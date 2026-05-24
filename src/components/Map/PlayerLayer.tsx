@@ -1,0 +1,219 @@
+/**
+ * 玩家图层组件
+ * 在地图上渲染在线玩家位置（显示玩家头像）
+ */
+
+import { useEffect, useRef, useState, useCallback } from 'react';
+import * as L from 'leaflet';
+import type { Player } from '@/types';
+import { fetchPlayersDetailed } from '@/lib/playerApi';
+import { DynmapProjection } from '@/lib/DynmapProjection';
+
+/**
+ * 获取玩家头像 URL (从 Dynmap)
+ * 格式: /api/dynmap/_{worldId}/tiles/faces/{size}x{size}/{playerName}.png
+ * 支持的尺寸: 16x16, 32x32
+ */
+function getPlayerAvatarUrl(playerName: string, size: number = 32, worldId: string = 'zth'): string {
+  // Dynmap 只支持 16x16 和 32x32，选择最接近的；默认走 Vercel same-origin 代理。
+  const tileSize = size <= 16 ? 16 : 32;
+  return `/api/dynmap/_${worldId}/tiles/faces/${tileSize}x${tileSize}/${encodeURIComponent(playerName)}.png`;
+}
+
+/**
+ * 创建玩家头像 HTML (圆形头像带边框)
+ */
+function createPlayerAvatarHtml(playerName: string, size: number = 32, worldId: string = 'zth'): string {
+  const avatarUrl = getPlayerAvatarUrl(playerName, size, worldId);
+  return `
+    <div style="
+      width: ${size}px;
+      height: ${size}px;
+      border-radius: 50%;
+      border: 3px solid #06b6d4;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      overflow: hidden;
+      background: #1e293b;
+    ">
+      <img
+        src="${avatarUrl}"
+        alt="${playerName}"
+        style="width: 100%; height: 100%; object-fit: cover;"
+        onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%2306b6d4%22><circle cx=%2212%22 cy=%228%22 r=%225%22/><path d=%22M20 21a8 8 0 0 0-16 0%22/></svg>'"
+      />
+    </div>
+  `;
+}
+
+
+const PLAYER_TOOLTIP_PANE = 'ria-player-tooltip';
+const PLAYER_TOOLTIP_PANE_Z = 900;
+
+function ensurePlayerTooltipPane(map: L.Map) {
+  let pane = map.getPane(PLAYER_TOOLTIP_PANE);
+  if (!pane) pane = map.createPane(PLAYER_TOOLTIP_PANE);
+  pane.style.zIndex = String(PLAYER_TOOLTIP_PANE_Z);
+  pane.style.pointerEvents = 'none';
+  return pane;
+}
+
+interface PlayerLayerProps {
+  map: L.Map;
+  projection: DynmapProjection;
+  worldId: string;
+  visible?: boolean;
+  players?: Player[];
+  onPlayerClick?: (player: Player) => void;
+}
+
+export function PlayerLayer({
+  map,
+  projection,
+  worldId,
+  visible = true,
+  players,
+  onPlayerClick,
+}: PlayerLayerProps) {
+  const [internalPlayers, setInternalPlayers] = useState<Player[]>([]);
+  const lastErrorRef = useRef<string | null>(null);
+  const layerGroupRef = useRef<L.LayerGroup | null>(null);
+  const intervalRef = useRef<number | null>(null);
+  const controlledPlayers = Array.isArray(players);
+  const renderPlayers = controlledPlayers ? players : internalPlayers;
+
+  // 加载玩家数据：仅在未由 MapContainer 传入 players 时启用，保留组件独立使用兼容性。
+  const loadPlayers = useCallback(async () => {
+    if (controlledPlayers) return;
+    const result = await fetchPlayersDetailed(worldId);
+    setInternalPlayers(result.players);
+    if (result.error) {
+      if (lastErrorRef.current !== result.error) {
+        console.warn('[PlayerLayer] 玩家信息读取失败：', result.error);
+        lastErrorRef.current = result.error;
+      }
+      return;
+    }
+    lastErrorRef.current = null;
+  }, [controlledPlayers, worldId]);
+
+  // 初始加载和定时刷新
+  useEffect(() => {
+    if (controlledPlayers) return;
+
+    // 立即加载一次
+    loadPlayers();
+
+    // 设置定时刷新 (5秒)
+    intervalRef.current = window.setInterval(() => {
+      loadPlayers();
+    }, 5000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [controlledPlayers, loadPlayers]);
+
+  // 世界切换时清空玩家列表
+  useEffect(() => {
+    if (!controlledPlayers) setInternalPlayers([]);
+  }, [controlledPlayers, worldId]);
+
+  // 创建图层组（仅一次）
+  useEffect(() => {
+    if (!map) return;
+
+    const group = L.layerGroup();
+    layerGroupRef.current = group;
+    if (visible) group.addTo(map);
+
+    return () => {
+      group.remove();
+      if (layerGroupRef.current === group) layerGroupRef.current = null;
+    };
+  }, [map]);
+
+  // 玩家 hover tooltip 使用专用 Leaflet pane，确保高于规则 symbol / label。
+  useEffect(() => {
+    if (!map) return;
+    ensurePlayerTooltipPane(map);
+  }, [map]);
+
+  // 渲染玩家图层内容
+  useEffect(() => {
+    const group = layerGroupRef.current;
+    if (!group) return;
+
+    group.clearLayers();
+    if (renderPlayers.length === 0) return;
+
+    // 渲染每个玩家
+    for (const player of renderPlayers) {
+      if (
+        !Number.isFinite(player.x) ||
+        !Number.isFinite(player.y) ||
+        !Number.isFinite(player.z)
+      ) continue;
+
+      const latLng = projection.locationToLatLng(player.x, player.y, player.z);
+
+      // 创建玩家头像图标
+      const markerSize = 32;
+      const markerIcon = L.divIcon({
+        className: 'player-avatar-icon',
+        html: createPlayerAvatarHtml(player.name, markerSize, worldId),
+        iconSize: [markerSize + 6, markerSize + 6], // 加上边框尺寸
+        iconAnchor: [(markerSize + 6) / 2, (markerSize + 6) / 2],
+      });
+
+      const marker = L.marker(latLng, { icon: markerIcon });
+
+      // 玩家 tooltip
+      const healthBar = `${'❤'.repeat(Math.ceil(player.health / 2))}`;
+      marker.bindTooltip(
+        `<b>${player.name}</b><br/><span style="color: #ef4444;">${healthBar}</span>`,
+        {
+          permanent: false,
+          direction: 'top',
+          offset: [0, -8],
+          pane: PLAYER_TOOLTIP_PANE,
+          className: 'player-hover-tooltip',
+        }
+      );
+
+      // 玩家点击事件
+      if (onPlayerClick) {
+        marker.on('click', () => {
+          onPlayerClick(player);
+        });
+      }
+
+      group.addLayer(marker);
+    }
+  }, [renderPlayers, projection, onPlayerClick, worldId]);
+
+  // 控制图层可见性
+  useEffect(() => {
+    const group = layerGroupRef.current;
+    if (!group || !map) return;
+
+    if (visible) {
+      if (!map.hasLayer(group)) {
+        group.addTo(map);
+      }
+    } else {
+      if (map.hasLayer(group)) {
+        map.removeLayer(group);
+      }
+    }
+  }, [visible, map]);
+
+  return null;
+}
+
+// 导出获取头像 URL 函数供其他组件使用
+export { getPlayerAvatarUrl };
+
+export default PlayerLayer;

@@ -1,0 +1,29 @@
+import type { ComponentType } from 'react';
+
+import FeatureInteractionCard from '@/components/Rules/core/FeatureInteractionCard';
+import TRPFeatureInteractionCard from './TRPFeatureInteractionCard';
+
+import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { CardFeatureLinkTarget, ResolveFeatureById } from './cardInteractions';
+import type { FeatureSharePayload } from '@/lib/featureShareLink';
+
+export type FeatureCardCommonProps = {
+  open: boolean;
+  feature?: FeatureRecord | null;
+  onClose?: () => void;
+  // Optional hooks used by the default card; special cards may ignore.
+  resolveFeatureById?: ResolveFeatureById;
+  onTryTriggerLabelClickById?: (id: string, linkTarget?: CardFeatureLinkTarget) => void;
+  variant?: 'floating' | 'embedded';
+  onOpenJsonPanel?: (payload: { title: string; jsonText: string; filename: string }) => void;
+  onOpenSharePanel?: (payload: FeatureSharePayload) => void;
+};
+
+export const FEATURE_CARD_REGISTRY: Record<string, ComponentType<FeatureCardCommonProps>> = {
+  TRP: TRPFeatureInteractionCard,
+};
+
+export function resolveFeatureCardComponent(classCode: unknown): ComponentType<FeatureCardCommonProps> {
+  const key = String(classCode ?? '').trim().toUpperCase();
+  return FEATURE_CARD_REGISTRY[key] ?? FeatureInteractionCard;
+}
