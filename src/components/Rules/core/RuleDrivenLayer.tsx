@@ -116,7 +116,7 @@ type Props = {
   activeButtonIds?: string[];
 };
 
-const Y_FOR_DISPLAY = 64;
+const Y_FOR_DISPLAY = -64;
 
 type LayerBundle = {
   main: L.Layer;
@@ -672,12 +672,10 @@ function toP3(v: any): { x: number; y: number; z: number } | null {
   if (!v) return null;
   if (Array.isArray(v)) {
     const x = Number(v[0]);
-    const y = Number(v[1]);
-    const z = Number(v[2]);
+    const y = v.length >= 3 ? Number(v[1]) : Y_FOR_DISPLAY;
+    const z = v.length >= 3 ? Number(v[2]) : Number(v[1]);
     if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z))
       return { x, y, z };
-    if (Number.isFinite(x) && Number.isFinite(z))
-      return { x, y: Y_FOR_DISPLAY, z };
     return null;
   }
   if (typeof v === "object") {

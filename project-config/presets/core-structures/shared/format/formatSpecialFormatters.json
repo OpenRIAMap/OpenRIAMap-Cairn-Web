@@ -66,6 +66,22 @@
       ],
       "runtimeStatus": "configPrimary",
       "description": "Station floor formatter."
+    },
+    {
+      "key": "roadLineFormatter",
+      "classCodes": [
+        "ROD"
+      ],
+      "runtimeStatus": "configPrimary",
+      "description": "Road line formatter. Config owns fields/groups; Cairn executor normalizes Linepoints, ConnectL, Blacklist, and Mode."
+    },
+    {
+      "key": "teleportPointFormatter",
+      "classCodes": [
+        "TPP"
+      ],
+      "runtimeStatus": "configPrimary",
+      "description": "Teleport point target coordinate formatter. Config owns fields; Cairn executor assembles TGTcoordinate."
     }
   ]
 }

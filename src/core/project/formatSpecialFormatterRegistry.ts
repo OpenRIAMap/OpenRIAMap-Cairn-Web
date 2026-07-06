@@ -1,5 +1,10 @@
 import { getFormatRuntimeContractByClassCode } from './formatRuntimeContracts';
 import {
+  getFormatExecutorByKey,
+  hasFormatExecutor,
+} from './formatExecutorRegistry';
+import type { CairnMapFormatExecutor } from './formatExecutorTypes';
+import {
   getSpecialFormatterConfigByClassCode,
   getSpecialFormatterConfigByKey,
   listSpecialFormatterConfigItems,
@@ -53,4 +58,13 @@ export function getSpecialFormatterDescriptorByClassCode(classCode: string): Cai
 
 export function hasRegisteredSpecialFormatter(formatterKey: string): boolean {
   return Boolean(getSpecialFormatterDescriptor(formatterKey));
+}
+
+export function getSpecialFormatterExecutor(formatterKey: string): CairnMapFormatExecutor | undefined {
+  if (!getSpecialFormatterDescriptor(formatterKey)) return undefined;
+  return getFormatExecutorByKey(formatterKey);
+}
+
+export function hasExecutableSpecialFormatter(formatterKey: string): boolean {
+  return Boolean(getSpecialFormatterDescriptor(formatterKey) && hasFormatExecutor(formatterKey));
 }

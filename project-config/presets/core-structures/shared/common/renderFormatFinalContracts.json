@@ -100,11 +100,11 @@
       "displaySource": "config",
       "displayContract": "configPrimary",
       "formatSource": "config",
-      "formatContract": "genericConfigPrimary",
+      "formatContract": "specialFormatterConfigPrimary",
       "schemaSource": "config",
       "legacyRole": "algorithmRuntimeAndCompatibilityAdapter",
       "legacyFallbackAllowed": false,
-      "notes": "Finalization contract: config owns declarations; TypeScript remains execution/runtime adapter.",
+      "notes": "Finalization contract: config owns declarations; Cairn roadLineFormatter remains execution/runtime adapter.",
       "completionStatus": "configDefinitionComplete"
     },
     {
@@ -113,7 +113,7 @@
       "displaySource": "config",
       "displayContract": "configPrimary",
       "formatSource": "config",
-      "formatContract": "genericConfigPrimary",
+      "formatContract": "specialFormatterConfigPrimary",
       "schemaSource": "config",
       "legacyRole": "algorithmRuntimeAndCompatibilityAdapter",
       "legacyFallbackAllowed": false,

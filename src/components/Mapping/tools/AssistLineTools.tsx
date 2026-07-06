@@ -91,7 +91,7 @@ type AssistLineToolsProps = {
   defaultPanelPosition?: { x: number; y: number };
 };
 
-const Y_FOR_DISPLAY = 64;
+const Y_FOR_DISPLAY = -64;
 
 // 固定直线参考线显示用：足够大的范围（仅用于可视化，不用于计算“无限”效果）
 const VIS_EXTENT = 300000;

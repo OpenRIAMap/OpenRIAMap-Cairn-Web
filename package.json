@@ -15,6 +15,7 @@
     "audit:class-config": "node ./scripts/audit-class-config.mjs",
     "audit:display-config": "node ./scripts/audit-display-config.mjs",
     "audit:schema-format": "node ./scripts/audit-schema-format.mjs",
+    "audit:format-executors": "node ./scripts/audit-format-executors.mjs",
     "audit:render-format-final": "node ./scripts/audit-render-format-final.mjs",
     "audit:card-config": "node ./scripts/audit-card-config.mjs",
     "audit:workflow-config": "node ./scripts/audit-workflow-config.mjs",

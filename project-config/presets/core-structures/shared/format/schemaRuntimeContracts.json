@@ -55,14 +55,16 @@
     {
       "classCode": "ROD",
       "schemaMode": "schemaPrimary",
-      "formatMode": "genericConfigPrimary",
-      "sourceFeatureKey": "道路"
+      "formatMode": "specialFormatterConfigPrimary",
+      "sourceFeatureKey": "道路",
+      "notes": "Schema is config-primary; Cairn roadLineFormatter handles Linepoints and road relation normalization."
     },
     {
       "classCode": "TPP",
       "schemaMode": "schemaPrimary",
-      "formatMode": "genericConfigPrimary",
-      "sourceFeatureKey": "传送点"
+      "formatMode": "specialFormatterConfigPrimary",
+      "sourceFeatureKey": "传送点",
+      "notes": "Schema is config-primary; Cairn teleportPointFormatter assembles TGTcoordinate."
     },
     {
       "classCode": "WRP",

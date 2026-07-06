@@ -19,6 +19,11 @@ const audits = [
     label: 'Format source: presets/shared/format + classes/*.json',
   },
   {
+    name: 'audit:format-executors',
+    file: './scripts/audit-format-executors.mjs',
+    label: 'Format executor source: Cairn built-in executor registry',
+  },
+  {
     name: 'audit:render-format-final',
     file: './scripts/audit-render-format-final.mjs',
     label: 'Render final source: presets/shared/common + executor bridge',

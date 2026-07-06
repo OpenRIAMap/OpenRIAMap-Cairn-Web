@@ -56,7 +56,7 @@ type CurveInputTProps = {
   outerClassName?: string;
 };
 
-const Y_FOR_DISPLAY = 64;
+const Y_FOR_DISPLAY = -64;
 
 const snapToHalf = (n: number) => roundToStepStable(n, 0.5);
 const snapToTenth = (n: number) => roundToStepStable(n, 0.1);

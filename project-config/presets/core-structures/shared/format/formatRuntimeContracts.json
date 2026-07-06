@@ -21,12 +21,20 @@
     {
       "classCode": "ROD",
       "sourceFeatureKey": "道路",
-      "formatMode": "genericConfigPrimary"
+      "formatMode": "specialFormatterConfigPrimary",
+      "formatterKey": "roadLineFormatter",
+      "fallback": "generic",
+      "formatterRuntimeStatus": "configPrimary",
+      "notes": "Config owns schema and contract; Cairn built-in executor normalizes Linepoints and road relation arrays."
     },
     {
       "classCode": "TPP",
       "sourceFeatureKey": "传送点",
-      "formatMode": "genericConfigPrimary"
+      "formatMode": "specialFormatterConfigPrimary",
+      "formatterKey": "teleportPointFormatter",
+      "fallback": "generic",
+      "formatterRuntimeStatus": "configPrimary",
+      "notes": "Config owns schema and contract; Cairn built-in executor assembles target coordinate fields."
     },
     {
       "classCode": "WRP",

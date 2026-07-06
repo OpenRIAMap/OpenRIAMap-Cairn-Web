@@ -78,7 +78,7 @@ type ControlPointsTProps = {
   onExitAddModeRestoreAssistLine?: () => void;
 };
 
-const Y_FOR_DISPLAY = 64;
+const Y_FOR_DISPLAY = -64;
 const ADD_SNAP_MAX_DIST = 50;
 
 type GeometryTypeForArrayEditor = 'point' | 'polyline' | 'polygon';

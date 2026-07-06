@@ -15,6 +15,8 @@ export type CairnMapGenericHydratedFormat = {
   groups: Record<string, unknown[]>;
 };
 
+const DEFAULT_COORD_Y = -64;
+
 const isObject = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
@@ -45,20 +47,21 @@ function pickFields(fields: CairnMapClassFieldConfig[], values: Record<string, u
 }
 
 function buildPointCoordinate(coord: CairnMapCoord2D | undefined): Record<string, number> {
+  const y = Number(coord?.y);
   const out: Record<string, number> = {
     x: Number(coord?.x ?? 0),
+    y: Number.isFinite(y) ? y : DEFAULT_COORD_Y,
     z: Number(coord?.z ?? 0),
   };
-  if (Number.isFinite(Number(coord?.y))) out.y = Number(coord?.y);
   return out;
 }
 
-function buildCoordinateArray(coords: CairnMapCoord2D[]): Array<[number, number] | [number, number, number]> {
+function buildCoordinateArray(coords: CairnMapCoord2D[]): Array<[number, number, number]> {
   return coords.map((coord) => {
     const x = Number(coord.x);
     const z = Number(coord.z);
-    if (Number.isFinite(Number(coord.y))) return [x, Number(coord.y), z];
-    return [x, z];
+    const y = Number(coord.y);
+    return [x, Number.isFinite(y) ? y : DEFAULT_COORD_Y, z];
   });
 }
 
@@ -93,19 +96,19 @@ function readPointCoordinate(value: unknown): CairnMapCoord2D[] {
   const z = Number(value.z);
   if (!Number.isFinite(x) || !Number.isFinite(z)) return [];
   const y = Number(value.y);
-  return [Number.isFinite(y) ? { x, z, y } : { x, z }];
+  return [{ x, z, y: Number.isFinite(y) ? y : DEFAULT_COORD_Y }];
 }
 
 function readCoordinateArray(value: unknown): CairnMapCoord2D[] {
   if (!Array.isArray(value)) return [];
   return value
-    .map((item) => {
+    .map((item): CairnMapCoord2D | null => {
       if (!Array.isArray(item)) return null;
       const x = Number(item[0]);
       const z = item.length >= 3 ? Number(item[2]) : Number(item[1]);
       if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
       const y = item.length >= 3 ? Number(item[1]) : Number.NaN;
-      return Number.isFinite(y) ? { x, z, y } : { x, z };
+      return { x, z, y: Number.isFinite(y) ? y : DEFAULT_COORD_Y };
     })
     .filter((item): item is CairnMapCoord2D => Boolean(item));
 }

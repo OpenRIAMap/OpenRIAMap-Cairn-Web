@@ -358,16 +358,16 @@ function toCoord(v: any): Coordinate | null {
   if (!v) return null;
   if (Array.isArray(v)) {
     const x = num(v[0], NaN);
-    const z = num(v[2] ?? v[1], NaN);
-    const y = num(v[1] ?? 64, 64);
-    if (Number.isFinite(x) && Number.isFinite(z)) return { x, y: Number.isFinite(y) ? y : 64, z };
+    const z = v.length >= 3 ? num(v[2], NaN) : num(v[1], NaN);
+    const y = v.length >= 3 ? num(v[1], -64) : -64;
+    if (Number.isFinite(x) && Number.isFinite(z)) return { x, y: Number.isFinite(y) ? y : -64, z };
     return null;
   }
   if (typeof v === 'object') {
     const x = num(v.x, NaN);
     const z = num(v.z, NaN);
-    const y = num(v.y ?? 64, 64);
-    if (Number.isFinite(x) && Number.isFinite(z)) return { x, y: Number.isFinite(y) ? y : 64, z };
+    const y = num(v.y ?? -64, -64);
+    if (Number.isFinite(x) && Number.isFinite(z)) return { x, y: Number.isFinite(y) ? y : -64, z };
   }
   return null;
 }
@@ -444,7 +444,7 @@ function nearestBuildingForCoord(buildings: Map<string, Building>, p: Coordinate
 }
 
 function centroidPolygonXZ(poly: Coordinate[]): Coordinate {
-  if (poly.length < 3) return poly[0] ?? { x: 0, y: 64, z: 0 };
+  if (poly.length < 3) return poly[0] ?? { x: 0, y: -64, z: 0 };
   let area = 0;
   let cx = 0;
   let cz = 0;
@@ -463,7 +463,7 @@ function centroidPolygonXZ(poly: Coordinate[]): Coordinate {
   cx /= 6 * area;
   cz /= 6 * area;
   if (!Number.isFinite(cx) || !Number.isFinite(cz)) return poly[0];
-  return { x: cx, y: poly[0].y ?? 64, z: cz };
+  return { x: cx, y: poly[0].y ?? -64, z: cz };
 }
 
 // ------------------------------
@@ -506,7 +506,7 @@ function projectPointToPolylineMeasure(p: Coordinate, line: Rle): { m: number; n
 
     if (d < bestD) {
       bestD = d;
-      bestPt = { x, y: p.y ?? 64, z };
+      bestPt = { x, y: p.y ?? -64, z };
       const segLen = distXZ(a, b);
       const base = line.cumlen[i];
       bestM = base + t * segLen;
@@ -533,7 +533,7 @@ function pointAtMeasure(line: Rle, m: number): Coordinate {
 
   return {
     x: a.x + (b.x - a.x) * t,
-    y: a.y ?? 64,
+    y: a.y ?? -64,
     z: a.z + (b.z - a.z) * t,
   };
 }

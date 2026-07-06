@@ -53,7 +53,7 @@ export function createClassConfig(options) {
     geometry: {
       type: options.geometry,
       sourceField: options.sourceField || geometry.sourceField,
-      axisOrder: 'x,z,y',
+      axisOrder: 'x,y,z',
       required: true,
     },
     identity: {

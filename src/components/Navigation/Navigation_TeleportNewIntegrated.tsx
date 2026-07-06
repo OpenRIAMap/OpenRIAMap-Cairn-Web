@@ -122,7 +122,7 @@ export type NavigationTeleportComputeOptions = {
 // small utils
 // ------------------------------
 
-const DEFAULT_Y = 64;
+const DEFAULT_Y = -64;
 const isFiniteNum = (v: any) => Number.isFinite(Number(v));
 
 function normCoord(c: Coordinate): Coordinate {
@@ -258,6 +258,9 @@ async function loadTeleportPoints(worldId: string, opt: {
         const telev = (item as any).TGTelevation;
         const ty = Number.isFinite(tcy) ? tcy : (isFiniteNum(telev) ? Number(telev) : DEFAULT_Y);
         tgt = normCoord({ x: tc.x, z: tc.z, y: ty });
+      } else if (isFiniteNum((item as any).TGT_x) && isFiniteNum((item as any).TGT_z)) {
+        const ty = isFiniteNum((item as any).TGTelevation) ? Number((item as any).TGTelevation) : DEFAULT_Y;
+        tgt = normCoord({ x: (item as any).TGT_x, z: (item as any).TGT_z, y: ty });
       }
     }
 

@@ -8,6 +8,7 @@ import {
 } from '../../core/project/classMetadata';
 import { getClassSchema, getClassSchemaByFeatureKey } from '../../core/project/schemaMetadata';
 import type { CairnMapClassConfig, CairnMapClassFieldConfig, CairnMapClassGroupConfig } from '../../core/project/classTypes';
+import { getFormatExecutorByClassCode, getFormatExecutorKeyByClassCode } from '../../core/project/formatExecutorRegistry';
 import { stringifyFeatureJsonArray } from './featureJsonSerializer';
 import { buildWorldCodeMapFromConfig } from './buildDataToolSchema';
 
@@ -378,6 +379,7 @@ const TYPE_NAME_BY_MODE: Record<DrawMode, 'Points' | 'Polyline' | 'Polygon'> = {
 };
 
 export const WORLD_CODE_BY_WORLD_ID: Record<string, number> = buildWorldCodeMapFromConfig();
+const DEFAULT_COORD_Y = -64;
 
 const formatYYYYMMDD = (d: Date) => {
   const y = d.getFullYear();
@@ -436,11 +438,11 @@ const mapGroup = (group: CairnMapClassGroupConfig): GroupDef => ({
   fields: group.fields.map(mapField),
 });
 
-const buildCoordinateArray = (coords: Coord2D[]): Array<[number, number] | [number, number, number]> => coords.map((coord) => {
+const buildCoordinateArray = (coords: Coord2D[]): Array<[number, number, number]> => coords.map((coord) => {
   const x = Number(coord.x);
   const z = Number(coord.z);
-  if (Number.isFinite(Number(coord.y))) return [x, Number(coord.y), z];
-  return [x, z];
+  const y = Number(coord.y);
+  return [x, Number.isFinite(y) ? y : DEFAULT_COORD_Y, z];
 });
 
 const readPointCoordinate = (value: unknown): Coord2D[] => {
@@ -449,19 +451,19 @@ const readPointCoordinate = (value: unknown): Coord2D[] => {
   const z = Number(value.z);
   if (!Number.isFinite(x) || !Number.isFinite(z)) return [];
   const y = Number(value.y);
-  return [Number.isFinite(y) ? { x, z, y } : { x, z }];
+  return [{ x, z, y: Number.isFinite(y) ? y : DEFAULT_COORD_Y }];
 };
 
 const readCoordinateArray = (value: unknown): Coord2D[] => {
   if (!Array.isArray(value)) return [];
   return value
-    .map((item) => {
+    .map((item): Coord2D | null => {
       if (!Array.isArray(item)) return null;
       const x = Number(item[0]);
       const z = item.length >= 3 ? Number(item[2]) : Number(item[1]);
       if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
       const y = item.length >= 3 ? Number(item[1]) : Number.NaN;
-      return Number.isFinite(y) ? { x, z, y } : { x, z };
+      return { x, z, y: Number.isFinite(y) ? y : DEFAULT_COORD_Y };
     })
     .filter((item): item is Coord2D => Boolean(item));
 };
@@ -548,6 +550,34 @@ const isEmptyRequired = (field: FieldDef, value: unknown) => {
   return String(value).trim().length === 0;
 };
 
+const applyFormatExecutor = (baseDef: FormatDef): FormatDef => {
+  if (!baseDef.classCode) return baseDef;
+  const executor = getFormatExecutorByClassCode(baseDef.classCode);
+  const formatterKey = getFormatExecutorKeyByClassCode(baseDef.classCode);
+  if (!executor || !formatterKey) return baseDef;
+  const context = {
+    formatterKey,
+    classCode: baseDef.classCode,
+    featureKey: baseDef.key,
+    baseDef,
+  };
+  return {
+    ...baseDef,
+    buildFeatureInfo: executor.buildFeatureInfo
+      ? (args) => executor.buildFeatureInfo!(args, context)
+      : baseDef.buildFeatureInfo,
+    hydrate: executor.hydrate
+      ? (featureInfo) => executor.hydrate!(featureInfo, context)
+      : baseDef.hydrate,
+    coordsFromFeatureInfo: executor.coordsFromFeatureInfo
+      ? (featureInfo) => executor.coordsFromFeatureInfo!(featureInfo, context) as Coord2D[]
+      : baseDef.coordsFromFeatureInfo,
+    validateImportItem: executor.validateImportItem
+      ? (item) => executor.validateImportItem!(item, context)
+      : baseDef.validateImportItem,
+  };
+};
+
 const createFormatDefFromClassConfig = (config: CairnMapClassConfig): FormatDef => {
   const key = (config.sourceFeatureKey ?? config.classKey) as FeatureKey;
   const mode = geometryToDrawMode(config.geometry.type);
@@ -559,10 +589,11 @@ const createFormatDefFromClassConfig = (config: CairnMapClassConfig): FormatDef 
     injectGroups(out, groupValues);
     if (config.geometry.type === 'Point') {
       const coord = coords[0];
+      const y = Number(coord?.y);
       out[config.geometry.sourceField] = {
         x: Number(coord?.x ?? 0),
+        y: Number.isFinite(y) ? y : DEFAULT_COORD_Y,
         z: Number(coord?.z ?? 0),
-        ...(Number.isFinite(Number(coord?.y)) ? { y: Number(coord?.y) } : {}),
       };
     } else {
       out[config.geometry.sourceField] = buildCoordinateArray(coords);
@@ -605,7 +636,7 @@ const createFormatDefFromClassConfig = (config: CairnMapClassConfig): FormatDef 
     return undefined;
   };
 
-  return {
+  return applyFormatExecutor({
     key,
     label: resolveCairnMapLocalizedLabel(config.label, 'zh-CN', key),
     modes: [mode],
@@ -617,7 +648,7 @@ const createFormatDefFromClassConfig = (config: CairnMapClassConfig): FormatDef 
     hydrate,
     coordsFromFeatureInfo,
     validateImportItem,
-  };
+  });
 };
 
 const createDefaultFormatDef = (): FormatDef => ({
@@ -630,10 +661,11 @@ const createDefaultFormatDef = (): FormatDef => ({
     const out: Record<string, unknown> = {};
     if (mode === 'point') {
       const coord = coords[0];
+      const y = Number(coord?.y);
       out.coordinate = {
         x: Number(coord?.x ?? 0),
+        y: Number.isFinite(y) ? y : DEFAULT_COORD_Y,
         z: Number(coord?.z ?? 0),
-        ...(Number.isFinite(Number(coord?.y)) ? { y: Number(coord?.y) } : {}),
       };
     } else {
       out.Conpoints = buildCoordinateArray(coords);

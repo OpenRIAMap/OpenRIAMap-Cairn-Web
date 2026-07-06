@@ -20,7 +20,7 @@
   "geometry": {
     "type": "LineString",
     "sourceField": "Linepoints",
-    "axisOrder": "x,z,y",
+    "axisOrder": "x,y,z",
     "required": true
   },
   "identity": {

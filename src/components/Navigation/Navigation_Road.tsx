@@ -131,7 +131,7 @@ export type NavigationRoadComputeOptions = {
 // constants & utils
 // ------------------------------
 
-const DEFAULT_Y = 64;
+const DEFAULT_Y = -64;
 const DEFAULT_EPS = 1.5;
 
 
@@ -289,10 +289,10 @@ function parseRoadFromRaw(it: any): RoadFeature | null {
   const coords = lp
     .map((p: any) => {
       const x = Number(p?.[0]);
-      const y = Number(p?.[1]);
-      const z = Number(p?.[2]);
+      const y = Array.isArray(p) && p.length >= 3 ? Number(p?.[1]) : DEFAULT_Y;
+      const z = Array.isArray(p) && p.length >= 3 ? Number(p?.[2]) : Number(p?.[1]);
       if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
-      return { x, z, y: Number.isFinite(y) ? y : -64 } as Coordinate;
+      return { x, z, y: Number.isFinite(y) ? y : DEFAULT_Y } as Coordinate;
     })
     .filter(Boolean) as Coordinate[];
   if (coords.length < 2) return null;

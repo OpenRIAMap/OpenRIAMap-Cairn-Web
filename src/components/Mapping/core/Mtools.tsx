@@ -66,7 +66,7 @@ type ToolLayer = {
   data?: ShapeEllipseData | ShapeSquareData;
 };
 
-const Y_FOR_DISPLAY = 64;
+const Y_FOR_DISPLAY = -64;
 
 function clampNumber(n: number, fallback: number) {
   return Number.isFinite(n) ? n : fallback;
