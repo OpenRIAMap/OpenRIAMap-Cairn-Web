@@ -1,0 +1,37 @@
+{
+  "provider": "github",
+  "requiredOrganization": "OpenRIAMap",
+  "repositories": {
+    "web": {
+      "owner": "OpenRIAMap",
+      "repo": "OpenRIAMap-Cairn-Web",
+      "required": true
+    },
+    "pr": {
+      "owner": "OpenRIAMap",
+      "repo": "OpenRIAMap-Cairn-PR",
+      "required": true
+    },
+    "media": {
+      "owner": "OpenRIAMap",
+      "repo": "OpenRIAMap-Cairn-Media",
+      "required": true
+    },
+    "data": {
+      "owner": "OpenRIAMap",
+      "repo": "OpenRIAMap-Data",
+      "required": true
+    }
+  },
+  "roles": {
+    "reviewerTeam": "Cairn-Reviewers",
+    "submitterTeam": "Cairn-Submitters"
+  },
+  "capabilitiesForEnterReview": [
+    "identityVerified",
+    "orgMember",
+    "readPrRepo",
+    "readMediaRepo",
+    "readDataRepo"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "submission": {
+    "mode": "github_inline_zip_until_object_storage",
+    "packageMode": "github_inline_zip",
+    "maxGithubInlinePackageMiB": 95,
+    "objectStorageFallbackRequiredAboveMiB": 95,
+    "prRepositoryStores": "full_zip_until_object_storage",
+    "branchPrefix": "submit/",
+    "packagePathPrefix": "RelayPackages/submissions/pending",
+    "futureObjectStorage": {
+      "packageMode": "full_zip_object",
+      "provider": "vercel_blob_or_r2",
+      "enabled": false,
+      "pointerPathPrefix": "PackagePointers"
+    }
+  },
+  "accept": {
+    "mode": "local_manual",
+    "githubActionsAcceptEnabled": false,
+    "approvedPackageQueue": "RelayPackages/approved-pending-local-apply",
+    "localApplyRequired": true
+  }
+}
