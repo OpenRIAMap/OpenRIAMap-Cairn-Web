@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "cairnmap.relay-review-status.v1",
+  "packageId": "RelayPackage_Aunst-639_zth_202605171818",
+  "projectId": "openriamap-ria",
+  "worldId": "zth",
+  "status": "pending",
+  "createdAt": "1970-01-01T00:00:00.000Z",
+  "updatedAt": "1970-01-01T00:00:00.000Z",
+  "currentStage": "created",
+  "package": {
+    "path": "docs/30_data-contracts/examples/native-relay-package-sample",
+    "type": "native-relay-package"
+  },
+  "precheck": {
+    "status": "NOT_RUN",
+    "runId": null,
+    "reportPath": null,
+    "finalStatus": null,
+    "updatedAt": null
+  },
+  "accept": {
+    "status": "NOT_RUN",
+    "runId": null,
+    "reportPath": null,
+    "finalStatus": null,
+    "updatedAt": null
+  },
+  "review": {
+    "decision": null,
+    "reviewer": null,
+    "comment": null,
+    "decidedAt": null
+  },
+  "history": [
+    {
+      "at": "1970-01-01T00:00:00.000Z",
+      "from": null,
+      "to": "pending",
+      "stage": "init",
+      "reason": "review status initialized"
+    }
+  ],
+  "warnings": [],
+  "errors": []
+}

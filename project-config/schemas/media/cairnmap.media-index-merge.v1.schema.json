@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/media/cairnmap.media-index-merge.v1.schema.json",
+  "title": "CairnMap MediaIndex Merge v1",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["schemaVersion", "projectId", "generatedAt", "layout", "worldCount", "assetCount", "bindingCount", "worlds"],
+      "properties": {
+        "schemaVersion": { "const": "cairnmap.media-index.merge-root-index.v1" },
+        "projectId": { "type": "string" },
+        "generatedAt": { "type": "string" },
+        "layout": { "const": "world-first" },
+        "worldCount": { "type": "integer", "minimum": 0 },
+        "assetCount": { "type": "integer", "minimum": 0 },
+        "bindingCount": { "type": "integer", "minimum": 0 },
+        "worlds": { "type": "array" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["schemaVersion", "projectId", "worldId", "assetCount", "bindingCount", "features"],
+      "properties": {
+        "schemaVersion": { "const": "cairnmap.media-index.merge-world-index.v1" },
+        "projectId": { "type": "string" },
+        "worldId": { "type": "string" },
+        "generatedAt": { "type": "string" },
+        "assetCount": { "type": "integer", "minimum": 0 },
+        "bindingCount": { "type": "integer", "minimum": 0 },
+        "features": { "type": "array" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["schemaVersion", "featureRef", "media"],
+      "properties": {
+        "schemaVersion": { "const": "cairnmap.media-index.by-feature.v1" },
+        "featureRef": { "type": "object" },
+        "media": { "type": "array" }
+      },
+      "additionalProperties": true
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/cairnmap.storage-profiles.v1.schema.json",
+  "title": "CairnMap Storage Profiles",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "const": "cairnmap.storage-profiles.v1"
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "runtimeStatus": {
+      "type": "string",
+      "enum": [
+        "contract-only",
+        "active",
+        "deprecated"
+      ]
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "properties": {
+        "featureData": {
+          "type": "string"
+        },
+        "media": {
+          "type": "string"
+        },
+        "mediaIndex": {
+          "type": "string"
+        },
+        "relayPool": {
+          "type": "string"
+        }
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "featureData",
+              "media",
+              "mediaIndex",
+              "relayPool"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "internal-path",
+              "github-repo",
+              "raw-compatible",
+              "object-storage",
+              "api",
+              "database"
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "internal",
+              "external",
+              "planned"
+            ]
+          },
+          "owner": {
+            "type": "string"
+          },
+          "repo": {
+            "type": "string"
+          },
+          "branch": {
+            "type": "string"
+          },
+          "root": {
+            "type": "string"
+          },
+          "paths": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "read": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "rawCompatible": {
+                "type": "boolean"
+              },
+              "sourceLinkModeRef": {
+                "type": "string"
+              }
+            }
+          },
+          "write": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          },
+          "compatibility": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "kind",
+          "mode",
+          "root"
+        ]
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "projectId",
+    "defaults",
+    "profiles"
+  ]
+}

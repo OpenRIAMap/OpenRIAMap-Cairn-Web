@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cairnmap.native-relay-accept-guards.v1.schema.json",
+  "title": "CairnMap Native RelayPackage Accept Guards Report",
+  "type": "object",
+  "required": ["schemaVersion", "generatedAt", "finalStatus", "policy", "checked", "warnings", "errors"],
+  "properties": {
+    "schemaVersion": { "const": "cairnmap.native-relay-accept-guards.v1" },
+    "generatedAt": { "type": "string" },
+    "finalStatus": { "enum": ["PASS", "FAIL"] },
+    "policy": {
+      "type": "object",
+      "required": ["acceptBranchPrefix", "protectedBranches", "allowedRelayRoots", "allowedDataRoots", "commitAllowedChildren"],
+      "properties": {
+        "acceptBranchPrefix": { "type": "string" },
+        "protectedBranches": { "type": "array", "items": { "type": "string" } },
+        "allowedRelayRoots": { "type": "array", "items": { "type": "string" } },
+        "allowedDataRoots": { "type": "array", "items": { "type": "string" } },
+        "commitAllowedChildren": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "checked": {
+      "type": "object",
+      "required": ["relay", "dataRoot", "targetBranch", "write", "commitChanges", "pushChanges"],
+      "properties": {
+        "relay": { "type": "string" },
+        "dataRoot": { "type": "string" },
+        "targetBranch": { "type": "string" },
+        "write": { "type": "boolean" },
+        "commitChanges": { "type": "boolean" },
+        "pushChanges": { "type": "boolean" },
+        "explicitRelay": { "type": "boolean" },
+        "explicitDataRoot": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

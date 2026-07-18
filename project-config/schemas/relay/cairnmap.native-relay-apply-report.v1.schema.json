@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/cairnmap.native-relay-apply-report.v1.schema.json",
+  "title": "CairnMap Native RelayPackage Apply Report",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "const": "cairnmap.native-relay-apply-report.v1"
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["dry-run", "write"]
+    },
+    "finalStatus": {
+      "type": "string",
+      "enum": ["DRY_RUN_ONLY", "PASS", "FAIL"]
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "dryRunSummary": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "writes": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "featureWrites": { "type": "array" },
+        "deleteWrites": { "type": "array" },
+        "pictureWrites": { "type": "array" },
+        "mediaAssetWrites": { "type": "array" },
+        "mediaBindingWrites": { "type": "array" },
+        "backupManifest": { "type": "array" }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "errors": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "mode",
+    "finalStatus",
+    "projectId",
+    "inputs",
+    "dryRunSummary",
+    "writes",
+    "warnings",
+    "errors"
+  ]
+}

@@ -108,6 +108,7 @@ const schemaVersionByBasename = new Map([
   ['ruleButtons.json', 'cairnmap.rule-buttons.v1'],
   ['searchProfiles.json', 'cairnmap.search-profiles.v1'],
   ['sourceLinkModes.json', 'cairnmap.source-link-modes.v1'],
+  ['storageProfiles.json', 'cairnmap.storage-profiles.v1'],
   ['worlds.json', 'cairnmap.worlds.v1'],
   ['package.json', 'cairnmap.config-package.v1'],
   ['project.json', 'cairnmap.project-package.v1'],

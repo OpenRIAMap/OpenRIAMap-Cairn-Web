@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/cairnmap.native-relay-protocol.v1.schema.json",
+  "title": "CairnMap Native RelayPackage Protocol Contract",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "const": "cairnmap.native-relay-protocol.v1"
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "runtimeStatus": {
+      "type": "string",
+      "enum": [
+        "contract-only",
+        "active",
+        "deprecated"
+      ]
+    },
+    "roots": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "semantics": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "projectId",
+    "runtimeStatus",
+    "roots",
+    "semantics"
+  ]
+}

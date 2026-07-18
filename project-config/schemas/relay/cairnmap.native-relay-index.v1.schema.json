@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/cairnmap.native-relay-index.v1.schema.json",
+  "title": "CairnMap Native RelayPackage INDEX",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "operator": {
+      "type": "string",
+      "minLength": 1
+    },
+    "note": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "packageVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "exportedAt": {
+      "type": "string"
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "worldId": {
+      "type": "string"
+    },
+    "baseDataVersion": {
+      "type": "string"
+    },
+    "packageStatus": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending",
+        "prechecked",
+        "accepted",
+        "rejected",
+        "skipped",
+        "applied",
+        "archived"
+      ]
+    },
+    "featureCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "pictureCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "deleteCount": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "operator",
+    "version",
+    "packageVersion",
+    "exportedAt",
+    "featureCount",
+    "pictureCount",
+    "deleteCount"
+  ]
+}

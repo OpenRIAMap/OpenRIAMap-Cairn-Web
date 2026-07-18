@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/cairnmap.native-relay-delete.v1.schema.json",
+  "title": "CairnMap Native RelayPackage Delete Table",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "deleteTime": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "worldId": {
+            "type": "string"
+          },
+          "classCode": {
+            "type": "string"
+          },
+          "featureId": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "deleteTime",
+    "items"
+  ]
+}

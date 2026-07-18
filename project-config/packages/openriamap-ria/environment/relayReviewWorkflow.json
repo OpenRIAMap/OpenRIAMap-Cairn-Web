@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "cairnmap.relay-review-workflow.v1",
+  "projectId": "openriamap-ria",
+  "description": "RelayPackage review workflow contract. RELAY_REVIEW_WORKFLOW_CORE_1 defines status sidecars, inbox buckets, and optional action/status synchronization without introducing Admin UI or automatic production writes.",
+  "runtimeStatus": "contract-and-tools",
+  "roots": {
+    "relayPackagesRoot": "RelayPackages",
+    "pending": "RelayPackages/pending",
+    "prechecked": "RelayPackages/prechecked",
+    "accepted": "RelayPackages/accepted",
+    "rejected": "RelayPackages/rejected",
+    "failed": "RelayPackages/failed",
+    "archived": "RelayPackages/archived"
+  },
+  "statusFile": "review-status.json",
+  "reportsDir": "reports",
+  "statuses": [
+    "pending",
+    "precheck_running",
+    "prechecked",
+    "precheck_failed",
+    "accepted",
+    "accept_failed",
+    "rejected",
+    "changes_requested",
+    "archived"
+  ],
+  "actions": {
+    "precheck": {
+      "updatesStatusOnlyWhenExplicit": true,
+      "optionalFlags": ["--review-status-path", "--review-package-root", "--update-review-status"]
+    },
+    "accept": {
+      "updatesStatusOnlyWhenExplicit": true,
+      "optionalFlags": ["--review-status-path", "--review-package-root", "--update-review-status"]
+    }
+  },
+  "compatibility": {
+    "adminUiRequired": false,
+    "movesPackagesByDefault": false,
+    "deletesPackagesByDefault": false,
+    "notes": "This workflow core records review state beside RelayPackages. Package movement between buckets should remain explicit and may be implemented by later Admin/review-flow patches."
+  }
+}

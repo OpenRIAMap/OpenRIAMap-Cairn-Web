@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "cairnmap.native-relay-review.v1",
+  "status": "pending",
+  "reviewer": null,
+  "reviewedAt": null,
+  "decision": null,
+  "notes": [],
+  "precheck": {
+    "status": "not-run",
+    "warnings": [],
+    "errors": []
+  },
+  "history": []
+}

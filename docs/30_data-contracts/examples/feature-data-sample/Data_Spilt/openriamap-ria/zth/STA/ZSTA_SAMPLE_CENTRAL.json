@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "cairnmap.feature-record.sample.v1",
+  "projectId": "openriamap-ria",
+  "worldId": "zth",
+  "classCode": "STA",
+  "featureId": "ZSTA_SAMPLE_CENTRAL",
+  "geometry": {
+    "type": "Point",
+    "coordinates": [
+      5,
+      10
+    ]
+  },
+  "properties": {
+    "name": "Sample Central Station",
+    "category": "station"
+  },
+  "meta": {
+    "sampleOnly": true,
+    "source": "DATA_FEATURE_REPO_CONTRACT_1"
+  }
+}

@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/cairnmap.feature-data-index.v1.schema.json",
+  "title": "CairnMap FeatureData Index Artifacts",
+  "type": "object",
+  "additionalProperties": true,
+  "definitions": {
+    "featureRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "projectId": {
+          "type": "string"
+        },
+        "worldId": {
+          "type": "string"
+        },
+        "classCode": {
+          "type": "string"
+        },
+        "featureId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "projectId",
+        "worldId",
+        "classCode",
+        "featureId"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "merge-index",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "cairnmap.feature-data-index.merge-index.v1"
+        },
+        "generatedAt": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "features": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "projectId": {
+                "type": "string"
+              },
+              "worldId": {
+                "type": "string"
+              },
+              "classCode": {
+                "type": "string"
+              },
+              "featureId": {
+                "type": "string"
+              },
+              "sourcePath": {
+                "type": "string"
+              },
+              "mergeChunk": {
+                "type": "string"
+              },
+              "contentHash": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "projectId",
+              "worldId",
+              "classCode",
+              "featureId",
+              "sourcePath",
+              "mergeChunk",
+              "contentHash"
+            ]
+          }
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "generatedAt",
+        "projectId",
+        "features"
+      ]
+    },
+    {
+      "title": "chunk-manifest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": "cairnmap.feature-data-index.chunk-manifest.v1"
+        },
+        "generatedAt": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "chunks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "chunkPath": {
+                "type": "string"
+              },
+              "projectId": {
+                "type": "string"
+              },
+              "worldId": {
+                "type": "string"
+              },
+              "classCode": {
+                "type": "string"
+              },
+              "featureCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "contentHash": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "chunkPath",
+              "projectId",
+              "worldId",
+              "classCode",
+              "featureCount",
+              "contentHash"
+            ]
+          }
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "generatedAt",
+        "projectId",
+        "chunks"
+      ]
+    },
+    {
+      "title": "data-version",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "schemaVersion": {
+          "const": "cairnmap.feature-data-index.data-version.v1"
+        },
+        "dataVersion": {
+          "type": "string"
+        },
+        "generatedAt": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "sourceProfile": {
+          "type": "string"
+        },
+        "mergeStrategy": {
+          "type": "string"
+        },
+        "builderVersion": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "dataVersion",
+        "generatedAt",
+        "projectId",
+        "sourceProfile",
+        "mergeStrategy",
+        "builderVersion"
+      ]
+    }
+  ]
+}

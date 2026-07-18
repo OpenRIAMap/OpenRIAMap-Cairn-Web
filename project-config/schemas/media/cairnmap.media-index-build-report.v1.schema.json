@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/media/cairnmap.media-index-build-report.v1.schema.json",
+  "title": "CairnMap MediaIndex Build Report v1",
+  "type": "object",
+  "required": ["schemaVersion", "patchId", "generatedAt", "writeMode", "inputs", "outputs", "summary", "warnings", "errors", "finalStatus"],
+  "properties": {
+    "schemaVersion": { "const": "cairnmap.media-index-build-report.v1" },
+    "patchId": { "const": "DATA_MEDIA_INDEX_WORLD_FIRST_BUILD_1" },
+    "generatedAt": { "type": "string" },
+    "writeMode": { "type": "boolean" },
+    "inputs": { "type": "object" },
+    "outputs": { "type": "object" },
+    "summary": { "type": "object" },
+    "skippedWorldDirs": { "type": "array" },
+    "skippedFiles": { "type": "array" },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } },
+    "finalStatus": { "enum": ["PASS", "FAIL"] }
+  },
+  "additionalProperties": true
+}

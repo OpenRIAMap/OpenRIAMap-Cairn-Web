@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cairnmap.native-relay-precheck-report.v1.schema.json",
+  "title": "CairnMap Native RelayPackage Precheck Report",
+  "type": "object",
+  "required": ["schemaVersion", "generatedAt", "projectId", "mode", "finalStatus", "inputs", "outputs", "summary", "steps", "warnings", "errors"],
+  "properties": {
+    "schemaVersion": { "const": "cairnmap.native-relay-precheck-report.v1" },
+    "generatedAt": { "type": "string" },
+    "projectId": { "type": "string", "minLength": 1 },
+    "mode": { "const": "precheck-dry-run" },
+    "finalStatus": { "enum": ["PASS", "FAIL"] },
+    "inputs": {
+      "type": "object",
+      "required": ["relay", "outRoot", "writeEnabled", "strictWorlds"],
+      "properties": {
+        "relay": { "type": "string" },
+        "dataRoot": { "type": ["string", "null"] },
+        "outRoot": { "type": "string" },
+        "writeEnabled": { "const": false },
+        "strictWorlds": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "outputs": { "type": "object", "additionalProperties": { "type": "string" } },
+    "summary": {
+      "type": "object",
+      "required": ["stepCount", "passedSteps", "failedSteps", "warningCount", "errorCount"],
+      "properties": {
+        "stepCount": { "type": "integer", "minimum": 0 },
+        "passedSteps": { "type": "integer", "minimum": 0 },
+        "failedSteps": { "type": "integer", "minimum": 0 },
+        "pipelineFinalStatus": { "type": ["string", "null"] },
+        "apply": { "type": "object" },
+        "featureMerge": { "type": "object" },
+        "mediaIndex": { "type": "object" },
+        "warningCount": { "type": "integer", "minimum": 0 },
+        "errorCount": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "script", "args", "exitCode", "status"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "script": { "type": "string" },
+          "args": { "type": "array", "items": { "type": "string" } },
+          "exitCode": { "type": "integer" },
+          "status": { "enum": ["PASS", "FAIL"] },
+          "stdoutTail": { "type": "array", "items": { "type": "string" } },
+          "stderrTail": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": true
+      }
+    },
+    "childReports": { "type": "object", "additionalProperties": { "type": ["string", "null"] } },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

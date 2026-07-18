@@ -1,0 +1,130 @@
+{
+  "schemaVersion": "cairnmap.storage-profiles.v1",
+  "projectId": "openriamap-ria",
+  "description": "Storage profile contract for the Cairn distributed framework. This file declares future FeatureData, media, MediaIndex, and RelayPool storage locations without replacing the current dataSources/sourceLinkModes runtime chain.",
+  "runtimeStatus": "contract-only",
+  "defaults": {
+    "featureData": "featureData.github.currentOpenRIAMapData",
+    "media": "media.github.currentOpenRIAMapDataPicture",
+    "mediaIndex": "mediaIndex.github.plannedOpenRIAMapData",
+    "relayPool": "relayPool.github.plannedCairnMapRelayPool"
+  },
+  "profiles": [
+    {
+      "id": "featureData.github.currentOpenRIAMapData",
+      "role": "featureData",
+      "label": "Current OpenRIAMap feature data repository",
+      "kind": "github-repo",
+      "mode": "external",
+      "owner": "Ozstk639",
+      "repo": "OpenRIAMap-Data",
+      "branch": "main",
+      "root": "",
+      "paths": {
+        "splitRoot": "Data_Spilt",
+        "mergeRoot": "Data_Merge",
+        "indexRoot": "Data_Index",
+        "toolRoot": "Data_Merge_Tool"
+      },
+      "read": {
+        "rawCompatible": true,
+        "sourceLinkModeRef": "sourceLinkModes.current"
+      },
+      "write": {
+        "enabled": false,
+        "reason": "CM_STORAGE_PROFILE_1 only introduces the profile contract. Write operations remain reserved for future RelayPackage/apply patches."
+      },
+      "compatibility": {
+        "currentRuntimeReplacement": false,
+        "currentRuntimeChain": "sourceLinkModes.json + dataSources.json + dat sourceMode",
+        "notes": "The current service site continues to read Data_Merge through the existing dat-mode data source logic."
+      }
+    },
+    {
+      "id": "media.github.currentOpenRIAMapDataPicture",
+      "role": "media",
+      "label": "Current OpenRIAMap picture repository area",
+      "kind": "github-repo",
+      "mode": "external",
+      "owner": "Ozstk639",
+      "repo": "OpenRIAMap-Data",
+      "branch": "main",
+      "root": "Picture",
+      "paths": {
+        "objectRoot": "Picture"
+      },
+      "read": {
+        "rawCompatible": true,
+        "sourceLinkModeRef": "sourceLinkModes.current"
+      },
+      "write": {
+        "enabled": false,
+        "reason": "Media writes remain handled by the existing data-maintenance workflow until MediaIndex and RelayPackage apply tools are introduced."
+      },
+      "compatibility": {
+        "currentRuntimeReplacement": false,
+        "currentRuntimeChain": "sourceLinkModes.json + dataSources.json + pictureSourceMode",
+        "notes": "This profile records the current Picture storage area only; it does not move image relationships into MediaIndex yet."
+      }
+    },
+    {
+      "id": "mediaIndex.github.plannedOpenRIAMapData",
+      "role": "mediaIndex",
+      "label": "Planned MediaIndex area",
+      "kind": "github-repo",
+      "mode": "external",
+      "owner": "Ozstk639",
+      "repo": "OpenRIAMap-Data",
+      "branch": "main",
+      "root": "",
+      "paths": {
+        "splitRoot": "Media_Index_Spilt",
+        "mergeRoot": "Media_Index_Merge"
+      },
+      "read": {
+        "rawCompatible": true,
+        "sourceLinkModeRef": "sourceLinkModes.current"
+      },
+      "write": {
+        "enabled": false,
+        "reason": "MediaIndex schemas and builders are scheduled for DATA_MEDIA_INDEX_CONTRACT_1."
+      },
+      "compatibility": {
+        "currentRuntimeReplacement": false,
+        "currentRuntimeChain": "not active",
+        "notes": "Reserved profile for future MediaIndex work. Feature JSON image behavior is unchanged in this patch."
+      }
+    },
+    {
+      "id": "relayPool.github.plannedCairnMapRelayPool",
+      "role": "relayPool",
+      "label": "Planned CairnMap relay package repository",
+      "kind": "github-repo",
+      "mode": "external",
+      "owner": "Ozstk639",
+      "repo": "CairnMap-RelayPool",
+      "branch": "main",
+      "root": "packages",
+      "paths": {
+        "packageRoot": "packages"
+      },
+      "read": {
+        "rawCompatible": false
+      },
+      "write": {
+        "enabled": false,
+        "reason": "RelayPool submission and review integration are scheduled for later RelayPackage and service/admin module patches."
+      },
+      "compatibility": {
+        "currentRuntimeReplacement": false,
+        "currentRuntimeChain": "not active",
+        "notes": "Reserved profile for future user submission and admin review workflows."
+      }
+    }
+  ],
+  "compatibility": {
+    "doNotReplaceCurrentDataRuntimeInThisPatch": true,
+    "currentDataRuntime": "sourceLinkModes.json selects a raw-compatible base URL; dataSources.json keeps per-world dat-mode Data_Merge/Picture loading.",
+    "nextIntendedPatch": "DATA_FEATURE_REPO_CONTRACT_1 or CM_RELAY_PACKAGE_PROTOCOL_1, after the StorageProfile contract is accepted."
+  }
+}

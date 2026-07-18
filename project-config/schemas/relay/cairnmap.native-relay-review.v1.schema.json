@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/cairnmap.native-relay-review.v1.schema.json",
+  "title": "CairnMap Native RelayPackage Review Report",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "const": "cairnmap.native-relay-review.v1"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending",
+        "prechecked",
+        "accepted",
+        "rejected",
+        "skipped",
+        "applied",
+        "archived"
+      ]
+    },
+    "reviewer": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reviewedAt": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "decision": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "precheck": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "warnings": {
+          "type": "array"
+        },
+        "errors": {
+          "type": "array"
+        }
+      }
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "status",
+    "notes",
+    "precheck"
+  ]
+}

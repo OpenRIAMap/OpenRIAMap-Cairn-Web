@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "cairnmap.native-relay-protocol.v1",
+  "projectId": "openriamap-ria",
+  "description": "Native CairnMap RelayPackage protocol. CM_RELAY_PACKAGE_PROTOCOL_1 formalizes the existing lightweight package shape: complete upsert feature JSON in Data_Spilt, delete intent in Delete.json, package metadata in INDEX.json, media files in Picture, and review/precheck feedback in Review.json.",
+  "runtimeStatus": "contract-only",
+  "storageProfileRefs": {
+    "featureData": "featureData.github.currentOpenRIAMapData",
+    "media": "media.github.currentOpenRIAMapDataPicture",
+    "relayPool": "relayPool.github.plannedCairnMapRelayPool"
+  },
+  "roots": {
+    "indexFile": "INDEX.json",
+    "deleteFile": "Delete.json",
+    "reviewFile": "Review.json",
+    "splitRoot": "Data_Spilt",
+    "pictureRoot": "Picture",
+    "toolRefreshRoot": "Tool_Refresh"
+  },
+  "pathTemplates": {
+    "featureRoot": "Data_Spilt/{worldId}/{classCode}/.../{featureId}.json",
+    "pictureRoot": "Picture/{worldId}/{classCode}/.../{featureId}/...",
+    "kindNestedFeatureRoot": "Data_Spilt/{worldId}/{classCode}/{kind}/{featureId}.json"
+  },
+  "semantics": {
+    "featureJsonInSplit": "upsert-complete-record",
+    "deleteJsonItems": "delete-feature-reference-table",
+    "pictureFiles": "add-or-replace-media-files",
+    "indexJson": "package-metadata-and-export-version-record",
+    "reviewJson": "review-feedback-and-precheck-record",
+    "operationArrays": "not-required-in-native-v1"
+  },
+  "index": {
+    "schemaPath": "project-config/schemas/relay/cairnmap.native-relay-index.v1.schema.json",
+    "requiredCounterFields": [
+      "featureCount",
+      "pictureCount",
+      "deleteCount"
+    ],
+    "versionFields": [
+      "version",
+      "packageVersion",
+      "baseDataVersion"
+    ],
+    "baseDataVersionPolicy": "optional-in-native-v1-but-recommended-for-conflict-checking"
+  },
+  "delete": {
+    "schemaPath": "project-config/schemas/relay/cairnmap.native-relay-delete.v1.schema.json",
+    "emptyItemsAllowed": true,
+    "recommendedItemFields": [
+      "worldId",
+      "classCode",
+      "featureId",
+      "path",
+      "reason"
+    ]
+  },
+  "review": {
+    "schemaPath": "project-config/schemas/relay/cairnmap.native-relay-review.v1.schema.json",
+    "required": true,
+    "statuses": [
+      "draft",
+      "pending",
+      "prechecked",
+      "accepted",
+      "rejected",
+      "skipped",
+      "applied",
+      "archived"
+    ]
+  },
+  "compatibility": {
+    "doNotReplaceCurrentDataRuntimeInThisPatch": true,
+    "doNotIntroduceOperationArrayProtocolInThisPatch": true,
+    "nativeReferencePackage": "RelayPackage_Aunst-639_zth_202605171818.zip",
+    "currentRuntimeChain": "Data_Spilt + Picture + Delete.json + INDEX.json + Tool_Refresh",
+    "notes": "This patch preserves the existing editable package shape. Future apply/review tools should infer add/update from Data_Spilt complete JSON records and infer delete from Delete.json. The package root does not need projectId in every path because world/class registration resolves the native CairnMap structure."
+  }
+}

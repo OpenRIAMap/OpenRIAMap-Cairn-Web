@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/cairnmap.native-relay-dry-run-report.v1.schema.json",
+  "title": "CairnMap Native RelayPackage Dry-run Apply Report",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "const": "cairnmap.native-relay-dry-run-report.v1"
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["compare", "dry-run-apply"]
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "featuresToCreate": { "type": "integer", "minimum": 0 },
+        "featuresToUpdate": { "type": "integer", "minimum": 0 },
+        "featuresUnchanged": { "type": "integer", "minimum": 0 },
+        "featuresToDelete": { "type": "integer", "minimum": 0 },
+        "picturesToCopy": { "type": "integer", "minimum": 0 },
+        "mediaAssetsPlanned": { "type": "integer", "minimum": 0 },
+        "mediaBindingsPlanned": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 },
+        "errors": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "featureChanges": {
+      "type": "array"
+    },
+    "deleteChanges": {
+      "type": "array"
+    },
+    "pictureChanges": {
+      "type": "array"
+    },
+    "mediaIndexPlan": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "errors": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "mode",
+    "projectId",
+    "inputs",
+    "package",
+    "baseline",
+    "summary",
+    "featureChanges",
+    "deleteChanges",
+    "pictureChanges",
+    "warnings",
+    "errors"
+  ]
+}

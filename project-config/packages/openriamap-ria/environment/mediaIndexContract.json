@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "cairnmap.media-index-contract.v1",
+  "projectId": "openriamap-ria",
+  "description": "MediaIndex repository contract for the Cairn distributed framework. DATA_MEDIA_INDEX_WORLD_FIRST_BUILD_1 keeps MediaIndex world-first and separates projects through StorageProfile/baseUrl roots rather than projectId path nesting.",
+  "runtimeStatus": "contract-only",
+  "storageProfileRefs": {
+    "media": "media.github.currentOpenRIAMapDataPicture",
+    "mediaIndex": "mediaIndex.github.plannedOpenRIAMapData",
+    "featureData": "featureData.github.currentOpenRIAMapData",
+    "relayPool": "relayPool.github.plannedCairnMapRelayPool"
+  },
+  "roots": {
+    "splitRoot": "Media_Index_Spilt",
+    "mergeRoot": "Media_Index_Merge",
+    "assetSplitRoot": "Media_Index_Spilt/assets",
+    "bindingSplitRoot": "Media_Index_Spilt/bindings",
+    "byFeatureMergeRoot": "Media_Index_Merge/{worldId}/by-feature",
+    "assetMergeRoot": "Media_Index_Merge/{worldId}/assets"
+  },
+  "asset": {
+    "schemaPath": "project-config/schemas/media/cairnmap.media-asset.v1.schema.json",
+    "idTemplate": "IMG_{stableId}",
+    "storageProfileField": "storageProfile",
+    "objectKeyPolicy": "relative-to-media-storage-profile-root",
+    "objectKeyExample": "zth/ISG/NGF/ZNGFLADISD_aunst_island/ZNGFLADISD_aunst_island_1.webp",
+    "allowedMediaTypes": [
+      "image"
+    ],
+    "allowedStatuses": [
+      "active",
+      "inactive",
+      "archived",
+      "deleted"
+    ]
+  },
+  "binding": {
+    "schemaPath": "project-config/schemas/media/cairnmap.media-binding.v1.schema.json",
+    "pathTemplate": "Media_Index_Spilt/bindings/{worldId}/{classCode}/.../{featureId}.json",
+    "featureRefFields": [
+      "projectId",
+      "worldId",
+      "classCode",
+      "featureId"
+    ],
+    "optionalKindPathField": "kindPath",
+    "roles": [
+      "cover",
+      "gallery",
+      "detail",
+      "reference"
+    ],
+    "coverPolicy": "at-most-one-visible-cover-per-feature",
+    "projectSeparationPolicy": "projectId is stored in JSON metadata, not used as a directory segment; distinct projects should use distinct storage profile roots/base URLs."
+  },
+  "merge": {
+    "schemaPath": "project-config/schemas/media/cairnmap.media-index-merge.v1.schema.json",
+    "worldIndexPathTemplate": "Media_Index_Merge/{worldId}/INDEX.json",
+    "byFeaturePathTemplate": "Media_Index_Merge/{worldId}/by-feature/{classCode}/.../{featureId}.json",
+    "assetPathTemplate": "Media_Index_Merge/{worldId}/assets/{mediaId}.json",
+    "runtimeReadPattern": "featureRef -> by-feature binding -> mediaId -> asset -> storageProfile + objectKey -> final URL",
+    "layout": "world-first",
+    "projectSeparationPolicy": "Use different mediaIndex storage profile roots/base URLs for different projects instead of adding {projectId} as a directory layer."
+  },
+  "nativeRelayCompatibility": {
+    "doNotChangeNativeRelayPackagePictureShape": true,
+    "nativeRelayPictureRoot": "Picture",
+    "nativeRelayExamplePicture": "Picture/zth/ISG/NGF/ZNGFLADISD_aunst_island/ZNGFLADISD_aunst_island_1.webp",
+    "notes": "Native RelayPackage keeps submitting image files through Picture/. MediaIndex builders may derive asset and binding records during apply/build, but CM_RELAY_PACKAGE_PROTOCOL_1 remains unchanged."
+  },
+  "compatibility": {
+    "doNotReplaceCurrentDataRuntimeInThisPatch": true,
+    "doNotReplaceCurrentPictureRuntimeInThisPatch": true,
+    "doNotWriteImageUrlsIntoFeatureJson": true,
+    "currentRuntimeChain": "sourceLinkModes.json + dataSources.json + pictureSourceMode/Picture path rules",
+    "nextIntendedPatch": "ACTIONS_RELAY_PRECHECK_1 or local automation wrapper after MediaIndex world-first build is accepted."
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cairnmap.feature-merge-build-report.v1",
+  "title": "CairnMap Feature Merge Build Report v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "patchId",
+    "generatedAt",
+    "writeMode",
+    "inputs",
+    "outputs",
+    "summary",
+    "skippedWorldDirs",
+    "skippedFiles",
+    "warnings",
+    "errors",
+    "finalStatus"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "cairnmap.feature-merge-build-report.v1" },
+    "patchId": { "const": "DATA_MERGE_BUILD_LOCAL_1" },
+    "generatedAt": { "type": "string" },
+    "writeMode": { "type": "boolean" },
+    "inputs": {
+      "type": "object",
+      "required": ["splitRoot", "mergeRoot", "indexRoot", "projectId", "layout", "chunkSize", "strictWorlds"],
+      "properties": {
+        "splitRoot": { "type": "string" },
+        "mergeRoot": { "type": "string" },
+        "indexRoot": { "type": "string" },
+        "projectId": { "type": "string" },
+        "layout": { "enum": ["auto", "native-world-first", "project-aware"] },
+        "chunkSize": { "type": "integer", "minimum": 1 },
+        "strictWorlds": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["mergeRoot", "indexRoot", "buildReport"],
+      "properties": {
+        "mergeRoot": { "type": "string" },
+        "indexRoot": { "type": "string" },
+        "buildReport": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "summary": {
+      "type": "object",
+      "required": ["scannedFeatureFiles", "processedFeatures", "skippedWorldDirs", "skippedFiles", "classCount", "chunkCount", "warningCount", "errorCount"],
+      "properties": {
+        "scannedFeatureFiles": { "type": "integer", "minimum": 0 },
+        "processedFeatures": { "type": "integer", "minimum": 0 },
+        "skippedWorldDirs": { "type": "integer", "minimum": 0 },
+        "skippedFiles": { "type": "integer", "minimum": 0 },
+        "classCount": { "type": "integer", "minimum": 0 },
+        "chunkCount": { "type": "integer", "minimum": 0 },
+        "warningCount": { "type": "integer", "minimum": 0 },
+        "errorCount": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "skippedWorldDirs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["worldId", "fileCount"],
+        "properties": {
+          "worldId": { "type": "string" },
+          "fileCount": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": true
+      }
+    },
+    "skippedFiles": { "type": "array" },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } },
+    "finalStatus": { "enum": ["PASS", "FAIL"] }
+  },
+  "additionalProperties": true
+}

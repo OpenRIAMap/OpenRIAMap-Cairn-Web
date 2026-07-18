@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/cairnmap.feature-data.v1.schema.json",
+  "title": "CairnMap FeatureData Contract",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "const": "cairnmap.feature-data.v1"
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "runtimeStatus": {
+      "type": "string",
+      "enum": [
+        "contract-only",
+        "active",
+        "deprecated"
+      ]
+    },
+    "storageProfileRefs": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "properties": {
+        "featureData": {
+          "type": "string"
+        },
+        "media": {
+          "type": "string"
+        },
+        "mediaIndex": {
+          "type": "string"
+        },
+        "relayPool": {
+          "type": "string"
+        }
+      }
+    },
+    "roots": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "properties": {
+        "splitRoot": {
+          "type": "string"
+        },
+        "mergeRoot": {
+          "type": "string"
+        },
+        "indexRoot": {
+          "type": "string"
+        }
+      }
+    },
+    "split": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "sourceOfTruth": {
+          "type": "boolean"
+        },
+        "pathTemplate": {
+          "type": "string"
+        },
+        "featureFileNameTemplate": {
+          "type": "string"
+        },
+        "allowedFeatureExtensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "merge": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "runtimeCache": {
+          "type": "boolean"
+        },
+        "worldIndexPathTemplate": {
+          "type": "string"
+        },
+        "classIndexPathTemplate": {
+          "type": "string"
+        },
+        "chunkPathTemplate": {
+          "type": "string"
+        },
+        "chunking": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "index": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "mergeIndexPath": {
+          "type": "string"
+        },
+        "chunkManifestPath": {
+          "type": "string"
+        },
+        "dataVersionPath": {
+          "type": "string"
+        }
+      }
+    },
+    "featureRef": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "requiredFields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "keyTemplate": {
+          "type": "string"
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "projectId",
+    "runtimeStatus",
+    "storageProfileRefs",
+    "roots",
+    "split",
+    "merge",
+    "index"
+  ]
+}

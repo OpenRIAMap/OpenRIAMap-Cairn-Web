@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/media/cairnmap.media-binding.v1.schema.json",
+  "title": "CairnMap MediaBinding v1",
+  "type": "object",
+  "required": ["schemaVersion", "featureRef", "media"],
+  "properties": {
+    "schemaVersion": { "const": "cairnmap.media-binding.v1" },
+    "featureRef": {
+      "type": "object",
+      "required": ["projectId", "worldId", "classCode", "featureId"],
+      "properties": {
+        "projectId": { "type": "string", "minLength": 1 },
+        "worldId": { "type": "string", "minLength": 1 },
+        "classCode": { "type": "string", "minLength": 1 },
+        "kindPath": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "featureId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "media": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["mediaId", "role", "order", "visible"],
+        "properties": {
+          "mediaId": { "type": "string", "minLength": 1 },
+          "role": { "enum": ["cover", "gallery", "detail", "reference"] },
+          "order": { "type": "integer", "minimum": 1 },
+          "caption": { "type": ["string", "null"] },
+          "visible": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "updatedAt": { "type": ["string", "null"] },
+    "metadata": { "type": "object" }
+  },
+  "additionalProperties": false
+}

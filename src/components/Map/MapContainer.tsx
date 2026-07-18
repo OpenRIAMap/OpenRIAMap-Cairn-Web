@@ -49,6 +49,7 @@ import { Globe2, PanelsTopLeft, Layers3, SlidersHorizontal, Plus, Minus, Pencil,
 import { buildBuildingNameIndex, getRuleCategoryLabelWithParent, getRuleDisplayName } from '@/components/Search/searchRuleTables';
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { consumeFeatureShareTargetFromLocation, normalizePlayerShareId, type FeatureSharePayload, type FeatureShareTarget, type PlayerShareTarget, type ShareParseResult } from '@/lib/featureShareLink';
+import { ReviewModule, ReviewModuleLauncher, createReviewPackageSession, type CairnMapModuleMode, type ReviewInboxItem, type ReviewPackageSession } from '@/components/Review';
 
 // ===== 导航“图上选取”：MapContainer 统一派发地图点击事件 =====
 type MapClickWorldPointEventDetail = {
@@ -328,7 +329,7 @@ function MapContainer() {
   const requestFeatureModuleActivation = useFeatureModuleStore((s) => s.requestModuleActivation);
   const measuringModuleLoaded = measuringModuleState.status === 'loaded';
   const legacyModuleLoaded = legacyModuleState.status === 'loaded';
-  const [pendingMeasureModuleOpen, setPendingMeasureModuleOpen] = useState<null | 'measuring' | 'mtools'>(null);
+  const [pendingMeasureModuleOpen, setPendingMeasureModuleOpen] = useState<null | 'measuring' | 'mtools' | 'review'>(null);
   const [pendingLegacyAction, setPendingLegacyAction] = useState<null | 'railway-on' | 'landmark-on' | 'lines-page'>(null);
   const [measuringOpenSignal, setMeasuringOpenSignal] = useState(0);
   const [measurementToolsOpenSignal, setMeasurementToolsOpenSignal] = useState(0);
@@ -364,6 +365,10 @@ function MapContainer() {
   const [measureToolsCloseSignal, setMeasureToolsCloseSignal] = useState(0);
   const [measuringModuleActive, setMeasuringModuleActive] = useState(false);
   const [measurementToolsActive, setMeasurementToolsActive] = useState(false);
+  const [moduleMode, setModuleMode] = useState<CairnMapModuleMode>('runtime');
+  const [reviewSession, setReviewSession] = useState<ReviewPackageSession | null>(null);
+  const [reviewWorkspaceDirty, setReviewWorkspaceDirty] = useState(false);
+  const [pendingReviewPackage, setPendingReviewPackage] = useState<ReviewInboxItem | null>(null);
 
   // 测绘激活态：用于禁止导航图选点（由 MeasuringModule / MeasurementToolsModule 派发）
 // 说明：临时挂载启用时，MeasuringModule 可能被迫处于 active，但此时仍允许导航图选点（只要 MeasurementToolsModule 未启用）
@@ -446,7 +451,7 @@ useEffect(() => {
   useEffect(() => {
     if (!pendingMeasureModuleOpen || !measuringModuleLoaded) return;
     if (pendingMeasureModuleOpen === 'measuring') setMeasuringOpenSignal((v) => v + 1);
-    else setMeasurementToolsOpenSignal((v) => v + 1);
+    else if (pendingMeasureModuleOpen === 'mtools') setMeasurementToolsOpenSignal((v) => v + 1);
     setPendingMeasureModuleOpen(null);
   }, [pendingMeasureModuleOpen, measuringModuleLoaded]);
 
@@ -517,6 +522,7 @@ useEffect(() => {
   }, [requestLegacyFeature]);
 
   const requestMeasuringModuleEntry = useCallback((target: 'measuring' | 'mtools') => {
+    setModuleMode('mapping');
     if (measuringModuleLoaded) {
       if (target === 'measuring') setMeasuringOpenSignal((v) => v + 1);
       else setMeasurementToolsOpenSignal((v) => v + 1);
@@ -525,6 +531,70 @@ useEffect(() => {
     setPendingMeasureModuleOpen(target);
     requestFeatureModuleActivation('measuring');
   }, [measuringModuleLoaded, requestFeatureModuleActivation]);
+
+  const requestReviewModuleEntry = useCallback(() => {
+    setMeasureToolsCloseSignal((v) => v + 1);
+    setModuleMode('review');
+    if (!measuringModuleLoaded) {
+      setPendingMeasureModuleOpen('review');
+      requestFeatureModuleActivation('measuring');
+    }
+  }, [measuringModuleLoaded, requestFeatureModuleActivation]);
+
+  const closeReviewModule = useCallback(() => {
+    const ok = measuringModuleRef.current?.requestCloseAndClear?.('退出审核模块') ?? true;
+    if (!ok) return;
+    setReviewSession(null);
+    setReviewWorkspaceDirty(false);
+    setPendingReviewPackage(null);
+    setModuleMode('runtime');
+  }, []);
+
+  const loadReviewPackageIntoWorkspace = useCallback((item: ReviewInboxItem) => {
+    setModuleMode('review');
+    setReviewSession(createReviewPackageSession(item));
+    setReviewWorkspaceDirty(false);
+    setPendingReviewPackage(item);
+    if (!measuringModuleLoaded) {
+      setPendingMeasureModuleOpen('review');
+      requestFeatureModuleActivation('measuring');
+    }
+  }, [measuringModuleLoaded, requestFeatureModuleActivation]);
+
+  const handleReviewSave = useCallback(() => {
+    setReviewSession((prev) => prev ? { ...prev, status: 'saved_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
+    setReviewWorkspaceDirty(false);
+  }, []);
+
+  const handleReviewApprove = useCallback(() => {
+    setReviewSession((prev) => prev ? { ...prev, status: 'approved_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
+    setReviewWorkspaceDirty(false);
+    setPendingReviewPackage(null);
+  }, []);
+
+  const handleReviewReject = useCallback(() => {
+    setReviewSession((prev) => prev ? { ...prev, status: 'changes_requested_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
+    setReviewWorkspaceDirty(false);
+    setPendingReviewPackage(null);
+  }, []);
+
+  useEffect(() => {
+    if (moduleMode !== 'review' || !measuringModuleLoaded || !pendingReviewPackage) return;
+    const item = pendingReviewPackage;
+    const timer = window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('ria:reviewLoadPackageIntoWorkspace', { detail: item }));
+      setPendingReviewPackage(null);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [measuringModuleLoaded, moduleMode, pendingReviewPackage]);
+
+  useEffect(() => {
+    if (measuringModuleActive || measurementToolsActive) {
+      setModuleMode((prev) => (prev === 'review' ? prev : 'mapping'));
+      return;
+    }
+    setModuleMode((prev) => (prev === 'mapping' ? 'runtime' : prev));
+  }, [measurementToolsActive, measuringModuleActive]);
 
 
   // 规则图层“分组开关”（按 world 维度持久化）
@@ -1679,6 +1749,16 @@ case 'players':
         </div>
       )}
 
+      {moduleMode === 'review' && (
+        <ReviewModule
+          activeWorldId={currentWorld}
+          session={reviewSession}
+          dirty={reviewWorkspaceDirty}
+          onClose={closeReviewModule}
+          onLoadPackage={loadReviewPackageIntoWorkspace}
+        />
+      )}
+
       {/* 规则驱动图层（总开关控制，worldId 切换自动重载） */}
       {mapReady && leafletMapRef.current && projectionRef.current && (
         <RuleDrivenLayer
@@ -2095,6 +2175,12 @@ case 'players':
             onToggleDimBackground={setDimBackground}
             onToggleMapStyle={setMapStyle}
           >
+          <div className="hidden sm:block">
+            <ReviewModuleLauncher
+              active={moduleMode === 'review'}
+              onClick={requestReviewModuleEntry}
+            />
+          </div>
           {measuringModuleLoaded ? (
             <Suspense fallback={null}>
               <LazyMeasurementToolsModule
@@ -2116,6 +2202,12 @@ case 'players':
                 openSignal={measuringOpenSignal}
                 onBecameActive={() => setMeasureToolsCloseSignal(v => v + 1)}
                 launcherSlot={(launcher) => <div className="hidden sm:block">{launcher}</div>}
+                workspaceMode={moduleMode === 'review' ? 'review' : 'mapping'}
+                reviewSession={reviewSession}
+                onReviewDirtyChange={setReviewWorkspaceDirty}
+                onReviewSave={handleReviewSave}
+                onReviewApprove={handleReviewApprove}
+                onReviewReject={handleReviewReject}
               />
             </Suspense>
           ) : (

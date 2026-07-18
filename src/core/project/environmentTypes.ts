@@ -120,3 +120,113 @@ export type CairnMapSearchProfilesConfig = CairnMapProjectTaggedConfig & {
   defaultProfileId: string;
   items: CairnMapSearchProfile[];
 };
+export type CairnMapStorageProfileRole = 'featureData' | 'media' | 'mediaIndex' | 'relayPool';
+
+export type CairnMapStorageProfileKind =
+  | 'internal-path'
+  | 'github-repo'
+  | 'raw-compatible'
+  | 'object-storage'
+  | 'api'
+  | 'database';
+
+export type CairnMapStorageProfileMode = 'internal' | 'external' | 'planned';
+
+export type CairnMapStorageProfileReadConfig = {
+  rawCompatible?: boolean;
+  sourceLinkModeRef?: string;
+  baseUrl?: string;
+};
+
+export type CairnMapStorageProfileWriteConfig = {
+  enabled?: boolean;
+  reason?: string;
+  requiredPermissions?: string[];
+};
+
+export type CairnMapStorageProfileCompatibilityConfig = {
+  currentRuntimeReplacement?: boolean;
+  currentRuntimeChain?: string;
+  notes?: string;
+  [key: string]: unknown;
+};
+
+export type CairnMapStorageProfileItem = {
+  id: string;
+  role: CairnMapStorageProfileRole;
+  label?: string;
+  kind: CairnMapStorageProfileKind;
+  mode: CairnMapStorageProfileMode;
+  owner?: string;
+  repo?: string;
+  branch?: string;
+  root: string;
+  paths?: Record<string, string | undefined>;
+  read?: CairnMapStorageProfileReadConfig;
+  write?: CairnMapStorageProfileWriteConfig;
+  compatibility?: CairnMapStorageProfileCompatibilityConfig;
+};
+
+export type CairnMapStorageProfileDefaults = Partial<Record<CairnMapStorageProfileRole, string>>;
+
+export type CairnMapStorageProfilesConfig = CairnMapProjectTaggedConfig & {
+  description?: string;
+  runtimeStatus?: 'contract-only' | 'active' | 'deprecated' | string;
+  defaults: CairnMapStorageProfileDefaults;
+  profiles: CairnMapStorageProfileItem[];
+  compatibility?: Record<string, unknown>;
+};
+
+export type CairnMapNativeRelayPackageStatus =
+  | 'draft'
+  | 'pending'
+  | 'prechecked'
+  | 'accepted'
+  | 'rejected'
+  | 'skipped'
+  | 'applied'
+  | 'archived';
+
+export type CairnMapNativeRelayPackageProtocolConfig = CairnMapProjectTaggedConfig & {
+  description?: string;
+  runtimeStatus?: 'contract-only' | 'active' | 'deprecated' | string;
+  storageProfileRefs?: Record<string, string>;
+  roots: {
+    indexFile: string;
+    deleteFile: string;
+    reviewFile: string;
+    splitRoot: string;
+    pictureRoot: string;
+    toolRefreshRoot?: string;
+  };
+  pathTemplates?: Record<string, string>;
+  semantics: Record<string, string>;
+  index?: Record<string, unknown>;
+  delete?: Record<string, unknown>;
+  review?: {
+    schemaPath?: string;
+    required?: boolean;
+    statuses?: CairnMapNativeRelayPackageStatus[];
+    [key: string]: unknown;
+  };
+  compatibility?: Record<string, unknown>;
+};
+export type CairnMapMediaIndexContractConfig = CairnMapProjectTaggedConfig & {
+  description?: string;
+  runtimeStatus?: 'contract-only' | 'active' | 'deprecated' | string;
+  storageProfileRefs?: Record<string, string>;
+  roots: {
+    splitRoot: string;
+    mergeRoot: string;
+    assetSplitRoot: string;
+    bindingSplitRoot: string;
+    byFeatureMergeRoot: string;
+    assetMergeRoot: string;
+  };
+  asset?: Record<string, unknown>;
+  binding?: Record<string, unknown>;
+  merge?: Record<string, unknown>;
+  nativeRelayCompatibility?: Record<string, unknown>;
+  compatibility?: Record<string, unknown>;
+};
+

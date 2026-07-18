@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "cairnmap.media-asset.v1",
+  "mediaId": "IMG_SAMPLE_AUNST_ISLAND_001",
+  "mediaType": "image",
+  "storageProfile": "media.github.currentOpenRIAMapDataPicture",
+  "objectKey": "zth/ISG/NGF/ZNGFLADISD_aunst_island/ZNGFLADISD_aunst_island_1.webp",
+  "source": {
+    "nativeRelayPackagePath": "docs/30_data-contracts/examples/native-relay-package-sample/Picture/zth/ISG/NGF/ZNGFLADISD_aunst_island/ZNGFLADISD_aunst_island_1.webp",
+    "nativePicturePath": "Picture/zth/ISG/NGF/ZNGFLADISD_aunst_island/ZNGFLADISD_aunst_island_1.webp"
+  },
+  "sha256": "a5b20c896ac401ff77d968cdeb30ee4ef00cbec78b68b1da39c58b2038b1ea5a",
+  "mimeType": "image/webp",
+  "sizeBytes": 332410,
+  "variants": {
+    "original": "zth/ISG/NGF/ZNGFLADISD_aunst_island/ZNGFLADISD_aunst_island_1.webp"
+  },
+  "status": "active",
+  "createdAt": "2026-05-17T10:18:08.525Z",
+  "updatedAt": "2026-05-17T10:18:08.525Z",
+  "metadata": {
+    "sampleSource": "RelayPackage_Aunst-639_zth_202605171818.zip"
+  }
+}

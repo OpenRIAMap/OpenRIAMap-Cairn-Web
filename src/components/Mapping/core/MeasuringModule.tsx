@@ -122,6 +122,8 @@ import WarpPointWorkflow from '@/components/Mapping/Workflow/WarpPointWorkflow';
 import TradePointWorkflow from '@/components/Mapping/Workflow/TradePointWorkflow';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
+import type { ReviewInboxItem } from '@/components/Review/reviewStatusTypes';
+import type { ReviewPackageSession } from '@/components/Review/reviewPackageSession';
 
 import {
   checkTempMountIdConflictsDetailed,
@@ -155,6 +157,14 @@ type MeasuringModuleProps = {
 
   // 可选：将启动按钮插入到外部工具栏
   launcherSlot?: (launcher: React.ReactNode) => React.ReactNode;
+
+  // 审核工作台：只改变宿主语境和按钮语义，不接入 GitHub。
+  workspaceMode?: 'mapping' | 'review';
+  reviewSession?: ReviewPackageSession | null;
+  onReviewDirtyChange?: (dirty: boolean) => void;
+  onReviewSave?: () => void;
+  onReviewApprove?: () => void;
+  onReviewReject?: () => void;
 };
 
 
@@ -177,7 +187,24 @@ export type MeasuringModuleHandle = {
 };
 
 const MeasuringModule = forwardRef<MeasuringModuleHandle, MeasuringModuleProps>((props, ref) => {
-  const { mapReady, leafletMapRef, projectionRef, currentWorldId, closeSignal, openSignal, onBecameActive, launcherSlot } = props;
+  const {
+    mapReady,
+    leafletMapRef,
+    projectionRef,
+    currentWorldId,
+    closeSignal,
+    openSignal,
+    onBecameActive,
+    launcherSlot,
+    workspaceMode = 'mapping',
+    reviewSession = null,
+    onReviewDirtyChange,
+    onReviewSave,
+    onReviewApprove,
+    onReviewReject,
+  } = props;
+  const isReviewWorkspace = workspaceMode === 'review';
+  const reviewPackageLabel = reviewSession?.packageId ?? '';
 
 
 // ---------- 测绘 & 图层管理状态 ------------
@@ -2763,6 +2790,78 @@ const applyParsedRelayPackage = (parsed: { draft: RelayPackageDraft; jsonItems: 
 };
 
 
+
+const buildRelayDraftFromReviewItem = (item: ReviewInboxItem): RelayPackageDraft => {
+  const draft = createEmptyRelayPackageDraft();
+  const picturesById: RelayPackageDraft['picturesById'] = {};
+  for (const [id, entries] of Object.entries(item.picturesById ?? {})) {
+    picturesById[id] = (entries ?? []).map((entry, index) => ({
+      uid: `review:${item.packageId}:${id}:${index}`,
+      originalName: entry.filename || `${id}_${index + 1}.png`,
+      relativePath: entry.relativePath,
+      previewUrl: entry.url,
+      deleted: false,
+      order: index + 1,
+      source: entry.source,
+    }));
+  }
+  return {
+    meta: {
+      ...draft.meta,
+      operator: item.meta?.operator ?? item.review?.reviewer ?? '',
+      note: item.meta?.note ?? `review:${item.packageId}`,
+      draftStatus: 'imported_package',
+      updatedAt: new Date().toISOString(),
+      packageVersion: item.meta?.packageVersion,
+    },
+    deleteMarks: item.deleteMarks ?? [],
+    picturesById,
+  };
+};
+
+const reviewBaselineSignatureRef = useRef<string | null>(null);
+const reviewDirtyRef = useRef(false);
+const reviewJustLoadedRef = useRef(false);
+
+const applyReviewInboxItemToWorkspace = (item: ReviewInboxItem) => {
+  if (!item) return;
+  onBecameActive?.();
+  clearAllLayers();
+  clearTempRuleOverrideIdsForWorld();
+  clearTempRuleDeleteIdsForWorld();
+  setTempMountAllActive(false);
+  resetFeatureSelectionState();
+  setImportPanelOpen(false);
+  setWorkflowRunning(false);
+  setMeasureDropdownOpen(false);
+  setMeasuringVariant('full');
+  setDrawing(false);
+  setDrawMode('none');
+  setTempPoints([]);
+  setRedoStack([]);
+  setEditingLayerId(null);
+  reviewBaselineSignatureRef.current = null;
+  reviewDirtyRef.current = false;
+  reviewJustLoadedRef.current = true;
+  onReviewDirtyChange?.(false);
+  setMeasuringActive(true);
+  applyParsedRelayPackage({
+    draft: buildRelayDraftFromReviewItem(item),
+    jsonItems: Array.isArray(item.features) ? item.features : [],
+  });
+};
+
+useEffect(() => {
+  if (!isReviewWorkspace) return;
+  const handler = (ev: Event) => {
+    const item = (ev as CustomEvent<ReviewInboxItem>).detail;
+    if (!item) return;
+    applyReviewInboxItemToWorkspace(item);
+  };
+  window.addEventListener('ria:reviewLoadPackageIntoWorkspace', handler as EventListener);
+  return () => window.removeEventListener('ria:reviewLoadPackageIntoWorkspace', handler as EventListener);
+}, [isReviewWorkspace, currentWorldId, onReviewDirtyChange]);
+
 const applyMinimalFeatureEditPackage = (pkg: MinimalFeatureEditPackage) => {
   const item = (pkg?.feature ?? {}) as any;
   if (!item || typeof item !== 'object') return;
@@ -4183,17 +4282,100 @@ const workflowBridge: WorkflowBridge = {
     fixedRootRef.current?.clearLayers();
   };
 
+
+  const buildReviewWorkspaceSignature = () => JSON.stringify({
+    layers: layers.map((l) => ({
+      id: l.id,
+      title: getLayerDisplayTitle(l),
+      subType: l.jsonInfo?.subType ?? l.mode,
+      featureInfo: l.jsonInfo?.featureInfo ?? null,
+      visible: l.visible,
+    })),
+    deleteMarks: relayPackageDraft.deleteMarks,
+    pictureKeys: Object.keys(relayPackageDraft.picturesById ?? {}).sort(),
+    pictureCounts: Object.fromEntries(Object.entries(relayPackageDraft.picturesById ?? {}).map(([id, list]) => [id, list.filter((x) => !x.deleted).length])),
+  });
+
+  useEffect(() => {
+    if (!isReviewWorkspace || !measuringActive) return;
+    const signature = buildReviewWorkspaceSignature();
+    if (reviewJustLoadedRef.current) {
+      reviewJustLoadedRef.current = false;
+      reviewBaselineSignatureRef.current = signature;
+      reviewDirtyRef.current = false;
+      onReviewDirtyChange?.(false);
+      return;
+    }
+    if (reviewBaselineSignatureRef.current === null) {
+      reviewBaselineSignatureRef.current = signature;
+      reviewDirtyRef.current = false;
+      onReviewDirtyChange?.(false);
+      return;
+    }
+    const dirty = signature !== reviewBaselineSignatureRef.current;
+    if (dirty !== reviewDirtyRef.current) {
+      reviewDirtyRef.current = dirty;
+      onReviewDirtyChange?.(dirty);
+    }
+  }, [isReviewWorkspace, measuringActive, layers, relayPackageDraft, onReviewDirtyChange]);
+
+  const resetReviewDirtyBaseline = () => {
+    reviewBaselineSignatureRef.current = buildReviewWorkspaceSignature();
+    reviewDirtyRef.current = false;
+    onReviewDirtyChange?.(false);
+  };
+
+  const clearReviewWorkspaceAfterDecision = () => {
+    clearTempRuleOverrideIdsForWorld();
+    clearTempRuleDeleteIdsForWorld();
+    removeAllTempMountedLayersForWorld(layers.map((l) => l.id));
+    clearAllLayers();
+    setRelayPackageDraft(createEmptyRelayPackageDraft());
+    setTempMountAllActive(false);
+    setDrawing(false);
+    setDrawMode('none');
+    setTempPoints([]);
+    setRedoStack([]);
+    setEditingLayerId(null);
+    resetFeatureSelectionState();
+    reviewBaselineSignatureRef.current = null;
+    reviewDirtyRef.current = false;
+    onReviewDirtyChange?.(false);
+    setMeasuringActive(false);
+  };
+
+  const handleReviewSaveAction = () => {
+    resetReviewDirtyBaseline();
+    onReviewSave?.();
+  };
+
+  const handleReviewApproveAction = () => {
+    const ok = window.confirm('确认以当前审核图层管理内容通过该包？当前阶段仅记录本地通过状态，不会写入 GitHub。');
+    if (!ok) return;
+    resetReviewDirtyBaseline();
+    onReviewApprove?.();
+    clearReviewWorkspaceAfterDecision();
+  };
+
+  const handleReviewRejectAction = () => {
+    const ok = window.confirm('确认打回该审核包？当前阶段仅记录本地打回状态，不会写入 GitHub。');
+    if (!ok) return;
+    resetReviewDirtyBaseline();
+    onReviewReject?.();
+    clearReviewWorkspaceAfterDecision();
+  };
+
   const layerPanelCard = (
     <AppCard className="w-96 overflow-hidden border" style={{ maxHeight: '70vh' }}>
       <div ref={layerMgrCardRef}>
       {/* 标题栏（拖拽区域：前 48px） */}
       <div className="flex items-center justify-between px-4 py-3 border-b">
-        <h3 className="font-bold text-gray-800">图层</h3>
+        <h3 className="font-bold text-gray-800" data-draggable-title>{isReviewWorkspace ? '审核图层管理' : '图层'}</h3>
         <AppButton
           onClick={closeMeasuringUI}
           className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
           aria-label="关闭"
-          title="退出测绘并清理"
+          title={isReviewWorkspace ? '关闭审核图层管理并清理' : '退出测绘并清理'}
           type="button"
         >
           <X className="w-4 h-4" />
@@ -4218,111 +4400,191 @@ const workflowBridge: WorkflowBridge = {
 
         return (
           <>
-            {/* 标题下按钮行：整体JSON + 临时挂载（全局） */}
-            <div className="flex items-center gap-2 px-4 py-2 border-b">
-              <AppButton
-                type="button"
-                className={`px-2 py-1 text-sm rounded border ${
-                  busy || visibleList.length === 0
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'
-                    : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'
-                }`}
-                title={
-                  busy
-                    ? '当前有要素正在编辑/绘制，无法整体导出'
-                    : visibleList.length === 0
-                      ? '暂无图层'
-                      : '导出图层管理区全部图层 JSON'
-                }
-                disabled={busy || visibleList.length === 0}
-                onClick={() => {
-                  if (busy || visibleList.length === 0) return;
-                  setJsonExportSubType('__ALL__');
-                  setJsonPanelText(getLayersJSONOutputBySubType('__ALL__'));
-                  setJsonPanelOpen(true);
-                }}
-              >
-                整体JSON
-              </AppButton>
+            {/* 标题下按钮行：普通测绘保留原工具；审核工作区改为六按钮 */}
+            {isReviewWorkspace ? (
+              <div className="grid grid-cols-3 gap-2 px-4 py-2 border-b">
+                <AppButton
+                  type="button"
+                  className="px-2 py-1 text-sm rounded border bg-blue-600 text-white hover:bg-blue-700 border-blue-700"
+                  title="保存当前审核工作区状态；当前阶段只记录本地审核状态，不写入 GitHub。"
+                  onClick={handleReviewSaveAction}
+                >
+                  保存
+                </AppButton>
 
-              <AppButton
-                type="button"
-                className={`px-2 py-1 text-sm rounded border ${
-                  busy || visibleList.length === 0 || hasDefaultLayer
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'
-                    : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'
-                }`}
-                title={
-                  busy
-                    ? '当前有要素正在编辑/绘制，无法导出'
-                    : visibleList.length === 0
-                      ? '暂无图层'
-                      : hasDefaultLayer
-                        ? '存在默认图层，无法导出简略CSV'
-                        : '导出 Type,Class,World,ID,Name 简略CSV（便于快速维护检查）'
-                }
-                disabled={busy || visibleList.length === 0 || hasDefaultLayer}
-                onClick={() => {
-                  if (busy || visibleList.length === 0 || hasDefaultLayer) return;
-                  const csv = buildBriefCsvFromLayers(visibleList, currentWorldId);
-                  const now = new Date();
-                  const y = String(now.getFullYear());
-                  const m = String(now.getMonth() + 1).padStart(2, '0');
-                  const d = String(now.getDate()).padStart(2, '0');
-                  const filename = `brief_${y}${m}${d}.csv`;
-                  downloadTextFile(csv, filename, 'text/csv;charset=utf-8');
-                }}
-              >
-                简略CSV文件
-              </AppButton>
+                <AppButton
+                  type="button"
+                  className={`px-2 py-1 text-sm rounded border ${busy || !hasRelayExportContent ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-green-600 text-white hover:bg-green-700 border-green-700'}`}
+                  title={busy ? '当前有要素正在编辑/绘制，请先保存' : !hasRelayExportContent ? '暂无可通过内容' : '以当前图层内容通过该审核包'}
+                  disabled={busy || !hasRelayExportContent}
+                  onClick={handleReviewApproveAction}
+                >
+                  通过
+                </AppButton>
 
-              <AppButton
-                type="button"
-                className={`px-2 py-1 text-sm rounded border ${
-                  busy || visibleList.length === 0 || (!tempMountAllActive && hasDefaultLayer)
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'
-                    : tempMountAllActive
-                      ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700'
-                      : 'bg-emerald-200 text-emerald-900 border-emerald-300 hover:bg-emerald-300'
-                }`}
-                title={
-                  busy
-                    ? '当前有要素正在编辑/绘制，请先保存'
-                    : visibleList.length === 0
-                      ? '暂无图层'
-                      : (!tempMountAllActive && hasDefaultLayer)
-                        ? '存在默认图层，无法挂载'
+                <AppButton
+                  type="button"
+                  className="px-2 py-1 text-sm rounded border bg-rose-600 text-white hover:bg-rose-700 border-rose-700"
+                  title="打回该审核包；当前阶段只记录本地状态。"
+                  onClick={handleReviewRejectAction}
+                >
+                  打回
+                </AppButton>
+
+                <AppButton
+                  type="button"
+                  className={`px-2 py-1 text-sm rounded border ${
+                    busy || visibleList.length === 0 || (!tempMountAllActive && hasDefaultLayer)
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'
                       : tempMountAllActive
-                        ? '取消临时挂载（存在即移除）'
-                        : '临时挂载所有图层到规则图层（用于测试显示/去重/关联）'
-                }
-                disabled={busy || visibleList.length === 0 || (!tempMountAllActive && hasDefaultLayer)}
-                onClick={() => void toggleTempMountAllLayers(visibleList, busy)}
-              >
-                {tempMountAllActive ? '取消临时挂载' : '临时挂载'}
-              </AppButton>
+                        ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700'
+                        : 'bg-emerald-200 text-emerald-900 border-emerald-300 hover:bg-emerald-300'
+                  }`}
+                  title={
+                    busy
+                      ? '当前有要素正在编辑/绘制，请先保存'
+                      : visibleList.length === 0
+                        ? '暂无图层'
+                        : (!tempMountAllActive && hasDefaultLayer)
+                          ? '存在默认图层，无法挂载'
+                        : tempMountAllActive
+                          ? '取消临时挂载（存在即移除）'
+                          : '临时挂载所有图层到规则图层，并运行 ID 冲突检查'
+                  }
+                  disabled={busy || visibleList.length === 0 || (!tempMountAllActive && hasDefaultLayer)}
+                  onClick={() => void toggleTempMountAllLayers(visibleList, busy)}
+                >
+                  临挂
+                </AppButton>
 
-              <AppButton
-                type="button"
-                className={`px-2 py-1 text-sm rounded border ${busy || !hasRelayExportContent ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'}`}
-                title={relayExportTitle}
-                disabled={busy || !hasRelayExportContent}
-                onClick={() => { if (!busy && hasRelayExportContent) setRelayPackageExportOpen(true); }}
-              >
-                导出标准包
-              </AppButton>
+                <AppButton
+                  type="button"
+                  className={`px-2 py-1 text-sm rounded border ${busy || !hasRelayExportContent ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'}`}
+                  title={relayExportTitle}
+                  disabled={busy || !hasRelayExportContent}
+                  onClick={() => { if (!busy && hasRelayExportContent) setRelayPackageExportOpen(true); }}
+                >
+                  导出
+                </AppButton>
 
-              <AppButton
-                type="button"
-                className="px-2 py-1 text-sm rounded border bg-white text-gray-800 hover:bg-gray-50 border-gray-300"
-                title="查看待删除标记"
-                onClick={() => { setDeletePickedCandidate(null); setDeleteMapPickEnabled(false); setDeletePanelOpen(true); }}
-              >
-                删除要素
-              </AppButton>
-            </div>
+                <AppButton
+                  type="button"
+                  className="px-2 py-1 text-sm rounded border bg-white text-gray-800 hover:bg-gray-50 border-gray-300"
+                  title="查看或添加待删除标记"
+                  onClick={() => { setDeletePickedCandidate(null); setDeleteMapPickEnabled(false); setDeletePanelOpen(true); }}
+                >
+                  删除
+                </AppButton>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-2 border-b">
+                <AppButton
+                  type="button"
+                  className={`px-2 py-1 text-sm rounded border ${
+                    busy || visibleList.length === 0
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'
+                      : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'
+                  }`}
+                  title={
+                    busy
+                      ? '当前有要素正在编辑/绘制，无法整体导出'
+                      : visibleList.length === 0
+                        ? '暂无图层'
+                        : '导出图层管理区全部图层 JSON'
+                  }
+                  disabled={busy || visibleList.length === 0}
+                  onClick={() => {
+                    if (busy || visibleList.length === 0) return;
+                    setJsonExportSubType('__ALL__');
+                    setJsonPanelText(getLayersJSONOutputBySubType('__ALL__'));
+                    setJsonPanelOpen(true);
+                  }}
+                >
+                  整体JSON
+                </AppButton>
+
+                <AppButton
+                  type="button"
+                  className={`px-2 py-1 text-sm rounded border ${
+                    busy || visibleList.length === 0 || hasDefaultLayer
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'
+                      : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'
+                  }`}
+                  title={
+                    busy
+                      ? '当前有要素正在编辑/绘制，无法导出'
+                      : visibleList.length === 0
+                        ? '暂无图层'
+                        : hasDefaultLayer
+                          ? '存在默认图层，无法导出简略CSV'
+                          : '导出 Type,Class,World,ID,Name 简略CSV（便于快速维护检查）'
+                  }
+                  disabled={busy || visibleList.length === 0 || hasDefaultLayer}
+                  onClick={() => {
+                    if (busy || visibleList.length === 0 || hasDefaultLayer) return;
+                    const csv = buildBriefCsvFromLayers(visibleList, currentWorldId);
+                    const now = new Date();
+                    const y = String(now.getFullYear());
+                    const m = String(now.getMonth() + 1).padStart(2, '0');
+                    const d = String(now.getDate()).padStart(2, '0');
+                    const filename = `brief_${y}${m}${d}.csv`;
+                    downloadTextFile(csv, filename, 'text/csv;charset=utf-8');
+                  }}
+                >
+                  简略CSV文件
+                </AppButton>
+
+                <AppButton
+                  type="button"
+                  className={`px-2 py-1 text-sm rounded border ${
+                    busy || visibleList.length === 0 || (!tempMountAllActive && hasDefaultLayer)
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'
+                      : tempMountAllActive
+                        ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700'
+                        : 'bg-emerald-200 text-emerald-900 border-emerald-300 hover:bg-emerald-300'
+                  }`}
+                  title={
+                    busy
+                      ? '当前有要素正在编辑/绘制，请先保存'
+                      : visibleList.length === 0
+                        ? '暂无图层'
+                        : (!tempMountAllActive && hasDefaultLayer)
+                          ? '存在默认图层，无法挂载'
+                        : tempMountAllActive
+                          ? '取消临时挂载（存在即移除）'
+                          : '临时挂载所有图层到规则图层（用于测试显示/去重/关联）'
+                  }
+                  disabled={busy || visibleList.length === 0 || (!tempMountAllActive && hasDefaultLayer)}
+                  onClick={() => void toggleTempMountAllLayers(visibleList, busy)}
+                >
+                  {tempMountAllActive ? '取消临时挂载' : '临时挂载'}
+                </AppButton>
+
+                <AppButton
+                  type="button"
+                  className={`px-2 py-1 text-sm rounded border ${busy || !hasRelayExportContent ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300'}`}
+                  title={relayExportTitle}
+                  disabled={busy || !hasRelayExportContent}
+                  onClick={() => { if (!busy && hasRelayExportContent) setRelayPackageExportOpen(true); }}
+                >
+                  导出标准包
+                </AppButton>
+
+                <AppButton
+                  type="button"
+                  className="px-2 py-1 text-sm rounded border bg-white text-gray-800 hover:bg-gray-50 border-gray-300"
+                  title="查看待删除标记"
+                  onClick={() => { setDeletePickedCandidate(null); setDeleteMapPickEnabled(false); setDeletePanelOpen(true); }}
+                >
+                  删除要素
+                </AppButton>
+              </div>
+            )}
 
             <div className="px-4 py-2 border-b text-xs text-gray-600 space-y-1">
+              {isReviewWorkspace && reviewPackageLabel ? (
+                <div><span className="font-bold">审核包：</span>{reviewPackageLabel}</div>
+              ) : null}
               <div><span className="font-bold">标准包状态：</span>{relayDraftStatusLabel(relayPackageDraft.meta.draftStatus)}</div>
               {relayDraftShowsMeta(relayPackageDraft.meta.draftStatus) ? (
                 <div><span className="font-bold">Operator：</span>{relayPackageDraft.meta.operator || '-'}</div>
@@ -4581,7 +4843,7 @@ const measuringWindowActions = (
             <AppCard className="w-96 max-h-[70vh] overflow-hidden border" data-draggable-proxy-close="true">
               {/* 标题栏（拖拽区域） */}
               <div className="flex items-center px-4 py-3 pr-40 border-b">
-                <h3 className="font-bold text-gray-800" data-draggable-title>测绘</h3>
+                <h3 className="font-bold text-gray-800" data-draggable-title>{isReviewWorkspace ? '审核测绘工作区' : '测绘'}</h3>
                 <button
                   type="button"
                   data-draggable-close
@@ -5032,7 +5294,7 @@ onChange={(e) => {
         <div className="sm:hidden fixed top-[240px] left-2 right-2 z-[1800]">
           <AppCard className="overflow-hidden border max-h-[70vh]">
             <div className="flex items-center justify-between px-4 py-3 border-b">
-              <h3 className="font-bold text-gray-800">测绘</h3>
+              <h3 className="font-bold text-gray-800">{isReviewWorkspace ? '审核测绘工作区' : '测绘'}</h3>
               <AppButton
                 onClick={closeMeasuringUI}
                 className="text-gray-400 hover:text-gray-600"

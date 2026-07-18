@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairnmap.local/schemas/media/cairnmap.media-index-contract.v1.schema.json",
+  "title": "CairnMap MediaIndex Contract v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "projectId",
+    "runtimeStatus",
+    "storageProfileRefs",
+    "roots",
+    "asset",
+    "binding",
+    "merge",
+    "compatibility"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "cairnmap.media-index-contract.v1" },
+    "projectId": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "runtimeStatus": { "enum": ["contract-only", "active"] },
+    "storageProfileRefs": {
+      "type": "object",
+      "required": ["media", "mediaIndex", "featureData", "relayPool"],
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "roots": {
+      "type": "object",
+      "required": ["splitRoot", "mergeRoot", "assetSplitRoot", "bindingSplitRoot", "byFeatureMergeRoot", "assetMergeRoot"],
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "asset": { "type": "object" },
+    "binding": { "type": "object" },
+    "merge": { "type": "object" },
+    "nativeRelayCompatibility": { "type": "object" },
+    "compatibility": { "type": "object" }
+  },
+  "additionalProperties": false
+}

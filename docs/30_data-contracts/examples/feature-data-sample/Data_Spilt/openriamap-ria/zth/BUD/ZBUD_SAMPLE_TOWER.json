@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "cairnmap.feature-record.sample.v1",
+  "projectId": "openriamap-ria",
+  "worldId": "zth",
+  "classCode": "BUD",
+  "featureId": "ZBUD_SAMPLE_TOWER",
+  "geometry": {
+    "type": "Point",
+    "coordinates": [
+      20,
+      8
+    ]
+  },
+  "properties": {
+    "name": "Sample Tower",
+    "category": "building"
+  },
+  "meta": {
+    "sampleOnly": true,
+    "source": "DATA_FEATURE_REPO_CONTRACT_1"
+  }
+}

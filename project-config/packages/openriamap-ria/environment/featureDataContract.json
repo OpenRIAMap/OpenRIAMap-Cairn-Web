@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "cairnmap.feature-data.v1",
+  "projectId": "openriamap-ria",
+  "description": "FeatureData Split/Merge/Index repository contract for the Cairn distributed framework. DATA_FEATURE_REPO_CONTRACT_1 is contract-only and does not replace the current dataSources/sourceLinkModes runtime chain.",
+  "runtimeStatus": "contract-only",
+  "storageProfileRefs": {
+    "featureData": "featureData.github.currentOpenRIAMapData",
+    "media": "media.github.currentOpenRIAMapDataPicture",
+    "mediaIndex": "mediaIndex.github.plannedOpenRIAMapData",
+    "relayPool": "relayPool.github.plannedCairnMapRelayPool"
+  },
+  "roots": {
+    "splitRoot": "Data_Spilt",
+    "mergeRoot": "Data_Merge",
+    "indexRoot": "Data_Index"
+  },
+  "split": {
+    "sourceOfTruth": true,
+    "pathTemplate": "Data_Spilt/{projectId}/{worldId}/{classCode}/{featureId}.json",
+    "featureFileNameTemplate": "{featureId}.json",
+    "allowedFeatureExtensions": [
+      ".json"
+    ],
+    "requiredRecordFields": [
+      "projectId",
+      "worldId",
+      "classCode",
+      "featureId",
+      "geometry",
+      "properties"
+    ]
+  },
+  "merge": {
+    "runtimeCache": true,
+    "worldIndexPathTemplate": "Data_Merge/{projectId}/{worldId}/INDEX.json",
+    "classIndexPathTemplate": "Data_Merge/{projectId}/{worldId}/{classCode}/INDEX.json",
+    "chunkPathTemplate": "Data_Merge/{projectId}/{worldId}/{classCode}/chunk_{chunkId}.json",
+    "chunking": {
+      "strategy": "stable-class-world-chunks",
+      "defaultChunkSize": 500,
+      "sampleChunkSize": 2,
+      "chunkIdFormat": "000"
+    },
+    "deterministicOrder": [
+      "projectId",
+      "worldId",
+      "classCode",
+      "featureId"
+    ]
+  },
+  "index": {
+    "mergeIndexPath": "Data_Index/merge-index.json",
+    "chunkManifestPath": "Data_Index/chunk-manifest.json",
+    "dataVersionPath": "Data_Index/data-version.json",
+    "featureKeyTemplate": "{classCode}:{featureId}",
+    "requiredEntryFields": [
+      "projectId",
+      "worldId",
+      "classCode",
+      "featureId",
+      "sourcePath",
+      "mergeChunk",
+      "contentHash"
+    ]
+  },
+  "featureRef": {
+    "requiredFields": [
+      "projectId",
+      "worldId",
+      "classCode",
+      "featureId"
+    ],
+    "keyTemplate": "{classCode}:{featureId}",
+    "sourcePathTemplate": "Data_Spilt/{projectId}/{worldId}/{classCode}/{featureId}.json"
+  },
+  "compatibility": {
+    "doNotReplaceCurrentDataRuntimeInThisPatch": true,
+    "currentRuntimeChain": "sourceLinkModes.json + dataSources.json + dat sourceMode + current Data_Merge layout",
+    "currentDataRepository": "OpenRIAMap-Data",
+    "currentDataMaintenanceTool": "Data_Merge_Tool",
+    "notes": "This contract records the target FeatureData shape for future tools. Existing site runtime and existing OpenRIAMap-Data files remain unchanged in DATA_FEATURE_REPO_CONTRACT_1."
+  }
+}

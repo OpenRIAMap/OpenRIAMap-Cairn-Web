@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cairnmap.relay-review-status.v1.schema.json",
+  "title": "CairnMap Relay Review Status",
+  "type": "object",
+  "required": ["schemaVersion", "packageId", "projectId", "worldId", "status", "createdAt", "updatedAt", "currentStage", "package", "precheck", "accept", "review", "history", "warnings", "errors"],
+  "properties": {
+    "schemaVersion": { "const": "cairnmap.relay-review-status.v1" },
+    "packageId": { "type": "string", "minLength": 1 },
+    "projectId": { "type": "string", "minLength": 1 },
+    "worldId": { "type": "string", "minLength": 1 },
+    "status": {
+      "enum": ["pending", "precheck_running", "prechecked", "precheck_failed", "accepted", "accept_failed", "rejected", "changes_requested", "archived"]
+    },
+    "createdAt": { "type": "string" },
+    "updatedAt": { "type": "string" },
+    "currentStage": { "type": "string" },
+    "package": {
+      "type": "object",
+      "required": ["path", "type"],
+      "properties": {
+        "path": { "type": "string" },
+        "type": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "precheck": { "type": "object", "additionalProperties": true },
+    "accept": { "type": "object", "additionalProperties": true },
+    "review": { "type": "object", "additionalProperties": true },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["at", "to", "stage"],
+        "properties": {
+          "at": { "type": "string" },
+          "from": { "type": ["string", "null"] },
+          "to": { "type": "string" },
+          "stage": { "type": "string" },
+          "reason": { "type": ["string", "null"] },
+          "runId": { "type": ["string", "null"] },
+          "reportPath": { "type": ["string", "null"] }
+        },
+        "additionalProperties": true
+      }
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

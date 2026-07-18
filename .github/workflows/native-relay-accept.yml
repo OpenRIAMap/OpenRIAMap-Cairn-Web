@@ -1,0 +1,142 @@
+name: Native RelayPackage Accept
+
+on:
+  workflow_dispatch:
+    inputs:
+      relay_package_path:
+        description: "Path to a Native RelayPackage .zip or directory inside this repository"
+        required: true
+        type: string
+      project_id:
+        description: "Cairn project id"
+        required: false
+        default: "openriamap-ria"
+        type: string
+      data_root:
+        description: "Data root to update when write_changes is true"
+        required: false
+        default: "OpenRIAMap-Data"
+        type: string
+      target_branch:
+        description: "Branch to create or reset when commit_changes is true. Must use accept/native-relay/* when committing or pushing."
+        required: false
+        default: ""
+        type: string
+      precheck_report_path:
+        description: "Optional repository path to the matching precheck report"
+        required: false
+        default: ""
+        type: string
+      precheck_run_id:
+        description: "Optional GitHub Actions run id for the matching precheck"
+        required: false
+        default: ""
+        type: string
+      strict_worlds:
+        description: "Fail on unregistered world directories"
+        required: false
+        default: false
+        type: boolean
+      write_changes:
+        description: "Run the local pipeline in --write mode"
+        required: false
+        default: false
+        type: boolean
+      commit_changes:
+        description: "Create a git commit after a successful write pipeline"
+        required: false
+        default: false
+        type: boolean
+      push_changes:
+        description: "Push the accept branch after committing"
+        required: false
+        default: false
+        type: boolean
+      review_status_path:
+        description: "Optional review-status.json path to update after accept"
+        required: false
+        default: ""
+        type: string
+      review_package_root:
+        description: "Optional RelayPackage review package root for status metadata"
+        required: false
+        default: ""
+        type: string
+      update_review_status:
+        description: "Update review-status.json after accept"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  accept:
+    name: RelayPackage accept
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Native RelayPackage accept
+        shell: bash
+        run: |
+          args=(
+            "--relay" "${{ inputs.relay_package_path }}"
+            "--project-id" "${{ inputs.project_id }}"
+            "--data-root" "${{ inputs.data_root }}"
+            "--out" ".cairnmap-actions/native-relay-accept"
+          )
+          if [ -n "${{ inputs.target_branch }}" ]; then
+            args+=("--target-branch" "${{ inputs.target_branch }}")
+          else
+            args+=("--target-branch" "accept/native-relay/${{ github.run_id }}")
+          fi
+          if [ -n "${{ inputs.precheck_report_path }}" ]; then
+            args+=("--precheck-report" "${{ inputs.precheck_report_path }}")
+          fi
+          if [ -n "${{ inputs.precheck_run_id }}" ]; then
+            args+=("--precheck-run-id" "${{ inputs.precheck_run_id }}")
+          fi
+          if [ "${{ inputs.strict_worlds }}" = "true" ]; then
+            args+=("--strict-worlds")
+          fi
+          if [ "${{ inputs.write_changes }}" = "true" ]; then
+            args+=("--write")
+          fi
+          if [ "${{ inputs.commit_changes }}" = "true" ]; then
+            args+=("--commit-changes")
+          fi
+          if [ "${{ inputs.push_changes }}" = "true" ]; then
+            args+=("--push")
+          fi
+          if [ -n "${{ inputs.review_status_path }}" ]; then
+            args+=("--review-status-path" "${{ inputs.review_status_path }}")
+          fi
+          if [ -n "${{ inputs.review_package_root }}" ]; then
+            args+=("--review-package-root" "${{ inputs.review_package_root }}")
+          fi
+          if [ "${{ inputs.update_review_status }}" = "true" ]; then
+            args+=("--update-review-status")
+          fi
+          npm run action:native-relay-accept -- "${args[@]}"
+
+      - name: Upload accept artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-relay-accept
+          path: .cairnmap-actions/native-relay-accept
+          if-no-files-found: warn
