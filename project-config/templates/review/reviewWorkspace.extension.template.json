@@ -1,0 +1,6 @@
+{
+  "schemaVersion": "cairnmap.review-workspace-extension.v1",
+  "adapterId": "application-local-adapter",
+  "allowedIntents": ["save", "approve", "reject"],
+  "capabilities": { "temporaryLayers": true, "localRelayPackage": true }
+}

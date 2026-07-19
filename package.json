@@ -23,7 +23,10 @@
     "audit:legacy-definition": "node ./scripts/audit-legacy-definition.mjs",
     "audit:project-config": "node ./scripts/audit-project-config.mjs",
     "create:class": "node ./scripts/create-class-config.mjs",
-    "inspect:project-config": "node ./scripts/inspect-project-config.mjs"
+    "inspect:project-config": "node ./scripts/inspect-project-config.mjs",
+    "validate:review-contract-boundary": "node ./scripts/review/validate-review-contract-boundary.mjs",
+    "validate:case-template": "node ./scripts/review/validate-case-template-manifest.mjs",
+    "test:review-workspace-contracts": "tsx ./scripts/review/test-review-workspace-contracts.ts"
   },
   "dependencies": {
     "jszip": "^3.10.1",
