@@ -7,7 +7,7 @@
   "properties": {
     "schemaVersion": { "const": "cairnmap.review-workspace-extension.v1" },
     "adapterId": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" },
-    "allowedIntents": { "type": "array", "uniqueItems": true, "items": { "enum": ["save", "approve", "reject"] } },
+    "allowedIntents": { "type": "array", "uniqueItems": true, "items": { "enum": ["save", "submit", "precheck", "approve", "reject", "request-changes", "archive", "status-refresh", "report-refresh"] } },
     "capabilities": {
       "type": "object", "additionalProperties": false, "required": ["temporaryLayers", "localRelayPackage"],
       "properties": { "temporaryLayers": { "type": "boolean" }, "localRelayPackage": { "type": "boolean" } }

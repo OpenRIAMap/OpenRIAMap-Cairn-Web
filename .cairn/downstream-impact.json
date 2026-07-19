@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "cairnmap.downstream-impact.v1",
+  "contractVersion": "review-workflow.v1",
+  "compatibility": "additive",
+  "requiredAdapters": ["review-workflow"],
+  "requiredValidation": ["workflow-state-machine", "adapter-transport", "local-status-isolation"],
+  "migration": "Register an application-owned workflow adapter before binding any new intent."
+}
