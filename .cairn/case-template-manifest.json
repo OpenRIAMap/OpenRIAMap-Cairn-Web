@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "cairnmap.case-template-manifest.v1",
+  "templates": [{
+    "id": "upstream-ria-showcase-snapshot",
+    "role": "template-only",
+    "syncDirection": "none",
+    "paths": ["project-config/assemblies/openriamap-ria.json", "project-config/packages/openriamap-ria"],
+    "sourceTreeSha256": "20b973af369eef699746ef3bf237ee3bcd4893a446f91a31d5a16f980138e325",
+    "allowedChangeContext": "workflow-modularization"
+  }]
+}
