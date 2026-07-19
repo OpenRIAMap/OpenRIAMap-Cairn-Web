@@ -36,7 +36,7 @@ export type ReviewWorkflowState =
   | 'archived';
 
 export type ReviewAuthorizationContext = {
-  /** Application-defined opaque identity; it is never a credential. */
+  /** Application-defined opaque identity; it is never a secret. */
   principalId: string;
   roles: string[];
 };
