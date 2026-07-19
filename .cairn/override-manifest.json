@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "cairn.override-manifest.v1",
+  "applicationProfile": "openriamap-ria",
+  "overrides": [
+    { "area": "relay-package", "owner": "downstream", "reason": "RIA RelayPackage protocol and status sidecars" },
+    { "area": "temporary-layers", "owner": "downstream", "reason": "RIA local storage protocol" },
+    { "area": "workflow-adapter", "owner": "downstream", "reason": "RIA authorization and operation binding" },
+    { "area": "runtime-profile", "owner": "downstream", "reason": "RIA deployment and data-source configuration" }
+  ]
+}
