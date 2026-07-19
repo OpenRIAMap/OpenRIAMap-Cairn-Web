@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "openriamap.ria-review-automation-binding.v1",
+  "runtimeProfile": "openriamap-ria",
+  "enabled": false,
+  "broker": {
+    "controlApiBaseEnvironmentVariable": "CAIRN_CONTROL_API_BASE",
+    "oauthClientIdEnvironmentVariable": "CAIRN_GITHUB_OAUTH_CLIENT_ID",
+    "oauthClientSecretEnvironmentVariable": "CAIRN_GITHUB_OAUTH_CLIENT_SECRET",
+    "oauthRedirectUriEnvironmentVariable": "CAIRN_GITHUB_OAUTH_REDIRECT_URI",
+    "dispatcherPath": "/v1/review-intents",
+    "sessionSigningSecretEnvironmentVariable": "CAIRN_SESSION_SIGNING_SECRET",
+    "dispatcherSigningSecretEnvironmentVariable": "CAIRN_BROKER_TO_DISPATCHER_SECRET"
+  },
+  "authorization": {
+    "identityProvider": "github-oauth",
+    "githubApp": { "appIdEnvironmentVariable": "GITHUB_APP_ID", "installationIdEnvironmentVariable": "GITHUB_APP_INSTALLATION_ID" },
+    "roleBindings": { "contributors": [], "reviewers": [], "maintainers": [], "approvers": [] },
+    "separationOfDuties": { "acceptRequiresIndependentApprover": true, "productionApplyRequiresControlApproval": true }
+  },
+  "targets": {
+    "repositories": { "control": "OpenRIAMap/OpenRIAMap-Cairn-Control", "data": "OpenRIAMap/OpenRIAMap-Cairn-Data" },
+    "buckets": { "review": "COS_REVIEW_BUCKET", "control": "COS_CONTROL_BUCKET", "data": "COS_DATA_BUCKET", "media": "COS_MEDIA_BUCKET" },
+    "prefixes": { "reviewPackages": "RelayPackages/", "controlJobs": "review/jobs/", "controlEvents": "review/events/", "dataReleases": "releases/" },
+    "runtime": { "tcrRepository": "openriamap/cairn-pipeline", "dispatcher": "cairn-pipeline-dispatcher", "worker": "cairn-pipeline-worker", "mirrorWorker": "cairn-github-mirror-worker", "environmentAlias": "staging" }
+  },
+  "relay": { "workflowConfig": "project-config/packages/openriamap-ria/environment/relayReviewWorkflow.json", "statusFile": "review-status.json", "reportDirectory": "reports" },
+  "scriptEntrypoints": { "precheck": "npm run action:native-relay-precheck", "accept": "npm run action:native-relay-accept", "status": "npm run validate:relay-review-status", "report": "npm run sync:relay-review-report" },
+  "intents": ["submit", "precheck", "approve", "reject", "request-changes", "archive", "status-refresh", "report-refresh"]
+}

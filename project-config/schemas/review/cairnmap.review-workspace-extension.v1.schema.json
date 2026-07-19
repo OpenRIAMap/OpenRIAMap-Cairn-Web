@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cairnmap.review-workspace-extension.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "adapterId", "allowedIntents", "capabilities"],
+  "properties": {
+    "schemaVersion": { "const": "cairnmap.review-workspace-extension.v1" },
+    "adapterId": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" },
+    "allowedIntents": { "type": "array", "uniqueItems": true, "items": { "enum": ["save", "submit", "precheck", "approve", "reject", "request-changes", "archive", "status-refresh", "report-refresh"] } },
+    "capabilities": {
+      "type": "object", "additionalProperties": false, "required": ["temporaryLayers", "localRelayPackage"],
+      "properties": { "temporaryLayers": { "type": "boolean" }, "localRelayPackage": { "type": "boolean" } }
+    }
+  }
+}

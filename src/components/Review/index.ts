@@ -4,3 +4,8 @@ export type { ReviewInboxItem } from './reviewStatusTypes';
 export type { ReviewPackageSession, ReviewWorkbenchStatus } from './reviewPackageSession';
 export { createReviewPackageSession, describeReviewWorkbenchStatus } from './reviewPackageSession';
 export type CairnMapModuleMode = 'runtime' | 'mapping' | 'review';
+export * from './contracts';
+export * from './session';
+export * from './adapterRegistry';
+export * from './workflow';
+export * from './riaReviewWorkflowAdapter';

@@ -50,7 +50,12 @@
     "update:relay-review-status": "node ./scripts/review/update-relay-review-status.mjs",
     "validate:relay-review-status": "node ./scripts/review/validate-relay-review-status.mjs",
     "list:relay-review-inbox": "node ./scripts/review/list-relay-review-inbox.mjs",
-    "sync:relay-review-report": "node ./scripts/review/sync-relay-review-report.mjs"
+    "sync:relay-review-report": "node ./scripts/review/sync-relay-review-report.mjs",
+    "validate:review-control-binding": "node ./scripts/review/validate-review-control-binding.mjs",
+    "test:review-control-binding": "tsx ./scripts/review/test-review-control-binding.ts",
+    "validate:upstream-contract-import": "node ./scripts/review/validate-upstream-contract-import.mjs",
+    "validate:case-template": "node ./scripts/review/validate-case-template-manifest.mjs",
+    "test:review-workspace-contracts": "tsx ./scripts/review/test-review-workspace-contracts.ts"
   },
   "dependencies": {
     "jszip": "^3.10.1",

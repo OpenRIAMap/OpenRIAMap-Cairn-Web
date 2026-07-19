@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "cairn.upstream-lock.v1",
+  "upstreamRepository": "Ozstk639/CairnMap-Web",
+  "commit": "ce50558b42306657f5d73c510c2250a0bc7ef828",
+  "contractVersion": "review-workflow.v1",
+  "syncMode": "stable-release-to-pull-request"
+}
