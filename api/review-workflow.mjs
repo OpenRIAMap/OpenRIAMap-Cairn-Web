@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { requireReviewAutomation } from './_reviewAutomation.mjs';
 
 const intents = new Set(['submit', 'precheck', 'approve', 'reject', 'request-changes', 'archive', 'status-refresh', 'report-refresh']);
 
@@ -38,6 +39,7 @@ function config() {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method-not-allowed' });
+  if (!requireReviewAutomation(res)) return;
   const runtime = config();
   if (!runtime.base || !runtime.sessionSecret || !runtime.dispatcherSecret) return res.status(503).json({ error: 'workflow-broker-not-configured' });
   const session = verifySession(parseCookies(req.headers.cookie).cairn_review_session, runtime.sessionSecret);
