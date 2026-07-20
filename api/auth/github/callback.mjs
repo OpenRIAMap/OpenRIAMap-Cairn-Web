@@ -1,6 +1,8 @@
 import { sessionCookie, verify } from '../../_reviewAuth.mjs';
+import { requireReviewAutomation } from '../../_reviewAutomation.mjs';
 
 export default async function handler(req, res) {
+  if (!requireReviewAutomation(res)) return;
   const secret = process.env.CAIRN_SESSION_SIGNING_SECRET;
   const clientId = process.env.CAIRN_GITHUB_OAUTH_CLIENT_ID;
   const clientSecret = process.env.CAIRN_GITHUB_OAUTH_CLIENT_SECRET;

@@ -1,7 +1,9 @@
 import crypto from 'node:crypto';
 import { sign } from '../../_reviewAuth.mjs';
+import { requireReviewAutomation } from '../../_reviewAutomation.mjs';
 
 export default function handler(req, res) {
+  if (!requireReviewAutomation(res)) return;
   const clientId = process.env.CAIRN_GITHUB_OAUTH_CLIENT_ID;
   const redirectUri = process.env.CAIRN_GITHUB_OAUTH_REDIRECT_URI;
   const secret = process.env.CAIRN_SESSION_SIGNING_SECRET;
