@@ -4,7 +4,9 @@
     "contractVersion": "review-workflow.v1",
     "supportedIntents": ["submit", "precheck", "approve", "reject", "request-changes", "archive", "status-refresh", "report-refresh"],
     "formalApprovalStates": ["awaiting-approval", "approved", "dispatch-queued", "dispatch-running", "completed"],
-    "localStatusIsNotFormalApproval": true
+    "localStatusIsNotFormalApproval": true,
+    "authorizationPolicy": "github-organization-teams.v1",
+    "staticUsernameRoleBindingsAllowed": false
   },
-  "requiredChecks": ["validate:review-control-binding", "test:review-control-binding", "validate:relay-review-status", "validate:native-relay-accept-guards"]
+  "requiredChecks": ["validate:review-control-binding", "test:review-control-binding", "validate:team-review-authorization", "validate:relay-review-status", "validate:native-relay-accept-guards"]
 }

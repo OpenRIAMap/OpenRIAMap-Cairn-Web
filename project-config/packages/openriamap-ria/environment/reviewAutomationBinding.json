@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "openriamap.ria-review-automation-binding.v1",
+  "schemaVersion": "openriamap.ria-review-automation-binding.v2",
   "runtimeProfile": "openriamap-ria",
   "enabled": false,
   "broker": {
@@ -13,15 +13,27 @@
   },
   "authorization": {
     "identityProvider": "github-oauth",
-    "githubApp": { "appIdEnvironmentVariable": "GITHUB_APP_ID", "installationIdEnvironmentVariable": "GITHUB_APP_INSTALLATION_ID" },
-    "roleBindings": { "contributors": [], "reviewers": [], "maintainers": [], "approvers": [] },
-    "separationOfDuties": { "acceptRequiresIndependentApprover": true, "productionApplyRequiresControlApproval": true }
+    "authorizationProvider": "scf-github-app-team-resolution",
+    "githubApp": {
+      "clientIdEnvironmentVariable": "CAIRN_GITHUB_APP_CLIENT_ID",
+      "installationIdEnvironmentVariable": "CAIRN_GITHUB_APP_INSTALLATION_ID",
+      "privateKeyEnvironmentVariable": "CAIRN_GITHUB_APP_PRIVATE_KEY_PEM",
+      "organization": "OpenRIAMap",
+      "teamSlugs": { "contributor": "cairn-contributors", "reviewer": "cairn-reviewers", "maintainer": "cairn-maintainers" }
+    },
+    "roles": {
+      "contributor": ["submit", "status-refresh", "report-refresh"],
+      "reviewer": ["precheck", "approve", "reject", "request-changes", "archive"],
+      "maintainer": ["inherits-reviewer", "repository-maintenance"]
+    },
+    "separationOfDuties": { "acceptRequiresIndependentApprover": false, "acceptRequiresReviewerOrMaintainer": true, "productionApplyRequiresControlApproval": true },
+    "staticUsernameRoleBindingsAllowed": false
   },
   "targets": {
     "repositories": { "control": "OpenRIAMap/OpenRIAMap-Cairn-Control", "data": "OpenRIAMap/OpenRIAMap-Cairn-Data" },
     "buckets": { "review": "COS_REVIEW_BUCKET", "control": "COS_CONTROL_BUCKET", "data": "COS_DATA_BUCKET", "media": "COS_MEDIA_BUCKET" },
     "prefixes": { "reviewPackages": "RelayPackages/", "controlJobs": "review/jobs/", "controlEvents": "review/events/", "dataReleases": "releases/" },
-    "runtime": { "tcrRepository": "openriamap/cairn-pipeline", "dispatcher": "cairn-pipeline-dispatcher", "worker": "cairn-pipeline-worker", "mirrorWorker": "cairn-github-mirror-worker", "environmentAlias": "staging" }
+    "runtime": { "deploymentMode": "scf-nodejs-zip", "region": "ap-shanghai", "dispatcher": "cairn-pipeline-dispatcher", "worker": "cairn-pipeline-worker", "mirrorWorker": "cairn-github-mirror-worker", "environmentAlias": "staging" }
   },
   "relay": { "workflowConfig": "project-config/packages/openriamap-ria/environment/relayReviewWorkflow.json", "statusFile": "review-status.json", "reportDirectory": "reports" },
   "scriptEntrypoints": { "precheck": "npm run action:native-relay-precheck", "accept": "npm run action:native-relay-accept", "status": "npm run validate:relay-review-status", "report": "npm run sync:relay-review-report" },

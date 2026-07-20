@@ -1,7 +1,6 @@
 import crypto from 'node:crypto';
 
 const intents = new Set(['submit', 'precheck', 'approve', 'reject', 'request-changes', 'archive', 'status-refresh', 'report-refresh']);
-const permissionByIntent = { submit: 'contributors', precheck: 'reviewers', approve: 'approvers', reject: 'reviewers', 'request-changes': 'reviewers', archive: 'maintainers', 'status-refresh': 'contributors', 'report-refresh': 'contributors' };
 
 function parseCookies(value = '') {
   return Object.fromEntries(value.split(';').map((entry) => entry.trim().split('=').map(decodeURIComponent)).filter(([key, item]) => key && item));
@@ -34,7 +33,6 @@ function config() {
     base: process.env.CAIRN_CONTROL_API_BASE,
     sessionSecret: process.env.CAIRN_SESSION_SIGNING_SECRET,
     dispatcherSecret: process.env.CAIRN_BROKER_TO_DISPATCHER_SECRET,
-    roleBindings: JSON.parse(process.env.CAIRN_REVIEW_ROLE_BINDINGS_JSON ?? '{}'),
   };
 }
 
@@ -48,12 +46,10 @@ export default async function handler(req, res) {
   const request = req.body?.request;
   const intent = operation === 'dispatch' ? request?.intent : operation === 'status' ? 'status-refresh' : operation === 'report' ? 'report-refresh' : null;
   if (!intent || !intents.has(intent)) return res.status(400).json({ error: 'invalid-intent' });
-  const permitted = new Set(runtime.roleBindings[permissionByIntent[intent]] ?? []);
-  if (!permitted.has(session.login)) return res.status(403).json({ error: 'role-not-authorized' });
   if (operation === 'dispatch' && (!request?.requestId || !request?.idempotencyKey || !request?.packageId)) return res.status(400).json({ error: 'invalid-workflow-request' });
-  const actor = { principalId: session.login, roles: Object.entries(runtime.roleBindings).filter(([, users]) => Array.isArray(users) && users.includes(session.login)).map(([role]) => role) };
-  // The dispatcher compares this authenticated actor to the submitted Control record.
-  // Browser-provided actor data is never forwarded as authority.
+  // Role membership is intentionally resolved by the SCF dispatcher with the GitHub App.
+  // Browser-provided roles and Vercel environment username lists are never authority.
+  const actor = { principalId: session.login };
   const body = operation === 'dispatch' ? { ...req.body, request: { ...request, actor } } : { ...req.body, actor };
   const signed = signDispatcherRequest(body, runtime.dispatcherSecret);
   const response = await fetch(`${runtime.base.replace(/\/$/, '')}/v1/review-intents`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-cairn-timestamp': signed.timestamp, 'x-cairn-signature': signed.signature }, body: JSON.stringify(body) });
