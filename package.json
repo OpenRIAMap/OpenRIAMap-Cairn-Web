@@ -54,6 +54,8 @@
     "validate:review-control-binding": "node ./scripts/review/validate-review-control-binding.mjs",
     "test:review-control-binding": "tsx ./scripts/review/test-review-control-binding.ts",
     "test:review-automation-gate": "node ./scripts/review/test-review-automation-gate.mjs",
+    "test:review-relay-transfer-port": "node ./scripts/review/test-review-relay-transfer-port.mjs",
+    "test:review-workflow-broker-actor": "node ./scripts/review/test-review-workflow-broker-actor.mjs",
     "validate:team-review-authorization": "node ./scripts/review/validate-team-review-authorization.mjs",
     "validate:upstream-contract-import": "node ./scripts/review/validate-upstream-contract-import.mjs",
     "validate:case-template": "node ./scripts/review/validate-case-template-manifest.mjs",

@@ -52,7 +52,7 @@ export default async function handler(req, res) {
   // Role membership is intentionally resolved by the SCF dispatcher with the GitHub App.
   // Browser-provided roles and Vercel environment username lists are never authority.
   const actor = { principalId: session.login };
-  const body = operation === 'dispatch' ? { ...req.body, request: { ...request, actor } } : { ...req.body, actor };
+  const body = operation === 'dispatch' ? { ...req.body, actor, request: { ...request, actor } } : { ...req.body, actor };
   const signed = signDispatcherRequest(body, runtime.dispatcherSecret);
   const response = await fetch(`${runtime.base.replace(/\/$/, '')}/v1/review-intents`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-cairn-timestamp': signed.timestamp, 'x-cairn-signature': signed.signature }, body: JSON.stringify(body) });
   const payload = await response.json();

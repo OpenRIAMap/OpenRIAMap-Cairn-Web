@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "openriamap.ria-relay-staging-transport.v1",
+  "runtimeProfile": "openriamap-ria",
+  "brokerRoute": "/api/review-relay-transfer",
+  "dispatcherPath": "/v1/review-intents",
+  "dispatcherOperations": ["relay-upload-request", "relay-upload-complete", "relay-inbox-list", "status"],
+  "pendingObjectKeyTemplate": "RelayPackages/pending/{packageId}.zip",
+  "uploadMethod": "PUT",
+  "uploadTtlSeconds": 300,
+  "maxUploadBytes": 67108864,
+  "completionIntegrity": ["content-md5", "sha256", "byte-length"],
+  "inboxIndexKey": "review/inbox/index.json",
+  "browserDirectAccessForbidden": ["GitHub write API", "SCF worker", "SCF mirror", "private COS credentials"],
+  "activation": {
+    "vercelEnvironmentGate": "CAIRN_REVIEW_AUTOMATION_ENABLED",
+    "localProfileBindingRemainsDisabled": true,
+    "uiBindingIncluded": false
+  }
+}
