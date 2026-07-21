@@ -4,6 +4,8 @@ import path from 'node:path';
 const root = process.cwd();
 const bindingPath = path.join(root, 'project-config/packages/openriamap-ria/environment/reviewAutomationBinding.json');
 const binding = JSON.parse(fs.readFileSync(bindingPath, 'utf8'));
+const relayPath = path.join(root, 'deployment/ria-review-relay-staging-transport.json');
+const relay = JSON.parse(fs.readFileSync(relayPath, 'utf8'));
 const expected = ['submit', 'precheck', 'approve', 'reject', 'request-changes', 'archive', 'status-refresh', 'report-refresh'];
 const errors = [];
 if (binding.enabled !== false) errors.push('automation must remain disabled until staged cloud approval');
@@ -18,5 +20,11 @@ if (binding.authorization.separationOfDuties.productionApplyRequiresControlAppro
 if (Object.values(binding.targets.buckets).some((value) => !/^[A-Z0-9_]+$/.test(value))) errors.push('bucket references must be environment variable names');
 if (binding.broker.controlApiBaseEnvironmentVariable !== 'CAIRN_CONTROL_API_BASE') errors.push('broker endpoint must be supplied by environment');
 if (JSON.stringify(binding).includes('CAIRN_REVIEW_ROLE_BINDINGS_JSON')) errors.push('static Vercel role binding variable is forbidden');
+if (!relay || relay.brokerRoute !== '/api/review-relay-transfer') errors.push('Relay staging broker route missing');
+if (relay?.pendingObjectKeyTemplate !== 'RelayPackages/pending/{packageId}.zip') errors.push('Relay staging key must stay under pending prefix');
+if (relay?.uploadMethod !== 'PUT' || relay?.uploadTtlSeconds !== 300 || relay?.maxUploadBytes !== 67108864) errors.push('Relay staging upload limits mismatch');
+if (JSON.stringify(relay?.browserDirectAccessForbidden ?? []).includes('COS_REVIEW_BUCKET')) errors.push('browser transport must not expose a bucket name');
+if (JSON.stringify(relay?.dispatcherOperations ?? []) !== JSON.stringify(['relay-upload-request', 'relay-upload-complete', 'relay-inbox-list', 'status'])) errors.push('Relay staging dispatcher operation list mismatch');
+if (relay?.runtimeProfile !== 'openriamap-ria' || relay?.activation?.uiBindingIncluded !== false || relay?.activation?.localProfileBindingRemainsDisabled !== true) errors.push('Relay staging transport must remain an unbound downstream-only port');
 if (errors.length) { console.error('Review control binding: FAIL'); errors.forEach((error) => console.error(`- ${error}`)); process.exitCode = 1; }
 else console.log('Review control binding: PASS');

@@ -5,7 +5,7 @@
     "role": "template-only",
     "syncDirection": "none",
     "paths": ["project-config/assemblies/openriamap-ria.json", "project-config/packages/openriamap-ria"],
-    "sourceTreeSha256": "d408101a32d4a99b57c44f414e9621b97985005699d747ca2a2440e271c5cf5c",
+    "sourceTreeSha256": "bd8b41ccdc56d791925baf94343f832430ce53335a3a0d741c77e2b21d8af94c",
     "allowedChangeContext": "workflow-modularization"
   }]
 }
