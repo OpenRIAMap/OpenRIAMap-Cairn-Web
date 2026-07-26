@@ -5,6 +5,7 @@
     { "area": "relay-package", "owner": "downstream", "reason": "RIA RelayPackage protocol and status sidecars" },
     { "area": "temporary-layers", "owner": "downstream", "reason": "RIA local storage protocol" },
     { "area": "workflow-adapter", "owner": "downstream", "reason": "RIA authorization and operation binding" },
+    { "area": "submission-control", "owner": "downstream", "reason": "RIA revision storage, authorization, and release transport" },
     { "area": "runtime-profile", "owner": "downstream", "reason": "RIA deployment and data-source configuration" }
   ]
 }
