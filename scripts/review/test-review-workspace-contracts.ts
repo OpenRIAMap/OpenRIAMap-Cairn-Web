@@ -1,4 +1,4 @@
-import { canTransitionReviewWorkflow, createReviewWorkflowIdempotencyKey, createReviewWorkspaceAdapterRegistry, emptyReviewWorkspaceSession, loadReviewWorkspaceSession, markReviewWorkspaceDirty, recordReviewWorkspaceIntent, targetStateForReviewIntent, type TemporaryLayerPort } from '../../src/components/Review';
+import { canTransitionReviewSubmission, canTransitionReviewWorkflow, createReviewSubmissionIdempotencyKey, createReviewWorkflowIdempotencyKey, createReviewWorkspaceAdapterRegistry, emptyReviewWorkspaceSession, hasExpectedReviewSubmissionStateVersion, isReviewSubmissionActionAllowed, loadReviewWorkspaceSession, markReviewWorkspaceDirty, recordReviewWorkspaceIntent, targetStateForReviewIntent, type TemporaryLayerPort } from '../../src/components/Review';
 
 const layers: TemporaryLayerPort = { mount() {}, clear() {} };
 const registry = createReviewWorkspaceAdapterRegistry();
@@ -12,4 +12,8 @@ if (emptyReviewWorkspaceSession().package !== null) throw new Error('empty sessi
 if (!canTransitionReviewWorkflow('precheck-passed', 'awaiting-approval') || canTransitionReviewWorkflow('draft', 'completed')) throw new Error('workflow transition guard failed');
 if (targetStateForReviewIntent('approve') !== 'awaiting-approval') throw new Error('intent target failed');
 if (createReviewWorkflowIdempotencyKey({ packageId: 'relay-1', intent: 'submit', correlationId: 'c-1' }) !== 'relay-1:submit:c-1') throw new Error('idempotency key failed');
+if (!canTransitionReviewSubmission('pending', 'approved') || canTransitionReviewSubmission('mirrored', 'pending')) throw new Error('submission transition guard failed');
+if (!isReviewSubmissionActionAllowed('pending', 'save') || isReviewSubmissionActionAllowed('approved', 'save')) throw new Error('submission action guard failed');
+if (!hasExpectedReviewSubmissionStateVersion(4, 4) || hasExpectedReviewSubmissionStateVersion(4, 5)) throw new Error('state version guard failed');
+if (createReviewSubmissionIdempotencyKey({ submissionId: 'submission-1', targetRevisionId: 'submission-1-r2', action: 'approve', correlationId: 'c-1' }) !== 'submission-1:submission-1-r2:approve:c-1') throw new Error('submission idempotency key failed');
 console.log('Review workspace contract test: PASS');

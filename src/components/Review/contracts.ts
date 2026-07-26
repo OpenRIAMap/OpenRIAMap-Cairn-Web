@@ -19,6 +19,112 @@ export type ReviewIntentKind =
   | 'status-refresh'
   | 'report-refresh';
 
+/**
+ * Submission actions are provider-neutral formal-review semantics. They do not
+ * grant deployment authority and do not prescribe a UI or transport.
+ */
+export type ReviewSubmissionActionKind =
+  | 'save'
+  | 'precheck'
+  | 'approve'
+  | 'reject'
+  | 'request-changes'
+  | 'reopen'
+  | 'publish'
+  | 'archive'
+  | 'refresh';
+
+/**
+ * State belongs to a logical submission, while every mutation records the
+ * exact revision that it targeted. This prevents a newer edited revision from
+ * inheriting a decision made for an older revision.
+ */
+export type ReviewSubmissionState =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'queued'
+  | 'running'
+  | 'released'
+  | 'mirror-pending'
+  | 'mirrored'
+  | 'failed'
+  | 'archived';
+
+export type ReviewRevisionTag =
+  | 'submitted'
+  | 'reviewer-modified'
+  | 'selected'
+  | 'approved-target'
+  | 'rejected-target'
+  | 'superseded';
+
+export type ReviewPackageRevision = {
+  revisionId: string;
+  package: ReviewPackageReference;
+  contentHash: string;
+  byteLength: number;
+  createdAt: string;
+  createdBy: string;
+  basedOnRevisionId?: string;
+  tags: ReviewRevisionTag[];
+  summary?: string;
+};
+
+export type ReviewSubmissionEvent = {
+  eventId: string;
+  action: ReviewSubmissionActionKind;
+  targetRevisionId: string;
+  from: ReviewSubmissionState;
+  to: ReviewSubmissionState;
+  occurredAt: string;
+  actor: ReviewAuthorizationContext;
+  reason?: string;
+};
+
+export type ReviewSubmissionSnapshot = {
+  submissionId: string;
+  packageName: string;
+  state: ReviewSubmissionState;
+  /** Incremented by every package-level event and required by mutations. */
+  stateVersion: number;
+  currentRevisionId: string;
+  displayRevisionId: string;
+  revisions: ReviewPackageRevision[];
+  lastEvent: ReviewSubmissionEvent | null;
+  allowedActions: ReviewSubmissionActionKind[];
+};
+
+export type ReviewSubmissionRequest = {
+  requestId: string;
+  correlationId: string;
+  idempotencyKey: string;
+  submissionId: string;
+  targetRevisionId: string;
+  expectedStateVersion: number;
+  action: ReviewSubmissionActionKind;
+  occurredAt: string;
+  actor: ReviewAuthorizationContext;
+  reason?: string;
+};
+
+export type ReviewSubmissionResult = {
+  requestId: string;
+  correlationId: string;
+  submission: ReviewSubmissionSnapshot;
+  auditEvent?: ReviewSubmissionEvent;
+  reportReference?: string;
+};
+
+export type ReviewReleaseFeedItem = {
+  releaseId: string;
+  occurredAt: string;
+  datasets: string[];
+  approvedBy: string[];
+  state: Extract<ReviewSubmissionState, 'released' | 'mirror-pending' | 'mirrored' | 'failed'>;
+  rejectedSincePreviousRelease: Array<Pick<ReviewSubmissionEvent, 'targetRevisionId' | 'occurredAt' | 'actor' | 'reason'>>;
+};
+
 export type ReviewWorkflowState =
   | 'draft'
   | 'submitted'
@@ -121,6 +227,14 @@ export interface ReviewWorkflowTransport {
 export interface ReviewWorkflowAdapter {
   loadInbox?(): Promise<ReviewPackageReference[]>;
   submitIntent?(request: ReviewWorkflowRequest): Promise<ReviewWorkflowResult>;
+}
+
+/** Application-owned implementation of the submission review seam. */
+export interface ReviewSubmissionAdapter {
+  getSubmission(submissionId: string, actor: ReviewAuthorizationContext): Promise<ReviewSubmissionSnapshot>;
+  listSubmissions?(actor: ReviewAuthorizationContext): Promise<ReviewSubmissionSnapshot[]>;
+  dispatchSubmission(request: ReviewSubmissionRequest): Promise<ReviewSubmissionResult>;
+  getReleaseFeed?(actor: ReviewAuthorizationContext, limit?: number): Promise<ReviewReleaseFeedItem[]>;
 }
 
 export interface ReviewWorkspaceHostPort {
