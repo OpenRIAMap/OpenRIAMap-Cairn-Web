@@ -9,3 +9,4 @@ export * from './session';
 export * from './adapterRegistry';
 export * from './workflow';
 export * from './riaReviewWorkflowAdapter';
+export * from './submission';
