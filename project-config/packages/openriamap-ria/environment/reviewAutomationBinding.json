@@ -24,7 +24,7 @@
     },
     "roles": {
       "contributor": ["submit", "status-refresh", "report-refresh"],
-      "reviewer": ["precheck", "approve", "reject", "request-changes", "archive"],
+      "reviewer": ["precheck", "approve", "reject", "request-changes", "reopen", "publish", "archive"],
       "maintainer": ["inherits-reviewer", "repository-maintenance"]
     },
     "separationOfDuties": { "acceptRequiresIndependentApprover": false, "acceptRequiresReviewerOrMaintainer": true, "productionApplyRequiresControlApproval": true },
@@ -33,7 +33,17 @@
   "targets": {
     "repositories": { "control": "OpenRIAMap/OpenRIAMap-Cairn-Control", "data": "OpenRIAMap/OpenRIAMap-Cairn-Data" },
     "buckets": { "review": "COS_REVIEW_BUCKET", "control": "COS_CONTROL_BUCKET", "data": "COS_DATA_BUCKET", "media": "COS_MEDIA_BUCKET" },
-    "prefixes": { "reviewPackages": "RelayPackages/", "controlJobs": "review/jobs/", "controlEvents": "review/events/", "dataReleases": "releases/" },
+    "prefixes": {
+      "reviewPackages": "RelayPackages/",
+      "reviewSubmissions": "RelayPackages/submissions/",
+      "reviewerWorkspaces": "ReviewerWorkspaces/",
+      "rejectedPackages": "Rejected/",
+      "controlJobs": "review/jobs/",
+      "controlEvents": "review/events/",
+      "controlSubmissionStates": "review/review-submissions/",
+      "controlActorAudit": "review/review-actors/",
+      "dataReleases": "releases/"
+    },
     "runtime": { "deploymentMode": "scf-nodejs-zip", "region": "ap-shanghai", "dispatcher": "cairn-pipeline-dispatcher", "worker": "cairn-pipeline-worker", "mirrorWorker": "cairn-github-mirror-worker", "environmentAlias": "staging" }
   },
   "relay": { "workflowConfig": "project-config/packages/openriamap-ria/environment/relayReviewWorkflow.json", "statusFile": "review-status.json", "reportDirectory": "reports" },
