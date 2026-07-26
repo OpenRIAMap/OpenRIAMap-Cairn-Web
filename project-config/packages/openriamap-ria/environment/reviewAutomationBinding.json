@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "openriamap.ria-review-automation-binding.v2",
+  "schemaVersion": "openriamap.ria-review-automation-binding.v3",
   "runtimeProfile": "openriamap-ria",
   "enabled": false,
   "broker": {
@@ -8,6 +8,7 @@
     "oauthClientSecretEnvironmentVariable": "CAIRN_GITHUB_OAUTH_CLIENT_SECRET",
     "oauthRedirectUriEnvironmentVariable": "CAIRN_GITHUB_OAUTH_REDIRECT_URI",
     "dispatcherPath": "/v1/review-intents",
+    "submissionControlPath": "/api/review-control",
     "sessionSigningSecretEnvironmentVariable": "CAIRN_SESSION_SIGNING_SECRET",
     "dispatcherSigningSecretEnvironmentVariable": "CAIRN_BROKER_TO_DISPATCHER_SECRET"
   },
@@ -37,5 +38,10 @@
   },
   "relay": { "workflowConfig": "project-config/packages/openriamap-ria/environment/relayReviewWorkflow.json", "statusFile": "review-status.json", "reportDirectory": "reports" },
   "scriptEntrypoints": { "precheck": "npm run action:native-relay-precheck", "accept": "npm run action:native-relay-accept", "status": "npm run validate:relay-review-status", "report": "npm run sync:relay-review-report" },
-  "intents": ["submit", "precheck", "approve", "reject", "request-changes", "archive", "status-refresh", "report-refresh"]
+  "intents": ["submit", "precheck", "approve", "reject", "request-changes", "archive", "status-refresh", "report-refresh"],
+  "submissionControl": {
+    "operations": ["detail", "list", "revision-upload-request", "revision-upload-complete", "save", "precheck", "approve", "reject", "request-changes", "reopen", "save-and-approve", "publish", "status", "report", "release-feed", "archive"],
+    "browserDirectAccessForbidden": ["private-cos", "github-write", "scf-worker"],
+    "uiBindingIncluded": false
+  }
 }
