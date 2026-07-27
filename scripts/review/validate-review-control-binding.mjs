@@ -9,6 +9,7 @@ const relay = JSON.parse(fs.readFileSync(relayPath, 'utf8'));
 const expected = ['submit', 'precheck', 'approve', 'reject', 'request-changes', 'archive', 'status-refresh', 'report-refresh'];
 const errors = [];
 if (binding.enabled !== false) errors.push('automation must remain disabled until staged cloud approval');
+if (binding.stagingActivation?.enabledEnvironmentVariable !== 'CAIRN_REVIEW_AUTOMATION_ENABLED' || binding.stagingActivation?.stageEnvironmentVariable !== 'CAIRN_REVIEW_AUTOMATION_STAGE' || binding.stagingActivation?.requiredStageValue !== 'staging' || binding.stagingActivation?.productionActivationIncluded !== false) errors.push('staging-only broker activation contract missing');
 if (binding.runtimeProfile !== 'openriamap-ria') errors.push('binding must remain downstream-only');
 if (JSON.stringify([...binding.intents].sort()) !== JSON.stringify([...expected].sort())) errors.push('intent list mismatch');
 if (binding.schemaVersion !== 'openriamap.ria-review-automation-binding.v3') errors.push('three-role binding v3 is required');

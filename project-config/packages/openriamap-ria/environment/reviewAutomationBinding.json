@@ -2,6 +2,12 @@
   "schemaVersion": "openriamap.ria-review-automation-binding.v3",
   "runtimeProfile": "openriamap-ria",
   "enabled": false,
+  "stagingActivation": {
+    "enabledEnvironmentVariable": "CAIRN_REVIEW_AUTOMATION_ENABLED",
+    "stageEnvironmentVariable": "CAIRN_REVIEW_AUTOMATION_STAGE",
+    "requiredStageValue": "staging",
+    "productionActivationIncluded": false
+  },
   "broker": {
     "controlApiBaseEnvironmentVariable": "CAIRN_CONTROL_API_BASE",
     "oauthClientIdEnvironmentVariable": "CAIRN_GITHUB_OAUTH_CLIENT_ID",

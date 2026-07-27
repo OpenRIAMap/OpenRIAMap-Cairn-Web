@@ -4,11 +4,13 @@ import handler from '../../api/review-workflow.mjs';
 
 const previous = {
   enabled: process.env.CAIRN_REVIEW_AUTOMATION_ENABLED,
+  stage: process.env.CAIRN_REVIEW_AUTOMATION_STAGE,
   base: process.env.CAIRN_CONTROL_API_BASE,
   session: process.env.CAIRN_SESSION_SIGNING_SECRET,
   dispatcher: process.env.CAIRN_BROKER_TO_DISPATCHER_SECRET,
 };
 process.env.CAIRN_REVIEW_AUTOMATION_ENABLED = 'true';
+process.env.CAIRN_REVIEW_AUTOMATION_STAGE = 'staging';
 process.env.CAIRN_CONTROL_API_BASE = 'https://dispatcher.example';
 process.env.CAIRN_SESSION_SIGNING_SECRET = 'session-test-secret';
 process.env.CAIRN_BROKER_TO_DISPATCHER_SECRET = 'dispatcher-test-secret';
@@ -38,7 +40,7 @@ try {
 } finally {
   globalThis.fetch = originalFetch;
   for (const [key, value] of Object.entries(previous)) {
-    const environmentKey = key === 'enabled' ? 'CAIRN_REVIEW_AUTOMATION_ENABLED' : key === 'base' ? 'CAIRN_CONTROL_API_BASE' : key === 'session' ? 'CAIRN_SESSION_SIGNING_SECRET' : 'CAIRN_BROKER_TO_DISPATCHER_SECRET';
+    const environmentKey = key === 'enabled' ? 'CAIRN_REVIEW_AUTOMATION_ENABLED' : key === 'stage' ? 'CAIRN_REVIEW_AUTOMATION_STAGE' : key === 'base' ? 'CAIRN_CONTROL_API_BASE' : key === 'session' ? 'CAIRN_SESSION_SIGNING_SECRET' : 'CAIRN_BROKER_TO_DISPATCHER_SECRET';
     if (value === undefined) delete process.env[environmentKey]; else process.env[environmentKey] = value;
   }
 }
