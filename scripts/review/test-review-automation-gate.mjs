@@ -12,12 +12,17 @@ function response() {
 
 assert.equal(reviewAutomationEnabled({}), false);
 assert.equal(reviewAutomationEnabled({ CAIRN_REVIEW_AUTOMATION_ENABLED: 'false' }), false);
-assert.equal(reviewAutomationEnabled({ CAIRN_REVIEW_AUTOMATION_ENABLED: 'true' }), true);
+assert.equal(reviewAutomationEnabled({ CAIRN_REVIEW_AUTOMATION_ENABLED: 'true' }), false);
+assert.equal(reviewAutomationEnabled({ CAIRN_REVIEW_AUTOMATION_ENABLED: 'true', CAIRN_REVIEW_AUTOMATION_STAGE: 'production' }), false);
+assert.equal(reviewAutomationEnabled({ CAIRN_REVIEW_AUTOMATION_ENABLED: 'true', CAIRN_REVIEW_AUTOMATION_STAGE: 'staging' }), true);
 const blocked = response();
 assert.equal(requireReviewAutomation(blocked, {}), false);
 assert.equal(blocked.statusCode, 503);
 assert.deepEqual(blocked.payload, { error: 'review-automation-disabled' });
+const stageBlocked = response();
+assert.equal(requireReviewAutomation(stageBlocked, { CAIRN_REVIEW_AUTOMATION_ENABLED: 'true' }), false);
+assert.deepEqual(stageBlocked.payload, { error: 'review-automation-staging-required' });
 const allowed = response();
-assert.equal(requireReviewAutomation(allowed, { CAIRN_REVIEW_AUTOMATION_ENABLED: 'true' }), true);
+assert.equal(requireReviewAutomation(allowed, { CAIRN_REVIEW_AUTOMATION_ENABLED: 'true', CAIRN_REVIEW_AUTOMATION_STAGE: 'staging' }), true);
 assert.equal(allowed.statusCode, null);
 console.log('Review automation gate: PASS');
