@@ -30,7 +30,7 @@
     },
     "roles": {
       "contributor": ["submit", "status-refresh", "report-refresh"],
-      "reviewer": ["precheck", "approve", "reject", "request-changes", "reopen", "publish", "archive"],
+      "reviewer": ["precheck", "approve", "reject", "request-changes", "reopen", "publish-precheck", "publish-confirm", "archive"],
       "maintainer": ["inherits-reviewer", "repository-maintenance"]
     },
     "separationOfDuties": { "acceptRequiresIndependentApprover": false, "acceptRequiresReviewerOrMaintainer": true, "productionApplyRequiresControlApproval": true },
@@ -56,7 +56,7 @@
   "scriptEntrypoints": { "precheck": "npm run action:native-relay-precheck", "accept": "npm run action:native-relay-accept", "status": "npm run validate:relay-review-status", "report": "npm run sync:relay-review-report" },
   "intents": ["submit", "precheck", "approve", "reject", "request-changes", "archive", "status-refresh", "report-refresh"],
   "submissionControl": {
-    "operations": ["detail", "list", "revision-upload-request", "revision-upload-complete", "save", "precheck", "approve", "reject", "request-changes", "reopen", "save-and-approve", "publish", "status", "report", "release-feed", "archive"],
+    "operations": ["detail", "list", "revision-upload-request", "revision-upload-complete", "save", "precheck", "approve", "reject", "request-changes", "reopen", "save-and-approve", "publish", "publish-precheck", "publish-confirm", "status", "report", "release-feed", "release-gate", "archive"],
     "browserDirectAccessForbidden": ["private-cos", "github-write", "scf-worker"],
     "uiBindingIncluded": false
   }

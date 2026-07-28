@@ -21,7 +21,7 @@ if (binding.authorization.separationOfDuties.productionApplyRequiresControlAppro
 if (Object.values(binding.targets.buckets).some((value) => !/^[A-Z0-9_]+$/.test(value))) errors.push('bucket references must be environment variable names');
 if (binding.broker.controlApiBaseEnvironmentVariable !== 'CAIRN_CONTROL_API_BASE') errors.push('broker endpoint must be supplied by environment');
 if (binding.broker.submissionControlPath !== '/api/review-control') errors.push('submission control route missing');
-const expectedSubmissionOperations = ['detail', 'list', 'revision-upload-request', 'revision-upload-complete', 'save', 'precheck', 'approve', 'reject', 'request-changes', 'reopen', 'save-and-approve', 'publish', 'status', 'report', 'release-feed', 'archive'];
+const expectedSubmissionOperations = ['detail', 'list', 'revision-upload-request', 'revision-upload-complete', 'save', 'precheck', 'approve', 'reject', 'request-changes', 'reopen', 'save-and-approve', 'publish', 'publish-precheck', 'publish-confirm', 'status', 'report', 'release-feed', 'release-gate', 'archive'];
 if (JSON.stringify(binding.submissionControl?.operations ?? []) !== JSON.stringify(expectedSubmissionOperations)) errors.push('submission control operation list mismatch');
 if (binding.submissionControl?.uiBindingIncluded !== false) errors.push('submission control must remain unbound');
 if (JSON.stringify(binding).includes('CAIRN_REVIEW_ROLE_BINDINGS_JSON')) errors.push('static Vercel role binding variable is forbidden');

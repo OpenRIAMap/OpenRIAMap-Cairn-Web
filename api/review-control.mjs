@@ -4,12 +4,12 @@ import { signDispatcherRequest, verifySession } from './review-relay-transfer.mj
 const operations = new Set([
   'detail', 'list', 'revision-upload-request', 'revision-upload-complete', 'save',
   'precheck', 'approve', 'reject', 'request-changes', 'reopen', 'save-and-approve',
-  'publish', 'status', 'report', 'release-feed', 'archive',
+  'publish', 'publish-precheck', 'publish-confirm', 'status', 'report', 'release-feed', 'release-gate', 'archive',
 ]);
 
 const versionedOperations = new Set([
   'revision-upload-request', 'revision-upload-complete', 'save', 'precheck', 'approve',
-  'reject', 'request-changes', 'reopen', 'save-and-approve', 'publish', 'archive',
+  'reject', 'request-changes', 'reopen', 'save-and-approve', 'publish', 'publish-precheck', 'publish-confirm', 'archive',
 ]);
 
 function parseCookies(value = '') {
@@ -26,6 +26,11 @@ function runtimeConfig(environment = process.env) {
 
 function requireString(value, code) {
   if (typeof value !== 'string' || !value.trim()) throw new Error(code);
+  return value;
+}
+
+function requireSha256(value, code) {
+  if (typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value)) throw new Error(code);
   return value;
 }
 
@@ -49,7 +54,19 @@ export function normalizeReviewControlRequest(input, actor) {
   if (operation === 'detail') return { operation, submissionId: requireString(input.submissionId, 'invalid-review-submission-id'), actor };
   if (operation === 'list') return { operation, limit: input.limit ?? 50, actor };
   if (operation === 'release-feed') return { operation, limit: input.limit ?? 10, actor };
+  if (operation === 'release-gate') return { operation, actor };
   if (operation === 'status' || operation === 'report') return { operation, submissionId: requireString(input.submissionId, 'invalid-review-submission-id'), actor };
+  if (operation === 'publish-confirm') {
+    if (!Number.isSafeInteger(input.expectedGateVersion) || input.expectedGateVersion < 1) throw new Error('invalid-review-release-confirmation');
+    return {
+      operation,
+      request: requireRequest(input.request, { versioned: true }),
+      attemptId: requireString(input.attemptId, 'invalid-review-release-confirmation'),
+      expectedGateVersion: input.expectedGateVersion,
+      precheckReportSha256: requireSha256(input.precheckReportSha256, 'invalid-review-release-confirmation'),
+      actor,
+    };
+  }
   return { operation, request: requireRequest(input.request, { versioned: versionedOperations.has(operation) }), actor };
 }
 
