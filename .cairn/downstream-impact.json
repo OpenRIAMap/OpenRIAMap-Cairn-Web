@@ -1,8 +1,8 @@
 {
   "schemaVersion": "cairnmap.downstream-impact.v1",
-  "contractVersion": "review-workflow.v2",
+  "contractVersion": "review-workflow.v3",
   "compatibility": "additive",
-  "requiredAdapters": ["review-workflow", "review-submission-control"],
-  "requiredValidation": ["workflow-state-machine", "submission-state-machine", "state-version-conflict", "adapter-transport", "local-status-isolation"],
-  "migration": "Register an application-owned submission-control adapter before binding package save, decision, publish, or release-feed actions."
+  "requiredAdapters": ["review-workflow", "review-submission-control", "review-release-preflight"],
+  "requiredValidation": ["workflow-state-machine", "submission-state-machine", "state-version-conflict", "release-preflight", "release-gate", "adapter-transport", "local-status-isolation"],
+  "migration": "Register an application-owned release snapshot/preflight adapter before binding package precheck, warning confirmation, or publish actions. The application must treat the browser result as advisory and repeat the same preflight against a trusted current snapshot."
 }
