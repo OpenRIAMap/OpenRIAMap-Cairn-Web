@@ -142,7 +142,7 @@ export function preflightReviewRelease(request: ReviewReleasePreflightRequest): 
   };
 }
 
-/** Stable serialisation for adapter-owned report hashing and Control binding. */
+/** Stable serialisation for adapter-owned report hashing and confirmation binding. */
 export function serializeReviewReleasePreflightReport(report: ReviewReleasePreflightReport): string {
   return JSON.stringify({
     schemaVersion: report.schemaVersion,

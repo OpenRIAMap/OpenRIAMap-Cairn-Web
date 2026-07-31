@@ -6,7 +6,7 @@ import process from 'node:process';
 
 const root = process.cwd();
 const required = [
-  'src/components/Review/contracts.ts', 'src/components/Review/session.ts', 'src/components/Review/adapterRegistry.ts', 'src/components/Review/index.ts', 'src/components/Review/submission.ts',
+  'src/components/Review/contracts.ts', 'src/components/Review/session.ts', 'src/components/Review/adapterRegistry.ts', 'src/components/Review/index.ts', 'src/components/Review/submission.ts', 'src/components/Review/releasePreflight.ts',
   'project-config/schemas/review/cairnmap.review-workspace-extension.v1.schema.json',
   'project-config/templates/review/reviewWorkspace.extension.template.json', '.cairn/case-template-manifest.json', '.cairn/downstream-impact.json',
 ];
@@ -16,7 +16,7 @@ for (const file of required.filter((file) => file.startsWith('src/'))) {
   if (forbidden.test(fs.readFileSync(path.join(root, file), 'utf8'))) errors.push(`${file} contains a downstream or deployment dependency`);
 }
 const changed = childProcess.execFileSync('git', ['diff', '--name-only', 'upstream/main...HEAD'], { cwd: root, encoding: 'utf8' }).split(/\r?\n/).filter(Boolean);
-const allowed = new Set([...required, 'src/components/Review/workflow.ts', 'docs/ReviewWorkspaceContracts.md', 'scripts/review/validate-review-contract-boundary.mjs', 'scripts/review/validate-case-template-manifest.mjs', 'scripts/review/test-review-workspace-contracts.ts', 'Update_Log/CM_REVIEW_WORKFLOW_CONTRACTS_1.md', 'Update_Log/CM_REVIEW_WORKFLOW_CONTROL_CONTRACTS_1.md', 'Update_Log/CM_REVIEW_SUBMISSION_CONTRACTS_2.md', 'package.json']);
+const allowed = new Set([...required, 'src/components/Review/workflow.ts', 'docs/ReviewWorkspaceContracts.md', 'docs/REVIEW_RELEASE_PREFLIGHT.md', 'scripts/review/validate-review-contract-boundary.mjs', 'scripts/review/validate-case-template-manifest.mjs', 'scripts/review/test-review-workspace-contracts.ts', 'Update_Log/CM_REVIEW_WORKFLOW_CONTRACTS_1.md', 'Update_Log/CM_REVIEW_WORKFLOW_CONTROL_CONTRACTS_1.md', 'Update_Log/CM_REVIEW_SUBMISSION_CONTRACTS_2.md', 'Update_Log/CM_REVIEW_RELEASE_PREFLIGHT_CORE_1.md', 'package.json']);
 for (const file of changed) if (!allowed.has(file)) errors.push(`baseline-preservation violation: ${file} is outside the contract-only allowlist`);
 if (changed.some((file) => file.endsWith('.tsx') || file === 'src/components/Map/MapContainer.tsx' || file.startsWith('src/components/Mapping/'))) errors.push('baseline-preservation violation: UI or Mapping implementation changed');
 if (errors.length) { console.error('Review contract boundary: FAIL'); errors.forEach((error) => console.error(`- ${error}`)); process.exitCode = 1; }
