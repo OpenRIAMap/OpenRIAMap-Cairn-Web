@@ -1,8 +1,0 @@
-{
-  "schemaVersion": "cairn.upstream-candidate.v1",
-  "baseLockedCommit": "6f64fc587c7577aa51b2594f62a62068b2a46645",
-  "candidateCommit": "4ae5bceeda4ce334ee1c77df27b97e1bde09afea",
-  "contractVersion": "review-workflow.v3",
-  "status": "local-unmerged",
-  "requiredBeforeDownstreamPullRequest": "replace this candidate record with the actual merged upstream commit in upstream.lock.json and compatibility.json"
-}
