@@ -11,3 +11,4 @@ export * from './workflow';
 export * from './riaReviewWorkflowAdapter';
 export * from './submission';
 export * from './riaReviewSubmissionAdapter';
+export * from './releasePreflight';

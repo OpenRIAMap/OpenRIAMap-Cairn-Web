@@ -14,6 +14,13 @@ assert.equal(normalized.actor.principalId, 'alice');
 assert.equal(normalized.request.targetRevisionId, 'submission-1-r2');
 assert.throws(() => normalizeReviewControlRequest({ operation: 'approve', request: { ...request, expectedStateVersion: -1 } }, { principalId: 'alice' }), /invalid-review-control-request/);
 assert.throws(() => normalizeReviewControlRequest({ operation: 'unknown' }, { principalId: 'alice' }), /invalid-review-control-operation/);
+const confirmation = normalizeReviewControlRequest({
+  operation: 'publish-confirm', request,
+  attemptId: 'attempt-demo-001', expectedGateVersion: 2, precheckReportSha256: 'b'.repeat(64),
+}, { principalId: 'alice' });
+assert.equal(confirmation.attemptId, 'attempt-demo-001');
+assert.equal(confirmation.precheckReportSha256, 'b'.repeat(64));
+assert.equal(normalizeReviewControlRequest({ operation: 'release-gate' }, { principalId: 'alice' }).operation, 'release-gate');
 
 let forwarded = null;
 const environment = { CAIRN_CONTROL_API_BASE: 'https://dispatcher.example', CAIRN_SESSION_SIGNING_SECRET: secret, CAIRN_BROKER_TO_DISPATCHER_SECRET: 'broker-test-secret' };

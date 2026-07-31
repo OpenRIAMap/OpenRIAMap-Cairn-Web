@@ -116,6 +116,92 @@ export type ReviewSubmissionResult = {
   reportReference?: string;
 };
 
+/** A provider-neutral current-data snapshot used by release preflight. */
+export type ReviewReleaseFeatureReference = {
+  worldId: string;
+  classCode: string;
+  featureId: string;
+  /** Optional immutable content fingerprint when an exporter can provide one. */
+  contentSha256?: string;
+};
+
+export type ReviewReleaseDeleteReference = {
+  featureId: string;
+  worldId?: string;
+  classCode?: string;
+};
+
+export type ReviewReleaseCandidate = {
+  baseReleaseId?: string;
+  upserts: readonly ReviewReleaseFeatureReference[];
+  deletes: readonly ReviewReleaseDeleteReference[];
+};
+
+export type ReviewReleaseSnapshot = {
+  snapshotId: string;
+  releaseId: string;
+  capturedAt: string;
+  features: readonly ReviewReleaseFeatureReference[];
+};
+
+export type ReviewPreflightFindingCode =
+  | 'PACKAGE_INVALID'
+  | 'UPSERT_DUPLICATE'
+  | 'DELETE_TARGET_MISSING'
+  | 'DELETE_TARGET_AMBIGUOUS'
+  | 'SOURCE_SNAPSHOT_UNAVAILABLE'
+  | 'SUBMISSION_STATE_CHANGED'
+  | 'RELEASE_IN_PROGRESS'
+  | 'BASE_RELEASE_CHANGED'
+  | 'UPSERT_OVERWRITES_CURRENT'
+  | 'DELETE_EXISTING_TARGET'
+  | 'SOURCE_FINGERPRINT_UNAVAILABLE'
+  | 'BATCH_TARGET_OVERLAP'
+  | 'BATCH_DELETE_TARGET_OVERLAP'
+  | 'PRECHECK_STALE';
+
+export type ReviewPreflightFinding = {
+  code: ReviewPreflightFindingCode;
+  severity: 'blocker' | 'warning' | 'info';
+  message: string;
+  target?: ReviewReleaseFeatureReference | ReviewReleaseDeleteReference;
+};
+
+export type ReviewReleasePreflightRequest = {
+  package: { submissionId: string; revisionId: string; sha256: string; byteLength: number };
+  candidate: ReviewReleaseCandidate;
+  snapshot: ReviewReleaseSnapshot;
+  selectedCandidates?: readonly ReviewReleaseCandidate[];
+};
+
+export type ReviewReleasePreflightReport = {
+  schemaVersion: 'cairn.review-release-preflight.v1';
+  decision: 'ready' | 'warning-confirmation-required' | 'blocked' | 'stale';
+  package: ReviewReleasePreflightRequest['package'];
+  source: Pick<ReviewReleaseSnapshot, 'snapshotId' | 'releaseId' | 'capturedAt'>;
+  findings: readonly ReviewPreflightFinding[];
+  summary: { created: number; updated: number; deleted: number; warnings: number; blockers: number };
+};
+
+export type ReviewReleaseGateState =
+  | 'idle'
+  | 'prechecking'
+  | 'awaiting-confirmation'
+  | 'queueing'
+  | 'running'
+  | 'mirroring'
+  | 'completed'
+  | 'rebase-required'
+  | 'infrastructure-failed';
+
+export type ReviewReleaseGateSnapshot = {
+  attemptId: string | null;
+  gateVersion: number;
+  state: ReviewReleaseGateState;
+  acquiredAt?: string;
+  leaseExpiresAt?: string;
+};
+
 export type ReviewReleaseFeedItem = {
   releaseId: string;
   occurredAt: string;
@@ -235,6 +321,16 @@ export interface ReviewSubmissionAdapter {
   listSubmissions?(actor: ReviewAuthorizationContext): Promise<ReviewSubmissionSnapshot[]>;
   dispatchSubmission(request: ReviewSubmissionRequest): Promise<ReviewSubmissionResult>;
   getReleaseFeed?(actor: ReviewAuthorizationContext, limit?: number): Promise<ReviewReleaseFeedItem[]>;
+}
+
+/** The application resolves snapshots and authority; core UI code never does. */
+export interface ReviewReleaseSnapshotProvider {
+  getReleaseSnapshot(actor: ReviewAuthorizationContext): Promise<ReviewReleaseSnapshot>;
+}
+
+export interface ReviewReleasePreflightPort extends ReviewReleaseSnapshotProvider {
+  precheckRelease(request: ReviewReleasePreflightRequest, actor: ReviewAuthorizationContext): Promise<ReviewReleasePreflightReport>;
+  getReleaseGate?(actor: ReviewAuthorizationContext): Promise<ReviewReleaseGateSnapshot>;
 }
 
 export interface ReviewWorkspaceHostPort {

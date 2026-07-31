@@ -1,7 +1,7 @@
 {
   "schemaVersion": "cairn.compatibility.v1",
   "reviewWorkflow": {
-    "contractVersion": "review-workflow.v2",
+    "contractVersion": "review-workflow.v3",
     "supportedIntents": ["submit", "precheck", "approve", "reject", "request-changes", "archive", "status-refresh", "report-refresh"],
     "formalApprovalStates": ["awaiting-approval", "approved", "dispatch-queued", "dispatch-running", "completed"],
     "localStatusIsNotFormalApproval": true,
