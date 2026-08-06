@@ -1,8 +1,8 @@
 {
   "schemaVersion": "cairnmap.downstream-impact.v1",
-  "contractVersion": "review-workflow.v3",
+  "contractVersion": "review-workflow.v3+data-source-selection.v1",
   "compatibility": "additive",
-  "requiredAdapters": ["review-workflow", "review-submission-control", "review-release-preflight"],
-  "requiredValidation": ["workflow-state-machine", "submission-state-machine", "state-version-conflict", "release-preflight", "release-gate", "adapter-transport", "local-status-isolation"],
-  "migration": "Register an application-owned release snapshot/preflight adapter before binding package precheck, warning confirmation, or publish actions. The application must treat the browser result as advisory and repeat the same preflight against a trusted current snapshot."
+  "requiredAdapters": ["review-workflow", "review-submission-control", "review-release-preflight", "data-source-reader"],
+  "requiredValidation": ["workflow-state-machine", "submission-state-machine", "state-version-conflict", "release-preflight", "release-gate", "adapter-transport", "local-status-isolation", "data-source-selection-policy", "data-source-switch-lifecycle", "data-source-failure-recovery"],
+  "migration": "Register an application-owned release snapshot/preflight adapter before binding package precheck, warning confirmation, or publish actions. The application must treat the browser result as advisory and repeat the same preflight against a trusted current snapshot. Register application-owned data-source reader adapters before mounting source selection. The application must keep one source snapshot per load, scope cache keys by source and reader schema version, and never automatically switch a source after a request failure."
 }
