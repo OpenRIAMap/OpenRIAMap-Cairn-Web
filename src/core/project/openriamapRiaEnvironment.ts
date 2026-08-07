@@ -1,5 +1,6 @@
 import type {
   CairnMapDataSourcesConfig,
+  CairnMapFormalDataSourceRuntimeConfig,
   CairnMapRuleButtonsConfig,
   CairnMapWorldsConfig,
   CairnMapSearchProfilesConfig,
@@ -11,6 +12,7 @@ import type {
 
 import sourceLinkModesConfigJson from '../../../project-config/packages/openriamap-ria/environment/sourceLinkModes.json';
 import dataSourcesConfigJson from '../../../project-config/packages/openriamap-ria/environment/dataSources.json';
+import formalDataSourcesConfigJson from '../../../.cairn/formal-data-source-runtime.json';
 import ruleButtonsConfigJson from '../../../project-config/packages/openriamap-ria/environment/ruleButtons.json';
 import searchProfilesConfigJson from '../../../project-config/packages/openriamap-ria/environment/searchProfiles.json';
 import worldsConfigJson from '../../../project-config/packages/openriamap-ria/environment/worlds.json';
@@ -24,6 +26,10 @@ export function getOpenRIAMapSourceLinkModesConfig(): CairnMapSourceLinkModesCon
 
 export function getOpenRIAMapDataSourcesConfig(): CairnMapDataSourcesConfig {
   return dataSourcesConfigJson as CairnMapDataSourcesConfig;
+}
+
+export function getOpenRIAMapFormalDataSourceRuntimeConfig(): CairnMapFormalDataSourceRuntimeConfig {
+  return formalDataSourcesConfigJson as CairnMapFormalDataSourceRuntimeConfig;
 }
 
 export function getOpenRIAMapRuleButtonsConfig(): CairnMapRuleButtonsConfig {

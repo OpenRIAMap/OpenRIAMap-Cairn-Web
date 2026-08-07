@@ -24,6 +24,8 @@ import {
 } from '@/components/Rules/data/worldRuleCache';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
+import DataSourceSelectionSection from './DataSourceSelectionSection';
+import { getRuleDataSourceSelectionController, getRuleDataSourceSelectionPolicy } from '@/components/Rules/data/formalDataSourceRuntime';
 import {
   getCurrentSourceLinkModeId,
   getDefaultSourceLinkModeId,
@@ -59,6 +61,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const { startLoading, updateStage, isLoading, activeFlowId, activeRuleWorldId } = useLoadingStore();
   const datasets = useRuleDataStore((s) => s.datasets);
   const refreshWorlds = useRuleDataStore((s) => s.refreshWorlds);
+  const dataSource = useRuleDataStore((s) => s.dataSource);
+  const dataSourceApplying = useRuleDataStore((s) => s.dataSourceApplying);
+  const applyDataSource = useRuleDataStore((s) => s.applyDataSource);
 
   const [isRefreshingRules, setIsRefreshingRules] = useState(false);
   const [isRefreshingLegacy, setIsRefreshingLegacy] = useState(false);
@@ -80,6 +85,10 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const [sourceLinkModeDraft, setSourceLinkModeDraft] = useState(() => getCurrentSourceLinkModeId());
   const [sourceLinkModeApplied, setSourceLinkModeApplied] = useState(() => getCurrentSourceLinkModeId());
   const [sourceLinkModeStatus, setSourceLinkModeStatus] = useState<string>('');
+  const dataSourceController = getRuleDataSourceSelectionController();
+  const dataSourcePolicy = getRuleDataSourceSelectionPolicy();
+  const [dataSourceDraft, setDataSourceDraft] = useState(() => dataSource.sourceId);
+  const [dataSourceStatus, setDataSourceStatus] = useState<{ tone: 'success' | 'error' | 'info'; text: string } | null>(null);
 
   const anyRefreshBusy = isRefreshingRules || isRefreshingLegacy || isSyncingRules;
   const rulesRefreshBlocked = anyRefreshBusy || (isLoading && !!activeRuleWorldId);
@@ -90,6 +99,10 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     setSourceLinkModeDraft(current);
     setSourceLinkModeApplied(current);
   }, []);
+
+  useEffect(() => {
+    setDataSourceDraft(dataSource.sourceId);
+  }, [dataSource.sourceId]);
 
   useEffect(() => {
     if (!sourceLinkModeStatus) return;
@@ -106,6 +119,16 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     setSourceLinkModeStatus(changed ? '已应用，后续新数据获取将使用该模式' : '当前已是该模式');
   };
 
+  const handleApplyDataSource = async () => {
+    setDataSourceStatus({ tone: 'info', text: '正在应用并重新读取当前世界数据…' });
+    try {
+      await applyDataSource(dataSourceDraft, 'settings');
+      setDataSourceStatus({ tone: 'success', text: '已应用，当前世界数据已按所选来源重新读取。' });
+    } catch {
+      setDataSourceStatus({ tone: 'error', text: '读取失败。请在提示窗口中选择来源并明确重试。' });
+    }
+  };
+
 
   const buildRuleWorldRow = (worldId: string, remoteVersion: string, remoteOk: boolean): RuleWorldRow => {
     const meta = readRuleWorldMeta(worldId);
@@ -116,7 +139,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
       name: RULE_WORLDS.find((item) => item.id === worldId)?.name ?? worldId,
       remoteVersion,
       remoteOk,
-      localVersion: meta ? String(meta.mergeVersion) : null,
+      localVersion: meta ? String(meta.releaseId) : null,
       cachedAt: meta?.cachedAt ?? null,
       featureCount: loadedFeatureCount ?? getRuleWorldFeatureCount(worldId),
       isLoaded: !!loadedDataset,
@@ -456,6 +479,22 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               <div className="text-[11px] text-green-600">{sourceLinkModeStatus}</div>
             ) : null}
           </div>
+
+          <DataSourceSelectionSection
+            sources={dataSourceController.getSources()}
+            policy={dataSourcePolicy}
+            draftSourceId={dataSourceDraft}
+            appliedSourceId={dataSource.sourceId}
+            isApplying={dataSourceApplying}
+            status={dataSourceStatus}
+            onDraftSourceIdChange={setDataSourceDraft}
+            onApply={() => { void handleApplyDataSource(); }}
+            title="运行数据读取来源"
+            applyLabel="应用"
+            appliedLabel="当前已应用"
+            defaultSuffix="（默认）"
+            hint="切换后会清除仅依赖当前运行数据源的缓存，并重新读取当前世界；读取失败不会自动改用其他来源。"
+          />
 
           <div className="flex gap-2">
             <AppButton

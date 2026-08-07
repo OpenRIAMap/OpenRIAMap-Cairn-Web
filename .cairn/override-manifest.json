@@ -6,6 +6,7 @@
     { "area": "temporary-layers", "owner": "downstream", "reason": "RIA local storage protocol" },
     { "area": "workflow-adapter", "owner": "downstream", "reason": "RIA authorization and operation binding" },
     { "area": "submission-control", "owner": "downstream", "reason": "RIA revision storage, authorization, and release transport" },
-    { "area": "runtime-profile", "owner": "downstream", "reason": "RIA deployment and data-source configuration" }
+    { "area": "runtime-profile", "owner": "downstream", "reason": "RIA deployment and data-source configuration" },
+    { "area": "formal-data-source-runtime", "owner": "downstream", "reason": "RIA formal COS/GitHub reader bindings and legacy compatibility endpoint" }
   ]
 }

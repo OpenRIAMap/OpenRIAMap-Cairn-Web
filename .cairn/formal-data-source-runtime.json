@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "openriamap.formal-data-source-runtime.v1",
+  "projectId": "openriamap-ria",
+  "selection": {
+    "schemaVersion": "cairnmap.data-source-selection.v1",
+    "storageKey": "openriamap_formal_data_source_v1",
+    "sources": [
+      { "id": "formal-cos", "label": "正式数据源（COS）", "readerKind": "formal-release-v2", "enabled": true, "selectable": true },
+      { "id": "formal-github", "label": "正式数据源（GitHub 镜像）", "readerKind": "formal-release-v2", "enabled": true, "selectable": true },
+      { "id": "legacy-github", "label": "兼容数据源（GitHub Raw）", "readerKind": "legacy-merge-v1", "enabled": true, "selectable": true }
+    ],
+    "policy": {
+      "defaultSourceId": "formal-cos",
+      "selectionMode": "user-select",
+      "requireExplicitApply": true,
+      "automaticFallback": false,
+      "clearCacheOnApply": "source-dependent",
+      "retryOnFailure": true
+    }
+  },
+  "bindings": [
+    {
+      "id": "formal-cos",
+      "readerKind": "formal-release-v2",
+      "readerSchemaVersion": "openriamap.formal-release-reader.v2",
+      "rootUrl": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com"
+    },
+    {
+      "id": "formal-github",
+      "readerKind": "formal-release-v2",
+      "readerSchemaVersion": "openriamap.formal-release-reader.v2",
+      "rootUrl": "https://raw.githubusercontent.com/OpenRIAMap/OpenRIAMap-Cairn-Data/main"
+    },
+    {
+      "id": "legacy-github",
+      "readerKind": "legacy-merge-v1",
+      "readerSchemaVersion": "openriamap.legacy-merge-reader.v1",
+      "rootUrl": "https://raw.githubusercontent.com/OpenRIAMap/OpenRIAMap-Data/main"
+    }
+  ]
+}

@@ -25,6 +25,9 @@ export type TradeImageSourceDef = {
 export type RuleWorldDataset = {
   worldId: string;
   mergeVersion: number | string;
+  releaseId?: string;
+  sourceId?: string;
+  readerSchemaVersion?: string;
   loadedAt: number;
   features: Record<string, unknown>[];
 };

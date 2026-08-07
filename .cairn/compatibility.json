@@ -14,5 +14,14 @@
     "browserControlRoute": "/api/review-control",
     "uiBindingIncluded": false
   },
-  "requiredChecks": ["validate:review-control-binding", "test:review-control-binding", "test:review-control-port", "validate:team-review-authorization", "validate:relay-review-status", "validate:native-relay-accept-guards"]
+  "dataSourceSelection": {
+    "contractVersion": "cairnmap.data-source-selection.v1",
+    "runtimeConfig": ".cairn/formal-data-source-runtime.json",
+    "formalReaderSchemaVersion": "openriamap.formal-release-reader.v2",
+    "defaultSourceId": "formal-cos",
+    "automaticFallback": false,
+    "cacheScope": ["sourceId", "releaseId", "worldId", "readerSchemaVersion"],
+    "legacySourceLinkModeRemainsSeparate": true
+  },
+  "requiredChecks": ["validate:review-control-binding", "test:review-control-binding", "test:review-control-port", "validate:team-review-authorization", "validate:relay-review-status", "validate:native-relay-accept-guards", "test:data-source-selection", "test:formal-release-reader", "validate:formal-data-source-runtime"]
 }
