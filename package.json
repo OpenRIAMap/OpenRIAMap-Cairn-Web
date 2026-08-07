@@ -60,7 +60,8 @@
     "validate:team-review-authorization": "node ./scripts/review/validate-team-review-authorization.mjs",
     "validate:upstream-contract-import": "node ./scripts/review/validate-upstream-contract-import.mjs",
     "validate:case-template": "node ./scripts/review/validate-case-template-manifest.mjs",
-    "test:review-workspace-contracts": "tsx ./scripts/review/test-review-workspace-contracts.ts"
+    "test:review-workspace-contracts": "tsx ./scripts/review/test-review-workspace-contracts.ts",
+    "test:data-source-selection": "tsx ./scripts/data-source/test-data-source-selection.ts"
   },
   "dependencies": {
     "jszip": "^3.10.1",
