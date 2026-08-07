@@ -2,6 +2,7 @@ import MapContainer from './components/Map/MapContainer'
 import PWAInstallPrompt from './components/PWAInstallPrompt/PWAInstallPrompt'
 import FeatureModuleLoadDialog from './components/Common/FeatureModuleLoadDialog'
 import FeatureModuleLoadingOverlay from './components/Common/FeatureModuleLoadingOverlay'
+import DataSourceRecoveryHost from './components/Settings/DataSourceRecoveryHost'
 import { useEffect } from 'react'
 import { useFeatureModuleStore } from './store/featureModuleStore'
 
@@ -18,6 +19,7 @@ function App() {
       <PWAInstallPrompt />
       <FeatureModuleLoadDialog />
       <FeatureModuleLoadingOverlay />
+      <DataSourceRecoveryHost />
     </div>
   )
 }

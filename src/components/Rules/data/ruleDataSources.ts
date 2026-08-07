@@ -1,5 +1,4 @@
 import { getOpenRIAMapDataSourcesConfig } from '../../../core/project/openriamapRiaEnvironment';
-import { readRuleWorldCache } from '@/components/Rules/data/worldRuleCache';
 import { loadWorldRuleDataset } from '@/components/Rules/data/worldRuleDatasetLoader';
 
 /**
@@ -87,12 +86,11 @@ export async function loadRuleItemsForWorld(worldId: string, opt?: { fetcher?: (
   if (!ds) return [];
 
   if ((ds.sourceMode ?? 'pub') === 'dat') {
-    const cached = readRuleWorldCache(wid);
-    if (cached?.features && Array.isArray(cached.features)) return cached.features as any[];
     try {
       const dataset = await loadWorldRuleDataset(wid);
       if (Array.isArray(dataset?.features)) return dataset.features as any[];
     } catch {
+      return [];
       // 若 Data 仓库链路失败，继续向下尝试旧 public 清单（若存在）
     }
   }

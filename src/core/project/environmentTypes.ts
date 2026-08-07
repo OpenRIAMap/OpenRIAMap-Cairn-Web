@@ -50,6 +50,18 @@ export type CairnMapDataSourcesConfig = CairnMapProjectTaggedConfig & {
   items: CairnMapDataSourceItem[];
 };
 
+export type CairnMapFormalDataSourceBinding = {
+  id: string;
+  readerKind: string;
+  readerSchemaVersion: string;
+  rootUrl: string;
+};
+
+export type CairnMapFormalDataSourceRuntimeConfig = CairnMapProjectTaggedConfig & {
+  selection: unknown;
+  bindings: CairnMapFormalDataSourceBinding[];
+};
+
 export type CairnMapRuleButtonTone = 'blue' | 'green' | 'cyan' | 'purple' | 'gray' | 'orange' | 'slate';
 
 export type CairnMapRuleButtonCriteria = {
