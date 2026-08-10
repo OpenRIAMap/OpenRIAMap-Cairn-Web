@@ -22,8 +22,10 @@ Any load that began on an earlier generation must be aborted or discarded by the
 
 `DataSourceSelectionSection` and `DataSourceRecoveryDialog` deliberately reuse the existing Settings card, select, button and blocking-modal primitives. Applications provide labels and source definitions; these components do not know endpoint URLs, credentials, repository identities or provider-specific storage.
 
+`DataSourceSelectionSection` may optionally receive `renderSupplemental`. It receives only the current draft/applied `DataSourceDefinition`, the selection permission and the apply state. It is the application-owned place for a setting that is relevant only for a selected reader. The generic component does not define the setting, persist it, or make any network decision. A downstream can therefore render a source-specific transport selector beneath the generic source selector without adding provider information to CairnMap-Web.
+
 The application must mount the recovery dialog outside any closable settings surface so a request failure can be recovered even when Settings is closed. The dialog cancel path retains the current source and performs no hidden retry or switch.
 
 ## Downstream requirements
 
-An application integration provides reader adapters for each `readerKind`, a concrete persistence key, scoped cache key components (`sourceId`, release identifier, world identifier and reader schema version), and a failure-to-dialog bridge. It must validate that the configured default source is enabled and preserve one source snapshot per world load; data from distinct sources must not be mixed in the same snapshot.
+An application integration provides reader adapters for each `readerKind`, a concrete persistence key, scoped cache key components (`sourceId`, transport identifier where applicable, release identifier, world identifier and reader schema version), and a failure-to-dialog bridge. It must validate that the configured default source is enabled and preserve one source snapshot per world load; data from distinct sources or transport roots must not be mixed in the same snapshot.

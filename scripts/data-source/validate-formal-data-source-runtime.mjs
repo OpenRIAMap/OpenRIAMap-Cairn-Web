@@ -20,6 +20,7 @@ requireValue(config?.projectId === 'openriamap-ria', 'projectId is invalid');
 const selection = config?.selection;
 const sources = Array.isArray(selection?.sources) ? selection.sources : [];
 const bindings = Array.isArray(config?.bindings) ? config.bindings : [];
+const githubRawTransport = config?.githubRawTransport;
 const policy = selection?.policy ?? {};
 requireValue(selection?.schemaVersion === 'cairnmap.data-source-selection.v1', 'selection schemaVersion is invalid');
 requireValue(typeof selection?.storageKey === 'string' && selection.storageKey.length > 0, 'selection storageKey is required');
@@ -45,8 +46,21 @@ for (const binding of bindings) {
   requireValue(typeof binding?.rootUrl === 'string' && /^https:\/\//.test(binding.rootUrl), `binding rootUrl must be HTTPS: ${binding?.id ?? '?'}`);
   requireValue(typeof binding?.readerSchemaVersion === 'string' && binding.readerSchemaVersion.length > 0, `binding readerSchemaVersion is required: ${binding?.id ?? '?'}`);
   requireValue(binding?.readerKind === sourceById.get(binding?.id)?.readerKind, `binding readerKind mismatch: ${binding?.id ?? '?'}`);
+  requireValue(['direct', 'github-raw-compatible'].includes(binding?.transport ?? 'direct'), `binding transport is invalid: ${binding?.id ?? '?'}`);
 }
 for (const sourceId of sourceById.keys()) requireValue(bindingIds.has(sourceId), `source has no binding: ${sourceId}`);
+
+const githubRawSourceIds = Array.isArray(githubRawTransport?.sourceIds) ? githubRawTransport.sourceIds : [];
+const githubRepository = githubRawTransport?.repository ?? {};
+const githubTransportBindings = bindings.filter((binding) => binding?.transport === 'github-raw-compatible').map((binding) => binding.id);
+if (githubTransportBindings.length) {
+  requireValue(githubRawSourceIds.length > 0, 'githubRawTransport sourceIds is required');
+  requireValue(githubTransportBindings.every((id) => githubRawSourceIds.includes(id)), 'githubRawTransport must bind every github-raw-compatible source');
+  requireValue(githubRawSourceIds.every((id) => sourceById.has(id)), 'githubRawTransport references unknown source');
+  requireValue(typeof githubRepository.owner === 'string' && githubRepository.owner.length > 0, 'githubRawTransport repository owner is required');
+  requireValue(typeof githubRepository.repo === 'string' && githubRepository.repo.length > 0, 'githubRawTransport repository repo is required');
+  requireValue(typeof githubRepository.branch === 'string' && githubRepository.branch.length > 0, 'githubRawTransport repository branch is required');
+}
 
 if (errors.length) {
   console.error('Formal data source runtime: FAIL');

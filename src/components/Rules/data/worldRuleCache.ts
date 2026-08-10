@@ -1,13 +1,16 @@
 import type { RuleWorldDataset } from './sourceTypes';
 
-const RULE_CACHE_PREFIX = 'ria-rule-cache-v2:';
-const RULE_META_PREFIX = 'ria-rule-meta-v2:';
+const RULE_CACHE_PREFIX = 'ria-rule-cache-v3:';
+const RULE_META_PREFIX = 'ria-rule-meta-v3:';
+const PREVIOUS_RULE_CACHE_PREFIX = 'ria-rule-cache-v2:';
+const PREVIOUS_RULE_META_PREFIX = 'ria-rule-meta-v2:';
 const LEGACY_RULE_CACHE_PREFIX = 'ria-rule-cache-';
 const LEGACY_RULE_META_PREFIX = 'ria-rule-meta-';
-const SCHEMA_VERSION = '2.0.0';
+const SCHEMA_VERSION = '3.0.0';
 
 export type RuleCacheScope = {
   sourceId: string;
+  transportId: string;
   releaseId: string;
   worldId: string;
   readerSchemaVersion: string;
@@ -23,7 +26,7 @@ function normalized(value: string): string {
 }
 
 function scopePart(scope: RuleCacheScope): string {
-  return [scope.sourceId, scope.releaseId, scope.worldId, scope.readerSchemaVersion]
+  return [scope.sourceId, scope.transportId, scope.releaseId, scope.worldId, scope.readerSchemaVersion]
     .map((value) => encodeURIComponent(normalized(value)))
     .join(':');
 }
@@ -45,7 +48,7 @@ function parseMeta(raw: string | null): RuleCacheMeta | null {
   try {
     const meta = JSON.parse(raw) as RuleCacheMeta;
     if (meta.schemaVersion !== SCHEMA_VERSION) return null;
-    if (!normalized(meta.sourceId) || !normalized(meta.releaseId) || !normalized(meta.worldId) || !normalized(meta.readerSchemaVersion)) return null;
+    if (!normalized(meta.sourceId) || !normalized(meta.transportId) || !normalized(meta.releaseId) || !normalized(meta.worldId) || !normalized(meta.readerSchemaVersion)) return null;
     if (!Number.isFinite(meta.cachedAt)) return null;
     return meta;
   } catch {
@@ -80,7 +83,7 @@ export function readRuleWorldCache(scopeOrWorld: RuleCacheScope | string): RuleW
     if (!raw) return null;
     const dataset = JSON.parse(raw) as RuleWorldDataset;
     if (dataset.worldId !== scope.worldId || String(dataset.mergeVersion) !== String(scope.releaseId)) return null;
-    if (dataset.sourceId !== scope.sourceId || dataset.readerSchemaVersion !== scope.readerSchemaVersion) return null;
+    if (dataset.sourceId !== scope.sourceId || dataset.transportId !== scope.transportId || dataset.readerSchemaVersion !== scope.readerSchemaVersion) return null;
     return dataset;
   } catch {
     return null;
@@ -99,6 +102,7 @@ export function readRuleWorldMeta(scopeOrWorld: RuleCacheScope | string): RuleCa
 export function writeRuleWorldCache(scope: RuleCacheScope, dataset: RuleWorldDataset): void {
   const normalizedScope: RuleCacheScope = {
     sourceId: normalized(scope.sourceId),
+    transportId: normalized(scope.transportId),
     releaseId: normalized(scope.releaseId),
     worldId: normalized(scope.worldId),
     readerSchemaVersion: normalized(scope.readerSchemaVersion),
@@ -109,6 +113,7 @@ export function writeRuleWorldCache(scope: RuleCacheScope, dataset: RuleWorldDat
     mergeVersion: normalizedScope.releaseId,
     releaseId: normalizedScope.releaseId,
     sourceId: normalizedScope.sourceId,
+    transportId: normalizedScope.transportId,
     readerSchemaVersion: normalizedScope.readerSchemaVersion,
   };
   localStorage.setItem(cacheKey(normalizedScope), JSON.stringify(normalizedDataset));
@@ -126,6 +131,7 @@ export function isRuleWorldCacheValid(scope: RuleCacheScope): boolean {
   return meta.worldId === scope.worldId
     && meta.releaseId === scope.releaseId
     && meta.sourceId === scope.sourceId
+    && meta.transportId === scope.transportId
     && meta.readerSchemaVersion === scope.readerSchemaVersion;
 }
 
@@ -161,6 +167,8 @@ export function clearAllRuleWorldCaches(): void {
       if (!key) continue;
       if (key.startsWith(RULE_CACHE_PREFIX)
         || key.startsWith(RULE_META_PREFIX)
+        || key.startsWith(PREVIOUS_RULE_CACHE_PREFIX)
+        || key.startsWith(PREVIOUS_RULE_META_PREFIX)
         || key.startsWith(LEGACY_RULE_CACHE_PREFIX)
         || key.startsWith(LEGACY_RULE_META_PREFIX)) {
         keys.push(key);
@@ -185,6 +193,7 @@ export function calculateRuleCacheSize(): number {
       const key = localStorage.key(index);
       if (!key) continue;
       if (!key.startsWith(RULE_CACHE_PREFIX) && !key.startsWith(RULE_META_PREFIX)
+        && !key.startsWith(PREVIOUS_RULE_CACHE_PREFIX) && !key.startsWith(PREVIOUS_RULE_META_PREFIX)
         && !key.startsWith(LEGACY_RULE_CACHE_PREFIX) && !key.startsWith(LEGACY_RULE_META_PREFIX)) continue;
       const value = localStorage.getItem(key);
       if (!value) continue;

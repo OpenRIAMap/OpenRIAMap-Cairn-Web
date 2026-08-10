@@ -26,7 +26,9 @@ export type RuleWorldDataset = {
   worldId: string;
   mergeVersion: number | string;
   releaseId?: string;
+  formalVersion?: number | string;
   sourceId?: string;
+  transportId?: string;
   readerSchemaVersion?: string;
   loadedAt: number;
   features: Record<string, unknown>[];
