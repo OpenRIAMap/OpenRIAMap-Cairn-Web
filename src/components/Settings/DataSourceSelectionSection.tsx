@@ -24,7 +24,11 @@ export type DataSourceSelectionSectionProps = {
   appliedLabel?: string;
   defaultSuffix?: string;
   hint?: string;
-  /** Application-owned selected-source settings; the generic component never interprets them. */
+  /**
+   * Application-owned settings that are meaningful only for a selected reader.
+   * The generic component supplies selection state but never interprets the
+   * setting, endpoint, credential, repository, or provider behind it.
+   */
   renderSupplemental?: (context: DataSourceSelectionSupplementalContext) => ReactNode;
 };
 
@@ -59,7 +63,12 @@ export function DataSourceSelectionSection({
   const draftSource = sources.find((source) => source.id === draftSourceId) ?? null;
   const appliedSource = sources.find((source) => source.id === appliedSourceId) ?? null;
   const appliedLabelValue = appliedSource?.label ?? appliedSourceId;
-  const supplemental = renderSupplemental?.({ draftSource, appliedSource, selectionAllowed, isApplying });
+  const supplemental = renderSupplemental?.({
+    draftSource,
+    appliedSource,
+    selectionAllowed,
+    isApplying,
+  });
 
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
     onDraftSourceIdChange(event.target.value);
