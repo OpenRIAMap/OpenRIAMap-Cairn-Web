@@ -1,7 +1,14 @@
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
 import AppButton from '@/components/ui/AppButton';
 import type { DataSourceDefinition, DataSourceSelectionPolicy } from '@/core/dataSourceSelection';
 import { isDataSourceSelectionAllowed } from '@/core/dataSourceSelection';
+
+export type DataSourceSelectionSupplementalContext = {
+  draftSource: DataSourceDefinition | null;
+  appliedSource: DataSourceDefinition | null;
+  selectionAllowed: boolean;
+  isApplying: boolean;
+};
 
 export type DataSourceSelectionSectionProps = {
   sources: readonly DataSourceDefinition[];
@@ -17,6 +24,12 @@ export type DataSourceSelectionSectionProps = {
   appliedLabel?: string;
   defaultSuffix?: string;
   hint?: string;
+  /**
+   * Application-owned settings that are meaningful only for a selected reader.
+   * The generic component supplies selection state but never interprets the
+   * setting, endpoint, credential, repository, or provider behind it.
+   */
+  renderSupplemental?: (context: DataSourceSelectionSupplementalContext) => ReactNode;
 };
 
 const toneClassName = {
@@ -43,10 +56,19 @@ export function DataSourceSelectionSection({
   appliedLabel = 'Applied',
   defaultSuffix = ' (default)',
   hint,
+  renderSupplemental,
 }: DataSourceSelectionSectionProps) {
   const sourcesForSelect = selectableSources(sources);
   const selectionAllowed = isDataSourceSelectionAllowed(policy, 'settings');
-  const appliedLabelValue = sources.find((source) => source.id === appliedSourceId)?.label ?? appliedSourceId;
+  const draftSource = sources.find((source) => source.id === draftSourceId) ?? null;
+  const appliedSource = sources.find((source) => source.id === appliedSourceId) ?? null;
+  const appliedLabelValue = appliedSource?.label ?? appliedSourceId;
+  const supplemental = renderSupplemental?.({
+    draftSource,
+    appliedSource,
+    selectionAllowed,
+    isApplying,
+  });
 
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
     onDraftSourceIdChange(event.target.value);
@@ -82,6 +104,7 @@ export function DataSourceSelectionSection({
       <div className="text-[11px] leading-relaxed text-gray-500">
         {appliedLabel}: {appliedLabelValue}. {hint ?? 'Changes take effect only after an explicit apply action.'}
       </div>
+      {supplemental ? <div className="pt-1">{supplemental}</div> : null}
       {policy.selectionMode === 'fixed' ? (
         <div className="text-[11px] leading-relaxed text-gray-500">This selection is fixed by the application policy.</div>
       ) : null}
