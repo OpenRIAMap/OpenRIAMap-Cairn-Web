@@ -18,24 +18,35 @@
       "retryOnFailure": true
     }
   },
+  "githubRawTransport": {
+    "sourceIds": ["formal-github"],
+    "repository": {
+      "owner": "OpenRIAMap",
+      "repo": "OpenRIAMap-Cairn-Data",
+      "branch": "main"
+    }
+  },
   "bindings": [
     {
       "id": "formal-cos",
       "readerKind": "formal-release-v2",
       "readerSchemaVersion": "openriamap.formal-release-reader.v2",
-      "rootUrl": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com"
+      "rootUrl": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com",
+      "transport": "direct"
     },
     {
       "id": "formal-github",
       "readerKind": "formal-release-v2",
       "readerSchemaVersion": "openriamap.formal-release-reader.v2",
-      "rootUrl": "https://raw.githubusercontent.com/OpenRIAMap/OpenRIAMap-Cairn-Data/main"
+      "rootUrl": "https://raw.githubusercontent.com/OpenRIAMap/OpenRIAMap-Cairn-Data/main",
+      "transport": "github-raw-compatible"
     },
     {
       "id": "legacy-github",
       "readerKind": "legacy-merge-v1",
       "readerSchemaVersion": "openriamap.legacy-merge-reader.v1",
-      "rootUrl": "https://raw.githubusercontent.com/OpenRIAMap/OpenRIAMap-Data/main"
+      "rootUrl": "https://raw.githubusercontent.com/OpenRIAMap/OpenRIAMap-Data/main",
+      "transport": "direct"
     }
   ]
 }

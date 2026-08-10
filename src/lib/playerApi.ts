@@ -56,7 +56,9 @@ function normalizeBaseUrl(raw: string | undefined): string {
 
 function getConfiguredMode(): PlayerFetchMode {
   const raw = String(import.meta.env.VITE_PLAYER_API_MODE ?? '').trim().toLowerCase();
-  return raw === 'proxy' ? 'proxy' : DEFAULT_PLAYER_API_MODE;
+  // Direct satellite reads are known to require a compatible CORS response.
+  // Keep them opt-in for diagnostics; normal users stay on the same-origin proxy.
+  return raw === 'direct' ? 'direct' : DEFAULT_PLAYER_API_MODE;
 }
 
 function buildProxyUrl(apiWorld: string, timestamp: number): string {
@@ -105,10 +107,7 @@ export async function fetchPlayersDetailed(worldId: string): Promise<PlayerFetch
   const preferredMode = getConfiguredMode();
   const candidates: Array<{ source: PlayerFetchMode; url: string }> =
     preferredMode === 'proxy'
-      ? [
-          { source: 'proxy', url: buildProxyUrl(apiWorld, timestamp) },
-          { source: 'direct', url: buildDirectUrl(apiWorld, timestamp) },
-        ]
+      ? [{ source: 'proxy', url: buildProxyUrl(apiWorld, timestamp) }]
       : [
           { source: 'direct', url: buildDirectUrl(apiWorld, timestamp) },
           { source: 'proxy', url: buildProxyUrl(apiWorld, timestamp) },
@@ -120,7 +119,6 @@ export async function fetchPlayersDetailed(worldId: string): Promise<PlayerFetch
       return await tryFetchPlayers(candidate.url, candidate.source);
     } catch (error) {
       lastError = String((error as Error)?.message ?? error ?? '玩家接口请求失败');
-      console.warn(`[playerApi] ${candidate.source} failed:`, error);
     }
   }
 

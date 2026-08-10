@@ -17,6 +17,7 @@ const source: RuleDataSourceSnapshot = {
   readerKind: 'formal-release-v2',
   readerSchemaVersion: 'openriamap.formal-release-reader.v2',
   rootUrl: 'https://example.invalid',
+  transportId: 'direct:https://example.invalid',
   generation: 0,
 };
 
@@ -24,12 +25,14 @@ const objects: Record<string, unknown> = {
   'current/worlds/_release-set.json': {
     schemaVersion: 'openriamap.current-release-set.v2',
     releaseId: 'release-1',
+    formalVersion: 1,
     worlds: ['zth'],
   },
   'current/worlds/zth.json': {
     schemaVersion: 'openriamap.current-world.v2',
     worldId: 'zth',
     releaseId: 'release-1',
+    formalVersion: 1,
     worldManifestKey: 'releases/release-1/manifests/worlds/zth.json',
   },
   'releases/release-1/manifests/worlds/zth.json': {
@@ -66,12 +69,14 @@ const fetchJson: FormalReleaseFetchJson = async <T>(key) => {
 
 const release = await resolveFormalWorldRelease({ source, worldId: 'zth', fetchJson });
 expect(release.releaseId === 'release-1', 'release id mismatch');
+expect(release.formalVersion === 1, 'formal version mismatch');
 
 const features = await loadFormalWorldFeatures({ source, release, fetchJson });
 expect(features.length === 2 && features[0].ID === 'a' && features[1].ID === 'b', 'feature records were not unwrapped');
 
 const dataset = await loadFormalWorldRuleDataset({ source, worldId: 'zth', fetchJson });
 expect(dataset.releaseId === 'release-1', 'dataset release id mismatch');
+expect(dataset.formalVersion === 1, 'dataset formal version mismatch');
 expect(dataset.sourceId === 'formal-test', 'dataset source scope mismatch');
 expect(dataset.readerSchemaVersion === source.readerSchemaVersion, 'dataset schema scope mismatch');
 

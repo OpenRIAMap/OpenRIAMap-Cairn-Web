@@ -16,6 +16,7 @@ const activeLegacyRequests = new Set<AbortController>();
 function cacheScope(source: RuleDataSourceSnapshot, releaseId: string, worldId: string): RuleCacheScope {
   return {
     sourceId: source.sourceId,
+    transportId: source.transportId,
     releaseId: String(releaseId),
     worldId: String(worldId),
     readerSchemaVersion: source.readerSchemaVersion,
@@ -114,6 +115,7 @@ async function loadLegacyWorldDataset(
     mergeVersion,
     releaseId: String(mergeVersion),
     sourceId: source.sourceId,
+    transportId: source.transportId,
     readerSchemaVersion: source.readerSchemaVersion,
     loadedAt: Date.now(),
     features: all,
@@ -124,16 +126,22 @@ async function loadLegacyWorldDataset(
   return dataset;
 }
 
+export type RuleWorldVersion = {
+  formalVersion: string | null;
+  releaseId: string;
+};
+
 export async function fetchWorldMergeVersion(
   worldId: string,
   onProgress?: ProgressCallback,
   source: RuleDataSourceSnapshot = getRuleDataSourceSnapshot(),
-): Promise<number | string> {
+): Promise<RuleWorldVersion> {
   if (source.readerKind === 'formal-release-v2') {
     const release = await resolveFormalWorldRelease({ source, worldId });
-    return release.releaseId;
+    return { formalVersion: release.formalVersion === null ? null : String(release.formalVersion), releaseId: release.releaseId };
   }
-  return fetchLegacyMergeVersion(worldId, source, onProgress);
+  const version = await fetchLegacyMergeVersion(worldId, source, onProgress);
+  return { formalVersion: String(version), releaseId: String(version) };
 }
 
 export function abortActiveRuleDatasetRequests(): void {
@@ -168,7 +176,9 @@ export async function loadWorldRuleDataset(
     worldId: release.worldId,
     mergeVersion: release.releaseId,
     releaseId: release.releaseId,
+    formalVersion: release.formalVersion ?? undefined,
     sourceId: source.sourceId,
+    transportId: source.transportId,
     readerSchemaVersion: source.readerSchemaVersion,
     loadedAt: Date.now(),
     features,

@@ -11,6 +11,7 @@ import { DynmapTileLayer, createDynmapTileLayer } from '@/lib/DynmapTileLayer';
 import { createSketchTileLayer } from '@/lib/SketchTileLayer';
 import { createWatercolorTileLayer } from '@/lib/SketchTileLayer';
 import { PlayerLayer } from './PlayerLayer';
+import { nextPlayerPollDelayMs } from '@/lib/playerPollingPolicy';
 import { RouteHighlightLayer, type RouteHighlightData } from './RouteHighlightLayer';
 import { LineHighlightLayer } from './LineHighlightLayer';
 import { WorldSwitcher } from './WorldSwitcher';
@@ -827,17 +828,36 @@ if (mapStyle === 'sketch') {
     if (!PLAYER_FEATURE_ENABLED || !mapReady) return;
 
     let cancelled = false;
-    let intervalId: number | null = null;
+    let timerId: number | null = null;
+    let inFlight = false;
+    let consecutiveFailures = 0;
+    let lastWarningAt = 0;
     const worldId = currentWorld;
 
     const loadPlayers = async () => {
-      const result = await fetchPlayersDetailed(worldId);
-      if (cancelled) return;
-      setPlayers(result.players);
-      if (result.error) {
-        console.warn('[MapContainer] 玩家信息读取失败：', result.error);
-      } else {
-        setPlayerSnapshotReadyWorld(worldId);
+      if (inFlight || cancelled) return;
+      inFlight = true;
+      try {
+        const result = await fetchPlayersDetailed(worldId);
+        if (cancelled) return;
+        if (result.error) {
+          consecutiveFailures += 1;
+          // A transient 502 must not erase the last valid player snapshot or
+          // flood developer tools. Log no more than once per minute.
+          if (Date.now() - lastWarningAt >= 60_000) {
+            lastWarningAt = Date.now();
+            console.warn('[MapContainer] 玩家信息读取暂时失败；保留上一次成功结果并稍后重试：', result.error);
+          }
+        } else {
+          consecutiveFailures = 0;
+          setPlayers(result.players);
+          setPlayerSnapshotReadyWorld(worldId);
+        }
+      } finally {
+        inFlight = false;
+        if (!cancelled) {
+          timerId = window.setTimeout(() => { void loadPlayers(); }, nextPlayerPollDelayMs(consecutiveFailures));
+        }
       }
     };
 
@@ -845,13 +865,10 @@ if (mapStyle === 'sketch') {
     setSelectedPlayer(null);
     setPlayerSnapshotReadyWorld(null);
     void loadPlayers();
-    intervalId = window.setInterval(() => {
-      void loadPlayers();
-    }, 5000);
 
     return () => {
       cancelled = true;
-      if (intervalId !== null) window.clearInterval(intervalId);
+      if (timerId !== null) window.clearTimeout(timerId);
     };
   }, [currentWorld, mapReady]);
 

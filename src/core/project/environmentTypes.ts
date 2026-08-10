@@ -55,11 +55,18 @@ export type CairnMapFormalDataSourceBinding = {
   readerKind: string;
   readerSchemaVersion: string;
   rootUrl: string;
+  transport?: 'direct' | 'github-raw-compatible';
+};
+
+export type CairnMapFormalGithubRawTransport = {
+  sourceIds: string[];
+  repository: { owner: string; repo: string; branch: string };
 };
 
 export type CairnMapFormalDataSourceRuntimeConfig = CairnMapProjectTaggedConfig & {
   selection: unknown;
   bindings: CairnMapFormalDataSourceBinding[];
+  githubRawTransport?: CairnMapFormalGithubRawTransport;
 };
 
 export type CairnMapRuleButtonTone = 'blue' | 'green' | 'cyan' | 'purple' | 'gray' | 'orange' | 'slate';

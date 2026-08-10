@@ -63,6 +63,7 @@
     "test:review-workspace-contracts": "tsx ./scripts/review/test-review-workspace-contracts.ts",
     "test:data-source-selection": "tsx ./scripts/data-source/test-data-source-selection.ts",
     "test:formal-release-reader": "tsx ./scripts/data-source/test-formal-release-reader.ts",
+    "test:player-polling-policy": "tsx ./scripts/player/test-player-polling-policy.ts",
     "validate:formal-data-source-runtime": "node ./scripts/data-source/validate-formal-data-source-runtime.mjs"
   },
   "dependencies": {

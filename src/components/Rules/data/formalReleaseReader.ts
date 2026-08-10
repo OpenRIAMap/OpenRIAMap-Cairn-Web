@@ -6,6 +6,7 @@ type JsonRecord = Record<string, unknown>;
 
 export type FormalWorldRelease = {
   releaseId: string;
+  formalVersion: number | null;
   worldId: string;
   worldManifest: JsonRecord;
 };
@@ -34,6 +35,13 @@ function asRecord(value: unknown, stage: FormalReleaseReaderError['stage'], name
 function requiredString(record: JsonRecord, key: string, stage: FormalReleaseReaderError['stage']): string {
   const value = typeof record[key] === 'string' ? record[key].trim() : '';
   if (!value) throw new FormalReleaseReaderError(stage, `${key} is required`);
+  return value;
+}
+
+function optionalFormalVersion(record: JsonRecord, key: string, stage: FormalReleaseReaderError['stage']): number | null {
+  const value = record[key];
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1) throw new FormalReleaseReaderError(stage, `${key} must be a positive integer`);
   return value;
 }
 
@@ -84,6 +92,7 @@ export async function resolveFormalWorldRelease(args: {
     throw new FormalReleaseReaderError('release-set', 'unsupported release-set schema');
   }
   const releaseId = requiredString(releaseSet, 'releaseId', 'release-set');
+  const formalVersion = optionalFormalVersion(releaseSet, 'formalVersion', 'release-set');
   if (!Array.isArray(releaseSet.worlds) || !releaseSet.worlds.includes(worldId)) {
     throw new FormalReleaseReaderError('release-set', `world is not published: ${worldId}`);
   }
@@ -98,6 +107,9 @@ export async function resolveFormalWorldRelease(args: {
   if (requiredString(pointer, 'releaseId', 'world-pointer') !== releaseId) {
     throw new FormalReleaseReaderError('world-pointer', 'release-set and world-pointer release mismatch');
   }
+  if (optionalFormalVersion(pointer, 'formalVersion', 'world-pointer') !== formalVersion) {
+    throw new FormalReleaseReaderError('world-pointer', 'release-set and world-pointer formal version mismatch');
+  }
 
   const manifestKey = safeObjectKey(requiredString(pointer, 'worldManifestKey', 'world-pointer'), 'manifest');
   const worldManifest = asRecord(await fetchJson<JsonRecord>(manifestKey, 'manifest'), 'manifest', 'world manifest');
@@ -111,7 +123,7 @@ export async function resolveFormalWorldRelease(args: {
     throw new FormalReleaseReaderError('manifest', 'world pointer and manifest release mismatch');
   }
 
-  return { releaseId, worldId, worldManifest };
+  return { releaseId, formalVersion, worldId, worldManifest };
 }
 
 export async function loadFormalWorldFeatures(args: {
@@ -187,7 +199,9 @@ export async function loadFormalWorldRuleDataset(args: {
     worldId: release.worldId,
     mergeVersion: release.releaseId,
     releaseId: release.releaseId,
+    formalVersion: release.formalVersion ?? undefined,
     sourceId: args.source.sourceId,
+    transportId: args.source.transportId,
     readerSchemaVersion: args.source.readerSchemaVersion,
     loadedAt: Date.now(),
     features,

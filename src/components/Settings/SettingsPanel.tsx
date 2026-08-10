@@ -15,17 +15,18 @@ import { useDataStore } from '@/store/dataStore';
 import { useLoadingStore } from '@/store/loadingStore';
 import { useRuleDataStore } from '@/store/ruleDataStore';
 import { downloadDataToolSchema } from '@/components/Common/exportDataToolSchema';
-import { fetchWorldMergeVersion } from '@/components/Rules/data/worldRuleDatasetLoader';
+import { fetchWorldMergeVersion, type RuleWorldVersion } from '@/components/Rules/data/worldRuleDatasetLoader';
 import {
   calculateRuleCacheSize,
   clearAllRuleWorldCaches,
   getRuleWorldFeatureCount,
+  readRuleWorldCache,
   readRuleWorldMeta,
 } from '@/components/Rules/data/worldRuleCache';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import DataSourceSelectionSection from './DataSourceSelectionSection';
-import { getRuleDataSourceSelectionController, getRuleDataSourceSelectionPolicy } from '@/components/Rules/data/formalDataSourceRuntime';
+import { getRuleDataSourceSelectionController, getRuleDataSourceSelectionPolicy, isFormalGithubTransportSource } from '@/components/Rules/data/formalDataSourceRuntime';
 import {
   getCurrentSourceLinkModeId,
   getDefaultSourceLinkModeId,
@@ -41,8 +42,10 @@ type RuleWorldRow = {
   worldId: string;
   name: string;
   remoteVersion: string;
+  remoteReleaseId: string | null;
   remoteOk: boolean;
   localVersion: string | null;
+  localReleaseId: string | null;
   cachedAt: number | null;
   featureCount: number | null;
   isLoaded: boolean;
@@ -56,6 +59,13 @@ const RULE_WORLDS: Array<{ id: string; name: string }> = [
   { id: 'laputa', name: '拉普塔' },
 ];
 
+/** Keep the compact card readable while the title retains both immutable IDs. */
+function compactFormalVersion(value: string | null): string {
+  const version = String(value ?? '').trim();
+  if (!/^\d+$/.test(version) || version.length <= 6) return version || '未分配';
+  return `${version.slice(0, 6)}…`;
+}
+
 export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const { cacheInfo, clearCache, forceRefresh, updateCacheInfo } = useDataStore();
   const { startLoading, updateStage, isLoading, activeFlowId, activeRuleWorldId } = useLoadingStore();
@@ -64,6 +74,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const dataSource = useRuleDataStore((s) => s.dataSource);
   const dataSourceApplying = useRuleDataStore((s) => s.dataSourceApplying);
   const applyDataSource = useRuleDataStore((s) => s.applyDataSource);
+  const applyDataSourceTransport = useRuleDataStore((s) => s.applyDataSourceTransport);
 
   const [isRefreshingRules, setIsRefreshingRules] = useState(false);
   const [isRefreshingLegacy, setIsRefreshingLegacy] = useState(false);
@@ -110,13 +121,26 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     return () => window.clearTimeout(timer);
   }, [sourceLinkModeStatus]);
 
-  const handleApplySourceLinkMode = () => {
+  const handleApplySourceLinkMode = async () => {
+    if (!isFormalGithubTransportSource(dataSource.sourceId)) {
+      setSourceLinkModeStatus('请先应用 GitHub 镜像作为运行数据读取来源。');
+      return;
+    }
     const next = setCurrentSourceLinkMode(sourceLinkModeDraft);
     const nextId = next.id;
     const changed = nextId !== sourceLinkModeApplied;
     setSourceLinkModeDraft(nextId);
     setSourceLinkModeApplied(nextId);
-    setSourceLinkModeStatus(changed ? '已应用，后续新数据获取将使用该模式' : '当前已是该模式');
+    if (!changed) {
+      setSourceLinkModeStatus('当前已是该模式');
+      return;
+    }
+    try {
+      await applyDataSourceTransport();
+      setSourceLinkModeStatus('已应用，已清空运行数据缓存并重新读取当前世界。');
+    } catch {
+      setSourceLinkModeStatus('读取失败；来源未自动切换。请在恢复提示中明确选择后重试。');
+    }
   };
 
   const handleApplyDataSource = async () => {
@@ -130,16 +154,20 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   };
 
 
-  const buildRuleWorldRow = (worldId: string, remoteVersion: string, remoteOk: boolean): RuleWorldRow => {
+  const buildRuleWorldRow = (worldId: string, remote: RuleWorldVersion, remoteOk: boolean): RuleWorldRow => {
     const meta = readRuleWorldMeta(worldId);
     const loadedDataset = datasets[worldId];
+    const cachedDataset = readRuleWorldCache(worldId);
+    const localDataset = loadedDataset ?? cachedDataset;
     const loadedFeatureCount = Array.isArray(loadedDataset?.features) ? loadedDataset.features.length : null;
     return {
       worldId,
       name: RULE_WORLDS.find((item) => item.id === worldId)?.name ?? worldId,
-      remoteVersion,
+      remoteVersion: remote.formalVersion ?? '未分配',
+      remoteReleaseId: remote.releaseId,
       remoteOk,
-      localVersion: meta ? String(meta.releaseId) : null,
+      localVersion: localDataset?.formalVersion === undefined || localDataset.formalVersion === null ? null : String(localDataset.formalVersion),
+      localReleaseId: localDataset?.releaseId ?? meta?.releaseId ?? null,
       cachedAt: meta?.cachedAt ?? null,
       featureCount: loadedFeatureCount ?? getRuleWorldFeatureCount(worldId),
       isLoaded: !!loadedDataset,
@@ -153,9 +181,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         RULE_WORLDS.map(async (world) => {
           try {
             const remoteVersion = await fetchWorldMergeVersion(world.id);
-            return buildRuleWorldRow(world.id, String(remoteVersion), true);
+            return buildRuleWorldRow(world.id, remoteVersion, true);
           } catch {
-            return buildRuleWorldRow(world.id, '读取失败', false);
+            return buildRuleWorldRow(world.id, { formalVersion: '读取失败', releaseId: '' }, false);
           }
         })
       );
@@ -167,7 +195,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   };
 
   const syncRuleWorldRowsFromLocal = () => {
-    setRuleWorldRows((prev) => prev.map((row) => buildRuleWorldRow(row.worldId, row.remoteVersion, row.remoteOk)));
+    setRuleWorldRows((prev) => prev.map((row) => buildRuleWorldRow(row.worldId, { formalVersion: row.remoteVersion, releaseId: row.remoteReleaseId ?? '' }, row.remoteOk)));
     setRuleCacheSize(calculateRuleCacheSize());
   };
 
@@ -264,8 +292,8 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
   const getRuleRowStatus = (row: RuleWorldRow): { text: string; className: string; icon: 'ok' | 'warn' | 'none' } => {
     if (!row.remoteOk) return { text: '远端读取失败', className: 'text-orange-600', icon: 'warn' };
-    if (!row.localVersion) return { text: row.isLoaded ? '仅内存已加载' : '未缓存', className: 'text-gray-600', icon: 'none' };
-    if (String(row.localVersion) === String(row.remoteVersion)) return { text: '已缓存', className: 'text-green-600', icon: 'ok' };
+    if (!row.localReleaseId) return { text: row.isLoaded ? '仅内存已加载' : '未缓存', className: 'text-gray-600', icon: 'none' };
+    if (row.localReleaseId === row.remoteReleaseId) return { text: '已缓存', className: 'text-green-600', icon: 'ok' };
     return { text: '缓存待刷新', className: 'text-orange-600', icon: 'warn' };
   };
 
@@ -426,11 +454,15 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-gray-600">
                         <div className="flex justify-between gap-2">
                           <span className="text-gray-500">远端版本</span>
-                          <span className="text-gray-700">{row.remoteVersion}</span>
+                          <span className="truncate text-gray-700" title={`正式版本：${row.remoteVersion}\n技术 ID：${row.remoteReleaseId ?? '—'}`}>
+                            {compactFormalVersion(row.remoteVersion)}
+                          </span>
                         </div>
                         <div className="flex justify-between gap-2">
                           <span className="text-gray-500">本地版本</span>
-                          <span className="text-gray-700">{row.localVersion ?? '—'}</span>
+                          <span className="truncate text-gray-700" title={`正式版本：${row.localVersion ?? '未分配'}\n技术 ID：${row.localReleaseId ?? '—'}`}>
+                            {compactFormalVersion(row.localVersion)}
+                          </span>
                         </div>
                         <div className="flex justify-between gap-2 col-span-2">
                           <span className="text-gray-500">缓存时间</span>
@@ -448,38 +480,6 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             )}
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white px-3 py-3 space-y-2">
-            <div className="text-xs font-semibold text-gray-700">源数据仓库链接模式</div>
-            <div className="flex items-center gap-2">
-              <select
-                className="min-w-0 flex-1 rounded border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-800"
-                value={sourceLinkModeDraft}
-                onChange={(e) => setSourceLinkModeDraft(e.target.value)}
-                onMouseDownCapture={(e) => e.stopPropagation()}
-                onPointerDownCapture={(e) => e.stopPropagation()}
-                onTouchStartCapture={(e) => e.stopPropagation()}
-              >
-                {sourceLinkModeDefs.map((mode) => (
-                  <option key={mode.id} value={mode.id}>
-                    {mode.label}{mode.id === getDefaultSourceLinkModeId() ? '（默认）' : ''}
-                  </option>
-                ))}
-              </select>
-              <AppButton
-                onClick={handleApplySourceLinkMode}
-                className="shrink-0 rounded bg-blue-500 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-600"
-              >
-                应用
-              </AppButton>
-            </div>
-            <div className="text-[11px] leading-relaxed text-gray-500">
-              当前已应用：{sourceLinkModeDefs.find((mode) => mode.id === sourceLinkModeApplied)?.label ?? sourceLinkModeApplied}。切换后不会清除已有缓存，后续新数据获取、刷新数据、换世界与图片路径会使用所选模式。
-            </div>
-            {sourceLinkModeStatus ? (
-              <div className="text-[11px] text-green-600">{sourceLinkModeStatus}</div>
-            ) : null}
-          </div>
-
           <DataSourceSelectionSection
             sources={dataSourceController.getSources()}
             policy={dataSourcePolicy}
@@ -494,6 +494,47 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             appliedLabel="当前已应用"
             defaultSuffix="（默认）"
             hint="切换后会清除仅依赖当前运行数据源的缓存，并重新读取当前世界；读取失败不会自动改用其他来源。"
+            renderSupplemental={(context) => {
+              const isGithubCandidate = isFormalGithubTransportSource(context.draftSource?.id);
+              const isGithubApplied = context.appliedSource?.id === context.draftSource?.id
+                && isFormalGithubTransportSource(context.appliedSource?.id);
+              if (!isGithubCandidate) return null;
+              return (
+                <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-3 space-y-2">
+                  <div className="text-xs font-semibold text-gray-700">源数据仓库链接模式</div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      className="min-w-0 flex-1 rounded border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100 disabled:text-gray-500"
+                      value={sourceLinkModeDraft}
+                      disabled={!isGithubApplied || context.isApplying}
+                      onChange={(event) => setSourceLinkModeDraft(event.target.value)}
+                      onMouseDownCapture={(event) => event.stopPropagation()}
+                      onPointerDownCapture={(event) => event.stopPropagation()}
+                      onTouchStartCapture={(event) => event.stopPropagation()}
+                    >
+                      {sourceLinkModeDefs.map((mode) => (
+                        <option key={mode.id} value={mode.id}>
+                          {mode.label}{mode.id === getDefaultSourceLinkModeId() ? '（默认）' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <AppButton
+                      onClick={() => { void handleApplySourceLinkMode(); }}
+                      disabled={!isGithubApplied || context.isApplying}
+                      className="shrink-0 rounded bg-blue-500 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-600 disabled:bg-blue-300"
+                    >
+                      应用
+                    </AppButton>
+                  </div>
+                  <div className="text-[11px] leading-relaxed text-gray-500">
+                    {isGithubApplied
+                      ? `当前已应用：${sourceLinkModeDefs.find((mode) => mode.id === sourceLinkModeApplied)?.label ?? sourceLinkModeApplied}。应用后会清空运行数据缓存、刷新并重新尝试当前世界；失败不会自动切换来源。`
+                      : '请先应用 GitHub 镜像作为运行数据读取来源，再选择链接模式。'}
+                  </div>
+                  {sourceLinkModeStatus ? <div className="text-[11px] text-green-600">{sourceLinkModeStatus}</div> : null}
+                </div>
+              );
+            }}
           />
 
           <div className="flex gap-2">

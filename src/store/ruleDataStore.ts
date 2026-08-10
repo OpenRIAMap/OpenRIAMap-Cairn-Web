@@ -28,6 +28,7 @@ interface RuleDataState {
   ensureWorldLoaded: (worldId: string) => Promise<RuleWorldDataset>;
   refreshWorlds: (worldIds: string[]) => Promise<void>;
   applyDataSource: (sourceId: string, context: DataSourceSelectionContext) => Promise<void>;
+  applyDataSourceTransport: () => Promise<void>;
   clearDataSourceFailure: () => void;
 }
 
@@ -50,7 +51,10 @@ function currentWorldId(): string {
 
 function isCurrentSource(source: RuleDataSourceSnapshot): boolean {
   const active = getRuleDataSourceSnapshot();
-  return active.sourceId === source.sourceId && active.generation === source.generation;
+  return active.sourceId === source.sourceId
+    && active.transportId === source.transportId
+    && active.rootUrl === source.rootUrl
+    && active.generation === source.generation;
 }
 
 function toDataSourceFailure(error: unknown, source: RuleDataSourceSnapshot, worldId: string): DataSourceSelectionFailure {
@@ -205,6 +209,32 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
           await get().ensureWorldLoaded(currentWorldId());
         },
       });
+      set({ dataSource: getRuleDataSourceSnapshot(), dataSourceApplying: false, dataSourceFailure: null });
+    } catch (error) {
+      const source = getRuleDataSourceSnapshot();
+      set({
+        dataSource: source,
+        dataSourceApplying: false,
+        dataSourceFailure: toDataSourceFailure(error, source, currentWorldId()),
+      });
+      throw error;
+    }
+  },
+  applyDataSourceTransport: async () => {
+    set({ dataSourceApplying: true, dataSourceFailure: null });
+    try {
+      abortActiveRuleDatasetRequests();
+      clearAllRuleWorldCaches();
+      const source = getRuleDataSourceSnapshot();
+      set({
+        datasets: {},
+        pending: {},
+        pendingGeneration: {},
+        loadingWorld: null,
+        dataSource: source,
+        dataSourceFailure: null,
+      });
+      await get().ensureWorldLoaded(currentWorldId());
       set({ dataSource: getRuleDataSourceSnapshot(), dataSourceApplying: false, dataSourceFailure: null });
     } catch (error) {
       const source = getRuleDataSourceSnapshot();
