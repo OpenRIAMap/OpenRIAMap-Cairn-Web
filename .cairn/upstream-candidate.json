@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "cairn.upstream-candidate.v1",
+  "status": "local-unmerged",
+  "baseLockedCommit": "3851e5cf6dabf40d0d29488f9391e80c39bff188",
+  "candidateCommit": "0d91693d6b03842f0aa3372c95960f5978872c18",
+  "reviewPackageContractVersion": "cairnmap.review-package.v1",
+  "reviewAuthPortVersion": "cairnmap.review-auth-port.v1",
+  "purpose": "Local downstream validation only; replace this overlay with the actual merged upstream commit before any downstream pull request."
+}

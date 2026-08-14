@@ -25,6 +25,7 @@ import { PlayersList } from '../Players/PlayersList';
 import { LoadingOverlay } from '../Loading/LoadingOverlay';
 import { DraggablePanel } from '../DraggablePanel/DraggablePanel';
 import { SettingsPanel } from '../Settings/SettingsPanel';
+import { openriamapGithubReviewAuth } from '@/components/Review/openriamapReviewAuth';
 import { useDataStore } from '@/store/dataStore';
 import { ensureLegacyDataLoaded } from '@/lib/legacyDataLoader';
 import { useRuleDataStore } from '@/store/ruleDataStore';
@@ -1668,7 +1669,7 @@ map.on('mousemove', handleMouseMove);
       case 'about':
         return <AboutCard onClose={closeMobileSheet} />;
       case 'settings':
-        return <SettingsPanel onClose={closeMobileSheet} />;
+        return <SettingsPanel onClose={closeMobileSheet} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="审核身份（GitHub）" reviewAuthLoginLabel="使用 GitHub 登录" />;
       case 'navigation':
         return (
           <NavigationPanel
@@ -2017,7 +2018,7 @@ case 'players':
           id="settings"
           defaultPosition={{ x: 16, y: 240 }}
         >
-          <SettingsPanel onClose={() => setShowSettings(false)} />
+          <SettingsPanel onClose={() => setShowSettings(false)} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="审核身份（GitHub）" reviewAuthLoginLabel="使用 GitHub 登录" />
         </DraggablePanel>
         </div>
       )}

@@ -12,7 +12,19 @@
     "versionedPackages": true,
     "stateVersionConflicts": "required",
     "browserControlRoute": "/api/review-control",
-    "uiBindingIncluded": false
+    "uiBindingIncluded": false,
+    "packageContractVersion": "cairnmap.review-package.v1",
+    "reviewMarkerSchemaVersion": "cairnmap.native-relay-review.v1",
+    "legacyPackageImport": "compat-import-only",
+    "strictSubmissionRequiresLocatedDeleteMarks": true
+  },
+  "reviewAuth": {
+    "contractVersion": "cairnmap.review-auth-port.v1",
+    "provider": "github-oauth-session",
+    "sessionRoute": "/api/auth/github/session",
+    "loginRoute": "/api/auth/github/start",
+    "logoutRoute": "/api/auth/github/logout",
+    "browserReceivesCloudCredentials": false
   },
   "dataSourceSelection": {
     "contractVersion": "cairnmap.data-source-selection.v1",
@@ -23,5 +35,5 @@
     "cacheScope": ["sourceId", "releaseId", "worldId", "readerSchemaVersion"],
     "legacySourceLinkModeRemainsSeparate": true
   },
-  "requiredChecks": ["validate:review-control-binding", "test:review-control-binding", "test:review-control-port", "validate:team-review-authorization", "validate:relay-review-status", "validate:native-relay-accept-guards", "test:data-source-selection", "test:formal-release-reader", "validate:formal-data-source-runtime"]
+  "requiredChecks": ["validate:review-control-binding", "test:review-control-binding", "test:review-control-port", "validate:team-review-authorization", "validate:relay-review-status", "validate:native-relay-accept-guards", "test:data-source-selection", "test:formal-release-reader", "validate:formal-data-source-runtime", "test:review-package-contract", "test:review-package-profile-auth"]
 }

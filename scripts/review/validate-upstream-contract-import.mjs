@@ -8,14 +8,20 @@ const compatibility = JSON.parse(fs.readFileSync(path.join(root, '.cairn/compati
 const candidatePath = path.join(root, '.cairn/upstream-candidate.json');
 const candidate = fs.existsSync(candidatePath) ? JSON.parse(fs.readFileSync(candidatePath, 'utf8')) : null;
 const errors = [];
-const stableContractVersionsMatch = lock.contractVersion === impact.contractVersion && lock.contractVersion === compatibility.reviewWorkflow.contractVersion;
+const workflowContractMatches = lock.contractVersion === compatibility.reviewWorkflow.contractVersion;
+const packageContractMatches = candidate?.reviewPackageContractVersion === compatibility.reviewSubmission.packageContractVersion;
+const authContractMatches = candidate?.reviewAuthPortVersion === compatibility.reviewAuth.contractVersion;
+const impactIncludesPackageContract = String(impact.contractVersion ?? '').includes('review-package.v1');
+if (!workflowContractMatches) errors.push('workflow contract versions are inconsistent');
+if (!packageContractMatches) errors.push('review package contract versions are inconsistent');
+if (!authContractMatches) errors.push('review auth contract versions are inconsistent');
+if (!impactIncludesPackageContract) errors.push('downstream impact is missing the review package contract');
 const validLocalCandidate = candidate?.schemaVersion === 'cairn.upstream-candidate.v1'
   && candidate.status === 'local-unmerged'
   && candidate.baseLockedCommit === lock.commit
   && /^[0-9a-f]{40}$/.test(candidate.candidateCommit ?? '')
-  && candidate.contractVersion === impact.contractVersion
-  && lock.contractVersion === compatibility.reviewWorkflow.contractVersion;
-if (!stableContractVersionsMatch && !validLocalCandidate) errors.push('contract versions are inconsistent');
+  && candidate.reviewPackageContractVersion === compatibility.reviewSubmission.packageContractVersion
+  && candidate.reviewAuthPortVersion === compatibility.reviewAuth.contractVersion;
 if (candidate && !validLocalCandidate) errors.push('upstream candidate overlay is invalid');
 if (!/^[0-9a-f]{40}$/.test(lock.commit)) errors.push('upstream lock must contain an immutable commit');
 if (!compatibility.reviewWorkflow.localStatusIsNotFormalApproval) errors.push('local approval isolation is required');

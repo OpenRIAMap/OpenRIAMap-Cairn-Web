@@ -53,7 +53,7 @@ import {
   type RelayPackageDraft,
   type RelayPackageDraftStatus,
 } from '@/components/Mapping/core/relayPackageDraft';
-import { buildRelayPackageZip } from '@/components/Mapping/core/relayPackageSerializer';
+import { buildRelayPackageZip, resolveRelayPackageWorldId } from '@/components/Mapping/core/relayPackageSerializer';
 import { parseRelayPackageZip } from '@/components/Mapping/core/relayPackageParser';
 import type { MinimalFeatureEditPackage } from '@/components/Mapping/core/minimalFeatureEditPackage';
 import RelayPackageExportPanel from '@/components/Mapping/panels/RelayPackageExportPanel';
@@ -991,7 +991,7 @@ const buildDeleteCandidateFromRuleFeature = (feature: FeatureRecord | null | und
   const id = String(idValue ?? '').trim();
   if (!id) return null;
   const name = String(fi?.Name ?? fi?.Label ?? '').trim() || id;
-  return { ID: id, Name: name, className: cls };
+  return { ID: id, Name: name, className: cls, worldId: resolveRelayPackageWorldId(fi?.World, currentWorldId) };
 };
 
 useEffect(() => {
@@ -2925,6 +2925,7 @@ const layerDeleteCandidateFromLayer = (layer: LayerType) => {
     ID: id,
     Name: String(fi?.Name ?? fi?.Label ?? '').trim() || getLayerDisplayTitle(layer),
     className: cls,
+    worldId: resolveRelayPackageWorldId(fi?.World, currentWorldId),
   };
 };
 
@@ -6100,7 +6101,16 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
         pickedItem={deletePickedCandidate}
         onOpenPickPanel={() => { setDeletePickPanelOpen(true); setDeleteMapPickEnabled(true); setDeletePickCandidate(null); }}
         onConfirm={(items) => {
-          setRelayPackageDraft((prev) => ({ ...prev, deleteMarks: items.map((x) => ({ ID: x.ID, Name: x.Name || '' })), meta: { ...prev.meta, updatedAt: new Date().toISOString() } }));
+          setRelayPackageDraft((prev) => ({
+            ...prev,
+            deleteMarks: items.map((x) => ({
+              ID: x.ID,
+              Name: x.Name || '',
+              ...(x.worldId ? { worldId: x.worldId } : { worldId: currentWorldId }),
+              ...(x.className ? { classCode: x.className } : {}),
+            })),
+            meta: { ...prev.meta, updatedAt: new Date().toISOString() },
+          }));
           setDeletePanelOpen(false);
           setDeleteMapPickEnabled(false);
           setDeletePickPanelOpen(false);
