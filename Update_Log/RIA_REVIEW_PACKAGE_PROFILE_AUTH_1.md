@@ -1,6 +1,6 @@
 # RIA_REVIEW_PACKAGE_PROFILE_AUTH_1
 
-Consumes the local upstream candidate `CM_REVIEW_PACKAGE_CONTRACT_AUTH_CORE_1`
+Consumes the merged upstream `CM_REVIEW_PACKAGE_CONTRACT_AUTH_CORE_1`
 without changing the established Mapping or Review Workbench presentation.
 
 ## Downstream bindings
@@ -23,5 +23,5 @@ without changing the established Mapping or Review Workbench presentation.
 
 The RIA directory names, GitHub routes and broker endpoint exist only in the
 downstream adapter/profile. Generic package syntax, validation modes, digest
-calculation, transport port and settings UI are imported from the upstream
-candidate. The current Review Workbench and Mapping behavior remain intact.
+calculation, transport port and settings UI are imported from the locked
+upstream merge. The current Review Workbench and Mapping behavior remain intact.
