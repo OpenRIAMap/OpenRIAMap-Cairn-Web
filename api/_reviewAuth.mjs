@@ -19,3 +19,7 @@ export function sessionCookie(login, secret) {
   const value = sign({ login, expiresAt: Date.now() + 8 * 60 * 60 * 1000 }, secret);
   return `cairn_review_session=${encodeURIComponent(value)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=28800`;
 }
+
+export function clearSessionCookie() {
+  return 'cairn_review_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
+}

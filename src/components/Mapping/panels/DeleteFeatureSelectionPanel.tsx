@@ -7,7 +7,7 @@ import { useRuleDataStore } from '@/store/ruleDataStore';
 import { buildWorkflowSearchOptionsFromFeatures, filterWorkflowSearchOptions, type SearchSelectConfig } from '@/components/Mapping/Workflow/WorkflowFeatureSearchSelect';
 import { pickIdFieldValue } from '@/components/Rules/rendering/renderRules';
 
-export type DeletePanelItem = { ID: string; Name: string; className?: string };
+export type DeletePanelItem = { ID: string; Name: string; className?: string; worldId?: string };
 
 const DELETE_SEARCH_CONFIG: SearchSelectConfig = {
   cacheKey: 'delete-panel-all-features',
@@ -54,7 +54,7 @@ export default function DeleteFeatureSelectionPanel(props: {
   const candidateList = useMemo(() => {
     const existing = new Set(draft.map((x) => x.ID));
     const datasetOptions = buildWorkflowSearchOptionsFromFeatures(worldFeatures as any[], DELETE_SEARCH_CONFIG)
-      .map((o) => ({ ID: o.id, Name: o.name || o.id, className: o.className }));
+      .map((o) => ({ ID: o.id, Name: o.name || o.id, className: o.className, worldId: currentWorldId }));
     const mergedMap = new Map<string, DeletePanelItem>();
     for (const item of [...datasetOptions, ...candidates]) {
       if (!item?.ID) continue;

@@ -27,6 +27,8 @@ import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import DataSourceSelectionSection from './DataSourceSelectionSection';
 import { getRuleDataSourceSelectionController, getRuleDataSourceSelectionPolicy, isFormalGithubTransportSource } from '@/components/Rules/data/formalDataSourceRuntime';
+import ReviewAuthSettingsSection from '@/components/Settings/ReviewAuthSettingsSection';
+import type { ReviewAuthPort } from '@/components/Review/auth';
 import {
   getCurrentSourceLinkModeId,
   getDefaultSourceLinkModeId,
@@ -36,6 +38,10 @@ import {
 
 interface SettingsPanelProps {
   onClose: () => void;
+  /** Optional application-owned identity provider; generic settings remain unchanged when absent. */
+  reviewAuth?: ReviewAuthPort;
+  reviewAuthTitle?: string;
+  reviewAuthLoginLabel?: string;
 }
 
 type RuleWorldRow = {
@@ -66,7 +72,7 @@ function compactFormalVersion(value: string | null): string {
   return `${version.slice(0, 6)}…`;
 }
 
-export function SettingsPanel({ onClose }: SettingsPanelProps) {
+export function SettingsPanel({ onClose, reviewAuth, reviewAuthTitle, reviewAuthLoginLabel }: SettingsPanelProps) {
   const { cacheInfo, clearCache, forceRefresh, updateCacheInfo } = useDataStore();
   const { startLoading, updateStage, isLoading, activeFlowId, activeRuleWorldId } = useLoadingStore();
   const datasets = useRuleDataStore((s) => s.datasets);
@@ -419,6 +425,13 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
       {/* 内容 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {reviewAuth ? (
+          <ReviewAuthSettingsSection
+            auth={reviewAuth}
+            title={reviewAuthTitle}
+            loginLabel={reviewAuthLoginLabel}
+          />
+        ) : null}
         {/* 世界数据版本 */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-700">

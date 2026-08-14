@@ -60,11 +60,14 @@
     "validate:team-review-authorization": "node ./scripts/review/validate-team-review-authorization.mjs",
     "validate:upstream-contract-import": "node ./scripts/review/validate-upstream-contract-import.mjs",
     "validate:case-template": "node ./scripts/review/validate-case-template-manifest.mjs",
-    "test:review-workspace-contracts": "tsx ./scripts/review/test-review-workspace-contracts.ts",
+    "test:review-workspace-contracts": "tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-review-workspace-contracts.ts",
     "test:data-source-selection": "tsx ./scripts/data-source/test-data-source-selection.ts",
     "test:formal-release-reader": "tsx ./scripts/data-source/test-formal-release-reader.ts",
     "test:player-polling-policy": "tsx ./scripts/player/test-player-polling-policy.ts",
-    "validate:formal-data-source-runtime": "node ./scripts/data-source/validate-formal-data-source-runtime.mjs"
+    "validate:formal-data-source-runtime": "node ./scripts/data-source/validate-formal-data-source-runtime.mjs",
+    "test:review-package-contract": "tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-review-package-contract.ts",
+    "test:review-package-profile-auth": "tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-review-package-profile-auth.ts",
+    "test:review-auth-routes": "node ./scripts/review/test-review-auth-routes.mjs"
   },
   "dependencies": {
     "jszip": "^3.10.1",
