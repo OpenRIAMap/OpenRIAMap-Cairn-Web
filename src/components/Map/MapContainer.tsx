@@ -581,11 +581,11 @@ useEffect(() => {
     publishReviewStatusDraft('approved', undefined, 'approve');
   }, [publishReviewStatusDraft]);
 
-  const handleReviewReject = useCallback(() => {
+  const handleReviewReject = useCallback((reason: string) => {
     setReviewSession((prev) => prev ? { ...prev, status: 'changes_requested_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
     setReviewWorkspaceDirty(false);
     setPendingReviewPackage(null);
-    publishReviewStatusDraft('rejected', undefined, 'reject');
+    publishReviewStatusDraft('rejected', reason, 'reject');
   }, [publishReviewStatusDraft]);
 
   const handleReviewArchive = useCallback(() => {
@@ -594,10 +594,10 @@ useEffect(() => {
     publishReviewStatusDraft('archived', undefined, 'archive');
   }, [publishReviewStatusDraft]);
 
-  const handleReviewRequestChanges = useCallback(() => {
+  const handleReviewRequestChanges = useCallback((reason: string) => {
     setReviewSession((prev) => prev ? { ...prev, status: 'changes_requested_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
     setReviewWorkspaceDirty(false);
-    publishReviewStatusDraft('rejected', '要求修改', 'request-changes');
+    publishReviewStatusDraft('rejected', reason, 'request-changes');
   }, [publishReviewStatusDraft]);
 
   const handleReviewReopen = useCallback(() => {

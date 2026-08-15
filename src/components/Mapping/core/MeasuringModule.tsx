@@ -165,9 +165,9 @@ type MeasuringModuleProps = {
   onReviewDirtyChange?: (dirty: boolean) => void;
   onReviewSave?: () => void;
   onReviewApprove?: () => void;
-  onReviewReject?: () => void;
+  onReviewReject?: (reason: string) => void;
   onReviewArchive?: () => void;
-  onReviewRequestChanges?: () => void;
+  onReviewRequestChanges?: (reason: string) => void;
   onReviewReopen?: () => void;
   /** App-provided transport binding for a prepared standard package. */
   onReviewPackageUpload?: ReviewPackageUploadPort['uploadPackage'];
@@ -4376,10 +4376,10 @@ const workflowBridge: WorkflowBridge = {
   };
 
   const handleReviewRejectAction = () => {
-    const ok = window.confirm('确认打回该审核包？当前阶段仅记录本地打回状态，不会写入 GitHub。');
-    if (!ok) return;
+    const reason = window.prompt('请填写打回原因：');
+    if (!reason?.trim()) return;
     resetReviewDirtyBaseline();
-    onReviewReject?.();
+    onReviewReject?.(reason.trim());
     clearReviewWorkspaceAfterDecision();
   };
 
@@ -4393,7 +4393,7 @@ const workflowBridge: WorkflowBridge = {
     const reason = window.prompt('请填写要求修改的原因：');
     if (!reason?.trim()) return;
     resetReviewDirtyBaseline();
-    onReviewRequestChanges?.();
+    onReviewRequestChanges?.(reason.trim());
   };
 
   const handleReviewReopenAction = () => {
