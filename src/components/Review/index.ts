@@ -14,3 +14,4 @@ export * from './riaReviewSubmissionAdapter';
 export * from './releasePreflight';
 export * from './auth';
 export * from './package';
+export * from './statusBoard';

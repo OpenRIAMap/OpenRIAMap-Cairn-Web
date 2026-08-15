@@ -5,6 +5,8 @@ const operations = new Set([
   'detail', 'list', 'revision-upload-request', 'revision-upload-complete', 'save',
   'precheck', 'approve', 'reject', 'request-changes', 'reopen', 'save-and-approve',
   'publish', 'publish-precheck', 'publish-confirm', 'status', 'report', 'release-feed', 'release-gate', 'archive',
+  'status-board', 'status-save',
+  'revision-download-request',
 ]);
 
 const versionedOperations = new Set([
@@ -44,6 +46,23 @@ function requireRequest(request, { versioned = false } = {}) {
   return { ...request };
 }
 
+function requireStatusBoardSave(request) {
+  if (!request || typeof request !== 'object') throw new Error('invalid-review-status-board-save');
+  for (const field of ['requestId', 'correlationId', 'idempotencyKey']) requireString(request[field], 'invalid-review-status-board-save');
+  if (!Number.isSafeInteger(request.expectedBoardVersion) || request.expectedBoardVersion < 0 || !Array.isArray(request.entries)) throw new Error('invalid-review-status-board-save');
+  return {
+    requestId: request.requestId, correlationId: request.correlationId, idempotencyKey: request.idempotencyKey,
+    expectedBoardVersion: request.expectedBoardVersion,
+    entries: request.entries.map((entry) => ({
+      submissionId: requireString(entry?.submissionId, 'invalid-review-status-board-save'),
+      state: requireString(entry?.state, 'invalid-review-status-board-save'),
+      decisionRevisionId: entry?.decisionRevisionId === null || entry?.decisionRevisionId === undefined ? null : requireString(entry.decisionRevisionId, 'invalid-review-status-board-save'),
+      ...(entry?.decisionAction === undefined ? {} : { decisionAction: requireString(entry.decisionAction, 'invalid-review-status-board-save') }),
+      ...(typeof entry?.reason === 'string' ? { reason: entry.reason } : {}),
+    })),
+  };
+}
+
 /**
  * Browser identity is never accepted from request input. The downstream
  * Dispatcher resolves Team membership and owns the package-state transition.
@@ -55,7 +74,25 @@ export function normalizeReviewControlRequest(input, actor) {
   if (operation === 'list') return { operation, limit: input.limit ?? 50, actor };
   if (operation === 'release-feed') return { operation, limit: input.limit ?? 10, actor };
   if (operation === 'release-gate') return { operation, actor };
+  if (operation === 'status-board') return { operation, actor };
+  if (operation === 'status-save') return { operation, request: requireStatusBoardSave(input.request), actor };
+  if (operation === 'revision-download-request') return {
+    operation,
+    submissionId: requireString(input.submissionId, 'invalid-review-revision-download-request'),
+    revisionId: requireString(input.revisionId, 'invalid-review-revision-download-request'),
+    actor,
+  };
   if (operation === 'status' || operation === 'report') return { operation, submissionId: requireString(input.submissionId, 'invalid-review-submission-id'), actor };
+  if (operation === 'publish-precheck') {
+    if (!Array.isArray(input.selectedSubmissionIds) || !input.selectedSubmissionIds.length || !Number.isSafeInteger(input.expectedBoardVersion) || input.expectedBoardVersion < 0) throw new Error('invalid-review-release-selection');
+    return {
+      operation,
+      request: requireRequest(input.request, { versioned: true }),
+      selectedSubmissionIds: input.selectedSubmissionIds.map((value) => requireString(value, 'invalid-review-release-selection')),
+      expectedBoardVersion: input.expectedBoardVersion,
+      actor,
+    };
+  }
   if (operation === 'publish-confirm') {
     if (!Number.isSafeInteger(input.expectedGateVersion) || input.expectedGateVersion < 1) throw new Error('invalid-review-release-confirmation');
     return {

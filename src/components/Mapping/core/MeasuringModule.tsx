@@ -124,6 +124,7 @@ import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import type { ReviewInboxItem } from '@/components/Review/reviewStatusTypes';
 import type { ReviewPackageSession } from '@/components/Review/reviewPackageSession';
+import type { ReviewPackageUploadPort } from '@/components/Review/contracts';
 
 import {
   checkTempMountIdConflictsDetailed,
@@ -165,6 +166,11 @@ type MeasuringModuleProps = {
   onReviewSave?: () => void;
   onReviewApprove?: () => void;
   onReviewReject?: () => void;
+  onReviewArchive?: () => void;
+  onReviewRequestChanges?: () => void;
+  onReviewReopen?: () => void;
+  /** App-provided transport binding for a prepared standard package. */
+  onReviewPackageUpload?: ReviewPackageUploadPort['uploadPackage'];
 };
 
 
@@ -202,6 +208,10 @@ const MeasuringModule = forwardRef<MeasuringModuleHandle, MeasuringModuleProps>(
     onReviewSave,
     onReviewApprove,
     onReviewReject,
+    onReviewArchive,
+    onReviewRequestChanges,
+    onReviewReopen,
+    onReviewPackageUpload,
   } = props;
   const isReviewWorkspace = workspaceMode === 'review';
   const reviewPackageLabel = reviewSession?.packageId ?? '';
@@ -2822,6 +2832,7 @@ const buildRelayDraftFromReviewItem = (item: ReviewInboxItem): RelayPackageDraft
 const reviewBaselineSignatureRef = useRef<string | null>(null);
 const reviewDirtyRef = useRef(false);
 const reviewJustLoadedRef = useRef(false);
+const [reviewActionDirty, setReviewActionDirty] = useState(false);
 
 const applyReviewInboxItemToWorkspace = (item: ReviewInboxItem) => {
   if (!item) return;
@@ -4304,18 +4315,21 @@ const workflowBridge: WorkflowBridge = {
       reviewJustLoadedRef.current = false;
       reviewBaselineSignatureRef.current = signature;
       reviewDirtyRef.current = false;
+      setReviewActionDirty(false);
       onReviewDirtyChange?.(false);
       return;
     }
     if (reviewBaselineSignatureRef.current === null) {
       reviewBaselineSignatureRef.current = signature;
       reviewDirtyRef.current = false;
+      setReviewActionDirty(false);
       onReviewDirtyChange?.(false);
       return;
     }
     const dirty = signature !== reviewBaselineSignatureRef.current;
     if (dirty !== reviewDirtyRef.current) {
       reviewDirtyRef.current = dirty;
+      setReviewActionDirty(dirty);
       onReviewDirtyChange?.(dirty);
     }
   }, [isReviewWorkspace, measuringActive, layers, relayPackageDraft, onReviewDirtyChange]);
@@ -4323,6 +4337,7 @@ const workflowBridge: WorkflowBridge = {
   const resetReviewDirtyBaseline = () => {
     reviewBaselineSignatureRef.current = buildReviewWorkspaceSignature();
     reviewDirtyRef.current = false;
+    setReviewActionDirty(false);
     onReviewDirtyChange?.(false);
   };
 
@@ -4341,11 +4356,13 @@ const workflowBridge: WorkflowBridge = {
     resetFeatureSelectionState();
     reviewBaselineSignatureRef.current = null;
     reviewDirtyRef.current = false;
+    setReviewActionDirty(false);
     onReviewDirtyChange?.(false);
     setMeasuringActive(false);
   };
 
   const handleReviewSaveAction = () => {
+    if (!reviewDirtyRef.current) return;
     resetReviewDirtyBaseline();
     onReviewSave?.();
   };
@@ -4364,6 +4381,25 @@ const workflowBridge: WorkflowBridge = {
     resetReviewDirtyBaseline();
     onReviewReject?.();
     clearReviewWorkspaceAfterDecision();
+  };
+
+  const handleReviewArchiveAction = () => {
+    if (!window.confirm('确认将当前审核包标记为归档？状态仍需在审核序列中点击“保存状态”后才会提交。')) return;
+    resetReviewDirtyBaseline();
+    onReviewArchive?.();
+  };
+
+  const handleReviewRequestChangesAction = () => {
+    const reason = window.prompt('请填写要求修改的原因：');
+    if (!reason?.trim()) return;
+    resetReviewDirtyBaseline();
+    onReviewRequestChanges?.();
+  };
+
+  const handleReviewReopenAction = () => {
+    if (!window.confirm('确认恢复为待审核？状态仍需在审核序列中点击“保存状态”后才会提交。')) return;
+    resetReviewDirtyBaseline();
+    onReviewReopen?.();
   };
 
   const layerPanelCard = (
@@ -4401,13 +4437,14 @@ const workflowBridge: WorkflowBridge = {
 
         return (
           <>
-            {/* 标题下按钮行：普通测绘保留原工具；审核工作区改为六按钮 */}
+            {/* 审核第一、三行保持既有顺序；仅在中间新增三项状态草稿操作。 */}
             {isReviewWorkspace ? (
               <div className="grid grid-cols-3 gap-2 px-4 py-2 border-b">
                 <AppButton
                   type="button"
-                  className="px-2 py-1 text-sm rounded border bg-blue-600 text-white hover:bg-blue-700 border-blue-700"
-                  title="保存当前审核工作区状态；当前阶段只记录本地审核状态，不写入 GitHub。"
+                  className={`px-2 py-1 text-sm rounded border ${reviewActionDirty ? 'bg-blue-600 text-white hover:bg-blue-700 border-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'}`}
+                  title={reviewActionDirty ? '保存当前审核工作区修改；当前阶段只记录本地审核修改。' : '当前没有审核修改，保存保持锁定。'}
+                  disabled={!reviewActionDirty}
                   onClick={handleReviewSaveAction}
                 >
                   保存
@@ -4431,6 +4468,10 @@ const workflowBridge: WorkflowBridge = {
                 >
                   打回
                 </AppButton>
+
+                <AppButton type="button" className="px-2 py-1 text-sm rounded border bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300" title="将归档状态加入本地草稿；需在审核序列保存状态后提交。" onClick={handleReviewArchiveAction}>归档</AppButton>
+                <AppButton type="button" className="px-2 py-1 text-sm rounded border bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-300" title="标记要求修改；需在审核序列保存状态后提交。" onClick={handleReviewRequestChangesAction}>要求修改</AppButton>
+                <AppButton type="button" className="px-2 py-1 text-sm rounded border bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200" title="恢复待审核状态草稿；需在审核序列保存状态后提交。" onClick={handleReviewReopenAction}>恢复待审</AppButton>
 
                 <AppButton
                   type="button"
@@ -6089,6 +6130,7 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
         featureCount={layers.filter((l) => l.id !== editingLayerId && l.jsonInfo?.featureInfo).length}
         onClose={() => setRelayPackageExportOpen(false)}
         onExport={handleExportRelayPackage}
+        onUploadToReview={onReviewPackageUpload ? async ({ blob, filename, note }) => onReviewPackageUpload({ blob, packageName: filename, summary: note }) : undefined}
       />
 
       <DeleteFeatureSelectionPanel

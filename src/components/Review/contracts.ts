@@ -323,6 +323,33 @@ export interface ReviewSubmissionAdapter {
   getReleaseFeed?(actor: ReviewAuthorizationContext, limit?: number): Promise<ReviewReleaseFeedItem[]>;
 }
 
+/** Application-owned persisted package-status board with conditional writes. */
+export interface ReviewStatusBoardAdapter {
+  getStatusBoard(actor: ReviewAuthorizationContext): Promise<import('./statusBoard').ReviewStatusBoardSnapshot>;
+  saveStatusBoard(request: import('./statusBoard').ReviewStatusBoardSaveRequest): Promise<import('./statusBoard').ReviewStatusBoardSaveResult>;
+}
+
+/**
+ * Provider-neutral hand-off from a standard-package exporter to the review
+ * submission transport. The core never decides where the artifact is sent or
+ * how the actor authenticates; applications supply that binding.
+ */
+export type ReviewPackageUploadInput = {
+  packageName: string;
+  blob: Blob;
+  summary?: string;
+};
+
+export type ReviewPackageUploadResult = {
+  submissionId: string;
+  revisionId: string;
+  alreadySubmitted?: boolean;
+};
+
+export interface ReviewPackageUploadPort {
+  uploadPackage(input: ReviewPackageUploadInput): Promise<ReviewPackageUploadResult>;
+}
+
 /** The application resolves snapshots and authority; core UI code never does. */
 export interface ReviewReleaseSnapshotProvider {
   getReleaseSnapshot(actor: ReviewAuthorizationContext): Promise<ReviewReleaseSnapshot>;
