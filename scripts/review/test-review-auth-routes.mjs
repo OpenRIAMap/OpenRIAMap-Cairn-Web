@@ -22,7 +22,7 @@ try {
   const authenticated = response();
   sessionHandler({ method: 'GET', headers: { cookie: `cairn_review_session=${encodeURIComponent(cookie)}` } }, authenticated);
   assert.equal(authenticated.statusCode, 200);
-  assert.deepEqual(authenticated.payload, { status: 'authenticated', principalId: 'alice' });
+  assert.deepEqual(authenticated.payload, { status: 'authenticated', principalId: 'alice', roles: [] });
   const anonymous = response();
   sessionHandler({ method: 'GET', headers: {} }, anonymous);
   assert.deepEqual(anonymous.payload, { status: 'anonymous' });

@@ -4,7 +4,7 @@ import {
   type ReviewPackageValidationReport,
 } from '@/components/Review/package';
 import { createEmptyRelayPackageDraft, type RelayPackageDraft, type RelayPictureBindingItem } from './relayPackageDraft';
-import { OPENRIAMAP_RIA_RELAY_PROFILE } from './openriamapRiaRelayProfile';
+import { OPENRIAMAP_RIA_REVIEW_PACKAGE_PROFILE } from './openriamapRiaReviewPackageProfile';
 
 export type ParsedRelayPackage = {
   draft: RelayPackageDraft;
@@ -23,9 +23,9 @@ export type ParsedRelayPackage = {
  * deliberate here: old RIA packages may lack the new Review marker, whereas
  * formal submission requires the strict mode in the package core.
  */
-export async function parseRelayPackageZip(file: File): Promise<ParsedRelayPackage> {
-  const parsed = await parseReviewPackageBlob(file, OPENRIAMAP_RIA_RELAY_PROFILE);
-  const validation = validateParsedReviewPackage(parsed, OPENRIAMAP_RIA_RELAY_PROFILE, 'compat-import');
+export async function materializeRiaReviewPackageForWorkspace(file: File): Promise<ParsedRelayPackage> {
+  const parsed = await parseReviewPackageBlob(file);
+  const validation = validateParsedReviewPackage(parsed, OPENRIAMAP_RIA_REVIEW_PACKAGE_PROFILE, 'compat-import');
   const draft = createEmptyRelayPackageDraft();
   const manifest = parsed.manifest ?? {};
   draft.meta = {
@@ -72,3 +72,6 @@ export async function parseRelayPackageZip(file: File): Promise<ParsedRelayPacka
     validation,
   };
 }
+
+/** @deprecated Use materializeRiaReviewPackageForWorkspace for new callers. */
+export const parseRelayPackageZip = materializeRiaReviewPackageForWorkspace;

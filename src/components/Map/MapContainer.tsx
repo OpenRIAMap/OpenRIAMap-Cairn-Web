@@ -52,6 +52,7 @@ import { buildBuildingNameIndex, getRuleCategoryLabelWithParent, getRuleDisplayN
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { consumeFeatureShareTargetFromLocation, normalizePlayerShareId, type FeatureSharePayload, type FeatureShareTarget, type PlayerShareTarget, type ShareParseResult } from '@/lib/featureShareLink';
 import { ReviewModule, ReviewModuleLauncher, createReviewPackageSession, type CairnMapModuleMode, type ReviewInboxItem, type ReviewPackageSession } from '@/components/Review';
+import { openriamapReviewPackageUploader } from '@/components/Review/riaReviewPackageUploader';
 
 // ===== 导航“图上选取”：MapContainer 统一派发地图点击事件 =====
 type MapClickWorldPointEventDetail = {
@@ -563,6 +564,11 @@ useEffect(() => {
     }
   }, [measuringModuleLoaded, requestFeatureModuleActivation]);
 
+  const publishReviewStatusDraft = useCallback((state: 'pending' | 'approved' | 'rejected' | 'archived', reason?: string, decisionAction?: 'approve' | 'reject' | 'request-changes' | 'archive' | 'reopen') => {
+    if (!reviewSession?.packageId) return;
+    window.dispatchEvent(new CustomEvent('cairn-review-status-draft', { detail: { submissionId: reviewSession.packageId, state, reason, decisionAction } }));
+  }, [reviewSession?.packageId]);
+
   const handleReviewSave = useCallback(() => {
     setReviewSession((prev) => prev ? { ...prev, status: 'saved_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
     setReviewWorkspaceDirty(false);
@@ -572,13 +578,33 @@ useEffect(() => {
     setReviewSession((prev) => prev ? { ...prev, status: 'approved_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
     setReviewWorkspaceDirty(false);
     setPendingReviewPackage(null);
-  }, []);
+    publishReviewStatusDraft('approved', undefined, 'approve');
+  }, [publishReviewStatusDraft]);
 
-  const handleReviewReject = useCallback(() => {
+  const handleReviewReject = useCallback((reason: string) => {
     setReviewSession((prev) => prev ? { ...prev, status: 'changes_requested_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
     setReviewWorkspaceDirty(false);
     setPendingReviewPackage(null);
-  }, []);
+    publishReviewStatusDraft('rejected', reason, 'reject');
+  }, [publishReviewStatusDraft]);
+
+  const handleReviewArchive = useCallback(() => {
+    setReviewSession((prev) => prev ? { ...prev, status: 'saved_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
+    setReviewWorkspaceDirty(false);
+    publishReviewStatusDraft('archived', undefined, 'archive');
+  }, [publishReviewStatusDraft]);
+
+  const handleReviewRequestChanges = useCallback((reason: string) => {
+    setReviewSession((prev) => prev ? { ...prev, status: 'changes_requested_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
+    setReviewWorkspaceDirty(false);
+    publishReviewStatusDraft('rejected', reason, 'request-changes');
+  }, [publishReviewStatusDraft]);
+
+  const handleReviewReopen = useCallback(() => {
+    setReviewSession((prev) => prev ? { ...prev, status: 'loaded', dirty: false, updatedAt: new Date().toISOString() } : prev);
+    setReviewWorkspaceDirty(false);
+    publishReviewStatusDraft('pending', undefined, 'reopen');
+  }, [publishReviewStatusDraft]);
 
   useEffect(() => {
     if (moduleMode !== 'review' || !measuringModuleLoaded || !pendingReviewPackage) return;
@@ -1669,7 +1695,7 @@ map.on('mousemove', handleMouseMove);
       case 'about':
         return <AboutCard onClose={closeMobileSheet} />;
       case 'settings':
-        return <SettingsPanel onClose={closeMobileSheet} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="审核身份（GitHub）" reviewAuthLoginLabel="使用 GitHub 登录" />;
+        return <SettingsPanel onClose={closeMobileSheet} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />;
       case 'navigation':
         return (
           <NavigationPanel
@@ -2018,7 +2044,7 @@ case 'players':
           id="settings"
           defaultPosition={{ x: 16, y: 240 }}
         >
-          <SettingsPanel onClose={() => setShowSettings(false)} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="审核身份（GitHub）" reviewAuthLoginLabel="使用 GitHub 登录" />
+          <SettingsPanel onClose={() => setShowSettings(false)} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />
         </DraggablePanel>
         </div>
       )}
@@ -2226,6 +2252,10 @@ case 'players':
                 onReviewSave={handleReviewSave}
                 onReviewApprove={handleReviewApprove}
                 onReviewReject={handleReviewReject}
+                onReviewArchive={handleReviewArchive}
+                onReviewRequestChanges={handleReviewRequestChanges}
+                onReviewReopen={handleReviewReopen}
+                onReviewPackageUpload={openriamapReviewPackageUploader.uploadPackage}
               />
             </Suspense>
           ) : (

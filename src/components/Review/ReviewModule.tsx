@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ShieldCheck } from 'lucide-react';
-import AppButton from '@/components/ui/AppButton';
+import { useCallback, useMemo } from 'react';
 import { DraggablePanel } from '@/components/DraggablePanel/DraggablePanel';
-import { parseRelayPackageZip } from '@/components/Mapping/core/relayPackageParser';
-import ReviewInboxPanel from './ReviewInboxPanel';
+import { materializeRiaReviewPackageForWorkspace } from '@/components/Mapping/core/relayPackageParser';
+import { createReviewItemFromParsedRelayPackage } from './reviewInboxReader';
 import ReviewLayerManagerPanel from './ReviewLayerManagerPanel';
-import { createReviewItemFromParsedRelayPackage, loadSampleReviewInbox } from './reviewInboxReader';
+import { openriamapGithubReviewAuth } from './openriamapReviewAuth';
+import { createRiaReviewSubmissionAdapter, requestRiaReviewRevisionDownload } from './riaReviewSubmissionAdapter';
+import { ReviewStatusBoardPanel, type ReviewStatusDraftSignal } from './ReviewStatusBoardPanel';
+import type { ReviewPackageRevision, ReviewSubmissionSnapshot } from './contracts';
 import type { ReviewInboxItem } from './reviewStatusTypes';
 import type { ReviewPackageSession } from './reviewPackageSession';
 
@@ -17,113 +18,58 @@ type ReviewModuleProps = {
   onLoadPackage: (item: ReviewInboxItem) => void;
 };
 
+/**
+ * RIA application binding for the upstream generic status-board workbench.
+ * This layer owns GitHub session use, broker-issued archive downloads, Relay
+ * parsing, and map-workspace injection. It deliberately owns no queue UI,
+ * state-board semantics, or release-control orchestration.
+ */
 export default function ReviewModule({ activeWorldId, session, dirty, onClose, onLoadPackage }: ReviewModuleProps) {
-  const [items, setItems] = useState<ReviewInboxItem[]>([]);
-  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [localFileBusy, setLocalFileBusy] = useState(false);
+  const adapter = useMemo(() => createRiaReviewSubmissionAdapter(), []);
 
-  const selectedItem = useMemo(
-    () => items.find((item) => item.packageId === selectedPackageId) ?? null,
-    [items, selectedPackageId],
-  );
+  const onLoadRevision = useCallback(async ({ submission, revision }: { submission: ReviewSubmissionSnapshot; revision: ReviewPackageRevision }) => {
+    if (dirty && !window.confirm('当前审核工作区有未保存修改。加载其他审核包会清理该工作区，是否继续？')) return;
+    const grant = await requestRiaReviewRevisionDownload(submission.submissionId, revision.revisionId);
+    const response = await fetch(grant.download.url);
+    if (!response.ok) throw new Error(`审核包下载失败：HTTP ${response.status}`);
+    const blob = await response.blob();
+    if (blob.size !== grant.download.byteLength) throw new Error('审核包下载长度校验失败。');
+    const file = new File([blob], submission.packageName || `${submission.submissionId}.zip`, { type: 'application/zip' });
+      const parsed = await materializeRiaReviewPackageForWorkspace(file);
+    const item = createReviewItemFromParsedRelayPackage(file.name, parsed, activeWorldId);
+    onLoadPackage({
+      ...item,
+      packageId: submission.submissionId,
+      status: submission.state,
+      updatedAt: submission.lastEvent?.occurredAt,
+      source: 'local-file',
+    });
+  }, [activeWorldId, dirty, onLoadPackage]);
 
-  const reloadSampleInbox = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const loadedItems = await loadSampleReviewInbox();
-      setItems((previous) => {
-        const localItems = previous.filter((item) => item.source === 'local-file');
-        return [...localItems, ...loadedItems];
-      });
-      setSelectedPackageId((previous) => previous ?? loadedItems[0]?.packageId ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
+  const subscribeToStatusDraft = useCallback((listener: (signal: ReviewStatusDraftSignal) => void) => {
+    const receive = (event: Event) => {
+      const detail = (event as CustomEvent<Partial<ReviewStatusDraftSignal>>).detail;
+      if (!detail?.submissionId || !detail.state) return;
+      listener({ submissionId: detail.submissionId, state: detail.state, ...(detail.reason ? { reason: detail.reason } : {}), ...(detail.decisionAction ? { decisionAction: detail.decisionAction } : {}) });
+    };
+    window.addEventListener('cairn-review-status-draft', receive);
+    return () => window.removeEventListener('cairn-review-status-draft', receive);
   }, []);
 
-  useEffect(() => {
-    void reloadSampleInbox();
-  }, [reloadSampleInbox]);
+  const subscribeToSubmissionUpload = useCallback((listener: (submissionId?: string) => void) => {
+    const receive = (event: Event) => listener((event as CustomEvent<{ submissionId?: string }>).detail?.submissionId);
+    window.addEventListener('cairn-review-submission-uploaded', receive);
+    return () => window.removeEventListener('cairn-review-submission-uploaded', receive);
+  }, []);
 
-  const confirmSwitchIfNeeded = useCallback((nextPackageId?: string) => {
-    if (!session) return true;
-    if (nextPackageId && session.packageId === nextPackageId) return true;
-    if (dirty) {
-      return window.confirm('当前审核包已有未保存修改。切换审核包将清空当前审核图层管理组，是否继续？');
-    }
-    if (session.status === 'saved_local') {
-      return window.confirm('当前审核包已有本地保存的审核修改，但尚未通过或打回。是否继续切换？');
-    }
-    return true;
-  }, [dirty, session]);
-
-  const handleLocalRelayPackageFile = async (file: File | null) => {
-    if (!file) return;
-    setLocalFileBusy(true);
-    setError(null);
-    try {
-      const parsed = await parseRelayPackageZip(file);
-      const item = createReviewItemFromParsedRelayPackage(file.name, parsed, activeWorldId);
-      setItems((previous) => [item, ...previous.filter((existing) => existing.packageId !== item.packageId)]);
-      setSelectedPackageId(item.packageId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLocalFileBusy(false);
-    }
-  };
-
-  const handleLoadSelected = useCallback(() => {
-    if (!selectedItem) return;
-    if (!confirmSwitchIfNeeded(selectedItem.packageId)) return;
-    onLoadPackage(selectedItem);
-  }, [confirmSwitchIfNeeded, onLoadPackage, selectedItem]);
-
-  const handleSelect = useCallback((item: ReviewInboxItem) => {
-    if (session && item.packageId !== session.packageId && dirty) {
-      const ok = window.confirm('当前审核包已有未保存修改。仅切换列表选择不会清空工作区，但请先保存/通过/打回后再加载新包。是否继续选择？');
-      if (!ok) return;
-    }
-    setSelectedPackageId(item.packageId);
-  }, [dirty, session]);
-
-  return (
-    <>
-      <DraggablePanel id="review-inbox-panel" defaultPosition={{ x: 18, y: 132 }} zIndex={1760} constrainExpandedToViewport>
-        <ReviewInboxPanel
-          activeWorldId={activeWorldId}
-          items={items}
-          selectedPackageId={selectedPackageId}
-          loading={loading}
-          error={error}
-          localFileBusy={localFileBusy}
-          selectedItem={selectedItem}
-          session={session}
-          dirty={dirty}
-          onReload={reloadSampleInbox}
-          onSelect={handleSelect}
-          onLocalFile={(file) => void handleLocalRelayPackageFile(file)}
-          onLoadSelected={handleLoadSelected}
-        />
-      </DraggablePanel>
-
-      <DraggablePanel id="review-status-panel" defaultPosition={{ x: 424, y: 132 }} zIndex={1755} constrainExpandedToViewport>
-        <ReviewLayerManagerPanel session={session} dirty={dirty} />
-      </DraggablePanel>
-
-      <div className="pointer-events-none absolute left-1/2 top-4 z-[1500] hidden -translate-x-1/2 sm:block">
-        <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-orange-200 bg-white/95 px-3 py-2 text-xs text-orange-800 shadow-lg">
-          <ShieldCheck className="h-4 w-4" />
-          <span className="font-semibold">审核模块</span>
-          <span className="text-orange-600">前端工作台框架；暂不连接 GitHub。</span>
-          <AppButton type="button" onClick={onClose} className="ml-1 h-7 rounded-full bg-orange-100 px-2 text-xs text-orange-800 hover:bg-orange-200">退出</AppButton>
-        </div>
-      </div>
-    </>
-  );
+  return <ReviewStatusBoardPanel
+    auth={openriamapGithubReviewAuth}
+    submissionAdapter={adapter}
+    releaseControl={adapter}
+    onLoadRevision={onLoadRevision}
+    onClose={onClose}
+    subscribeToStatusDraft={subscribeToStatusDraft}
+    subscribeToSubmissionUpload={subscribeToSubmissionUpload}
+    workspacePanel={<DraggablePanel id="review-status-panel" defaultPosition={{ x: 424, y: 132 }} zIndex={1755} constrainExpandedToViewport><ReviewLayerManagerPanel session={session} dirty={dirty} /></DraggablePanel>}
+  />;
 }

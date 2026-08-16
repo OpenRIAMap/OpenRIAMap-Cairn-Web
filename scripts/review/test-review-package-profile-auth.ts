@@ -1,8 +1,9 @@
 import {
   parseReviewPackageBlob,
+  REVIEW_PACKAGE_LAYOUT,
   validateParsedReviewPackage,
 } from '../../src/components/Review/package';
-import { OPENRIAMAP_RIA_RELAY_PROFILE } from '../../src/components/Mapping/core/openriamapRiaRelayProfile';
+import { OPENRIAMAP_RIA_REVIEW_PACKAGE_PROFILE } from '../../src/components/Mapping/core/openriamapRiaReviewPackageProfile';
 import { buildRelayPackageZip } from '../../src/components/Mapping/core/relayPackageSerializer';
 import { createEmptyRelayPackageDraft } from '../../src/components/Mapping/core/relayPackageDraft';
 import { openriamapReviewSubmissionTransport } from '../../src/components/Review/openriamapReviewSubmissionTransport';
@@ -24,8 +25,14 @@ const blob = await buildRelayPackageZip({
     jsonInfo: { subType: 'BUD', featureInfo: { ID: 'new-feature', Class: 'BUD', World: 'zth', Name: 'New feature' } },
   }],
 });
-const parsed = await parseReviewPackageBlob(blob, OPENRIAMAP_RIA_RELAY_PROFILE);
-const strict = validateParsedReviewPackage(parsed, OPENRIAMAP_RIA_RELAY_PROFILE, 'strict-submission');
+if (OPENRIAMAP_RIA_REVIEW_PACKAGE_PROFILE.profileId !== 'openriamap-ria-relay'
+  || !OPENRIAMAP_RIA_REVIEW_PACKAGE_PROFILE.nestedKindClasses?.includes('ISG')
+  || REVIEW_PACKAGE_LAYOUT.featureRoot !== 'Data_Spilt'
+  || 'featureRoot' in OPENRIAMAP_RIA_REVIEW_PACKAGE_PROFILE) {
+  throw new Error('RIA JSON package profile boundary failed');
+}
+const parsed = await parseReviewPackageBlob(blob);
+const strict = validateParsedReviewPackage(parsed, OPENRIAMAP_RIA_REVIEW_PACKAGE_PROFILE, 'strict-submission');
 if (!strict.valid || !parsed.paths.includes('Review.json') || !parsed.paths.includes('Data_Spilt/zth/BUD/new-feature.json')) {
   throw new Error(`RIA profile package contract failed: ${strict.errors.map((entry) => entry.code).join(',')}`);
 }
