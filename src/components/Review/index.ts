@@ -15,3 +15,4 @@ export * from './releasePreflight';
 export * from './auth';
 export * from './package';
 export * from './statusBoard';
+export * from './ReviewStatusBoardPanel';

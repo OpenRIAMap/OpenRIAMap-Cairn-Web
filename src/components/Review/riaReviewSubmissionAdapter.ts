@@ -1,4 +1,4 @@
-import type { ReviewAuthorizationContext, ReviewPackageRevision, ReviewReleaseFeedItem, ReviewStatusBoardAdapter, ReviewSubmissionAdapter, ReviewSubmissionRequest, ReviewSubmissionResult, ReviewSubmissionSnapshot } from './contracts';
+import type { ReviewAuthorizationContext, ReviewPackageRevision, ReviewReleaseConfirmationRequest, ReviewReleaseControlPort, ReviewReleaseControlReport, ReviewReleaseControlRequest, ReviewReleaseFeedItem, ReviewReleaseGateSnapshot, ReviewStatusBoardAdapter, ReviewSubmissionAdapter, ReviewSubmissionRequest, ReviewSubmissionResult, ReviewSubmissionSnapshot } from './contracts';
 import type { ReviewStatusBoardSaveRequest, ReviewStatusBoardSaveResult, ReviewStatusBoardSnapshot } from './statusBoard';
 import type { ReviewWorkflowFetch } from './riaReviewWorkflowAdapter';
 
@@ -61,7 +61,7 @@ function normalizeSnapshot(value: RiaStoredSnapshot): ReviewSubmissionSnapshot {
 }
 
 /** Downstream-only same-origin transport. It deliberately contains no provider credentials. */
-export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = fetch): ReviewSubmissionAdapter & ReviewStatusBoardAdapter {
+export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = fetch): ReviewSubmissionAdapter & ReviewStatusBoardAdapter & ReviewReleaseControlPort {
   return {
     getSubmission: async (submissionId: string, _actor: ReviewAuthorizationContext) => normalizeSnapshot(await requestControl<RiaStoredSnapshot>(fetcher, { operation: 'detail', submissionId })),
     listSubmissions: async (_actor: ReviewAuthorizationContext) => {
@@ -83,6 +83,20 @@ export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = 
         expectedBoardVersion: request.expectedBoardVersion,
         entries: request.entries.map(({ submissionId, state, decisionRevisionId, decisionAction, reason }) => ({ submissionId, state, decisionRevisionId, ...(decisionAction ? { decisionAction } : {}), ...(reason ? { reason } : {}) })),
       },
+    }),
+    getReleaseGate: (_actor: ReviewAuthorizationContext) => requestControl<ReviewReleaseGateSnapshot>(fetcher, { operation: 'release-gate' }),
+    runReleasePrecheck: (request: ReviewReleaseControlRequest, _actor: ReviewAuthorizationContext) => requestControl<ReviewReleaseControlReport>(fetcher, {
+      operation: 'publish-precheck',
+      selectedSubmissionIds: request.selectedSubmissionIds,
+      expectedBoardVersion: request.expectedBoardVersion,
+      request: request.request,
+    }),
+    confirmRelease: (request: ReviewReleaseConfirmationRequest, _actor: ReviewAuthorizationContext) => requestControl<ReviewReleaseControlReport>(fetcher, {
+      operation: 'publish-confirm',
+      attemptId: request.attemptId,
+      expectedGateVersion: request.expectedGateVersion,
+      precheckReportSha256: request.precheckReportSha256,
+      request: request.request,
     }),
   };
 }
