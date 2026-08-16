@@ -14,6 +14,17 @@ assert.equal(normalized.actor.principalId, 'alice');
 assert.equal(normalized.request.targetRevisionId, 'submission-1-r2');
 assert.throws(() => normalizeReviewControlRequest({ operation: 'approve', request: { ...request, expectedStateVersion: -1 } }, { principalId: 'alice' }), /invalid-review-control-request/);
 assert.throws(() => normalizeReviewControlRequest({ operation: 'unknown' }, { principalId: 'alice' }), /invalid-review-control-operation/);
+const uploadRequest = {
+  requestId: 'upload-r1', correlationId: 'upload-c1', idempotencyKey: 'submission-2:submission-2-r1:upload:upload-c1',
+  submissionId: 'submission-2', revisionId: 'submission-2-r1', expectedStateVersion: 0,
+  byteLength: 22, sha256: 'a'.repeat(64), contentMd5: 'dGVzdC1tZDU=', packageName: 'RelayPackage.zip',
+};
+const upload = normalizeReviewControlRequest({ operation: 'revision-upload-request', request: uploadRequest }, { principalId: 'alice' });
+assert.equal(upload.request.revisionId, 'submission-2-r1');
+assert.equal(upload.request.targetRevisionId, 'submission-2-r1');
+const uploadComplete = normalizeReviewControlRequest({ operation: 'revision-upload-complete', request: uploadRequest }, { principalId: 'alice' });
+assert.equal(uploadComplete.request.targetRevisionId, 'submission-2-r1');
+assert.throws(() => normalizeReviewControlRequest({ operation: 'revision-upload-request', request: { ...uploadRequest, targetRevisionId: 'another-revision' } }, { principalId: 'alice' }), /invalid-review-control-request/);
 const confirmation = normalizeReviewControlRequest({
   operation: 'publish-confirm', request,
   attemptId: 'attempt-demo-001', expectedGateVersion: 2, precheckReportSha256: 'b'.repeat(64),
