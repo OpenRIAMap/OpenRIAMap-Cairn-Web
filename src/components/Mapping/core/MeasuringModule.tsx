@@ -54,7 +54,7 @@ import {
   type RelayPackageDraftStatus,
 } from '@/components/Mapping/core/relayPackageDraft';
 import { buildRelayPackageZip, resolveRelayPackageWorldId } from '@/components/Mapping/core/relayPackageSerializer';
-import { parseRelayPackageZip } from '@/components/Mapping/core/relayPackageParser';
+import { materializeRiaReviewPackageForWorkspace } from '@/components/Mapping/core/relayPackageParser';
 import type { MinimalFeatureEditPackage } from '@/components/Mapping/core/minimalFeatureEditPackage';
 import RelayPackageExportPanel from '@/components/Mapping/panels/RelayPackageExportPanel';
 import DeleteFeatureSelectionPanel, { type DeletePanelItem } from '@/components/Mapping/panels/DeleteFeatureSelectionPanel';
@@ -3043,7 +3043,7 @@ const handleImportFileSelected = async (e: ChangeEvent<HTMLInputElement>) => {
     // 先尝试按 RelayPackage 解析。
     // 若 ZIP 已具备 RelayPackage 结构，则不允许回退到旧 ZIP JSON 导入，避免 INDEX/Delete/Picture/Tool_Refresh 被误处理。
     try {
-      const parsed = await parseRelayPackageZip(file);
+      const parsed = await materializeRiaReviewPackageForWorkspace(file);
       if (parsed.isRelayPackageLike) {
         if (
           (Array.isArray(parsed.jsonItems) && parsed.jsonItems.length > 0) ||

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { DraggablePanel } from '@/components/DraggablePanel/DraggablePanel';
-import { parseRelayPackageZip } from '@/components/Mapping/core/relayPackageParser';
+import { materializeRiaReviewPackageForWorkspace } from '@/components/Mapping/core/relayPackageParser';
 import { createReviewItemFromParsedRelayPackage } from './reviewInboxReader';
 import ReviewLayerManagerPanel from './ReviewLayerManagerPanel';
 import { openriamapGithubReviewAuth } from './openriamapReviewAuth';
@@ -35,7 +35,7 @@ export default function ReviewModule({ activeWorldId, session, dirty, onClose, o
     const blob = await response.blob();
     if (blob.size !== grant.download.byteLength) throw new Error('审核包下载长度校验失败。');
     const file = new File([blob], submission.packageName || `${submission.submissionId}.zip`, { type: 'application/zip' });
-    const parsed = await parseRelayPackageZip(file);
+      const parsed = await materializeRiaReviewPackageForWorkspace(file);
     const item = createReviewItemFromParsedRelayPackage(file.name, parsed, activeWorldId);
     onLoadPackage({
       ...item,

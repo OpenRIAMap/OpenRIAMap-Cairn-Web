@@ -1,0 +1,5 @@
+{
+  "schemaVersion": "cairnmap.review-package-profile.v1",
+  "profileId": "openriamap-ria-relay",
+  "nestedKindClasses": ["ISG", "ISL", "ISP"]
+}

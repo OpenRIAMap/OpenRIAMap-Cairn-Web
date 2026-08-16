@@ -4,11 +4,11 @@ import {
   type ReviewPackageFeatureInput,
   type ReviewPackagePictureInput,
   type ReviewPackageSourceSnapshot,
+  buildReviewPackageToolRefreshFiles,
 } from '@/components/Review/package';
 import { readRuleWorldCache } from '@/components/Rules/data/worldRuleCache';
 import type { RelayPackageDraft } from './relayPackageDraft';
-import { OPENRIAMAP_RIA_RELAY_PROFILE } from './openriamapRiaRelayProfile';
-import { buildRelayPackageToolRefreshFiles } from './relayPackageToolRefresh';
+import { OPENRIAMAP_RIA_REVIEW_PACKAGE_PROFILE } from './openriamapRiaReviewPackageProfile';
 
 export type RelayExportLayer = {
   id: number;
@@ -152,7 +152,7 @@ export async function buildRelayPackageZip(args: {
     })
     .filter((item) => item.ID);
 
-  const artifact = await buildReviewPackageArtifact(OPENRIAMAP_RIA_RELAY_PROFILE, {
+  const artifact = await buildReviewPackageArtifact(OPENRIAMAP_RIA_REVIEW_PACKAGE_PROFILE, {
     packageName: packageNameFor(args.operator, args.currentWorldId),
     operator: args.operator,
     note: args.note,
@@ -161,7 +161,7 @@ export async function buildRelayPackageZip(args: {
     features,
     pictures,
     deletes,
-    extraFiles: buildRelayPackageToolRefreshFiles(),
+    extraFiles: buildReviewPackageToolRefreshFiles(),
   });
   return artifact.blob;
 }
