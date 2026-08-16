@@ -46,6 +46,18 @@ function requireRequest(request, { versioned = false } = {}) {
   return { ...request };
 }
 
+/**
+ * The generic Review package contract calls its immutable revision field
+ * `revisionId`.  The RIA Dispatcher contract calls the same value
+ * `targetRevisionId`.  Normalize at this downstream broker boundary so the
+ * generic upload port never needs to know an application-specific term.
+ */
+function requireRevisionUploadRequest(request) {
+  const revisionId = requireString(request?.revisionId, 'invalid-review-control-request');
+  if (request?.targetRevisionId !== undefined && request.targetRevisionId !== revisionId) throw new Error('invalid-review-control-request');
+  return requireRequest({ ...request, targetRevisionId: revisionId }, { versioned: true });
+}
+
 function requireStatusBoardSave(request) {
   if (!request || typeof request !== 'object') throw new Error('invalid-review-status-board-save');
   for (const field of ['requestId', 'correlationId', 'idempotencyKey']) requireString(request[field], 'invalid-review-status-board-save');
@@ -76,6 +88,9 @@ export function normalizeReviewControlRequest(input, actor) {
   if (operation === 'release-gate') return { operation, actor };
   if (operation === 'status-board') return { operation, actor };
   if (operation === 'status-save') return { operation, request: requireStatusBoardSave(input.request), actor };
+  if (operation === 'revision-upload-request' || operation === 'revision-upload-complete') {
+    return { operation, request: requireRevisionUploadRequest(input.request), actor };
+  }
   if (operation === 'revision-download-request') return {
     operation,
     submissionId: requireString(input.submissionId, 'invalid-review-revision-download-request'),
