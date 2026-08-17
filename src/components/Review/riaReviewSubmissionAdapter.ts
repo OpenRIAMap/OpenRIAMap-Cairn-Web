@@ -1,6 +1,46 @@
-import type { ReviewAuthorizationContext, ReviewPackageRevision, ReviewReleaseConfirmationRequest, ReviewReleaseControlPort, ReviewReleaseControlReport, ReviewReleaseControlRequest, ReviewReleaseFeedItem, ReviewReleaseGateSnapshot, ReviewStatusBoardAdapter, ReviewSubmissionAdapter, ReviewSubmissionRequest, ReviewSubmissionResult, ReviewSubmissionSnapshot } from './contracts';
+import {
+  createIdleReviewReleaseGate,
+  ReviewOperationError,
+  type ReviewAuthorizationContext,
+  type ReviewPackagePrecheckReport,
+  type ReviewPackageRevision,
+  type ReviewReleaseConfirmationRequest,
+  type ReviewReleaseControlPort,
+  type ReviewReleaseControlReport,
+  type ReviewReleaseControlRequest,
+  type ReviewReleaseFeedItem,
+  type ReviewReleaseGateSnapshot,
+  type ReviewStatusBoardAdapter,
+  type ReviewSubmissionAdapter,
+  type ReviewSubmissionRequest,
+  type ReviewSubmissionResult,
+  type ReviewSubmissionSnapshot,
+} from './contracts';
 import type { ReviewStatusBoardSaveRequest, ReviewStatusBoardSaveResult, ReviewStatusBoardSnapshot } from './statusBoard';
 import type { ReviewWorkflowFetch } from './riaReviewWorkflowAdapter';
+
+type ControlErrorPayload = { error?: unknown; code?: unknown; message?: unknown; correlationId?: unknown; requestId?: unknown; details?: unknown };
+
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
+function asDetails(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && Boolean(item.trim())) : [];
+}
+
+function operationError(payload: unknown, status: number): ReviewOperationError {
+  const object = payload && typeof payload === 'object' ? payload as ControlErrorPayload : {};
+  const code = asString(object.code) ?? asString(object.error) ?? `review-control-http-${status}`;
+  const message = asString(object.message) ?? asString(object.error) ?? `审核服务请求失败（HTTP ${status}）。`;
+  return new ReviewOperationError({
+    code,
+    message,
+    retryable: status >= 500 || status === 429,
+    correlationId: asString(object.correlationId) ?? asString(object.requestId),
+    details: asDetails(object.details),
+  });
+}
 
 async function requestControl<T>(fetcher: ReviewWorkflowFetch, body: Record<string, unknown>): Promise<T> {
   const response = await fetcher('/api/review-control', {
@@ -9,11 +49,17 @@ async function requestControl<T>(fetcher: ReviewWorkflowFetch, body: Record<stri
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const payload = await response.json() as T | { error?: string };
-  if (!response.ok) {
-    const error = typeof payload === 'object' && payload && 'error' in payload && typeof payload.error === 'string' ? payload.error : 'Review submission request failed.';
-    throw new Error(error);
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new ReviewOperationError({
+      code: 'review-control-invalid-response',
+      message: '审核服务返回了无法解析的响应。',
+      retryable: response.status >= 500,
+    });
   }
+  if (!response.ok) throw operationError(payload, response.status);
   return payload as T;
 }
 
@@ -33,6 +79,7 @@ type RiaStoredRevision = {
 };
 
 type RiaStoredSnapshot = Omit<ReviewSubmissionSnapshot, 'revisions'> & { revisions?: RiaStoredRevision[] };
+type RiaPrecheckResponse = ReviewSubmissionResult & { report?: { decision?: unknown; findings?: unknown; summary?: { warnings?: unknown; blockers?: unknown } } };
 
 /** Maps the downstream persisted revision record to the generic Review display contract. */
 function normalizeSnapshot(value: RiaStoredSnapshot): ReviewSubmissionSnapshot {
@@ -60,6 +107,35 @@ function normalizeSnapshot(value: RiaStoredSnapshot): ReviewSubmissionSnapshot {
   return { ...value, revisions } as ReviewSubmissionSnapshot;
 }
 
+function normalizePackagePrecheck(value: RiaPrecheckResponse, request: ReviewSubmissionRequest): ReviewPackagePrecheckReport {
+  const report = value.report;
+  const decision = report?.decision;
+  if (!report || (decision !== 'ready' && decision !== 'warning-confirmation-required' && decision !== 'blocked')) {
+    throw new ReviewOperationError({
+      code: 'review-precheck-invalid-response',
+      message: '审核预检未返回可用的报告。',
+      correlationId: value.correlationId,
+    });
+  }
+  const summary = report.summary;
+  return {
+    schemaVersion: 'cairn.review-package-precheck.v1',
+    decision,
+    submissionId: request.submissionId,
+    revisionId: request.targetRevisionId,
+    stateVersion: value.submission?.stateVersion ?? request.expectedStateVersion,
+    findings: Array.isArray(report.findings) ? report.findings as ReviewPackagePrecheckReport['findings'] : [],
+    ...(summary && Number.isSafeInteger(summary.warnings) && Number.isSafeInteger(summary.blockers)
+      ? { summary: { warnings: Number(summary.warnings), blockers: Number(summary.blockers) } }
+      : {}),
+    correlationId: value.correlationId,
+  };
+}
+
+function normalizeGate(value: ReviewReleaseGateSnapshot | null | undefined): ReviewReleaseGateSnapshot {
+  return value && typeof value === 'object' && typeof value.state === 'string' ? value : createIdleReviewReleaseGate();
+}
+
 /** Downstream-only same-origin transport. It deliberately contains no provider credentials. */
 export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = fetch): ReviewSubmissionAdapter & ReviewStatusBoardAdapter & ReviewReleaseControlPort {
   return {
@@ -69,6 +145,7 @@ export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = 
       return result.items.map(normalizeSnapshot);
     },
     dispatchSubmission: (request: ReviewSubmissionRequest) => requestControl<ReviewSubmissionResult>(fetcher, { operation: request.action, request }),
+    precheckSubmission: async (request: ReviewSubmissionRequest) => normalizePackagePrecheck(await requestControl<RiaPrecheckResponse>(fetcher, { operation: 'precheck', request }), request),
     getReleaseFeed: async (_actor: ReviewAuthorizationContext, limit = 10) => {
       const result = await requestControl<{ items: ReviewReleaseFeedItem[] }>(fetcher, { operation: 'release-feed', limit });
       return result.items;
@@ -84,7 +161,7 @@ export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = 
         entries: request.entries.map(({ submissionId, state, decisionRevisionId, decisionAction, reason }) => ({ submissionId, state, decisionRevisionId, ...(decisionAction ? { decisionAction } : {}), ...(reason ? { reason } : {}) })),
       },
     }),
-    getReleaseGate: (_actor: ReviewAuthorizationContext) => requestControl<ReviewReleaseGateSnapshot>(fetcher, { operation: 'release-gate' }),
+    getReleaseGate: async (_actor: ReviewAuthorizationContext) => normalizeGate(await requestControl<ReviewReleaseGateSnapshot | null>(fetcher, { operation: 'release-gate' })),
     runReleasePrecheck: (request: ReviewReleaseControlRequest, _actor: ReviewAuthorizationContext) => requestControl<ReviewReleaseControlReport>(fetcher, {
       operation: 'publish-precheck',
       selectedSubmissionIds: request.selectedSubmissionIds,
