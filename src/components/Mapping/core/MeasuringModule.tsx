@@ -169,6 +169,8 @@ type MeasuringModuleProps = {
   onReviewArchive?: () => void;
   onReviewRequestChanges?: (reason: string) => void;
   onReviewReopen?: () => void;
+  /** The host owns module teardown; closing the Review manager requests it. */
+  onReviewExitRequested?: () => void;
   /** App-provided transport binding for a prepared standard package. */
   onReviewPackageUpload?: ReviewPackageUploadPort['uploadPackage'];
 };
@@ -211,6 +213,7 @@ const MeasuringModule = forwardRef<MeasuringModuleHandle, MeasuringModuleProps>(
     onReviewArchive,
     onReviewRequestChanges,
     onReviewReopen,
+    onReviewExitRequested,
     onReviewPackageUpload,
   } = props;
   const isReviewWorkspace = workspaceMode === 'review';
@@ -944,6 +947,10 @@ const endMeasuringFromMenu = () => {
 
 
 const closeMeasuringUI = () => {
+  if (isReviewWorkspace) {
+    onReviewExitRequested?.();
+    return;
+  }
   // 右上角 X：也视同“退出测绘并清理”，必须二次确认
   confirmExitAndClear('退出测绘');
 };
@@ -4403,8 +4410,8 @@ const workflowBridge: WorkflowBridge = {
   };
 
   const layerPanelCard = (
-    <AppCard className="w-96 overflow-hidden border" style={{ maxHeight: '70vh' }}>
-      <div ref={layerMgrCardRef}>
+  <AppCard className={`w-96 overflow-hidden border ${isReviewWorkspace ? 'flex h-[70vh] max-h-[70vh] flex-col' : ''}`} style={{ maxHeight: '70vh' }}>
+      <div ref={layerMgrCardRef} className={isReviewWorkspace ? 'flex min-h-0 flex-1 flex-col' : undefined}>
       {/* 标题栏（拖拽区域：前 48px） */}
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <h3 className="font-bold text-gray-800" data-draggable-title>{isReviewWorkspace ? '审核图层管理' : '图层'}</h3>
@@ -4678,11 +4685,11 @@ const workflowBridge: WorkflowBridge = {
             </div>
 
             {/* 列表：纵向滚动 + 横向滚动（与顶部同步） */}
-            <div className="px-3 pb-3">
+            <div className={isReviewWorkspace ? 'min-h-0 flex-1 px-3 pb-3' : 'px-3 pb-3'}>
               <div
                 ref={layerMgrBodyRef}
-                className="overflow-y-auto overflow-x-auto"
-                style={{ maxHeight: layerMgrListMaxHeight }}
+                className={isReviewWorkspace ? 'h-full overflow-x-auto overflow-y-auto' : 'overflow-y-auto overflow-x-auto'}
+                style={isReviewWorkspace ? undefined : { maxHeight: layerMgrListMaxHeight }}
               >
                 <div className="min-w-max">
                 {visibleList.map((l) => {

@@ -12,7 +12,7 @@
     "versionedPackages": true,
     "stateVersionConflicts": "required",
     "browserControlRoute": "/api/review-control",
-    "uiBindingIncluded": false,
+    "uiBindingIncluded": true,
     "packageContractVersion": "cairnmap.review-package.v1",
     "reviewMarkerSchemaVersion": "cairnmap.native-relay-review.v1",
     "legacyPackageImport": "compat-import-only",

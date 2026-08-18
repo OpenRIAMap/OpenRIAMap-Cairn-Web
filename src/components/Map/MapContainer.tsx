@@ -545,13 +545,19 @@ useEffect(() => {
   }, [measuringModuleLoaded, requestFeatureModuleActivation]);
 
   const closeReviewModule = useCallback(() => {
-    const ok = measuringModuleRef.current?.requestCloseAndClear?.('退出审核模块') ?? true;
+    const ok = measuringModuleRef.current?.requestCloseAndClear?.('关闭则为退出审核模块') ?? true;
     if (!ok) return;
     setReviewSession(null);
     setReviewWorkspaceDirty(false);
     setPendingReviewPackage(null);
     setModuleMode('runtime');
   }, []);
+
+  useEffect(() => {
+    const requestExit = () => closeReviewModule();
+    window.addEventListener('ria:reviewExitRequested', requestExit);
+    return () => window.removeEventListener('ria:reviewExitRequested', requestExit);
+  }, [closeReviewModule]);
 
   const loadReviewPackageIntoWorkspace = useCallback((item: ReviewInboxItem) => {
     setModuleMode('review');
@@ -1796,7 +1802,6 @@ case 'players':
       {moduleMode === 'review' && (
         <ReviewModule
           activeWorldId={currentWorld}
-          session={reviewSession}
           dirty={reviewWorkspaceDirty}
           onClose={closeReviewModule}
           onLoadPackage={loadReviewPackageIntoWorkspace}
@@ -2255,6 +2260,7 @@ case 'players':
                 onReviewArchive={handleReviewArchive}
                 onReviewRequestChanges={handleReviewRequestChanges}
                 onReviewReopen={handleReviewReopen}
+                onReviewExitRequested={closeReviewModule}
                 onReviewPackageUpload={openriamapReviewPackageUploader.uploadPackage}
               />
             </Suspense>
