@@ -35,5 +35,5 @@
     "cacheScope": ["sourceId", "releaseId", "worldId", "readerSchemaVersion"],
     "legacySourceLinkModeRemainsSeparate": true
   },
-  "requiredChecks": ["validate:review-control-binding", "test:review-control-binding", "test:review-control-port", "validate:team-review-authorization", "validate:relay-review-status", "validate:native-relay-accept-guards", "test:data-source-selection", "test:formal-release-reader", "validate:formal-data-source-runtime", "test:review-package-contract", "test:review-package-profile-auth"]
+  "requiredChecks": ["validate:review-control-binding", "test:review-control-binding", "test:review-control-port", "validate:team-review-authorization", "validate:relay-review-status", "validate:native-relay-accept-guards", "test:data-source-selection", "test:formal-release-reader", "validate:formal-data-source-runtime", "test:review-package-contract", "test:review-package-profile-auth", "test:review-status-board"]
 }
