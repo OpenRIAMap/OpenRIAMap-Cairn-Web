@@ -53,6 +53,13 @@ export default function ReviewModule({ activeWorldId, dirty, onClose, onLoadPack
       status: submission.state,
       updatedAt: submission.lastEvent?.occurredAt,
       source: 'local-file',
+      submissionContext: {
+        submissionId: submission.submissionId,
+        revisionId: revision.revisionId,
+        revisionCount: submission.revisions.length,
+        stateVersion: submission.stateVersion,
+        packageName: submission.packageName || file.name,
+      },
     });
     reportProgress?.({ stage: 'ready', message: '审核包已加载到审核工作区。' });
   }, [activeWorldId, dirty, onLoadPackage]);
