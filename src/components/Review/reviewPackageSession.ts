@@ -1,10 +1,11 @@
-import type { ReviewInboxItem } from './reviewStatusTypes';
+import type { ReviewInboxItem, ReviewSubmissionLoadContext } from './reviewStatusTypes';
 
 export type ReviewWorkbenchStatus =
   | 'idle'
   | 'loaded'
   | 'dirty'
   | 'saved_local'
+  | 'saved_remote'
   | 'approved_local'
   | 'rejected_local'
   | 'changes_requested_local';
@@ -22,6 +23,7 @@ export type ReviewPackageSession = {
   featureCount: number;
   deleteCount: number;
   pictureCount: number;
+  submissionContext?: ReviewSubmissionLoadContext;
 };
 
 export function createReviewPackageSession(item: ReviewInboxItem): ReviewPackageSession {
@@ -39,6 +41,7 @@ export function createReviewPackageSession(item: ReviewInboxItem): ReviewPackage
     featureCount: item.features.length,
     deleteCount: item.deleteMarks.length,
     pictureCount,
+    ...(item.submissionContext ? { submissionContext: item.submissionContext } : {}),
   };
 }
 
@@ -50,6 +53,8 @@ export function describeReviewWorkbenchStatus(status: ReviewWorkbenchStatus): st
       return '有未保存修改';
     case 'saved_local':
       return '已本地保存';
+    case 'saved_remote':
+      return '已保存新版本';
     case 'approved_local':
       return '已本地通过';
     case 'rejected_local':

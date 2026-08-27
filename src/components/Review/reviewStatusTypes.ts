@@ -52,6 +52,18 @@ export type ReviewPackageDecision = {
   history?: ReviewHistoryItem[];
 };
 
+/**
+ * Opaque revision facts captured when a package is loaded from the review
+ * authority. They are used only for conditional creation of a newer revision.
+ */
+export type ReviewSubmissionLoadContext = {
+  submissionId: string;
+  revisionId: string;
+  revisionCount: number;
+  stateVersion: number;
+  packageName: string;
+};
+
 export type ReviewPictureEntry = {
   source: 'dat' | 'pub';
   url: string;
@@ -80,6 +92,8 @@ export type ReviewInboxItem = {
   deleteMarks: RelayDeleteMarkItem[];
   picturesById: Record<string, ReviewPictureEntry[]>;
   source: 'sample' | 'local-file';
+  /** Present only for a package loaded from the remote review submission list. */
+  submissionContext?: ReviewSubmissionLoadContext;
 };
 
 export type ReviewInboxPayloadItem = Omit<ReviewInboxItem, 'source'> & { source?: ReviewInboxItem['source'] };

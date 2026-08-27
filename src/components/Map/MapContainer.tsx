@@ -34,7 +34,7 @@ import { fetchPlayersDetailed } from '@/lib/playerApi';
 import { loadMapSettings, saveMapSettings, MapStyle } from '@/lib/cookies';
 import type { ParsedStation, ParsedLine, Coordinate, Player } from '@/types';
 import type { ParsedLandmark } from '@/components/Legacy/data/landmarkParser';
-import type { MeasuringModuleHandle } from '@/components/Mapping/core/MeasuringModule';
+import type { MeasuringModuleHandle, ReviewWorkspaceSaveArtifact } from '@/components/Mapping/core/MeasuringModule';
 import { useFeatureModuleStore } from '@/store/featureModuleStore';
 
 import RuleDrivenLayer from '@/components/Rules/core/RuleDrivenLayer';
@@ -52,7 +52,7 @@ import { buildBuildingNameIndex, getRuleCategoryLabelWithParent, getRuleDisplayN
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { consumeFeatureShareTargetFromLocation, normalizePlayerShareId, type FeatureSharePayload, type FeatureShareTarget, type PlayerShareTarget, type ShareParseResult } from '@/lib/featureShareLink';
 import { ReviewModule, ReviewModuleLauncher, createReviewPackageSession, type CairnMapModuleMode, type ReviewInboxItem, type ReviewPackageSession } from '@/components/Review';
-import { openriamapReviewPackageUploader } from '@/components/Review/riaReviewPackageUploader';
+import { openriamapReviewPackageUploader, uploadRiaReviewRevision } from '@/components/Review/riaReviewPackageUploader';
 
 // ===== 导航“图上选取”：MapContainer 统一派发地图点击事件 =====
 type MapClickWorldPointEventDetail = {
@@ -575,10 +575,37 @@ useEffect(() => {
     window.dispatchEvent(new CustomEvent('cairn-review-status-draft', { detail: { submissionId: reviewSession.packageId, state, reason, decisionAction } }));
   }, [reviewSession?.packageId]);
 
-  const handleReviewSave = useCallback(() => {
-    setReviewSession((prev) => prev ? { ...prev, status: 'saved_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
+  const handleReviewSave = useCallback(async (artifact: ReviewWorkspaceSaveArtifact) => {
+    const context = reviewSession?.submissionContext;
+    if (!reviewSession?.packageId || !context) {
+      throw new Error('review-revision-context-missing');
+    }
+    if (context.submissionId !== reviewSession.packageId) {
+      throw new Error('review-revision-context-invalid');
+    }
+    const saved = await uploadRiaReviewRevision({
+      ...artifact,
+      submissionId: context.submissionId,
+      revisionCount: context.revisionCount,
+      expectedStateVersion: context.stateVersion,
+    });
+    setReviewSession((prev) => prev && prev.packageId === saved.submissionId
+      ? {
+          ...prev,
+          status: 'saved_remote',
+          dirty: false,
+          updatedAt: new Date().toISOString(),
+          submissionContext: {
+            ...prev.submissionContext!,
+            revisionId: saved.revisionId,
+            revisionCount: saved.revisionCount,
+            stateVersion: saved.stateVersion,
+            packageName: artifact.packageName,
+          },
+        }
+      : prev);
     setReviewWorkspaceDirty(false);
-  }, []);
+  }, [reviewSession]);
 
   const handleReviewApprove = useCallback(() => {
     setReviewSession((prev) => prev ? { ...prev, status: 'approved_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
