@@ -39,12 +39,23 @@ export function isReviewReleaseGateLeaseExpired(
 export type ReviewStatusBoardState = Extract<ReviewSubmissionState, 'pending' | 'approved' | 'rejected' | 'archived'>;
 export type ReviewStatusDecisionAction = 'approve' | 'reject' | 'request-changes' | 'archive' | 'reopen';
 
+/** Immutable Control evidence for a saved approve/reject lamp. */
+export type ReviewStatusDecisionRecord = {
+  decisionId: string;
+  recordSha256: string;
+  controlCommit: string;
+  decision: Extract<ReviewStatusDecisionAction, 'approve' | 'reject'>;
+  stateVersion: number;
+};
+
 export type ReviewStatusBoardEntry = {
   submissionId: string;
   state: ReviewStatusBoardState;
   decisionRevisionId: string | null;
   /** Keeps reject and request-changes distinct while sharing the rejected lamp. */
   decisionAction?: ReviewStatusDecisionAction;
+  /** Server-authored immutable evidence; clients never submit this field. */
+  decisionRecord?: ReviewStatusDecisionRecord;
   updatedAt: string;
   updatedBy: ReviewAuthorizationContext;
   reason?: string;
