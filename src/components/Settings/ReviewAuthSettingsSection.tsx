@@ -45,6 +45,11 @@ export function ReviewAuthSettingsSection({ auth, title = '登录状态', loginL
     }
   }, [auth]);
   useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    const onAuthChanged = () => { void refresh(); };
+    window.addEventListener('ria:review-auth-changed', onAuthChanged);
+    return () => window.removeEventListener('ria:review-auth-changed', onAuthChanged);
+  }, [refresh]);
   const view = presentation(session);
   const isAuthenticated = session.status === 'authenticated';
   return (
@@ -70,7 +75,13 @@ export function ReviewAuthSettingsSection({ auth, title = '登录状态', loginL
           <AppButton
             className="rounded bg-blue-500 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-600"
             disabled={busy || session.status === 'unavailable'}
-            onClick={() => auth.beginLogin()}
+            onClick={() => {
+              setBusy(true);
+              void auth.beginLogin()
+                .then(refresh)
+                .catch((error: unknown) => setSession({ status: 'anonymous', message: error instanceof Error ? error.message : '登录未完成。' }))
+                .finally(() => setBusy(false));
+            }}
           >
             {loginLabel}
           </AppButton>

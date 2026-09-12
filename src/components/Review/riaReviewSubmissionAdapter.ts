@@ -10,6 +10,7 @@ import {
   type ReviewReleaseControlRequest,
   type ReviewReleaseFeedItem,
   type ReviewReleaseGateSnapshot,
+  type ReviewReleaseProgress,
   type ReviewStatusBoardAdapter,
   type ReviewSubmissionAdapter,
   type ReviewSubmissionRequest,
@@ -150,6 +151,8 @@ export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = 
       const result = await requestControl<{ items: ReviewReleaseFeedItem[] }>(fetcher, { operation: 'release-feed', limit });
       return result.items;
     },
+    getReleaseProgress: (releaseId: string, _actor: ReviewAuthorizationContext) => requestControl<ReviewReleaseProgress>(fetcher, { operation: 'release-progress', releaseId }),
+    requestReleaseDownload: (releaseId: string, _actor: ReviewAuthorizationContext) => requestControl<{ download: { url: string; sha256: string; byteLength: number } }>(fetcher, { operation: 'release-download-request', releaseId }),
     getStatusBoard: (_actor: ReviewAuthorizationContext) => requestControl<ReviewStatusBoardSnapshot>(fetcher, { operation: 'status-board' }),
     saveStatusBoard: (request: ReviewStatusBoardSaveRequest) => requestControl<ReviewStatusBoardSaveResult>(fetcher, {
       operation: 'status-save',
