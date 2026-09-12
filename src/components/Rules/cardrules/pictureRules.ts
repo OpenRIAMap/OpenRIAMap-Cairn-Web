@@ -15,7 +15,10 @@ import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
 import { RULE_DATA_SOURCES } from '@/components/Rules/data/ruleDataSources';
 import { resolveWorldDirName, resolvePictureFileUrl } from '@/components/Rules/data/sourceResolver';
 import { fetchCategoryIndex } from '@/components/Rules/data/dataRepositoryReader';
+import { loadFormalMediaAssets, formalMediaUrl } from '@/components/Rules/data/formalMediaReader';
+import { getRuleDataSourceSnapshot } from '@/components/Rules/data/formalDataSourceRuntime';
 import type { RulePictureSourceDef, SourceKey } from '@/components/Rules/data/sourceTypes';
+import { readRuleWorldCache } from '@/components/Rules/data/worldRuleCache';
 
 export type PictureDirRule = {
   name: string;
@@ -46,6 +49,7 @@ export type FeaturePictureEntry = {
 };
 
 const TEMP_MOUNTED_PICTURES_BY_WORLD = new Map<string, Record<string, FeaturePictureEntry[]>>();
+const FORMAL_MEDIA_REQUESTS = new Map<string, Promise<FeaturePictureEntry[]>>();
 
 export function setTempMountedPictureEntries(worldId: string, picturesById: Record<string, FeaturePictureEntry[]>) {
   const key = resolveWorldDirName(String(worldId || 'zth'));
@@ -62,7 +66,7 @@ function resolveTempMountedPictureEntriesForFeature(feature?: FeatureRecord | nu
   if (!Array.isArray(entries)) return [];
   return entries
     .map((x) => ({
-      source: x.source === 'pub' || x.source === 'dat' ? x.source : 'dat',
+      source: x.source === 'pub' || x.source === 'dat' || x.source === 'formal' ? x.source : 'dat',
       url: String(x.url ?? '').trim(),
       filename: x.filename,
       relativePath: x.relativePath,
@@ -187,11 +191,52 @@ async function buildRepositoryPictureUrlsForFeature(feature?: FeatureRecord | nu
 }
 
 /**
+ * Formal release images are deliberately separate from the Data mirror. The
+ * loaded world cache pins the exact release used by the current map, so a
+ * card never mixes a new current pointer with an old feature dataset.
+ */
+async function resolveFormalMediaPictureEntriesForFeature(feature?: FeatureRecord | null): Promise<FeaturePictureEntry[]> {
+  const fi: any = feature?.featureInfo ?? {};
+  const worldId = resolveWorldDirName(String(fi.World ?? feature?.meta?.World ?? 'zth'));
+  const classCode = String(fi.Class ?? feature?.meta?.Class ?? '').trim();
+  const kind = String(fi.Kind ?? '').trim();
+  const featureId = String(fi.ID ?? feature?.meta?.idValue ?? '').trim();
+  if (!classCode || !featureId) return [];
+  try {
+    const source = getRuleDataSourceSnapshot();
+    const dataset = readRuleWorldCache(worldId);
+    const releaseId = String(dataset?.releaseId ?? dataset?.mergeVersion ?? '').trim();
+    if (source.readerKind !== 'formal-release-v2' || !source.mediaRootUrl || !releaseId
+      || dataset?.sourceId !== source.sourceId || dataset?.transportId !== source.transportId) return [];
+    const kindPath = SPECIAL_CLASS_SET.has(classCode) && kind ? [kind] : [];
+    const cacheKey = [source.sourceId, source.transportId, source.generation, releaseId, worldId, classCode, ...kindPath, featureId].join('\u0000');
+    let request = FORMAL_MEDIA_REQUESTS.get(cacheKey);
+    if (!request) {
+      request = loadFormalMediaAssets({ source, releaseId, worldId, classCode, kindPath, featureId })
+        .then((assets) => assets.map((asset) => ({
+          source: 'formal' as const,
+          url: formalMediaUrl(source.mediaRootUrl!, asset.key),
+          filename: fileNameFromUrl(asset.key),
+          relativePath: asset.sourcePath,
+        })))
+        .catch(() => []);
+      FORMAL_MEDIA_REQUESTS.set(cacheKey, request);
+    }
+    return await request;
+  } catch {
+    return [];
+  }
+}
+
+/**
  * 探测并返回当前要素可用的图片 URL 列表。
  */
 export async function buildPictureUrlsForFeature(feature?: FeatureRecord | null, opts?: { maxImages?: number }): Promise<string[]> {
   const tempEntries = resolveTempMountedPictureEntriesForFeature(feature);
   if (tempEntries.length > 0) return tempEntries.map((x) => x.url);
+
+  const formalEntries = await resolveFormalMediaPictureEntriesForFeature(feature);
+  if (formalEntries.length > 0) return formalEntries.map((x) => x.url);
 
   const world = String((feature?.featureInfo as any)?.World ?? '').trim();
   const worldDir = resolveWorldDirName(world || 'zth');
@@ -208,6 +253,9 @@ export async function buildPictureUrlsForFeature(feature?: FeatureRecord | null,
 export async function resolvePictureEntriesForFeature(feature?: FeatureRecord | null, opts?: { maxImages?: number }): Promise<FeaturePictureEntry[]> {
   const tempEntries = resolveTempMountedPictureEntriesForFeature(feature);
   if (tempEntries.length > 0) return tempEntries;
+
+  const formalEntries = await resolveFormalMediaPictureEntriesForFeature(feature);
+  if (formalEntries.length > 0) return formalEntries;
 
   const world = String((feature?.featureInfo as any)?.World ?? '').trim();
   const worldDir = resolveWorldDirName(world || 'zth');

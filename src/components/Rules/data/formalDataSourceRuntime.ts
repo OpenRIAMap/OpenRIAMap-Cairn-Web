@@ -14,6 +14,7 @@ export type RuleDataSourceSnapshot = {
   readerKind: string;
   readerSchemaVersion: string;
   rootUrl: string;
+  mediaRootUrl: string | null;
   transportId: string;
   generation: number;
 };
@@ -94,6 +95,7 @@ export function getRuleDataSourceSnapshot(): RuleDataSourceSnapshot {
     readerKind: source.readerKind,
     readerSchemaVersion: String(binding.readerSchemaVersion).trim(),
     rootUrl: transport.rootUrl,
+    mediaRootUrl: String(binding.mediaRootUrl ?? '').trim().replace(/\/+$/, '') || null,
     transportId: transport.transportId,
     generation: state.generation,
   };
