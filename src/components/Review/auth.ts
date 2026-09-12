@@ -7,7 +7,8 @@ export type ReviewAuthSessionState = {
 
 export interface ReviewAuthPort {
   getSession(): Promise<ReviewAuthSessionState>;
-  beginLogin(): void;
+  /** Opens a short-lived provider popup and resolves after the parent session is refreshed. */
+  beginLogin(): Promise<void>;
   logout(): Promise<void>;
 }
 

@@ -57,7 +57,7 @@ export const openriamapReviewPackageUploader: ReviewPackageUploadPort = {
     const session = await openriamapGithubReviewAuth.getSession();
     if (session.status !== 'authenticated' || !session.principalId) {
       if (window.confirm('上传到审核序列需要 GitHub 组织身份。现在前往登录吗？登录后请再次点击“上传到审核序列”。')) {
-        openriamapGithubReviewAuth.beginLogin();
+        void openriamapGithubReviewAuth.beginLogin().catch(() => {});
       }
       throw new Error('review-login-required');
     }
@@ -87,7 +87,7 @@ export async function uploadRiaReviewRevision(input: RiaReviewRevisionUploadInpu
   const session = await openriamapGithubReviewAuth.getSession();
   if (session.status !== 'authenticated' || !session.principalId) {
     if (window.confirm('保存审核修改需要 GitHub 组织身份。现在前往登录吗？登录后请重新执行保存。')) {
-      openriamapGithubReviewAuth.beginLogin();
+      void openriamapGithubReviewAuth.beginLogin().catch(() => {});
     }
     throw new Error('review-login-required');
   }

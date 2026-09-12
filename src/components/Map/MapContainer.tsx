@@ -369,6 +369,11 @@ function MapContainer() {
   const [measuringModuleActive, setMeasuringModuleActive] = useState(false);
   const [measurementToolsActive, setMeasurementToolsActive] = useState(false);
   const [moduleMode, setModuleMode] = useState<CairnMapModuleMode>('runtime');
+  // Mapping and review deliberately receive different React instances.  The
+  // review instance is never a mode switch inside a live mapping instance,
+  // which prevents Leaflet feature groups, drawing state and custom events
+  // from crossing the two workflow boundaries.
+  const [workspaceInstanceKey, setWorkspaceInstanceKey] = useState(() => `mapping-${crypto.randomUUID()}`);
   const [reviewSession, setReviewSession] = useState<ReviewPackageSession | null>(null);
   const [reviewWorkspaceDirty, setReviewWorkspaceDirty] = useState(false);
   const [pendingReviewPackage, setPendingReviewPackage] = useState<ReviewInboxItem | null>(null);
@@ -525,6 +530,15 @@ useEffect(() => {
   }, [requestLegacyFeature]);
 
   const requestMeasuringModuleEntry = useCallback((target: 'measuring' | 'mtools') => {
+    if (moduleMode === 'review') {
+      if (!window.confirm('切换至测绘模块将退出审核模块并卸载审核图层。审核服务中的状态灯和已保存版本不会受影响，是否继续？')) return;
+      const ok = measuringModuleRef.current?.requestCloseAndClear?.('关闭则为退出审核模块') ?? true;
+      if (!ok) return;
+      setReviewSession(null);
+      setReviewWorkspaceDirty(false);
+      setPendingReviewPackage(null);
+      setWorkspaceInstanceKey(`mapping-${crypto.randomUUID()}`);
+    }
     setModuleMode('mapping');
     if (measuringModuleLoaded) {
       if (target === 'measuring') setMeasuringOpenSignal((v) => v + 1);
@@ -533,16 +547,20 @@ useEffect(() => {
     }
     setPendingMeasureModuleOpen(target);
     requestFeatureModuleActivation('measuring');
-  }, [measuringModuleLoaded, requestFeatureModuleActivation]);
+  }, [measuringModuleLoaded, moduleMode, requestFeatureModuleActivation]);
 
   const requestReviewModuleEntry = useCallback(() => {
+    if ((moduleMode === 'mapping' || measuringModuleActive || measurementToolsActive)
+      && !window.confirm('启动审核模块会退出当前测绘模式并卸载测绘图层；两个模块不能同时运行。未导出的测绘草稿不会自动带入审核模块，是否继续？')) return;
     setMeasureToolsCloseSignal((v) => v + 1);
+    setMeasuringCloseSignal((v) => v + 1);
+    setWorkspaceInstanceKey(`review-${crypto.randomUUID()}`);
     setModuleMode('review');
     if (!measuringModuleLoaded) {
       setPendingMeasureModuleOpen('review');
       requestFeatureModuleActivation('measuring');
     }
-  }, [measuringModuleLoaded, requestFeatureModuleActivation]);
+  }, [measuringModuleActive, measuringModuleLoaded, measurementToolsActive, moduleMode, requestFeatureModuleActivation]);
 
   const closeReviewModule = useCallback(() => {
     const ok = measuringModuleRef.current?.requestCloseAndClear?.('关闭则为退出审核模块') ?? true;
@@ -550,6 +568,7 @@ useEffect(() => {
     setReviewSession(null);
     setReviewWorkspaceDirty(false);
     setPendingReviewPackage(null);
+    setWorkspaceInstanceKey(`mapping-${crypto.randomUUID()}`);
     setModuleMode('runtime');
   }, []);
 
@@ -560,6 +579,11 @@ useEffect(() => {
   }, [closeReviewModule]);
 
   const loadReviewPackageIntoWorkspace = useCallback((item: ReviewInboxItem) => {
+    if (moduleMode !== 'review') {
+      setMeasureToolsCloseSignal((v) => v + 1);
+      setMeasuringCloseSignal((v) => v + 1);
+      setWorkspaceInstanceKey(`review-${crypto.randomUUID()}`);
+    }
     setModuleMode('review');
     setReviewSession(createReviewPackageSession(item));
     setReviewWorkspaceDirty(false);
@@ -568,7 +592,7 @@ useEffect(() => {
       setPendingMeasureModuleOpen('review');
       requestFeatureModuleActivation('measuring');
     }
-  }, [measuringModuleLoaded, requestFeatureModuleActivation]);
+  }, [measuringModuleLoaded, moduleMode, requestFeatureModuleActivation]);
 
   const publishReviewStatusDraft = useCallback((state: 'pending' | 'approved' | 'rejected' | 'archived', reason?: string, decisionAction?: 'approve' | 'reject' | 'request-changes' | 'archive' | 'reopen') => {
     if (!reviewSession?.packageId) return;
@@ -2259,7 +2283,7 @@ case 'players':
           </div>
           {measuringModuleLoaded ? (
             <Suspense fallback={null}>
-              <LazyMeasurementToolsModule
+              {moduleMode !== 'review' ? <LazyMeasurementToolsModule
                 mapReady={mapReady}
                 leafletMapRef={leafletMapRef}
                 projectionRef={projectionRef}
@@ -2267,8 +2291,9 @@ case 'players':
                 openSignal={measurementToolsOpenSignal}
                 onBecameActive={() => setMeasuringCloseSignal(v => v + 1)}
                 launcherSlot={(launcher) => <div className="hidden sm:block">{launcher}</div>}
-              />
+              /> : null}
               <LazyMeasuringModule
+                key={workspaceInstanceKey}
                 ref={measuringModuleRef}
                 mapReady={mapReady}
                 leafletMapRef={leafletMapRef}

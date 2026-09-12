@@ -256,13 +256,52 @@ export function createIdleReviewReleaseGate(): ReviewReleaseGateSnapshot {
   return { attemptId: null, gateVersion: 0, state: 'idle', initialized: false };
 }
 
+export type ReviewReleasePackageSummary = {
+  submissionId: string;
+  packageName: string;
+  decisionRevisionId: string;
+  decisionState: 'approved' | 'archived';
+  revisionCount: number;
+  counts: { featureCount: number; deleteCount: number; pictureCount: number };
+};
+
+export type ReviewReleaseLifecycle = {
+  queuedAt?: string | null;
+  dataPublishedAt?: string | null;
+  mirroredAt?: string | null;
+  archivedAt?: string | null;
+  completedAt?: string | null;
+};
+
+/** Public, storage-key-free projection of a durable SCF release state. */
+export type ReviewReleaseProgress = {
+  schemaVersion?: string;
+  releaseId: string;
+  state: string;
+  lifecycle?: ReviewReleaseLifecycle;
+  formalVersion?: number | null;
+  approval?: { approvedBy?: string; approvedRole?: string; approvedAt?: string } | null;
+  packages?: ReviewReleasePackageSummary[];
+  archive?: { state?: string; archivedAt?: string | null; queuedAt?: string | null; startedAt?: string | null; failedAt?: string | null; error?: string | null; downloadReady?: boolean; bundleByteLength?: number | null } | null;
+  error?: string;
+};
+
+/** v3 records are rich; legacy properties remain readable for prior releases. */
 export type ReviewReleaseFeedItem = {
   releaseId: string;
-  occurredAt: string;
-  datasets: string[];
-  approvedBy: string[];
-  state: Extract<ReviewSubmissionState, 'released' | 'mirror-pending' | 'mirrored' | 'failed'>;
-  rejectedSincePreviousRelease: Array<Pick<ReviewSubmissionEvent, 'targetRevisionId' | 'occurredAt' | 'actor' | 'reason'>>;
+  state: string;
+  occurredAt?: string;
+  publishedAt?: string | null;
+  mirroredAt?: string | null;
+  lifecycle?: ReviewReleaseLifecycle;
+  formalVersion?: number | null;
+  packages?: ReviewReleasePackageSummary[];
+  download?: { byteLength?: number };
+  datasets?: Array<string | { submissionId: string; revisionId: string }>;
+  archived?: Array<{ submissionId: string; revisionId: string }>;
+  approvedBy?: string | string[] | null;
+  approvedRole?: string | null;
+  rejectedSincePreviousRelease?: Array<Partial<Pick<ReviewSubmissionEvent, 'targetRevisionId' | 'occurredAt' | 'actor' | 'reason'>> & { submissionId?: string; revisionId?: string }>;
 };
 
 export type ReviewWorkflowState =
@@ -381,6 +420,8 @@ export interface ReviewSubmissionAdapter {
    */
   precheckSubmission?(request: ReviewSubmissionRequest): Promise<ReviewPackagePrecheckReport>;
   getReleaseFeed?(actor: ReviewAuthorizationContext, limit?: number): Promise<ReviewReleaseFeedItem[]>;
+  getReleaseProgress?(releaseId: string, actor: ReviewAuthorizationContext): Promise<ReviewReleaseProgress>;
+  requestReleaseDownload?(releaseId: string, actor: ReviewAuthorizationContext): Promise<{ download: { url: string; sha256: string; byteLength: number } }>;
 }
 
 /** Application-owned persisted package-status board with conditional writes. */
@@ -401,6 +442,7 @@ export type ReviewReleaseControlReport = {
     findings?: Array<{ severity?: 'blocker' | 'warning' | 'info' | string; message?: string }>;
   };
   next?: { action?: string };
+  release?: { releaseId?: string; state?: string; selectedCount?: number; archivedCount?: number };
 };
 
 export type ReviewReleaseControlRequest = {

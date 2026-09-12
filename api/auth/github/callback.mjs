@@ -1,6 +1,15 @@
 import { sessionCookie, verify } from '../../_reviewAuth.mjs';
 import { requireReviewAutomation } from '../../_reviewAutomation.mjs';
 
+function popupCompletion(res, state, redirectUri) {
+  const origin = new URL(redirectUri).origin;
+  const payload = JSON.stringify({ type: 'cairn-review-auth-complete', nonce: state.nonce, status: 'ok' });
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'");
+  return res.status(200).send(`<!doctype html><meta charset="utf-8"><title>登录完成</title><script>window.opener&&window.opener.postMessage(${payload},${JSON.stringify(origin)});window.close();</script><p>登录完成，可关闭此窗口。</p>`);
+}
+
 export default async function handler(req, res) {
   if (!requireReviewAutomation(res)) return;
   const secret = process.env.CAIRN_SESSION_SIGNING_SECRET;
@@ -16,5 +25,6 @@ export default async function handler(req, res) {
   const user = await userResponse.json();
   if (!userResponse.ok || typeof user.login !== 'string') return res.status(502).json({ error: 'github-user-lookup-failed' });
   res.setHeader('Set-Cookie', sessionCookie(user.login, secret));
+  if (state.popup === true) return popupCompletion(res, state, redirectUri);
   return res.redirect(302, '/');
 }

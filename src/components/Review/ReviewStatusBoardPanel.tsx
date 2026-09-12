@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Archive, CheckCircle2, ClipboardCheck, FileDown, FileText, RefreshCw, RotateCcw, Send, ShieldCheck, XCircle } from 'lucide-react';
 import AppButton from '@/components/ui/AppButton';
 import { DraggablePanel } from '@/components/DraggablePanel/DraggablePanel';
+import { ReviewOperationOverlay, type ReviewOperationOverlayState } from './ReviewOperationOverlay';
 import type { ReviewAuthPort } from './auth';
 import {
   createIdleReviewReleaseGate,
@@ -50,11 +51,11 @@ export type ReviewStatusBoardPanelProps = {
 const createId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 
 function stateLabel(state: string) {
-  return ({ pending: '待审核', approved: '已通过', rejected: '已打回', archived: '已归档', queued: '已排队', running: '发布中', 'mirror-pending': '镜像等待中', mirrored: '已镜像', failed: '失败' } as Record<string, string>)[state] ?? state;
+  return ({ pending: '待审核', approved: '已通过', rejected: '已打回', archived: '已归档', queued: '已排队', running: '发布中', 'mirror-pending': '镜像等待中', mirrored: '已镜像', 'archive-pending': '等待归档', archiving: '归档中', completed: '发布完成', 'rebase-required': '需要重新检查', 'mirror-recovery-required': '镜像需恢复', 'archive-recovery-required': '归档需恢复', failed: '失败' } as Record<string, string>)[state] ?? state;
 }
 
 function stateTone(state: string) {
-  return ({ pending: 'bg-amber-100 text-amber-800', approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 text-red-700', archived: 'bg-gray-200 text-gray-700' } as Record<string, string>)[state] ?? 'bg-blue-100 text-blue-700';
+  return ({ pending: 'bg-amber-100 text-amber-800', approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 text-red-700', archived: 'bg-gray-200 text-gray-700', completed: 'bg-green-100 text-green-700', failed: 'bg-red-100 text-red-700', 'mirror-recovery-required': 'bg-red-100 text-red-700', 'archive-recovery-required': 'bg-red-100 text-red-700' } as Record<string, string>)[state] ?? 'bg-blue-100 text-blue-700';
 }
 
 function isStatusLampState(state: string): state is ReviewStatusBoardEntry['state'] {
@@ -143,11 +144,6 @@ function reportView(report: ReviewReleaseControlReport | ReviewPackagePrecheckRe
     {localizedFindings.length ? <div className="mt-2 space-y-1">{localizedFindings.map((finding, index) => <div key={`${finding.key}-${index}`} className={finding.severity === 'blocker' ? 'text-red-700' : finding.severity === 'warning' ? 'text-amber-700' : 'text-gray-600'}>• {finding.message}</div>)}</div> : <div className="mt-1 text-gray-500">未返回阻断或警告项。</div>}
   </div>;
 }
-function progressText(progress: ReviewWorkspaceLoadProgress) {
-  if (!progress.totalBytes || progress.completedBytes === undefined) return progress.message;
-  return `${progress.message} ${Math.min(100, Math.round((progress.completedBytes / progress.totalBytes) * 100))}%`;
-}
-
 export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl, onLoadRevision, onClose, subscribeToStatusDraft, subscribeToSubmissionUpload }: ReviewStatusBoardPanelProps) {
   const [actor, setActor] = useState<ReviewAuthorizationContext>({ principalId: 'anonymous', roles: [] });
   const [submissions, setSubmissions] = useState<ReviewSubmissionSnapshot[]>([]);
@@ -162,7 +158,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   const [releaseReport, setReleaseReport] = useState<ReviewReleaseControlReport | null>(null);
   const [releaseGate, setReleaseGate] = useState<ReviewReleaseGateSnapshot | null>(null);
   const [releaseFeed, setReleaseFeed] = useState<Awaited<ReturnType<NonNullable<ReviewSubmissionAdapter['getReleaseFeed']>>> | null>(null);
-  const [loadProgress, setLoadProgress] = useState<ReviewWorkspaceLoadProgress | null>(null);
+  const [operation, setOperation] = useState<ReviewOperationOverlayState | null>(null);
 
   const detail = submissions.find((submission) => submission.submissionId === detailId) ?? null;
   const revision = detail?.revisions.find((candidate) => candidate.revisionId === revisionId)
@@ -225,20 +221,26 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   const saveStatus = useCallback(async () => {
     if (!board || !selectedEntries.length) return;
     setBusy('save-status');
+    setOperation({ title: '正在保存审核状态', message: '正在读取云端状态灯并校验版本。', phase: 'running' });
     try {
       const remote = await submissionAdapter.getStatusBoard(actor);
       const differences = compareReviewStatusBoards(draft, remote.entries).filter((difference) => difference.kind !== 'unchanged');
       const revisionChanges = differences.filter((difference) => difference.kind === 'revision-changed');
       if (revisionChanges.length) {
         setMessage(`保存状态已阻断：${revisionChanges.map((difference) => difference.submissionId).join('、')} 的云端决策版本已变化。请刷新并检查对应审核包。`);
+        setOperation({ title: '审核状态保存已阻断', message: '云端的决策版本已经变化，未写入任何状态灯。', phase: 'error' });
         return;
       }
       const expectedBoardVersion = remote.boardVersion;
       if (differences.length && !window.confirm(`检测到云端状态灯变化：${differences.map((difference) => `${difference.submissionId}（${difference.kind}）`).join('；')}。确认以本地已选择状态覆盖这些变化？`)) {
         setMessage('保存状态已取消；本地状态灯保持不变。');
+        setOperation({ title: '审核状态保存已取消', message: '未向云端写入状态灯。', phase: 'success' });
         return;
       }
-      if (!window.confirm(`确认保存 ${selectedEntries.length} 个审核包的状态灯？`)) return;
+      if (!window.confirm(`确认保存 ${selectedEntries.length} 个审核包的状态灯？`)) {
+        setOperation({ title: '审核状态保存已取消', message: '未向云端写入状态灯。', phase: 'success' });
+        return;
+      }
       await submissionAdapter.saveStatusBoard({
         requestId: createId('status-save'), correlationId: createId('status-correlation'), idempotencyKey: createId('status-idempotency'),
         expectedBoardVersion, entries: selectedEntries, actor, occurredAt: new Date().toISOString(),
@@ -246,8 +248,10 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       setReleaseReport(null);
       await refreshList({ preserveMessage: true });
       setMessage('审核状态已保存。');
+      setOperation({ title: '审核状态已保存', message: `已安全保存 ${selectedEntries.length} 个审核包的状态灯。`, phase: 'success' });
     } catch (error) {
       setMessage(describeError(error));
+      setOperation({ title: '审核状态保存失败', message: '云端没有接受本次状态灯保存。', detail: describeError(error), phase: 'error' });
     } finally {
       setBusy(null);
     }
@@ -256,14 +260,17 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   const loadWorkspace = useCallback(async () => {
     if (!detail || !revision) return;
     setBusy('load');
-    setLoadProgress({ stage: 'requesting-download', message: '正在申请审核包下载…' });
+    setOperation({ title: '正在加载审核包', message: '正在申请受限下载并准备审核工作区。', phase: 'running' });
     try {
-      await onLoadRevision({ submission: detail, revision }, setLoadProgress);
+      await onLoadRevision({ submission: detail, revision }, (progress) => {
+        setOperation({ title: '正在加载审核包', message: progress.message, phase: 'running', completedBytes: progress.completedBytes, totalBytes: progress.totalBytes });
+      });
       setMessage('审核包已下载并加载到审核工作区。');
+      setOperation({ title: '审核包已加载', message: '审核图层已注入独立的审核工作区。', phase: 'success' });
     } catch (error) {
       setMessage(describeError(error));
+      setOperation({ title: '审核包加载失败', message: '审核包未能加载到工作区。', detail: describeError(error), phase: 'error' });
     } finally {
-      setLoadProgress(null);
       setBusy(null);
     }
   }, [detail, onLoadRevision, revision]);
@@ -276,6 +283,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     }
     setBusy('package-precheck');
     setPackageReport(null);
+    setOperation({ title: '正在审核包预检', message: '正在校验当前版本与正式数据快照。', phase: 'running' });
     try {
       const result = await submissionAdapter.precheckSubmission({
         requestId: createId('precheck'), correlationId: createId('precheck-correlation'), idempotencyKey: createId('precheck-idempotency'),
@@ -283,8 +291,10 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
         action: 'precheck', occurredAt: new Date().toISOString(), actor,
       });
       setPackageReport(result);
+      setOperation({ title: '审核包预检完成', message: `预检结论：${reviewDecisionLabel(result.decision)}。`, phase: result.decision === 'blocked' ? 'error' : 'success', detail: result.findings.map((finding) => reviewFindingLabel(finding.code, finding.message)).join('\n') || '未发现需要展示的阻断或警告项。' });
     } catch (error) {
       setMessage(describeError(error));
+      setOperation({ title: '审核包预检失败', message: '预检请求未完成。', detail: describeError(error), phase: 'error' });
     } finally {
       setBusy(null);
     }
@@ -313,6 +323,27 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     }
   }, [actor, submissionAdapter]);
 
+  const downloadRelease = useCallback(async (releaseId: string) => {
+    if (!submissionAdapter.requestReleaseDownload) return;
+    setBusy('release-download');
+    setOperation({ title: '正在准备发布归档', message: '正在申请该发布审核包的短期下载链接。', phase: 'running' });
+    try {
+      const grant = await submissionAdapter.requestReleaseDownload(releaseId, actor);
+      const link = document.createElement('a');
+      link.href = grant.download.url;
+      link.download = `ReviewRelease_${releaseId}.zip`;
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setOperation({ title: '发布归档下载已开始', message: '浏览器正在下载该发布包含的所有审核包。', detail: `发布 ID：${releaseId}\n大小：${grant.download.byteLength.toLocaleString()} 字节`, phase: 'success' });
+    } catch (error) {
+      setOperation({ title: '发布归档下载失败', message: '无法获取该发布的下载链接。', detail: describeError(error), phase: 'error' });
+    } finally {
+      setBusy(null);
+    }
+  }, [actor, submissionAdapter]);
+
   const releasePrecheck = useCallback(async () => {
     if (!board || !selectedEntries.length) return;
     if (dirty) {
@@ -323,10 +354,15 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     const owner = approved && submissions.find((item) => item.submissionId === approved.submissionId);
     if (!approved || !owner) { setMessage('至少选择一个已通过且已指定版本的审核包。'); return; }
     setBusy('release-precheck');
+    setOperation({ title: '正在发布前检查', message: '正在核对保存的状态灯、Release Gate 与正式数据版本。', phase: 'running' });
     try {
       const gate = normalizeGate(await releaseControl.getReleaseGate(actor));
       setReleaseGate(gate);
-      if (isReviewReleaseGateLeaseActive(gate)) { setMessage('当前已有发布进行中，请稍后刷新 Release Gate。'); return; }
+      if (isReviewReleaseGateLeaseActive(gate)) {
+        setMessage('当前已有发布进行中，请稍后刷新 Release Gate。');
+        setOperation({ title: '发布前检查已阻断', message: '当前已有发布正在执行，未发起新的检查。', phase: 'error' });
+        return;
+      }
       if (isReviewReleaseGateLeaseExpired(gate)) setMessage(null);
       const remote = await submissionAdapter.getStatusBoard(actor);
       const differences = compareReviewStatusBoards(draft, remote.entries).filter((difference) => difference.kind !== 'unchanged');
@@ -334,8 +370,10 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
         const revisionChanges = differences.filter((difference) => difference.kind === 'revision-changed');
         if (revisionChanges.length) {
           setMessage(`发布前检查已阻断：${revisionChanges.map((difference) => difference.submissionId).join('、')} 的云端决策版本已变化。请刷新对应审核包并重新保存状态。`);
+          setOperation({ title: '发布前检查已阻断', message: '云端的决策版本已经变化。', phase: 'error' });
         } else {
           setMessage(`发布前检查已阻断：云端状态灯已更新（${differences.map((difference) => `${difference.submissionId}:${difference.kind}`).join('；') || '版本号变化'}）。请确认后先保存状态，再重新检查。`);
+          setOperation({ title: '发布前检查已阻断', message: '云端状态灯已更新，请先刷新并保存。', phase: 'error' });
         }
         return;
       }
@@ -345,12 +383,44 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       }, actor);
       setReleaseReport(result);
       setReleaseGate(normalizeGate(result.gate));
+      setOperation({ title: '发布前检查完成', message: `检查结论：${reviewDecisionLabel(result.decision)}。`, phase: result.decision === 'blocked' || result.decision === 'stale' ? 'error' : 'success', detail: result.report?.findings?.map((finding) => finding.message ?? '未提供详情。').join('\n') || '可以继续确认发布。' });
     } catch (error) {
       setMessage(describeError(error));
+      setOperation({ title: '发布前检查失败', message: '发布前检查请求未完成。', detail: describeError(error), phase: 'error' });
     } finally {
       setBusy(null);
     }
   }, [actor, board, dirty, draft, releaseControl, selectedEntries, submissionAdapter, submissions]);
+
+  const waitForReleaseCompletion = useCallback(async (releaseId: string) => {
+    if (!submissionAdapter.getReleaseProgress) {
+      setOperation({ title: '发布已排队', message: '发布已进入服务端队列；请稍后刷新发布记录。', phase: 'success', detail: `发布 ID：${releaseId}` });
+      return;
+    }
+    for (let attempt = 0; attempt < 360; attempt += 1) {
+      const progress = await submissionAdapter.getReleaseProgress(releaseId, actor);
+      const lifecycle = progress.lifecycle;
+      const detail = [
+        progress.formalVersion ? `正式版本：${progress.formalVersion}` : null,
+        lifecycle?.dataPublishedAt ? '正式数据已发布' : null,
+        lifecycle?.mirroredAt ? 'GitHub Data 已镜像' : null,
+        progress.archive?.state ? `归档：${progress.archive.state}` : null,
+      ].filter(Boolean).join(' · ');
+      if (progress.state === 'completed') {
+        setOperation({ title: '发布完成', message: '正式数据、GitHub 镜像与审核包归档均已完成。', detail: `${detail}\n发布 ID：${releaseId}`, phase: 'success' });
+        await refreshList({ preserveMessage: true });
+        return;
+      }
+      if (['failed', 'rebase-required', 'mirror-recovery-required', 'archive-recovery-required'].includes(progress.state)) {
+        setOperation({ title: '发布需要处理', message: `发布停在“${stateLabel(progress.state)}”。`, detail: progress.error ?? progress.archive?.error ?? detail, phase: 'error' });
+        await refreshList({ preserveMessage: true });
+        return;
+      }
+      setOperation({ title: '正在发布', message: `服务端正在执行：${stateLabel(progress.state)}。关闭页面不会取消发布。`, detail, phase: 'running' });
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 2_000));
+    }
+    setOperation({ title: '发布仍在执行', message: '浏览器停止等待，但服务端发布不会中断。请稍后刷新发布记录。', detail: `发布 ID：${releaseId}`, phase: 'success' });
+  }, [actor, refreshList, submissionAdapter]);
 
   const publish = useCallback(async () => {
     if (!releaseReport?.gate?.attemptId || !releaseReport.report?.reportSha256 || !publishReady) return;
@@ -358,6 +428,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     const owner = approved && submissions.find((item) => item.submissionId === approved.submissionId);
     if (!approved || !owner || !window.confirm('确认发布？服务端会再次校验 Release Gate、当前数据和已保存状态。')) return;
     setBusy('publish');
+    setOperation({ title: '正在提交发布', message: '正在创建不可变发布任务；之后将由服务端持续执行。', phase: 'running' });
     try {
       const result = await releaseControl.confirmRelease({
         attemptId: releaseReport.gate.attemptId, expectedGateVersion: releaseReport.gate.gateVersion,
@@ -368,12 +439,16 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       setReleaseGate(normalizeGate(result.gate));
       setMessage('发布已进入受控执行队列。');
       await refreshList({ preserveMessage: true });
+      const releaseId = result.release?.releaseId;
+      if (releaseId) await waitForReleaseCompletion(releaseId);
+      else setOperation({ title: '发布已排队', message: '发布已进入服务端队列；请稍后刷新发布记录。', phase: 'success' });
     } catch (error) {
       setMessage(describeError(error));
+      setOperation({ title: '发布提交失败', message: '服务端没有接受本次发布。', detail: describeError(error), phase: 'error' });
     } finally {
       setBusy(null);
     }
-  }, [actor, publishReady, refreshList, releaseControl, releaseReport, selectedEntries, submissions]);
+  }, [actor, publishReady, refreshList, releaseControl, releaseReport, selectedEntries, submissions, waitForReleaseCompletion]);
 
   useEffect(() => { void refreshList(); }, [refreshList]);
   useEffect(() => subscribeToStatusDraft?.((signal) => updateDraft(signal.submissionId, signal.state, signal.decisionAction, signal.reason)), [subscribeToStatusDraft, updateDraft]);
@@ -448,7 +523,25 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
         </div>
       </DraggablePanel>
     ) : null}
-    {releaseFeed ? <DraggablePanel id="review-release-feed" defaultPosition={{ x: 870, y: 180 }} zIndex={1762} constrainExpandedToViewport><div className="w-[330px] max-h-[60vh] overflow-auto rounded-2xl border border-gray-200 bg-white p-4 shadow-xl" data-draggable-proxy-close="true"><h3 className="text-base font-bold text-gray-900" data-draggable-title>发布记录</h3><button type="button" data-draggable-close className="sr-only" aria-label="关闭" onClick={() => setReleaseFeed(null)} />{releaseFeed.length ? <div className="mt-3 space-y-2">{releaseFeed.map((item) => <div key={item.releaseId} className="rounded-xl bg-gray-50 p-2 text-xs"><div className="font-semibold text-gray-800">{item.releaseId}</div><div className="mt-1 text-gray-500">{item.occurredAt} · {stateLabel(item.state)}</div></div>)}</div> : <p className="mt-3 text-sm text-gray-500">暂无发布记录。</p>}</div></DraggablePanel> : null}
-    {loadProgress ? <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" role="dialog" aria-live="polite"><div className="w-[420px] max-w-[90vw] rounded-2xl border border-gray-200 bg-white shadow-xl"><div className="border-b border-gray-200 px-4 py-3 text-sm font-bold text-gray-900">正在加载审核包</div><div className="px-4 py-4 text-sm text-gray-700">{progressText(loadProgress)}</div><div className="px-4 pb-4"><div className="h-2 overflow-hidden rounded bg-gray-100"><div className="h-full w-3/5 animate-pulse rounded bg-blue-600" /></div></div></div></div> : null}
+    {releaseFeed ? <DraggablePanel id="review-release-feed" defaultPosition={{ x: 870, y: 180 }} zIndex={1762} constrainExpandedToViewport>
+      <div className="w-[440px] max-h-[72vh] overflow-auto rounded-2xl border border-gray-200 bg-white p-4 shadow-xl" data-draggable-proxy-close="true">
+        <h3 className="text-base font-bold text-gray-900" data-draggable-title>发布记录</h3>
+        <button type="button" data-draggable-close className="sr-only" aria-label="关闭" onClick={() => setReleaseFeed(null)} />
+        {releaseFeed.length ? <div className="mt-3 space-y-3">{releaseFeed.map((item) => {
+          const packages = item.packages ?? [];
+          const lifecycle = item.lifecycle;
+          const occurredAt = lifecycle?.completedAt ?? lifecycle?.archivedAt ?? lifecycle?.mirroredAt ?? item.publishedAt ?? item.occurredAt ?? '时间未记录';
+          const canDownload = item.state === 'completed' && Boolean(item.download);
+          return <div key={item.releaseId} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
+            <div className="flex items-start justify-between gap-2"><div className="font-semibold text-slate-900">{item.releaseId}</div><span className={`rounded-full px-2 py-1 ${stateTone(item.state)}`}>{stateLabel(item.state)}</span></div>
+            <div className="mt-2 text-slate-600">发布生命周期：{stateLabel(item.state)} · {occurredAt}</div>
+            {item.formalVersion ? <div className="mt-1 text-slate-600">正式版本：{item.formalVersion}</div> : null}
+            {packages.length ? <div className="mt-3 space-y-2">{packages.map((pkg) => <div key={`${pkg.submissionId}-${pkg.decisionRevisionId}`} className="rounded-lg border border-slate-200 bg-white p-2"><div className="truncate font-medium text-slate-800">{pkg.packageName}</div><div className="mt-1 text-slate-500">版本：{pkg.decisionRevisionId} · {pkg.decisionState === 'approved' ? '已发布' : '仅归档'} · 共 {pkg.revisionCount} 个版本</div><div className="mt-1 grid grid-cols-3 gap-1 text-center"><span className="rounded bg-blue-50 py-1 text-blue-700">{pkg.counts.featureCount} 要素</span><span className="rounded bg-amber-50 py-1 text-amber-700">{pkg.counts.deleteCount} 删除</span><span className="rounded bg-purple-50 py-1 text-purple-700">{pkg.counts.pictureCount} 图片</span></div></div>)}</div> : null}
+            {canDownload ? <AppButton disabled={busy !== null} onClick={() => void downloadRelease(item.releaseId)} className="mt-3 w-full justify-center rounded-lg bg-blue-600 px-3 py-2 text-xs text-white hover:bg-blue-700 disabled:bg-blue-300"><FileDown className="h-3.5 w-3.5" />下载本次发布的全部审核包</AppButton> : null}
+          </div>;
+        })}</div> : <p className="mt-3 text-sm text-gray-500">暂无发布记录。</p>}
+      </div>
+    </DraggablePanel> : null}
+    <ReviewOperationOverlay operation={operation} onClose={() => setOperation(null)} />
   </>;
 }

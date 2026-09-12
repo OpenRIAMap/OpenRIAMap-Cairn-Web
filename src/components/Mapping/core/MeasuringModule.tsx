@@ -201,6 +201,12 @@ export type MeasuringModuleHandle = {
   requestCloseAndClear: (actionLabel?: string) => boolean;
 };
 
+// Kept at module scope so both workflow instances use stable, explicitly
+// namespaced persistence keys rather than closing over an uninitialized value.
+const TEMP_RULE_SOURCES_KEY = 'ria_temp_rule_sources_v1';
+const TEMP_RULE_OVERRIDE_IDS_KEY = 'ria_temp_rule_override_ids_v1';
+const TEMP_RULE_DELETE_IDS_KEY = 'ria_temp_rule_delete_ids_v1';
+
 const MeasuringModule = forwardRef<MeasuringModuleHandle, MeasuringModuleProps>((props, ref) => {
   const {
     mapReady,
@@ -224,6 +230,12 @@ const MeasuringModule = forwardRef<MeasuringModuleHandle, MeasuringModuleProps>(
     onReviewPackageUpload,
   } = props;
   const isReviewWorkspace = workspaceMode === 'review';
+  // Review temporary mounts must never occupy the mapping module's persisted
+  // rule-source slots. React remounting isolates component state; these three
+  // namespace keys isolate the remaining browser-persisted layer bridge.
+  const tempRuleSourcesStorageKey = isReviewWorkspace ? `${TEMP_RULE_SOURCES_KEY}:review` : TEMP_RULE_SOURCES_KEY;
+  const tempRuleOverrideIdsStorageKey = isReviewWorkspace ? `${TEMP_RULE_OVERRIDE_IDS_KEY}:review` : TEMP_RULE_OVERRIDE_IDS_KEY;
+  const tempRuleDeleteIdsStorageKey = isReviewWorkspace ? `${TEMP_RULE_DELETE_IDS_KEY}:review` : TEMP_RULE_DELETE_IDS_KEY;
   const reviewPackageLabel = reviewSession?.packageId ?? '';
 
 
@@ -562,12 +574,6 @@ const [jsonPanelOpen, setJsonPanelOpen] = useState(false);
 const [jsonPanelText, setJsonPanelText] = useState('');
 const [jsonExportSubType, setJsonExportSubType] = useState<string>('__ALL__');
 
-// 临时挂载到 RuleDrivenLayer 的本地存储 key（与 RuleDrivenLayer 保持一致）
-const TEMP_RULE_SOURCES_KEY = 'ria_temp_rule_sources_v1';
-// 临时挂载：覆盖固定数据源中“同 ID 要素”的屏蔽列表（worldId -> string[]）
-const TEMP_RULE_OVERRIDE_IDS_KEY = 'ria_temp_rule_override_ids_v1';
-const TEMP_RULE_DELETE_IDS_KEY = 'ria_temp_rule_delete_ids_v1';
-
 type TempRuleSource = {
   uid: string;
   worldId: string;
@@ -775,7 +781,7 @@ const confirmExitAndClear = (actionLabel: string) => {
   // 退出测绘时：若仍处于“临时挂载”模式，必须先关闭挂载（并触发规则图层重载）
   // 目标：避免退出测绘后仍残留挂载源，导致后续世界/数据处理混乱。
   try {
-    const raw = localStorage.getItem(TEMP_RULE_SOURCES_KEY);
+    const raw = localStorage.getItem(tempRuleSourcesStorageKey);
     if (raw) {
       const obj = JSON.parse(raw);
       if (obj && typeof obj === 'object') {
@@ -1987,7 +1993,7 @@ const downloadTextFile = (text: string, filename: string, mime: string) => {
 
 const readTempRuleSources = (): Record<string, TempRuleSource[]> => {
   try {
-    const raw = localStorage.getItem(TEMP_RULE_SOURCES_KEY);
+    const raw = localStorage.getItem(tempRuleSourcesStorageKey);
     if (!raw) return {};
     const obj = JSON.parse(raw);
     if (!obj || typeof obj !== 'object') return {};
@@ -1999,7 +2005,7 @@ const readTempRuleSources = (): Record<string, TempRuleSource[]> => {
 
 const readTempRuleOverrideIds = (): Record<string, string[]> => {
   try {
-    const raw = localStorage.getItem(TEMP_RULE_OVERRIDE_IDS_KEY);
+    const raw = localStorage.getItem(tempRuleOverrideIdsStorageKey);
     if (!raw) return {};
     const obj = JSON.parse(raw);
     if (!obj || typeof obj !== 'object') return {};
@@ -2012,7 +2018,7 @@ const readTempRuleOverrideIds = (): Record<string, string[]> => {
 
 const readTempRuleDeleteIds = (): Record<string, string[]> => {
   try {
-    const raw = localStorage.getItem(TEMP_RULE_DELETE_IDS_KEY);
+    const raw = localStorage.getItem(tempRuleDeleteIdsStorageKey);
     if (!raw) return {};
     const obj = JSON.parse(raw);
     if (!obj || typeof obj !== 'object') return {};
@@ -2024,7 +2030,7 @@ const readTempRuleDeleteIds = (): Record<string, string[]> => {
 
 const writeTempRuleDeleteIds = (all: Record<string, string[]>) => {
   try {
-    localStorage.setItem(TEMP_RULE_DELETE_IDS_KEY, JSON.stringify(all));
+    localStorage.setItem(tempRuleDeleteIdsStorageKey, JSON.stringify(all));
     bumpTempRuleDeleteIdsRevision();
     window.dispatchEvent(
       new CustomEvent('ria-temp-rule-deletes-changed', { detail: { worldId: currentWorldId } }),
@@ -2090,7 +2096,7 @@ const requestTempMountNavigationRebuild = (worldId: string) => {
 
 const writeTempRuleOverrideIds = (all: Record<string, string[]>) => {
   try {
-    localStorage.setItem(TEMP_RULE_OVERRIDE_IDS_KEY, JSON.stringify(all));
+    localStorage.setItem(tempRuleOverrideIdsStorageKey, JSON.stringify(all));
     bumpTempRuleOverrideIdsRevision();
     window.dispatchEvent(
       new CustomEvent('ria-temp-rule-overrides-changed', { detail: { worldId: currentWorldId } }),
@@ -2117,7 +2123,7 @@ const clearTempRuleOverrideIdsForWorld = () => {
 
 const writeTempRuleSources = (all: Record<string, TempRuleSource[]>) => {
   try {
-    localStorage.setItem(TEMP_RULE_SOURCES_KEY, JSON.stringify(all));
+    localStorage.setItem(tempRuleSourcesStorageKey, JSON.stringify(all));
     bumpTempRuleSourcesRevision();
     window.dispatchEvent(new CustomEvent('ria-temp-rule-sources-changed', { detail: { worldId: currentWorldId } }));
     requestTempMountNavigationRebuild(currentWorldId);
