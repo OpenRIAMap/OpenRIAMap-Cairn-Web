@@ -8,6 +8,7 @@
 export const REVIEW_PACKAGE_CONTRACT_VERSION = 'cairnmap.review-package.v1';
 export const REVIEW_PACKAGE_REVIEW_SCHEMA_VERSION = 'cairnmap.native-relay-review.v1';
 export const REVIEW_PACKAGE_PROFILE_SCHEMA_VERSION = 'cairnmap.review-package-profile.v1';
+export const REVIEW_PACKAGE_PICTURE_BINDINGS_SCHEMA_VERSION = 'cairnmap.review-picture-bindings.v1';
 
 /**
  * The Relay ZIP wire layout is a CairnMap protocol, not an application
@@ -17,6 +18,7 @@ export const REVIEW_PACKAGE_PROFILE_SCHEMA_VERSION = 'cairnmap.review-package-pr
 export const REVIEW_PACKAGE_LAYOUT = Object.freeze({
   featureRoot: 'Data_Spilt',
   pictureRoot: 'Picture',
+  pictureIndexPath: 'Picture/INDEX.json',
   indexPath: 'INDEX.json',
   reviewPath: 'Review.json',
   deletePath: 'Delete.json',
@@ -75,7 +77,12 @@ export type ReviewPackagePictureInput = {
   filename: string;
   content: Blob;
   kindPath?: readonly string[];
+  order?: number;
 };
+
+export type ReviewPackagePictureBindingFile = { path: string; order: number; role: 'display' };
+export type ReviewPackagePictureBinding = { worldId: string; classCode: string; featureId: string; kindPath: string[]; files: ReviewPackagePictureBindingFile[] };
+export type ReviewPackagePictureBindingManifest = { schemaVersion: typeof REVIEW_PACKAGE_PICTURE_BINDINGS_SCHEMA_VERSION; bindings: ReviewPackagePictureBinding[] };
 
 export type ReviewPackageExtraFile = {
   path: string;
@@ -147,6 +154,7 @@ export type ParsedReviewPackagePicture = {
   kindPath: string[];
   filename: string;
   content: Blob;
+  order?: number;
 };
 
 export type ParsedReviewPackage = {
@@ -159,6 +167,8 @@ export type ParsedReviewPackage = {
   deletes: ReviewPackageDeleteMark[];
   features: ParsedReviewPackageFeature[];
   pictures: ParsedReviewPackagePicture[];
+  pictureBindingManifest: Record<string, unknown> | null;
+  pictureBindingPathPresent: boolean;
   extraPaths: string[];
   parseWarnings: ReviewPackageValidationIssue[];
 };
@@ -177,6 +187,7 @@ export type ReviewPackageValidationCode =
   | 'PACKAGE_DELETE_AMBIGUOUS'
   | 'PACKAGE_COUNT_MISMATCH'
   | 'PACKAGE_CONTENT_INVALID'
+  | 'PACKAGE_PICTURE_BINDING_INVALID'
   | 'PACKAGE_LEGACY_COMPATIBILITY';
 
 export type ReviewPackageValidationIssue = {

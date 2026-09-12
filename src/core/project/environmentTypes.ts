@@ -55,6 +55,8 @@ export type CairnMapFormalDataSourceBinding = {
   readerKind: string;
   readerSchemaVersion: string;
   rootUrl: string;
+  /** Public immutable Media root. Formal data may be mirrored separately from Media binaries. */
+  mediaRootUrl?: string;
   transport?: 'direct' | 'github-raw-compatible';
 };
 

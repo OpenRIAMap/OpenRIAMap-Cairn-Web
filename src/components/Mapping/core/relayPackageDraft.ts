@@ -7,7 +7,7 @@ export type RelayPictureBindingItem = {
   previewUrl?: string;
   deleted?: boolean;
   order: number;
-  source?: 'new' | 'imported' | 'pub' | 'dat';
+  source?: 'new' | 'imported' | 'pub' | 'dat' | 'formal';
 };
 
 export type RelayDeleteMarkItem = {

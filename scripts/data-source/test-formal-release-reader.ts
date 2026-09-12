@@ -17,6 +17,7 @@ const source: RuleDataSourceSnapshot = {
   readerKind: 'formal-release-v2',
   readerSchemaVersion: 'openriamap.formal-release-reader.v2',
   rootUrl: 'https://example.invalid',
+  mediaRootUrl: 'https://example.invalid/media',
   transportId: 'direct:https://example.invalid',
   generation: 0,
 };

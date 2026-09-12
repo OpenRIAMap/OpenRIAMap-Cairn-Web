@@ -1,4 +1,4 @@
-export type SourceKey = 'pub' | 'dat';
+export type SourceKey = 'pub' | 'dat' | 'formal';
 
 export type RulePictureSourceDef = {
   source: SourceKey;

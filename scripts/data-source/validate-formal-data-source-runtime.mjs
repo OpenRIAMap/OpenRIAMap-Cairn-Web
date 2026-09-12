@@ -44,6 +44,7 @@ for (const binding of bindings) {
   if (binding?.id && bindingIds.has(binding.id)) errors.push(`duplicate binding id: ${binding.id}`);
   if (binding?.id) bindingIds.add(binding.id);
   requireValue(typeof binding?.rootUrl === 'string' && /^https:\/\//.test(binding.rootUrl), `binding rootUrl must be HTTPS: ${binding?.id ?? '?'}`);
+  if (binding?.readerKind === 'formal-release-v2') requireValue(typeof binding?.mediaRootUrl === 'string' && /^https:\/\//.test(binding.mediaRootUrl), `formal binding mediaRootUrl must be HTTPS: ${binding?.id ?? '?'}`);
   requireValue(typeof binding?.readerSchemaVersion === 'string' && binding.readerSchemaVersion.length > 0, `binding readerSchemaVersion is required: ${binding?.id ?? '?'}`);
   requireValue(binding?.readerKind === sourceById.get(binding?.id)?.readerKind, `binding readerKind mismatch: ${binding?.id ?? '?'}`);
   requireValue(['direct', 'github-raw-compatible'].includes(binding?.transport ?? 'direct'), `binding transport is invalid: ${binding?.id ?? '?'}`);
