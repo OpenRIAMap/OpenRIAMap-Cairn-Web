@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Archive, CheckCircle2, ClipboardCheck, FileDown, FileText, RefreshCw, RotateCcw, Send, ShieldCheck, XCircle } from 'lucide-react';
 import AppButton from '@/components/ui/AppButton';
 import { DraggablePanel } from '@/components/DraggablePanel/DraggablePanel';
+import { ReviewConfirmationOverlay, type ReviewConfirmationOverlayState } from './ReviewConfirmationOverlay';
 import { ReviewOperationOverlay, type ReviewOperationOverlayState } from './ReviewOperationOverlay';
 import type { ReviewAuthPort } from './auth';
 import {
@@ -159,6 +160,21 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   const [releaseGate, setReleaseGate] = useState<ReviewReleaseGateSnapshot | null>(null);
   const [releaseFeed, setReleaseFeed] = useState<Awaited<ReturnType<NonNullable<ReviewSubmissionAdapter['getReleaseFeed']>>> | null>(null);
   const [operation, setOperation] = useState<ReviewOperationOverlayState | null>(null);
+  const [confirmation, setConfirmation] = useState<ReviewConfirmationOverlayState | null>(null);
+  const confirmationResolver = useRef<((confirmed: boolean) => void) | null>(null);
+
+  const requestConfirmation = useCallback((next: ReviewConfirmationOverlayState) => new Promise<boolean>((resolve) => {
+    confirmationResolver.current?.(false);
+    confirmationResolver.current = resolve;
+    setConfirmation(next);
+  }), []);
+  const settleConfirmation = useCallback((confirmed: boolean) => {
+    const resolve = confirmationResolver.current;
+    confirmationResolver.current = null;
+    setConfirmation(null);
+    resolve?.(confirmed);
+  }, []);
+  useEffect(() => () => { confirmationResolver.current?.(false); confirmationResolver.current = null; }, []);
 
   const detail = submissions.find((submission) => submission.submissionId === detailId) ?? null;
   const revision = detail?.revisions.find((candidate) => candidate.revisionId === revisionId)
@@ -195,7 +211,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     }
   }, [auth, submissionAdapter]);
 
-  const updateDraft = useCallback((submissionId: string, state: ReviewStatusBoardEntry['state'], decisionAction?: ReviewStatusDecisionAction, reason?: string) => {
+  const updateDraft = useCallback(async (submissionId: string, state: ReviewStatusBoardEntry['state'], decisionAction?: ReviewStatusDecisionAction, reason?: string) => {
     const current = draft.find((entry) => entry.submissionId === submissionId);
     const selected = submissions.find((item) => item.submissionId === submissionId);
     if (!current || !selected) return;
@@ -204,7 +220,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       return;
     }
     const actionLabel = ({ approve: '通过', reject: '打回', 'request-changes': '要求修改', archive: '归档', reopen: '恢复待审' } as Record<string, string>)[decisionAction ?? ''] ?? stateLabel(state);
-    if (!window.confirm(`确认将此审核包的状态灯设为“${actionLabel}”？此操作仅修改本地草稿；不会创建新版本、重新发布或回滚数据。点击“保存状态”后才会提交。`)) return;
+    if (!await requestConfirmation({ title: '确认修改审核状态', message: `确认将此审核包的状态灯设为“${actionLabel}”？`, detail: '此操作仅修改本地草稿；不会创建新版本、重新发布或回滚数据。点击“保存状态”后才会提交。', confirmLabel: '确认修改' })) return;
     const selectedRevision = selected.revisions.find((item) => item.revisionId === revisionId) ?? selected.revisions.find((item) => item.revisionId === selected.currentRevisionId);
     setDraft((entries) => entries.map((entry) => entry.submissionId !== submissionId ? entry : {
       ...entry,
@@ -216,7 +232,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       updatedBy: actor,
     }));
     setSelectedIds((previous) => new Set(previous).add(submissionId));
-  }, [actor, draft, revisionId, submissions]);
+  }, [actor, draft, requestConfirmation, revisionId, submissions]);
 
   const saveStatus = useCallback(async () => {
     if (!board || !selectedEntries.length) return;
@@ -232,12 +248,12 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
         return;
       }
       const expectedBoardVersion = remote.boardVersion;
-      if (differences.length && !window.confirm(`检测到云端状态灯变化：${differences.map((difference) => `${difference.submissionId}（${difference.kind}）`).join('；')}。确认以本地已选择状态覆盖这些变化？`)) {
+      if (differences.length && !await requestConfirmation({ title: '确认覆盖云端状态灯', message: '检测到云端状态灯变化。是否以当前已选择的本地状态覆盖？', detail: differences.map((difference) => `${difference.submissionId}（${difference.kind}）`).join('；'), confirmLabel: '确认覆盖' })) {
         setMessage('保存状态已取消；本地状态灯保持不变。');
         setOperation({ title: '审核状态保存已取消', message: '未向云端写入状态灯。', phase: 'success' });
         return;
       }
-      if (!window.confirm(`确认保存 ${selectedEntries.length} 个审核包的状态灯？`)) {
+      if (!await requestConfirmation({ title: '确认保存审核状态', message: `确认保存 ${selectedEntries.length} 个审核包的状态灯？`, detail: '服务端会按当前审核包和决策版本执行一致性校验。', confirmLabel: '保存状态' })) {
         setOperation({ title: '审核状态保存已取消', message: '未向云端写入状态灯。', phase: 'success' });
         return;
       }
@@ -255,7 +271,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     } finally {
       setBusy(null);
     }
-  }, [actor, board, draft, refreshList, selectedEntries, submissionAdapter]);
+  }, [actor, board, draft, refreshList, requestConfirmation, selectedEntries, submissionAdapter]);
 
   const loadWorkspace = useCallback(async () => {
     if (!detail || !revision) return;
@@ -301,7 +317,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   }, [actor, detail, revision, submissionAdapter]);
 
   const refreshGate = useCallback(async () => {
-    if (!window.confirm('确认刷新 Release Gate？这会读取当前发布锁与执行状态。')) return;
+    if (!await requestConfirmation({ title: '刷新 Release Gate', message: '确认读取当前发布锁与执行状态？', confirmLabel: '刷新' })) return;
     setBusy('gate');
     try {
       setReleaseGate(normalizeGate(await releaseControl.getReleaseGate(actor)));
@@ -310,7 +326,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     } finally {
       setBusy(null);
     }
-  }, [actor, releaseControl]);
+  }, [actor, releaseControl, requestConfirmation]);
 
   const refreshFeed = useCallback(async () => {
     setBusy('feed');
@@ -426,7 +442,8 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     if (!releaseReport?.gate?.attemptId || !releaseReport.report?.reportSha256 || !publishReady) return;
     const approved = selectedEntries.find((entry) => entry.state === 'approved' && entry.decisionRevisionId);
     const owner = approved && submissions.find((item) => item.submissionId === approved.submissionId);
-    if (!approved || !owner || !window.confirm('确认发布？服务端会再次校验 Release Gate、当前数据和已保存状态。')) return;
+    if (!approved || !owner) return;
+    if (!await requestConfirmation({ title: '确认发布', message: '确认将当前通过的审核包提交发布？', detail: '服务端会再次校验 Release Gate、当前正式数据和已保存状态。关闭此页面不会取消已经受理的发布。', confirmLabel: '确认发布' })) return;
     setBusy('publish');
     setOperation({ title: '正在提交发布', message: '正在创建不可变发布任务；之后将由服务端持续执行。', phase: 'running' });
     try {
@@ -448,10 +465,10 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     } finally {
       setBusy(null);
     }
-  }, [actor, publishReady, refreshList, releaseControl, releaseReport, selectedEntries, submissions, waitForReleaseCompletion]);
+  }, [actor, publishReady, refreshList, releaseControl, releaseReport, requestConfirmation, selectedEntries, submissions, waitForReleaseCompletion]);
 
   useEffect(() => { void refreshList(); }, [refreshList]);
-  useEffect(() => subscribeToStatusDraft?.((signal) => updateDraft(signal.submissionId, signal.state, signal.decisionAction, signal.reason)), [subscribeToStatusDraft, updateDraft]);
+  useEffect(() => subscribeToStatusDraft?.((signal) => { void updateDraft(signal.submissionId, signal.state, signal.decisionAction, signal.reason); }), [subscribeToStatusDraft, updateDraft]);
   useEffect(() => subscribeToSubmissionUpload?.(() => { void refreshList(); }), [refreshList, subscribeToSubmissionUpload]);
 
   return <>
@@ -469,7 +486,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
         </div>
       </div>
     </DraggablePanel>
-+    {detail ? (
+    {detail ? (
       <DraggablePanel id="review-package-detail" defaultPosition={{ x: 900, y: 132 }} zIndex={1761} constrainExpandedToViewport>
         <div className="w-[390px] max-h-[74vh] overflow-auto rounded-2xl border border-gray-200 bg-white p-4 shadow-xl" data-draggable-proxy-close="true">
           <div className="flex items-start justify-between">
@@ -502,21 +519,21 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
             {reportView(packageReport, '审核包预检报告')}
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 border-t border-gray-100 pt-3">
-            <AppButton onClick={() => updateDraft(detail.submissionId, 'archived', 'archive')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-gray-100 px-2 py-2 text-xs text-gray-700 hover:bg-gray-200">
+            <AppButton onClick={() => void updateDraft(detail.submissionId, 'archived', 'archive')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-gray-100 px-2 py-2 text-xs text-gray-700 hover:bg-gray-200">
               <Archive className="h-3.5 w-3.5" />归档
             </AppButton>
-            <AppButton onClick={() => { const reason = window.prompt('请填写要求修改的原因：'); if (reason?.trim()) updateDraft(detail.submissionId, 'rejected', 'request-changes', reason.trim()); }} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-red-50 px-2 py-2 text-xs text-red-700 hover:bg-red-100">
+            <AppButton onClick={() => { const reason = window.prompt('请填写要求修改的原因：'); if (reason?.trim()) void updateDraft(detail.submissionId, 'rejected', 'request-changes', reason.trim()); }} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-red-50 px-2 py-2 text-xs text-red-700 hover:bg-red-100">
               <XCircle className="h-3.5 w-3.5" />要求修改
             </AppButton>
-            <AppButton onClick={() => updateDraft(detail.submissionId, 'pending', 'reopen')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-amber-50 px-2 py-2 text-xs text-amber-800 hover:bg-amber-100">
+            <AppButton onClick={() => void updateDraft(detail.submissionId, 'pending', 'reopen')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-amber-50 px-2 py-2 text-xs text-amber-800 hover:bg-amber-100">
               <RotateCcw className="h-3.5 w-3.5" />恢复待审
             </AppButton>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <AppButton onClick={() => updateDraft(detail.submissionId, 'approved', 'approve')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-green-600 px-2 py-2 text-xs text-white hover:bg-green-700">
+            <AppButton onClick={() => void updateDraft(detail.submissionId, 'approved', 'approve')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-green-600 px-2 py-2 text-xs text-white hover:bg-green-700">
               <CheckCircle2 className="h-3.5 w-3.5" />通过
             </AppButton>
-            <AppButton onClick={() => { const reason = window.prompt('请填写打回原因：'); if (reason?.trim()) updateDraft(detail.submissionId, 'rejected', 'reject', reason.trim()); }} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-rose-600 px-2 py-2 text-xs text-white hover:bg-rose-700">
+            <AppButton onClick={() => { const reason = window.prompt('请填写打回原因：'); if (reason?.trim()) void updateDraft(detail.submissionId, 'rejected', 'reject', reason.trim()); }} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-rose-600 px-2 py-2 text-xs text-white hover:bg-rose-700">
               <XCircle className="h-3.5 w-3.5" />打回
             </AppButton>
           </div>
@@ -543,5 +560,6 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       </div>
     </DraggablePanel> : null}
     <ReviewOperationOverlay operation={operation} onClose={() => setOperation(null)} />
+    <ReviewConfirmationOverlay confirmation={confirmation} onConfirm={() => settleConfirmation(true)} onCancel={() => settleConfirmation(false)} />
   </>;
 }
