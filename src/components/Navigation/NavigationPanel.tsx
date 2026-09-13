@@ -320,8 +320,6 @@ const TRAVEL_MODES: Array<{ mode: TravelModePanel; label: string; icon: typeof T
   { mode: 'rail_new', label: '铁路(新)', icon: Train },
   { mode: 'teleport_new', label: '传送(新)', icon: Zap },
   { mode: 'road', label: '道路', icon: Route },
-  { mode: 'rail', label: '铁路', icon: Train },
-  { mode: 'teleport', label: '传送', icon: Zap },
   { mode: 'walk', label: '步行', icon: Footprints },
 ];
 

@@ -47,11 +47,11 @@ import { formatGridNumber, snapWorldPointByMode } from '@/lib/gridSnapUtils';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import ToolIconButton from '@/components/Toolbar/ToolIconButton';
-import { Globe2, PanelsTopLeft, Layers3, SlidersHorizontal, Plus, Minus, Pencil, Ruler, User } from 'lucide-react';
+import { Globe2, PanelsTopLeft, Layers3, SlidersHorizontal, Plus, Minus, Pencil, Ruler, User, History } from 'lucide-react';
 import { buildBuildingNameIndex, getRuleCategoryLabelWithParent, getRuleDisplayName } from '@/components/Search/searchRuleTables';
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { consumeFeatureShareTargetFromLocation, normalizePlayerShareId, type FeatureSharePayload, type FeatureShareTarget, type PlayerShareTarget, type ShareParseResult } from '@/lib/featureShareLink';
-import { ReviewModule, ReviewModuleLauncher, createReviewPackageSession, type CairnMapModuleMode, type ReviewInboxItem, type ReviewPackageSession } from '@/components/Review';
+import { ReviewModule, ReviewModuleLauncher, PublicReleaseRecordPanel, createReviewPackageSession, type CairnMapModuleMode, type ReviewInboxItem, type ReviewPackageSession } from '@/components/Review';
 import { openriamapReviewPackageUploader, uploadRiaReviewRevision } from '@/components/Review/riaReviewPackageUploader';
 
 // ===== 导航“图上选取”：MapContainer 统一派发地图点击事件 =====
@@ -61,7 +61,7 @@ type MapClickWorldPointEventDetail = {
 };
 
 
-type MobilePanelKey = null | 'navigation' | 'attributeQuery' | 'players' | 'about' | 'settings' | 'featureJson' | 'featureShare';
+type MobilePanelKey = null | 'navigation' | 'attributeQuery' | 'players' | 'about' | 'settings' | 'releaseRecords' | 'featureJson' | 'featureShare';
 type MobileQuickPanelKey = null | 'worlds' | 'toolbar' | 'ruleButtons' | 'modeTools';
 
 type PendingShareTarget =
@@ -301,6 +301,9 @@ function MapContainer() {
   const [showPlayersPage, setShowPlayersPage] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showPublicReleaseRecords, setShowPublicReleaseRecords] = useState(false);
+  const [rulePanelCollapsed, setRulePanelCollapsed] = useState(false);
+  const [modePanelCollapsed, setModePanelCollapsed] = useState(false);
   const [mobileActivePanel, setMobileActivePanel] = useState<MobilePanelKey>(null);
   const [mobileQuickPanel, setMobileQuickPanel] = useState<MobileQuickPanelKey>(null);
   const [mobileSheetCollapsed, setMobileSheetCollapsed] = useState(false);
@@ -508,22 +511,6 @@ useEffect(() => {
     requestFeatureModuleActivation('legacy');
   }, [activateLegacyAction, legacyModuleLoaded, requestFeatureModuleActivation]);
 
-  const handleToggleLegacyRailway = useCallback(() => {
-    if (showRailway) {
-      setShowRailway(false);
-      return;
-    }
-    requestLegacyFeature('railway-on');
-  }, [showRailway, requestLegacyFeature]);
-
-  const handleToggleLegacyLandmark = useCallback(() => {
-    if (showLandmark) {
-      setShowLandmark(false);
-      return;
-    }
-    requestLegacyFeature('landmark-on');
-  }, [showLandmark, requestLegacyFeature]);
-
   const handleOpenLegacyLinesPage = useCallback(() => {
     if (!LINES_FEATURE_ENABLED) return;
     requestLegacyFeature('lines-page');
@@ -719,6 +706,24 @@ useEffect(() => {
     setNavigationInitialEndPoint(null);
     window.dispatchEvent(new CustomEvent('ria:ruleFeatureCardClose'));
     setMobileActivePanel((prev) => (prev === panel ? null : panel));
+  }, []);
+
+  // The authenticated review workbench can direct users to the public record
+  // without rendering that record inside its own stacking context.
+  useEffect(() => {
+    const open = () => {
+      if (window.matchMedia('(max-width: 639px)').matches) {
+        suppressRuleFeatureCardOpenRef.current = false;
+        setMobileQuickPanel(null);
+        setMobileSheetHidden(false);
+        setMobileSheetCollapsed(false);
+        setMobileActivePanel('releaseRecords');
+        return;
+      }
+      setShowPublicReleaseRecords(true);
+    };
+    window.addEventListener('ria:open-public-release-record', open);
+    return () => window.removeEventListener('ria:open-public-release-record', open);
   }, []);
 
   const toggleMobileSheetCollapsed = useCallback(() => {
@@ -1631,9 +1636,11 @@ map.on('mousemove', handleMouseMove);
                 ? '在线玩家'
                 : mobileActivePanel === 'about'
                   ? '关于'
-                  : mobileActivePanel === 'settings'
-                    ? '设置'
-                    : mobileActivePanel === 'featureJson'
+                : mobileActivePanel === 'settings'
+                  ? '设置'
+                  : mobileActivePanel === 'releaseRecords'
+                    ? '发布记录'
+                  : mobileActivePanel === 'featureJson'
                       ? 'JSON 详情'
                       : mobileActivePanel === 'featureShare'
                         ? '分享要素'
@@ -1753,6 +1760,8 @@ map.on('mousemove', handleMouseMove);
         return <AboutCard onClose={closeMobileSheet} />;
       case 'settings':
         return <SettingsPanel onClose={closeMobileSheet} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />;
+      case 'releaseRecords':
+        return <PublicReleaseRecordPanel onClose={closeMobileSheet} />;
       case 'navigation':
         return (
           <NavigationPanel
@@ -2021,6 +2030,8 @@ case 'players':
                   mode="mobile"
                   activeButtonIds={activeRuleButtonIds}
                   onToggle={toggleRuleButton}
+                  showPlayers={showPlayers}
+                  onTogglePlayers={setShowPlayers}
                 />
               );
             }
@@ -2028,17 +2039,13 @@ case 'players':
               <LayerControl
                 frameless
                 mobile
-                showRailway={showRailway}
-                showLandmark={showLandmark}
-                showPlayers={showPlayers}
                 dimBackground={dimBackground}
                 mapStyle={mapStyle}
-                onToggleRailway={handleToggleLegacyRailway}
-                onToggleLandmark={handleToggleLegacyLandmark}
-                onTogglePlayers={setShowPlayers}
                 onToggleDimBackground={setDimBackground}
                 onToggleMapStyle={setMapStyle}
-              />
+              >
+                <ToolIconButton label="发布记录" icon={<History className="w-5 h-5" />} tone="purple" onClick={() => openMobilePanel('releaseRecords')} />
+              </LayerControl>
             );
           }}
           onDockHeightChange={setMobileQuickDockHeight}
@@ -2258,23 +2265,20 @@ case 'players':
       {/* 桌面端：右上角图层控制 */}
       <div className="hidden sm:block absolute top-4 right-4 z-[1000]">
         <div className="flex items-start gap-2">
-          <RuleButtonPanel
+          {rulePanelCollapsed ? <ToolIconButton label="展开图层面板" icon={<Layers3 className="w-5 h-5" />} tone="green" onClick={() => setRulePanelCollapsed(false)} /> : <div className="flex items-start gap-1"><RuleButtonPanel
             activeButtonIds={activeRuleButtonIds}
             onToggle={toggleRuleButton}
-          />
-
-          <LayerControl
-            showRailway={showRailway}
-            showLandmark={showLandmark}
             showPlayers={showPlayers}
+            onTogglePlayers={setShowPlayers}
+          /><ToolIconButton label="收起图层面板" icon={<PanelsTopLeft className="w-5 h-5" />} tone="gray" onClick={() => setRulePanelCollapsed(true)} /></div>}
+
+          {modePanelCollapsed ? <ToolIconButton label="展开模式面板" icon={<SlidersHorizontal className="w-5 h-5" />} tone="blue" onClick={() => setModePanelCollapsed(false)} /> : <div className="flex items-start gap-1"><LayerControl
             dimBackground={dimBackground}
             mapStyle={mapStyle}
-            onToggleRailway={handleToggleLegacyRailway}
-            onToggleLandmark={handleToggleLegacyLandmark}
-            onTogglePlayers={setShowPlayers}
             onToggleDimBackground={setDimBackground}
             onToggleMapStyle={setMapStyle}
           >
+          <div className="hidden sm:block"><ToolIconButton label="发布记录" icon={<History className="w-5 h-5" />} tone="purple" onClick={() => setShowPublicReleaseRecords(true)} /></div>
           <div className="hidden sm:block">
             <ReviewModuleLauncher
               active={moduleMode === 'review'}
@@ -2339,9 +2343,13 @@ case 'players':
               </div>
             </>
           )}
-          </LayerControl>
+          </LayerControl><ToolIconButton label="收起模式面板" icon={<PanelsTopLeft className="w-5 h-5" />} tone="gray" onClick={() => setModePanelCollapsed(true)} /></div>}
         </div>
       </div>
+
+      {showPublicReleaseRecords ? <div className="hidden sm:block"><DraggablePanel id="public-review-release-records" defaultPosition={{ x: 850, y: 180 }} zIndex={1762} constrainExpandedToViewport>
+        <PublicReleaseRecordPanel onClose={() => setShowPublicReleaseRecords(false)} />
+      </DraggablePanel></div> : null}
 
       <MobileBottomSheet
         open={shouldShowMobileSheet}

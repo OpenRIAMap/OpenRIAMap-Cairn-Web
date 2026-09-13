@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { Navigation, List, HelpCircle, Train, Home, Moon, X, User, Users, Map, Palette, Pencil, Settings, Filter } from 'lucide-react';
+import { Navigation, List, HelpCircle, Moon, X, Users, Map, Palette, Pencil, Settings, Filter } from 'lucide-react';
 import type { MapStyle } from '@/lib/cookies';
 import ToolIconButton from '@/components/Toolbar/ToolIconButton';
 import AppButton from '@/components/ui/AppButton';
@@ -263,14 +263,8 @@ export function AboutCard({ onClose }: AboutCardProps) {
 }
 
 interface LayerControlProps {
-  showRailway: boolean;
-  showLandmark: boolean;
-  showPlayers: boolean;
   dimBackground: boolean;
   mapStyle: MapStyle;
-  onToggleRailway: (show: boolean) => void;
-  onToggleLandmark: (show: boolean) => void;
-  onTogglePlayers: (show: boolean) => void;
   onToggleDimBackground: (dim: boolean) => void;
   onToggleMapStyle: (style: MapStyle) => void;
   children?: React.ReactNode;
@@ -279,14 +273,8 @@ interface LayerControlProps {
 }
 
 function LayerControlButtons({
-  showRailway,
-  showLandmark,
-  showPlayers,
   dimBackground,
   mapStyle,
-  onToggleRailway,
-  onToggleLandmark,
-  onTogglePlayers,
   onToggleDimBackground,
   onToggleMapStyle,
   children,
@@ -295,34 +283,6 @@ function LayerControlButtons({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-1">
-        <ToolIconButton
-          label="铁路"
-          icon={<Train className="w-5 h-5" />}
-          active={showRailway}
-          tone="blue"
-          onClick={() => onToggleRailway(!showRailway)}
-        />
-        <ToolIconButton
-          label="地标"
-          icon={<Home className="w-5 h-5" />}
-          active={showLandmark}
-          tone="green"
-          onClick={() => onToggleLandmark(!showLandmark)}
-        />
-{PLAYER_FEATURE_ENABLED && (
-  <ToolIconButton
-    label="玩家"
-    icon={<User className="w-5 h-5" />}
-    active={showPlayers}
-    tone="cyan"
-    onClick={() => onTogglePlayers(!showPlayers)}
-  />
-)}
-      </div>
-
-      <div className="h-px bg-gray-200" />
-
       <div className="flex flex-wrap items-center gap-1">
         {hasExtra ? <div className="flex flex-wrap items-center gap-1">{children}</div> : null}
         <ToolIconButton

@@ -22,7 +22,7 @@ export function ReviewOperationOverlay({ operation, onClose }: ReviewOperationOv
   const tone = operation.phase === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
     : operation.phase === 'error' ? 'border-rose-200 bg-rose-50 text-rose-800'
       : 'border-blue-200 bg-blue-50 text-blue-800';
-  return <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/45 p-4" role="dialog" aria-modal="true" aria-live="polite">
+  const content = <div className="fixed inset-0 z-[2147483000] flex items-center justify-center bg-slate-950/45 p-4" role="dialog" aria-modal="true" aria-live="polite">
     <div className="w-[460px] max-w-[94vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
       <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <h2 className="text-lg font-bold text-slate-900">{operation.title}</h2>
@@ -38,6 +38,11 @@ export function ReviewOperationOverlay({ operation, onClose }: ReviewOperationOv
       </div>
     </div>
   </div>;
+  // Draggable panels use transforms, which create stacking contexts. Portal
+  // the operation frame to document.body so it is genuinely above every map
+  // and floating panel instead of merely using a large local z-index.
+  return typeof document === 'undefined' ? content : createPortal(content, document.body);
 }
 
 export default ReviewOperationOverlay;
+import { createPortal } from 'react-dom';
