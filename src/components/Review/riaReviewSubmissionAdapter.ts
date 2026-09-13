@@ -153,6 +153,7 @@ export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = 
     },
     getReleaseProgress: (releaseId: string, _actor: ReviewAuthorizationContext) => requestControl<ReviewReleaseProgress>(fetcher, { operation: 'release-progress', releaseId }),
     requestReleaseDownload: (releaseId: string, _actor: ReviewAuthorizationContext) => requestControl<{ download: { url: string; sha256: string; byteLength: number } }>(fetcher, { operation: 'release-download-request', releaseId }),
+    reconcileReleaseArchive: (releaseId: string, _actor: ReviewAuthorizationContext) => requestControl<{ accepted: boolean; releaseId: string; state: string; archive: string | null }>(fetcher, { operation: 'release-archive-reconcile', releaseId }),
     getStatusBoard: (_actor: ReviewAuthorizationContext) => requestControl<ReviewStatusBoardSnapshot>(fetcher, { operation: 'status-board' }),
     saveStatusBoard: (request: ReviewStatusBoardSaveRequest) => requestControl<ReviewStatusBoardSaveResult>(fetcher, {
       operation: 'status-save',

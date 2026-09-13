@@ -283,6 +283,7 @@ export type ReviewReleaseProgress = {
   approval?: { approvedBy?: string; approvedRole?: string; approvedAt?: string } | null;
   packages?: ReviewReleasePackageSummary[];
   archive?: { state?: string; archivedAt?: string | null; queuedAt?: string | null; startedAt?: string | null; failedAt?: string | null; error?: string | null; downloadReady?: boolean; bundleByteLength?: number | null } | null;
+  reconciliation?: { action: 'release-archive-reconcile'; reason: string };
   error?: string;
 };
 
@@ -297,6 +298,7 @@ export type ReviewReleaseFeedItem = {
   formalVersion?: number | null;
   packages?: ReviewReleasePackageSummary[];
   download?: { byteLength?: number };
+  reconciliation?: { action: 'release-archive-reconcile'; reason: string };
   datasets?: Array<string | { submissionId: string; revisionId: string }>;
   archived?: Array<{ submissionId: string; revisionId: string }>;
   approvedBy?: string | string[] | null;
@@ -422,6 +424,7 @@ export interface ReviewSubmissionAdapter {
   getReleaseFeed?(actor: ReviewAuthorizationContext, limit?: number): Promise<ReviewReleaseFeedItem[]>;
   getReleaseProgress?(releaseId: string, actor: ReviewAuthorizationContext): Promise<ReviewReleaseProgress>;
   requestReleaseDownload?(releaseId: string, actor: ReviewAuthorizationContext): Promise<{ download: { url: string; sha256: string; byteLength: number } }>;
+  reconcileReleaseArchive?(releaseId: string, actor: ReviewAuthorizationContext): Promise<{ accepted: boolean; releaseId: string; state: string; archive: string | null }>;
 }
 
 /** Application-owned persisted package-status board with conditional writes. */
