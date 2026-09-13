@@ -38,6 +38,12 @@ for (const operation of ['release-progress', 'release-detail', 'release-download
   assert.equal(release.actor.principalId, 'alice');
 }
 assert.throws(() => normalizeReviewControlRequest({ operation: 'release-progress' }, { principalId: 'alice' }), /invalid-review-release-id/);
+const reconciliationPrecheck = normalizeReviewControlRequest({ operation: 'archive-reconciliation-precheck', selectedSubmissionIds: ['submission-1', 'submission-2'] }, { principalId: 'alice' });
+assert.deepEqual(reconciliationPrecheck.selectedSubmissionIds, ['submission-1', 'submission-2']);
+const reconciliationConfirm = normalizeReviewControlRequest({ operation: 'archive-reconciliation-confirm', reconciliationId: 'reconcile-aaaaaaaaaaaaaaaaaaaa', planSha256: 'c'.repeat(64) }, { principalId: 'alice' });
+assert.equal(reconciliationConfirm.planSha256, 'c'.repeat(64));
+assert.equal(normalizeReviewControlRequest({ operation: 'archive-reconciliation-progress', reconciliationId: 'reconcile-aaaaaaaaaaaaaaaaaaaa' }, { principalId: 'alice' }).reconciliationId, 'reconcile-aaaaaaaaaaaaaaaaaaaa');
+assert.throws(() => normalizeReviewControlRequest({ operation: 'archive-reconciliation-precheck', selectedSubmissionIds: ['submission-1', 'submission-1'] }, { principalId: 'alice' }), /invalid-review-archive-reconciliation-selection/);
 
 let forwarded = null;
 const environment = { CAIRN_CONTROL_API_BASE: 'https://dispatcher.example', CAIRN_SESSION_SIGNING_SECRET: secret, CAIRN_BROKER_TO_DISPATCHER_SECRET: 'broker-test-secret' };

@@ -93,6 +93,8 @@ export type ReviewSubmissionSnapshot = {
   revisions: ReviewPackageRevision[];
   lastEvent: ReviewSubmissionEvent | null;
   allowedActions: ReviewSubmissionActionKind[];
+  /** Present only after the archive worker has verified every retained revision. */
+  archive?: { state?: string; releaseId?: string; completedAt?: string } | null;
 };
 
 export type ReviewSubmissionRequest = {
@@ -461,10 +463,38 @@ export type ReviewReleaseConfirmationRequest = {
   request: ReviewSubmissionRequest;
 };
 
+/** Explicit, maintainer-only cleanup plan for old archive-lamp submissions. */
+export type ReviewArchiveReconciliationPlan = {
+  reconciliationId: string;
+  planSha256: string;
+  candidateCount: number;
+  candidates: Array<{
+    submissionId: string;
+    packageName: string;
+    revisionId: string;
+    lifecycleState?: 'archived' | 'mirrored';
+    stateVersion: number;
+    revisionCount: number;
+    counts: { featureCount: number; deleteCount: number; pictureCount: number };
+  }>;
+};
+
+export type ReviewArchiveReconciliationProgress = {
+  reconciliationId: string;
+  jobId?: string;
+  state: 'queued' | 'running' | 'completed' | 'recovery-required' | string;
+  candidateCount?: number;
+  archivedAt?: string;
+  error?: string;
+};
+
 export interface ReviewReleaseControlPort {
   getReleaseGate(actor: ReviewAuthorizationContext): Promise<ReviewReleaseGateSnapshot>;
   runReleasePrecheck(request: ReviewReleaseControlRequest, actor: ReviewAuthorizationContext): Promise<ReviewReleaseControlReport>;
   confirmRelease(request: ReviewReleaseConfirmationRequest, actor: ReviewAuthorizationContext): Promise<ReviewReleaseControlReport>;
+  runArchiveReconciliationPrecheck(input: { selectedSubmissionIds: readonly string[] }, actor: ReviewAuthorizationContext): Promise<{ decision: 'ready' | 'blocked' | string; plan?: ReviewArchiveReconciliationPlan; blockers?: Array<{ submissionId: string; code: string }> }>;
+  confirmArchiveReconciliation(input: Pick<ReviewArchiveReconciliationPlan, 'reconciliationId' | 'planSha256'>, actor: ReviewAuthorizationContext): Promise<{ accepted: boolean; reconciliationId: string; state: string; jobId?: string; candidateCount?: number }>;
+  getArchiveReconciliationProgress(reconciliationId: string, actor: ReviewAuthorizationContext): Promise<ReviewArchiveReconciliationProgress>;
 }
 
 /**

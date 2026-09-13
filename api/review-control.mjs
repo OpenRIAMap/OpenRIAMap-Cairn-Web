@@ -6,6 +6,7 @@ const operations = new Set([
   'precheck', 'approve', 'reject', 'request-changes', 'reopen', 'save-and-approve',
   'publish', 'publish-precheck', 'publish-confirm', 'status', 'report', 'release-feed', 'release-gate', 'archive',
   'release-progress', 'release-detail', 'release-download-request', 'release-archive-reconcile',
+  'archive-reconciliation-precheck', 'archive-reconciliation-confirm', 'archive-reconciliation-progress',
   'status-board', 'status-save',
   'revision-download-request',
 ]);
@@ -91,6 +92,23 @@ export function normalizeReviewControlRequest(input, actor) {
     return { operation, releaseId: requireString(input.releaseId, 'invalid-review-release-id'), actor };
   }
   if (operation === 'status-board') return { operation, actor };
+  if (operation === 'archive-reconciliation-precheck') {
+    if (!Array.isArray(input.selectedSubmissionIds) || !input.selectedSubmissionIds.length || input.selectedSubmissionIds.length > 100) throw new Error('invalid-review-archive-reconciliation-selection');
+    const selectedSubmissionIds = input.selectedSubmissionIds.map((value) => requireString(value, 'invalid-review-archive-reconciliation-selection'));
+    if (new Set(selectedSubmissionIds).size !== selectedSubmissionIds.length) throw new Error('invalid-review-archive-reconciliation-selection');
+    return { operation, selectedSubmissionIds, actor };
+  }
+  if (operation === 'archive-reconciliation-confirm') {
+    return {
+      operation,
+      reconciliationId: requireString(input.reconciliationId, 'invalid-review-archive-reconciliation-confirmation'),
+      planSha256: requireSha256(input.planSha256, 'invalid-review-archive-reconciliation-confirmation'),
+      actor,
+    };
+  }
+  if (operation === 'archive-reconciliation-progress') {
+    return { operation, reconciliationId: requireString(input.reconciliationId, 'invalid-review-archive-reconciliation-progress'), actor };
+  }
   if (operation === 'status-save') return { operation, request: requireStatusBoardSave(input.request), actor };
   if (operation === 'revision-upload-request' || operation === 'revision-upload-complete') {
     return { operation, request: requireRevisionUploadRequest(input.request), actor };

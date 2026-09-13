@@ -2,6 +2,8 @@ import {
   createIdleReviewReleaseGate,
   ReviewOperationError,
   type ReviewAuthorizationContext,
+  type ReviewArchiveReconciliationPlan,
+  type ReviewArchiveReconciliationProgress,
   type ReviewPackagePrecheckReport,
   type ReviewPackageRevision,
   type ReviewReleaseConfirmationRequest,
@@ -178,6 +180,15 @@ export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = 
       expectedGateVersion: request.expectedGateVersion,
       precheckReportSha256: request.precheckReportSha256,
       request: request.request,
+    }),
+    runArchiveReconciliationPrecheck: (input: { selectedSubmissionIds: readonly string[] }, _actor: ReviewAuthorizationContext) => requestControl<{ decision: 'ready' | 'blocked' | string; plan?: ReviewArchiveReconciliationPlan; blockers?: Array<{ submissionId: string; code: string }> }>(fetcher, {
+      operation: 'archive-reconciliation-precheck', selectedSubmissionIds: [...input.selectedSubmissionIds],
+    }),
+    confirmArchiveReconciliation: (input: Pick<ReviewArchiveReconciliationPlan, 'reconciliationId' | 'planSha256'>, _actor: ReviewAuthorizationContext) => requestControl<{ accepted: boolean; reconciliationId: string; state: string; jobId?: string; candidateCount?: number }>(fetcher, {
+      operation: 'archive-reconciliation-confirm', reconciliationId: input.reconciliationId, planSha256: input.planSha256,
+    }),
+    getArchiveReconciliationProgress: (reconciliationId: string, _actor: ReviewAuthorizationContext) => requestControl<ReviewArchiveReconciliationProgress>(fetcher, {
+      operation: 'archive-reconciliation-progress', reconciliationId,
     }),
   };
 }
