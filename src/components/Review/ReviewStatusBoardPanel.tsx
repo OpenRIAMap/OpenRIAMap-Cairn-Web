@@ -438,6 +438,29 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     setOperation({ title: '发布仍在执行', message: '浏览器停止等待，但服务端发布不会中断。请稍后刷新发布记录。', detail: `发布 ID：${releaseId}`, phase: 'success' });
   }, [actor, refreshList, submissionAdapter]);
 
+  const reconcileReleaseArchive = useCallback(async (releaseId: string) => {
+    if (!submissionAdapter.reconcileReleaseArchive) return;
+    if (!await requestConfirmation({
+      title: '补齐发布归档',
+      message: '该发布已完成正式数据与 GitHub 镜像，但此前未进入审核包归档。确认后将只补建归档任务，不会重新发布数据。',
+      detail: `发布 ID：${releaseId}`,
+      confirmLabel: '开始归档',
+    })) return;
+    setBusy('release-archive-reconcile');
+    setOperation({ title: '正在补齐发布归档', message: '正在核验已镜像状态并创建审核包归档任务。', detail: `发布 ID：${releaseId}`, phase: 'running' });
+    try {
+      const result = await submissionAdapter.reconcileReleaseArchive(releaseId, actor);
+      setOperation({ title: '发布归档已接管', message: '归档任务已创建，正在等待服务端完成。', detail: `发布 ID：${result.releaseId} · 当前阶段：${stateLabel(result.state)}`, phase: 'running' });
+      await waitForReleaseCompletion(releaseId);
+      await refreshFeed();
+    } catch (error) {
+      setMessage(describeError(error));
+      setOperation({ title: '补齐发布归档失败', message: '服务端未能确认该发布可安全进入归档。', detail: describeError(error), phase: 'error' });
+    } finally {
+      setBusy(null);
+    }
+  }, [actor, refreshFeed, requestConfirmation, submissionAdapter, waitForReleaseCompletion]);
+
   const publish = useCallback(async () => {
     if (!releaseReport?.gate?.attemptId || !releaseReport.report?.reportSha256 || !publishReady) return;
     const approved = selectedEntries.find((entry) => entry.state === 'approved' && entry.decisionRevisionId);
@@ -549,12 +572,14 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
           const lifecycle = item.lifecycle;
           const occurredAt = lifecycle?.completedAt ?? lifecycle?.archivedAt ?? lifecycle?.mirroredAt ?? item.publishedAt ?? item.occurredAt ?? '时间未记录';
           const canDownload = item.state === 'completed' && Boolean(item.download);
+          const canReconcile = item.reconciliation?.action === 'release-archive-reconcile' && Boolean(submissionAdapter.reconcileReleaseArchive);
           return <div key={item.releaseId} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
             <div className="flex items-start justify-between gap-2"><div className="font-semibold text-slate-900">{item.releaseId}</div><span className={`rounded-full px-2 py-1 ${stateTone(item.state)}`}>{stateLabel(item.state)}</span></div>
             <div className="mt-2 text-slate-600">发布生命周期：{stateLabel(item.state)} · {occurredAt}</div>
             {item.formalVersion ? <div className="mt-1 text-slate-600">正式版本：{item.formalVersion}</div> : null}
             {packages.length ? <div className="mt-3 space-y-2">{packages.map((pkg) => <div key={`${pkg.submissionId}-${pkg.decisionRevisionId}`} className="rounded-lg border border-slate-200 bg-white p-2"><div className="truncate font-medium text-slate-800">{pkg.packageName}</div><div className="mt-1 text-slate-500">版本：{pkg.decisionRevisionId} · {pkg.decisionState === 'approved' ? '已发布' : '仅归档'} · 共 {pkg.revisionCount} 个版本</div><div className="mt-1 grid grid-cols-3 gap-1 text-center"><span className="rounded bg-blue-50 py-1 text-blue-700">{pkg.counts.featureCount} 要素</span><span className="rounded bg-amber-50 py-1 text-amber-700">{pkg.counts.deleteCount} 删除</span><span className="rounded bg-purple-50 py-1 text-purple-700">{pkg.counts.pictureCount} 图片</span></div></div>)}</div> : null}
             {canDownload ? <AppButton disabled={busy !== null} onClick={() => void downloadRelease(item.releaseId)} className="mt-3 w-full justify-center rounded-lg bg-blue-600 px-3 py-2 text-xs text-white hover:bg-blue-700 disabled:bg-blue-300"><FileDown className="h-3.5 w-3.5" />下载本次发布的全部审核包</AppButton> : null}
+            {canReconcile ? <AppButton disabled={busy !== null} onClick={() => void reconcileReleaseArchive(item.releaseId)} className="mt-3 w-full justify-center rounded-lg bg-amber-600 px-3 py-2 text-xs text-white hover:bg-amber-700 disabled:bg-amber-300"><Archive className="h-3.5 w-3.5" />补齐审核包归档</AppButton> : null}
           </div>;
         })}</div> : <p className="mt-3 text-sm text-gray-500">暂无发布记录。</p>}
       </div>

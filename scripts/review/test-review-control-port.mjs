@@ -32,6 +32,12 @@ const confirmation = normalizeReviewControlRequest({
 assert.equal(confirmation.attemptId, 'attempt-demo-001');
 assert.equal(confirmation.precheckReportSha256, 'b'.repeat(64));
 assert.equal(normalizeReviewControlRequest({ operation: 'release-gate' }, { principalId: 'alice' }).operation, 'release-gate');
+for (const operation of ['release-progress', 'release-detail', 'release-download-request', 'release-archive-reconcile']) {
+  const release = normalizeReviewControlRequest({ operation, releaseId: 'review-aaaaaaaaaaaaaaaaaaaa' }, { principalId: 'alice' });
+  assert.equal(release.releaseId, 'review-aaaaaaaaaaaaaaaaaaaa');
+  assert.equal(release.actor.principalId, 'alice');
+}
+assert.throws(() => normalizeReviewControlRequest({ operation: 'release-progress' }, { principalId: 'alice' }), /invalid-review-release-id/);
 
 let forwarded = null;
 const environment = { CAIRN_CONTROL_API_BASE: 'https://dispatcher.example', CAIRN_SESSION_SIGNING_SECRET: secret, CAIRN_BROKER_TO_DISPATCHER_SECRET: 'broker-test-secret' };

@@ -5,6 +5,7 @@ const operations = new Set([
   'detail', 'list', 'revision-upload-request', 'revision-upload-complete', 'save',
   'precheck', 'approve', 'reject', 'request-changes', 'reopen', 'save-and-approve',
   'publish', 'publish-precheck', 'publish-confirm', 'status', 'report', 'release-feed', 'release-gate', 'archive',
+  'release-progress', 'release-detail', 'release-download-request', 'release-archive-reconcile',
   'status-board', 'status-save',
   'revision-download-request',
 ]);
@@ -86,6 +87,9 @@ export function normalizeReviewControlRequest(input, actor) {
   if (operation === 'list') return { operation, limit: input.limit ?? 50, actor };
   if (operation === 'release-feed') return { operation, limit: input.limit ?? 10, actor };
   if (operation === 'release-gate') return { operation, actor };
+  if (['release-progress', 'release-detail', 'release-download-request', 'release-archive-reconcile'].includes(operation)) {
+    return { operation, releaseId: requireString(input.releaseId, 'invalid-review-release-id'), actor };
+  }
   if (operation === 'status-board') return { operation, actor };
   if (operation === 'status-save') return { operation, request: requireStatusBoardSave(input.request), actor };
   if (operation === 'revision-upload-request' || operation === 'revision-upload-complete') {
