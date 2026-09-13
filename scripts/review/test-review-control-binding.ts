@@ -18,6 +18,11 @@ const submissionAdapter = createRiaReviewSubmissionAdapter(async (url, init) => 
   if (body.operation === 'detail') return new Response(JSON.stringify({ submissionId: body.submissionId, state: 'pending', stateVersion: 1, revisions: [] }), { status: 200 });
   if (body.operation === 'release-feed') return new Response(JSON.stringify({ items: [] }), { status: 200 });
   if (body.operation === 'release-gate') return new Response('null', { status: 200 });
+  if (body.operation === 'archive-reconciliation-precheck') return new Response(JSON.stringify({
+    decision: 'ready', plan: { reconciliationId: 'reconcile-aaaaaaaaaaaaaaaaaaaa', planSha256: 'a'.repeat(64), candidateCount: 1, candidates: [] }, blockers: [],
+  }), { status: 200 });
+  if (body.operation === 'archive-reconciliation-confirm') return new Response(JSON.stringify({ accepted: true, reconciliationId: body.reconciliationId, state: 'queued', jobId: 'job-001', candidateCount: 1 }), { status: 200 });
+  if (body.operation === 'archive-reconciliation-progress') return new Response(JSON.stringify({ reconciliationId: body.reconciliationId, state: 'completed', candidateCount: 1 }), { status: 200 });
   if (body.operation === 'precheck') return new Response(JSON.stringify({
     requestId: body.request.requestId,
     correlationId: body.request.correlationId,
@@ -32,8 +37,12 @@ await submissionAdapter.dispatchSubmission({ requestId: 'r-2', correlationId: 'c
 await submissionAdapter.getReleaseFeed?.(actor, 10);
 const precheck = await submissionAdapter.precheckSubmission?.({ requestId: 'r-3', correlationId: 'c-3', idempotencyKey: 'submission-1:r2:precheck:c-3', submissionId: 'submission-1', targetRevisionId: 'submission-1-r2', expectedStateVersion: 1, action: 'precheck', occurredAt: '2026-07-27T00:00:00.000Z', actor });
 const idleGate = await submissionAdapter.getReleaseGate?.(actor);
+const reconciliation = await submissionAdapter.runArchiveReconciliationPrecheck({ selectedSubmissionIds: ['submission-legacy-001'] }, actor);
+const reconciliationQueued = reconciliation.plan ? await submissionAdapter.confirmArchiveReconciliation(reconciliation.plan, actor) : null;
+const reconciliationProgress = await submissionAdapter.getArchiveReconciliationProgress('reconcile-aaaaaaaaaaaaaaaaaaaa', actor);
 if (!precheck || precheck.decision !== 'ready' || precheck.stateVersion !== 2) throw new Error('package precheck normalization failed');
 if (idleGate?.state !== 'idle' || idleGate.initialized !== false) throw new Error('null release gate normalization failed');
-if (submissionCalls.length !== 5 || submissionCalls.some((call) => call.url !== '/api/review-control')) throw new Error('same-origin submission control transport failed');
+if (reconciliation.decision !== 'ready' || reconciliationQueued?.state !== 'queued' || reconciliationProgress.state !== 'completed') throw new Error('archive reconciliation control binding failed');
+if (submissionCalls.length !== 8 || submissionCalls.some((call) => call.url !== '/api/review-control')) throw new Error('same-origin submission control transport failed');
 if (!String(submissionCalls[1].init?.body).includes('"operation":"approve"')) throw new Error('submission action mapping failed');
 console.log('Review submission control binding test: PASS');
