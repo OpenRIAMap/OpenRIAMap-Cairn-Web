@@ -1,15 +1,18 @@
 import AppCard from '@/components/ui/AppCard';
 import ToolIconButton from '@/components/Toolbar/ToolIconButton';
 import { RULE_BUTTON_DEFS } from './buttonRuleConfig';
+import { User } from 'lucide-react';
 
 type Props = {
   activeButtonIds: string[];
   onToggle: (id: string) => void;
   mode?: 'desktop' | 'mobile';
   frameless?: boolean;
+  showPlayers?: boolean;
+  onTogglePlayers?: (show: boolean) => void;
 };
 
-export default function RuleButtonPanel({ activeButtonIds, onToggle, mode = 'desktop', frameless = false }: Props) {
+export default function RuleButtonPanel({ activeButtonIds, onToggle, mode = 'desktop', frameless = false, showPlayers = false, onTogglePlayers }: Props) {
   const active = new Set((activeButtonIds ?? []).map((x) => String(x).trim()).filter(Boolean));
 
   const mobile = mode === 'mobile';
@@ -25,6 +28,7 @@ export default function RuleButtonPanel({ activeButtonIds, onToggle, mode = 'des
           onClick={() => onToggle(d.id)}
         />
       ))}
+      {onTogglePlayers ? <ToolIconButton label="玩家" icon={<User className="w-5 h-5" />} active={showPlayers} tone="cyan" onClick={() => onTogglePlayers(!showPlayers)} /> : null}
     </div>
   );
 

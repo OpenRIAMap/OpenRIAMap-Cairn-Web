@@ -4,6 +4,7 @@ import AppButton from '@/components/ui/AppButton';
 import { DraggablePanel } from '@/components/DraggablePanel/DraggablePanel';
 import { ReviewConfirmationOverlay, type ReviewConfirmationOverlayState } from './ReviewConfirmationOverlay';
 import { ReviewOperationOverlay, type ReviewOperationOverlayState } from './ReviewOperationOverlay';
+import { ReviewReasonOverlay, type ReviewReasonOverlayState } from './ReviewReasonOverlay';
 import type { ReviewAuthPort } from './auth';
 import {
   createIdleReviewReleaseGate,
@@ -158,9 +159,9 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   const [packageReport, setPackageReport] = useState<ReviewPackagePrecheckReport | null>(null);
   const [releaseReport, setReleaseReport] = useState<ReviewReleaseControlReport | null>(null);
   const [releaseGate, setReleaseGate] = useState<ReviewReleaseGateSnapshot | null>(null);
-  const [releaseFeed, setReleaseFeed] = useState<Awaited<ReturnType<NonNullable<ReviewSubmissionAdapter['getReleaseFeed']>>> | null>(null);
   const [operation, setOperation] = useState<ReviewOperationOverlayState | null>(null);
   const [confirmation, setConfirmation] = useState<ReviewConfirmationOverlayState | null>(null);
+  const [reasonRequest, setReasonRequest] = useState<(ReviewReasonOverlayState & { submissionId: string; state: ReviewStatusBoardEntry['state']; decisionAction: ReviewStatusDecisionAction }) | null>(null);
   const confirmationResolver = useRef<((confirmed: boolean) => void) | null>(null);
 
   const requestConfirmation = useCallback((next: ReviewConfirmationOverlayState) => new Promise<boolean>((resolve) => {
@@ -222,17 +223,30 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     const actionLabel = ({ approve: '通过', reject: '打回', 'request-changes': '要求修改', archive: '归档', reopen: '恢复待审' } as Record<string, string>)[decisionAction ?? ''] ?? stateLabel(state);
     if (!await requestConfirmation({ title: '确认修改审核状态', message: `确认将此审核包的状态灯设为“${actionLabel}”？`, detail: '此操作仅修改本地草稿；不会创建新版本、重新发布或回滚数据。点击“保存状态”后才会提交。', confirmLabel: '确认修改' })) return;
     const selectedRevision = selected.revisions.find((item) => item.revisionId === revisionId) ?? selected.revisions.find((item) => item.revisionId === selected.currentRevisionId);
-    setDraft((entries) => entries.map((entry) => entry.submissionId !== submissionId ? entry : {
-      ...entry,
-      state,
-      decisionRevisionId: selectedRevision?.revisionId ?? entry.decisionRevisionId,
-      ...(decisionAction ? { decisionAction } : {}),
-      ...(reason ? { reason } : {}),
-      updatedAt: new Date().toISOString(),
-      updatedBy: actor,
+    setDraft((entries) => entries.map((entry) => {
+      if (entry.submissionId !== submissionId) return entry;
+      const { reason: previousReason, ...withoutReason } = entry;
+      return {
+        ...withoutReason,
+        state,
+        decisionRevisionId: selectedRevision?.revisionId ?? entry.decisionRevisionId,
+        ...(decisionAction ? { decisionAction } : {}),
+        ...(reason ? { reason } : {}),
+        updatedAt: new Date().toISOString(),
+        updatedBy: actor,
+      };
     }));
     setSelectedIds((previous) => new Set(previous).add(submissionId));
   }, [actor, draft, requestConfirmation, revisionId, submissions]);
+
+  const requestReason = useCallback((submissionId: string, state: ReviewStatusBoardEntry['state'], decisionAction: ReviewStatusDecisionAction, title: string, message: string, submitLabel: string) => {
+    setReasonRequest({ submissionId, state, decisionAction, title, message, submitLabel });
+  }, []);
+  const submitReason = useCallback((reason: string) => {
+    const next = reasonRequest;
+    setReasonRequest(null);
+    if (next) void updateDraft(next.submissionId, next.state, next.decisionAction, reason);
+  }, [reasonRequest, updateDraft]);
 
   const saveStatus = useCallback(async () => {
     if (!board || !selectedEntries.length) return;
@@ -328,37 +342,9 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     }
   }, [actor, releaseControl, requestConfirmation]);
 
-  const refreshFeed = useCallback(async () => {
-    setBusy('feed');
-    try {
-      setReleaseFeed(await submissionAdapter.getReleaseFeed?.(actor, 10) ?? []);
-    } catch (error) {
-      setMessage(describeError(error));
-    } finally {
-      setBusy(null);
-    }
-  }, [actor, submissionAdapter]);
-
-  const downloadRelease = useCallback(async (releaseId: string) => {
-    if (!submissionAdapter.requestReleaseDownload) return;
-    setBusy('release-download');
-    setOperation({ title: '正在准备发布归档', message: '正在申请该发布审核包的短期下载链接。', phase: 'running' });
-    try {
-      const grant = await submissionAdapter.requestReleaseDownload(releaseId, actor);
-      const link = document.createElement('a');
-      link.href = grant.download.url;
-      link.download = `ReviewRelease_${releaseId}.zip`;
-      link.rel = 'noopener';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setOperation({ title: '发布归档下载已开始', message: '浏览器正在下载该发布包含的所有审核包。', detail: `发布 ID：${releaseId}\n大小：${grant.download.byteLength.toLocaleString()} 字节`, phase: 'success' });
-    } catch (error) {
-      setOperation({ title: '发布归档下载失败', message: '无法获取该发布的下载链接。', detail: describeError(error), phase: 'error' });
-    } finally {
-      setBusy(null);
-    }
-  }, [actor, submissionAdapter]);
+  const openPublicReleaseRecord = useCallback(() => {
+    window.dispatchEvent(new Event('ria:open-public-release-record'));
+  }, []);
 
   const releasePrecheck = useCallback(async () => {
     if (!board || !selectedEntries.length) return;
@@ -366,9 +352,9 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       setMessage('发布前检查已阻断：状态灯存在未保存的本地修改，请先保存状态。');
       return;
     }
-    const approved = selectedEntries.find((entry) => entry.state === 'approved' && entry.decisionRevisionId);
-    const owner = approved && submissions.find((item) => item.submissionId === approved.submissionId);
-    if (!approved || !owner) { setMessage('至少选择一个已通过且已指定版本的审核包。'); return; }
+    const publishable = selectedEntries.find((entry) => ['approved', 'archived', 'rejected'].includes(entry.state) && entry.decisionRevisionId);
+    const owner = publishable && submissions.find((item) => item.submissionId === publishable.submissionId);
+    if (!publishable || !owner) { setMessage('至少选择一个已通过、已归档、已打回或要求修改，且已指定版本的审核包。“恢复待审”不能发布。'); return; }
     setBusy('release-precheck');
     setOperation({ title: '正在发布前检查', message: '正在核对保存的状态灯、Release Gate 与正式数据版本。', phase: 'running' });
     try {
@@ -395,7 +381,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       }
       const result = await releaseControl.runReleasePrecheck({
         selectedSubmissionIds: selectedEntries.map((entry) => entry.submissionId), expectedBoardVersion: board.boardVersion,
-        request: { requestId: createId('release-precheck'), correlationId: createId('release-correlation'), idempotencyKey: createId('release-idempotency'), submissionId: owner.submissionId, targetRevisionId: approved.decisionRevisionId!, expectedStateVersion: owner.stateVersion, action: 'publish', occurredAt: new Date().toISOString(), actor },
+        request: { requestId: createId('release-precheck'), correlationId: createId('release-correlation'), idempotencyKey: createId('release-idempotency'), submissionId: owner.submissionId, targetRevisionId: publishable.decisionRevisionId!, expectedStateVersion: owner.stateVersion, action: 'publish', occurredAt: new Date().toISOString(), actor },
       }, actor);
       setReleaseReport(result);
       setReleaseGate(normalizeGate(result.gate));
@@ -425,6 +411,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       if (progress.state === 'completed') {
         setOperation({ title: '发布完成', message: '正式数据、GitHub 镜像与审核包归档均已完成。', detail: `${detail}\n发布 ID：${releaseId}`, phase: 'success' });
         await refreshList({ preserveMessage: true });
+        openPublicReleaseRecord();
         return;
       }
       if (['failed', 'rebase-required', 'mirror-recovery-required', 'archive-recovery-required'].includes(progress.state)) {
@@ -436,44 +423,23 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       await new Promise<void>((resolve) => window.setTimeout(resolve, 2_000));
     }
     setOperation({ title: '发布仍在执行', message: '浏览器停止等待，但服务端发布不会中断。请稍后刷新发布记录。', detail: `发布 ID：${releaseId}`, phase: 'success' });
-  }, [actor, refreshList, submissionAdapter]);
-
-  const reconcileReleaseArchive = useCallback(async (releaseId: string) => {
-    if (!submissionAdapter.reconcileReleaseArchive) return;
-    if (!await requestConfirmation({
-      title: '补齐发布归档',
-      message: '该发布已完成正式数据与 GitHub 镜像，但此前未进入审核包归档。确认后将只补建归档任务，不会重新发布数据。',
-      detail: `发布 ID：${releaseId}`,
-      confirmLabel: '开始归档',
-    })) return;
-    setBusy('release-archive-reconcile');
-    setOperation({ title: '正在补齐发布归档', message: '正在核验已镜像状态并创建审核包归档任务。', detail: `发布 ID：${releaseId}`, phase: 'running' });
-    try {
-      const result = await submissionAdapter.reconcileReleaseArchive(releaseId, actor);
-      setOperation({ title: '发布归档已接管', message: '归档任务已创建，正在等待服务端完成。', detail: `发布 ID：${result.releaseId} · 当前阶段：${stateLabel(result.state)}`, phase: 'running' });
-      await waitForReleaseCompletion(releaseId);
-      await refreshFeed();
-    } catch (error) {
-      setMessage(describeError(error));
-      setOperation({ title: '补齐发布归档失败', message: '服务端未能确认该发布可安全进入归档。', detail: describeError(error), phase: 'error' });
-    } finally {
-      setBusy(null);
-    }
-  }, [actor, refreshFeed, requestConfirmation, submissionAdapter, waitForReleaseCompletion]);
+  }, [actor, openPublicReleaseRecord, refreshList, submissionAdapter]);
 
   const publish = useCallback(async () => {
     if (!releaseReport?.gate?.attemptId || !releaseReport.report?.reportSha256 || !publishReady) return;
-    const approved = selectedEntries.find((entry) => entry.state === 'approved' && entry.decisionRevisionId);
-    const owner = approved && submissions.find((item) => item.submissionId === approved.submissionId);
-    if (!approved || !owner) return;
-    if (!await requestConfirmation({ title: '确认发布', message: '确认将当前通过的审核包提交发布？', detail: '服务端会再次校验 Release Gate、当前正式数据和已保存状态。关闭此页面不会取消已经受理的发布。', confirmLabel: '确认发布' })) return;
+    const publishable = selectedEntries.find((entry) => ['approved', 'archived', 'rejected'].includes(entry.state) && entry.decisionRevisionId);
+    const owner = publishable && submissions.find((item) => item.submissionId === publishable.submissionId);
+    if (!publishable || !owner) return;
+    const dataCount = selectedEntries.filter((entry) => entry.state === 'approved').length;
+    const resultOnlyCount = selectedEntries.length - dataCount;
+    if (!await requestConfirmation({ title: '确认发布审核结果', message: `确认发布当前 ${selectedEntries.length} 个审核结果？`, detail: `${dataCount ? `其中 ${dataCount} 个“通过”结果将更新正式数据。` : '本次不更新正式数据。'}${resultOnlyCount ? `其余 ${resultOnlyCount} 个结果将仅归档并进入公开发布记录。` : ''}\n“恢复待审”不能发布。关闭此页面不会取消已经受理的发布。`, confirmLabel: '确认发布' })) return;
     setBusy('publish');
     setOperation({ title: '正在提交发布', message: '正在创建不可变发布任务；之后将由服务端持续执行。', phase: 'running' });
     try {
       const result = await releaseControl.confirmRelease({
         attemptId: releaseReport.gate.attemptId, expectedGateVersion: releaseReport.gate.gateVersion,
         precheckReportSha256: releaseReport.report.reportSha256,
-        request: { requestId: createId('publish'), correlationId: createId('publish-correlation'), idempotencyKey: createId('publish-idempotency'), submissionId: owner.submissionId, targetRevisionId: approved.decisionRevisionId!, expectedStateVersion: owner.stateVersion, action: 'publish', occurredAt: new Date().toISOString(), actor },
+        request: { requestId: createId('publish'), correlationId: createId('publish-correlation'), idempotencyKey: createId('publish-idempotency'), submissionId: owner.submissionId, targetRevisionId: publishable.decisionRevisionId!, expectedStateVersion: owner.stateVersion, action: 'publish', occurredAt: new Date().toISOString(), actor },
       }, actor);
       setReleaseReport(result);
       setReleaseGate(normalizeGate(result.gate));
@@ -499,7 +465,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       <div className="w-[430px] max-h-[74vh] overflow-auto rounded-2xl border border-gray-200 bg-white shadow-xl" data-draggable-proxy-close="true">
         <div className="flex items-start justify-between border-b border-gray-200 px-5 py-4"><div><h2 className="text-xl font-bold text-gray-900" data-draggable-title>审核序列</h2><p className="mt-1 text-sm text-gray-500">状态灯先本地编辑；仅“保存状态”会提交至审核服务。</p></div><button type="button" data-draggable-close className="sr-only" aria-label="关闭" onClick={onClose} /></div>
         <div className="space-y-3 p-4">
-          <div className="grid grid-cols-2 gap-2"><AppButton onClick={() => void refreshGate()} disabled={busy !== null} className="justify-center rounded-xl bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200"><ShieldCheck className="h-4 w-4" />刷新 Release Gate</AppButton><AppButton onClick={() => void refreshFeed()} disabled={busy !== null} className="justify-center rounded-xl bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200"><FileText className="h-4 w-4" />刷新发布记录</AppButton><AppButton onClick={() => void refreshList()} disabled={busy !== null} className="justify-center rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-700 hover:bg-blue-100"><RefreshCw className="h-4 w-4" />刷新列表</AppButton><div className="rounded-xl bg-gray-50 px-3 py-2 text-center text-sm text-gray-600">Gate：{releaseGate ? (isReviewReleaseGateLeaseExpired(releaseGate) ? '已过期' : stateLabel(releaseGate.state)) : '未读取'} · 已选 {selectedIds.size}</div></div>
+          <div className="grid grid-cols-2 gap-2"><AppButton onClick={() => void refreshGate()} disabled={busy !== null} className="justify-center rounded-xl bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200"><ShieldCheck className="h-4 w-4" />刷新 Release Gate</AppButton><AppButton onClick={openPublicReleaseRecord} disabled={busy !== null} className="justify-center rounded-xl bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200"><FileText className="h-4 w-4" />打开发布记录</AppButton><AppButton onClick={() => void refreshList()} disabled={busy !== null} className="justify-center rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-700 hover:bg-blue-100"><RefreshCw className="h-4 w-4" />刷新列表</AppButton><div className="rounded-xl bg-gray-50 px-3 py-2 text-center text-sm text-gray-600">Gate：{releaseGate ? (isReviewReleaseGateLeaseExpired(releaseGate) ? '已过期' : stateLabel(releaseGate.state)) : '未读取'} · 已选 {selectedIds.size}</div></div>
           {message ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{message}</div> : null}
           <div className="flex items-center justify-between"><h3 className="font-semibold text-gray-900">待审核包</h3><div className="flex gap-3 text-sm"><button type="button" className="text-blue-600 hover:underline" onClick={() => setSelectedIds(new Set(submissions.map((item) => item.submissionId)))}>全选</button><button type="button" className="text-gray-500 hover:underline" onClick={() => setSelectedIds(new Set())}>清空选择</button></div></div>
           <div className="space-y-2">{submissions.map((submission) => { const entry = draft.find((item) => item.submissionId === submission.submissionId); const shownState = displayState(submission, entry); return <button key={submission.submissionId} type="button" onClick={() => { setDetailId(submission.submissionId); setRevisionId(submission.currentRevisionId); setPackageReport(null); }} className="w-full rounded-2xl border border-blue-200 bg-blue-50 p-3 text-left hover:border-blue-400"><div className="flex gap-3"><input aria-label={`选择 ${submission.packageName}`} type="checkbox" checked={selectedIds.has(submission.submissionId)} onClick={(event) => event.stopPropagation()} onChange={() => setSelectedIds((previous) => { const next = new Set(previous); if (next.has(submission.submissionId)) next.delete(submission.submissionId); else next.add(submission.submissionId); return next; })} /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><span className="truncate font-semibold text-gray-900">{submission.packageName}</span><span className={`shrink-0 rounded-full px-2 py-1 text-xs ${stateTone(shownState)}`}>{stateLabel(shownState)}</span></div><div className="mt-1 text-xs text-gray-500">{submission.submissionId}</div><div className="mt-2 text-xs text-gray-600">决策版本：{entry?.decisionRevisionId ?? '未选择'} · 共 {submission.revisions.length} 个版本</div>{isPublicationLifecycleState(submission.state) ? <div className="mt-2 text-xs text-amber-700">发布生命周期：{stateLabel(submission.state)}。状态灯仍可记录，但不会重新发布、回滚数据或创建新版本。</div> : null}</div></div></button>; })}</div>
@@ -545,7 +511,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
             <AppButton onClick={() => void updateDraft(detail.submissionId, 'archived', 'archive')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-gray-100 px-2 py-2 text-xs text-gray-700 hover:bg-gray-200">
               <Archive className="h-3.5 w-3.5" />归档
             </AppButton>
-            <AppButton onClick={() => { const reason = window.prompt('请填写要求修改的原因：'); if (reason?.trim()) void updateDraft(detail.submissionId, 'rejected', 'request-changes', reason.trim()); }} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-red-50 px-2 py-2 text-xs text-red-700 hover:bg-red-100">
+            <AppButton onClick={() => requestReason(detail.submissionId, 'rejected', 'request-changes', '填写要求修改原因', '该审核意见将随本次结果发布，供提交者下载审核包后查看与重新提交。', '确认要求修改')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-red-50 px-2 py-2 text-xs text-red-700 hover:bg-red-100">
               <XCircle className="h-3.5 w-3.5" />要求修改
             </AppButton>
             <AppButton onClick={() => void updateDraft(detail.submissionId, 'pending', 'reopen')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-amber-50 px-2 py-2 text-xs text-amber-800 hover:bg-amber-100">
@@ -556,35 +522,15 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
             <AppButton onClick={() => void updateDraft(detail.submissionId, 'approved', 'approve')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-green-600 px-2 py-2 text-xs text-white hover:bg-green-700">
               <CheckCircle2 className="h-3.5 w-3.5" />通过
             </AppButton>
-            <AppButton onClick={() => { const reason = window.prompt('请填写打回原因：'); if (reason?.trim()) void updateDraft(detail.submissionId, 'rejected', 'reject', reason.trim()); }} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-rose-600 px-2 py-2 text-xs text-white hover:bg-rose-700">
+            <AppButton onClick={() => requestReason(detail.submissionId, 'rejected', 'reject', '填写打回原因', '该审核意见将随本次结果发布，供提交者下载审核包后查看与重新提交。', '确认打回')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-rose-600 px-2 py-2 text-xs text-white hover:bg-rose-700">
               <XCircle className="h-3.5 w-3.5" />打回
             </AppButton>
           </div>
         </div>
       </DraggablePanel>
     ) : null}
-    {releaseFeed ? <DraggablePanel id="review-release-feed" defaultPosition={{ x: 870, y: 180 }} zIndex={1762} constrainExpandedToViewport>
-      <div className="w-[440px] max-h-[72vh] overflow-auto rounded-2xl border border-gray-200 bg-white p-4 shadow-xl" data-draggable-proxy-close="true">
-        <h3 className="text-base font-bold text-gray-900" data-draggable-title>发布记录</h3>
-        <button type="button" data-draggable-close className="sr-only" aria-label="关闭" onClick={() => setReleaseFeed(null)} />
-        {releaseFeed.length ? <div className="mt-3 space-y-3">{releaseFeed.map((item) => {
-          const packages = item.packages ?? [];
-          const lifecycle = item.lifecycle;
-          const occurredAt = lifecycle?.completedAt ?? lifecycle?.archivedAt ?? lifecycle?.mirroredAt ?? item.publishedAt ?? item.occurredAt ?? '时间未记录';
-          const canDownload = item.state === 'completed' && Boolean(item.download);
-          const canReconcile = item.reconciliation?.action === 'release-archive-reconcile' && Boolean(submissionAdapter.reconcileReleaseArchive);
-          return <div key={item.releaseId} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
-            <div className="flex items-start justify-between gap-2"><div className="font-semibold text-slate-900">{item.releaseId}</div><span className={`rounded-full px-2 py-1 ${stateTone(item.state)}`}>{stateLabel(item.state)}</span></div>
-            <div className="mt-2 text-slate-600">发布生命周期：{stateLabel(item.state)} · {occurredAt}</div>
-            {item.formalVersion ? <div className="mt-1 text-slate-600">正式版本：{item.formalVersion}</div> : null}
-            {packages.length ? <div className="mt-3 space-y-2">{packages.map((pkg) => <div key={`${pkg.submissionId}-${pkg.decisionRevisionId}`} className="rounded-lg border border-slate-200 bg-white p-2"><div className="truncate font-medium text-slate-800">{pkg.packageName}</div><div className="mt-1 text-slate-500">版本：{pkg.decisionRevisionId} · {pkg.decisionState === 'approved' ? '已发布' : '仅归档'} · 共 {pkg.revisionCount} 个版本</div><div className="mt-1 grid grid-cols-3 gap-1 text-center"><span className="rounded bg-blue-50 py-1 text-blue-700">{pkg.counts.featureCount} 要素</span><span className="rounded bg-amber-50 py-1 text-amber-700">{pkg.counts.deleteCount} 删除</span><span className="rounded bg-purple-50 py-1 text-purple-700">{pkg.counts.pictureCount} 图片</span></div></div>)}</div> : null}
-            {canDownload ? <AppButton disabled={busy !== null} onClick={() => void downloadRelease(item.releaseId)} className="mt-3 w-full justify-center rounded-lg bg-blue-600 px-3 py-2 text-xs text-white hover:bg-blue-700 disabled:bg-blue-300"><FileDown className="h-3.5 w-3.5" />下载本次发布的全部审核包</AppButton> : null}
-            {canReconcile ? <AppButton disabled={busy !== null} onClick={() => void reconcileReleaseArchive(item.releaseId)} className="mt-3 w-full justify-center rounded-lg bg-amber-600 px-3 py-2 text-xs text-white hover:bg-amber-700 disabled:bg-amber-300"><Archive className="h-3.5 w-3.5" />补齐审核包归档</AppButton> : null}
-          </div>;
-        })}</div> : <p className="mt-3 text-sm text-gray-500">暂无发布记录。</p>}
-      </div>
-    </DraggablePanel> : null}
     <ReviewOperationOverlay operation={operation} onClose={() => setOperation(null)} />
     <ReviewConfirmationOverlay confirmation={confirmation} onConfirm={() => settleConfirmation(true)} onCancel={() => settleConfirmation(false)} />
+    <ReviewReasonOverlay request={reasonRequest} onSubmit={submitReason} onCancel={() => setReasonRequest(null)} />
   </>;
 }

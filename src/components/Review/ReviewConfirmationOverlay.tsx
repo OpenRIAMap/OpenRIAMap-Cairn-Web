@@ -14,7 +14,7 @@ type ReviewConfirmationOverlayProps = {
 /** Uses the same high-priority frame as long-running review operations. */
 export function ReviewConfirmationOverlay({ confirmation, onConfirm, onCancel }: ReviewConfirmationOverlayProps) {
   if (!confirmation) return null;
-  return <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/45 p-4" role="dialog" aria-modal="true" aria-labelledby="review-confirmation-title">
+  const content = <div className="fixed inset-0 z-[2147483001] flex items-center justify-center bg-slate-950/45 p-4" role="dialog" aria-modal="true" aria-labelledby="review-confirmation-title">
     <div className="w-[460px] max-w-[94vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
       <div className="border-b border-slate-200 px-5 py-4"><h2 id="review-confirmation-title" className="text-lg font-bold text-slate-900">{confirmation.title}</h2></div>
       <div className="space-y-3 px-5 py-5">
@@ -27,6 +27,8 @@ export function ReviewConfirmationOverlay({ confirmation, onConfirm, onCancel }:
       </div>
     </div>
   </div>;
+  return typeof document === 'undefined' ? content : createPortal(content, document.body);
 }
 
 export default ReviewConfirmationOverlay;
+import { createPortal } from 'react-dom';
