@@ -14,6 +14,11 @@ import { ROAD_TRAVEL_PROFILES } from '@/components/Navigation/Navigation_Road';
 
 const WF_KEY = 'rod_road';
 
+// Mapping is intentionally independent from login and cloud workflows.  These
+// values live only in the current JavaScript process and are cleared when this
+// workflow closes; they must never become a localStorage profile.
+let roadSessionPreference: { catAbbr: string; modeCodes: string[] } = { catAbbr: '', modeCodes: [] };
+
 /**
  * RoadWorkflow（工作流：道路）
  *
@@ -218,15 +223,6 @@ export default function RoadWorkflow(props: WorkflowComponentProps) {
 
   // Page 2
   const [info, setInfo] = useState<InfoForm>(() => {
-    const lastModeRaw = localStorage.getItem('ria_rod_mode_last_v1');
-    let lastModes: string[] = [];
-    try {
-      const v = lastModeRaw ? JSON.parse(lastModeRaw) : null;
-      if (Array.isArray(v)) lastModes = v.map((x) => String(x ?? '').trim()).filter(Boolean);
-    } catch {}
-
-    const lastCat = String(localStorage.getItem('ria_rod_cat_abbr_last_v1') ?? '').trim();
-
     return {
       kind: 'NOM',
       // SKind / SKind2 已去必填：仅当用户明确选择/填写时才写入 JSON
@@ -234,7 +230,7 @@ export default function RoadWorkflow(props: WorkflowComponentProps) {
       skind2: '',
 
       name: '',
-      catAbbr: lastCat,
+      catAbbr: roadSessionPreference.catAbbr,
       abbr: '',
       nomenclator: '',
       wiki: '',
@@ -253,9 +249,10 @@ export default function RoadWorkflow(props: WorkflowComponentProps) {
       connectL: [],
       blacklist: [],
 
-      modeCodes: lastModes,
+      modeCodes: [...roadSessionPreference.modeCodes],
     };
   });
+  useEffect(() => () => { roadSessionPreference = { catAbbr: '', modeCodes: [] }; }, []);
   const [extItems, setExtItems] = useState<ExtensionItem[]>([]);
 
   // Page 3
@@ -404,9 +401,7 @@ export default function RoadWorkflow(props: WorkflowComponentProps) {
       const skind = normalizedClass.skind;
       const skind2 = normalizedClass.skind2;
       const cat = normalizeAbbr(info.catAbbr ?? '');
-      try {
-        localStorage.setItem('ria_rod_cat_abbr_last_v1', cat);
-      } catch {}
+      roadSessionPreference.catAbbr = cat;
       const id = `${worldPrefix}ROD${cat ? `_${cat}` : ''}_${abbrNormalized}`;
 
       // extensions：
@@ -661,9 +656,7 @@ export default function RoadWorkflow(props: WorkflowComponentProps) {
             onChange={(v) => {
               const nv = normalizeAbbr(v);
               setInfo((prev) => ({ ...prev, catAbbr: nv }));
-              try {
-                localStorage.setItem('ria_rod_cat_abbr_last_v1', nv);
-              } catch {}
+              roadSessionPreference.catAbbr = nv;
             }}
           />
           <LabeledInput
@@ -827,7 +820,7 @@ export default function RoadWorkflow(props: WorkflowComponentProps) {
                         setInfo((prev) => {
                           const arr = [...(prev.modeCodes ?? [])];
                           arr[idx] = v;
-                          try { localStorage.setItem('ria_rod_mode_last_v1', JSON.stringify(arr)); } catch {}
+                          roadSessionPreference.modeCodes = [...arr];
                           return { ...prev, modeCodes: arr };
                         });
                       }}
@@ -848,7 +841,7 @@ export default function RoadWorkflow(props: WorkflowComponentProps) {
                       onClick={() => {
                         setInfo((prev) => {
                           const arr = (prev.modeCodes ?? []).filter((_, i) => i !== idx);
-                          try { localStorage.setItem('ria_rod_mode_last_v1', JSON.stringify(arr)); } catch {}
+                          roadSessionPreference.modeCodes = [...arr];
                           return { ...prev, modeCodes: arr };
                         });
                       }}

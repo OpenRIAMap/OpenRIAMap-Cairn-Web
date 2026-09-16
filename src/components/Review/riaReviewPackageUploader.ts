@@ -7,6 +7,7 @@ import {
 } from './package';
 import { openriamapGithubReviewAuth } from './openriamapReviewAuth';
 import { openriamapReviewSubmissionTransport } from './openriamapReviewSubmissionTransport';
+import { requestReviewConfirmation } from './ReviewConfirmationHost';
 
 function resolveSubmission(result: unknown): { submissionId: string; revisionId: string } {
   if (!result || typeof result !== 'object') throw new Error('review-upload-completion-invalid');
@@ -56,12 +57,22 @@ export const openriamapReviewPackageUploader: ReviewPackageUploadPort = {
   async uploadPackage(input) {
     const session = await openriamapGithubReviewAuth.getSession();
     if (session.status !== 'authenticated' || !session.principalId) {
-      if (window.confirm('上传到审核序列需要 GitHub 组织身份。现在前往登录吗？登录后请再次点击“上传到审核序列”。')) {
+      if (await requestReviewConfirmation({
+        title: '需要登录',
+        message: '上传到审核序列需要 GitHub 组织身份。现在前往登录吗？登录后请再次点击“上传到审核序列”。',
+        confirmLabel: '前往登录',
+        tone: 'blue',
+      })) {
         openriamapGithubReviewAuth.beginLogin();
       }
       throw new Error('review-login-required');
     }
-    if (!window.confirm(`确认上传“${input.packageName}”到审核序列？上传完成后将作为新的待审核包，不会直接发布。`)) {
+    if (!await requestReviewConfirmation({
+      title: '确认上传审核包',
+      message: `确认上传“${input.packageName}”到审核序列？上传完成后将作为新的待审核包，不会直接发布。`,
+      confirmLabel: '确认上传',
+      tone: 'blue',
+    })) {
       throw new Error('review-upload-cancelled');
     }
     const identity = createReviewSubmissionIdentity();
@@ -86,12 +97,22 @@ export const openriamapReviewPackageUploader: ReviewPackageUploadPort = {
 export async function uploadRiaReviewRevision(input: RiaReviewRevisionUploadInput): Promise<RiaReviewRevisionUploadResult> {
   const session = await openriamapGithubReviewAuth.getSession();
   if (session.status !== 'authenticated' || !session.principalId) {
-    if (window.confirm('保存审核修改需要 GitHub 组织身份。现在前往登录吗？登录后请重新执行保存。')) {
+    if (await requestReviewConfirmation({
+      title: '需要登录',
+      message: '保存审核修改需要 GitHub 组织身份。现在前往登录吗？登录后请重新执行保存。',
+      confirmLabel: '前往登录',
+      tone: 'blue',
+    })) {
       openriamapGithubReviewAuth.beginLogin();
     }
     throw new Error('review-login-required');
   }
-  if (!window.confirm(`确认保存审核修改？这会为当前审核包创建第 ${input.revisionCount + 1} 个不可变版本，原版本会保留。`)) {
+  if (!await requestReviewConfirmation({
+    title: '确认保存审核修订',
+    message: `确认保存审核修改？这会为当前审核包创建第 ${input.revisionCount + 1} 个不可变版本，原版本会保留。`,
+    confirmLabel: '保存新版本',
+    tone: 'orange',
+  })) {
     throw new Error('review-revision-save-cancelled');
   }
 

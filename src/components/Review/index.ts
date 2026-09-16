@@ -1,5 +1,7 @@
 export { default as ReviewModule } from './ReviewModule';
 export { default as ReviewModuleLauncher } from './ReviewModuleLauncher';
+export { default as PublicReleaseRecordsPanel } from './PublicReleaseRecordsPanel';
+export { default as ReviewConfirmationHost } from './ReviewConfirmationHost';
 export type { ReviewInboxItem } from './reviewStatusTypes';
 export type { ReviewPackageSession, ReviewWorkbenchStatus } from './reviewPackageSession';
 export { createReviewPackageSession, describeReviewWorkbenchStatus } from './reviewPackageSession';

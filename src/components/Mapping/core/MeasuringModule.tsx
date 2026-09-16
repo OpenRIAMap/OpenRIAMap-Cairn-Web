@@ -40,6 +40,7 @@ import WorkflowStyleEditPanel from '@/components/Mapping/Editor/WorkflowStyleEdi
 import type { DynmapProjection } from '@/lib/DynmapProjection';
 import { DraggablePanel } from '@/components/DraggablePanel/DraggablePanel';
 import { useDesktopWindowStackLayer } from '@/components/DraggablePanel/desktopWindowStack';
+import BlockingFullscreenModal from '@/components/Common/BlockingFullscreenModal';
 import { EyeOff, MousePointerClick, Pencil, Upload, Trash2, X } from 'lucide-react';
 import ToolIconButton from '@/components/Toolbar/ToolIconButton';
 
@@ -65,7 +66,15 @@ import { rebuildRoadGraphCacheForWorld } from '@/components/Navigation/Navigatio
 import { rebuildRailNewIndexCacheForWorld } from '@/components/Navigation/railNewIndex';
 import { rebuildRailNewNavigationCacheForWorld } from '@/components/Navigation/Navigation_RailNewIntegrated';
 import { rebuildTeleportNewCacheForWorld } from '@/components/Navigation/Navigation_TeleportNewIntegrated';
-import { bumpTempRuleDeleteIdsRevision, bumpTempRuleOverrideIdsRevision, bumpTempRuleSourcesRevision } from '@/components/Rules/data/effectiveRuleItems';
+import {
+  clearTemporaryRuleSession,
+  readTemporaryRuleDeleteIds,
+  readTemporaryRuleOverrideIds,
+  readTemporaryRuleSources,
+  writeTemporaryRuleDeleteIds,
+  writeTemporaryRuleOverrideIds,
+  writeTemporaryRuleSources,
+} from '@/components/Rules/data/temporaryRuleSession';
 
 import ControlPointsT, { type ControlPointsTHandle } from '@/components/Mapping/tools/ControlPointsT';
 
@@ -137,7 +146,7 @@ import {
  * 关键：把 MapContainer 里的引用对象（ref）当 props 传进来
  * 这属于 React 组件间通过 props 传值的常规做法。:contentReference[oaicite:1]{index=1}
  */
-type MeasuringModuleProps = {
+export type MeasuringModuleProps = {
   mapReady: boolean;
   leafletMapRef: React.MutableRefObject<L.Map | null>;
   projectionRef: React.MutableRefObject<DynmapProjection | null>;
@@ -159,18 +168,15 @@ type MeasuringModuleProps = {
   // 可选：将启动按钮插入到外部工具栏
   launcherSlot?: (launcher: React.ReactNode) => React.ReactNode;
 
-  // 审核工作台：只改变宿主语境和按钮语义，不接入 GitHub。
-  workspaceMode?: 'mapping' | 'review';
+  /** ReviewEditor supplies this constant only at mount time. */
+  reviewWorkspace?: true;
+  // ReviewWorkspace passes an immutable package session into its own mounted
+  // editor instance. MappingWorkspace never supplies these Review bindings.
   reviewSession?: ReviewPackageSession | null;
   onReviewDirtyChange?: (dirty: boolean) => void;
   /** Host-owned transport for an immutable ZIP revision built from this workspace. */
   onReviewSave?: (artifact: ReviewWorkspaceSaveArtifact) => Promise<unknown>;
-  onReviewApprove?: () => void;
-  onReviewReject?: (reason: string) => void;
-  onReviewArchive?: () => void;
-  onReviewRequestChanges?: (reason: string) => void;
-  onReviewReopen?: () => void;
-  /** The host owns module teardown; closing the Review manager requests it. */
+  /** The host clears only the active workspace; the review sequence stays open. */
   onReviewExitRequested?: () => void;
   /** App-provided transport binding for a prepared standard package. */
   onReviewPackageUpload?: ReviewPackageUploadPort['uploadPackage'];
@@ -198,10 +204,10 @@ export type MeasuringModuleHandle = {
    * 在切换世界等场景下使用：若用户取消确认，则返回 false 并阻止上层继续执行。
    * 内部会负责：先关闭“临时挂载”，再清除测绘图层并退出测绘。
    */
-  requestCloseAndClear: (actionLabel?: string) => boolean;
+  requestCloseAndClear: (actionLabel?: string) => Promise<boolean>;
 };
 
-const MeasuringModule = forwardRef<MeasuringModuleHandle, MeasuringModuleProps>((props, ref) => {
+const MappingEditorCore = forwardRef<MeasuringModuleHandle, MeasuringModuleProps>((props, ref) => {
   const {
     mapReady,
     leafletMapRef,
@@ -211,20 +217,28 @@ const MeasuringModule = forwardRef<MeasuringModuleHandle, MeasuringModuleProps>(
     openSignal,
     onBecameActive,
     launcherSlot,
-    workspaceMode = 'mapping',
+    reviewWorkspace,
     reviewSession = null,
     onReviewDirtyChange,
     onReviewSave,
-    onReviewApprove,
-    onReviewReject,
-    onReviewArchive,
-    onReviewRequestChanges,
-    onReviewReopen,
     onReviewExitRequested,
     onReviewPackageUpload,
   } = props;
-  const isReviewWorkspace = workspaceMode === 'review';
+  // A core instance is created by either MappingWorkspace or ReviewEditor and
+  // is keyed/remounted by the host on every boundary transition. This is a
+  // construction-time capability, never a mutable runtime mode switch.
+  const isReviewWorkspace = reviewWorkspace === true;
   const reviewPackageLabel = reviewSession?.packageId ?? '';
+
+  // Mapping previews are strictly process-local. A workspace remount (which
+  // also occurs when switching to review) must not resurrect any old layer,
+  // delete marker or image binding from browser storage.
+  useEffect(() => () => {
+    clearTemporaryRuleSession();
+    window.dispatchEvent(new CustomEvent('ria-temp-rule-sources-changed'));
+    window.dispatchEvent(new CustomEvent('ria-temp-rule-overrides-changed'));
+    window.dispatchEvent(new CustomEvent('ria-temp-rule-deletes-changed'));
+  }, []);
 
 
 // ---------- 测绘 & 图层管理状态 ------------
@@ -423,6 +437,33 @@ const cancelExtraSwitch = () => {
 
 // ======== 结束测绘确认：任何触发“清空测绘图层 + 关闭测绘”的操作都必须二次确认 ========
 const [endMeasuringWarnOpen, setEndMeasuringWarnOpen] = useState(false);
+// Requests initiated by MapContainer must be awaitable: a native confirm would
+// synchronously tear down an unrelated workspace and could sit below a panel.
+// This portal-backed confirmation owns the highest interaction layer.
+const [externalClearConfirmLabel, setExternalClearConfirmLabel] = useState<string | null>(null);
+const externalClearConfirmResolverRef = useRef<((confirmed: boolean) => void) | null>(null);
+
+const requestExternalClearConfirmation = (label: string) => new Promise<boolean>((resolve) => {
+  if (externalClearConfirmResolverRef.current) {
+    resolve(false);
+    return;
+  }
+  externalClearConfirmResolverRef.current = resolve;
+  setExternalClearConfirmLabel(label);
+});
+
+const resolveExternalClearConfirmation = (confirmed: boolean) => {
+  const resolve = externalClearConfirmResolverRef.current;
+  externalClearConfirmResolverRef.current = null;
+  setExternalClearConfirmLabel(null);
+  resolve?.(confirmed);
+};
+
+useEffect(() => () => {
+  const resolve = externalClearConfirmResolverRef.current;
+  externalClearConfirmResolverRef.current = null;
+  resolve?.(false);
+}, []);
 
 const endMeasuringNow = () => {
   // 1) 关闭 UI
@@ -561,12 +602,6 @@ useEffect(() => {
 const [jsonPanelOpen, setJsonPanelOpen] = useState(false);
 const [jsonPanelText, setJsonPanelText] = useState('');
 const [jsonExportSubType, setJsonExportSubType] = useState<string>('__ALL__');
-
-// 临时挂载到 RuleDrivenLayer 的本地存储 key（与 RuleDrivenLayer 保持一致）
-const TEMP_RULE_SOURCES_KEY = 'ria_temp_rule_sources_v1';
-// 临时挂载：覆盖固定数据源中“同 ID 要素”的屏蔽列表（worldId -> string[]）
-const TEMP_RULE_OVERRIDE_IDS_KEY = 'ria_temp_rule_override_ids_v1';
-const TEMP_RULE_DELETE_IDS_KEY = 'ria_temp_rule_delete_ids_v1';
 
 type TempRuleSource = {
   uid: string;
@@ -767,31 +802,16 @@ const toggleMeasureDropdown = () => {
   });
 };
 
-const confirmExitAndClear = (actionLabel: string) => {
-  // 统一二次确认：任何“退出测绘并清理图层”的入口都走这里
-  const ok = window.confirm(`${actionLabel}将清除所有测绘图层，是否确认？`);
-  if (!ok) return false;
-
+const clearCurrentWorkspace = () => {
   // 退出测绘时：若仍处于“临时挂载”模式，必须先关闭挂载（并触发规则图层重载）
   // 目标：避免退出测绘后仍残留挂载源，导致后续世界/数据处理混乱。
-  try {
-    const raw = localStorage.getItem(TEMP_RULE_SOURCES_KEY);
-    if (raw) {
-      const obj = JSON.parse(raw);
-      if (obj && typeof obj === 'object') {
-        const prev = Array.isArray((obj as any)?.[currentWorldId]) ? ((obj as any)[currentWorldId] as any[]) : [];
-        const prefix = `${currentWorldId}::layer-`;
-        const next = prev.filter((x) => {
-          const uid = x && typeof x === 'object' ? String((x as any).uid ?? '') : '';
-          return !uid.startsWith(prefix);
-        });
-        (obj as any)[currentWorldId] = next;
-        writeTempRuleSources(obj as any);
-      }
-    }
-  } catch {
-    // ignore
-  }
+  const previewSources = readTemporaryRuleSources();
+  const previousEntries = Array.isArray(previewSources[currentWorldId]) ? previewSources[currentWorldId] : [];
+  const previewPrefix = `${currentWorldId}::layer-`;
+  writeTemporaryRuleSources({
+    ...previewSources,
+    [currentWorldId]: previousEntries.filter((entry) => !String(entry?.uid ?? '').startsWith(previewPrefix)),
+  });
   clearTempRuleOverrideIdsForWorld();
   clearTempRuleDeleteIdsForWorld();
   setTempMountAllActive(false);
@@ -824,11 +844,35 @@ const confirmExitAndClear = (actionLabel: string) => {
   setRedoStack([]);
   setEditingLayerId(null);
 
+  // Review and mapping never share a draft lifetime.  A confirmed transition
+  // must also discard the package-only state which has no Leaflet layer.
+  setRelayPackageDraft(createEmptyRelayPackageDraft());
+  setRelayPackageExportOpen(false);
+  setDeletePanelOpen(false);
+  setDeleteMapPickEnabled(false);
+  setDeletePickPanelOpen(false);
+  setDeletePickCandidate(null);
+  setDeletePickedCandidate(null);
+  setPicturePanelOpen(false);
+  setPicturePanelLayerId(null);
+  reviewBaselineSignatureRef.current = null;
+  reviewJustLoadedRef.current = false;
+  reviewDirtyRef.current = false;
+  setReviewActionDirty(false);
+  onReviewDirtyChange?.(false);
+
   return true;
 };
 
+const confirmExitAndClear = async (actionLabel: string) => {
+  // 统一二次确认：任何“退出测绘并清理图层”的入口都走这里。
+  // A portal is used so that every active floating panel is covered.
+  const ok = await requestExternalClearConfirmation(actionLabel);
+  return ok ? clearCurrentWorkspace() : false;
+};
+
 useImperativeHandle(ref, () => ({
-  requestCloseAndClear: (actionLabel?: string) => {
+  requestCloseAndClear: async (actionLabel?: string) => {
     const label = (actionLabel ?? '关闭测绘').trim() || '关闭测绘';
 
     const hasMeasuringContent =
@@ -839,7 +883,11 @@ useImperativeHandle(ref, () => ({
       tempPoints.length > 0 ||
       tempMountAllActive;
 
-    if (!hasMeasuringContent) return true;
+    if (!hasMeasuringContent && !(isReviewWorkspace && reviewDirtyRef.current)) return true;
+    if (isReviewWorkspace && reviewDirtyRef.current) {
+      const confirmed = await requestExternalClearConfirmation(label);
+      return confirmed ? clearCurrentWorkspace() : false;
+    }
     return confirmExitAndClear(label);
   },
 }));
@@ -953,11 +1001,22 @@ const endMeasuringFromMenu = () => {
 };
 
 
-const closeMeasuringUI = () => {
-  if (isReviewWorkspace) {
-    onReviewExitRequested?.();
-    return;
-  }
+  const closeMeasuringUI = () => {
+    if (isReviewWorkspace) {
+      // The layer-manager close button leaves only the currently loaded review
+      // workspace.  It must not close the surrounding review sequence; that
+      // sequence owns the package detail and status-lamp workflow.
+      if (reviewDirtyRef.current) {
+        void (async () => {
+          const confirmed = await requestExternalClearConfirmation('关闭审核图层管理');
+          if (confirmed && clearCurrentWorkspace()) onReviewExitRequested?.();
+        })();
+        return;
+      }
+      clearCurrentWorkspace();
+      onReviewExitRequested?.();
+      return;
+    }
   // 右上角 X：也视同“退出测绘并清理”，必须二次确认
   confirmExitAndClear('退出测绘');
 };
@@ -1985,54 +2044,19 @@ const downloadTextFile = (text: string, filename: string, mime: string) => {
   }
 };
 
-const readTempRuleSources = (): Record<string, TempRuleSource[]> => {
-  try {
-    const raw = localStorage.getItem(TEMP_RULE_SOURCES_KEY);
-    if (!raw) return {};
-    const obj = JSON.parse(raw);
-    if (!obj || typeof obj !== 'object') return {};
-    return obj as any;
-  } catch {
-    return {};
-  }
-};
+const readTempRuleSources = (): Record<string, TempRuleSource[]> => readTemporaryRuleSources() as Record<string, TempRuleSource[]>;
 
-const readTempRuleOverrideIds = (): Record<string, string[]> => {
-  try {
-    const raw = localStorage.getItem(TEMP_RULE_OVERRIDE_IDS_KEY);
-    if (!raw) return {};
-    const obj = JSON.parse(raw);
-    if (!obj || typeof obj !== 'object') return {};
-    return obj as any;
-  } catch {
-    return {};
-  }
-};
+const readTempRuleOverrideIds = (): Record<string, string[]> => readTemporaryRuleOverrideIds();
 
 
-const readTempRuleDeleteIds = (): Record<string, string[]> => {
-  try {
-    const raw = localStorage.getItem(TEMP_RULE_DELETE_IDS_KEY);
-    if (!raw) return {};
-    const obj = JSON.parse(raw);
-    if (!obj || typeof obj !== 'object') return {};
-    return obj as any;
-  } catch {
-    return {};
-  }
-};
+const readTempRuleDeleteIds = (): Record<string, string[]> => readTemporaryRuleDeleteIds();
 
 const writeTempRuleDeleteIds = (all: Record<string, string[]>) => {
-  try {
-    localStorage.setItem(TEMP_RULE_DELETE_IDS_KEY, JSON.stringify(all));
-    bumpTempRuleDeleteIdsRevision();
-    window.dispatchEvent(
-      new CustomEvent('ria-temp-rule-deletes-changed', { detail: { worldId: currentWorldId } }),
-    );
-    requestTempMountNavigationRebuild(currentWorldId);
-  } catch {
-    // ignore
-  }
+  writeTemporaryRuleDeleteIds(all);
+  window.dispatchEvent(
+    new CustomEvent('ria-temp-rule-deletes-changed', { detail: { worldId: currentWorldId } }),
+  );
+  requestTempMountNavigationRebuild(currentWorldId);
 };
 
 const clearTempRuleDeleteIdsForWorld = () => {
@@ -2089,16 +2113,11 @@ const requestTempMountNavigationRebuild = (worldId: string) => {
 };
 
 const writeTempRuleOverrideIds = (all: Record<string, string[]>) => {
-  try {
-    localStorage.setItem(TEMP_RULE_OVERRIDE_IDS_KEY, JSON.stringify(all));
-    bumpTempRuleOverrideIdsRevision();
-    window.dispatchEvent(
-      new CustomEvent('ria-temp-rule-overrides-changed', { detail: { worldId: currentWorldId } }),
-    );
-    requestTempMountNavigationRebuild(currentWorldId);
-  } catch {
-    // ignore
-  }
+  writeTemporaryRuleOverrideIds(all);
+  window.dispatchEvent(
+    new CustomEvent('ria-temp-rule-overrides-changed', { detail: { worldId: currentWorldId } }),
+  );
+  requestTempMountNavigationRebuild(currentWorldId);
 };
 
 const clearTempRuleOverrideIdsForWorld = () => {
@@ -2116,14 +2135,9 @@ const clearTempRuleOverrideIdsForWorld = () => {
 };
 
 const writeTempRuleSources = (all: Record<string, TempRuleSource[]>) => {
-  try {
-    localStorage.setItem(TEMP_RULE_SOURCES_KEY, JSON.stringify(all));
-    bumpTempRuleSourcesRevision();
-    window.dispatchEvent(new CustomEvent('ria-temp-rule-sources-changed', { detail: { worldId: currentWorldId } }));
-    requestTempMountNavigationRebuild(currentWorldId);
-  } catch {
-    // ignore
-  }
+  writeTemporaryRuleSources(all);
+  window.dispatchEvent(new CustomEvent('ria-temp-rule-sources-changed', { detail: { worldId: currentWorldId } }));
+  requestTempMountNavigationRebuild(currentWorldId);
 };
 
 const [tempMountUiVersion, setTempMountUiVersion] = useState(0);
@@ -2848,6 +2862,7 @@ const reviewDirtyRef = useRef(false);
 const reviewJustLoadedRef = useRef(false);
 const [reviewActionDirty, setReviewActionDirty] = useState(false);
 const [reviewSaveInProgress, setReviewSaveInProgress] = useState(false);
+const [reviewNotice, setReviewNotice] = useState<string | null>(null);
 
 const applyReviewInboxItemToWorkspace = (item: ReviewInboxItem) => {
   if (!item) return;
@@ -4361,31 +4376,11 @@ const workflowBridge: WorkflowBridge = {
     onReviewDirtyChange?.(false);
   };
 
-  const clearReviewWorkspaceAfterDecision = () => {
-    clearTempRuleOverrideIdsForWorld();
-    clearTempRuleDeleteIdsForWorld();
-    removeAllTempMountedLayersForWorld(layers.map((l) => l.id));
-    clearAllLayers();
-    setRelayPackageDraft(createEmptyRelayPackageDraft());
-    setTempMountAllActive(false);
-    setDrawing(false);
-    setDrawMode('none');
-    setTempPoints([]);
-    setRedoStack([]);
-    setEditingLayerId(null);
-    resetFeatureSelectionState();
-    reviewBaselineSignatureRef.current = null;
-    reviewDirtyRef.current = false;
-    setReviewActionDirty(false);
-    onReviewDirtyChange?.(false);
-    setMeasuringActive(false);
-  };
-
-  const handleReviewSaveAction = async () => {
-    if (!reviewDirtyRef.current || reviewSaveInProgress) return;
+  const handleReviewSaveAction = async (): Promise<boolean> => {
+    if (!reviewDirtyRef.current || reviewSaveInProgress) return false;
     if (!onReviewSave) {
-      alert('当前应用未配置审核修订保存通道。审核修改仍保留在本地工作区。');
-      return;
+      setReviewNotice('当前应用未配置审核修订保存通道。审核修改仍保留在本地工作区。');
+      return false;
     }
     const operator = String(relayPackageDraft.meta.operator || reviewSession?.reviewerLabel || 'reviewer').trim() || 'reviewer';
     const note = String(relayPackageDraft.meta.note || `审核编辑修订：${reviewPackageLabel || 'review-package'}`).trim();
@@ -4399,47 +4394,14 @@ const workflowBridge: WorkflowBridge = {
       });
       setRelayPackageDraft((prev) => ({ ...prev, meta: { ...prev.meta, ...artifact.nextMeta } }));
       resetReviewDirtyBaseline();
-      alert('审核修改已保存为新的不可变版本。请在审核序列中刷新该包以查看新版本。');
+      setReviewNotice('审核修改已保存为新的不可变版本。关闭审核图层管理后会回到审核包详情；刷新该包即可选择新版本。');
+      return true;
     } catch (error) {
-      alert(`审核修改保存失败：${String((error as Error)?.message ?? error ?? '未知错误')}。本地修改仍保留，未生成成功的远端版本。`);
+      setReviewNotice(`审核修改保存失败：${String((error as Error)?.message ?? error ?? '未知错误')}。本地修改仍保留，未生成成功的远端版本。`);
+      return false;
     } finally {
       setReviewSaveInProgress(false);
     }
-  };
-
-  const handleReviewApproveAction = () => {
-    const ok = window.confirm('确认以当前审核图层管理内容通过该包？当前阶段仅记录本地通过状态，不会写入 GitHub。');
-    if (!ok) return;
-    resetReviewDirtyBaseline();
-    onReviewApprove?.();
-    clearReviewWorkspaceAfterDecision();
-  };
-
-  const handleReviewRejectAction = () => {
-    const reason = window.prompt('请填写打回原因：');
-    if (!reason?.trim()) return;
-    resetReviewDirtyBaseline();
-    onReviewReject?.(reason.trim());
-    clearReviewWorkspaceAfterDecision();
-  };
-
-  const handleReviewArchiveAction = () => {
-    if (!window.confirm('确认将当前审核包标记为归档？状态仍需在审核序列中点击“保存状态”后才会提交。')) return;
-    resetReviewDirtyBaseline();
-    onReviewArchive?.();
-  };
-
-  const handleReviewRequestChangesAction = () => {
-    const reason = window.prompt('请填写要求修改的原因：');
-    if (!reason?.trim()) return;
-    resetReviewDirtyBaseline();
-    onReviewRequestChanges?.(reason.trim());
-  };
-
-  const handleReviewReopenAction = () => {
-    if (!window.confirm('确认恢复为待审核？状态仍需在审核序列中点击“保存状态”后才会提交。')) return;
-    resetReviewDirtyBaseline();
-    onReviewReopen?.();
   };
 
   const layerPanelCard = (
@@ -4477,41 +4439,19 @@ const workflowBridge: WorkflowBridge = {
 
         return (
           <>
-            {/* 审核第一、三行保持既有顺序；仅在中间新增三项状态草稿操作。 */}
+            {/* 状态灯属于审核包详情，避免工作区和详情页出现两套状态入口。 */}
             {isReviewWorkspace ? (
-              <div className="grid grid-cols-3 gap-2 px-4 py-2 border-b">
+              <div className="space-y-2 px-4 py-2 border-b">
                 <AppButton
                   type="button"
-                  className={`px-2 py-1 text-sm rounded border ${reviewActionDirty && !reviewSaveInProgress ? 'bg-blue-600 text-white hover:bg-blue-700 border-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'}`}
+                  className={`w-full px-2 py-1 text-sm rounded border ${reviewActionDirty && !reviewSaveInProgress ? 'bg-blue-600 text-white hover:bg-blue-700 border-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'}`}
                   title={reviewActionDirty ? (reviewSaveInProgress ? '正在保存新的审核版本。' : '保存当前审核工作区修改为新的远端审核版本。') : '当前没有审核修改，保存保持锁定。'}
                   disabled={!reviewActionDirty || reviewSaveInProgress}
                   onClick={handleReviewSaveAction}
                 >
                   {reviewSaveInProgress ? '保存中…' : '保存'}
                 </AppButton>
-
-                <AppButton
-                  type="button"
-                  className={`px-2 py-1 text-sm rounded border ${busy || !hasRelayExportContent ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-green-600 text-white hover:bg-green-700 border-green-700'}`}
-                  title={busy ? '当前有要素正在编辑/绘制，请先保存' : !hasRelayExportContent ? '暂无可通过内容' : '以当前图层内容通过该审核包'}
-                  disabled={busy || !hasRelayExportContent}
-                  onClick={handleReviewApproveAction}
-                >
-                  通过
-                </AppButton>
-
-                <AppButton
-                  type="button"
-                  className="px-2 py-1 text-sm rounded border bg-rose-600 text-white hover:bg-rose-700 border-rose-700"
-                  title="打回该审核包；当前阶段只记录本地状态。"
-                  onClick={handleReviewRejectAction}
-                >
-                  打回
-                </AppButton>
-
-                <AppButton type="button" className="px-2 py-1 text-sm rounded border bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300" title="将归档状态加入本地草稿；需在审核序列保存状态后提交。" onClick={handleReviewArchiveAction}>归档</AppButton>
-                <AppButton type="button" className="px-2 py-1 text-sm rounded border bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-300" title="标记要求修改；需在审核序列保存状态后提交。" onClick={handleReviewRequestChangesAction}>要求修改</AppButton>
-                <AppButton type="button" className="px-2 py-1 text-sm rounded border bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200" title="恢复待审核状态草稿；需在审核序列保存状态后提交。" onClick={handleReviewReopenAction}>恢复待审</AppButton>
+                <p className="text-xs leading-5 text-slate-500">通过、打回、要求修改、归档和恢复待审均在关闭本工作区后，于审核包详情中设置并保存。</p>
 
                 <AppButton
                   type="button"
@@ -6136,6 +6076,30 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
   </div>
 )}
 
+<BlockingFullscreenModal open={externalClearConfirmLabel !== null} onBackdropClick={() => resolveExternalClearConfirmation(false)}>
+  <AppCard className="w-[440px] max-w-[92vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-label="清理测绘工作区确认">
+    <div className="border-b border-slate-200 px-5 py-4 text-lg font-bold text-slate-900">切换前确认</div>
+    <div className="px-5 py-4 text-sm leading-6 text-slate-700">
+      {externalClearConfirmLabel}会清除当前{isReviewWorkspace ? '审核' : '测绘'}工作区的图层、删除标记、图片绑定与未完成编辑，且本次浏览器会话不会保留草稿。是否继续？
+    </div>
+    <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-3">
+      <AppButton type="button" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" onClick={() => resolveExternalClearConfirmation(false)}>继续编辑</AppButton>
+      {isReviewWorkspace ? <AppButton type="button" disabled={reviewSaveInProgress} className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300" onClick={() => { void (async () => { if (await handleReviewSaveAction()) resolveExternalClearConfirmation(true); })(); }}>{reviewSaveInProgress ? '保存中…' : '保存新版本并继续'}</AppButton> : null}
+      <AppButton type="button" className="rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700" onClick={() => resolveExternalClearConfirmation(true)}>放弃编辑并继续</AppButton>
+    </div>
+  </AppCard>
+</BlockingFullscreenModal>
+
+<BlockingFullscreenModal open={reviewNotice !== null} onBackdropClick={() => setReviewNotice(null)}>
+  <AppCard className="w-[440px] max-w-[92vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-label="审核工作区提示">
+    <div className="border-b border-slate-200 px-5 py-4 text-lg font-bold text-slate-900">审核工作区</div>
+    <div className="whitespace-pre-wrap px-5 py-4 text-sm leading-6 text-slate-700">{reviewNotice}</div>
+    <div className="flex justify-end border-t border-slate-200 px-5 py-3">
+      <AppButton type="button" className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700" onClick={() => setReviewNotice(null)}>知道了</AppButton>
+    </div>
+  </AppCard>
+</BlockingFullscreenModal>
+
 {endMeasuringWarnOpen && (
   <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40">
     <AppCard className="w-[420px] max-w-[90vw] border">
@@ -6227,4 +6191,5 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
 );
 });
 
-export default MeasuringModule;
+MappingEditorCore.displayName = 'MappingEditorCore';
+export default MappingEditorCore;

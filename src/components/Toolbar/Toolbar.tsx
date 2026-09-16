@@ -12,6 +12,10 @@ import AppCard from '@/components/ui/AppCard';
 
 const PLAYER_FEATURE_ENABLED = true;
 const LINES_FEATURE_ENABLED = false;
+// Historical railway/landmark datasets are no longer a runtime source. Keep
+// the compatibility code behind this hard-off guard while migration readers
+// remain in the bundle for old shared links.
+const LEGACY_MAP_CONTROLS_ENABLED = false;
 
 interface ToolbarProps {
   onNavigationClick: () => void;
@@ -296,20 +300,22 @@ function LayerControlButtons({
   return (
     <>
       <div className="flex flex-wrap items-center gap-1">
-        <ToolIconButton
-          label="铁路"
-          icon={<Train className="w-5 h-5" />}
-          active={showRailway}
-          tone="blue"
-          onClick={() => onToggleRailway(!showRailway)}
-        />
-        <ToolIconButton
-          label="地标"
-          icon={<Home className="w-5 h-5" />}
-          active={showLandmark}
-          tone="green"
-          onClick={() => onToggleLandmark(!showLandmark)}
-        />
+        {LEGACY_MAP_CONTROLS_ENABLED ? <>
+          <ToolIconButton
+            label="铁路"
+            icon={<Train className="w-5 h-5" />}
+            active={showRailway}
+            tone="blue"
+            onClick={() => onToggleRailway(!showRailway)}
+          />
+          <ToolIconButton
+            label="地标"
+            icon={<Home className="w-5 h-5" />}
+            active={showLandmark}
+            tone="green"
+            onClick={() => onToggleLandmark(!showLandmark)}
+          />
+        </> : null}
 {PLAYER_FEATURE_ENABLED && (
   <ToolIconButton
     label="玩家"

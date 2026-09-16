@@ -68,7 +68,7 @@ export async function saveReviewPackageRevision<TSubmission = unknown>(input: Re
   input.onProgress?.('uploading');
   await input.transport.uploadRevision(grant, input.artifact.blob);
   input.onProgress?.('finalizing');
-  const result = await input.transport.completeRevisionUpload(request);
+  const result = await input.transport.completeRevisionUpload({ ...request, ...(grant.mode === 'multipart' ? { multipartParts: grant.completedParts } : {}) });
   input.onProgress?.('completed');
 
   return {

@@ -11,7 +11,6 @@ interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
-import { useDataStore } from '@/store/dataStore';
 import { useLoadingStore } from '@/store/loadingStore';
 import { useRuleDataStore } from '@/store/ruleDataStore';
 import { downloadDataToolSchema } from '@/components/Common/exportDataToolSchema';
@@ -73,8 +72,7 @@ function compactFormalVersion(value: string | null): string {
 }
 
 export function SettingsPanel({ onClose, reviewAuth, reviewAuthTitle, reviewAuthLoginLabel }: SettingsPanelProps) {
-  const { cacheInfo, clearCache, forceRefresh, updateCacheInfo } = useDataStore();
-  const { startLoading, updateStage, isLoading, activeFlowId, activeRuleWorldId } = useLoadingStore();
+  const { isLoading, activeRuleWorldId } = useLoadingStore();
   const datasets = useRuleDataStore((s) => s.datasets);
   const refreshWorlds = useRuleDataStore((s) => s.refreshWorlds);
   const dataSource = useRuleDataStore((s) => s.dataSource);
@@ -83,7 +81,7 @@ export function SettingsPanel({ onClose, reviewAuth, reviewAuthTitle, reviewAuth
   const applyDataSourceTransport = useRuleDataStore((s) => s.applyDataSourceTransport);
 
   const [isRefreshingRules, setIsRefreshingRules] = useState(false);
-  const [isRefreshingLegacy, setIsRefreshingLegacy] = useState(false);
+  const [rulesRefreshProgress, setRulesRefreshProgress] = useState<string | null>(null);
   const [isSyncingRules, setIsSyncingRules] = useState(false);
   const [ruleCacheSize, setRuleCacheSize] = useState(0);
   const [ruleWorldRows, setRuleWorldRows] = useState<RuleWorldRow[]>([]);
@@ -107,9 +105,8 @@ export function SettingsPanel({ onClose, reviewAuth, reviewAuthTitle, reviewAuth
   const [dataSourceDraft, setDataSourceDraft] = useState(() => dataSource.sourceId);
   const [dataSourceStatus, setDataSourceStatus] = useState<{ tone: 'success' | 'error' | 'info'; text: string } | null>(null);
 
-  const anyRefreshBusy = isRefreshingRules || isRefreshingLegacy || isSyncingRules;
+  const anyRefreshBusy = isRefreshingRules || isSyncingRules;
   const rulesRefreshBlocked = anyRefreshBusy || (isLoading && !!activeRuleWorldId);
-  const legacyRefreshBlocked = anyRefreshBusy || (isLoading && !!activeRuleWorldId) || (isLoading && activeFlowId === 'legacy-refresh');
 
   useEffect(() => {
     const current = getCurrentSourceLinkModeId();
@@ -180,7 +177,7 @@ export function SettingsPanel({ onClose, reviewAuth, reviewAuthTitle, reviewAuth
     };
   };
 
-  const syncRuleWorldRows = async () => {
+  const syncRuleWorldRows = async (): Promise<RuleWorldRow[]> => {
     setIsSyncingRules(true);
     try {
       const rows = await Promise.all(
@@ -195,6 +192,7 @@ export function SettingsPanel({ onClose, reviewAuth, reviewAuthTitle, reviewAuth
       );
       setRuleWorldRows(rows);
       setRuleCacheSize(calculateRuleCacheSize());
+      return rows;
     } finally {
       setIsSyncingRules(false);
     }
@@ -250,14 +248,12 @@ export function SettingsPanel({ onClose, reviewAuth, reviewAuthTitle, reviewAuth
       setDeferredPrompt(null);
     });
 
-    // 更新缓存信息
-    updateCacheInfo();
     syncRuleWorldRows();
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, [updateCacheInfo]);
+  }, []);
 
   useEffect(() => {
     if (ruleWorldRows.length === 0) return;
@@ -284,18 +280,6 @@ export function SettingsPanel({ onClose, reviewAuth, reviewAuthTitle, reviewAuth
     });
   };
 
-  // 计算下次更新时间
-  const getNextUpdateText = (): string => {
-    if (!cacheInfo.nextUpdate) return '需要更新';
-    const now = Date.now();
-    const diff = cacheInfo.nextUpdate - now;
-    if (diff <= 0) return '已过期';
-    const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-    const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-    if (days > 0) return `${days} 天后`;
-    return `${hours} 小时后`;
-  };
-
   const getRuleRowStatus = (row: RuleWorldRow): { text: string; className: string; icon: 'ok' | 'warn' | 'none' } => {
     if (!row.remoteOk) return { text: '远端读取失败', className: 'text-orange-600', icon: 'warn' };
     if (!row.localReleaseId) return { text: row.isLoaded ? '仅内存已加载' : '未缓存', className: 'text-gray-600', icon: 'none' };
@@ -307,20 +291,29 @@ export function SettingsPanel({ onClose, reviewAuth, reviewAuthTitle, reviewAuth
   const handleRefreshRules = async () => {
     if (rulesRefreshBlocked) return;
     setIsRefreshingRules(true);
+    setRulesRefreshProgress('正在读取云端版本…');
     try {
+      const remoteRows = await syncRuleWorldRows();
       const cachedWorldIds = RULE_WORLDS
         .map((world) => world.id)
         .filter((worldId) => !!readRuleWorldMeta(worldId));
       const loadedWorldIds = Object.keys(datasets);
-      const targetWorldIds = Array.from(new Set([...cachedWorldIds, ...loadedWorldIds]));
+      const outOfDateWorldIds = remoteRows
+        .filter((row) => row.remoteOk && row.remoteReleaseId !== row.localReleaseId)
+        .map((row) => row.worldId);
+      const targetWorldIds = Array.from(new Set([...cachedWorldIds, ...loadedWorldIds, ...outOfDateWorldIds]));
 
-      if (targetWorldIds.length > 0) {
-        await refreshWorlds(targetWorldIds);
+      for (const [index, worldId] of targetWorldIds.entries()) {
+        const worldName = RULE_WORLDS.find((world) => world.id === worldId)?.name ?? worldId;
+        setRulesRefreshProgress(`正在同步 ${worldName}（${index + 1}/${targetWorldIds.length}）…`);
+        await refreshWorlds([worldId]);
         syncRuleWorldRowsFromLocal();
       }
+      setRulesRefreshProgress('正在核验本地与云端版本…');
       await syncRuleWorldRows();
     } finally {
       setIsRefreshingRules(false);
+      setRulesRefreshProgress(null);
     }
   };
 
@@ -329,59 +322,6 @@ export function SettingsPanel({ onClose, reviewAuth, reviewAuthTitle, reviewAuth
     if (!confirm('确定要清除当前世界数据缓存吗？已加载到内存的数据会在后续按需重新缓存。')) return;
     clearAllRuleWorldCaches();
     await syncRuleWorldRows();
-  };
-
-  // 刷新兼容旧数据源
-  const handleRefreshLegacy = async () => {
-    if (legacyRefreshBlocked) return;
-    setIsRefreshingLegacy(true);
-
-    const legacyFlowId = 'legacy-refresh';
-    startLoading([
-      { name: 'bureaus', label: '铁路局配置' },
-      { name: 'zth-railway', label: '零洲铁路数据' },
-      { name: 'zth-rmp', label: '零洲 RMP 数据' },
-      { name: 'zth-landmark', label: '零洲地标数据' },
-      { name: 'houtu-railway', label: '后土洲铁路数据' },
-      { name: 'houtu-rmp', label: '后土洲 RMP 数据' },
-      { name: 'houtu-landmark', label: '后土洲地标数据' },
-      { name: 'naraku-railway', label: '奈落洲铁路数据' },
-      { name: 'naraku-landmark', label: '奈落洲地标数据' },
-      { name: 'eden-railway', label: '伊甸铁路数据' },
-      { name: 'eden-landmark', label: '伊甸地标数据' },
-      { name: 'laputa-railway', label: '拉普塔铁路数据' },
-      { name: 'laputa-landmark', label: '拉普塔地标数据' },
-    ], { flowId: legacyFlowId });
-
-    try {
-      await forceRefresh((stage, status) => {
-        updateStage(stage, status);
-      });
-
-      setTimeout(() => {
-        const latest = useLoadingStore.getState();
-        if (latest.isLoading && latest.activeFlowId === legacyFlowId && !latest.activeRuleWorldId) {
-          latest.finishLoading();
-        }
-        setIsRefreshingLegacy(false);
-        updateCacheInfo();
-      }, 500);
-    } catch (e) {
-      const latest = useLoadingStore.getState();
-      if (latest.isLoading && latest.activeFlowId === legacyFlowId && !latest.activeRuleWorldId) {
-        latest.finishLoading();
-      }
-      setIsRefreshingLegacy(false);
-      throw e;
-    }
-  };
-
-  // 清除兼容旧数据源缓存
-  const handleClearLegacyCache = () => {
-    if (confirm('确定要清除旧数据源缓存吗？下次使用对应旧模块时需要重新加载。')) {
-      clearCache();
-      updateCacheInfo();
-    }
   };
 
   // 导出 Data Tool Schema
@@ -573,72 +513,12 @@ export function SettingsPanel({ onClose, reviewAuth, reviewAuthTitle, reviewAuth
               <span>清除缓存</span>
             </AppButton>
           </div>
-        </div>
-
-        {/* 兼容旧数据源 */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            <Database className="w-4 h-4" />
-            <span>数据源缓存（兼容）</span>
-          </div>
-
-          <div className="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-500">状态</span>
-              <span className={`flex items-center gap-1 ${cacheInfo.isStale ? 'text-orange-600' : 'text-green-600'}`}>
-                {cacheInfo.isStale ? (
-                  <>
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    需要更新
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    已缓存
-                  </>
-                )}
-              </span>
+          {rulesRefreshProgress ? (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800" role="status" aria-live="polite">
+              <div className="flex items-center gap-2"><Loader2 className="h-3.5 w-3.5 animate-spin" />{rulesRefreshProgress}</div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded bg-blue-100"><div className="h-full w-2/3 animate-pulse rounded bg-blue-500" /></div>
             </div>
-
-            <div className="flex justify-between">
-              <span className="text-gray-500">更新时间</span>
-              <span className="text-gray-700">{formatDate(cacheInfo.lastUpdated)}</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-gray-500">缓存大小</span>
-              <span className="text-gray-700">{formatSize(cacheInfo.size)}</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-gray-500">下次更新</span>
-              <span className="text-gray-700">{getNextUpdateText()}</span>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <AppButton
-              onClick={handleRefreshLegacy}
-              disabled={legacyRefreshBlocked}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white text-sm rounded-lg transition-colors"
-            >
-              {isRefreshingLegacy ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-              <span>数据源刷新</span>
-            </AppButton>
-
-            <AppButton
-              onClick={handleClearLegacyCache}
-              disabled={legacyRefreshBlocked}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-700 text-sm rounded-lg transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>清除</span>
-            </AppButton>
-          </div>
+          ) : null}
         </div>
 
         {/* PWA 状态 */}

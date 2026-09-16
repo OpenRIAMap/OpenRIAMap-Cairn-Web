@@ -246,6 +246,10 @@ export type ReviewReleaseGateSnapshot = {
   updatedAt?: string;
   acquiredAt?: string;
   leaseExpiresAt?: string;
+  /** Server-owned execution identity, present only after queueing succeeds. */
+  releaseId?: string;
+  jobId?: string;
+  reason?: string;
 };
 
 /**
@@ -395,12 +399,22 @@ export interface ReviewStatusBoardAdapter {
  */
 export type ReviewReleaseControlReport = {
   decision?: string;
+  release?: { releaseId: string; state: string; selectedCount?: number; archivedCount?: number; outcomeCount?: number };
   gate?: ReviewReleaseGateSnapshot;
   report?: {
     reportSha256?: string;
     findings?: Array<{ severity?: 'blocker' | 'warning' | 'info' | string; message?: string }>;
   };
   next?: { action?: string };
+};
+
+export type ReviewReleaseProgressReport = {
+  releaseId: string;
+  state: string;
+  formalVersion?: number | null;
+  lifecycle?: Record<string, string | null>;
+  archive?: { state?: string; error?: string | null } | null;
+  error?: string;
 };
 
 export type ReviewReleaseControlRequest = {
@@ -420,6 +434,7 @@ export interface ReviewReleaseControlPort {
   getReleaseGate(actor: ReviewAuthorizationContext): Promise<ReviewReleaseGateSnapshot>;
   runReleasePrecheck(request: ReviewReleaseControlRequest, actor: ReviewAuthorizationContext): Promise<ReviewReleaseControlReport>;
   confirmRelease(request: ReviewReleaseConfirmationRequest, actor: ReviewAuthorizationContext): Promise<ReviewReleaseControlReport>;
+  getReleaseProgress?(releaseId: string, actor: ReviewAuthorizationContext): Promise<ReviewReleaseProgressReport>;
 }
 
 /**

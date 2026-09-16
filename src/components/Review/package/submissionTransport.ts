@@ -5,7 +5,7 @@ import type {
   ReviewSubmissionIdentity,
   ReviewSubmissionTransport,
 } from './contracts';
-import { calculateReviewPackageDigest } from './digest';
+import { calculateReviewChunkedArtifact, calculateReviewPackageDigest } from './digest';
 
 function nowSegment(clock: () => Date): string {
   return clock().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
@@ -39,6 +39,7 @@ export async function createReviewRevisionUploadRequest(input: {
   return {
     ...input.identity,
     ...digest,
+    artifact: await calculateReviewChunkedArtifact(input.artifact.blob, digest),
     packageName: input.artifact.packageName,
     ...(input.summary ? { summary: input.summary } : {}),
     expectedStateVersion: input.expectedStateVersion,
@@ -47,6 +48,7 @@ export async function createReviewRevisionUploadRequest(input: {
 
 export async function submitReviewPackageRevision<TSubmission>(transport: ReviewSubmissionTransport<TSubmission>, request: ReviewRevisionUploadRequest, artifact: Pick<ReviewPackageArtifact, 'blob'>): Promise<ReviewRevisionUploadResult<TSubmission>> {
   const grant = await transport.requestRevisionUpload(request);
+  if (grant.artifact.artifactId !== request.artifact.artifactId || grant.artifact.byteLength !== request.artifact.byteLength || grant.artifact.sha256 !== request.artifact.sha256 || JSON.stringify(grant.artifact.chunks) !== JSON.stringify(request.artifact.chunks)) throw new Error('review-upload-grant-artifact-mismatch');
   await transport.uploadRevision(grant, artifact.blob);
-  return transport.completeRevisionUpload(request);
+  return transport.completeRevisionUpload({ ...request, ...(grant.mode === 'multipart' ? { multipartParts: grant.completedParts } : {}) });
 }
