@@ -1,6 +1,6 @@
 export async function loadMeasuringModuleBundle() {
   const [measuringModule, measurementToolsModule] = await Promise.all([
-    import('@/components/Mapping/core/MeasuringModule'),
+    import('@/components/Mapping/MappingWorkspace'),
     import('@/components/Mapping/core/Mtools'),
   ]);
 

@@ -248,6 +248,10 @@ export type ReviewReleaseGateSnapshot = {
   updatedAt?: string;
   acquiredAt?: string;
   leaseExpiresAt?: string;
+  /** Server-owned execution identity, present only after queueing succeeds. */
+  releaseId?: string;
+  jobId?: string;
+  reason?: string;
 };
 
 /**
@@ -492,6 +496,7 @@ export interface ReviewReleaseControlPort {
   getReleaseGate(actor: ReviewAuthorizationContext): Promise<ReviewReleaseGateSnapshot>;
   runReleasePrecheck(request: ReviewReleaseControlRequest, actor: ReviewAuthorizationContext): Promise<ReviewReleaseControlReport>;
   confirmRelease(request: ReviewReleaseConfirmationRequest, actor: ReviewAuthorizationContext): Promise<ReviewReleaseControlReport>;
+  getReleaseProgress?(releaseId: string, actor: ReviewAuthorizationContext): Promise<ReviewReleaseProgress>;
   runArchiveReconciliationPrecheck(input: { selectedSubmissionIds: readonly string[] }, actor: ReviewAuthorizationContext): Promise<{ decision: 'ready' | 'blocked' | string; plan?: ReviewArchiveReconciliationPlan; blockers?: Array<{ submissionId: string; code: string }> }>;
   confirmArchiveReconciliation(input: Pick<ReviewArchiveReconciliationPlan, 'reconciliationId' | 'planSha256'>, actor: ReviewAuthorizationContext): Promise<{ accepted: boolean; reconciliationId: string; state: string; jobId?: string; candidateCount?: number }>;
   getArchiveReconciliationProgress(reconciliationId: string, actor: ReviewAuthorizationContext): Promise<ReviewArchiveReconciliationProgress>;
