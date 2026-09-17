@@ -197,3 +197,51 @@ export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = 
 export async function requestRiaReviewRevisionDownload(submissionId: string, revisionId: string, fetcher: ReviewWorkflowFetch = fetch): Promise<{ download: { url: string; sha256: string; byteLength: number } }> {
   return requestControl(fetcher, { operation: 'revision-download-request', submissionId, revisionId });
 }
+
+/**
+ * The authenticated public release-history projection intentionally has its
+ * own API surface. The browser keeps only its normal session cookie; it never
+ * receives COS, GitHub or SCF credentials.
+ */
+export type PublicReviewReleaseFeedItem = {
+  releaseId: string;
+  state: 'completed';
+  publishedAt?: string | null;
+  lifecycle?: Record<string, string | null> | null;
+  formalVersion?: number | null;
+  packageCount?: number;
+};
+
+export type PublicReviewReleasePackage = {
+  submissionId: string;
+  packageName?: string;
+  decisionRevisionId: string;
+  decisionState?: string;
+  decisionAction?: string;
+  reason?: string;
+  counts?: { featureCount?: number; deleteCount?: number; pictureCount?: number };
+  revisionCount?: number;
+  download?: { ready?: boolean; sha256?: string; byteLength?: number };
+};
+
+export type PublicReviewReleaseDetail = PublicReviewReleaseFeedItem & {
+  packages: PublicReviewReleasePackage[];
+};
+
+export async function requestRiaPublicReviewReleaseFeed(limit = 20, fetcher: ReviewWorkflowFetch = fetch): Promise<PublicReviewReleaseFeedItem[]> {
+  const response = await requestControl<{ items?: PublicReviewReleaseFeedItem[] }>(fetcher, { operation: 'public-release-feed', limit });
+  return Array.isArray(response.items) ? response.items : [];
+}
+
+export function requestRiaPublicReviewReleaseDetail(releaseId: string, fetcher: ReviewWorkflowFetch = fetch): Promise<PublicReviewReleaseDetail> {
+  return requestControl(fetcher, { operation: 'public-release-detail', releaseId });
+}
+
+export function requestRiaPublicReviewReleasePackageDownload(
+  releaseId: string,
+  submissionId: string,
+  revisionId: string,
+  fetcher: ReviewWorkflowFetch = fetch,
+): Promise<{ download: { url: string; sha256: string; byteLength: number } }> {
+  return requestControl(fetcher, { operation: 'public-release-package-download-request', releaseId, submissionId, revisionId });
+}

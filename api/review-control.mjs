@@ -2,13 +2,14 @@ import { requireReviewAutomation } from './_reviewAutomation.mjs';
 import { signDispatcherRequest, verifySession } from './review-relay-transfer.mjs';
 
 const operations = new Set([
-  'detail', 'list', 'revision-upload-request', 'revision-upload-complete', 'save',
+  'detail', 'list', 'revision-upload-request', 'revision-upload-complete', 'revision-upload-progress', 'save',
   'precheck', 'approve', 'reject', 'request-changes', 'reopen', 'save-and-approve',
   'publish', 'publish-precheck', 'publish-confirm', 'status', 'report', 'release-feed', 'release-gate', 'archive',
   'release-progress', 'release-detail', 'release-download-request', 'release-archive-reconcile',
   'archive-reconciliation-precheck', 'archive-reconciliation-confirm', 'archive-reconciliation-progress',
   'status-board', 'status-save',
   'revision-download-request',
+  'public-release-feed', 'public-release-detail', 'public-release-package-download-request',
 ]);
 
 const versionedOperations = new Set([
@@ -87,6 +88,19 @@ export function normalizeReviewControlRequest(input, actor) {
   if (operation === 'detail') return { operation, submissionId: requireString(input.submissionId, 'invalid-review-submission-id'), actor };
   if (operation === 'list') return { operation, limit: input.limit ?? 50, actor };
   if (operation === 'release-feed') return { operation, limit: input.limit ?? 10, actor };
+  if (operation === 'public-release-feed') return { operation, limit: input.limit ?? 20, actor };
+  if (operation === 'public-release-detail') {
+    return { operation, releaseId: requireString(input.releaseId, 'invalid-public-review-release-id'), actor };
+  }
+  if (operation === 'public-release-package-download-request') {
+    return {
+      operation,
+      releaseId: requireString(input.releaseId, 'invalid-public-review-release-id'),
+      submissionId: requireString(input.submissionId, 'invalid-public-review-submission-id'),
+      revisionId: requireString(input.revisionId, 'invalid-public-review-revision-id'),
+      actor,
+    };
+  }
   if (operation === 'release-gate') return { operation, actor };
   if (['release-progress', 'release-detail', 'release-download-request', 'release-archive-reconcile'].includes(operation)) {
     return { operation, releaseId: requireString(input.releaseId, 'invalid-review-release-id'), actor };
@@ -113,6 +127,12 @@ export function normalizeReviewControlRequest(input, actor) {
   if (operation === 'revision-upload-request' || operation === 'revision-upload-complete') {
     return { operation, request: requireRevisionUploadRequest(input.request), actor };
   }
+  if (operation === 'revision-upload-progress') return {
+    operation,
+    submissionId: requireString(input.submissionId, 'invalid-review-revision-upload-progress'),
+    revisionId: requireString(input.revisionId, 'invalid-review-revision-upload-progress'),
+    actor,
+  };
   if (operation === 'revision-download-request') return {
     operation,
     submissionId: requireString(input.submissionId, 'invalid-review-revision-download-request'),

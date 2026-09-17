@@ -7,6 +7,11 @@ import type { DynmapProjection } from "@/lib/DynmapProjection";
 
 import { FeatureStore } from "@/components/Rules/data/featureStore";
 import {
+  readTemporaryRuleDeleteIdsForWorld,
+  readTemporaryRuleOverrideIdsForWorld,
+  readTemporaryRuleSourcesForWorld,
+} from "@/components/Rules/data/temporaryRuleSession";
+import {
   DEFAULT_FLOOR_VIEW,
   buildFeatureMeta,
   findFirstRule,
@@ -1459,12 +1464,8 @@ export default function RuleDrivenLayer(props: Props) {
   // dataVersion：代表“进入渲染/索引的数据集(recordsRef/storeRef)更新完成”，驱动后续渲染/楼层逻辑。
   const [dataVersion, setDataVersion] = useState(0);
 
-  // ======== 临时挂载数据源（来自 MeasuringModule，本地存储） ========
+  // ======== 临时挂载数据源（来自 MeasuringModule，进程内会话） ========
   const [tempSourceVersion, setTempSourceVersion] = useState(0);
-
-  const TEMP_RULE_SOURCES_KEY = "ria_temp_rule_sources_v1";
-  const TEMP_RULE_OVERRIDE_IDS_KEY = "ria_temp_rule_override_ids_v1";
-  const TEMP_RULE_DELETE_IDS_KEY = "ria_temp_rule_delete_ids_v1";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1558,10 +1559,7 @@ export default function RuleDrivenLayer(props: Props) {
 
   function readTempSources(worldId: string): TempRuleSource[] {
     try {
-      const raw = localStorage.getItem(TEMP_RULE_SOURCES_KEY);
-      if (!raw) return [];
-      const obj = JSON.parse(raw);
-      const list = (obj?.[worldId] ?? []) as any[];
+      const list = readTemporaryRuleSourcesForWorld(worldId) as any[];
       if (!Array.isArray(list)) return [];
       return list
         .filter((x) => x && typeof x === "object")
@@ -1598,28 +1596,10 @@ export default function RuleDrivenLayer(props: Props) {
   }
 
   function readTempOverrideIds(worldId: string): Set<string> {
-    try {
-      const raw = localStorage.getItem(TEMP_RULE_OVERRIDE_IDS_KEY);
-      if (!raw) return new Set();
-      const obj = JSON.parse(raw);
-      const list = (obj?.[worldId] ?? []) as any[];
-      if (!Array.isArray(list)) return new Set();
-      return new Set(list.map((x) => String(x ?? "").trim()).filter((s) => s));
-    } catch {
-      return new Set();
-    }
+    return readTemporaryRuleOverrideIdsForWorld(worldId);
   }
   function readTempDeleteIds(worldId: string): Set<string> {
-    try {
-      const raw = localStorage.getItem(TEMP_RULE_DELETE_IDS_KEY);
-      if (!raw) return new Set();
-      const obj = JSON.parse(raw);
-      const list = (obj?.[worldId] ?? []) as any[];
-      if (!Array.isArray(list)) return new Set();
-      return new Set(list.map((x) => String(x ?? "").trim()).filter((s) => s));
-    } catch {
-      return new Set();
-    }
+    return readTemporaryRuleDeleteIdsForWorld(worldId);
   }
 
   useEffect(() => {

@@ -38,6 +38,7 @@ import type { MeasuringModuleHandle, ReviewWorkspaceSaveArtifact } from '@/compo
 import { useFeatureModuleStore } from '@/store/featureModuleStore';
 
 import RuleDrivenLayer from '@/components/Rules/core/RuleDrivenLayer';
+import { hasEnabledTemporaryRuleSources } from '@/components/Rules/data/temporaryRuleSession';
 import { resolveFeatureCardComponent } from '@/components/Rules/cardrules/featureCardRegistry';
 import { pickIdFieldValue, type FeatureRecord } from '@/components/Rules/rendering/renderRules';
 import RuleButtonPanel from '@/components/Rules/ButtonRule/RuleButtonPanel';
@@ -47,11 +48,11 @@ import { formatGridNumber, snapWorldPointByMode } from '@/lib/gridSnapUtils';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import ToolIconButton from '@/components/Toolbar/ToolIconButton';
-import { Globe2, PanelsTopLeft, Layers3, SlidersHorizontal, Plus, Minus, Pencil, Ruler, User, History } from 'lucide-react';
+import { Globe2, PanelsTopLeft, Layers3, SlidersHorizontal, Plus, Minus, Pencil, RefreshCw, Ruler, User, History } from 'lucide-react';
 import { buildBuildingNameIndex, getRuleCategoryLabelWithParent, getRuleDisplayName } from '@/components/Search/searchRuleTables';
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { consumeFeatureShareTargetFromLocation, normalizePlayerShareId, type FeatureSharePayload, type FeatureShareTarget, type PlayerShareTarget, type ShareParseResult } from '@/lib/featureShareLink';
-import { ReviewModule, ReviewModuleLauncher, PublicReleaseRecordPanel, createReviewPackageSession, type CairnMapModuleMode, type ReviewInboxItem, type ReviewPackageSession } from '@/components/Review';
+import { PublicReleaseRecordsPanel, ReviewConfirmationHost, ReviewModule, ReviewModuleLauncher, createReviewPackageSession, type CairnMapModuleMode, type ReviewInboxItem, type ReviewPackageSession } from '@/components/Review';
 import { openriamapReviewPackageUploader, uploadRiaReviewRevision } from '@/components/Review/riaReviewPackageUploader';
 
 // ===== 导航“图上选取”：MapContainer 统一派发地图点击事件 =====
@@ -112,7 +113,8 @@ function getShareLookupProgress(state: ShareLookupState): number {
 }
 
 // 世界配置
-const LazyMeasuringModule = lazy(() => import('@/components/Mapping/core/MeasuringModule'));
+const LazyMappingWorkspace = lazy(() => import('@/components/Mapping/MappingWorkspace'));
+const LazyReviewWorkspace = lazy(() => import('@/components/Review/ReviewWorkspace'));
 const LazyMeasurementToolsModule = lazy(() => import('@/components/Mapping/core/Mtools'));
 const LazyRailwayLayer = lazy(() => import('@/components/Legacy/map/RailwayLayer').then((mod) => ({ default: mod.RailwayLayer })));
 const LazyLandmarkLayer = lazy(() => import('@/components/Legacy/map/LandmarkLayer').then((mod) => ({ default: mod.LandmarkLayer })));
@@ -378,32 +380,16 @@ function MapContainer() {
   // from crossing the two workflow boundaries.
   const [workspaceInstanceKey, setWorkspaceInstanceKey] = useState(() => `mapping-${crypto.randomUUID()}`);
   const [reviewSession, setReviewSession] = useState<ReviewPackageSession | null>(null);
-  const [reviewWorkspaceDirty, setReviewWorkspaceDirty] = useState(false);
+  const [, setReviewWorkspaceDirty] = useState(false);
   const [pendingReviewPackage, setPendingReviewPackage] = useState<ReviewInboxItem | null>(null);
+  const [publicReleaseRecordsRefreshSignal, setPublicReleaseRecordsRefreshSignal] = useState(0);
 
   // 测绘激活态：用于禁止导航图选点（由 MeasuringModule / MeasurementToolsModule 派发）
 // 说明：临时挂载启用时，MeasuringModule 可能被迫处于 active，但此时仍允许导航图选点（只要 MeasurementToolsModule 未启用）
 const measuringModuleActiveRef = useRef(false);
 const measurementToolsActiveRef = useRef(false);
 
-const isTempRuleMountEnabled = useCallback(() => {
-  try {
-    const raw = localStorage.getItem('ria_temp_rule_sources_v1');
-    if (!raw) return false;
-    const data = JSON.parse(raw);
-    // 兼容：可能是 { enabled: true } 或 { entries: [{enabled:true}, ...] } 或 { layers: {...} }
-    if (typeof data?.enabled === 'boolean') return data.enabled;
-    if (Array.isArray(data?.entries)) return data.entries.some((e: any) => Boolean(e?.enabled));
-    if (Array.isArray(data?.sources)) return data.sources.some((e: any) => Boolean(e?.enabled));
-    if (data && typeof data === 'object') {
-      // 尝试遍历对象值
-      return Object.values(data).some((v: any) => Boolean(v?.enabled));
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}, []);
+const isTempRuleMountEnabled = useCallback(() => hasEnabledTemporaryRuleSources(), []);
 
 useEffect(() => {
   if (PLAYER_FEATURE_ENABLED) return;
@@ -516,15 +502,14 @@ useEffect(() => {
     requestLegacyFeature('lines-page');
   }, [requestLegacyFeature]);
 
-  const requestMeasuringModuleEntry = useCallback((target: 'measuring' | 'mtools') => {
+  const requestMeasuringModuleEntry = useCallback(async (target: 'measuring' | 'mtools') => {
     if (moduleMode === 'review') {
-      if (!window.confirm('切换至测绘模块将退出审核模块并卸载审核图层。审核服务中的状态灯和已保存版本不会受影响，是否继续？')) return;
-      const ok = measuringModuleRef.current?.requestCloseAndClear?.('关闭则为退出审核模块') ?? true;
+      const ok = await (measuringModuleRef.current?.requestCloseAndClear?.('切换至普通测绘') ?? Promise.resolve(true));
       if (!ok) return;
       setReviewSession(null);
       setReviewWorkspaceDirty(false);
       setPendingReviewPackage(null);
-      setWorkspaceInstanceKey(`mapping-${crypto.randomUUID()}`);
+      setWorkspaceInstanceKey((value) => value + 1);
     }
     setModuleMode('mapping');
     if (measuringModuleLoaded) {
@@ -536,12 +521,15 @@ useEffect(() => {
     requestFeatureModuleActivation('measuring');
   }, [measuringModuleLoaded, moduleMode, requestFeatureModuleActivation]);
 
-  const requestReviewModuleEntry = useCallback(() => {
-    if ((moduleMode === 'mapping' || measuringModuleActive || measurementToolsActive)
-      && !window.confirm('启动审核模块会退出当前测绘模式并卸载测绘图层；两个模块不能同时运行。未导出的测绘草稿不会自动带入审核模块，是否继续？')) return;
+  const requestReviewModuleEntry = useCallback(async () => {
+    if (moduleMode === 'mapping' || measuringModuleActive || measurementToolsActive) {
+      const ok = await (measuringModuleRef.current?.requestCloseAndClear?.('启动审核模块') ?? Promise.resolve(true));
+      if (!ok) return;
+      setMeasuringCloseSignal((value) => value + 1);
+      setMeasureToolsCloseSignal((value) => value + 1);
+      setWorkspaceInstanceKey((value) => value + 1);
+    }
     setMeasureToolsCloseSignal((v) => v + 1);
-    setMeasuringCloseSignal((v) => v + 1);
-    setWorkspaceInstanceKey(`review-${crypto.randomUUID()}`);
     setModuleMode('review');
     if (!measuringModuleLoaded) {
       setPendingMeasureModuleOpen('review');
@@ -549,14 +537,23 @@ useEffect(() => {
     }
   }, [measuringModuleActive, measuringModuleLoaded, measurementToolsActive, moduleMode, requestFeatureModuleActivation]);
 
-  const closeReviewModule = useCallback(() => {
-    const ok = measuringModuleRef.current?.requestCloseAndClear?.('关闭则为退出审核模块') ?? true;
+  const closeReviewModule = useCallback(async () => {
+    const ok = await (measuringModuleRef.current?.requestCloseAndClear?.('关闭则为退出审核模块') ?? Promise.resolve(true));
     if (!ok) return;
     setReviewSession(null);
     setReviewWorkspaceDirty(false);
     setPendingReviewPackage(null);
-    setWorkspaceInstanceKey(`mapping-${crypto.randomUUID()}`);
+    setWorkspaceInstanceKey((value) => value + 1);
     setModuleMode('runtime');
+  }, []);
+
+  // Closing the layer manager must not close the surrounding review sequence:
+  // reviewers may continue inspecting the package detail and status board.
+  const closeReviewWorkspace = useCallback(() => {
+    setReviewSession(null);
+    setReviewWorkspaceDirty(false);
+    setPendingReviewPackage(null);
+    setWorkspaceInstanceKey((value) => value + 1);
   }, []);
 
   useEffect(() => {
@@ -565,12 +562,16 @@ useEffect(() => {
     return () => window.removeEventListener('ria:reviewExitRequested', requestExit);
   }, [closeReviewModule]);
 
-  const loadReviewPackageIntoWorkspace = useCallback((item: ReviewInboxItem) => {
-    if (moduleMode !== 'review') {
-      setMeasureToolsCloseSignal((v) => v + 1);
-      setMeasuringCloseSignal((v) => v + 1);
-      setWorkspaceInstanceKey(`review-${crypto.randomUUID()}`);
+  const loadReviewPackageIntoWorkspace = useCallback(async (item: ReviewInboxItem) => {
+    const replacingReviewWorkspace = moduleMode === 'review';
+    if (replacingReviewWorkspace || moduleMode === 'mapping' || measuringModuleActive || measurementToolsActive) {
+      const label = replacingReviewWorkspace ? '切换审核包' : '置入审核工作区';
+      const ok = await (measuringModuleRef.current?.requestCloseAndClear?.(label) ?? Promise.resolve(true));
+      if (!ok) return false;
+      setMeasuringCloseSignal((value) => value + 1);
+      setMeasureToolsCloseSignal((value) => value + 1);
     }
+    setWorkspaceInstanceKey((value) => value + 1);
     setModuleMode('review');
     setReviewSession(createReviewPackageSession(item));
     setReviewWorkspaceDirty(false);
@@ -579,12 +580,8 @@ useEffect(() => {
       setPendingMeasureModuleOpen('review');
       requestFeatureModuleActivation('measuring');
     }
-  }, [measuringModuleLoaded, moduleMode, requestFeatureModuleActivation]);
-
-  const publishReviewStatusDraft = useCallback((state: 'pending' | 'approved' | 'rejected' | 'archived', reason?: string, decisionAction?: 'approve' | 'reject' | 'request-changes' | 'archive' | 'reopen') => {
-    if (!reviewSession?.packageId) return;
-    window.dispatchEvent(new CustomEvent('cairn-review-status-draft', { detail: { submissionId: reviewSession.packageId, state, reason, decisionAction } }));
-  }, [reviewSession?.packageId]);
+    return true;
+  }, [measuringModuleLoaded, measuringModuleActive, measurementToolsActive, moduleMode, requestFeatureModuleActivation]);
 
   const handleReviewSave = useCallback(async (artifact: ReviewWorkspaceSaveArtifact) => {
     const context = reviewSession?.submissionContext;
@@ -617,38 +614,6 @@ useEffect(() => {
       : prev);
     setReviewWorkspaceDirty(false);
   }, [reviewSession]);
-
-  const handleReviewApprove = useCallback(() => {
-    setReviewSession((prev) => prev ? { ...prev, status: 'approved_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
-    setReviewWorkspaceDirty(false);
-    setPendingReviewPackage(null);
-    publishReviewStatusDraft('approved', undefined, 'approve');
-  }, [publishReviewStatusDraft]);
-
-  const handleReviewReject = useCallback((reason: string) => {
-    setReviewSession((prev) => prev ? { ...prev, status: 'changes_requested_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
-    setReviewWorkspaceDirty(false);
-    setPendingReviewPackage(null);
-    publishReviewStatusDraft('rejected', reason, 'reject');
-  }, [publishReviewStatusDraft]);
-
-  const handleReviewArchive = useCallback(() => {
-    setReviewSession((prev) => prev ? { ...prev, status: 'saved_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
-    setReviewWorkspaceDirty(false);
-    publishReviewStatusDraft('archived', undefined, 'archive');
-  }, [publishReviewStatusDraft]);
-
-  const handleReviewRequestChanges = useCallback((reason: string) => {
-    setReviewSession((prev) => prev ? { ...prev, status: 'changes_requested_local', dirty: false, updatedAt: new Date().toISOString() } : prev);
-    setReviewWorkspaceDirty(false);
-    publishReviewStatusDraft('rejected', reason, 'request-changes');
-  }, [publishReviewStatusDraft]);
-
-  const handleReviewReopen = useCallback(() => {
-    setReviewSession((prev) => prev ? { ...prev, status: 'loaded', dirty: false, updatedAt: new Date().toISOString() } : prev);
-    setReviewWorkspaceDirty(false);
-    publishReviewStatusDraft('pending', undefined, 'reopen');
-  }, [publishReviewStatusDraft]);
 
   useEffect(() => {
     if (moduleMode !== 'review' || !measuringModuleLoaded || !pendingReviewPackage) return;
@@ -1761,7 +1726,7 @@ map.on('mousemove', handleMouseMove);
       case 'settings':
         return <SettingsPanel onClose={closeMobileSheet} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />;
       case 'releaseRecords':
-        return <PublicReleaseRecordPanel onClose={closeMobileSheet} />;
+        return <PublicReleaseRecordsPanel showNativeClose showInlineRefresh onClose={closeMobileSheet} />;
       case 'navigation':
         return (
           <NavigationPanel
@@ -1862,10 +1827,24 @@ case 'players':
       {moduleMode === 'review' && (
         <ReviewModule
           activeWorldId={currentWorld}
-          dirty={reviewWorkspaceDirty}
           onClose={closeReviewModule}
           onLoadPackage={loadReviewPackageIntoWorkspace}
         />
+      )}
+
+      <ReviewConfirmationHost />
+
+      {showPublicReleaseRecords && (
+        <div className="hidden sm:block">
+          <DraggablePanel
+            id="public-release-records"
+            defaultPosition={{ x: 760, y: 160 }}
+            constrainExpandedToViewport
+            expandedHeaderActions={<AppButton className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={() => setPublicReleaseRecordsRefreshSignal((value) => value + 1)} title="刷新发布记录"><RefreshCw className="h-5 w-5" /></AppButton>}
+          >
+            <PublicReleaseRecordsPanel onClose={() => setShowPublicReleaseRecords(false)} refreshSignal={publicReleaseRecordsRefreshSignal} />
+          </DraggablePanel>
+        </div>
       )}
 
       {/* 规则驱动图层（总开关控制，worldId 切换自动重载） */}
@@ -2296,8 +2275,8 @@ case 'players':
                 onBecameActive={() => setMeasuringCloseSignal(v => v + 1)}
                 launcherSlot={(launcher) => <div className="hidden sm:block">{launcher}</div>}
               /> : null}
-              <LazyMeasuringModule
-                key={workspaceInstanceKey}
+              {moduleMode === 'review' ? <LazyReviewWorkspace
+                key={`review-${workspaceInstanceKey}`}
                 ref={measuringModuleRef}
                 mapReady={mapReady}
                 leafletMapRef={leafletMapRef}
@@ -2305,20 +2284,26 @@ case 'players':
                 currentWorldId={currentWorld}
                 closeSignal={measuringCloseSignal}
                 openSignal={measuringOpenSignal}
-                onBecameActive={() => setMeasureToolsCloseSignal(v => v + 1)}
+                onBecameActive={() => setMeasureToolsCloseSignal((value) => value + 1)}
                 launcherSlot={(launcher) => <div className="hidden sm:block">{launcher}</div>}
-                workspaceMode={moduleMode === 'review' ? 'review' : 'mapping'}
                 reviewSession={reviewSession}
                 onReviewDirtyChange={setReviewWorkspaceDirty}
                 onReviewSave={handleReviewSave}
-                onReviewApprove={handleReviewApprove}
-                onReviewReject={handleReviewReject}
-                onReviewArchive={handleReviewArchive}
-                onReviewRequestChanges={handleReviewRequestChanges}
-                onReviewReopen={handleReviewReopen}
-                onReviewExitRequested={closeReviewModule}
+                onReviewExitRequested={closeReviewWorkspace}
                 onReviewPackageUpload={openriamapReviewPackageUploader.uploadPackage}
-              />
+              /> : <LazyMappingWorkspace
+                key={`mapping-${workspaceInstanceKey}`}
+                ref={measuringModuleRef}
+                mapReady={mapReady}
+                leafletMapRef={leafletMapRef}
+                projectionRef={projectionRef}
+                currentWorldId={currentWorld}
+                closeSignal={measuringCloseSignal}
+                openSignal={measuringOpenSignal}
+                onBecameActive={() => setMeasureToolsCloseSignal((value) => value + 1)}
+                launcherSlot={(launcher) => <div className="hidden sm:block">{launcher}</div>}
+                onReviewPackageUpload={openriamapReviewPackageUploader.uploadPackage}
+              />}
             </Suspense>
           ) : (
             <>
@@ -2346,10 +2331,6 @@ case 'players':
           </LayerControl><ToolIconButton label="收起模式面板" icon={<PanelsTopLeft className="w-5 h-5" />} tone="gray" onClick={() => setModePanelCollapsed(true)} /></div>}
         </div>
       </div>
-
-      {showPublicReleaseRecords ? <div className="hidden sm:block"><DraggablePanel id="public-review-release-records" defaultPosition={{ x: 850, y: 180 }} zIndex={1762} constrainExpandedToViewport>
-        <PublicReleaseRecordPanel onClose={() => setShowPublicReleaseRecords(false)} />
-      </DraggablePanel></div> : null}
 
       <MobileBottomSheet
         open={shouldShowMobileSheet}

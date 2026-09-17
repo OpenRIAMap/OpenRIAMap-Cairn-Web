@@ -211,6 +211,21 @@ export type ReviewPackageDigest = {
   contentMd5: string;
 };
 
+export type ReviewArtifactChunk = {
+  index: number;
+  byteLength: number;
+  sha256: string;
+};
+
+/** Immutable browser-calculated identity used for both direct and multipart uploads. */
+export type ReviewChunkedArtifact = {
+  kind: 'openriamap.chunked-artifact.v1';
+  artifactId: string;
+  byteLength: number;
+  sha256: string;
+  chunks: ReviewArtifactChunk[];
+};
+
 export type ReviewSubmissionIdentity = {
   submissionId: string;
   revisionId: string;
@@ -220,22 +235,45 @@ export type ReviewSubmissionIdentity = {
 };
 
 export type ReviewRevisionUploadRequest = ReviewSubmissionIdentity & ReviewPackageDigest & {
+  artifact: ReviewChunkedArtifact;
   packageName: string;
   summary?: string;
   expectedStateVersion: number;
+  /** Set by the browser only after every signed multipart PUT has succeeded. */
+  multipartParts?: Array<ReviewArtifactChunk & { partNumber: number; eTag: string }>;
 };
 
-export type ReviewRevisionUploadGrant = {
+export type ReviewRevisionSingleUploadGrant = {
+  mode: 'single';
   method: 'PUT';
   url: string;
   headers: Record<string, string>;
   key: string;
   expiresInSeconds: number;
+  artifact: ReviewChunkedArtifact;
 };
+
+export type ReviewRevisionMultipartUploadGrant = {
+  mode: 'multipart';
+  key: string;
+  expiresInSeconds: number;
+  byteLength: number;
+  session: { mode: 'multipart'; uploadId: string; artifactId: string; partSize: number; partCount: number };
+  parts: Array<ReviewArtifactChunk & { partNumber: number; url: string; headers: Record<string, string> }>;
+  artifact: ReviewChunkedArtifact;
+  /** Server-authoritatively recovered COS parts for a resumed browser upload. */
+  uploadedParts?: Array<ReviewArtifactChunk & { partNumber: number; eTag: string }>;
+  /** Kept only in memory and returned to the broker during completion. */
+  completedParts?: Array<ReviewArtifactChunk & { partNumber: number; eTag: string }>;
+};
+
+export type ReviewRevisionUploadGrant = ReviewRevisionSingleUploadGrant | ReviewRevisionMultipartUploadGrant;
 
 export type ReviewRevisionUploadResult<TSubmission = unknown> = {
   accepted: boolean;
   alreadySubmitted?: boolean;
+  state?: 'verification-queued';
+  jobId?: string;
   submission: TSubmission;
 };
 

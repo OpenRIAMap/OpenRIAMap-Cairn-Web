@@ -47,6 +47,7 @@ import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
+import { hasEnabledTemporaryRuleSources } from '@/components/Rules/data/temporaryRuleSession';
 import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
 import { formatGridNumber, snapWorldPointByMode } from '@/lib/gridSnapUtils';
 import {
@@ -880,20 +881,7 @@ export function NavigationPanel({
   const [measuringModuleActive, setMeasuringModuleActive] = useState(false);
   const [measurementToolsActive, setMeasurementToolsActive] = useState(false);
 
-  const isTempRuleMountEnabled = useCallback(() => {
-    try {
-      const raw = localStorage.getItem('ria_temp_rule_sources_v1');
-      if (!raw) return false;
-      const data = JSON.parse(raw);
-      if (typeof data?.enabled === 'boolean') return data.enabled;
-      if (Array.isArray(data?.entries)) return data.entries.some((e: any) => Boolean(e?.enabled));
-      if (Array.isArray(data?.sources)) return data.sources.some((e: any) => Boolean(e?.enabled));
-      if (data && typeof data === 'object') return Object.values(data).some((v: any) => Boolean(v?.enabled));
-      return false;
-    } catch {
-      return false;
-    }
-  }, []);
+  const isTempRuleMountEnabled = useCallback(() => hasEnabledTemporaryRuleSources(), []);
 
   const blockMapPick = measurementToolsActive || (measuringModuleActive && !isTempRuleMountEnabled());
 

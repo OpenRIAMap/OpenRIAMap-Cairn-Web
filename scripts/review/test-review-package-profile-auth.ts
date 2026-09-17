@@ -45,7 +45,18 @@ globalThis.fetch = (async (input: URL | RequestInfo, init?: RequestInit) => {
   if (String(input) === '/api/review-control') {
     const body = JSON.parse(String(init?.body));
     if (body.operation === 'revision-upload-request') {
-      return new Response(JSON.stringify({ accepted: true, upload: { method: 'PUT', url: 'https://example.invalid/upload', headers: { 'Content-MD5': 'XUFAKrxLKna5cZ2REBfFkg==' }, key: 'RelayPackages/submissions/s/r.zip', expiresInSeconds: 60 } }), { status: 200 });
+      return new Response(JSON.stringify({
+        accepted: true,
+        upload: {
+          mode: 'single',
+          method: 'PUT',
+          url: 'https://example.invalid/upload',
+          headers: { 'Content-MD5': 'XUFAKrxLKna5cZ2REBfFkg==' },
+          key: 'RelayPackages/submissions/s/r.zip',
+          expiresInSeconds: 60,
+          artifact: body.request.artifact,
+        },
+      }), { status: 200 });
     }
     return new Response(JSON.stringify({ accepted: true, submission: { submissionId: 'submission-test' } }), { status: 200 });
   }
@@ -55,6 +66,13 @@ try {
   const request = {
     submissionId: 'submission-test', revisionId: 'submission-test-r1', requestId: 'request-test', correlationId: 'correlation-test', idempotencyKey: 'submission-test:revision:upload',
     byteLength: 22, sha256: 'a'.repeat(64), contentMd5: 'XUFAKrxLKna5cZ2REBfFkg==', packageName: 'test.zip', expectedStateVersion: 0,
+    artifact: {
+      kind: 'openriamap.chunked-artifact.v1' as const,
+      artifactId: 'artifact-test',
+      byteLength: 22,
+      sha256: 'a'.repeat(64),
+      chunks: [{ index: 0, byteLength: 22, sha256: 'a'.repeat(64) }],
+    },
   };
   const grant = await openriamapReviewSubmissionTransport.requestRevisionUpload(request);
   await openriamapReviewSubmissionTransport.uploadRevision(grant, new Blob(['test']));
