@@ -4269,7 +4269,6 @@ const workflowBridge: WorkflowBridge = {
           {measureDropdownMenu}
         </div>
       ) : null}
-      {measureDropdownPortal}
     </div>
   );
 
@@ -4866,6 +4865,12 @@ const layerManagerDesktopNode = measuringActive ? (
 const rightDockNode = (
   <>
     {launcherNode}
+    {/*
+      The fixed toolbar may deliberately hide the legacy launcher with
+      launcherSlot={() => null}. Keep the desktop portal outside that slot so
+      an externally-triggered mapping menu remains renderable.
+    */}
+    {measureDropdownPortal}
     {layerManagerDesktopNode}
   </>
 );
