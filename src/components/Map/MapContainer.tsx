@@ -544,7 +544,10 @@ useEffect(() => {
     if (!pending || pending.token !== transition.token || pending.target !== transition.target) return;
 
     if (transition.target === 'review') {
-      const session = await openriamapGithubReviewAuth.getSession();
+      // Module admission has a deliberately narrow, fast authentication
+      // boundary.  Role lookup is deferred to the review surfaces that need
+      // it, while Dispatcher-backed operations remain server-authorized.
+      const session = await openriamapGithubReviewAuth.getSession({ includeRoles: false });
       const stillPending = workspaceTransitionCoordinatorRef.current.snapshot().pending;
       if (!stillPending || stillPending.token !== transition.token) return;
       if (session.status !== 'authenticated') {
@@ -573,11 +576,12 @@ useEffect(() => {
   const requestWorkspaceEntry = useCallback(async (target: Exclude<WorkspaceKind, 'runtime'>) => {
     const transition = workspaceTransitionCoordinatorRef.current.request(target);
     if (!transition) return;
-    // Re-clicking an already active fixed entry only focuses/opens its own UI;
-    // it never revives a different workspace or a stale pending intent.
+    // A repeated fixed-entry click belongs to the already-mounted workspace.
+    // It may toggle that workspace's launcher, but must not synthesize a new
+    // open signal (which used to reset/force-open the mapping menu).
     if (transition.token === 0) {
-      if (target === 'mapping') setMeasuringOpenSignal((value) => value + 1);
-      if (target === 'measurement') setMeasurementToolsOpenSignal((value) => value + 1);
+      if (target === 'mapping') measuringModuleRef.current?.toggleLauncherMenu?.();
+      if (target === 'measurement') void measurementToolsRef.current?.toggleLauncher?.();
       return;
     }
     syncWorkspaceCoordinator();
@@ -2426,7 +2430,7 @@ case 'players':
           </div>
           {measuringModuleLoaded ? (
             <Suspense fallback={null}>
-              <LazyMeasurementToolsModule
+              {activeWorkspace === 'measurement' && moduleMode === 'mapping' ? <LazyMeasurementToolsModule
                 ref={measurementToolsRef}
                 mapReady={mapReady}
                 leafletMapRef={leafletMapRef}
@@ -2436,8 +2440,8 @@ case 'players':
                 onBecameActive={() => setMeasuringCloseSignal(v => v + 1)}
                 onRequestOpen={() => requestMeasuringModuleEntry('mtools')}
                 launcherSlot={() => null}
-              />
-              {moduleMode === 'review' ? (reviewModuleLoaded && reviewSession ? <LazyReviewWorkspace
+              /> : null}
+              {activeWorkspace === 'review' && moduleMode === 'review' && reviewModuleLoaded && reviewSession ? <LazyReviewWorkspace
                 key={`review-${workspaceInstanceKey}`}
                 ref={measuringModuleRef}
                 mapReady={mapReady}
@@ -2453,7 +2457,8 @@ case 'players':
                 onReviewSave={handleReviewSave}
                 onReviewExitRequested={closeReviewWorkspace}
                 onReviewPackageUpload={openriamapReviewPackageUploader.uploadPackage}
-              /> : null) : <LazyMappingWorkspace
+              /> : null}
+              {activeWorkspace === 'mapping' && moduleMode === 'mapping' ? <LazyMappingWorkspace
                 key={`mapping-${workspaceInstanceKey}`}
                 ref={measuringModuleRef}
                 mapReady={mapReady}
@@ -2467,7 +2472,7 @@ case 'players':
                 onRequestOpen={() => requestMeasuringModuleEntry('measuring')}
                 launcherAnchorRef={mappingLauncherAnchorRef}
                 onReviewPackageUpload={openriamapReviewPackageUploader.uploadPackage}
-              />}
+              /> : null}
             </Suspense>
           ) : null}
           </LayerControl><ToolIconButton label="收起模式面板" icon={<PanelsTopLeft className="w-5 h-5" />} tone="gray" onClick={() => setModePanelCollapsed(true)} /></div>}

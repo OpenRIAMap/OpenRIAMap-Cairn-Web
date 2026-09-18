@@ -5,8 +5,17 @@ export type ReviewAuthSessionState = {
   message?: string;
 };
 
+/**
+ * Entry admission only needs to establish that the browser has an active
+ * same-origin login session.  Role resolution remains available to every
+ * view that actually presents or performs review operations.
+ */
+export type ReviewAuthSessionOptions = {
+  includeRoles?: boolean;
+};
+
 export interface ReviewAuthPort {
-  getSession(): Promise<ReviewAuthSessionState>;
+  getSession(options?: ReviewAuthSessionOptions): Promise<ReviewAuthSessionState>;
   /** Opens a short-lived provider popup and resolves after the parent session is refreshed. */
   beginLogin(): Promise<void>;
   logout(): Promise<void>;

@@ -65,4 +65,16 @@ test('a second click cannot race an active transition', () => {
   assert.equal(coordinator.snapshot().active, 'mapping');
 });
 
+test('re-clicking an active entry is a local toggle and never starts a transition', () => {
+  const coordinator = new WorkspaceTransitionCoordinator();
+  enter(coordinator, 'mapping');
+  const reClick = coordinator.request('mapping');
+  assert.ok(reClick);
+  assert.equal(reClick.token, 0);
+  assert.equal(reClick.source, 'mapping');
+  assert.equal(coordinator.snapshot().active, 'mapping');
+  assert.equal(coordinator.snapshot().phase, 'idle');
+  assert.equal(coordinator.snapshot().pending, null);
+});
+
 console.log('Workspace transition coordinator test: PASS');

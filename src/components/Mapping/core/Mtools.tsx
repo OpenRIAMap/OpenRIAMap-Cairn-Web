@@ -44,6 +44,8 @@ type MeasurementToolsModuleProps = {
 export type MeasurementToolsHandle = {
   /** Fails closed until the user confirms discarding measurement-only layers. */
   requestCloseAndClear: (actionLabel?: string) => Promise<boolean>;
+  /** Re-clicking the fixed entry closes an empty tool immediately, or asks before discarding work. */
+  toggleLauncher: () => Promise<boolean>;
 };
 
 type MainTab = 'measure' | 'shape' | 'analysis';
@@ -290,10 +292,14 @@ const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToo
     setActive(false);
   };
 
-  useImperativeHandle(ref, () => ({
-    requestCloseAndClear: async (actionLabel = '切换工作区') => {
-      const hasContent = active || layers.length > 0 || radiusModalOpen || pendingMeasureStartRef.current !== null || pendingSquareStartRef.current !== null;
-      if (!hasContent) return true;
+  const requestCloseAndClear = async (actionLabel = '切换工作区') => {
+      const hasUnsavedContent = layers.length > 0 || radiusModalOpen || pendingMeasureStartRef.current !== null || pendingSquareStartRef.current !== null || pendingCircleCenterRef.current !== null;
+      // Being active without any input is a mode, not unsaved work.  Closing
+      // it must be immediate so the fixed toolbar behaves as a true toggle.
+      if (!hasUnsavedContent) {
+        if (active) hardResetAndClose();
+        return true;
+      }
       const confirmed = await requestReviewConfirmation({
         title: '切换前确认',
         message: `${actionLabel}会清除当前测量工具的测线、形状和未完成输入。是否继续？`,
@@ -304,7 +310,11 @@ const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToo
       if (!confirmed) return false;
       hardResetAndClose();
       return true;
-    },
+  };
+
+  useImperativeHandle(ref, () => ({
+    requestCloseAndClear,
+    toggleLauncher: () => requestCloseAndClear('关闭测量工具'),
   }), [active, layers.length, radiusModalOpen]);
 
   // ---------- 图层顺序/显隐同步 ----------

@@ -12,6 +12,13 @@ export default async function handler(req, res) {
   const session = verifySession(cookie, process.env.CAIRN_SESSION_SIGNING_SECRET);
   res.setHeader('Cache-Control', 'no-store');
   if (session) {
+    // Opening the review shell only requires the signed browser session.  Do
+    // not make the launcher wait on the Dispatcher identity round-trip; the
+    // status board and every protected operation still request roles using
+    // the default (includeRoles) path and the server re-authorizes actions.
+    if (req.query?.includeRoles === '0') {
+      return res.status(200).json({ status: 'authenticated', principalId: session.login, roles: [] });
+    }
     const base = process.env.CAIRN_CONTROL_API_BASE;
     const dispatcherSecret = process.env.CAIRN_BROKER_TO_DISPATCHER_SECRET;
     if (!base || !dispatcherSecret) return res.status(200).json({ status: 'authenticated', principalId: session.login, roles: [] });
