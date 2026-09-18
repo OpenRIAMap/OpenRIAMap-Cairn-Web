@@ -1,6 +1,7 @@
 import {
   normalizeReviewAuthSession,
   type ReviewAuthPort,
+  type ReviewAuthSessionOptions,
   type ReviewAuthSessionState,
 } from '@/components/Review/auth';
 
@@ -64,9 +65,12 @@ async function beginPopupLogin(): Promise<void> {
 
 /** RIA-owned bridge for the provider-neutral settings component. */
 export const openriamapGithubReviewAuth: ReviewAuthPort = {
-  async getSession(): Promise<ReviewAuthSessionState> {
+  async getSession(options: ReviewAuthSessionOptions = {}): Promise<ReviewAuthSessionState> {
     try {
-      const { response, body } = await jsonRequest('/api/auth/github/session');
+      const path = options.includeRoles === false
+        ? '/api/auth/github/session?includeRoles=0'
+        : '/api/auth/github/session';
+      const { response, body } = await jsonRequest(path);
       if (response.ok) return normalizeReviewAuthSession(body);
       if (response.status === 401) return { status: 'expired', message: 'GitHub 登录会话已过期，请重新登录。' };
       return { status: 'unavailable', message: message(body, '无法读取 GitHub 登录状态。') };

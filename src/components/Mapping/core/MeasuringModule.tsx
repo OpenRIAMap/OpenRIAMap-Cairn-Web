@@ -215,6 +215,8 @@ export type MeasuringModuleHandle = {
    * 内部会负责：先关闭“临时挂载”，再清除测绘图层并退出测绘。
    */
   requestCloseAndClear: (actionLabel?: string) => Promise<boolean>;
+  /** Toggle only the fixed-entry launcher; it never resets mapping state. */
+  toggleLauncherMenu: () => void;
   /**
    * Replacing an already loaded audit package never exits the audit sequence.
    * It only confirms whether the current package may be replaced; the next
@@ -828,14 +830,7 @@ useEffect(() => {
   setMeasureDropdownOpen(true);
 }, [openSignal]);
 
-const toggleMeasureDropdown = () => {
-  // A dormant mapping editor may be mounted only to provide the external
-  // launcher.  It must never open its menu directly while another workspace
-  // is active; the host coordinates confirmation, cleanup and admission.
-  if (!measuringActive && !isReviewWorkspace && onRequestOpen) {
-    onRequestOpen();
-    return;
-  }
+const toggleMeasureDropdownUi = () => {
   setMeasureDropdownOpen((v) => {
     const next = !v;
     if (next) {
@@ -846,6 +841,16 @@ const toggleMeasureDropdown = () => {
     }
     return next;
   });
+};
+
+const toggleMeasureDropdown = () => {
+  // A dormant mapping editor must never open its menu directly while another
+  // workspace is active; the host coordinates admission first.
+  if (!measuringActive && !isReviewWorkspace && onRequestOpen) {
+    onRequestOpen();
+    return;
+  }
+  toggleMeasureDropdownUi();
 };
 
 const clearCurrentWorkspace = () => {
@@ -934,8 +939,14 @@ useImperativeHandle(ref, () => ({
       const confirmed = await requestExternalClearConfirmation(label, reviewDirtyRef.current ? 'review-dirty' : 'simple');
       return confirmed ? clearCurrentWorkspace() : false;
     }
-    if (!hasMeasuringContent) return true;
+    if (!hasMeasuringContent) {
+      setMeasureDropdownOpen(false);
+      return true;
+    }
     return confirmExitAndClear(label);
+  },
+  toggleLauncherMenu: () => {
+    if (!isReviewWorkspace) toggleMeasureDropdownUi();
   },
   confirmReviewPackageReplacement: async (actionLabel?: string) => {
     if (!isReviewWorkspace || !reviewSession?.packageId) return true;

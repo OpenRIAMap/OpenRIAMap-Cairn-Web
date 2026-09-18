@@ -24,19 +24,34 @@ const environment = {
   CAIRN_REVIEW_AUTOMATION_ENABLED: 'true',
   CAIRN_REVIEW_AUTOMATION_STAGE: 'staging',
   CAIRN_SESSION_SIGNING_SECRET: secret,
+  CAIRN_CONTROL_API_BASE: 'https://dispatcher.example.test',
+  CAIRN_BROKER_TO_DISPATCHER_SECRET: 'dispatcher-test-secret',
   CAIRN_GITHUB_OAUTH_CLIENT_ID: 'test-client',
   CAIRN_GITHUB_OAUTH_CLIENT_SECRET: 'test-client-secret',
   CAIRN_GITHUB_OAUTH_REDIRECT_URI: 'https://cmap.example.test/api/auth/github/callback',
 };
 const original = process.env;
 process.env = { ...process.env, ...environment };
+const fetchBeforeSession = globalThis.fetch;
+let identityCalls = 0;
+globalThis.fetch = async (url) => {
+  if (String(url).includes('/v1/review-intents')) {
+    identityCalls += 1;
+    return { ok: true, json: async () => ({ roles: ['contributor'] }) };
+  }
+  throw new Error(`Unexpected request: ${String(url)}`);
+};
 try {
   const authenticated = response();
-  sessionHandler({ method: 'GET', headers: { cookie: `cairn_review_session=${encodeURIComponent(cookie)}` } }, authenticated);
+  await sessionHandler({ method: 'GET', headers: { cookie: `cairn_review_session=${encodeURIComponent(cookie)}` } }, authenticated);
   assert.equal(authenticated.statusCode, 200);
-  assert.deepEqual(authenticated.payload, { status: 'authenticated', principalId: 'alice', roles: [] });
+  assert.deepEqual(authenticated.payload, { status: 'authenticated', principalId: 'alice', roles: ['contributor'] });
+  const fastAdmission = response();
+  await sessionHandler({ method: 'GET', query: { includeRoles: '0' }, headers: { cookie: `cairn_review_session=${encodeURIComponent(cookie)}` } }, fastAdmission);
+  assert.deepEqual(fastAdmission.payload, { status: 'authenticated', principalId: 'alice', roles: [] });
+  assert.equal(identityCalls, 1, 'fast review admission must not call Dispatcher identity');
   const anonymous = response();
-  sessionHandler({ method: 'GET', headers: {} }, anonymous);
+  await sessionHandler({ method: 'GET', headers: {} }, anonymous);
   assert.deepEqual(anonymous.payload, { status: 'anonymous' });
   const loggedOut = response();
   logoutHandler({ method: 'POST' }, loggedOut);
@@ -72,6 +87,7 @@ try {
     globalThis.fetch = fetchBeforeCallback;
   }
 } finally {
+  globalThis.fetch = fetchBeforeSession;
   process.env = original;
 }
 console.log('Review auth routes: PASS');
