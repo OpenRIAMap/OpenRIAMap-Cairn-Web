@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import AppButton from '@/components/ui/AppButton';
 import type { ReviewAuthPort, ReviewAuthSessionState } from '@/components/Review/auth';
 
@@ -34,6 +34,7 @@ export function ReviewAuthSettingsSection({ auth, title = '登录状态', loginL
   const [session, setSession] = useState<ReviewAuthSessionState>({ status: 'anonymous' });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const sectionRef = useRef<HTMLDivElement | null>(null);
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
@@ -50,10 +51,18 @@ export function ReviewAuthSettingsSection({ auth, title = '登录状态', loginL
     window.addEventListener('ria:review-auth-changed', onAuthChanged);
     return () => window.removeEventListener('ria:review-auth-changed', onAuthChanged);
   }, [refresh]);
+  useEffect(() => {
+    const focus = () => {
+      sectionRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      sectionRef.current?.focus({ preventScroll: true });
+    };
+    window.addEventListener('ria:focus-review-auth-settings', focus);
+    return () => window.removeEventListener('ria:focus-review-auth-settings', focus);
+  }, []);
   const view = presentation(session);
   const isAuthenticated = session.status === 'authenticated';
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-3 space-y-2">
+    <div ref={sectionRef} tabIndex={-1} className="rounded-lg border border-gray-200 bg-white px-3 py-3 space-y-2 outline-none">
       <div className="text-xs font-semibold text-gray-700">{title}</div>
       <div className={`text-[11px] leading-relaxed ${view.tone}`}>{loading ? '正在读取登录状态…' : view.text}</div>
       {isAuthenticated && session.roles?.length ? <div className="text-[11px] text-gray-500">最高权限：{highestRole(session.roles) ?? session.roles.join('、')}</div> : null}

@@ -62,6 +62,8 @@
     "validate:case-template": "node ./scripts/review/validate-case-template-manifest.mjs",
     "test:review-status-board": "tsx ./scripts/review/test-review-status-board.ts",
     "test:review-workspace-contracts": "tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-review-workspace-contracts.ts",
+    "test:workspace-transition-coordinator": "tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-workspace-transition-coordinator.ts",
+    "test:feature-module-contract": "tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-feature-module-contract.ts",
     "test:data-source-selection": "tsx ./scripts/data-source/test-data-source-selection.ts",
     "test:formal-release-reader": "tsx ./scripts/data-source/test-formal-release-reader.ts",
     "test:formal-media-reader": "tsx ./scripts/data-source/test-formal-media-reader.ts",

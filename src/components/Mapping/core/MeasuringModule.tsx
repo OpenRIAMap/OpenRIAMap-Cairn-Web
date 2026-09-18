@@ -168,6 +168,9 @@ export type MeasuringModuleProps = {
   // 可选：将启动按钮插入到外部工具栏
   launcherSlot?: (launcher: React.ReactNode) => React.ReactNode;
 
+  /** The Map host owns cross-workspace admission before a mapping menu opens. */
+  onRequestOpen?: () => void;
+
   /** ReviewEditor supplies this constant only at mount time. */
   reviewWorkspace?: true;
   // ReviewWorkspace passes an immutable package session into its own mounted
@@ -217,6 +220,7 @@ const MappingEditorCore = forwardRef<MeasuringModuleHandle, MeasuringModuleProps
     openSignal,
     onBecameActive,
     launcherSlot,
+    onRequestOpen,
     reviewWorkspace,
     reviewSession = null,
     onReviewDirtyChange,
@@ -229,6 +233,20 @@ const MappingEditorCore = forwardRef<MeasuringModuleHandle, MeasuringModuleProps
   // construction-time capability, never a mutable runtime mode switch.
   const isReviewWorkspace = reviewWorkspace === true;
   const reviewPackageLabel = reviewSession?.packageId ?? '';
+  const [reviewStatusDraft, setReviewStatusDraft] = useState<'pending' | 'approved' | 'rejected' | 'archived'>('pending');
+
+  useEffect(() => {
+    if (!isReviewWorkspace) return;
+    setReviewStatusDraft('pending');
+    const receive = (event: Event) => {
+      const detail = (event as CustomEvent<{ submissionId?: string; state?: 'pending' | 'approved' | 'rejected' | 'archived' }>).detail;
+      const submissionId = reviewSession?.submissionContext?.submissionId ?? reviewPackageLabel;
+      if (!submissionId || detail?.submissionId !== submissionId || !detail.state) return;
+      setReviewStatusDraft(detail.state);
+    };
+    window.addEventListener('cairn-review-status-draft-applied', receive);
+    return () => window.removeEventListener('cairn-review-status-draft-applied', receive);
+  }, [isReviewWorkspace, reviewPackageLabel, reviewSession?.submissionContext?.submissionId]);
 
   // Mapping previews are strictly process-local. A workspace remount (which
   // also occurs when switching to review) must not resurrect any old layer,
@@ -790,6 +808,13 @@ useEffect(() => {
 }, [openSignal]);
 
 const toggleMeasureDropdown = () => {
+  // A dormant mapping editor may be mounted only to provide the external
+  // launcher.  It must never open its menu directly while another workspace
+  // is active; the host coordinates confirmation, cleanup and admission.
+  if (!measuringActive && !isReviewWorkspace && onRequestOpen) {
+    onRequestOpen();
+    return;
+  }
   setMeasureDropdownOpen((v) => {
     const next = !v;
     if (next) {
@@ -4404,6 +4429,23 @@ const workflowBridge: WorkflowBridge = {
     }
   };
 
+  const requestReviewStatusDraft = (
+    state: 'pending' | 'approved' | 'rejected' | 'archived',
+    decisionAction: 'approve' | 'reject' | 'request-changes' | 'archive' | 'reopen',
+  ) => {
+    const submissionId = reviewSession?.submissionContext?.submissionId ?? reviewPackageLabel;
+    if (!submissionId) {
+      setReviewNotice('请先从审核包详情下载并加载一个审核包，再设置审核状态。');
+      return;
+    }
+    // ReviewModule owns the authoritative in-session draft and renders the
+    // confirmation/reason input above every draggable panel.  This workspace
+    // only requests a local lamp change; it never writes a remote state.
+    window.dispatchEvent(new CustomEvent('cairn-review-status-draft', {
+      detail: { submissionId, state, decisionAction },
+    }));
+  };
+
   const layerPanelCard = (
   <AppCard className={`w-96 overflow-hidden border ${isReviewWorkspace ? 'flex h-[70vh] max-h-[70vh] flex-col' : ''}`} style={{ maxHeight: '70vh' }}>
       <div ref={layerMgrCardRef} className={isReviewWorkspace ? 'flex min-h-0 flex-1 flex-col' : undefined}>
@@ -4439,19 +4481,25 @@ const workflowBridge: WorkflowBridge = {
 
         return (
           <>
-            {/* 状态灯属于审核包详情，避免工作区和详情页出现两套状态入口。 */}
+            {/* Both review surfaces use one in-session status draft.  The
+                workspace restores the historical 3x3 command layout while
+                the package detail remains an equivalent auxiliary entry. */}
             {isReviewWorkspace ? (
-              <div className="space-y-2 px-4 py-2 border-b">
+              <div className="grid grid-cols-3 gap-2 px-4 py-3 border-b">
                 <AppButton
                   type="button"
-                  className={`w-full px-2 py-1 text-sm rounded border ${reviewActionDirty && !reviewSaveInProgress ? 'bg-blue-600 text-white hover:bg-blue-700 border-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'}`}
+                  className={`px-2 py-1 text-sm rounded border ${reviewActionDirty && !reviewSaveInProgress ? 'bg-blue-600 text-white hover:bg-blue-700 border-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200'}`}
                   title={reviewActionDirty ? (reviewSaveInProgress ? '正在保存新的审核版本。' : '保存当前审核工作区修改为新的远端审核版本。') : '当前没有审核修改，保存保持锁定。'}
                   disabled={!reviewActionDirty || reviewSaveInProgress}
                   onClick={handleReviewSaveAction}
                 >
                   {reviewSaveInProgress ? '保存中…' : '保存'}
                 </AppButton>
-                <p className="text-xs leading-5 text-slate-500">通过、打回、要求修改、归档和恢复待审均在关闭本工作区后，于审核包详情中设置并保存。</p>
+                <AppButton type="button" aria-pressed={reviewStatusDraft === 'approved'} className={`px-2 py-1 text-sm rounded border bg-green-600 text-white border-green-700 hover:bg-green-700 ${reviewStatusDraft === 'approved' ? 'ring-2 ring-green-300 ring-offset-1' : ''}`} onClick={() => requestReviewStatusDraft('approved', 'approve')}>通过</AppButton>
+                <AppButton type="button" aria-pressed={reviewStatusDraft === 'rejected'} className={`px-2 py-1 text-sm rounded border bg-rose-600 text-white border-rose-700 hover:bg-rose-700 ${reviewStatusDraft === 'rejected' ? 'ring-2 ring-rose-300 ring-offset-1' : ''}`} onClick={() => requestReviewStatusDraft('rejected', 'reject')}>打回</AppButton>
+                <AppButton type="button" aria-pressed={reviewStatusDraft === 'archived'} className={`px-2 py-1 text-sm rounded border bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 ${reviewStatusDraft === 'archived' ? 'ring-2 ring-slate-300 ring-offset-1' : ''}`} onClick={() => requestReviewStatusDraft('archived', 'archive')}>归档</AppButton>
+                <AppButton type="button" aria-pressed={reviewStatusDraft === 'rejected'} className={`px-2 py-1 text-sm rounded border bg-red-50 text-red-700 border-red-200 hover:bg-red-100 ${reviewStatusDraft === 'rejected' ? 'ring-2 ring-rose-300 ring-offset-1' : ''}`} onClick={() => requestReviewStatusDraft('rejected', 'request-changes')}>要求修改</AppButton>
+                <AppButton type="button" aria-pressed={reviewStatusDraft === 'pending'} className={`px-2 py-1 text-sm rounded border bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100 ${reviewStatusDraft === 'pending' ? 'ring-2 ring-amber-300 ring-offset-1' : ''}`} onClick={() => requestReviewStatusDraft('pending', 'reopen')}>恢复待审</AppButton>
 
                 <AppButton
                   type="button"
