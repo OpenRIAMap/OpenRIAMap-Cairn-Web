@@ -9,12 +9,18 @@ import { ReviewStatusBoardPanel, type ReviewStatusDraftSignal } from './ReviewSt
 import type { ReviewPackagePrecheckReport, ReviewPackageRevision, ReviewSubmissionSnapshot, ReviewWorkspaceLoadProgress } from './contracts';
 import type { ParsedRelayPackage } from '@/components/Mapping/core/relayPackageParser';
 import type { ReviewInboxItem } from './reviewStatusTypes';
+import type { ReviewPackageSession } from './reviewPackageSession';
 
 type ReviewModuleProps = {
   activeWorldId: string;
-  onClose: () => void;
+  /** Resolves false when the user keeps the active review workspace open. */
+  onClose: () => Promise<boolean> | boolean;
   /** Returns false when the active workspace teardown was cancelled. */
   onLoadPackage: (item: ReviewInboxItem) => Promise<boolean> | boolean;
+  /** The loaded editor session, if this detail panel currently owns one. */
+  activeWorkspaceSession: ReviewPackageSession | null;
+  /** Closes the bound editor with its standard clean/dirty confirmation. */
+  onCloseActiveWorkspace: () => Promise<boolean> | boolean;
 };
 
 async function sha256Hex(blob: Blob): Promise<string> {
@@ -148,7 +154,7 @@ async function localPrecheck(submission: ReviewSubmissionSnapshot, revision: Rev
  * and map-workspace injection. It deliberately owns no queue UI or generic
  * review-state semantics.
  */
-export default function ReviewModule({ activeWorldId, onClose, onLoadPackage }: ReviewModuleProps) {
+export default function ReviewModule({ activeWorldId, onClose, onLoadPackage, activeWorkspaceSession, onCloseActiveWorkspace }: ReviewModuleProps) {
   const adapter = useMemo(() => createRiaReviewSubmissionAdapter(), []);
   const cacheRef = useRef(new Map<string, CachedRevision>());
   const [cachedKeys, setCachedKeys] = useState<ReadonlySet<string>>(() => new Set());
@@ -252,7 +258,15 @@ export default function ReviewModule({ activeWorldId, onClose, onLoadPackage }: 
     onLocalPrecheck={runLocalPrecheck}
     isRevisionCached={(input) => cachedKeys.has(revisionCacheKey(input.submission, input.revision))}
     onClearRevisionCache={clearRevisionCache}
-    onClose={() => { clearRevisionCache(); onClose(); }}
+    activeWorkspaceSession={activeWorkspaceSession}
+    onCloseActiveWorkspace={onCloseActiveWorkspace}
+    onClose={() => {
+      void (async () => {
+        // A cancelled dirty-workspace confirmation must leave its verified
+        // download and its cache indicator intact.
+        if (await onClose()) clearRevisionCache();
+      })();
+    }}
     subscribeToStatusDraft={subscribeToStatusDraft}
       subscribeToSubmissionUpload={subscribeToSubmissionUpload}
     />

@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ChangeEvent } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ChangeEvent, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -171,6 +171,13 @@ export type MeasuringModuleProps = {
   /** The Map host owns cross-workspace admission before a mapping menu opens. */
   onRequestOpen?: () => void;
 
+  /**
+   * The fixed desktop mapping button is the public launcher after the old
+   * standalone launcher was intentionally hidden. Its element still anchors
+   * the mapping menu portal.
+   */
+  launcherAnchorRef?: RefObject<HTMLElement | null>;
+
   /** ReviewEditor supplies this constant only at mount time. */
   reviewWorkspace?: true;
   // ReviewWorkspace passes an immutable package session into its own mounted
@@ -208,6 +215,12 @@ export type MeasuringModuleHandle = {
    * 内部会负责：先关闭“临时挂载”，再清除测绘图层并退出测绘。
    */
   requestCloseAndClear: (actionLabel?: string) => Promise<boolean>;
+  /**
+   * Replacing an already loaded audit package never exits the audit sequence.
+   * It only confirms whether the current package may be replaced; the next
+   * package injection owns the actual layer reset.
+   */
+  confirmReviewPackageReplacement: (actionLabel?: string) => Promise<boolean>;
 };
 
 const MappingEditorCore = forwardRef<MeasuringModuleHandle, MeasuringModuleProps>((props, ref) => {
@@ -221,6 +234,7 @@ const MappingEditorCore = forwardRef<MeasuringModuleHandle, MeasuringModuleProps
     onBecameActive,
     launcherSlot,
     onRequestOpen,
+    launcherAnchorRef,
     reviewWorkspace,
     reviewSession = null,
     onReviewDirtyChange,
@@ -297,9 +311,11 @@ const [tempPoints, setTempPoints] = useState<Array<{ x: number; z: number; y?: n
 useEffect(() => {
   if (typeof window !== 'undefined') {
     (window as any).__riaMeasuringActive = measuringActive;
-    window.dispatchEvent(new CustomEvent('ria:measuringActiveChanged', { detail: { active: measuringActive, source: 'MeasuringModule' } }));
+    window.dispatchEvent(new CustomEvent('ria:measuringActiveChanged', {
+      detail: { active: measuringActive, source: isReviewWorkspace ? 'ReviewWorkspace' : 'MeasuringModule' },
+    }));
   }
-}, [measuringActive]);
+}, [isReviewWorkspace, measuringActive]);
 
 // 对外广播“要素交互抑制”状态。抑制只在实际绘图添点状态下生效；已有信息卡不会被强制关闭。
 useEffect(() => {
@@ -458,22 +474,26 @@ const [endMeasuringWarnOpen, setEndMeasuringWarnOpen] = useState(false);
 // Requests initiated by MapContainer must be awaitable: a native confirm would
 // synchronously tear down an unrelated workspace and could sit below a panel.
 // This portal-backed confirmation owns the highest interaction layer.
-const [externalClearConfirmLabel, setExternalClearConfirmLabel] = useState<string | null>(null);
+type ExternalClearConfirmation = {
+  label: string;
+  mode: 'simple' | 'review-dirty';
+};
+const [externalClearConfirmation, setExternalClearConfirmation] = useState<ExternalClearConfirmation | null>(null);
 const externalClearConfirmResolverRef = useRef<((confirmed: boolean) => void) | null>(null);
 
-const requestExternalClearConfirmation = (label: string) => new Promise<boolean>((resolve) => {
+const requestExternalClearConfirmation = (label: string, mode: ExternalClearConfirmation['mode'] = 'simple') => new Promise<boolean>((resolve) => {
   if (externalClearConfirmResolverRef.current) {
     resolve(false);
     return;
   }
   externalClearConfirmResolverRef.current = resolve;
-  setExternalClearConfirmLabel(label);
+  setExternalClearConfirmation({ label, mode });
 });
 
 const resolveExternalClearConfirmation = (confirmed: boolean) => {
   const resolve = externalClearConfirmResolverRef.current;
   externalClearConfirmResolverRef.current = null;
-  setExternalClearConfirmLabel(null);
+  setExternalClearConfirmation(null);
   resolve?.(confirmed);
 };
 
@@ -773,7 +793,8 @@ useEffect(() => {
 }, []);
 
 const updateMeasureDropdownRect = () => {
-  const rect = measureLauncherRef.current?.getBoundingClientRect();
+  const rect = launcherAnchorRef?.current?.getBoundingClientRect()
+    ?? measureLauncherRef.current?.getBoundingClientRect();
   if (!rect) return;
   const width = 176;
   const margin = 8;
@@ -908,12 +929,18 @@ useImperativeHandle(ref, () => ({
       tempPoints.length > 0 ||
       tempMountAllActive;
 
-    if (!hasMeasuringContent && !(isReviewWorkspace && reviewDirtyRef.current)) return true;
-    if (isReviewWorkspace && reviewDirtyRef.current) {
-      const confirmed = await requestExternalClearConfirmation(label);
+    if (isReviewWorkspace) {
+      if (!hasMeasuringContent && !reviewSession?.packageId && !reviewDirtyRef.current) return true;
+      const confirmed = await requestExternalClearConfirmation(label, reviewDirtyRef.current ? 'review-dirty' : 'simple');
       return confirmed ? clearCurrentWorkspace() : false;
     }
+    if (!hasMeasuringContent) return true;
     return confirmExitAndClear(label);
+  },
+  confirmReviewPackageReplacement: async (actionLabel?: string) => {
+    if (!isReviewWorkspace || !reviewSession?.packageId) return true;
+    const label = (actionLabel ?? '切换审核包').trim() || '切换审核包';
+    return requestExternalClearConfirmation(label, reviewDirtyRef.current ? 'review-dirty' : 'simple');
   },
 }));
 
@@ -1028,18 +1055,13 @@ const endMeasuringFromMenu = () => {
 
   const closeMeasuringUI = () => {
     if (isReviewWorkspace) {
-      // The layer-manager close button leaves only the currently loaded review
-      // workspace.  It must not close the surrounding review sequence; that
-      // sequence owns the package detail and status-lamp workflow.
-      if (reviewDirtyRef.current) {
-        void (async () => {
-          const confirmed = await requestExternalClearConfirmation('关闭审核图层管理');
-          if (confirmed && clearCurrentWorkspace()) onReviewExitRequested?.();
-        })();
-        return;
-      }
-      clearCurrentWorkspace();
-      onReviewExitRequested?.();
+      // The detail panel owns the loaded package. Closing its bound layer
+      // manager must always be explicit: a dirty package offers save/discard;
+      // a clean package asks for a simple close confirmation.
+      void (async () => {
+        const confirmed = await requestExternalClearConfirmation('关闭审核图层管理', reviewDirtyRef.current ? 'review-dirty' : 'simple');
+        if (confirmed && clearCurrentWorkspace()) onReviewExitRequested?.();
+      })();
       return;
     }
   // 右上角 X：也视同“退出测绘并清理”，必须二次确认
@@ -6124,16 +6146,18 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
   </div>
 )}
 
-<BlockingFullscreenModal open={externalClearConfirmLabel !== null} onBackdropClick={() => resolveExternalClearConfirmation(false)}>
+<BlockingFullscreenModal open={externalClearConfirmation !== null} onBackdropClick={() => resolveExternalClearConfirmation(false)}>
   <AppCard className="w-[440px] max-w-[92vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-label="清理测绘工作区确认">
     <div className="border-b border-slate-200 px-5 py-4 text-lg font-bold text-slate-900">切换前确认</div>
     <div className="px-5 py-4 text-sm leading-6 text-slate-700">
-      {externalClearConfirmLabel}会清除当前{isReviewWorkspace ? '审核' : '测绘'}工作区的图层、删除标记、图片绑定与未完成编辑，且本次浏览器会话不会保留草稿。是否继续？
+      {externalClearConfirmation?.mode === 'review-dirty'
+        ? `${externalClearConfirmation.label}会清除当前审核工作区的图层、删除标记、图片绑定与未保存编辑。可先保存为新的审核版本，或放弃本次编辑后继续。`
+        : `${externalClearConfirmation?.label ?? '此操作'}会关闭当前${isReviewWorkspace ? '审核' : '测绘'}工作区并清除其临时图层、删除标记和图片绑定。当前没有未保存编辑。是否继续？`}
     </div>
     <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-3">
-      <AppButton type="button" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" onClick={() => resolveExternalClearConfirmation(false)}>继续编辑</AppButton>
-      {isReviewWorkspace ? <AppButton type="button" disabled={reviewSaveInProgress} className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300" onClick={() => { void (async () => { if (await handleReviewSaveAction()) resolveExternalClearConfirmation(true); })(); }}>{reviewSaveInProgress ? '保存中…' : '保存新版本并继续'}</AppButton> : null}
-      <AppButton type="button" className="rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700" onClick={() => resolveExternalClearConfirmation(true)}>放弃编辑并继续</AppButton>
+      <AppButton type="button" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" onClick={() => resolveExternalClearConfirmation(false)}>{externalClearConfirmation?.mode === 'review-dirty' ? '继续编辑' : '取消'}</AppButton>
+      {externalClearConfirmation?.mode === 'review-dirty' ? <AppButton type="button" disabled={reviewSaveInProgress} className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300" onClick={() => { void (async () => { if (await handleReviewSaveAction()) resolveExternalClearConfirmation(true); })(); }}>{reviewSaveInProgress ? '保存中…' : '保存新版本并继续'}</AppButton> : null}
+      <AppButton type="button" className="rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700" onClick={() => resolveExternalClearConfirmation(true)}>{externalClearConfirmation?.mode === 'review-dirty' ? '放弃编辑并继续' : '确认切换'}</AppButton>
     </div>
   </AppCard>
 </BlockingFullscreenModal>
