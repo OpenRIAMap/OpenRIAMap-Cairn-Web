@@ -238,6 +238,7 @@ function MapContainer() {
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const measuringModuleRef = useRef<MeasuringModuleHandle | null>(null);
   const measurementToolsRef = useRef<MeasurementToolsHandle | null>(null);
+  const mappingLauncherAnchorRef = useRef<HTMLDivElement | null>(null);
   const workspaceTransitionCoordinatorRef = useRef(new WorkspaceTransitionCoordinator());
   const [mapReady, setMapReady] = useState(false);
   const initialShareParseRef = useRef(consumeFeatureShareTargetFromLocation());
@@ -456,6 +457,14 @@ useEffect(() => {
       if (!active) reportWorkspaceInactive('measurement');
       return;
     }
+    if (source === 'ReviewWorkspace') {
+      // Review-layer manager closure is local to a loaded package. Its owner
+      // explicitly decides whether the review sequence stays open, changes
+      // workspace, or exits; an internal Leaflet cleanup must not demote the
+      // entire review module to runtime.
+      measuringModuleActiveRef.current = active;
+      return;
+    }
     if (source === 'MeasuringModule') {
       measuringModuleActiveRef.current = active;
       if (!active) {
@@ -584,8 +593,10 @@ useEffect(() => {
         return;
       }
       if (!workspaceTransitionCoordinatorRef.current.confirmSourceCleared(transition.token)) return;
+      // requestCloseAndClear has already disposed the source instance.  Do
+      // not send a second close signal here: for review it can race the new
+      // package injection and briefly remount the ordinary mapping workspace.
       if (transition.source === 'measurement') setMeasureToolsCloseSignal((value) => value + 1);
-      else setMeasuringCloseSignal((value) => value + 1);
       if (transition.source === 'review') clearReviewWorkspaceState();
       // The source is now fully discarded.  Keep the target unmounted while
       // its code and identity admission are resolved.
@@ -621,14 +632,14 @@ useEffect(() => {
   }, [requestWorkspaceEntry]);
 
   const closeReviewModule = useCallback(async () => {
-    if (activeWorkspace !== 'review') return;
+    if (activeWorkspace !== 'review') return true;
     const ok = await (measuringModuleRef.current?.requestCloseAndClear?.('关闭则为退出审核模块') ?? Promise.resolve(true));
-    if (!ok) return;
-    setMeasuringCloseSignal((value) => value + 1);
+    if (!ok) return false;
     clearReviewWorkspaceState();
     setWorkspaceInstanceKey((value) => value + 1);
     workspaceTransitionCoordinatorRef.current.reportInactive('review');
     syncWorkspaceCoordinator();
+    return true;
   }, [activeWorkspace, clearReviewWorkspaceState, syncWorkspaceCoordinator]);
 
   // Closing the layer manager must not close the surrounding review sequence:
@@ -638,6 +649,18 @@ useEffect(() => {
     setWorkspaceInstanceKey((value) => value + 1);
   }, [clearReviewWorkspaceState]);
 
+  // The package-detail panel is the lifecycle owner of a loaded review
+  // workspace.  Closing that upstream panel therefore asks the editor to
+  // perform its normal (simple/dirty) teardown before its cache is released.
+  const closeBoundReviewWorkspace = useCallback(async () => {
+    if (!reviewSession) return true;
+    const closed = await (measuringModuleRef.current?.requestCloseAndClear?.('关闭审核包详情') ?? Promise.resolve(true));
+    if (!closed) return false;
+    clearReviewWorkspaceState();
+    setWorkspaceInstanceKey((value) => value + 1);
+    return true;
+  }, [clearReviewWorkspaceState, reviewSession]);
+
   useEffect(() => {
     const requestExit = () => closeReviewModule();
     window.addEventListener('ria:reviewExitRequested', requestExit);
@@ -646,10 +669,12 @@ useEffect(() => {
 
   const loadReviewPackageIntoWorkspace = useCallback(async (item: ReviewInboxItem) => {
     if (activeWorkspace !== 'review' || !reviewModuleLoaded) return false;
-    const ok = await (measuringModuleRef.current?.requestCloseAndClear?.('切换审核包') ?? Promise.resolve(true));
+    // Replacing a package must keep the review editor mounted.  Its own
+    // package-injection path atomically clears old layers after this
+    // confirmation; closing/re-keying it here was the cause of the review
+    // panel disappearing and a MappingWorkspace appearing in its place.
+    const ok = await (measuringModuleRef.current?.confirmReviewPackageReplacement?.('切换审核包') ?? Promise.resolve(true));
     if (!ok) return false;
-    setMeasuringCloseSignal((value) => value + 1);
-    setWorkspaceInstanceKey((value) => value + 1);
     setReviewSession(createReviewPackageSession(item));
     setReviewWorkspaceDirty(false);
     setPendingReviewPackage(item);
@@ -1910,6 +1935,8 @@ case 'players':
             activeWorldId={currentWorld}
             onClose={closeReviewModule}
             onLoadPackage={loadReviewPackageIntoWorkspace}
+            activeWorkspaceSession={reviewSession}
+            onCloseActiveWorkspace={closeBoundReviewWorkspace}
           />
         </Suspense>
       )}
@@ -2379,7 +2406,7 @@ case 'players':
               onClick={() => requestMeasuringModuleEntry('mtools')}
             />
           </div>
-          <div className="hidden sm:block">
+          <div ref={mappingLauncherAnchorRef} className="hidden sm:block">
             <ToolIconButton
               label="测绘"
               icon={<Pencil className="w-5 h-5" />}
@@ -2410,7 +2437,7 @@ case 'players':
                 onRequestOpen={() => requestMeasuringModuleEntry('mtools')}
                 launcherSlot={() => null}
               />
-              {moduleMode === 'review' && reviewModuleLoaded ? <LazyReviewWorkspace
+              {moduleMode === 'review' ? (reviewModuleLoaded && reviewSession ? <LazyReviewWorkspace
                 key={`review-${workspaceInstanceKey}`}
                 ref={measuringModuleRef}
                 mapReady={mapReady}
@@ -2426,7 +2453,7 @@ case 'players':
                 onReviewSave={handleReviewSave}
                 onReviewExitRequested={closeReviewWorkspace}
                 onReviewPackageUpload={openriamapReviewPackageUploader.uploadPackage}
-              /> : <LazyMappingWorkspace
+              /> : null) : <LazyMappingWorkspace
                 key={`mapping-${workspaceInstanceKey}`}
                 ref={measuringModuleRef}
                 mapReady={mapReady}
@@ -2438,6 +2465,7 @@ case 'players':
                 onBecameActive={() => setMeasureToolsCloseSignal((value) => value + 1)}
                 launcherSlot={() => null}
                 onRequestOpen={() => requestMeasuringModuleEntry('measuring')}
+                launcherAnchorRef={mappingLauncherAnchorRef}
                 onReviewPackageUpload={openriamapReviewPackageUploader.uploadPackage}
               />}
             </Suspense>

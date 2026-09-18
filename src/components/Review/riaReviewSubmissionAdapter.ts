@@ -150,7 +150,10 @@ export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = 
     dispatchSubmission: (request: ReviewSubmissionRequest) => requestControl<ReviewSubmissionResult>(fetcher, { operation: request.action, request }),
     precheckSubmission: async (request: ReviewSubmissionRequest) => normalizePackagePrecheck(await requestControl<RiaPrecheckResponse>(fetcher, { operation: 'precheck', request }), request),
     getReleaseFeed: async (_actor: ReviewAuthorizationContext, limit = 10) => {
-      const result = await requestControl<{ items: ReviewReleaseFeedItem[] }>(fetcher, { operation: 'release-feed', limit });
+      // Dispatcher deliberately admits 1..10. Clamp at the Web boundary so a
+      // caller can never turn recovery UI into a feed-limit server error.
+      const normalizedLimit = Number.isSafeInteger(limit) ? Math.min(10, Math.max(1, limit)) : 10;
+      const result = await requestControl<{ items: ReviewReleaseFeedItem[] }>(fetcher, { operation: 'release-feed', limit: normalizedLimit });
       return result.items;
     },
     getReleaseProgress: (releaseId: string, _actor: ReviewAuthorizationContext) => requestControl<ReviewReleaseProgress>(fetcher, { operation: 'release-progress', releaseId }),

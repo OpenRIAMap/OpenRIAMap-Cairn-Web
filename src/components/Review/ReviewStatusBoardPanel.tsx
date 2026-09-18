@@ -4,6 +4,7 @@ import { Archive, CheckCircle2, ClipboardCheck, FileDown, FileText, RefreshCw, R
 import AppButton from '@/components/ui/AppButton';
 import { DraggablePanel } from '@/components/DraggablePanel/DraggablePanel';
 import { REVIEW_LAYER } from './reviewLayering';
+import type { ReviewPackageSession } from './reviewPackageSession';
 import type { ReviewAuthPort } from './auth';
 import {
   createIdleReviewReleaseGate,
@@ -61,6 +62,10 @@ export type ReviewStatusBoardPanelProps = {
   onLocalPrecheck(input: { submission: ReviewSubmissionSnapshot; revision: ReviewPackageRevision }): Promise<ReviewPackagePrecheckReport> | ReviewPackagePrecheckReport;
   isRevisionCached(input: { submission: ReviewSubmissionSnapshot; revision: ReviewPackageRevision }): boolean;
   onClearRevisionCache?(input?: { submission: ReviewSubmissionSnapshot; revision: ReviewPackageRevision }): void;
+  /** A loaded editor is owned by this detail panel and cannot be detached. */
+  activeWorkspaceSession?: ReviewPackageSession | null;
+  /** Host-managed editor teardown, including the clean/dirty switch prompt. */
+  onCloseActiveWorkspace?: () => Promise<boolean> | boolean;
   onClose: () => void;
   subscribeToStatusDraft?: (listener: (signal: ReviewStatusDraftSignal) => void) => () => void;
   subscribeToSubmissionUpload?: (listener: (submissionId?: string) => void) => () => void;
@@ -188,7 +193,7 @@ function progressText(progress: ReviewWorkspaceLoadProgress) {
   return `${progress.message} ${Math.min(100, Math.round((progress.completedBytes / progress.totalBytes) * 100))}%`;
 }
 
-export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl, onDownloadRevision, onLoadRevision, onLocalPrecheck, isRevisionCached, onClearRevisionCache, onClose, subscribeToStatusDraft, subscribeToSubmissionUpload }: ReviewStatusBoardPanelProps) {
+export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl, onDownloadRevision, onLoadRevision, onLocalPrecheck, isRevisionCached, onClearRevisionCache, activeWorkspaceSession, onCloseActiveWorkspace, onClose, subscribeToStatusDraft, subscribeToSubmissionUpload }: ReviewStatusBoardPanelProps) {
   const [actor, setActor] = useState<ReviewAuthorizationContext>({ principalId: 'anonymous', roles: [] });
   const [submissions, setSubmissions] = useState<ReviewSubmissionSnapshot[]>([]);
   const [board, setBoard] = useState<ReviewStatusBoardSnapshot | null>(null);
@@ -204,6 +209,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   const [releaseGate, setReleaseGate] = useState<ReviewReleaseGateSnapshot | null>(null);
   const [activeReleaseId, setActiveReleaseId] = useState<string | null>(null);
   const [releaseProgress, setReleaseProgress] = useState<ReviewReleaseProgress | null>(null);
+  const [releaseRecoveryEpoch, setReleaseRecoveryEpoch] = useState(0);
   const [loadProgress, setLoadProgress] = useState<ReviewWorkspaceLoadProgress | null>(null);
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingReviewConfirmation | null>(null);
   const [confirmationReason, setConfirmationReason] = useState('');
@@ -214,12 +220,49 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   const revision = detail?.revisions.find((candidate) => candidate.revisionId === revisionId)
     ?? detail?.revisions.find((candidate) => candidate.revisionId === detail.currentRevisionId)
     ?? null;
+  const activeWorkspaceSubmissionId = activeWorkspaceSession?.submissionContext?.submissionId ?? activeWorkspaceSession?.packageId ?? null;
+  const activeWorkspaceRevisionId = activeWorkspaceSession?.submissionContext?.revisionId ?? null;
+  const detailOwnsActiveWorkspace = Boolean(detail && activeWorkspaceSubmissionId === detail.submissionId);
   const canEditDetailLamp = Boolean(detail && revision && !isHistoricalArchiveCandidate(detail, detailEntry));
   const revisionCached = Boolean(detail && revision && isRevisionCached({ submission: detail, revision }));
   const selectedEntries = useMemo(() => draft.filter((entry) => selectedIds.has(entry.submissionId) && !submissions.some((item) => item.submissionId === entry.submissionId && isHistoricalArchiveCandidate(item, entry))), [draft, selectedIds, submissions]);
   const historicalArchiveCandidates = useMemo(() => submissions.filter((submission) => isHistoricalArchiveCandidate(submission, draft.find((entry) => entry.submissionId === submission.submissionId))), [draft, submissions]);
   const dirty = board ? isReviewStatusBoardDirty({ baseBoardVersion: board.boardVersion, entries: draft }, board) : false;
   const publishReady = releaseReport?.decision === 'ready' || releaseReport?.decision === 'warning-confirmation-required';
+
+  const selectDetail = useCallback((submission: ReviewSubmissionSnapshot) => {
+    if (activeWorkspaceSubmissionId && activeWorkspaceSubmissionId !== submission.submissionId) {
+      setMessage('当前审核图层管理已绑定另一个审核包。请先关闭该审核包详情（会同时关闭图层管理）后再切换。');
+      return;
+    }
+    // The active package owns its cached verified artifact. Re-selecting its
+    // card must focus the detail, never discard that artifact behind the editor.
+    if (!activeWorkspaceSubmissionId) onClearRevisionCache?.();
+    setDetailId(submission.submissionId);
+    setRevisionId(activeWorkspaceSubmissionId === submission.submissionId
+      ? (activeWorkspaceRevisionId ?? submission.currentRevisionId)
+      : submission.currentRevisionId);
+    setPackageReport(null);
+  }, [activeWorkspaceRevisionId, activeWorkspaceSubmissionId, onClearRevisionCache]);
+
+  const closeDetail = useCallback(async () => {
+    if (detailOwnsActiveWorkspace) {
+      setBusy('close-workspace');
+      try {
+        const closed = await (onCloseActiveWorkspace?.() ?? Promise.resolve(true));
+        if (!closed) return;
+      } catch (error) {
+        setMessage(describeError(error));
+        return;
+      } finally {
+        setBusy(null);
+      }
+    }
+    onClearRevisionCache?.();
+    setDetailId(null);
+    setRevisionId(null);
+    setPackageReport(null);
+  }, [detailOwnsActiveWorkspace, onClearRevisionCache, onCloseActiveWorkspace]);
 
   const refreshList = useCallback(async ({ preserveMessage = false }: { preserveMessage?: boolean } = {}) => {
     setBusy('refresh');
@@ -235,6 +278,9 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       const remoteById = new Map(remoteBoard.entries.map((entry) => [entry.submissionId, entry]));
       const hydrated = items.map((item) => createEntry(item, remoteById.get(item.submissionId)));
       setActor(currentActor);
+      // Recovery belongs to the server.  A manual refresh is an explicit new
+      // recovery attempt even when the authenticated principal is unchanged.
+      setReleaseRecoveryEpoch((value) => value + 1);
       setSubmissions(items);
       setBoard({ ...remoteBoard, entries: hydrated });
       setDraft(hydrated);
@@ -585,10 +631,11 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   // state or a browser-storage key.
   useEffect(() => {
     let cancelled = false;
-    if (actor.principalId === 'anonymous' || recoveredReleaseActorRef.current === actor.principalId || !submissionAdapter.getReleaseFeed) return undefined;
-    recoveredReleaseActorRef.current = actor.principalId;
+    const recoveryKey = `${actor.principalId}:${releaseRecoveryEpoch}`;
+    if (actor.principalId === 'anonymous' || recoveredReleaseActorRef.current === recoveryKey || !submissionAdapter.getReleaseFeed) return undefined;
+    recoveredReleaseActorRef.current = recoveryKey;
     void Promise.all([
-      submissionAdapter.getReleaseFeed(actor, 20),
+      submissionAdapter.getReleaseFeed(actor, 10),
       releaseControl.getReleaseGate(actor),
     ]).then(([items, gateValue]) => {
       if (cancelled) return;
@@ -602,9 +649,13 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
         setActiveReleaseId(recovered.releaseId);
         setReleaseProgress({ releaseId: recovered.releaseId, state: recovered.state });
       }
-    }).catch((error) => { if (!cancelled) setMessage(describeError(error)); });
+    }).catch((error) => {
+      if (cancelled) return;
+      recoveredReleaseActorRef.current = null;
+      setMessage(describeError(error));
+    });
     return () => { cancelled = true; };
-  }, [actor, releaseControl, submissionAdapter]);
+  }, [actor, releaseControl, releaseRecoveryEpoch, submissionAdapter]);
   useEffect(() => subscribeToStatusDraft?.((signal) => updateDraft(signal.submissionId, signal.state, signal.decisionAction, signal.reason)), [subscribeToStatusDraft, updateDraft]);
   useEffect(() => subscribeToSubmissionUpload?.(() => { void refreshList(); }), [refreshList, subscribeToSubmissionUpload]);
   useEffect(() => {
@@ -637,7 +688,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
             const shownState = displayState(submission, entry);
             const historical = isHistoricalArchiveCandidate(submission, entry);
             const checked = historical ? historicalArchiveSelectedIds.has(submission.submissionId) : selectedIds.has(submission.submissionId);
-            return <button key={submission.submissionId} type="button" onClick={() => { onClearRevisionCache?.(); setDetailId(submission.submissionId); setRevisionId(submission.currentRevisionId); setPackageReport(null); }} className={`w-full rounded-2xl border p-3 text-left ${historical ? 'border-amber-300 bg-amber-50 hover:border-amber-500' : 'border-blue-200 bg-blue-50 hover:border-blue-400'}`}><div className="flex gap-3"><input aria-label={`${historical ? '选择历史归档整理' : '选择发布'} ${submission.packageName}`} type="checkbox" checked={checked} onClick={(event) => event.stopPropagation()} onChange={() => {
+            return <button key={submission.submissionId} type="button" onClick={() => selectDetail(submission)} className={`w-full rounded-2xl border p-3 text-left ${historical ? 'border-amber-300 bg-amber-50 hover:border-amber-500' : 'border-blue-200 bg-blue-50 hover:border-blue-400'}`}><div className="flex gap-3"><input aria-label={`${historical ? '选择历史归档整理' : '选择发布'} ${submission.packageName}`} type="checkbox" checked={checked} onClick={(event) => event.stopPropagation()} onChange={() => {
               if (historical) setHistoricalArchiveSelectedIds((previous) => { const next = new Set(previous); if (next.has(submission.submissionId)) next.delete(submission.submissionId); else next.add(submission.submissionId); return next; });
               else setSelectedIds((previous) => { const next = new Set(previous); if (next.has(submission.submissionId)) next.delete(submission.submissionId); else next.add(submission.submissionId); return next; });
             }} /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><span className="truncate font-semibold text-gray-900">{submission.packageName}</span><span className={`shrink-0 rounded-full px-2 py-1 text-xs ${historical ? 'bg-amber-100 text-amber-800' : stateTone(shownState)}`}>{historical ? '历史归档待整理' : stateLabel(shownState)}</span></div><div className="mt-1 text-xs text-gray-500">{submission.submissionId}</div><div className="mt-2 text-xs text-gray-600">决策版本：{entry?.decisionRevisionId ?? '未选择'} · 共 {submission.revisions.length} 个版本</div>{historical ? <div className="mt-2 text-xs text-amber-800">该旧包已有“归档”状态灯但缺少归档完成回执，不能参与普通发布；请使用下方“历史归档整理”。</div> : isPublicationLifecycleState(submission.state) ? <div className="mt-2 text-xs text-amber-700">发布生命周期：{stateLabel(submission.state)}。状态灯仍可记录，但不会重新发布、回滚数据或创建新版本。</div> : null}</div></div></button>;
@@ -657,10 +708,10 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
               <h3 className="text-xl font-bold text-gray-900" data-draggable-title>审核包详情</h3>
               <p className="mt-1 text-sm text-gray-500">{detail.submissionId}</p>
             </div>
-            <button type="button" data-draggable-close className="sr-only" aria-label="关闭" onClick={() => { onClearRevisionCache?.(); setDetailId(null); setRevisionId(null); setPackageReport(null); }} />
+            <button type="button" data-draggable-close className="sr-only" aria-label="关闭" onClick={() => { void closeDetail(); }} />
           </div>
           <div className="mt-4 flex gap-2">
-            <select className="min-w-0 flex-1 rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm" value={revision?.revisionId ?? ''} onChange={(event) => { onClearRevisionCache?.(); setRevisionId(event.target.value); setPackageReport(null); }}>
+            <select title={detailOwnsActiveWorkspace ? '当前审核图层管理正在使用此版本；请先关闭详情与工作区后再切换版本。' : undefined} disabled={detailOwnsActiveWorkspace} className="min-w-0 flex-1 rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-gray-100" value={revision?.revisionId ?? ''} onChange={(event) => { onClearRevisionCache?.(); setRevisionId(event.target.value); setPackageReport(null); }}>
               {detail.revisions.map((item) => <option key={item.revisionId} value={item.revisionId}>{item.revisionId}</option>)}
             </select>
             <AppButton onClick={() => void refreshList()} disabled={busy !== null} className="rounded-xl bg-gray-100 px-3 text-gray-700 hover:bg-gray-200">

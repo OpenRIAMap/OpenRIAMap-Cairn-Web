@@ -34,7 +34,7 @@ const submissionAdapter = createRiaReviewSubmissionAdapter(async (url, init) => 
 const actor = { principalId: 'future-ui', roles: [] };
 await submissionAdapter.getSubmission('submission-1', actor);
 await submissionAdapter.dispatchSubmission({ requestId: 'r-2', correlationId: 'c-2', idempotencyKey: 'submission-1:r2:approve:c-2', submissionId: 'submission-1', targetRevisionId: 'submission-1-r2', expectedStateVersion: 1, action: 'approve', occurredAt: '2026-07-27T00:00:00.000Z', actor });
-await submissionAdapter.getReleaseFeed?.(actor, 10);
+await submissionAdapter.getReleaseFeed?.(actor, 20);
 const precheck = await submissionAdapter.precheckSubmission?.({ requestId: 'r-3', correlationId: 'c-3', idempotencyKey: 'submission-1:r2:precheck:c-3', submissionId: 'submission-1', targetRevisionId: 'submission-1-r2', expectedStateVersion: 1, action: 'precheck', occurredAt: '2026-07-27T00:00:00.000Z', actor });
 const idleGate = await submissionAdapter.getReleaseGate?.(actor);
 const reconciliation = await submissionAdapter.runArchiveReconciliationPrecheck({ selectedSubmissionIds: ['submission-legacy-001'] }, actor);
@@ -45,4 +45,5 @@ if (idleGate?.state !== 'idle' || idleGate.initialized !== false) throw new Erro
 if (reconciliation.decision !== 'ready' || reconciliationQueued?.state !== 'queued' || reconciliationProgress.state !== 'completed') throw new Error('archive reconciliation control binding failed');
 if (submissionCalls.length !== 8 || submissionCalls.some((call) => call.url !== '/api/review-control')) throw new Error('same-origin submission control transport failed');
 if (!String(submissionCalls[1].init?.body).includes('"operation":"approve"')) throw new Error('submission action mapping failed');
+if (!String(submissionCalls[2].init?.body).includes('"limit":10')) throw new Error('release feed limit must be clamped to Dispatcher range');
 console.log('Review submission control binding test: PASS');
