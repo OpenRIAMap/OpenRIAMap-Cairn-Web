@@ -35,7 +35,9 @@ import { loadMapSettings, saveMapSettings, MapStyle } from '@/lib/cookies';
 import type { ParsedStation, ParsedLine, Coordinate, Player } from '@/types';
 import type { ParsedLandmark } from '@/components/Legacy/data/landmarkParser';
 import type { MeasuringModuleHandle, ReviewWorkspaceSaveArtifact } from '@/components/Mapping/core/MeasuringModule';
+import type { MeasurementToolsHandle } from '@/components/Mapping/core/Mtools';
 import { useFeatureModuleStore } from '@/store/featureModuleStore';
+import { WorkspaceTransitionCoordinator, type WorkspaceKind, type WorkspaceTransition } from './workspaceTransitionCoordinator';
 
 import RuleDrivenLayer from '@/components/Rules/core/RuleDrivenLayer';
 import { hasEnabledTemporaryRuleSources } from '@/components/Rules/data/temporaryRuleSession';
@@ -52,7 +54,7 @@ import { Globe2, PanelsTopLeft, Layers3, SlidersHorizontal, Plus, Minus, Pencil,
 import { buildBuildingNameIndex, getRuleCategoryLabelWithParent, getRuleDisplayName } from '@/components/Search/searchRuleTables';
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { consumeFeatureShareTargetFromLocation, normalizePlayerShareId, type FeatureSharePayload, type FeatureShareTarget, type PlayerShareTarget, type ShareParseResult } from '@/lib/featureShareLink';
-import { PublicReleaseRecordsPanel, ReviewConfirmationHost, ReviewModule, ReviewModuleLauncher, createReviewPackageSession, type CairnMapModuleMode, type ReviewInboxItem, type ReviewPackageSession } from '@/components/Review';
+import { PublicReleaseRecordsPanel, ReviewConfirmationHost, ReviewModuleLauncher, createReviewPackageSession, type CairnMapModuleMode, type ReviewInboxItem, type ReviewPackageSession } from '@/components/Review';
 import { openriamapReviewPackageUploader, uploadRiaReviewRevision } from '@/components/Review/riaReviewPackageUploader';
 
 // ===== 导航“图上选取”：MapContainer 统一派发地图点击事件 =====
@@ -115,6 +117,7 @@ function getShareLookupProgress(state: ShareLookupState): number {
 // 世界配置
 const LazyMappingWorkspace = lazy(() => import('@/components/Mapping/MappingWorkspace'));
 const LazyReviewWorkspace = lazy(() => import('@/components/Review/ReviewWorkspace'));
+const LazyReviewModule = lazy(() => import('@/components/Review/ReviewModule'));
 const LazyMeasurementToolsModule = lazy(() => import('@/components/Mapping/core/Mtools'));
 const LazyRailwayLayer = lazy(() => import('@/components/Legacy/map/RailwayLayer').then((mod) => ({ default: mod.RailwayLayer })));
 const LazyLandmarkLayer = lazy(() => import('@/components/Legacy/map/LandmarkLayer').then((mod) => ({ default: mod.LandmarkLayer })));
@@ -234,6 +237,8 @@ function MapContainer() {
   const projectionRef = useRef<DynmapProjection | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const measuringModuleRef = useRef<MeasuringModuleHandle | null>(null);
+  const measurementToolsRef = useRef<MeasurementToolsHandle | null>(null);
+  const workspaceTransitionCoordinatorRef = useRef(new WorkspaceTransitionCoordinator());
   const [mapReady, setMapReady] = useState(false);
   const initialShareParseRef = useRef(consumeFeatureShareTargetFromLocation());
   const initialPendingShareRef = useRef<PendingShareTarget | null>(
@@ -303,6 +308,7 @@ function MapContainer() {
   const [showPlayersPage, setShowPlayersPage] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [reviewAccessBlockedMessage, setReviewAccessBlockedMessage] = useState<string | null>(null);
   const [showPublicReleaseRecords, setShowPublicReleaseRecords] = useState(false);
   const [rulePanelCollapsed, setRulePanelCollapsed] = useState(false);
   const [modePanelCollapsed, setModePanelCollapsed] = useState(false);
@@ -332,12 +338,14 @@ function MapContainer() {
   const isGlobalLoading = useLoadingStore((s) => s.isLoading);
   const activeRuleWorldId = useLoadingStore((s) => s.activeRuleWorldId);
   const measuringModuleState = useFeatureModuleStore((s) => s.modules.measuring);
+  const reviewModuleState = useFeatureModuleStore((s) => s.modules.review);
   const legacyModuleState = useFeatureModuleStore((s) => s.modules.legacy);
   const featureDialogState = useFeatureModuleStore((s) => s.dialog);
   const requestFeatureModuleActivation = useFeatureModuleStore((s) => s.requestModuleActivation);
   const measuringModuleLoaded = measuringModuleState.status === 'loaded';
+  const reviewModuleLoaded = reviewModuleState.status === 'loaded';
   const legacyModuleLoaded = legacyModuleState.status === 'loaded';
-  const [pendingMeasureModuleOpen, setPendingMeasureModuleOpen] = useState<null | 'measuring' | 'mtools' | 'review'>(null);
+  const [pendingWorkspaceAdmission, setPendingWorkspaceAdmission] = useState<WorkspaceTransition | null>(null);
   const [pendingLegacyAction, setPendingLegacyAction] = useState<null | 'railway-on' | 'landmark-on' | 'lines-page'>(null);
   const [measuringOpenSignal, setMeasuringOpenSignal] = useState(0);
   const [measurementToolsOpenSignal, setMeasurementToolsOpenSignal] = useState(0);
@@ -371,9 +379,9 @@ function MapContainer() {
   const searchLandmarks = legacyLandmarkSearchEnabled ? landmarks : [];
   const [measuringCloseSignal, setMeasuringCloseSignal] = useState(0);
   const [measureToolsCloseSignal, setMeasureToolsCloseSignal] = useState(0);
-  const [measuringModuleActive, setMeasuringModuleActive] = useState(false);
-  const [measurementToolsActive, setMeasurementToolsActive] = useState(false);
   const [moduleMode, setModuleMode] = useState<CairnMapModuleMode>('runtime');
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceKind>('runtime');
+  const [workspaceTransitionPhase, setWorkspaceTransitionPhase] = useState<'idle' | 'awaiting-source-confirmation' | 'preparing-target'>('idle');
   // Mapping and review deliberately receive different React instances.  The
   // review instance is never a mode switch inside a live mapping instance,
   // which prevents Leaflet feature groups, drawing state and custom events
@@ -388,6 +396,22 @@ function MapContainer() {
 // 说明：临时挂载启用时，MeasuringModule 可能被迫处于 active，但此时仍允许导航图选点（只要 MeasurementToolsModule 未启用）
 const measuringModuleActiveRef = useRef(false);
 const measurementToolsActiveRef = useRef(false);
+
+  const syncWorkspaceCoordinator = useCallback(() => {
+    const snapshot = workspaceTransitionCoordinatorRef.current.snapshot();
+    setActiveWorkspace(snapshot.active);
+    setWorkspaceTransitionPhase(snapshot.phase);
+    // During a pending admission the source may already have been unmounted.
+    // Do not let its old identity remount until this transition resolves.
+    if (snapshot.phase === 'idle') {
+      setModuleMode(snapshot.active === 'review' ? 'review' : snapshot.active === 'runtime' ? 'runtime' : 'mapping');
+    }
+  }, []);
+
+  const reportWorkspaceInactive = useCallback((workspace: Exclude<WorkspaceKind, 'runtime'>) => {
+    workspaceTransitionCoordinatorRef.current.reportInactive(workspace);
+    syncWorkspaceCoordinator();
+  }, [syncWorkspaceCoordinator]);
 
 const isTempRuleMountEnabled = useCallback(() => hasEnabledTemporaryRuleSources(), []);
 
@@ -429,36 +453,24 @@ useEffect(() => {
     const source = String(ce?.detail?.source ?? '');
     if (source === 'MeasurementToolsModule') {
       measurementToolsActiveRef.current = active;
-      setMeasurementToolsActive(active);
+      if (!active) reportWorkspaceInactive('measurement');
       return;
     }
     if (source === 'MeasuringModule') {
       measuringModuleActiveRef.current = active;
-      setMeasuringModuleActive(active);
+      if (!active) {
+        // A review editor uses the same core but must retain its own identity.
+        reportWorkspaceInactive(activeWorkspace === 'review' ? 'review' : 'mapping');
+      }
       return;
     }
     // 兜底：未知来源则视作 MeasuringModule
     measuringModuleActiveRef.current = active;
-    setMeasuringModuleActive(active);
+    if (!active) reportWorkspaceInactive(activeWorkspace === 'review' ? 'review' : 'mapping');
   };
   window.addEventListener('ria:measuringActiveChanged', handler as any);
   return () => window.removeEventListener('ria:measuringActiveChanged', handler as any);
-}, []);
-
-  useEffect(() => {
-    if (!pendingMeasureModuleOpen || !measuringModuleLoaded) return;
-    if (pendingMeasureModuleOpen === 'measuring') setMeasuringOpenSignal((v) => v + 1);
-    else if (pendingMeasureModuleOpen === 'mtools') setMeasurementToolsOpenSignal((v) => v + 1);
-    setPendingMeasureModuleOpen(null);
-  }, [pendingMeasureModuleOpen, measuringModuleLoaded]);
-
-  useEffect(() => {
-    if (!pendingMeasureModuleOpen) return;
-    if (featureDialogState.isOpen) return;
-    if (measuringModuleLoaded) return;
-    if (measuringModuleState.status === 'loading') return;
-    setPendingMeasureModuleOpen(null);
-  }, [pendingMeasureModuleOpen, featureDialogState.isOpen, measuringModuleLoaded, measuringModuleState.status]);
+}, [activeWorkspace, reportWorkspaceInactive]);
 
   const activateLegacyAction = useCallback(async (action: 'railway-on' | 'landmark-on' | 'lines-page') => {
     if (action === 'lines-page' && !LINES_FEATURE_ENABLED) return;
@@ -502,59 +514,129 @@ useEffect(() => {
     requestLegacyFeature('lines-page');
   }, [requestLegacyFeature]);
 
-  const requestMeasuringModuleEntry = useCallback(async (target: 'measuring' | 'mtools') => {
-    if (moduleMode === 'review') {
-      const ok = await (measuringModuleRef.current?.requestCloseAndClear?.('切换至普通测绘') ?? Promise.resolve(true));
-      if (!ok) return;
-      setReviewSession(null);
-      setReviewWorkspaceDirty(false);
-      setPendingReviewPackage(null);
-      setWorkspaceInstanceKey((value) => value + 1);
-    }
-    setModuleMode('mapping');
-    if (measuringModuleLoaded) {
-      if (target === 'measuring') setMeasuringOpenSignal((v) => v + 1);
-      else setMeasurementToolsOpenSignal((v) => v + 1);
-      return;
-    }
-    setPendingMeasureModuleOpen(target);
-    requestFeatureModuleActivation('measuring');
-  }, [measuringModuleLoaded, moduleMode, requestFeatureModuleActivation]);
-
-  const requestReviewModuleEntry = useCallback(async () => {
-    if (moduleMode === 'mapping' || measuringModuleActive || measurementToolsActive) {
-      const ok = await (measuringModuleRef.current?.requestCloseAndClear?.('启动审核模块') ?? Promise.resolve(true));
-      if (!ok) return;
-      setMeasuringCloseSignal((value) => value + 1);
-      setMeasureToolsCloseSignal((value) => value + 1);
-      setWorkspaceInstanceKey((value) => value + 1);
-    }
-    setMeasureToolsCloseSignal((v) => v + 1);
-    setModuleMode('review');
-    if (!measuringModuleLoaded) {
-      setPendingMeasureModuleOpen('review');
-      requestFeatureModuleActivation('measuring');
-    }
-  }, [measuringModuleActive, measuringModuleLoaded, measurementToolsActive, moduleMode, requestFeatureModuleActivation]);
-
-  const closeReviewModule = useCallback(async () => {
-    const ok = await (measuringModuleRef.current?.requestCloseAndClear?.('关闭则为退出审核模块') ?? Promise.resolve(true));
-    if (!ok) return;
+  const clearReviewWorkspaceState = useCallback(() => {
     setReviewSession(null);
     setReviewWorkspaceDirty(false);
     setPendingReviewPackage(null);
+  }, []);
+
+  const failWorkspaceAdmission = useCallback((transition: WorkspaceTransition, message?: string) => {
+    if (!workspaceTransitionCoordinatorRef.current.failTarget(transition.token)) return;
+    setPendingWorkspaceAdmission(null);
+    clearReviewWorkspaceState();
     setWorkspaceInstanceKey((value) => value + 1);
     setModuleMode('runtime');
-  }, []);
+    syncWorkspaceCoordinator();
+    if (message) setReviewAccessBlockedMessage(message);
+  }, [clearReviewWorkspaceState, syncWorkspaceCoordinator]);
+
+  const activateWorkspaceTarget = useCallback(async (transition: WorkspaceTransition) => {
+    const pending = workspaceTransitionCoordinatorRef.current.snapshot().pending;
+    if (!pending || pending.token !== transition.token || pending.target !== transition.target) return;
+
+    if (transition.target === 'review') {
+      const session = await openriamapGithubReviewAuth.getSession();
+      const stillPending = workspaceTransitionCoordinatorRef.current.snapshot().pending;
+      if (!stillPending || stillPending.token !== transition.token) return;
+      if (session.status !== 'authenticated') {
+        const message = session.status === 'unavailable'
+          ? (session.message ?? '身份服务暂时不可用，无法进入审核模块。')
+          : (session.message ?? '需要先在设置中登录 GitHub 身份，才能进入审核模块。');
+        failWorkspaceAdmission(transition, message);
+        return;
+      }
+    }
+
+    if (!workspaceTransitionCoordinatorRef.current.activateTarget(transition.token)) return;
+    setPendingWorkspaceAdmission(null);
+    setWorkspaceInstanceKey((value) => value + 1);
+    if (transition.target === 'review') {
+      setModuleMode('review');
+    } else {
+      clearReviewWorkspaceState();
+      setModuleMode('mapping');
+      if (transition.target === 'mapping') setMeasuringOpenSignal((value) => value + 1);
+      else setMeasurementToolsOpenSignal((value) => value + 1);
+    }
+    syncWorkspaceCoordinator();
+  }, [clearReviewWorkspaceState, failWorkspaceAdmission, syncWorkspaceCoordinator]);
+
+  const requestWorkspaceEntry = useCallback(async (target: Exclude<WorkspaceKind, 'runtime'>) => {
+    const transition = workspaceTransitionCoordinatorRef.current.request(target);
+    if (!transition) return;
+    // Re-clicking an already active fixed entry only focuses/opens its own UI;
+    // it never revives a different workspace or a stale pending intent.
+    if (transition.token === 0) {
+      if (target === 'mapping') setMeasuringOpenSignal((value) => value + 1);
+      if (target === 'measurement') setMeasurementToolsOpenSignal((value) => value + 1);
+      return;
+    }
+    syncWorkspaceCoordinator();
+
+    if (transition.source !== 'runtime') {
+      const sourceLabel = target === 'review' ? '启动审核模块' : target === 'mapping' ? '切换至测绘模块' : '切换至测量工具';
+      const sourceClosed = transition.source === 'measurement'
+        ? await (measurementToolsRef.current?.requestCloseAndClear(sourceLabel) ?? Promise.resolve(true))
+        : await (measuringModuleRef.current?.requestCloseAndClear(sourceLabel) ?? Promise.resolve(true));
+      if (!sourceClosed) {
+        workspaceTransitionCoordinatorRef.current.cancel(transition.token);
+        syncWorkspaceCoordinator();
+        return;
+      }
+      if (!workspaceTransitionCoordinatorRef.current.confirmSourceCleared(transition.token)) return;
+      if (transition.source === 'measurement') setMeasureToolsCloseSignal((value) => value + 1);
+      else setMeasuringCloseSignal((value) => value + 1);
+      if (transition.source === 'review') clearReviewWorkspaceState();
+      // The source is now fully discarded.  Keep the target unmounted while
+      // its code and identity admission are resolved.
+      setModuleMode('runtime');
+      setWorkspaceInstanceKey((value) => value + 1);
+      syncWorkspaceCoordinator();
+    }
+
+    const moduleReady = target === 'review' ? reviewModuleLoaded : measuringModuleLoaded;
+    if (!moduleReady) {
+      setPendingWorkspaceAdmission(transition);
+      if (target === 'review') {
+        requestFeatureModuleActivation('review', measuringModuleLoaded
+          ? {
+              title: '需要下载审核分包',
+              description: '审核分包尚未加载。确认后将下载并启用审核代码；审核包、图片、图层和草稿仍只保留在当前浏览器会话。',
+            }
+          : undefined);
+      } else {
+        requestFeatureModuleActivation('measuring');
+      }
+      return;
+    }
+    await activateWorkspaceTarget(transition);
+  }, [activateWorkspaceTarget, clearReviewWorkspaceState, measuringModuleLoaded, requestFeatureModuleActivation, reviewModuleLoaded, syncWorkspaceCoordinator]);
+
+  const requestMeasuringModuleEntry = useCallback((target: 'measuring' | 'mtools') => {
+    void requestWorkspaceEntry(target === 'measuring' ? 'mapping' : 'measurement');
+  }, [requestWorkspaceEntry]);
+
+  const requestReviewModuleEntry = useCallback(() => {
+    void requestWorkspaceEntry('review');
+  }, [requestWorkspaceEntry]);
+
+  const closeReviewModule = useCallback(async () => {
+    if (activeWorkspace !== 'review') return;
+    const ok = await (measuringModuleRef.current?.requestCloseAndClear?.('关闭则为退出审核模块') ?? Promise.resolve(true));
+    if (!ok) return;
+    setMeasuringCloseSignal((value) => value + 1);
+    clearReviewWorkspaceState();
+    setWorkspaceInstanceKey((value) => value + 1);
+    workspaceTransitionCoordinatorRef.current.reportInactive('review');
+    syncWorkspaceCoordinator();
+  }, [activeWorkspace, clearReviewWorkspaceState, syncWorkspaceCoordinator]);
 
   // Closing the layer manager must not close the surrounding review sequence:
   // reviewers may continue inspecting the package detail and status board.
   const closeReviewWorkspace = useCallback(() => {
-    setReviewSession(null);
-    setReviewWorkspaceDirty(false);
-    setPendingReviewPackage(null);
+    clearReviewWorkspaceState();
     setWorkspaceInstanceKey((value) => value + 1);
-  }, []);
+  }, [clearReviewWorkspaceState]);
 
   useEffect(() => {
     const requestExit = () => closeReviewModule();
@@ -563,25 +645,16 @@ useEffect(() => {
   }, [closeReviewModule]);
 
   const loadReviewPackageIntoWorkspace = useCallback(async (item: ReviewInboxItem) => {
-    const replacingReviewWorkspace = moduleMode === 'review';
-    if (replacingReviewWorkspace || moduleMode === 'mapping' || measuringModuleActive || measurementToolsActive) {
-      const label = replacingReviewWorkspace ? '切换审核包' : '置入审核工作区';
-      const ok = await (measuringModuleRef.current?.requestCloseAndClear?.(label) ?? Promise.resolve(true));
-      if (!ok) return false;
-      setMeasuringCloseSignal((value) => value + 1);
-      setMeasureToolsCloseSignal((value) => value + 1);
-    }
+    if (activeWorkspace !== 'review' || !reviewModuleLoaded) return false;
+    const ok = await (measuringModuleRef.current?.requestCloseAndClear?.('切换审核包') ?? Promise.resolve(true));
+    if (!ok) return false;
+    setMeasuringCloseSignal((value) => value + 1);
     setWorkspaceInstanceKey((value) => value + 1);
-    setModuleMode('review');
     setReviewSession(createReviewPackageSession(item));
     setReviewWorkspaceDirty(false);
     setPendingReviewPackage(item);
-    if (!measuringModuleLoaded) {
-      setPendingMeasureModuleOpen('review');
-      requestFeatureModuleActivation('measuring');
-    }
     return true;
-  }, [measuringModuleLoaded, measuringModuleActive, measurementToolsActive, moduleMode, requestFeatureModuleActivation]);
+  }, [activeWorkspace, reviewModuleLoaded]);
 
   const handleReviewSave = useCallback(async (artifact: ReviewWorkspaceSaveArtifact) => {
     const context = reviewSession?.submissionContext;
@@ -616,22 +689,29 @@ useEffect(() => {
   }, [reviewSession]);
 
   useEffect(() => {
-    if (moduleMode !== 'review' || !measuringModuleLoaded || !pendingReviewPackage) return;
+    if (!pendingWorkspaceAdmission) return;
+    const desiredState = pendingWorkspaceAdmission.target === 'review' ? reviewModuleState : measuringModuleState;
+    if (desiredState.status === 'loaded') {
+      void activateWorkspaceTarget(pendingWorkspaceAdmission);
+      return;
+    }
+    if (desiredState.status === 'loading') return;
+    if (featureDialogState.isOpen && featureDialogState.moduleKey === (pendingWorkspaceAdmission.target === 'review' ? 'review' : 'measuring')) return;
+    // A declined or failed bundle prompt cannot leave the source half-closed
+    // or manufacture a target mode.  The original source was only retained
+    // when its own confirmation was cancelled above.
+    failWorkspaceAdmission(pendingWorkspaceAdmission);
+  }, [activateWorkspaceTarget, failWorkspaceAdmission, featureDialogState.isOpen, featureDialogState.moduleKey, measuringModuleState, pendingWorkspaceAdmission, reviewModuleState]);
+
+  useEffect(() => {
+    if (moduleMode !== 'review' || !reviewModuleLoaded || !pendingReviewPackage) return;
     const item = pendingReviewPackage;
     const timer = window.setTimeout(() => {
       window.dispatchEvent(new CustomEvent('ria:reviewLoadPackageIntoWorkspace', { detail: item }));
       setPendingReviewPackage(null);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [measuringModuleLoaded, moduleMode, pendingReviewPackage]);
-
-  useEffect(() => {
-    if (measuringModuleActive || measurementToolsActive) {
-      setModuleMode((prev) => (prev === 'review' ? prev : 'mapping'));
-      return;
-    }
-    setModuleMode((prev) => (prev === 'mapping' ? 'runtime' : prev));
-  }, [measurementToolsActive, measuringModuleActive]);
+  }, [moduleMode, pendingReviewPackage, reviewModuleLoaded]);
 
 
   // 规则图层“分组开关”（按 world 维度持久化）
@@ -1824,15 +1904,46 @@ case 'players':
         </div>
       )}
 
-      {moduleMode === 'review' && (
-        <ReviewModule
-          activeWorldId={currentWorld}
-          onClose={closeReviewModule}
-          onLoadPackage={loadReviewPackageIntoWorkspace}
-        />
+      {moduleMode === 'review' && reviewModuleLoaded && (
+        <Suspense fallback={null}>
+          <LazyReviewModule
+            activeWorldId={currentWorld}
+            onClose={closeReviewModule}
+            onLoadPackage={loadReviewPackageIntoWorkspace}
+          />
+        </Suspense>
       )}
 
       <ReviewConfirmationHost />
+
+      {reviewAccessBlockedMessage ? (
+        <div className="fixed inset-0 z-[14000] flex items-center justify-center bg-slate-950/55 p-4" role="dialog" aria-modal="true" aria-labelledby="review-access-gate-title">
+          <AppCard className="w-full max-w-[460px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="border-b border-slate-200 px-5 py-4"><h2 id="review-access-gate-title" className="text-lg font-bold text-slate-900">需要登录后才能进入审核</h2></div>
+            <p className="whitespace-pre-wrap px-5 py-5 text-sm leading-6 text-slate-700">{reviewAccessBlockedMessage}</p>
+            <div className="flex justify-end border-t border-slate-200 bg-slate-50 px-5 py-4">
+              <AppButton
+                className="rounded-xl bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+                onClick={() => {
+                  setReviewAccessBlockedMessage(null);
+                  if (window.matchMedia?.('(max-width: 639px)').matches) {
+                    setMobileActivePanel('settings');
+                    setMobileSheetHidden(false);
+                    setMobileSheetCollapsed(false);
+                  } else {
+                    setShowSettings(true);
+                  }
+                  // The settings panel mounts after this click; defer the focus signal
+                  // until its review-auth section has subscribed to it.
+                  window.setTimeout(() => window.dispatchEvent(new CustomEvent('ria:focus-review-auth-settings')), 0);
+                }}
+              >
+                确认并前往设置
+              </AppButton>
+            </div>
+          </AppCard>
+        </div>
+      ) : null}
 
       {showPublicReleaseRecords && (
         <div className="hidden sm:block">
@@ -2259,23 +2370,47 @@ case 'players':
           >
           <div className="hidden sm:block"><ToolIconButton label="发布记录" icon={<History className="w-5 h-5" />} tone="purple" onClick={() => setShowPublicReleaseRecords(true)} /></div>
           <div className="hidden sm:block">
+            <ToolIconButton
+              label="测量工具"
+              icon={<Ruler className="w-5 h-5" />}
+              active={activeWorkspace === 'measurement'}
+              tone="blue"
+              disabled={workspaceTransitionPhase !== 'idle'}
+              onClick={() => requestMeasuringModuleEntry('mtools')}
+            />
+          </div>
+          <div className="hidden sm:block">
+            <ToolIconButton
+              label="测绘"
+              icon={<Pencil className="w-5 h-5" />}
+              active={activeWorkspace === 'mapping'}
+              tone="blue"
+              disabled={workspaceTransitionPhase !== 'idle'}
+              onClick={() => requestMeasuringModuleEntry('measuring')}
+              className="h-11 w-11"
+            />
+          </div>
+          <div className="hidden sm:block">
             <ReviewModuleLauncher
-              active={moduleMode === 'review'}
+              active={activeWorkspace === 'review'}
               onClick={requestReviewModuleEntry}
+              disabled={workspaceTransitionPhase !== 'idle'}
             />
           </div>
           {measuringModuleLoaded ? (
             <Suspense fallback={null}>
-              {moduleMode !== 'review' ? <LazyMeasurementToolsModule
+              <LazyMeasurementToolsModule
+                ref={measurementToolsRef}
                 mapReady={mapReady}
                 leafletMapRef={leafletMapRef}
                 projectionRef={projectionRef}
                 closeSignal={measureToolsCloseSignal}
                 openSignal={measurementToolsOpenSignal}
                 onBecameActive={() => setMeasuringCloseSignal(v => v + 1)}
-                launcherSlot={(launcher) => <div className="hidden sm:block">{launcher}</div>}
-              /> : null}
-              {moduleMode === 'review' ? <LazyReviewWorkspace
+                onRequestOpen={() => requestMeasuringModuleEntry('mtools')}
+                launcherSlot={() => null}
+              />
+              {moduleMode === 'review' && reviewModuleLoaded ? <LazyReviewWorkspace
                 key={`review-${workspaceInstanceKey}`}
                 ref={measuringModuleRef}
                 mapReady={mapReady}
@@ -2285,7 +2420,7 @@ case 'players':
                 closeSignal={measuringCloseSignal}
                 openSignal={measuringOpenSignal}
                 onBecameActive={() => setMeasureToolsCloseSignal((value) => value + 1)}
-                launcherSlot={(launcher) => <div className="hidden sm:block">{launcher}</div>}
+                launcherSlot={() => null}
                 reviewSession={reviewSession}
                 onReviewDirtyChange={setReviewWorkspaceDirty}
                 onReviewSave={handleReviewSave}
@@ -2301,33 +2436,12 @@ case 'players':
                 closeSignal={measuringCloseSignal}
                 openSignal={measuringOpenSignal}
                 onBecameActive={() => setMeasureToolsCloseSignal((value) => value + 1)}
-                launcherSlot={(launcher) => <div className="hidden sm:block">{launcher}</div>}
+                launcherSlot={() => null}
+                onRequestOpen={() => requestMeasuringModuleEntry('measuring')}
                 onReviewPackageUpload={openriamapReviewPackageUploader.uploadPackage}
               />}
             </Suspense>
-          ) : (
-            <>
-              <div className="hidden sm:block">
-                <ToolIconButton
-                  label="测量工具"
-                  icon={<Ruler className="w-5 h-5" />}
-                  active={measurementToolsActive}
-                  tone="blue"
-                  onClick={() => requestMeasuringModuleEntry('mtools')}
-                />
-              </div>
-              <div className="hidden sm:block">
-                <ToolIconButton
-                  label="测绘"
-                  icon={<Pencil className="w-5 h-5" />}
-                  active={measuringModuleActive}
-                  tone="blue"
-                  onClick={() => requestMeasuringModuleEntry('measuring')}
-                  className="h-11 w-11"
-                />
-              </div>
-            </>
-          )}
+          ) : null}
           </LayerControl><ToolIconButton label="收起模式面板" icon={<PanelsTopLeft className="w-5 h-5" />} tone="gray" onClick={() => setModePanelCollapsed(true)} /></div>}
         </div>
       </div>

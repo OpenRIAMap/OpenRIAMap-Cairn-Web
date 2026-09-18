@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { DynmapProjection } from '@/lib/DynmapProjection';
@@ -7,6 +7,7 @@ import { Ruler, X } from 'lucide-react';
 import ToolIconButton from '@/components/Toolbar/ToolIconButton';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
+import { requestReviewConfirmation } from '@/components/Review/ReviewConfirmationHost';
 
 
 type WorldPoint = { x: number; z: number };
@@ -35,6 +36,14 @@ type MeasurementToolsModuleProps = {
    * 外部请求打开（用于分包首次加载后自动继续原操作）
    */
   openSignal?: number;
+
+  /** The Map host owns all cross-workspace entry transitions. */
+  onRequestOpen?: () => void;
+};
+
+export type MeasurementToolsHandle = {
+  /** Fails closed until the user confirms discarding measurement-only layers. */
+  requestCloseAndClear: (actionLabel?: string) => Promise<boolean>;
 };
 
 type MainTab = 'measure' | 'shape' | 'analysis';
@@ -82,8 +91,8 @@ function rotateXZ(x: number, z: number, rad: number) {
   return { x: x * c - z * s, z: x * s + z * c };
 }
 
-export default function MeasurementToolsModule(props: MeasurementToolsModuleProps) {
-  const { mapReady, leafletMapRef, projectionRef, closeSignal, onBecameActive, launcherSlot, openSignal } = props;
+const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToolsModuleProps>((props, ref) => {
+  const { mapReady, leafletMapRef, projectionRef, closeSignal, onBecameActive, launcherSlot, openSignal, onRequestOpen } = props;
 
   // 主按钮开关
   const [active, setActive] = useState(false);
@@ -280,6 +289,23 @@ export default function MeasurementToolsModule(props: MeasurementToolsModuleProp
     setShapeKind('circle');
     setActive(false);
   };
+
+  useImperativeHandle(ref, () => ({
+    requestCloseAndClear: async (actionLabel = '切换工作区') => {
+      const hasContent = active || layers.length > 0 || radiusModalOpen || pendingMeasureStartRef.current !== null || pendingSquareStartRef.current !== null;
+      if (!hasContent) return true;
+      const confirmed = await requestReviewConfirmation({
+        title: '切换前确认',
+        message: `${actionLabel}会清除当前测量工具的测线、形状和未完成输入。是否继续？`,
+        cancelLabel: '继续测量',
+        confirmLabel: '放弃测量并继续',
+        tone: 'rose',
+      });
+      if (!confirmed) return false;
+      hardResetAndClose();
+      return true;
+    },
+  }), [active, layers.length, radiusModalOpen]);
 
   // ---------- 图层顺序/显隐同步 ----------
   const syncRootByStateOrder = (next: ToolLayer[]) => {
@@ -659,6 +685,10 @@ export default function MeasurementToolsModule(props: MeasurementToolsModuleProp
   // ---------- UI：主按钮 ----------
   const handleMainToggle = () => {
     if (!active) {
+      if (onRequestOpen) {
+        onRequestOpen();
+        return;
+      }
       // 打开：要求同时关闭“开始测绘”（由 MapContainer 实现回调联动）
       onBecameActive?.();
       // 打开即清空，不提示
@@ -1195,4 +1225,8 @@ export default function MeasurementToolsModule(props: MeasurementToolsModuleProp
       )}
     </>
   );
-}
+});
+
+MeasurementToolsModule.displayName = 'MeasurementToolsModule';
+
+export default MeasurementToolsModule;

@@ -5,6 +5,7 @@ import { useFeatureModuleStore } from '@/store/featureModuleStore';
 
 const MODULE_LABELS = {
   measuring: '测绘扩展模块',
+  review: '审核与测绘扩展模块',
   legacy: '旧图层扩展模块',
 } as const;
 
@@ -15,6 +16,13 @@ const STEP_TEXTS = {
     '正在解析测绘模块代码',
     '正在初始化测绘界面',
     '即将进入测绘功能',
+  ],
+  review: [
+    '正在准备审核模块依赖',
+    '正在确认测绘基础分包',
+    '正在请求审核模块资源',
+    '正在解析审核工作区代码',
+    '即将执行身份检查',
   ],
   legacy: [
     '正在准备旧图层扩展模块',

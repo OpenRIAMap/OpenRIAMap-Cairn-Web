@@ -110,6 +110,20 @@ function normalizeGate(value: ReviewReleaseGateSnapshot | null | undefined) {
   return value && typeof value.state === 'string' ? value : createIdleReviewReleaseGate();
 }
 
+function publishConfirmationFailureMessage(error: unknown): string {
+  const code = error instanceof ReviewOperationError ? error.code : error instanceof Error ? error.message : String(error);
+  if (code === 'review-release-gate-changed' || code === 'review-release-precheck-stale') {
+    return '发布确认已过期，未进入执行队列。已刷新 Release Gate；请重新执行发布前检查。';
+  }
+  if (code === 'review-release-lock-conflict') {
+    return '发布未进入执行队列：发布锁冲突。已刷新 Release Gate；请重新保存状态并重新执行发布前检查。';
+  }
+  if (code === 'review-release-decision-anchor-stale') {
+    return '发布未进入执行队列：审核决策对应的是旧生命周期版本。请重新保存状态并重新执行发布前检查。';
+  }
+  return `发布未进入执行队列：${describeError(error)}。已刷新 Release Gate。`;
+}
+
 function reviewDecisionLabel(decision: string | undefined): string {
   return ({
     ready: '可继续',
@@ -265,6 +279,12 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
           ...(finalReason ? { reason: finalReason } : {}),
           updatedAt: new Date().toISOString(),
           updatedBy: actor,
+        }));
+        // The layer manager and package detail are separate React surfaces.
+        // Broadcast only the already-confirmed local draft result so a request
+        // from the manager cannot recursively create another confirmation.
+        window.dispatchEvent(new CustomEvent('cairn-review-status-draft-applied', {
+          detail: { submissionId, state, decisionAction, ...(finalReason ? { reason: finalReason } : {}) },
         }));
         if (!isHistoricalArchiveCandidate(selected, current)) setSelectedIds((previous) => new Set(previous).add(submissionId));
       },
@@ -458,7 +478,26 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
           setMessage('发布已进入受控执行队列。');
           await refreshList({ preserveMessage: true });
         } catch (error) {
-          setMessage(describeError(error));
+          // A failed confirmation does not mean the server accepted a job.
+          // Drop the stale local precheck/report first, then make the next UI
+          // state come from the release authority instead of a prior click.
+          setReleaseReport(null);
+          setActiveReleaseId(null);
+          setReleaseProgress(null);
+          try {
+            const gate = normalizeGate(await releaseControl.getReleaseGate(actor));
+            setReleaseGate(gate);
+            // A transport error can arrive after a server-side acceptance.
+            // Only restore progress when the authority proves that a release
+            // actually owns an active Gate; otherwise there is no fake queue.
+            if (gate.releaseId && ['queueing', 'running', 'mirroring'].includes(gate.state)) {
+              setActiveReleaseId(gate.releaseId);
+              setReleaseProgress({ releaseId: gate.releaseId, state: gate.state });
+            }
+          } catch {
+            setReleaseGate(createIdleReviewReleaseGate());
+          }
+          setMessage(publishConfirmationFailureMessage(error));
         } finally {
           setBusy(null);
         }
