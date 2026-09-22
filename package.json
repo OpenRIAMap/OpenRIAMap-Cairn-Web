@@ -71,7 +71,8 @@
     "validate:formal-data-source-runtime": "node ./scripts/data-source/validate-formal-data-source-runtime.mjs",
     "test:review-package-contract": "tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-review-package-contract.ts",
     "test:review-package-profile-auth": "tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-review-package-profile-auth.ts",
-    "test:review-auth-routes": "node ./scripts/review/test-review-auth-routes.mjs"
+    "test:review-auth-routes": "node ./scripts/review/test-review-auth-routes.mjs",
+    "test:multipart-geometry": "tsx --tsconfig ./tsconfig.app.json ./scripts/geometry/test-multipart-geometry.ts"
   },
   "dependencies": {
     "jszip": "^3.10.1",
