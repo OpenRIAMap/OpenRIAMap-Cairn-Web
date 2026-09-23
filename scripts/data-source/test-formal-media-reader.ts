@@ -16,6 +16,7 @@ const source: RuleDataSourceSnapshot = {
 const releaseId = 'review-aaaaaaaaaaaaaaaaaaaa';
 const key = `releases/${releaseId}/media-index-merge/zth/feature-index/ISG/NGF/INDEX.json`;
 const mediaKey = `worlds/zth/assets/${'a'.repeat(64)}/display/greenland.png`;
+const externalUrl = 'https://images.example.test/greenland-reference.png';
 const assets = await loadFormalMediaAssets({
   source,
   releaseId,
@@ -31,11 +32,16 @@ const assets = await loadFormalMediaAssets({
       worldId: 'zth',
       category: 'ISG/NGF',
       assetsByFeature: {
-        greenland: [{ sourcePath: 'Picture/zth/ISG/NGF/greenland/greenland.png', key: mediaKey, sha256: 'a'.repeat(64), byteLength: 4, contentType: 'image/png', role: 'display', order: 1 }],
+        greenland: [
+          { sourcePath: 'Picture/zth/ISG/NGF/greenland/greenland.png', key: mediaKey, sha256: 'a'.repeat(64), byteLength: 4, contentType: 'image/png', role: 'display', order: 1 },
+          { sourcePath: `external:${externalUrl}`, url: externalUrl, key: null, sha256: 'b'.repeat(64), byteLength: 0, contentType: 'external-url', role: 'display', order: 2 },
+        ],
       },
     } as T;
   },
 });
-assert.equal(assets.length, 1);
-assert.equal(formalMediaUrl(source.mediaRootUrl!, assets[0].key), `https://example.invalid/media/${mediaKey}`);
+assert.equal(assets.length, 2);
+assert.equal(formalMediaUrl(source.mediaRootUrl!, assets[0].key!), `https://example.invalid/media/${mediaKey}`);
+assert.equal(assets[1].url, externalUrl);
+assert.equal(assets[1].key, undefined);
 console.log('Formal media reader test: PASS');

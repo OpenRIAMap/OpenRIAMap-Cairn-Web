@@ -8,7 +8,12 @@
 export const REVIEW_PACKAGE_CONTRACT_VERSION = 'cairnmap.review-package.v1';
 export const REVIEW_PACKAGE_REVIEW_SCHEMA_VERSION = 'cairnmap.native-relay-review.v1';
 export const REVIEW_PACKAGE_PROFILE_SCHEMA_VERSION = 'cairnmap.review-package-profile.v1';
-export const REVIEW_PACKAGE_PICTURE_BINDINGS_SCHEMA_VERSION = 'cairnmap.review-picture-bindings.v1';
+/**
+ * v2 adds URL-only display assets. A URL binding is metadata only: it never
+ * creates a Picture/ object and must not be fetched by a submission Worker.
+ */
+export const REVIEW_PACKAGE_PICTURE_BINDINGS_SCHEMA_VERSION = 'cairnmap.review-picture-bindings.v2';
+export const REVIEW_PACKAGE_PICTURE_BINDINGS_LEGACY_SCHEMA_VERSION = 'cairnmap.review-picture-bindings.v1';
 
 /**
  * The Relay ZIP wire layout is a CairnMap protocol, not an application
@@ -80,8 +85,28 @@ export type ReviewPackagePictureInput = {
   order?: number;
 };
 
+/** A browser-resolved display image which is intentionally not uploaded to COS. */
+export type ReviewPackageExternalPictureInput = {
+  worldId: string;
+  classCode: string;
+  featureId: string;
+  url: string;
+  kindPath?: readonly string[];
+  /** One-based display order shared with package-owned files. */
+  order?: number;
+};
+
 export type ReviewPackagePictureBindingFile = { path: string; order: number; role: 'display' };
-export type ReviewPackagePictureBinding = { worldId: string; classCode: string; featureId: string; kindPath: string[]; files: ReviewPackagePictureBindingFile[] };
+export type ReviewPackagePictureBindingLink = { url: string; order: number; role: 'display' };
+export type ReviewPackagePictureBinding = {
+  worldId: string;
+  classCode: string;
+  featureId: string;
+  kindPath: string[];
+  files: ReviewPackagePictureBindingFile[];
+  /** Direct external display URLs. They never correspond to a ZIP entry. */
+  links?: ReviewPackagePictureBindingLink[];
+};
 export type ReviewPackagePictureBindingManifest = { schemaVersion: typeof REVIEW_PACKAGE_PICTURE_BINDINGS_SCHEMA_VERSION; bindings: ReviewPackagePictureBinding[] };
 
 export type ReviewPackageExtraFile = {
@@ -98,6 +123,7 @@ export type ReviewPackageDraft = {
   sourceSnapshot?: ReviewPackageSourceSnapshot;
   features: readonly ReviewPackageFeatureInput[];
   pictures: readonly ReviewPackagePictureInput[];
+  externalPictures?: readonly ReviewPackageExternalPictureInput[];
   deletes: readonly ReviewPackageDeleteMark[];
   extraFiles?: readonly ReviewPackageExtraFile[];
 };
@@ -157,6 +183,15 @@ export type ParsedReviewPackagePicture = {
   order?: number;
 };
 
+export type ParsedReviewPackageExternalPicture = {
+  worldId: string;
+  classCode: string;
+  featureId: string;
+  kindPath: string[];
+  url: string;
+  order?: number;
+};
+
 export type ParsedReviewPackage = {
   rootPrefix: string;
   isPackageLike: boolean;
@@ -167,6 +202,8 @@ export type ParsedReviewPackage = {
   deletes: ReviewPackageDeleteMark[];
   features: ParsedReviewPackageFeature[];
   pictures: ParsedReviewPackagePicture[];
+  /** External display assets indexed by Picture/INDEX.json, never ZIP files. */
+  externalPictures: ParsedReviewPackageExternalPicture[];
   pictureBindingManifest: Record<string, unknown> | null;
   pictureBindingPathPresent: boolean;
   extraPaths: string[];
