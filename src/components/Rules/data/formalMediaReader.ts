@@ -4,7 +4,10 @@ type JsonRecord = Record<string, unknown>;
 
 export type FormalMediaAsset = {
   sourcePath: string;
-  key: string;
+  /** Present for COS-backed media. Omitted for URL-only external media. */
+  key?: string;
+  /** HTTPS URL for an externally hosted, index-only image. */
+  url?: string;
   sha256: string;
   byteLength: number;
   contentType: string;
@@ -16,6 +19,16 @@ export type FormalMediaFetchJson = <T>(key: string) => Promise<T>;
 
 const SAFE_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const SAFE_MEDIA_KEY = /^worlds\/[A-Za-z0-9][A-Za-z0-9._-]*\/assets\/[0-9a-f]{64}\/display\/[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+
+function isSafeExternalUrl(value: unknown): value is string {
+  if (typeof value !== 'string' || value.length === 0 || value.length > 2048) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password && !url.hash;
+  } catch {
+    return false;
+  }
+}
 
 function safeSegment(value: string, field: string): string {
   const normalized = String(value ?? '').trim();
@@ -34,16 +47,22 @@ function featureIndexKey(releaseId: string, worldId: string, classCode: string, 
 function readAsset(value: unknown, worldId: string): FormalMediaAsset | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const asset = value as JsonRecord;
-  const key = String(asset.key ?? '');
+  const key = typeof asset.key === 'string' ? asset.key : '';
+  const url = typeof asset.url === 'string' ? asset.url : '';
   const sourcePath = String(asset.sourcePath ?? '');
   const sha256 = String(asset.sha256 ?? '');
   const byteLength = typeof asset.byteLength === 'number' ? asset.byteLength : Number.NaN;
   const contentType = String(asset.contentType ?? '');
   const role = asset.role;
   const order = typeof asset.order === 'number' ? asset.order : Number.NaN;
+  if (!/^[0-9a-f]{64}$/.test(sha256) || !Number.isSafeInteger(byteLength) || byteLength < 0
+    || role !== 'display' || !Number.isSafeInteger(order) || order < 1) return null;
+  if (isSafeExternalUrl(url)) {
+    if (sourcePath !== `external:${url}` || key || byteLength !== 0 || contentType !== 'external-url') return null;
+    return { sourcePath, url, sha256, byteLength, contentType, role, order };
+  }
   if (!SAFE_MEDIA_KEY.test(key) || !key.startsWith(`worlds/${worldId}/`) || !sourcePath.startsWith(`Picture/${worldId}/`)
-    || !/^[0-9a-f]{64}$/.test(sha256) || !Number.isSafeInteger(byteLength) || byteLength < 0
-    || !contentType.startsWith('image/') || role !== 'display' || !Number.isSafeInteger(order) || order < 1) return null;
+    || !contentType.startsWith('image/')) return null;
   return { sourcePath, key, sha256, byteLength, contentType, role, order };
 }
 
@@ -82,7 +101,7 @@ export async function loadFormalMediaAssets(args: {
   return rawAssets
     .map((asset) => readAsset(asset, worldId))
     .filter((asset): asset is FormalMediaAsset => asset !== null)
-    .sort((left, right) => left.order - right.order || left.key.localeCompare(right.key));
+    .sort((left, right) => left.order - right.order || (left.key ?? left.url ?? '').localeCompare(right.key ?? right.url ?? ''));
 }
 
 export function formalMediaUrl(mediaRootUrl: string, key: string): string {

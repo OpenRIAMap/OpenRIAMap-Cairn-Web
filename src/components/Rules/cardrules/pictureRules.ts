@@ -42,7 +42,7 @@ export const DEFAULT_RULE_PICTURE_SOURCE: RulePictureSourceDef = {
 };
 
 export type FeaturePictureEntry = {
-  source: SourceKey;
+  source: SourceKey | 'external';
   url: string;
   filename?: string;
   relativePath?: string;
@@ -66,7 +66,7 @@ function resolveTempMountedPictureEntriesForFeature(feature?: FeatureRecord | nu
   if (!Array.isArray(entries)) return [];
   return entries
     .map((x) => ({
-      source: x.source === 'pub' || x.source === 'dat' || x.source === 'formal' ? x.source : 'dat',
+      source: x.source === 'pub' || x.source === 'dat' || x.source === 'formal' || x.source === 'external' ? x.source : 'dat',
       url: String(x.url ?? '').trim(),
       filename: x.filename,
       relativePath: x.relativePath,
@@ -213,12 +213,21 @@ async function resolveFormalMediaPictureEntriesForFeature(feature?: FeatureRecor
     let request = FORMAL_MEDIA_REQUESTS.get(cacheKey);
     if (!request) {
       request = loadFormalMediaAssets({ source, releaseId, worldId, classCode, kindPath, featureId })
-        .then((assets) => assets.map((asset) => ({
-          source: 'formal' as const,
-          url: formalMediaUrl(source.mediaRootUrl!, asset.key),
-          filename: fileNameFromUrl(asset.key),
-          relativePath: asset.sourcePath,
-        })))
+        .then((assets) => assets.flatMap((asset): FeaturePictureEntry[] => {
+          if (asset.url) return [{
+            source: 'external',
+            url: asset.url,
+            filename: fileNameFromUrl(asset.url),
+            relativePath: asset.sourcePath,
+          }];
+          if (!asset.key) return [];
+          return [{
+            source: 'formal',
+            url: formalMediaUrl(source.mediaRootUrl!, asset.key),
+            filename: fileNameFromUrl(asset.key),
+            relativePath: asset.sourcePath,
+          }];
+        }))
         .catch(() => []);
       FORMAL_MEDIA_REQUESTS.set(cacheKey, request);
     }
