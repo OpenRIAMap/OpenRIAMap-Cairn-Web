@@ -25,6 +25,7 @@ import { PlayersList } from '../Players/PlayersList';
 import { LoadingOverlay } from '../Loading/LoadingOverlay';
 import { DraggablePanel } from '../DraggablePanel/DraggablePanel';
 import { SettingsPanel } from '../Settings/SettingsPanel';
+import ConfigStudio from '@/configStudio/ConfigStudio';
 import { openriamapGithubReviewAuth } from '@/components/Review/openriamapReviewAuth';
 import { useDataStore } from '@/store/dataStore';
 import { ensureLegacyDataLoaded } from '@/lib/legacyDataLoader';
@@ -309,6 +310,7 @@ function MapContainer() {
   const [showPlayersPage, setShowPlayersPage] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showConfigStudio, setShowConfigStudio] = useState(false);
   const [reviewAccessBlockedMessage, setReviewAccessBlockedMessage] = useState<string | null>(null);
   const [showPublicReleaseRecords, setShowPublicReleaseRecords] = useState(false);
   const [rulePanelCollapsed, setRulePanelCollapsed] = useState(false);
@@ -1833,7 +1835,7 @@ map.on('mousemove', handleMouseMove);
       case 'about':
         return <AboutCard onClose={closeMobileSheet} />;
       case 'settings':
-        return <SettingsPanel onClose={closeMobileSheet} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />;
+        return <SettingsPanel onClose={closeMobileSheet} onOpenConfigStudio={() => { closeMobileSheet(); setShowConfigStudio(true); }} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />;
       case 'releaseRecords':
         return <PublicReleaseRecordsPanel showNativeClose showInlineRefresh onClose={closeMobileSheet} />;
       case 'navigation':
@@ -2228,10 +2230,12 @@ case 'players':
           id="settings"
           defaultPosition={{ x: 16, y: 240 }}
         >
-          <SettingsPanel onClose={() => setShowSettings(false)} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />
+          <SettingsPanel onClose={() => setShowSettings(false)} onOpenConfigStudio={() => { setShowSettings(false); setShowConfigStudio(true); }} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />
         </DraggablePanel>
         </div>
       )}
+
+      {showConfigStudio ? <ConfigStudio onClose={() => setShowConfigStudio(false)} /> : null}
 
       {/* 路径规划面板 */}
       {showNavigation && (
