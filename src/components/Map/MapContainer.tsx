@@ -25,7 +25,6 @@ import { PlayersList } from '../Players/PlayersList';
 import { LoadingOverlay } from '../Loading/LoadingOverlay';
 import { DraggablePanel } from '../DraggablePanel/DraggablePanel';
 import { SettingsPanel } from '../Settings/SettingsPanel';
-import ConfigStudio from '@/configStudio/ConfigStudio';
 import { openriamapGithubReviewAuth } from '@/components/Review/openriamapReviewAuth';
 import { useDataStore } from '@/store/dataStore';
 import { ensureLegacyDataLoaded } from '@/lib/legacyDataLoader';
@@ -310,7 +309,6 @@ function MapContainer() {
   const [showPlayersPage, setShowPlayersPage] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showConfigStudio, setShowConfigStudio] = useState(false);
   const [reviewAccessBlockedMessage, setReviewAccessBlockedMessage] = useState<string | null>(null);
   const [showPublicReleaseRecords, setShowPublicReleaseRecords] = useState(false);
   const [rulePanelCollapsed, setRulePanelCollapsed] = useState(false);
@@ -339,6 +337,17 @@ function MapContainer() {
   const currentRuleDataset = useRuleDataStore((s) => s.datasets[currentWorld]);
   const loadedRuleDatasets = useRuleDataStore((s) => s.datasets);
   const mountedRuleRecords = useMemo(() => Object.values(loadedRuleDatasets).flatMap((dataset) => dataset?.features ?? []), [loadedRuleDatasets]);
+  const openConfigStudio = useCallback(() => {
+    try {
+      sessionStorage.setItem('cairnmap-config-studio-mounted-records', JSON.stringify(mountedRuleRecords));
+    } catch {
+      // A full-page workspace must not retain the live map merely because a
+      // browser declined a transient data snapshot.
+    }
+    const target = new URL(window.location.href);
+    target.searchParams.set('workspace', 'config-studio');
+    window.location.assign(target.toString());
+  }, [mountedRuleRecords]);
   const currentRulePending = useRuleDataStore((s) => s.pending[currentWorld]);
   const isGlobalLoading = useLoadingStore((s) => s.isLoading);
   const activeRuleWorldId = useLoadingStore((s) => s.activeRuleWorldId);
@@ -1837,7 +1846,7 @@ map.on('mousemove', handleMouseMove);
       case 'about':
         return <AboutCard onClose={closeMobileSheet} />;
       case 'settings':
-        return <SettingsPanel onClose={closeMobileSheet} onOpenConfigStudio={() => { closeMobileSheet(); setShowConfigStudio(true); }} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />;
+        return <SettingsPanel onClose={closeMobileSheet} onOpenConfigStudio={() => { closeMobileSheet(); openConfigStudio(); }} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />;
       case 'releaseRecords':
         return <PublicReleaseRecordsPanel showNativeClose showInlineRefresh onClose={closeMobileSheet} />;
       case 'navigation':
@@ -2232,12 +2241,10 @@ case 'players':
           id="settings"
           defaultPosition={{ x: 16, y: 240 }}
         >
-          <SettingsPanel onClose={() => setShowSettings(false)} onOpenConfigStudio={() => { setShowSettings(false); setShowConfigStudio(true); }} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />
+          <SettingsPanel onClose={() => setShowSettings(false)} onOpenConfigStudio={() => { setShowSettings(false); openConfigStudio(); }} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />
         </DraggablePanel>
         </div>
       )}
-
-      {showConfigStudio ? <ConfigStudio onClose={() => setShowConfigStudio(false)} mountedRecords={mountedRuleRecords} /> : null}
 
       {/* 路径规划面板 */}
       {showNavigation && (
