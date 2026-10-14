@@ -114,3 +114,9 @@ html, body, #root {
 .cm-toolbar-compact button[aria-pressed] { padding: .25rem; }
 
 .cm-parameter-group { grid-column: 1 / -1; min-width: 0; }
+
+.cm-option-row { display:flex; flex-wrap:wrap; align-items:center; }
+.cm-option-row > span { flex:0 0 1.25rem; }
+.cm-option-row > input, .cm-option-row > label { flex:1 1 10rem; min-width:0; }
+.cm-option-row > button { flex:0 0 auto; }
+.cm-option-row > div { flex:1 1 100%; min-width:0; }

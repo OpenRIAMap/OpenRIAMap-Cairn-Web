@@ -3687,16 +3687,28 @@
     "t71": {
       "type": "object",
       "properties": {
-        "authorization": {
+        "oauthClientId": {
           "type": "string"
         },
-        "storage": {
+        "oauthRedirectUri": {
+          "type": "string"
+        },
+        "sessionSigning": {
+          "type": "string"
+        },
+        "controlApiBase": {
+          "type": "string"
+        },
+        "brokerSecret": {
           "type": "string"
         }
       },
       "required": [
-        "authorization",
-        "storage"
+        "oauthClientId",
+        "oauthRedirectUri",
+        "sessionSigning",
+        "controlApiBase",
+        "brokerSecret"
       ]
     },
     "t69": {

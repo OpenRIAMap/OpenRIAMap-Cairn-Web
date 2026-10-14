@@ -1,3 +1,5 @@
+import { parseLabelTemplate } from './labelTemplate';
+import { syncSystemClassification } from './systemClassification';
 import type { CategoryNode, ConfigPackageV3, FieldDefinition, GeometryKind, LabelAnchor } from './types';
 import { classificationPathKey, fieldScope, inheritanceControls, pathDepth, resolveCardConfiguration, resolveCategoryNodes, resolveEffectiveFields, resolveGeometryProfile, resolveIncomingFields, resolveSelectableFields, validateConfigPackage } from './runtime';
 import { editableGeometryProfile, newConfigId } from './renderRuleTemplates';
@@ -26,6 +28,7 @@ function pathRename(path:string,renamed:Record<string,string>):string {
 /** Rewrite only real local field references, never titles or remote match fields. */
 export function rewriteCategoryReferences<T>(value:T,renamed:Record<string,string>):T {
   const visit=(item:unknown,key='',remote=false):unknown=>{
+    if(typeof item==='string'&&key==='template'&&!remote)return parseLabelTemplate(item).map(token=>token.kind==='field'?'"'+pathRename(token.value,renamed)+'"':token.value.replace(/\\/g,'\\\\').replace(/"/g,'\\"')).join('');
     if(typeof item==='string')return !remote&&['field','source','nameSource','colorSource','targetIdField','parentReferenceField','hostField','memberField','selectorField'].includes(key)?pathRename(item,renamed):item;
     if(Array.isArray(item))return item.map(child=>typeof child==='string'&&['fallbackSources','queryFields'].includes(key)?pathRename(child,renamed):visit(child,key,remote));
     if(!item||typeof item!=='object')return item;
@@ -36,6 +39,7 @@ export function rewriteCategoryReferences<T>(value:T,renamed:Record<string,strin
 function localDependencies(value:unknown):Set<string> {
   const result=new Set<string>();
   const visit=(item:unknown,key='',remote=false):void=>{
+    if(typeof item==='string'&&key==='template'&&!remote){for(const token of parseLabelTemplate(item))if(token.kind==='field')result.add(token.value);return;}
     if(typeof item==='string'){if(!remote&&['field','source','nameSource','colorSource','targetIdField','parentReferenceField','hostField','memberField','selectorField'].includes(key))result.add(item);return;}
     if(Array.isArray(item)){item.forEach(child=>{if(typeof child==='string'&&['fallbackSources','queryFields'].includes(key))result.add(child);else visit(child,key,remote);});return;}
     if(item&&typeof item==='object')for(const [name,child] of Object.entries(item))visit(child,name,remote||['relation','reference','target'].includes(name));
@@ -87,6 +91,7 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
   const available=new Set(resolveSelectableFields(next,path).map(field=>field.key));
   for(const dependency of localDependencies([profile.zoomPriority,card,node.fieldSettings]))if(!available.has(dependency))throw Error(`未同步依赖字段 ${dependency}；请同步字段设计或调整初始化选择。`);
   for(const rule of profile.zoomPriority.rules){const visibility=rule.extensions?.visibility;if(visibility?.mode==='activeContextMember'&&visibility.activeContextMember?.bindingId){if(config.contractRevision>=10){const role=resolveNodeFieldSettings(next,path).value.structure;if(visibility.activeContextMember.bindingId!==STRUCTURE_CONTEXT_ID||!role?.enabled||role.role!=='member')throw Error('模板的附属可见性需要同步可用的附属身份与字段。');}else{const binding=next.contextBindings?.find(binding=>binding.id===visibility.activeContextMember?.bindingId);if(binding?.member?.classification.class!==path.class)throw Error('模板显示引用的上下文绑定不适用于目标 Class。');}}}
+  next.workflows=syncSystemClassification(next).workflows;
   const validation=validateConfigPackage(next);if(!validation.valid)throw Error(validation.issues.filter(issue=>issue.severity==='error').map(issue=>`${issue.path}：${issue.message}`).join('\n'));
   actions.push('完整配置核验通过，新分类草稿可以继续编辑。');return {config:next,node,report:{actions,renamed}};
 }

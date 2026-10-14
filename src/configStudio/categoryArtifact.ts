@@ -1,6 +1,9 @@
+import { linkCardInheritance } from './cardInheritance';
+import { syncSystemClassification } from './systemClassification';
+import { incomingNodeFieldSettings } from './nodeFieldSettings';
 import JSZip from 'jszip';
 import type { CategoryNode, ClassificationPath, ConfigPackageV3, ConfigValidationReport, FieldDefinition, LookupTable } from './types';
-import { classificationPathKey, parentClassificationPath, pathDepth, resolveIncomingFields, validateConfigPackage } from './runtime';
+import { classificationPathKey, parentClassificationPath, pathDepth, resolveIncomingFields, resolveCardConfiguration, inheritanceControls, validateConfigPackage } from './runtime';
 import { validateNativeStructure } from './nativeContractValidation';
 import { createBlankV32Package } from './v32Defaults';
 import { migrateConfigToR9 } from './r9Migration';
@@ -67,16 +70,23 @@ export function prepareCategoryImport(input:ConfigPackageV3,artifact:CategoryArt
   for(const node of incoming){const previous=old.find(n=>classificationPathKey(n.path)===classificationPathKey(node.path));let id=previous?.nodeId??node.nodeId;if(used.has(id)){conflicts.push(`节点 ID 冲突：${id}`);id=newConfigId('node');}used.add(id);idMap.set(node.nodeId,id);node.nodeId=id;}
   for(const node of incoming){node.children=node.children.map(id=>idMap.get(id)??id);if(node.card?.mode==='fields')for(const item of node.card.items)if(item.inheritFrom)item.inheritFrom.nodeId=idMap.get(item.inheritFrom.nodeId)??item.inheritFrom.nodeId;}
   if(payload.kind==='node')incoming[0].children=old[0]?.children??[];
+  if(config.contractRevision>=10&&payload.kind==='node'&&incoming[0].card?.mode==='fields'&&old[0]?.card?.mode==='fields'){
+    const previous=old[0].card.items,used=new Set<string>();
+    for(const item of incoming[0].card.items){const exact=previous.find(row=>row.id===item.id),matches=previous.filter(row=>row.source===item.source&&row.renderer===item.renderer&&row.section===item.section&&!used.has(row.id)),match=exact??(matches.length===1?matches[0]:undefined);if(match&&!used.has(match.id)){item.id=match.id;used.add(match.id);}}
+  }
   const fieldIds=new Set(retained.flatMap(n=>n.fields.map(f=>f.fieldId)));
   for(const node of incoming){const parent=parentClassificationPath(node.path),upstream=parent?resolveIncomingFields({...config,nodes:[...retained,...incoming]},node.path):[];
     for(const field of node.fields){const fixed=upstream.find(f=>f.key===(field.overrideOf??field.key));if(fixed){if(inheritedFieldText(field,config)!==inheritedFieldText(fixed,config))conflicts.push(`固定继承字段冲突：${classificationPathKey(node.path)} / ${field.key}`);}}
     node.fields=node.fields.filter(field=>{const fixed=upstream.find(f=>f.key===(field.overrideOf??field.key));if(!fixed)return true;return !fixConflicts&&inheritedFieldText(field,config)!==inheritedFieldText(fixed,config);});
+    if(config.contractRevision>=10){const inherited=incomingNodeFieldSettings({...config,nodes:[...retained,...incoming]},node);for(const module of ['structure','search'] as const){const fixed=inherited[module],local=node.fieldSettings?.[module];if(fixed&&local&&(module==='structure'||inherited.search?.inheritance==='sealed')){if(categoryStableText(fixed)!==categoryStableText(local))conflicts.push(`固定继承模块冲突：${classificationPathKey(node.path)} / ${module}`);if(fixConflicts||categoryStableText(fixed)===categoryStableText(local))delete node.fieldSettings![module];}}}
     const previous=old.find(n=>classificationPathKey(n.path)===classificationPathKey(node.path));
     for(const field of node.fields){const same=previous?.fields.find(f=>f.key===field.key);if(same)field.fieldId=same.fieldId;else if(fieldIds.has(field.fieldId)){conflicts.push(`字段 ID 冲突：${field.fieldId}`);field.fieldId=newConfigId('field');}fieldIds.add(field.fieldId);}
   }
   for(const node of retained)node.children=node.children.map(id=>old.find(n=>n.nodeId===id)?incoming.find(n=>classificationPathKey(n.path)===classificationPathKey(old.find(n=>n.nodeId===id)!.path))?.nodeId??id:id);
   config.nodes=[...retained,...incoming];
+  if(config.contractRevision>=10&&payload.kind==='node'){const node=incoming[0],parent=parentClassificationPath(node.path),owner=parent?config.nodes.find(row=>classificationPathKey(row.path)===classificationPathKey(parent)):undefined;if(owner&&inheritanceControls(owner).card)linkCardInheritance(node,resolveCardConfiguration(config,owner.path),owner.nodeId);}
   if(payload.kind==='node'){const parent=parentClassificationPath(payload.path),owner=parent?config.nodes.find(n=>classificationPathKey(n.path)===classificationPathKey(parent)):undefined;if(owner&&!owner.children.includes(incoming[0].nodeId))owner.children.push(incoming[0].nodeId);}
+  config.workflows=syncSystemClassification(config).workflows;
   const newPaths=new Set(incoming.map(n=>classificationPathKey(n.path)));for(const node of old)if(!newPaths.has(classificationPathKey(node.path)))changes.push(`删除 ${classificationPathKey(node.path)}`);for(const node of incoming)changes.push(`${old.some(n=>classificationPathKey(n.path)===classificationPathKey(node.path))?'替换':'新增'} ${classificationPathKey(node.path)}`);
   return {config,selectedId:incoming.find(n=>classificationPathKey(n.path)===classificationPathKey(payload.path))!.nodeId,classCode:payload.classCode,kind:payload.kind,conflicts,changes,report:validateConfigPackage(config)};
 }
@@ -87,7 +97,7 @@ export function prepareClassTreeCommit(current:ConfigPackageV3,baseline:ConfigPa
   if(baseline.contractRevision<9)baseline=migrateConfigToR9(baseline);
   const tree=(config:ConfigPackageV3)=>config.nodes.filter(node=>node.path.class===classCode);
   if(categoryStableText(tree(current))!==categoryStableText(tree(baseline)))throw Error('主配置中的同 Class 树已发生变化，请重新导入/核验，未覆盖较新的修改。');
-  const outside=(config:ConfigPackageV3)=>({...config,lookupTables:undefined,nodes:config.nodes.filter(node=>node.path.class!==classCode)});
+  const outside=(config:ConfigPackageV3)=>({...config,lookupTables:undefined,nodes:config.nodes.filter(node=>node.path.class!==classCode),workflows:config.workflows.map(workflow=>({...workflow,steps:workflow.steps.map(step=>({...step,controls:step.controls?.filter(control=>!(control.kind==='classificationPicker'&&control.systemManaged))}))}))});
   const needed=new Set(tree(staged).flatMap(node=>node.fields.flatMap(field=>field.optionsTableId?[field.optionsTableId]:[])));
   const tables=[...current.lookupTables??[]];
   for(const table of staged.lookupTables??[]){const original=baseline.lookupTables?.find(row=>row.id===table.id);if(original){if(categoryStableText(original)!==categoryStableText(table))throw Error('Class 树模式不能修改共享对照表。');continue;}if(!needed.has(table.id))throw Error('Class 树包含范围外的新对照表。');const existing=tables.find(row=>row.id===table.id);if(existing&&categoryStableText(existing)!==categoryStableText(table))throw Error(`对照表 ${table.id} 已由其他保存修改，请重新导入。`);if(!existing)tables.push(structuredClone(table));}
@@ -95,5 +105,6 @@ export function prepareClassTreeCommit(current:ConfigPackageV3,baseline:ConfigPa
   if(categoryStableText(outside(staged))!==categoryStableText(outside(baseline)))throw Error('暂存 Class 树修改了范围外内容，不能注入。');
   const nodes=tree(staged);if(!nodes.some(node=>pathDepth(node.path)===1))throw Error('暂存树缺少 Class 根。');
   const candidate={...current,...(tables.length?{lookupTables:tables}:{}),nodes:[...current.nodes.filter(node=>node.path.class!==classCode),...structuredClone(nodes)]};
+  candidate.workflows=syncSystemClassification(candidate).workflows;
   const report=validateConfigPackage(candidate);if(!report.valid)throw Error(report.issues.filter(issue=>issue.severity==='error').map(issue=>`${issue.path}：${issue.message}`).join('\n'));return candidate;
 }

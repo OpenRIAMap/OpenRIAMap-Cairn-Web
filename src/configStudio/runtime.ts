@@ -532,6 +532,7 @@ function validateRuleLabel(
     catch (error) { issue(issues, 'error', 'label-template-invalid', rulePath, (error as Error).message); }
   }
   if (label.sourceMode !== 'combined' && label.source && !sourceExists(label.source, fields)) issue(issues, 'error', 'render-label-source-invalid', rulePath, 'Label 来源必须是当前分类的有效字段、tags.xxx 或 extensions.xxx。', { field: label.source });
+  if(config.contractRevision>=10){const referenced=label.sourceMode==='combined'?(()=>{try{return parseLabelTemplate(label.template??'').filter(token=>token.kind==='field').map(token=>token.value);}catch{return [];}})():label.source?[label.source]:[];for(const path of referenced){const field=resolveEffectiveFields(config,sourcePath).find(field=>field.key===path);if(field&&(field.type==='json'||field.cardinality!=='single'))issue(issues,'error','label-complex-source-format',rulePath,'Label 来源需要标量字段；数组/对象必须先注册明确的显示格式。',{field:path});}}
   for (const fallback of label.fallbackSources ?? []) if (!sourceExists(fallback, fields)) issue(issues, 'error', 'render-label-fallback-source-invalid', rulePath, 'Label 回退来源必须是当前分类的有效字段、tags.xxx 或 extensions.xxx。', { field: fallback });
   if (label.valueFormat && !['plain', 'floorLabel'].includes(label.valueFormat)) issue(issues, 'error', 'render-label-value-format-invalid', rulePath, 'Label 值格式无效。');
   for (const [source, format] of Object.entries(label.fallbackValueFormats ?? {})) {

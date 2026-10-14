@@ -17,6 +17,7 @@ Node 24.21.0 / npm 11.19.0 下锁文件安装、合并基线的 39 组核验及 
 | TABLE-01 | 完成模型、编辑与执行接入；新版默认迁移随后统一交付 | r10 严格契约；V1 两表/四返回点；显式绑定、解除副本、ID 事务改名、引用删除阻断、字段/工作流/重复组解析和一次性预填；分类依赖信封与 ZIP 冲突/往返通过。41 组核验/build；五宽度实际控件验收及无原始 JSON 编辑通过，证据 `.cache/main-update/table-verify.txt`、`table-build.txt`、`subject-table-acceptance.json` |
 | LABEL-01 | 解析、编辑、运行与迁移完成；最终默认包及视觉验收随后统一交付 | 45 组核验/build；安全独立模板、转义/预算、空/对象回退、0/false、冻结编译缓存和未知字段阻断通过。27 组实际 RLE Zoom/方向渲染计划验证：2–4 的 direction=3 新增 11px bureau+line 颜色胶囊，其他区间/方向文字及样式保持原意。旧 V1 fixture 保留。证据 `.cache/main-update/label-verify.txt`、`label-build.txt` |
 | APP-01 与退役接口 | 总体规则六模块及运行消费者完成；旧合同元数据清理和最终包待统一交付 | 三工作区、独立持久草稿/核验保存/冲突保护、全包核验/ZIP；实际世界/投影/三种瓦片/Zoom、按钮样式和同一互斥联动状态机、世界来源绑定/transport/media、注册分包加载和入口、搜索数量/延迟、玩家接口/轮询、工具栏均接入活动应用设置。审核使用原同源 Cookie/nonce/服务端授权边界；禁用/空接口专项测试请求为 0，不模拟登录。现役数据/媒体读取器替换旧 pub/dat/legacy-merge 消费链；旧 source/cache 阻断且提示显式确认来源。46 组核验通过；编译兼容修正后生产构建通过，六模块五宽度/保存隔离/刷新/草稿阻断真实 UI 通过。证据 `.cache/main-update/application-build.txt`（含已修正的编译失败）、`application-build-final.txt`、`subject-application-acceptance.json`。真实账号审核写入和生产 CORS 未验收；服务端凭据引用随部署配置，浏览器不修改服务端环境变量 |
+| 分类/继承/表单交叉复核 | 完成 | 单分类替换保留子卡稳定来源和布局；固定角色/搜索模块导入冲突及显式修正；新增子级/整树替换只刷新系统分类控件，不修改用户工作流；组合 Label 模板字段改名与依赖检查；复杂标签值只读保留，窄对照行握柄。47 组核验/build、表格与信息卡实际 UI 回归通过。实际服务端引用与 api 环境名逐项对照，未加入凭据值。证据 `.cache/main-update/transaction-final-verify.txt`、`transaction-final-build.txt` |
 | 全量、浏览器、真实数据和服务验收 | 待实施 | |
 
 每个主题独立本地提交并执行 `npm run verify:config-v32` 和 `npm run build`，保留实际结果。未验收的服务与人工项不写成通过。
