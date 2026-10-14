@@ -65,8 +65,11 @@ export function migrateConfigToR10(value:ConfigPackageV3):{config:ConfigPackageV
     if(base&&full&&full.label){
       const low=structuredClone(base);low.id=base.id+'--zoom2-4';low.when!.zoom.min=2;base.when!.zoom.max=1;
       const pill=structuredClone(full);pill.id='r10-rle-code-pill-zoom2-4';pill.when!.zoom={min:2,max:4};pill.label={...pill.label!,sourceMode:'combined',template:'"bureau""line"',style:{...pill.label!.style!,size:11}};
+      pill.extensions={...pill.extensions,lineLabel:{...pill.extensions?.lineLabel,profile:'strict-on-line',mode:'strictOnLine',minLengthPx:24,endpointPaddingMinPx:4,endpointPaddingRatio:0.05,repositionMode:'off',repositionStrictSvg:false}};
       const position=rules.indexOf(base);rules.splice(position+1,0,low,pill);
       report.changes.push({path:'RLE/LineString/zoom2-4',message:'用户批准的 V1 偏离：direction=3 显示 bureau+line 11px 线路色代码胶囊；0–1、5–7、8 保持原意。'});
+      for(const rule of rules)if(rule.label?.style?.family==='rle-pill-color')rule.extensions={...rule.extensions,lineLabel:{...rule.extensions?.lineLabel,profile:rule.extensions?.lineLabel?.profile??'strict-on-line',repositionStrictSvg:false}};
+      report.changes.push({path:'RLE/LineString/pill',message:'修复 SVG-only 限制误隐藏背景胶囊；既有正式名称与代码胶囊采用支持背景的标签回退，不修改 ROD。'});
     }else throw Error('RLE 基线缺少 0–4/5–7 原生规则，无法自动创建代码胶囊。');
   }
   return {config,report};

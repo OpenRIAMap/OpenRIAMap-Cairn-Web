@@ -151,10 +151,10 @@ const structureContexts=new WeakMap<StructureIndex,WeakMap<FeatureRecord,ConfigR
 function structureContext(config:ConfigPackageV3,host:FeatureRecord,store:FeatureStore):ConfigRuntimeContext|undefined {
   const index=buildStructureIndex(config,store);let contexts=structureContexts.get(index);if(!contexts){contexts=new WeakMap();structureContexts.set(index,contexts);}if(contexts.has(host))return contexts.get(host);
   const members=index.membersByHost.get(host)??[],byValue=new Map<string,{value:string;label:string}>();
-  for(const member of members){const value=structureSelector(index,member);if(value&&!byValue.has(value))byValue.set(value,{value,label:String(featureValue(member,'Name')??value).trim()||value});}
+  for(const member of members){const value=structureSelector(index,member);if(value&&!byValue.has(value))byValue.set(value,{value,label:formatFloorDisplayLabel(value)});}
   if(!byValue.size){contexts.set(host,undefined);return undefined;}
   const binding:ContextBinding={id:STRUCTURE_CONTEXT_ID,label:{zh:'主结构／附属结构',en:''},enabled:true,profile:'show-active-member-only',host:{classification:pathFor(host),referenceField:'ID'},member:{classification:{class:''},referenceField:''}};
-  const result={binding,host,members,memberUids:new Set(members.map(member=>member.uid)),options:[...byValue.values()].sort((a,b)=>a.value.localeCompare(b.value,undefined,{numeric:true}))};contexts.set(host,result);return result;
+  const result={binding,host,members,memberUids:new Set(members.map(member=>member.uid)),options:[...byValue.values()].sort((a,b)=>compareFloorDisplayOrder(a.value,b.value))};contexts.set(host,result);return result;
 }
 
 type ContextLookup = {
@@ -974,3 +974,4 @@ export function resolveConfigRuntimeRule(
   if (!binding.nativeResolved) { binding.native = nativeRule(config, record, ctx, store); binding.nativeResolved = true; }
   return binding.native ?? null;
 }
+import {compareFloorDisplayOrder,formatFloorDisplayLabel} from '../rendering/order/floorDisplayOrder';

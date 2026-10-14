@@ -1,3 +1,4 @@
+import { resolveNodeFieldSettings } from './nodeFieldSettings';
 import { MAP_ZOOM_BOUNDS, TILE_ZOOM_BOUNDS } from '@/lib/mapZoom';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type * as L from 'leaflet';
@@ -96,6 +97,16 @@ export function makeConfigPreviewFixture(config: ConfigPackageV3, node: Category
   const selectedType = scenarioType(scenario);
   const path = node.path;
   const selected = fixtureFor(path, selectedType, coordinatesFor(scenario), `config-preview-${scenario}`, [path.class, path.kind, path.skind, path.skind2].filter(Boolean).join('/') || path.class);
+  if(config.contractRevision>=10){
+    const role=resolveNodeFieldSettings(config,node.path).value.structure;
+    if(role?.enabled&&role.role==='member'){
+      const host=config.nodes.find(candidate=>!candidate.path.kind&&resolveNodeFieldSettings(config,candidate.path).value.structure?.enabled&&resolveNodeFieldSettings(config,candidate.path).value.structure?.role==='main');
+      if(!host)return {features:[selected]};
+      const id='config-preview-context-host',type=typeForPath(config,host.path),peer=fixtureFor(host.path,type,coordinatesForExternalHost(type),id,'预览主结构');
+      return {features:[peer,{...selected,[role.hostField!]:id,[role.selectorField!]:'1'}]};
+    }
+    return {features:[selected]};
+  }
   const binding = (config.contextBindings ?? []).find((candidate) => candidate.enabled && (samePath(candidate.host.classification, path) || samePath(candidate.member.classification, path)));
   if (!binding) return { features: [selected] };
 
@@ -177,14 +188,14 @@ export function previewScenarioCompatible(config: ConfigPackageV3, node: Categor
   return Boolean(profile?.enabled && (!definition.multipart || profile.allowMultipleParts));
 }
 
-export function ConfigRuntimePreview({ config, node, scenario, onRuntimeError, onMapReady }: { config: ConfigPackageV3; node: CategoryNode; scenario: PreviewScenario; onRuntimeError?: (error: Error) => void; onMapReady?: (map: L.Map) => void }) {
+export function ConfigRuntimePreview({ config, node, scenario, onRuntimeError, onMapReady, fixture }: { config: ConfigPackageV3; node: CategoryNode; scenario: PreviewScenario; onRuntimeError?: (error: Error) => void; onMapReady?: (map: L.Map) => void; fixture?:{features:unknown[]} }) {
   const activeConfig = useMemo(() => validateConfigPackage(config).valid ? compileConfigRuntime(config, true) : undefined, [config]);
   const [map, setMap] = useState<L.Map | null>(null);
   const [tileError, setTileError] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const scenarioDefinition = PREVIEW_SCENARIOS.find((item) => item.id === scenario) ?? PREVIEW_SCENARIOS[0];
   const selectedBinding = (config.contextBindings ?? []).find((candidate) => candidate.enabled && samePath(candidate.member.classification, node.path));
-  const dataset = useMemo(() => makeConfigPreviewFixture(config, node, scenario), [config, node, scenario]);
+  const dataset = useMemo(() => fixture??makeConfigPreviewFixture(config, node, scenario), [config, node, scenario,fixture]);
   useEffect(() => { if (map) onMapReady?.(map); }, [map, onMapReady]);
   const projection = useMemo(() => new DynmapProjection(getWorldConfig('zth')), []);
   const [zoom, setZoom] = useState(scenarioDefinition.zoom);
@@ -213,7 +224,7 @@ export function ConfigRuntimePreview({ config, node, scenario, onRuntimeError, o
     <MapContainer center={[0, 0]} zoom={leafletZoom} minZoom={MAP_ZOOM_BOUNDS.minZoom} maxZoom={MAP_ZOOM_BOUNDS.maxZoom} zoomControl={false} attributionControl crs={createDynmapCRS(getWorldConfig('zth'))} className="absolute inset-0 h-full min-h-[300px] w-full" dragging={false} touchZoom={false} doubleClickZoom={false} boxZoom={false} keyboard={false} scrollWheelZoom={false} zoomSnap={1} zoomDelta={1}>
       <TileLayer onError={setTileError} />
       <LockedViewport zoom={leafletZoom} onReady={setMap} onZoom={(value) => setZoom(toZoomLevel(value))} />
-      {map && activeConfig ? <RuleDrivenLayer mapReady map={map} projection={projection} worldId="zth" visible activeButtonIds={[]} bypassButtonFilter runtimeDataset={dataset} disableTransientSources configRuntime={activeConfig} floorPanelMode={selectedBinding ? 'embedded' : 'hidden'} /> : null}
+      {map && activeConfig ? <RuleDrivenLayer mapReady map={map} projection={projection} worldId="zth" visible activeButtonIds={[]} bypassButtonFilter runtimeDataset={dataset} disableTransientSources configRuntime={activeConfig} floorPanelMode={selectedBinding||config.contractRevision>=10&&resolveNodeFieldSettings(config,node.path).value.structure?.role==='member'?'embedded':'hidden'} /> : null}
     </MapContainer>
     {tileError ? <p role="alert" className="absolute bottom-3 left-3 right-3 z-[1100] rounded bg-rose-50/95 p-2 text-xs text-rose-800">{tileError}</p> : null}
     {!activeConfig ? <p role="status" className="absolute bottom-3 left-3 right-3 z-[1100] rounded bg-amber-50 p-2 text-xs text-amber-900">当前草稿尚未通过核验，完善条件或引用后恢复原生预览。</p> : null}

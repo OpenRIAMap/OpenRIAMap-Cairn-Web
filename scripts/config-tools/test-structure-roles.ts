@@ -18,7 +18,7 @@ const bud=record('BUD','MAIN_A'),stb=record('STB','MAIN_B',{Floors:['LEGACY_FLOO
 const compiled=compileConfigRuntime(config,true),store=new FeatureStore([bud,stb,flrA,flrB,legacyFloor,edenBud,edenFloor]),index=buildStructureIndex(compiled,store);
 assert.equal(index.hostsByMember.get(flrA),bud);assert.equal(index.hostsByMember.get(flrB),stb);assert.equal(index.hostsByMember.get(legacyFloor),stb);assert.equal(index.hostsByMember.get(edenFloor),edenBud);
 assert.equal(buildStructureIndex(compiled,store),index,'One index per immutable config/data snapshot');assert.equal(index.diagnostics.length,0);
-const context=resolveConfigRuntimeContextForHost(compiled,stb,store)!;assert.equal(context.binding.id,STRUCTURE_CONTEXT_ID);assert.equal(context.members.length,2);assert.deepEqual(context.options.map(o=>o.value),['2','3']);
+const context=resolveConfigRuntimeContextForHost(compiled,stb,store)!;assert.equal(context.binding.id,STRUCTURE_CONTEXT_ID);assert.equal(context.members.length,2);assert.deepEqual(context.options.map(o=>o.value),['3','2']);
 assert.equal(resolveConfigRuntimeContextForRecord(compiled,flrB,store)?.host,stb);assert.equal(resolveConfigRuntimeContextForRecord(compiled,legacyFloor,store)?.host,stb);
 const ctx={inFloorView:true,activeBuildingUid:stb.uid,activeContextBindingId:STRUCTURE_CONTEXT_ID,activeFloorSelector:'2'} as Parameters<typeof isConfigRuntimeRecordVisible>[2];
 assert(isConfigRuntimeRecordVisible(compiled,flrB,ctx,store));assert(!isConfigRuntimeRecordVisible(compiled,flrA,ctx,store));assert(!isConfigRuntimeRecordVisible(compiled,legacyFloor,ctx,store));assert(isConfigRuntimeRecordVisible(compiled,bud,ctx,store));
@@ -34,3 +34,5 @@ const created=initializeCategory(config,{parentId:root.nodeId,code:'ROLE_TEST',l
 const flow=config.workflows.find(w=>w.mode==='composed'&&w.outputs[0]?.classification.class==='FLR')!;assert(flow);
 const classification=config.nodes.find(n=>n.path.class==='FLR'&&!n.children.length)!.path;const result=[{outputId:flow.outputs[0].id,classification,geometry:flow.outputs[0].geometry.selected,record:{ID:'INVALID',CoordP:[[0,-64,0]],NofFloor:'1'}}];assert(validateV3WorkflowRecords(config,flow,result).some(i=>i.message.includes('主结构 ID')));
 console.log('structure-roles: arbitrary main/member classes, FLR→BUD/STB, reverse legacy references, world isolation, duplicate/ambiguous blocking, zero selectors, shared floor/click context, hard module inheritance and strict new output passed');
+
+assert.deepEqual(context.options.map(o=>o.label),['3F','2F'],'Layer switching uses V1 level values rather than arbitrary first-room names');
