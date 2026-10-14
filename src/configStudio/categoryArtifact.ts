@@ -1,19 +1,19 @@
 import JSZip from 'jszip';
-import type { CategoryNode, ClassificationPath, ConfigPackageV3, ConfigValidationReport } from './types';
+import type { CategoryNode, ClassificationPath, ConfigPackageV3, ConfigValidationReport, LookupTable } from './types';
 import { classificationPathKey, parentClassificationPath, pathDepth, resolveEffectiveFields, validateConfigPackage } from './runtime';
 import { validateNativeStructure } from './nativeContractValidation';
 import { createBlankV32Package } from './v32Defaults';
 import { migrateConfigToR9 } from './r9Migration';
 import { newConfigId } from './renderRuleTemplates';
 
-export type CategoryArtifactPayload={schemaVersion:'cairnmap.category-artifact.v1';contractRevision:9;kind:'node'|'classTree';projectId:string;classCode:string;path:ClassificationPath;nodes:CategoryNode[];ancestors:ClassificationPath[];engineFingerprint:string};
+export type CategoryArtifactPayload={schemaVersion:'cairnmap.category-artifact.v1'|'cairnmap.category-artifact.v2';contractRevision:9|10;lookupTables?:LookupTable[];kind:'node'|'classTree';projectId:string;classCode:string;path:ClassificationPath;nodes:CategoryNode[];ancestors:ClassificationPath[];engineFingerprint:string};
 export type CategoryArtifact={payload:CategoryArtifactPayload;sha256:string};
 export function categoryStableText(value:unknown):string {if(Array.isArray(value))return '['+value.map(categoryStableText).join(',')+']';if(value&&typeof value==='object')return '{'+Object.entries(value).filter(([,v])=>v!==undefined).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>JSON.stringify(k)+':'+categoryStableText(v)).join(',')+'}';return JSON.stringify(value);}
 async function digest(value:unknown):Promise<string>{return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(categoryStableText(value))))].map(b=>b.toString(16).padStart(2,'0')).join('');}
 
 function checkPayload(payload:CategoryArtifactPayload) {
-  if(!payload||payload.schemaVersion!=='cairnmap.category-artifact.v1'||payload.contractRevision!==9||!['node','classTree'].includes(payload.kind)||!payload.classCode||!Array.isArray(payload.nodes)||!payload.nodes.length||payload.nodes.length>2048||!Array.isArray(payload.ancestors))throw Error('文件不是受支持的单分类/Class 树输出。');
-  const shape=validateNativeStructure({...createBlankV32Package(),contractRevision:9,nodes:payload.nodes,workflows:[]});if(shape.length)throw Error(shape.map(i=>`${i.path}：${i.message}`).join('\n'));
+  if(!payload||!([9,10].includes(payload.contractRevision))||payload.schemaVersion!==(payload.contractRevision===10?'cairnmap.category-artifact.v2':'cairnmap.category-artifact.v1')||!['node','classTree'].includes(payload.kind)||!payload.classCode||!Array.isArray(payload.nodes)||!payload.nodes.length||payload.nodes.length>2048||!Array.isArray(payload.ancestors))throw Error('文件不是受支持的单分类/Class 树输出。');
+  const shape=validateNativeStructure({...createBlankV32Package(),contractRevision:payload.contractRevision,lookupTables:payload.lookupTables,nodes:payload.nodes,workflows:[]});if(shape.length)throw Error(shape.map(i=>`${i.path}：${i.message}`).join('\n'));
   if(payload.nodes.some(node=>node.path.class!==payload.classCode)||payload.path?.class!==payload.classCode)throw Error('分类文件包含其他 Class 或范围身份不一致。');
   const ids=payload.nodes.map(node=>node.nodeId),paths=payload.nodes.map(node=>classificationPathKey(node.path));if(new Set(ids).size!==ids.length||new Set(paths).size!==paths.length)throw Error('分类文件内部节点 ID/路径重复。');
   for(const node of payload.nodes){const levels=['class','kind','skind','skind2'] as const;for(let index=1;index<levels.length;index++)if(node.path[levels[index]]&&!node.path[levels[index-1]])throw Error('分类路径层级不连续。');}
@@ -26,12 +26,14 @@ function checkPayload(payload:CategoryArtifactPayload) {
 }
 export async function createCategoryArtifact(config:ConfigPackageV3,nodeId:string,kind:'node'|'classTree'):Promise<CategoryArtifact> {
   const report=validateConfigPackage(config);if(!report.valid)throw Error('配置未通过核验，不能导出分类文件。');
-  if(config.contractRevision!==9)throw Error('请先迁移并保存 r9，再导出分类。');
+  if(config.contractRevision!==9&&config.contractRevision!==10)throw Error('请先迁移并保存原生配置，再导出分类。');
   const selected=config.nodes.find(n=>n.nodeId===nodeId);if(!selected)throw Error('请选择要导出的分类。');
   const path=kind==='classTree'?{class:selected.path.class}:selected.path;
   const nodes=structuredClone(kind==='classTree'?config.nodes.filter(n=>n.path.class===path.class):[selected]);if(kind==='node')nodes[0].children=[];
   const ancestors:ClassificationPath[]=[];let parent=parentClassificationPath(path);while(parent){ancestors.unshift(parent);parent=parentClassificationPath(parent);}
-  const payload:CategoryArtifactPayload={schemaVersion:'cairnmap.category-artifact.v1',contractRevision:9,kind,projectId:config.projectId,classCode:path.class,path,nodes,ancestors,engineFingerprint:await digest(config.engine)};checkPayload(payload);return {payload,sha256:await digest(payload)};
+  const tableIds=new Set(nodes.flatMap(node=>node.fields.flatMap(field=>field.optionsTableId?[field.optionsTableId]:[])));
+  const lookupTables=config.lookupTables?.filter(table=>tableIds.has(table.id));
+  const payload:CategoryArtifactPayload={schemaVersion:config.contractRevision===10?'cairnmap.category-artifact.v2':'cairnmap.category-artifact.v1',contractRevision:config.contractRevision as 9|10,...(lookupTables?.length?{lookupTables:structuredClone(lookupTables)}:{}),kind,projectId:config.projectId,classCode:path.class,path,nodes,ancestors,engineFingerprint:await digest(config.engine)};checkPayload(payload);return {payload,sha256:await digest(payload)};
 }
 export async function categoryArtifactBlob(artifact:CategoryArtifact,zip=true):Promise<Blob> {
   checkPayload(artifact.payload);if(artifact.sha256!==await digest(artifact.payload))throw Error('分类内容摘要无效。');
@@ -50,6 +52,8 @@ export type CategoryImportResult={config:ConfigPackageV3;selectedId:string;class
 /** Candidate only: never mutates the saved package or merges old tree nodes. */
 export function prepareCategoryImport(input:ConfigPackageV3,artifact:CategoryArtifact,fixConflicts=false):CategoryImportResult {
   checkPayload(artifact.payload);const config=input.contractRevision<9?migrateConfigToR9(input):structuredClone(input),payload=artifact.payload,changes:string[]=[],conflicts:string[]=[];
+  if(payload.contractRevision>config.contractRevision)throw Error('请先将总配置迁移到 r10，再导入新版分类。');
+  for(const table of payload.lookupTables??[]){const existing=config.lookupTables?.find(row=>row.id===table.id);if(existing&&categoryStableText(existing)!==categoryStableText(table))throw Error(`对照表 ${table.id} 与主配置存在差异，不能覆盖其他引用。请先统一表格后导入。`);if(!existing)config.lookupTables=[...config.lookupTables??[],structuredClone(table)];}
   if(payload.kind==='node') {
     let parent=parentClassificationPath(payload.path);while(parent){if(!config.nodes.some(n=>classificationPathKey(n.path)===classificationPathKey(parent!)))throw Error(parent.kind?`不存在上级 ${classificationPathKey(parent)}，请选择导入整体分类树或逐级上传保存`:'不存在上级Class，请选择导入整体分类树或逐级上传保存');parent=parentClassificationPath(parent);}
   }
@@ -78,9 +82,13 @@ export function prepareClassTreeCommit(current:ConfigPackageV3,baseline:ConfigPa
   if(baseline.contractRevision<9)baseline=migrateConfigToR9(baseline);
   const tree=(config:ConfigPackageV3)=>config.nodes.filter(node=>node.path.class===classCode);
   if(categoryStableText(tree(current))!==categoryStableText(tree(baseline)))throw Error('主配置中的同 Class 树已发生变化，请重新导入/核验，未覆盖较新的修改。');
-  const outside=(config:ConfigPackageV3)=>({...config,nodes:config.nodes.filter(node=>node.path.class!==classCode)});
+  const outside=(config:ConfigPackageV3)=>({...config,lookupTables:undefined,nodes:config.nodes.filter(node=>node.path.class!==classCode)});
+  const needed=new Set(tree(staged).flatMap(node=>node.fields.flatMap(field=>field.optionsTableId?[field.optionsTableId]:[])));
+  const tables=[...current.lookupTables??[]];
+  for(const table of staged.lookupTables??[]){const original=baseline.lookupTables?.find(row=>row.id===table.id);if(original){if(categoryStableText(original)!==categoryStableText(table))throw Error('Class 树模式不能修改共享对照表。');continue;}if(!needed.has(table.id))throw Error('Class 树包含范围外的新对照表。');const existing=tables.find(row=>row.id===table.id);if(existing&&categoryStableText(existing)!==categoryStableText(table))throw Error(`对照表 ${table.id} 已由其他保存修改，请重新导入。`);if(!existing)tables.push(structuredClone(table));}
+  if(baseline.lookupTables?.some(table=>!staged.lookupTables?.some(row=>row.id===table.id)))throw Error('Class 树模式不能删除共享对照表。');
   if(categoryStableText(outside(staged))!==categoryStableText(outside(baseline)))throw Error('暂存 Class 树修改了范围外内容，不能注入。');
   const nodes=tree(staged);if(!nodes.some(node=>pathDepth(node.path)===1))throw Error('暂存树缺少 Class 根。');
-  const candidate={...current,nodes:[...current.nodes.filter(node=>node.path.class!==classCode),...structuredClone(nodes)]};
+  const candidate={...current,...(tables.length?{lookupTables:tables}:{}),nodes:[...current.nodes.filter(node=>node.path.class!==classCode),...structuredClone(nodes)]};
   const report=validateConfigPackage(candidate);if(!report.valid)throw Error(report.issues.filter(issue=>issue.severity==='error').map(issue=>`${issue.path}：${issue.message}`).join('\n'));return candidate;
 }

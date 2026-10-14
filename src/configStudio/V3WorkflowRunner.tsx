@@ -210,7 +210,7 @@ export function validateV3WorkflowInputs(workflow: WorkflowDefinition, slots: V3
     for (const [rowIndex, row] of rows.entries()) {
       if (!scalar && (!row || typeof row !== 'object' || Array.isArray(row))) { report(`${control.label.zh} 第 ${rowIndex + 1} 项必须是字段对象。`); continue; }
       if (scalar && row !== null && typeof row === 'object') { report(`${control.label.zh} 第 ${rowIndex + 1} 项必须是纯值。`); continue; }
-      for (const field of group?.itemFields ?? []) validateValue(field, scalar ? row : row[field.key], (message) => report(`第 ${rowIndex + 1} 项：${message}`));
+      for (const field of group?.itemFields ?? []) validateValue(config ? {...field,options:resolveWorkflowSelectOptions(config,field)} : field, scalar ? row : row[field.key], (message) => report(`第 ${rowIndex + 1} 项：${message}`));
     }
   }
   for (const step of steps) for (const point of step.drawing?.auxiliaryPoints ?? []) {
@@ -270,7 +270,7 @@ function FeatureSearchInput({ profile, records, value, onChange, placeholder, wo
   const search = normalizeSearchProfile(profile);
   useEffect(()=>{if(open)return;const selected=search?records.find(record=>Object.is(readRecordPath(record,search.returnField??'ID'),value)):undefined;setQuery(selected?displaySearchTemplate(search?.displayTemplate??'{{ID}} ({{Name}})',selected):String(value??''));},[records,value,profile,open]);
   const choose=(candidate:V3SearchCandidate)=>{onChange(candidate.returned);setQuery(candidate.display);setOpen(false);};
-  return <div ref={container} className="min-w-0 space-y-1" onBlur={event=>{if(!container.current?.contains(event.relatedTarget as Node|null))setOpen(false);}}><input role="combobox" aria-label="搜索要素" aria-expanded={open&&Boolean(query)} className="w-full rounded border px-2 py-1 text-sm" value={query} onChange={event=>{setQuery(event.target.value);setOpen(true);onChange(undefined);}} onKeyDown={event=>{if(event.key==='Escape')setOpen(false);if(event.key==='Enter'&&open&&candidates[0]){event.preventDefault();choose(candidates[0]);}}} placeholder={placeholder ?? '输入 ID 或 Name 搜索'} />
+  return <div ref={container} className="min-w-0 space-y-1" onBlur={event=>{if(!container.current?.contains(event.relatedTarget as Node|null))setOpen(false);}}><input role="combobox" aria-label="搜索要素" aria-expanded={open&&Boolean(query)} className="w-full rounded border px-2 py-1 text-sm" value={query} onChange={event=>{setQuery(event.target.value);setOpen(true);onChange(undefined);}} onKeyDown={event=>{if(event.key==='Escape')setOpen(false);if(event.key==='Enter'&&open&&settledQuery===query&&candidates[0]){event.preventDefault();choose(candidates[0]);}}} placeholder={placeholder ?? '输入 ID 或 Name 搜索'} />
     {open && query && search ? <div role="listbox" className="max-h-32 min-w-0 overflow-y-auto overflow-x-hidden rounded border bg-white text-xs shadow-sm">{candidates.length ? candidates.map(candidate=><button role="option" aria-selected={false} type="button" key={`${candidate.id}-${String(candidate.returned)}`} className="block w-full whitespace-normal px-2 py-1 text-left [overflow-wrap:anywhere] hover:bg-blue-50" onClick={()=>choose(candidate)}>{candidate.display}</button>) : <p className="px-2 py-1 text-slate-500">无匹配要素</p>}</div> : null}
     <small className="block text-slate-500 [overflow-wrap:anywhere]">返回：{String(value ?? '') || '（尚未选择）'} · 范围：{search ? `${search.target.class}${search.target.kind ? `/${search.target.kind}` : ''}` : '未配置'}</small></div>;
 }

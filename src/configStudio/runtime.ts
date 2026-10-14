@@ -4,6 +4,7 @@ import {compileRenderFormula} from './renderBooleanFormula';
 import {resolveMappedColor} from './renderScalar';
 import {scalarValueErrors, validMappedColor} from './renderScalar';
 import { isNativeConfigRevision } from './contract';
+import { effectiveOptionsOwner, effectiveOptions, validateLookupTables } from './lookupTables';
 import { canonicalRenderFields, matchesRenderFields, renderRuleRange, validateRenderFields } from './renderRuleConditions';
 import type {
   AffectedFeature,
@@ -271,7 +272,7 @@ export function resolveEffectiveFields(config: ConfigPackageV3, path: Classifica
     for (const field of node.fields) {
       const key = field.overrideOf || field.key;
       if (values.get(key)?.inheritance === 'sealed') continue;
-      values.set(key, { ...field, key, ...(field.optionSource ? { options: config.registries.optionSets?.find(set => set.id === field.optionSource?.registryKey)?.options ?? field.options } : {}) });
+      values.set(key, effectiveOptionsOwner(config, { ...field, key, ...(field.optionSource ? { options: config.registries.optionSets?.find(set => set.id === field.optionSource?.registryKey)?.options ?? field.options } : {}) }));
     }
     inherited = inheritanceControls(node).fields;
   }
@@ -279,7 +280,8 @@ export function resolveEffectiveFields(config: ConfigPackageV3, path: Classifica
   return compiled ? cachedPathValue(compiled.fields, cacheKey, freezeData(result)) : result;
 }
 
-export function resolveWorkflowSelectOptions(config: ConfigPackageV3, control: Pick<WorkflowControl, 'options' | 'optionSource'>): SelectOption[] {
+export function resolveWorkflowSelectOptions(config: ConfigPackageV3, control: Pick<WorkflowControl, 'options' | 'optionSource' | 'optionsTableId'>): SelectOption[] {
+  if (control.optionsTableId) return effectiveOptions(config,control);
   if (config.contractRevision >= 8) return control.options ?? [];
   return control.optionSource ? config.registries.optionSets?.find(set => set.id === control.optionSource?.registryKey)?.options ?? [] : control.options ?? [];
 }
@@ -929,10 +931,10 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
   for (const step of workflow.steps) for (const point of step.drawing?.auxiliaryPoints ?? []) validateWorkflowValueCondition(point.when, allTokens, `${base}/steps/${step.id}/drawing/${point.id}`, issues);
   const validateOptions = (control: Pick<WorkflowControl, 'kind' | 'options'>, path: string) => {
     if (control.kind !== 'select') return;
-    const options = 'optionSource' in control ? resolveWorkflowSelectOptions(config, control as WorkflowControl) : control.options ?? [];
+    const options = resolveWorkflowSelectOptions(config,control as WorkflowControl);
     const values = options.map((option) => option.value);
     const normalized = values.map(value=>('optionValueType' in control&&control.optionValueType==='number')?String(Number(value)):value);
-    const typed=control as Pick<WorkflowControl,'optionValueType'>;
+    const typed=effectiveOptionsOwner(config,control as WorkflowControl);
     if(typed.optionValueType==='number'&&values.some(value=>!Number.isFinite(Number(value)))||typed.optionValueType==='boolean'&&values.some(value=>!['true','false'].includes(value)))issue(issues,'error','workflow-option-value-type-invalid',path,'下拉选项保存值与数字/布尔类型不符。');
     if (!values.length || values.some((value) => !value.trim()) || new Set(normalized).size !== values.length) issue(issues, 'error', 'workflow-select-options-invalid', path, '下拉选项必须具有非空且唯一的保存值。');
   };
@@ -1142,6 +1144,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   const issues: ConfigValidationIssue[] = [];
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: false, createdAt: new Date().toISOString(), issues: structure.map(item => ({ severity: 'error', code: 'native-contract-structure-invalid', ...item })) };
+  issues.push(...validateLookupTables(config));
   if (config.contractRevision>=8 && (config.registries.optionSets || config.nodes.some(node=>node.fields.some(field=>field.optionSource)) || config.workflows.some(workflow=>controlsFor(workflow).some(control=>control.optionSource)))) issue(issues,'error','legacy-option-source-forbidden','registries','r8 使用字段内对照；旧全局选项来源必须先迁移。');
   if (config.schemaVersion !== 'cairnmap.config-package.v3') issue(issues, 'error', 'schema-version-invalid', 'manifest', '配置包不是 cairnmap.config-package.v3。');
   if (!isNativeConfigRevision(config.contractRevision)) issue(issues, 'error', 'contract-revision-invalid', 'manifest', '配置包必须使用 V3.2 原生契约 revision 5/6。');
@@ -1179,7 +1182,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
     const parent = parentClassificationPath(node.path);
     if (parent && !hasCategoryNode(config, parent)) issue(issues, 'error', 'category-parent-missing', base, '子分类节点必须具有连续的父分类节点。');
     const keys = new Set<string>();
-    node.fields.forEach((field, index) => validateField(field, `${base}/fields/${index}`, keys, issues));
+    node.fields.forEach((field, index) => validateField(effectiveOptionsOwner(config,field), `${base}/fields/${index}`, keys, issues));
     for (const geometry of GEOMETRIES) {
       const profile = node.geometryProfiles[geometry];
       if (config.contractRevision >= 7 && profile?.enabled && resolveCategoryNodes(config, node.path).some(ancestor => ancestor.nodeId !== node.nodeId && ancestor.geometryType && ancestor.geometryType !== geometry)) issue(issues, 'error', 'geometry-type-inheritance-invalid', `${base}/geometry/${geometry}`, '本级几何与祖先已指定的类型不一致。');

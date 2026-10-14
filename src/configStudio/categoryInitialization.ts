@@ -64,7 +64,7 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
     if(inherited&&semanticField({...candidate,key:inherited.key})===semanticField(inherited)){actions.push(`一致跳过：${field.key}`);continue;}
     let key=mapped;
     if(inherited){if(reserved.has(field.key))throw Error(`固定系统字段 ${field.key} 与模板定义冲突，不能重命名绕过。`);let index=1;while(occupied.has(`${mapped}_${index}`))index++;key=`${mapped}_${index}`;renamed[field.key]=key;actions.push(`重命名：${field.key} → ${key}`);}
-    const {overrideOf:_override,...local}=structuredClone(field);const copied={...local,key,fieldId:newConfigId('field')};occupied.set(key,copied);copies.set(field.key,copied);actions.push(`复制字段：${key}`);
+    const {overrideOf:_override,...local}=structuredClone(field);const copied={...local,...(local.optionsTableId?{options:undefined}:{}),key,fieldId:newConfigId('field')};occupied.set(key,copied);copies.set(field.key,copied);actions.push(`复制字段：${key}`);
   }
   const fields=originals.flatMap(field=>{const copied=copies.get(field.key);return copied?[rewriteCategoryReferences(copied,renamed)]:[];});
   const profile=editableGeometryProfile(geometry,9);

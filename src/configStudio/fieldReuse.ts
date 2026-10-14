@@ -1,6 +1,7 @@
 import type { ConfigPackageV3, FieldDefinition, WorkflowControl, WorkflowDefinition, WorkflowFieldSource, WorkflowGroupField, WorkflowValueCondition } from './types';
 import { resolveEffectiveFields } from './runtime';
 import { workflowControlFromField } from './workflowFieldControl';
+import { effectiveOptionsOwner } from './lookupTables';
 
 export const FIELD_IMPORT_PROPERTIES = ['label','kind','options','optionValueType','placeholder','defaultValue','required','requiredWhen','search','group','rows','valueNormalization','fieldFormat'] as const;
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -64,8 +65,8 @@ export function resolveImportedGroupField(config: ConfigPackageV3, workflow: Wor
 }
 export function resolveWorkflowFields(config: ConfigPackageV3, workflow: WorkflowDefinition): WorkflowDefinition {
   return { ...workflow, steps: workflow.steps.map(step => ({ ...step,controls:step.controls?.map(raw => {
-    const control = resolveImportedControl(config,workflow,raw);
-    return control.group ? { ...control, group:{ ...control.group,itemFields:control.group.itemFields.map(field=>resolveImportedGroupField(config,workflow,field)) } } : control;
+    const control = effectiveOptionsOwner(config,resolveImportedControl(config,workflow,raw));
+    return control.group ? { ...control, group:{ ...control.group,itemFields:control.group.itemFields.map(field=>effectiveOptionsOwner(config,resolveImportedGroupField(config,workflow,field))) } } : control;
   }) })) };
 }
 export function fieldImportErrors(config: ConfigPackageV3, workflow: WorkflowDefinition, control: WorkflowControl | WorkflowGroupField): string[] {

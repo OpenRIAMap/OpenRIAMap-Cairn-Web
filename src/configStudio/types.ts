@@ -14,6 +14,14 @@ export type FieldValueType = 'string' | 'number' | 'boolean' | 'enum' | 'json' |
 /** A select always carries the human-facing label separately from its value.
  * V1 uses this for many railway and road fields (for example 上行 -> 1). */
 export type SelectOption = { value: string; label: LocalizedText };
+/** Explicit table binding is live; prefill copies effective rows without it. */
+export type LookupTable = {
+  id: string;
+  label: LocalizedText;
+  valueType: 'string' | 'number' | 'boolean';
+  functionKind: 'none' | 'speed' | 'teleportHub';
+  rows: Array<SelectOption & { functionValue?: number | { world: string; range: number; returnPoints: Array<{ id: string; label: LocalizedText; x: number; y: number; z: number }> } }>;
+};
 /** `tags` and `extensions` are optional field groups, never synthetic root
  * fields named "tags" or "extensions". `key` remains the full data path so
  * every consumer can use one unambiguous identifier. */
@@ -44,6 +52,7 @@ export type FieldDefinition = {
   labels: LocalizedText;
   description: LocalizedText;
   options?: SelectOption[];
+  optionsTableId?: string;
   /** Options are serialized text keys; this controls the actual stored scalar. */
   optionValueType?: 'string' | 'number' | 'boolean';
   format?: 'plain' | 'externalLink' | 'boolean' | 'json' | 'date';
@@ -705,6 +714,7 @@ export type WorkflowGroupField = {
   kind: Exclude<ComposedWorkflowControlKind, 'classificationPicker' | 'group' | 'tagsExtensions'>;
   required?: boolean;
   options?: SelectOption[];
+  optionsTableId?: string;
   placeholder?: string;
   defaultValue?: unknown;
   rows?: number;
@@ -743,6 +753,7 @@ export type WorkflowControl = {
   optionValueType?: FieldDefinition['optionValueType'];
   requiredWhen?: WorkflowValueCondition[];
   options?: SelectOption[];
+  optionsTableId?: string;
   optionSource?: { registryKey: string };
   placeholder?: string;
   defaultValue?: unknown;
@@ -845,7 +856,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */
@@ -855,6 +866,7 @@ export type ConfigPackageV3 = {
   /** Required for V3.2-native packages (contractRevision 5). */
   engine?: ConfigEngineSettings;
   registries: ConfigRegistries;
+  lookupTables?: LookupTable[];
   nodes: CategoryNode[];
   /** Required for V3.2-native packages; legacy node.containment is import-only. */
   contextBindings?: ContextBinding[];

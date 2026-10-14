@@ -14,7 +14,7 @@ Node 24.21.0 / npm 11.19.0 下锁文件安装、合并基线的 39 组核验及 
 | DRAW-01/02 | 完成，最终全量回归保留 | 40 组核验/build 通过；17 个原生工作流、34 份最终 record 与冻结 V1 fixture 完全一致；真实地图 TPP 目标点→主点→信息页回退/撤销/重画后，主坐标与目标坐标/高度独立保留。证据 `.cache/main-update/subject-native-workflow-matrix.json`、`subject-drawing-session.json`、`draw-verify.txt`、`draw-build.txt` |
 | INHERIT-01 / PREFILL-01 | 待实施 | |
 | REL-01 / SEARCH-01 | 待实施 | |
-| TABLE-01 | 待实施 | |
+| TABLE-01 | 完成模型、编辑与执行接入；新版默认迁移随后统一交付 | r10 严格契约；V1 两表/四返回点；显式绑定、解除副本、ID 事务改名、引用删除阻断、字段/工作流/重复组解析和一次性预填；分类依赖信封与 ZIP 冲突/往返通过。41 组核验/build；五宽度实际控件验收及无原始 JSON 编辑通过，证据 `.cache/main-update/table-verify.txt`、`table-build.txt`、`subject-table-acceptance.json` |
 | LABEL-01 | 待实施 | |
 | APP-01 与退役接口 | 待实施 | |
 | 全量、浏览器、真实数据和服务验收 | 待实施 | |

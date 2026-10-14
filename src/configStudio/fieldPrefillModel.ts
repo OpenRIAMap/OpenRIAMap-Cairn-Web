@@ -3,7 +3,7 @@ import { workflowControlFromField } from './workflowFieldControl';
 
 export function prefillWorkflowControl(value:WorkflowControl,field:FieldDefinition):WorkflowControl {
   const generated=workflowControlFromField({...field,defaultValue:undefined,placeholder:undefined},value.slot??value.id,value.id);
-  const {fieldSource:_source,optionSource:_options,...original}=value;
+  const {fieldSource:_source,optionSource:_options,optionsTableId:_table,...original}=value;
   const next:WorkflowControl={...original,kind:generated.kind,label:structuredClone(field.labels),prefillField:field.key,fieldFormat:field.format??'plain',options:structuredClone(generated.options),optionValueType:generated.optionValueType,group:generated.group,columns:value.columns};
   if(generated.search)next.search=generated.search;
   else if(next.kind!=='featureSearch')delete next.search;
@@ -20,7 +20,7 @@ export function prefillGroupField(value:WorkflowGroupField,field:FieldDefinition
   const control=prefillWorkflowControl({...value,id:'group-prefill',slot:'GROUP_VALUE',columns:1},field);
   const {id:_id,slot:_slot,columns:_columns,group:_group,...result}=control;
   if(['classificationPicker','group','tagsExtensions','component','notice','runtimeValue'].includes(result.kind))throw Error('此字段不能预填到组内单控件。');
-  const {fieldSource:_source,...original}=value;
+  const {fieldSource:_source,optionsTableId:_table,...original}=value;
   return {...original,...result,key:value.key,kind:result.kind as WorkflowGroupField['kind']};
 }
 export function prefillCardItem(value:CardItem,field:FieldDefinition):CardItem {
