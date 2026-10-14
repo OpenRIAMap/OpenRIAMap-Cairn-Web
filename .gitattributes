@@ -84,3 +84,7 @@ docs/90_roadmap-and-history/RuntimeV32_Incremental_Revision_Blueprint_v*_History
 # Frozen audit inputs are byte-hashed by the inherited r9 acceptance suite.
 docs/90_roadmap-and-history/RuntimeV32_CategoryManagement_Prefill_Editing_Update_Blueprint_2026-10-12.md text eol=lf
 docs/90_roadmap-and-history/runtime-v32-unified-repair-20261011/CairnMap_V32_FieldReuse_Drawing_r4.config.json text eol=lf
+
+# Synchronization evidence is UTF-8 LF for reproducible byte digests.
+docs/90_roadmap-and-history/runtime-v32-sync01-execution-20261014/*.json text eol=lf
+docs/90_roadmap-and-history/runtime-v32-sync01-execution-20261014/*.txt text eol=lf

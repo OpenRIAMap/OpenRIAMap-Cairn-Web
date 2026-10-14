@@ -1,0 +1,818 @@
+{
+  "records": 495,
+  "evaluations": 4455,
+  "visibleByZoom": {
+    "0": 42,
+    "1": 42,
+    "2": 42,
+    "3": 141,
+    "4": 210,
+    "5": 289,
+    "6": 354,
+    "7": 352,
+    "8": 490
+  },
+  "cards": 494,
+  "editRoutes": 489,
+  "failures": [],
+  "publishedImports": 495,
+  "legacyClassifications": [
+    {
+      "id": "Test1",
+      "classification": {
+        "class": "BUD",
+        "kind": "IDS",
+        "skind": "OLD"
+      }
+    },
+    {
+      "id": "FLRtest",
+      "classification": {
+        "class": "FLR",
+        "kind": "T",
+        "skind": "T"
+      }
+    },
+    {
+      "id": "TEST2",
+      "classification": {
+        "class": "FLR",
+        "kind": "T",
+        "skind": "T"
+      }
+    },
+    {
+      "id": "Test3",
+      "classification": {
+        "class": "FLR",
+        "kind": "TTS",
+        "skind": "TTS"
+      }
+    },
+    {
+      "id": "Test4",
+      "classification": {
+        "class": "FLR",
+        "kind": "TTS",
+        "skind": "TTS"
+      }
+    },
+    {
+      "id": "Test5",
+      "classification": {
+        "class": "FLR",
+        "kind": "TTS",
+        "skind": "TTS"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_BLBHDA",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_BLCDA",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_BLCSPT",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_BLHBR",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_BLKDXCSD",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_BLKXJDDS",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_BLKXUJDDN",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_BLYDT",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_BLZQL",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_BLZYBL",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_BLZYNL",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_HaibeiAVE_E",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_HaibeiAVE_W",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_HHBE",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_HHBGE",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_HHBGLOOP",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_HHBGW",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_HHBW",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_HuaqingRDE",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_HuaqingRDW1",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_NanyeAVEN",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_NanyeAVES",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_YunhaiRD",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_ZhichunRDE",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_ZhichunRDW1",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_ZhichunRDW2",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    },
+    {
+      "id": "ZRODNOMNOM_ZhichunRDW3",
+      "classification": {
+        "class": "ROD",
+        "kind": "NOM",
+        "skind": "NOM"
+      }
+    }
+  ],
+  "strictNativeImportAccepted": 389,
+  "strictNativeImportRejections": [
+    {
+      "id": "Test1",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "FLRtest",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "TEST2",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "Test3",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "Test4",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "Test5",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_BLBHDA",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_BLCDA",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_BLCSPT",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_BLHBR",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_BLKDXCSD",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_BLKXJDDS",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_BLKXUJDDN",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_BLYDT",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_BLZQL",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_BLZYBL",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_BLZYNL",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_HaibeiAVE_E",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_HaibeiAVE_W",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_HHBE",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_HHBGE",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_HHBGLOOP",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_HHBGW",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_HHBW",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_HuaqingRDE",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_HuaqingRDW1",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_NanyeAVEN",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_NanyeAVES",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_YunhaiRD",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_ZhichunRDE",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_ZhichunRDW1",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_ZhichunRDW2",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRODNOMNOM_ZhichunRDW3",
+      "stage": "strict-native-import",
+      "message": "Error: 导入记录的类型、最终分类或几何设置无效。"
+    },
+    {
+      "id": "ZRT13STA_01",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT13STA_02",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT13STA_03",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT13STA_04",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT13STA_05",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT13STA_06",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_01",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_02",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_03",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_04",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_05",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_06",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_07",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_08",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_09",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_10",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_11",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_12",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_14",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_15",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_16",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_17",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_18",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_20",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_21",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT1STA_22",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_01",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_02",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_03",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_04",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_05",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_06",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_07",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_08",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_09",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_11",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_12",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_13",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_14",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_15",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_16",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_17",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_18",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_19",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_20",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_21",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_22",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT4STA_23",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_01",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_02",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_03",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_04",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_05",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_07",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_08",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_09",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_10",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_11",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_12",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_13",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_14",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_15",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRT7STA_16",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 STBuilding 为必填项。"
+    },
+    {
+      "id": "ZRTSTF_BL_01",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 staBuildingID 为必填项。"
+    },
+    {
+      "id": "ZRTSTF_BL_02",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 staBuildingID 为必填项。"
+    },
+    {
+      "id": "ZRTSTF_BL_03",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 staBuildingID 为必填项。"
+    },
+    {
+      "id": "ZRTSTF_BL_04",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 staBuildingID 为必填项。"
+    },
+    {
+      "id": "ZRTSTF_QHC_01",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 staBuildingID 为必填项。"
+    },
+    {
+      "id": "ZRTSTF_SD_01",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 staBuildingID 为必填项。"
+    },
+    {
+      "id": "ZRTSTF_SD_02",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 staBuildingID 为必填项。"
+    },
+    {
+      "id": "ZRTSTF_SD_03",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 staBuildingID 为必填项。"
+    },
+    {
+      "id": "ZRTSTF_SD_04",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 staBuildingID 为必填项。"
+    },
+    {
+      "id": "ZRTSTF_SD_05",
+      "stage": "strict-native-import",
+      "message": "Error: 输出 native-import 的 staBuildingID 为必填项。"
+    }
+  ]
+}
