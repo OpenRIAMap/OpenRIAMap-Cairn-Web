@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
 import {
   createDataSourceSelectionFailure,
   type DataSourceSelectionContext,
@@ -46,7 +47,7 @@ const WORLD_LOADING_STAGES = [
 ];
 
 function currentWorldId(): string {
-  return String(loadMapSettings()?.currentWorld ?? '').trim() || 'zth';
+  return normalizeRuleSourceWorldId(String(loadMapSettings()?.currentWorld ?? ''));
 }
 
 function isCurrentSource(source: RuleDataSourceSnapshot): boolean {
@@ -78,6 +79,7 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
   dataSourceApplying: false,
   dataSourceFailure: null,
   ensureWorldLoaded: async (worldId: string) => {
+    worldId = normalizeRuleSourceWorldId(worldId);
     const source = getRuleDataSourceSnapshot();
     const pending = get().pending[worldId];
     if (pending && get().pendingGeneration[worldId] === source.generation) return pending;
@@ -126,7 +128,7 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
     return promise;
   },
   refreshWorlds: async (worldIds: string[]) => {
-    const ids = Array.from(new Set((worldIds ?? []).map((id) => String(id ?? '').trim()).filter(Boolean)));
+    const ids = Array.from(new Set((worldIds ?? []).map((id) => String(id ?? '').trim()).filter(Boolean).map(normalizeRuleSourceWorldId)));
     if (ids.length === 0) return;
 
     const source = getRuleDataSourceSnapshot();

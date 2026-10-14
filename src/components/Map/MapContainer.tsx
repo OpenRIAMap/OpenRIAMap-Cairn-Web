@@ -1,3 +1,5 @@
+import { isNativeConfigRevision } from '../../configStudio/contract';
+import { MAP_ZOOM_BOUNDS, TILE_ZOOM_BOUNDS } from '@/lib/mapZoom';
 import { Suspense, lazy, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import MobileBottomSheet from '@/components/Mobile/MobileBottomSheet';
 import MobileQuickDock from '@/components/Mobile/MobileQuickDock';
@@ -45,6 +47,7 @@ import { resolveFeatureCardComponent } from '@/components/Rules/cardrules/featur
 import { pickIdFieldValue, type FeatureRecord } from '@/components/Rules/rendering/renderRules';
 import RuleButtonPanel from '@/components/Rules/ButtonRule/RuleButtonPanel';
 import { useRuleButtonState } from '@/components/Rules/ButtonRule/ruleButtonState';
+import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
 
 import { formatGridNumber, snapWorldPointByMode } from '@/lib/gridSnapUtils';
 import AppButton from '@/components/ui/AppButton';
@@ -56,6 +59,7 @@ import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry'
 import { consumeFeatureShareTargetFromLocation, normalizePlayerShareId, type FeatureSharePayload, type FeatureShareTarget, type PlayerShareTarget, type ShareParseResult } from '@/lib/featureShareLink';
 import { PublicReleaseRecordsPanel, ReviewConfirmationHost, ReviewModuleLauncher, createReviewPackageSession, type CairnMapModuleMode, type ReviewInboxItem, type ReviewPackageSession } from '@/components/Review';
 import { openriamapReviewPackageUploader, uploadRiaReviewRevision } from '@/components/Review/riaReviewPackageUploader';
+import type { ConfigPackageV3 } from '@/configStudio/types';
 
 // ===== 导航“图上选取”：MapContainer 统一派发地图点击事件 =====
 type MapClickWorldPointEventDetail = {
@@ -70,6 +74,13 @@ type MobileQuickPanelKey = null | 'worlds' | 'toolbar' | 'ruleButtons' | 'modeTo
 type PendingShareTarget =
   | { type: 'feature'; target: FeatureShareTarget }
   | { type: 'player'; target: PlayerShareTarget };
+
+/** Share links, cookies and V1 data have historically used `Z`, `0`, Chinese
+ * names and canonical IDs interchangeably.  Normalize at the map boundary so
+ * tiles, data loading, search and Config V3 all observe one World value. */
+function normalizeShareWorld<T extends { worldId: string }>(target: T): T {
+  return { ...target, worldId: normalizeRuleSourceWorldId(target.worldId) };
+}
 
 type ShareLookupState = {
   pending: PendingShareTarget;
@@ -231,7 +242,12 @@ function buildNavigationInitialPointFromPlayer(player: Player): NavigationInitia
   };
 }
 
-function MapContainer() {
+function MapContainer({ configRuntime, configLab = false }: { configRuntime?: ConfigPackageV3; configLab?: boolean }) {
+  // The V3 lab is an isolated native-rendering environment.  Its configured
+  // features must not be visually mixed with the old railway/landmark layers
+  // or be filtered by the V1 rule-button registry.  The V1 lab and ordinary
+  // map deliberately keep their existing paths unchanged.
+  const nativeConfigLabActive = Boolean(configLab && isNativeConfigRevision(configRuntime?.contractRevision));
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const projectionRef = useRef<DynmapProjection | null>(null);
@@ -244,9 +260,9 @@ function MapContainer() {
   const initialShareParseRef = useRef(consumeFeatureShareTargetFromLocation());
   const initialPendingShareRef = useRef<PendingShareTarget | null>(
     initialShareParseRef.current.kind === 'feature'
-      ? { type: 'feature', target: initialShareParseRef.current.target }
+      ? { type: 'feature', target: normalizeShareWorld(initialShareParseRef.current.target) }
       : initialShareParseRef.current.kind === 'player'
-        ? { type: 'player', target: initialShareParseRef.current.target }
+        ? { type: 'player', target: normalizeShareWorld(initialShareParseRef.current.target) }
         : null
   );
   const shareTargetConsumedRef = useRef(false);
@@ -264,7 +280,7 @@ function MapContainer() {
 
   // 从 cookie 读取初始设置；分享链接中的 world 优先，避免先进入 cookie 世界再切换。
   const savedSettings = loadMapSettings();
-  const [currentWorld, setCurrentWorld] = useState(initialPendingShareRef.current?.target.worldId ?? savedSettings?.currentWorld ?? 'zth');
+  const [currentWorld, setCurrentWorld] = useState(() => normalizeRuleSourceWorldId(initialPendingShareRef.current?.target.worldId ?? savedSettings?.currentWorld ?? 'zth'));
 
   const applyShareParseResult = useCallback((result: ShareParseResult) => {
     if (result.kind === 'none') return;
@@ -286,8 +302,8 @@ function MapContainer() {
     }
 
     const pending: PendingShareTarget = result.kind === 'player'
-      ? { type: 'player', target: result.target }
-      : { type: 'feature', target: result.target };
+      ? { type: 'player', target: normalizeShareWorld(result.target) }
+      : { type: 'feature', target: normalizeShareWorld(result.target) };
     initialPendingShareRef.current = pending;
     shareTargetConsumedRef.current = false;
     setShareLinkMessage(null);
@@ -348,6 +364,11 @@ function MapContainer() {
     target.searchParams.set('workspace', 'config-studio');
     window.location.assign(target.toString());
   }, [mountedRuleRecords]);
+  const openConfigLab = useCallback(() => {
+    const target = new URL(window.location.href);
+    target.searchParams.set('workspace', 'config-lab');
+    window.location.assign(target.toString());
+  }, []);
   const currentRulePending = useRuleDataStore((s) => s.pending[currentWorld]);
   const isGlobalLoading = useLoadingStore((s) => s.isLoading);
   const activeRuleWorldId = useLoadingStore((s) => s.activeRuleWorldId);
@@ -356,6 +377,7 @@ function MapContainer() {
   const legacyModuleState = useFeatureModuleStore((s) => s.modules.legacy);
   const featureDialogState = useFeatureModuleStore((s) => s.dialog);
   const requestFeatureModuleActivation = useFeatureModuleStore((s) => s.requestModuleActivation);
+  const featureModulesHydrated = useFeatureModuleStore((s) => s.hydrated);
   const measuringModuleLoaded = measuringModuleState.status === 'loaded';
   const reviewModuleLoaded = reviewModuleState.status === 'loaded';
   const legacyModuleLoaded = legacyModuleState.status === 'loaded';
@@ -466,8 +488,9 @@ useEffect(() => {
     const active = Boolean(ce?.detail?.active);
     const source = String(ce?.detail?.source ?? '');
     if (source === 'MeasurementToolsModule') {
+      const wasActive = measurementToolsActiveRef.current;
       measurementToolsActiveRef.current = active;
-      if (!active) reportWorkspaceInactive('measurement');
+      if (wasActive && !active) reportWorkspaceInactive('measurement');
       return;
     }
     if (source === 'ReviewWorkspace') {
@@ -479,16 +502,21 @@ useEffect(() => {
       return;
     }
     if (source === 'MeasuringModule') {
+      const wasActive = measuringModuleActiveRef.current;
       measuringModuleActiveRef.current = active;
-      if (!active) {
+      // A freshly admitted editor broadcasts its initial idle state before
+      // the launcher opens. Only an actual active -> idle transition is a
+      // close; otherwise the host immediately unmounts the admitted editor.
+      if (wasActive && !active) {
         // A review editor uses the same core but must retain its own identity.
         reportWorkspaceInactive(activeWorkspace === 'review' ? 'review' : 'mapping');
       }
       return;
     }
     // 兜底：未知来源则视作 MeasuringModule
+    const wasActive = measuringModuleActiveRef.current;
     measuringModuleActiveRef.current = active;
-    if (!active) reportWorkspaceInactive(activeWorkspace === 'review' ? 'review' : 'mapping');
+    if (wasActive && !active) reportWorkspaceInactive(activeWorkspace === 'review' ? 'review' : 'mapping');
   };
   window.addEventListener('ria:measuringActiveChanged', handler as any);
   return () => window.removeEventListener('ria:measuringActiveChanged', handler as any);
@@ -643,6 +671,28 @@ useEffect(() => {
   const requestMeasuringModuleEntry = useCallback((target: 'measuring' | 'mtools') => {
     void requestWorkspaceEntry(target === 'measuring' ? 'mapping' : 'measurement');
   }, [requestWorkspaceEntry]);
+
+  useEffect(() => {
+    try {
+      if (!featureModulesHydrated || !mapReady) return;
+      const retry = sessionStorage.getItem('ria_feature_module_retry_v1');
+      const target = sessionStorage.getItem('ria_feature_module_pending_tool_v1');
+      if (!retry) return;
+      sessionStorage.removeItem('ria_feature_module_retry_v1');
+      sessionStorage.removeItem('ria_feature_module_pending_tool_v1');
+      if (retry === 'review' && target === 'review') void requestWorkspaceEntry('review');
+      else if (retry === 'measuring' && (target === 'measuring' || target === 'mtools')) requestMeasuringModuleEntry(target);
+    } catch { /* optional session storage */ }
+  }, [featureModulesHydrated, mapReady, requestMeasuringModuleEntry, requestWorkspaceEntry]);
+
+  useEffect(() => {
+    try {
+      if (pendingWorkspaceAdmission) {
+        const target = pendingWorkspaceAdmission.target;
+        sessionStorage.setItem('ria_feature_module_pending_tool_v1', target === 'mapping' ? 'measuring' : target === 'measurement' ? 'mtools' : 'review');
+      } else sessionStorage.removeItem('ria_feature_module_pending_tool_v1');
+    } catch { /* optional session storage */ }
+  }, [pendingWorkspaceAdmission]);
 
   const requestReviewModuleEntry = useCallback(() => {
     void requestWorkspaceEntry('review');
@@ -946,12 +996,7 @@ useEffect(() => {
 let newTileLayer: L.TileLayer;
 
 
-const tileLayerOptions = {
-  minZoom: -3,
-  maxZoom: map.getMaxZoom(), // =5
-  minNativeZoom: -2,
-  maxNativeZoom: 3
-};
+const tileLayerOptions = { ...TILE_ZOOM_BOUNDS };
 
 if (mapStyle === 'sketch') {
   newTileLayer = createSketchTileLayer(currentWorld, 'flat', tileLayerOptions);
@@ -1491,6 +1536,7 @@ const handleRouteFound = useCallback((route: RouteHighlightData | Array<{ coord:
 
   // 世界切换处理
   const handleWorldChange = useCallback((worldId: string) => {
+    const normalizedWorldId = normalizeRuleSourceWorldId(worldId);
     // 世界切换前默认触发“关闭测绘”。若用户不确认，则禁止切换。
     // 注意：必须在 setCurrentWorld 之前执行，否则会导致临时挂载/图层归属混乱。
     const ok = measuringModuleRef.current?.requestCloseAndClear?.('切换世界') ?? true;
@@ -1499,7 +1545,7 @@ const handleRouteFound = useCallback((route: RouteHighlightData | Array<{ coord:
     // 同步关闭“测量工具”（不需要二次确认）
     setMeasureToolsCloseSignal(v => v + 1);
 
-    setCurrentWorld(worldId);
+    setCurrentWorld(normalizedWorldId);
 
     // 更新瓦片图层
     const map = leafletMapRef.current;
@@ -1513,19 +1559,14 @@ const handleRouteFound = useCallback((route: RouteHighlightData | Array<{ coord:
 
     // 添加新瓦片图层（根据当前风格选择）
     let newTileLayer: L.TileLayer;
-const tileLayerOptions = {
-  minZoom: -3,
-  maxZoom: map.getMaxZoom(), // =5
-  minNativeZoom: -2,
-  maxNativeZoom: 3
-};
+const tileLayerOptions = { ...TILE_ZOOM_BOUNDS };
 
 if (mapStyle === 'sketch') {
-  newTileLayer = createSketchTileLayer(worldId, 'flat', tileLayerOptions);
+  newTileLayer = createSketchTileLayer(normalizedWorldId, 'flat', tileLayerOptions);
 } else if (mapStyle === 'watercolor') {
-  newTileLayer = createWatercolorTileLayer(worldId, 'flat', tileLayerOptions);
+  newTileLayer = createWatercolorTileLayer(normalizedWorldId, 'flat', tileLayerOptions);
 } else {
-  newTileLayer = createDynmapTileLayer(worldId, 'flat', tileLayerOptions);
+  newTileLayer = createDynmapTileLayer(normalizedWorldId, 'flat', tileLayerOptions);
 }
 
 
@@ -1533,7 +1574,7 @@ if (mapStyle === 'sketch') {
     tileLayerRef.current = newTileLayer;
 
     // 移动到新世界的中心点
-    const world = WORLDS.find(w => w.id === worldId);
+    const world = WORLDS.find(w => w.id === normalizedWorldId);
     if (world) {
       const centerLatLng = proj.locationToLatLng(
         world.center.x,
@@ -1548,7 +1589,7 @@ if (mapStyle === 'sketch') {
     if (!mapRef.current || leafletMapRef.current) return;
 
     // 从 cookie 读取初始世界设置
-    const savedWorld = initialPendingShareRef.current?.target.worldId ?? loadMapSettings()?.currentWorld ?? 'zth';
+    const savedWorld = normalizeRuleSourceWorldId(initialPendingShareRef.current?.target.worldId ?? loadMapSettings()?.currentWorld ?? 'zth');
 
     // 创建 Dynmap CRS
     const crs = createDynmapCRS(ZTH_FLAT_CONFIG);
@@ -1565,8 +1606,8 @@ if (mapStyle === 'sketch') {
       Number(world.center.z)
     );
 
-const minZoom = -3;                 // 9级：-3..5
-const maxZoom = projection.maxZoom; // 仍然是 5
+const minZoom = MAP_ZOOM_BOUNDS.minZoom;
+const maxZoom = MAP_ZOOM_BOUNDS.maxZoom;
 
 const map = L.map(mapRef.current, {
   crs: crs,
@@ -1595,12 +1636,7 @@ const map = L.map(mapRef.current, {
 
     // 添加 Dynmap 瓦片图层 - 使用保存的世界和风格
     const savedMapStyle = loadMapSettings()?.mapStyle ?? 'default';
-const tileLayerOptions = {
-  minZoom: -3,
-  maxZoom: projection.maxZoom, // 5
-  minNativeZoom: -2,           // 允许请求 zzzz/zzzzz（zoom<0 时仍命中真实瓦片）
-  maxNativeZoom: 3             // 保持你现有 Dynmap 行为
-};
+const tileLayerOptions = { ...TILE_ZOOM_BOUNDS };
 
 let tileLayer: L.TileLayer;
 if (savedMapStyle === 'sketch') {
@@ -1846,7 +1882,7 @@ map.on('mousemove', handleMouseMove);
       case 'about':
         return <AboutCard onClose={closeMobileSheet} />;
       case 'settings':
-        return <SettingsPanel onClose={closeMobileSheet} onOpenConfigStudio={() => { closeMobileSheet(); openConfigStudio(); }} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />;
+        return <SettingsPanel onClose={closeMobileSheet} onOpenConfigStudio={() => { closeMobileSheet(); openConfigStudio(); }} onOpenConfigLab={configLab ? undefined : () => { closeMobileSheet(); openConfigLab(); }} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />;
       case 'releaseRecords':
         return <PublicReleaseRecordsPanel showNativeClose showInlineRefresh onClose={closeMobileSheet} />;
       case 'navigation':
@@ -2011,12 +2047,14 @@ case 'players':
           worldId={currentWorld}
           visible={true}
           activeButtonIds={activeRuleButtonIds}
+          configRuntime={configRuntime}
+          bypassButtonFilter={nativeConfigLabActive}
         />
       )}
 
 
       {/* 铁路图层 - 有路径规划结果时隐藏 */}
-      {legacyModuleLoaded && mapReady && leafletMapRef.current && projectionRef.current && (
+      {!nativeConfigLabActive && legacyModuleLoaded && mapReady && leafletMapRef.current && projectionRef.current && (
         <Suspense fallback={null}>
           <LazyRailwayLayer
             map={leafletMapRef.current}
@@ -2030,7 +2068,7 @@ case 'players':
       )}
 
       {/* 地标图层 - 有路径规划结果时隐藏 */}
-      {legacyModuleLoaded && mapReady && leafletMapRef.current && projectionRef.current && (
+      {!nativeConfigLabActive && legacyModuleLoaded && mapReady && leafletMapRef.current && projectionRef.current && (
         <Suspense fallback={null}>
           <LazyLandmarkLayer
             map={leafletMapRef.current}
@@ -2179,6 +2217,8 @@ case 'players':
                 onToggleMapStyle={setMapStyle}
               >
                 <ToolIconButton label="发布记录" icon={<History className="w-5 h-5" />} tone="purple" onClick={() => openMobilePanel('releaseRecords')} />
+                <ToolIconButton label="测量工具" icon={<Ruler className="w-5 h-5" />} active={activeWorkspace === 'measurement'} disabled={workspaceTransitionPhase !== 'idle'} onClick={() => { requestMeasuringModuleEntry('mtools'); setMobileQuickPanel(null); }} />
+                <ToolIconButton label="测绘" icon={<Pencil className="w-5 h-5" />} active={activeWorkspace === 'mapping'} disabled={workspaceTransitionPhase !== 'idle'} onClick={() => { requestMeasuringModuleEntry('measuring'); setMobileQuickPanel(null); }} />
               </LayerControl>
             );
           }}
@@ -2241,7 +2281,7 @@ case 'players':
           id="settings"
           defaultPosition={{ x: 16, y: 240 }}
         >
-          <SettingsPanel onClose={() => setShowSettings(false)} onOpenConfigStudio={() => { setShowSettings(false); openConfigStudio(); }} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />
+          <SettingsPanel onClose={() => setShowSettings(false)} onOpenConfigStudio={() => { setShowSettings(false); openConfigStudio(); }} onOpenConfigLab={configLab ? undefined : () => { setShowSettings(false); openConfigLab(); }} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />
         </DraggablePanel>
         </div>
       )}
@@ -2441,7 +2481,13 @@ case 'players':
               disabled={workspaceTransitionPhase !== 'idle'}
             />
           </div>
-          {measuringModuleLoaded ? (
+
+          </LayerControl><ToolIconButton label="收起模式面板" icon={<PanelsTopLeft className="w-5 h-5" />} tone="gray" onClick={() => setModePanelCollapsed(true)} /></div>}
+        </div>
+      </div>
+
+      {/* Workspace bodies are independent of desktop toolbar visibility. */}
+      {measuringModuleLoaded ? (
             <Suspense fallback={null}>
               {activeWorkspace === 'measurement' && moduleMode === 'mapping' ? <LazyMeasurementToolsModule
                 ref={measurementToolsRef}
@@ -2460,6 +2506,7 @@ case 'players':
                 mapReady={mapReady}
                 leafletMapRef={leafletMapRef}
                 projectionRef={projectionRef}
+                configRuntime={configRuntime}
                 currentWorldId={currentWorld}
                 closeSignal={measuringCloseSignal}
                 openSignal={measuringOpenSignal}
@@ -2477,6 +2524,7 @@ case 'players':
                 mapReady={mapReady}
                 leafletMapRef={leafletMapRef}
                 projectionRef={projectionRef}
+                configRuntime={configRuntime}
                 currentWorldId={currentWorld}
                 closeSignal={measuringCloseSignal}
                 openSignal={measuringOpenSignal}
@@ -2484,13 +2532,11 @@ case 'players':
                 launcherSlot={() => null}
                 onRequestOpen={() => requestMeasuringModuleEntry('measuring')}
                 launcherAnchorRef={mappingLauncherAnchorRef}
+                disablePackageUpload={configLab}
                 onReviewPackageUpload={openriamapReviewPackageUploader.uploadPackage}
               /> : null}
             </Suspense>
-          ) : null}
-          </LayerControl><ToolIconButton label="收起模式面板" icon={<PanelsTopLeft className="w-5 h-5" />} tone="gray" onClick={() => setModePanelCollapsed(true)} /></div>}
-        </div>
-      </div>
+      ) : null}
 
       <MobileBottomSheet
         open={shouldShowMobileSheet}

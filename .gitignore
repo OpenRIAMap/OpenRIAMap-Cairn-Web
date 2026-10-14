@@ -27,3 +27,8 @@ npm-debug.log*
 # Cache
 .cache/
 .parcel-cache/
+# Local browser acceptance artifacts
+scripts/config-tools/browser/artifacts/
+__pycache__/
+.cache-source-shared.patch
+.cache-resolve-sync.py
