@@ -1,4 +1,5 @@
 import { coerceWorkflowValues } from './workflowValues';
+import { resolveNodeFieldSettings } from './nodeFieldSettings';
 import { WorkflowCategoryInput } from './WorkflowCategoryInput';
 import { WorkflowAnnotationsInput } from './WorkflowAnnotationsInput';
 import { annotationsForOutput, mergeAnnotations, annotationPaths } from './workflowAnnotations';
@@ -237,6 +238,11 @@ export function validateV3WorkflowRecords(config: ConfigPackageV3, workflow: Wor
     const geometry=readMultipartGeometry(output.record,definition.geometry.selected).geometry;
     if(geometry&&geometry.parts.length>1&&resolveGeometryProfile(config,output.classification,definition.geometry.selected)?.allowMultipleParts===false)issues.push({message:`输出 ${output.outputId} 的分类只允许单部件几何。`});
     if (!String(output.record.ID ?? '').trim()) issues.push({ message: `输出 ${output.outputId} 缺少有效 ID。` });
+    if(config.contractRevision>=10){const role=resolveNodeFieldSettings(config,output.classification).value.structure;if(role?.enabled&&role.role==='member'){
+      const host=role.hostField?readRecordPath(output.record,role.hostField):undefined,selector=role.selectorField?readRecordPath(output.record,role.selectorField):undefined;
+      if(typeof host!=='string'||!host.trim())issues.push({message:`输出 ${output.outputId} 缺少单值主结构 ID（${role.hostField}）。`});
+      if(!['string','number','boolean'].includes(typeof selector)||typeof selector==='string'&&!selector.trim()||typeof selector==='number'&&!Number.isFinite(selector))issues.push({message:`输出 ${output.outputId} 缺少有效附属层级（${role.selectorField}）。`});
+    }}
     for (const field of resolveEffectiveFields(config, output.classification)) {
       const value = readRecordPath(output.record, field.key);
       const required = field.required || field.requiredWhen?.some(condition => condition.kind === 'always' || condition.kind === 'fieldPresent' && !empty(readRecordPath(output.record, condition.field)) === condition.present || condition.kind === 'fieldEquals' && String(readRecordPath(output.record, condition.field) ?? '') === condition.value || condition.kind === 'fieldIn' && condition.values.includes(String(readRecordPath(output.record, condition.field) ?? '')));

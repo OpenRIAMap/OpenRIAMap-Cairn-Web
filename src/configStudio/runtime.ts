@@ -7,6 +7,8 @@ import { isNativeConfigRevision } from './contract';
 import { effectiveOptionsOwner, effectiveOptions, validateLookupTables } from './lookupTables';
 import { mergeInheritedCard } from './cardInheritance';
 import { validatePrefillCopies } from './prefillAudit';
+import { resolveNodeFieldSettings,validateNodeFieldSettings } from './nodeFieldSettings';
+import { STRUCTURE_CONTEXT_ID,validateMountedStructureRoles } from './structureRoleIndex';
 import { canonicalRenderFields, matchesRenderFields, renderRuleRange, validateRenderFields } from './renderRuleConditions';
 import type {
   AffectedFeature,
@@ -631,7 +633,8 @@ function validateRuleExtensions(rule: ZoomPriorityRule, geometry: GeometryKind, 
     }
     if (visibility.mode === 'activeContextMember') {
       const spec = visibility.activeContextMember;
-      if (spec?.bindingId && !(config.contextBindings ?? []).some((binding) => binding.enabled && binding.id === spec.bindingId)) issue(issues, 'error', 'visibility-context-binding-invalid', rulePath, '楼层/单元可见性规则引用了不存在的上下文绑定。');
+      if (spec?.bindingId && !(config.contractRevision>=10?spec.bindingId===STRUCTURE_CONTEXT_ID:(config.contextBindings ?? []).some((binding) => binding.enabled && binding.id === spec.bindingId))) issue(issues, 'error', 'visibility-context-binding-invalid', rulePath, '楼层/单元可见性规则引用了不存在的上下文绑定。');
+      if(config.contractRevision>=10){const role=resolveNodeFieldSettings(config,sourcePath).value.structure;if(!role?.enabled||role.role!=='member')issue(issues,'error','visibility-structure-role-invalid',rulePath,'附属可见性需要该分类启用附属身份与引用字段。');}
     }
   }
 }
@@ -1175,6 +1178,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   if (structure.length) return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: false, createdAt: new Date().toISOString(), issues: structure.map(item => ({ severity: 'error', code: 'native-contract-structure-invalid', ...item })) };
   issues.push(...validateLookupTables(config));
   issues.push(...validatePrefillCopies(config,resolveEffectiveFields));
+  issues.push(...validateNodeFieldSettings(config,resolveEffectiveFields));
   if (config.contractRevision>=8 && (config.registries.optionSets || config.nodes.some(node=>node.fields.some(field=>field.optionSource)) || config.workflows.some(workflow=>controlsFor(workflow).some(control=>control.optionSource)))) issue(issues,'error','legacy-option-source-forbidden','registries','r8 使用字段内对照；旧全局选项来源必须先迁移。');
   if (config.schemaVersion !== 'cairnmap.config-package.v3') issue(issues, 'error', 'schema-version-invalid', 'manifest', '配置包不是 cairnmap.config-package.v3。');
   if (!isNativeConfigRevision(config.contractRevision)) issue(issues, 'error', 'contract-revision-invalid', 'manifest', '配置包必须使用 V3.2 原生契约 revision 5/6。');
@@ -1250,6 +1254,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   if (!config.parity) issue(issues, 'warning', 'v1-parity-report-pending', 'parity', 'V1 语义迁移尚未执行；当前仅可作为 V3 原生试验包。');
   else for (const entry of config.parity.entries.filter((item) => item.status === 'unsupported')) issue(issues, 'warning', 'v1-parity-unsupported-pending', `parity/${entry.kind}/${entry.id}`, `V1 配置 ${entry.id} 尚未迁移：${entry.details ?? '未说明原因'}。`);
   const mounted = aggregateMountedIssues(mountedRecords, config);
+  mounted.push(...validateMountedStructureRoles(config,mountedRecords));
   issues.push(...mounted);
   const configuration = issues.filter((item) => !item.code.startsWith('mounted-') && !item.code.startsWith('v1-parity')).length;
   const parity = issues.filter((item) => item.code.startsWith('v1-parity')).length;

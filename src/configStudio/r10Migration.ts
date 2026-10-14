@@ -1,4 +1,6 @@
-import type { ConfigPackageV3 } from './types';
+import type { CategorySearch, ConfigPackageV3 } from './types';
+import { STRUCTURE_CONTEXT_ID } from './structureRoleIndex';
+import { SEARCH_CATEGORY_OVERRIDE_LINES,SEARCH_RULE_PRIORITY_LINES,SEARCH_RULE_BLACKLIST_LINES } from '../components/Search/searchRuleTables';
 import { migrateConfigToR9 } from './r9Migration';
 import { defaultLookupTables } from './lookupTables';
 import { createPrefillAudit } from './prefillAudit';
@@ -13,6 +15,24 @@ export function migrateConfigToR10(value:ConfigPackageV3):{config:ConfigPackageV
   const original=value.contractRevision<9?migrateConfigToR9(value):structuredClone(value),config=structuredClone(original);
   config.contractRevision=10;config.revision=Math.max(value.revision+1,6);
   config.lookupTables=defaultLookupTables();report.changes.push({path:'lookupTables',message:'加入所属枢纽区/四返回点与出行方式表；未替换导航消费者。'});
+  const names=new Map(SEARCH_CATEGORY_OVERRIDE_LINES.map(line=>{const value=JSON.parse('{'+line+'}') as {Class:string;Name:string};return [value.Class,value.Name];}));
+  const priorities=SEARCH_RULE_PRIORITY_LINES.map(line=>(JSON.parse('{'+line+'}') as {Class:string}).Class),blacklist=new Set(SEARCH_RULE_BLACKLIST_LINES.map(line=>(JSON.parse('{'+line+'}') as {Class:string}).Class));
+  for(const node of config.nodes.filter(node=>pathDepth(node.path)===1)){
+    const code=node.path.class,search:CategorySearch={enabled:!blacklist.has(code),queryFields:['Name','ID','Class'],priority:priorities.includes(code)?priorities.indexOf(code):100,subtitle:{mode:code==='FLR'||code==='STF'?'classificationField':'classification',...(names.has(code)?{classificationLabel:{zh:names.get(code)!,en:''}}:{}),...(code==='FLR'||code==='STF'?{field:code==='FLR'?'BuildingID':'staBuildingID',valueMode:'reference',referenceDisplayField:'Name'}:{})},extension:{mode:'none'}};
+    if(['PLF','PFB','STA','STB'].includes(code))search.extension={mode:'lineChips',lineChipSource:code==='PLF'||code==='PFB'?'platform':code==='STA'?'station':'stationBuilding'};
+    if(code==='RLE')search.extension={mode:'nameColorCapsule',nameField:'Name',colorField:'color',displayName:false,fallbackColor:'#999999'};
+    node.fieldSettings={...node.fieldSettings,search};
+  }
+  for(const binding of original.contextBindings??[])if(binding.enabled){
+    if(binding.host.referenceField!=='ID')throw Error(`旧绑定 ${binding.id} 的主端不是 ID，需先明确目标 ID 语义，不能静默转换。`);
+    const host=config.nodes.find(node=>classificationPathKey(node.path)===classificationPathKey(binding.host.classification)),member=config.nodes.find(node=>classificationPathKey(node.path)===classificationPathKey(binding.member.classification));
+    if(!host||!member)throw Error(`旧绑定 ${binding.id} 的分类不存在。`);
+    const hostRole={enabled:true,role:'main' as const,...(host.fields.some(field=>field.key==='Floors')?{memberField:'Floors'}:{})},memberRole={enabled:true,role:'member' as const,hostField:binding.member.referenceField,selectorField:binding.memberSelectorField,visibility:binding.profile==='show-active-member-only'?'activeLevel' as const:'allMembers' as const};
+    for(const [node,structure] of [[host,hostRole],[member,memberRole]] as const){if(node.fieldSettings?.structure&&JSON.stringify(node.fieldSettings.structure)!==JSON.stringify(structure))throw Error(`旧绑定 ${binding.id} 产生同分类身份/字段冲突，请先调整。`);node.fieldSettings={...node.fieldSettings,structure};}
+    report.changes.push({path:`contextBindings/${binding.id}`,message:'迁移为自身角色与引用字段；解除对端 Class 限制，保留显示策略及主向下兼容引用。'});
+  }
+  config.contextBindings=[];
+  for(const node of config.nodes)for(const profile of Object.values(node.geometryProfiles))for(const rule of profile?.zoomPriority.rules??[])if(rule.extensions?.visibility?.mode==='activeContextMember')rule.extensions.visibility.activeContextMember={...rule.extensions.visibility.activeContextMember,bindingId:STRUCTURE_CONTEXT_ID};
   for(const node of [...config.nodes].sort((a,b)=>pathDepth(a.path)-pathDepth(b.path))){
     const incoming=resolveIncomingFields(config,node.path);
     node.fields=node.fields.filter(field=>{const fixed=incoming.find(row=>row.key===(field.overrideOf??field.key));if(!fixed)return true;report.changes.push({path:`nodes/${node.nodeId}/fields/${field.fieldId}`,message:`移除遮挡固定父定义的 ${field.key} 副本，父字段身份/定义优先。`});return false;});

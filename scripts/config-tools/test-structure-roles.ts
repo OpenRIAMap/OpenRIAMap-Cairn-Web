@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {migrateConfigToR10} from '../../src/configStudio/r10Migration';
+import {buildStructureIndex,structureSelector,validateMountedStructureRoles,STRUCTURE_CONTEXT_ID} from '../../src/configStudio/structureRoleIndex';
+import {compileConfigRuntime,validateConfigPackage} from '../../src/configStudio/runtime';
+import {resolveNodeFieldSettings} from '../../src/configStudio/nodeFieldSettings';
+import {FeatureStore} from '../../src/components/Rules/data/featureStore';
+import type {FeatureRecord} from '../../src/components/Rules/rendering/renderRules';
+import {resolveConfigRuntimeContextForHost,resolveConfigRuntimeContextForRecord,isConfigRuntimeRecordVisible} from '../../src/components/Rules/configRuntime/configPackageAdapter';
+import {validateV3WorkflowRecords} from '../../src/configStudio/V3WorkflowRunner';
+import {initializeCategory} from '../../src/configStudio/categoryInitialization';
+
+const config=migrateConfigToR10(JSON.parse(fs.readFileSync('src/configStudio/defaults/r9-r5.config.json','utf8'))).config;
+assert.deepEqual(config.contextBindings,[]);assert(validateConfigPackage(config).valid);
+let serial=0;
+function record(Class:string,ID:string,fields:Record<string,unknown>={},World='zth'):FeatureRecord{return {uid:`record-${serial++}`,type:'Points',p3:{x:serial,y:-64,z:serial},featureInfo:{Class,ID,World,Name:ID,...fields},meta:{Class,Type:'Points',World,idField:'ID',idValue:ID,sig:{},signatureKey:ID,groups:{}}};}
+const bud=record('BUD','MAIN_A'),stb=record('STB','MAIN_B',{Floors:['LEGACY_FLOOR']}),flrA=record('FLR','FLR_A',{BuildingID:'MAIN_A',NofFloor:'1'}),flrB=record('FLR','FLR_B',{BuildingID:'MAIN_B',NofFloor:'2'}),legacyFloor=record('STF','LEGACY_FLOOR',{NofFloor:'3'}),edenBud=record('BUD','MAIN_A',{},'eden'),edenFloor=record('FLR','EDEN_FLOOR',{BuildingID:'MAIN_A',NofFloor:'4'},'eden');
+const compiled=compileConfigRuntime(config,true),store=new FeatureStore([bud,stb,flrA,flrB,legacyFloor,edenBud,edenFloor]),index=buildStructureIndex(compiled,store);
+assert.equal(index.hostsByMember.get(flrA),bud);assert.equal(index.hostsByMember.get(flrB),stb);assert.equal(index.hostsByMember.get(legacyFloor),stb);assert.equal(index.hostsByMember.get(edenFloor),edenBud);
+assert.equal(buildStructureIndex(compiled,store),index,'One index per immutable config/data snapshot');assert.equal(index.diagnostics.length,0);
+const context=resolveConfigRuntimeContextForHost(compiled,stb,store)!;assert.equal(context.binding.id,STRUCTURE_CONTEXT_ID);assert.equal(context.members.length,2);assert.deepEqual(context.options.map(o=>o.value),['2','3']);
+assert.equal(resolveConfigRuntimeContextForRecord(compiled,flrB,store)?.host,stb);assert.equal(resolveConfigRuntimeContextForRecord(compiled,legacyFloor,store)?.host,stb);
+const ctx={inFloorView:true,activeBuildingUid:stb.uid,activeContextBindingId:STRUCTURE_CONTEXT_ID,activeFloorSelector:'2'} as Parameters<typeof isConfigRuntimeRecordVisible>[2];
+assert(isConfigRuntimeRecordVisible(compiled,flrB,ctx,store));assert(!isConfigRuntimeRecordVisible(compiled,flrA,ctx,store));assert(!isConfigRuntimeRecordVisible(compiled,legacyFloor,ctx,store));assert(isConfigRuntimeRecordVisible(compiled,bud,ctx,store));
+const duplicate=record('STB','MAIN_A'),ambiguous=buildStructureIndex(compiled,new FeatureStore([bud,duplicate,flrA]));assert(!ambiguous.hostsByMember.has(flrA));assert(ambiguous.diagnostics.some(d=>d.code==='structure-id-ambiguous'));
+const otherHost=record('BUD','OTHER',{Floors:['LEGACY_FLOOR']});const reverseConfig=structuredClone(config);reverseConfig.nodes.find(n=>n.path.class==='BUD'&&!n.path.kind)!.fieldSettings!.structure!.memberField='ExtraMembers';otherHost.featureInfo.ExtraMembers=['LEGACY_FLOOR'];
+const reverseIndex=buildStructureIndex(reverseConfig,new FeatureStore([otherHost,stb,legacyFloor]));assert(!reverseIndex.hostsByMember.has(legacyFloor));assert(reverseIndex.diagnostics.some(d=>d.code==='structure-host-ambiguous'));
+const zero=record('FLR','ZERO',{BuildingID:'MAIN_A',NofFloor:0});assert.equal(structureSelector(buildStructureIndex(compiled,new FeatureStore([bud,zero])),zero),'0');
+const missing=record('FLR','MISSING',{BuildingID:'ABSENT',NofFloor:'1'});assert(validateMountedStructureRoles(compiled,[missing.featureInfo]).some(i=>i.severity==='warning'));assert(validateMountedStructureRoles(compiled,[bud.featureInfo,duplicate.featureInfo,flrA.featureInfo]).some(i=>i.severity==='error'));
+const invalid=structuredClone(config);invalid.nodes.find(n=>n.path.class==='FLR'&&!n.path.kind)!.fieldSettings!.structure!.hostField='Unknown';assert(validateConfigPackage(invalid).issues.some(i=>i.code==='field-settings-invalid'));
+const descendant=invalid.nodes.find(n=>n.path.class==='BUD'&&n.path.kind)!;descendant.fieldSettings={structure:{enabled:false,role:'main'}};assert.equal(resolveNodeFieldSettings(invalid,descendant.path).value.structure?.enabled,true);assert(validateConfigPackage(invalid).issues.some(i=>i.message.includes('固定继承')));
+const root=config.nodes.find(n=>n.path.class==='FLR'&&!n.path.kind)!;
+const created=initializeCategory(config,{parentId:root.nodeId,code:'ROLE_TEST',labels:{zh:'通用附属',en:''},mode:'parent',sync:{fields:true,geometry:true,display:true,card:true},geometry:'Point',multiple:false,anchor:'featureBbox'});assert.equal(resolveNodeFieldSettings(created.config,created.node.path).value.structure?.hostField,'BuildingID');
+const flow=config.workflows.find(w=>w.mode==='composed'&&w.outputs[0]?.classification.class==='FLR')!;assert(flow);
+const classification=config.nodes.find(n=>n.path.class==='FLR'&&!n.children.length)!.path;const result=[{outputId:flow.outputs[0].id,classification,geometry:flow.outputs[0].geometry.selected,record:{ID:'INVALID',CoordP:[[0,-64,0]],NofFloor:'1'}}];assert(validateV3WorkflowRecords(config,flow,result).some(i=>i.message.includes('主结构 ID')));
+console.log('structure-roles: arbitrary main/member classes, FLR→BUD/STB, reverse legacy references, world isolation, duplicate/ambiguous blocking, zero selectors, shared floor/click context, hard module inheritance and strict new output passed');

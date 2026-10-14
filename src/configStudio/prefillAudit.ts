@@ -14,7 +14,7 @@ export function createPrefillAudit(path:ClassificationPath,field:FieldDefinition
 }
 type Audited={prefillAudit?:PrefillAudit};
 export function visitPrefillCopies(config:ConfigPackageV3,visit:(owner:Audited,path:string)=>void):void {
-  config.nodes.forEach(node=>{if(node.card?.mode==='fields')node.card.items.filter(item=>!item.inheritFrom).forEach(item=>visit(item,`nodes/${node.nodeId}/card/${item.id}`));});
+  config.nodes.forEach(node=>{if(node.card?.mode==='fields')node.card.items.filter(item=>!item.inheritFrom).forEach(item=>visit(item,`nodes/${node.nodeId}/card/${item.id}`));if(node.fieldSettings?.search)visit(node.fieldSettings.search.subtitle,`nodes/${node.nodeId}/fieldSettings/search/subtitle`);});
   config.workflows.forEach(w=>w.steps.forEach(s=>s.controls?.forEach(c=>{if(!c.optionsTableId)visit(c,`workflows/${w.id}/${c.id}`);c.group?.itemFields.filter(f=>!f.optionsTableId).forEach(f=>visit(f,`workflows/${w.id}/${c.id}/${f.key}`));})));
 }
 export function validatePrefillCopies(config:ConfigPackageV3,resolve:(config:ConfigPackageV3,path:ClassificationPath)=>FieldDefinition[]):ConfigValidationIssue[] {

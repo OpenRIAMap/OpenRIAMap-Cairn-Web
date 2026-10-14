@@ -1,4 +1,5 @@
 import {resolveMappedColor} from '../../../configStudio/renderScalar';
+import {buildStructureIndex,structureSelector,STRUCTURE_CONTEXT_ID,type StructureIndex} from '../../../configStudio/structureRoleIndex';
 import { isNativeConfigRevision } from '../../../configStudio/contract';
 import type {
   ConfigPackageV3,
@@ -145,6 +146,15 @@ export type ConfigRuntimeContext = {
   memberUids: Set<string>;
   options: Array<{ value: string; label: string }>;
 };
+const structureContexts=new WeakMap<StructureIndex,WeakMap<FeatureRecord,ConfigRuntimeContext|undefined>>();
+function structureContext(config:ConfigPackageV3,host:FeatureRecord,store:FeatureStore):ConfigRuntimeContext|undefined {
+  const index=buildStructureIndex(config,store);let contexts=structureContexts.get(index);if(!contexts){contexts=new WeakMap();structureContexts.set(index,contexts);}if(contexts.has(host))return contexts.get(host);
+  const members=index.membersByHost.get(host)??[],byValue=new Map<string,{value:string;label:string}>();
+  for(const member of members){const value=structureSelector(index,member);if(value&&!byValue.has(value))byValue.set(value,{value,label:String(featureValue(member,'Name')??value).trim()||value});}
+  if(!byValue.size){contexts.set(host,undefined);return undefined;}
+  const binding:ContextBinding={id:STRUCTURE_CONTEXT_ID,label:{zh:'主结构／附属结构',en:''},enabled:true,profile:'show-active-member-only',host:{classification:pathFor(host),referenceField:'ID'},member:{classification:{class:''},referenceField:''}};
+  const result={binding,host,members,memberUids:new Set(members.map(member=>member.uid)),options:[...byValue.values()].sort((a,b)=>a.value.localeCompare(b.value,undefined,{numeric:true}))};contexts.set(host,result);return result;
+}
 
 type ContextLookup = {
   order: Map<FeatureRecord, number>;
@@ -205,6 +215,7 @@ export function resolveConfigRuntimeContextForHost(
   store?: FeatureStore,
 ): ConfigRuntimeContext | undefined {
   if (!config || !isNativeConfigRevision(config.contractRevision) || !store) return undefined;
+  if(config.contractRevision>=10)return structureContext(config,host,store);
   const lookup = contextLookup(config, store);
   if (lookup?.contexts.has(host)) return lookup.contexts.get(host);
   const binding = lookup?.firstHostBinding.get(host) ?? (lookup?.paths.has(host) ? undefined : (config.contextBindings ?? []).find((candidate) => candidate.enabled && matchesTargetPath(host, candidate.host.classification)));
@@ -231,6 +242,7 @@ export function resolveConfigRuntimeContextForRecord(
   store?: FeatureStore,
 ): ConfigRuntimeContext | undefined {
   if (!config || !isNativeConfigRevision(config.contractRevision) || !store) return undefined;
+  if(config.contractRevision>=10){const index=buildStructureIndex(config,store),host=index.roles.get(record)?.role==='main'?record:index.hostsByMember.get(record);return host?structureContext(config,host,store):undefined;}
   const direct = resolveConfigRuntimeContextForHost(config, record, store);
   if (direct) return direct;
   const lookup = contextLookup(config, store);
@@ -255,6 +267,7 @@ export function isConfigRuntimeRecordVisible(
   store?: FeatureStore,
 ): boolean {
   if (!ctx.inFloorView || !ctx.activeBuildingUid || !ctx.activeContextBindingId || !store) return true;
+  if(config.contractRevision>=10){const index=buildStructureIndex(config,store),role=index.roles.get(record);if(role?.role!=='member')return true;const host=index.byUid.get(ctx.activeBuildingUid);if(!host||index.hostsByMember.get(record)!==host)return false;return role.visibility==='allMembers'||!ctx.activeFloorSelector||structureSelector(index,record)===ctx.activeFloorSelector;}
   const host = store.all.find((candidate) => candidate.uid === ctx.activeBuildingUid);
   const binding = (config.contextBindings ?? []).find((candidate) => candidate.enabled && candidate.id === ctx.activeContextBindingId);
   if (!host || !binding || !matchesTargetPath(host, binding.host.classification)) return true;
@@ -430,6 +443,7 @@ function passesVisibilityExtension(config: ConfigPackageV3, record: FeatureRecor
     const spec = visibility.activeContextMember;
     if (!ctx.inFloorView || !ctx.activeBuildingUid || !ctx.activeContextBindingId || !store) return false;
     if (spec?.bindingId && spec.bindingId !== ctx.activeContextBindingId) return false;
+    if(config.contractRevision>=10){const index=buildStructureIndex(config,store),host=index.byUid.get(ctx.activeBuildingUid),role=index.roles.get(record);return Boolean(host&&role?.role==='member'&&index.hostsByMember.get(record)===host&&(!spec?.requireSelector||ctx.activeFloorSelector)&&(role.visibility==='allMembers'||!ctx.activeFloorSelector||structureSelector(index,record)===ctx.activeFloorSelector));}
     const binding = (config.contextBindings ?? []).find((candidate) => candidate.enabled && candidate.id === ctx.activeContextBindingId);
     const host = binding ? store.all.find((candidate) => candidate.uid === ctx.activeBuildingUid) : undefined;
     if (!binding || !host || !matchesTargetPath(record, binding.member.classification)) return false;

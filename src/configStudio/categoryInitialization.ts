@@ -1,6 +1,8 @@
 import type { CategoryNode, ConfigPackageV3, FieldDefinition, GeometryKind, LabelAnchor } from './types';
 import { classificationPathKey, fieldScope, inheritanceControls, pathDepth, resolveCardConfiguration, resolveCategoryNodes, resolveEffectiveFields, resolveGeometryProfile, resolveIncomingFields, resolveSelectableFields, validateConfigPackage } from './runtime';
 import { editableGeometryProfile, newConfigId } from './renderRuleTemplates';
+import { resolveNodeFieldSettings,incomingNodeFieldSettings } from './nodeFieldSettings';
+import { STRUCTURE_CONTEXT_ID } from './structureRoleIndex';
 import { linkCardInheritance } from './cardInheritance';
 import { migrateConfigToR9 } from './r9Migration';
 
@@ -24,8 +26,8 @@ function pathRename(path:string,renamed:Record<string,string>):string {
 /** Rewrite only real local field references, never titles or remote match fields. */
 export function rewriteCategoryReferences<T>(value:T,renamed:Record<string,string>):T {
   const visit=(item:unknown,key='',remote=false):unknown=>{
-    if(typeof item==='string')return !remote&&['field','source','nameSource','colorSource','targetIdField','parentReferenceField'].includes(key)?pathRename(item,renamed):item;
-    if(Array.isArray(item))return item.map(child=>typeof child==='string'&&key==='fallbackSources'?pathRename(child,renamed):visit(child,key,remote));
+    if(typeof item==='string')return !remote&&['field','source','nameSource','colorSource','targetIdField','parentReferenceField','hostField','memberField','selectorField'].includes(key)?pathRename(item,renamed):item;
+    if(Array.isArray(item))return item.map(child=>typeof child==='string'&&['fallbackSources','queryFields'].includes(key)?pathRename(child,renamed):visit(child,key,remote));
     if(!item||typeof item!=='object')return item;
     return Object.fromEntries(Object.entries(item).map(([name,child])=>[name,name==='fallbackValueFormats'&&child&&typeof child==='object'?Object.fromEntries(Object.entries(child).map(([source,format])=>[pathRename(source,renamed),format])):visit(child,name,remote||name==='relation'||name==='reference'||name==='target')]));
   };
@@ -34,8 +36,8 @@ export function rewriteCategoryReferences<T>(value:T,renamed:Record<string,strin
 function localDependencies(value:unknown):Set<string> {
   const result=new Set<string>();
   const visit=(item:unknown,key='',remote=false):void=>{
-    if(typeof item==='string'){if(!remote&&['field','source','nameSource','colorSource','targetIdField','parentReferenceField'].includes(key))result.add(item);return;}
-    if(Array.isArray(item)){item.forEach(child=>{if(typeof child==='string'&&key==='fallbackSources')result.add(child);else visit(child,key,remote);});return;}
+    if(typeof item==='string'){if(!remote&&['field','source','nameSource','colorSource','targetIdField','parentReferenceField','hostField','memberField','selectorField'].includes(key))result.add(item);return;}
+    if(Array.isArray(item)){item.forEach(child=>{if(typeof child==='string'&&['fallbackSources','queryFields'].includes(key))result.add(child);else visit(child,key,remote);});return;}
     if(item&&typeof item==='object')for(const [name,child] of Object.entries(item))visit(child,name,remote||['relation','reference','target'].includes(name));
   };visit(value);return result;
 }
@@ -79,11 +81,12 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
   const card=sync.card&&source?rewriteCategoryReferences(structuredClone(resolveCardConfiguration(config,source.path)??{mode:'fields' as const,items:[]}),renamed):{mode:'fields' as const,items:[]};
   if(card.mode==='fields')card.items=card.items.map(item=>({...item,...(config.contractRevision>=10?{inheritFrom:undefined}:{}),id:newConfigId('card')}));
   const node:CategoryNode={nodeId:newConfigId('node'),path,classificationLabels:{...parent?.classificationLabels,[level]:{zh:request.labels.zh.trim()||code,en:request.labels.en}},children:[],inheritDown:source?structuredClone(inheritanceControls(source)):{fields:true,display:true,card:true},fields,geometryType:geometry,geometryProfiles:{[geometry]:profile},card};
+  if(config.contractRevision>=10&&sync.fields&&source){const inherited=incomingNodeFieldSettings({...config,nodes:[...config.nodes,node]},node),copy=rewriteCategoryReferences(structuredClone(resolveNodeFieldSettings(config,source.path).value),renamed);if(inherited.structure&&copy.structure&&JSON.stringify(inherited.structure)!==JSON.stringify(copy.structure))throw Error('模板身份/绑定字段与父级固定包含关系冲突，无法增量合并。');node.fieldSettings={...copy};if(inherited.structure)delete node.fieldSettings.structure;if(inherited.search?.inheritance==='sealed')delete node.fieldSettings.search;}
   if(config.contractRevision>=10&&parent&&inheritanceControls(parent).card)linkCardInheritance(node,resolveCardConfiguration(config,parent.path),parent.nodeId);
   const next=structuredClone(config);next.nodes.push(node);if(parent)next.nodes.find(item=>item.nodeId===parent.nodeId)!.children.push(node.nodeId);
   const available=new Set(resolveSelectableFields(next,path).map(field=>field.key));
-  for(const dependency of localDependencies([profile.zoomPriority,card]))if(!available.has(dependency))throw Error(`未同步依赖字段 ${dependency}；请同步字段设计或调整初始化选择。`);
-  for(const rule of profile.zoomPriority.rules){const visibility=rule.extensions?.visibility;if(visibility?.mode==='activeContextMember'&&visibility.activeContextMember?.bindingId){const binding=next.contextBindings?.find(binding=>binding.id===visibility.activeContextMember?.bindingId);if(binding?.member?.classification.class!==path.class)throw Error('模板显示引用的上下文绑定不适用于目标 Class。');}}
+  for(const dependency of localDependencies([profile.zoomPriority,card,node.fieldSettings]))if(!available.has(dependency))throw Error(`未同步依赖字段 ${dependency}；请同步字段设计或调整初始化选择。`);
+  for(const rule of profile.zoomPriority.rules){const visibility=rule.extensions?.visibility;if(visibility?.mode==='activeContextMember'&&visibility.activeContextMember?.bindingId){if(config.contractRevision>=10){const role=resolveNodeFieldSettings(next,path).value.structure;if(visibility.activeContextMember.bindingId!==STRUCTURE_CONTEXT_ID||!role?.enabled||role.role!=='member')throw Error('模板的附属可见性需要同步可用的附属身份与字段。');}else{const binding=next.contextBindings?.find(binding=>binding.id===visibility.activeContextMember?.bindingId);if(binding?.member?.classification.class!==path.class)throw Error('模板显示引用的上下文绑定不适用于目标 Class。');}}}
   const validation=validateConfigPackage(next);if(!validation.valid)throw Error(validation.issues.filter(issue=>issue.severity==='error').map(issue=>`${issue.path}：${issue.message}`).join('\n'));
   actions.push('完整配置核验通过，新分类草稿可以继续编辑。');return {config:next,node,report:{actions,renamed}};
 }

@@ -553,6 +553,17 @@ export type ContextBinding = {
   enabled: boolean;
   profile: 'default' | 'keep-host-context' | 'show-active-member-only';
 };
+/** r10 roles do not constrain the classification of the opposite endpoint. */
+export type StructureRole = { enabled:boolean;role:'main'|'member';memberField?:string;hostField?:string;selectorField?:string;visibility?:'activeLevel'|'allMembers' };
+export type CategorySearch = {
+  enabled:boolean;
+  inheritance?:'sealed'|'overridable';
+  queryFields:string[];
+  priority?:number;
+  subtitle:{mode:'classification'|'classificationField'|'field';classificationLabel?:LocalizedText;field?:string;valueMode?:'value'|'meaning'|'reference';referenceDisplayField?:string;valueOptions?:SelectOption[];prefillAudit?:PrefillAudit};
+  extension:{mode:'none'|'nameColorCapsule'|'lineChips';nameField?:string;displayName?:boolean;colorField?:string;fallbackColor?:string;lineChipSource?:'platform'|'station'|'stationBuilding'};
+};
+export type NodeFieldSettings={structure?:StructureRole;search?:CategorySearch};
 
 export type InteractionState = 'hover' | 'selected' | 'searchResult' | 'editing' | 'deletionMarked';
 export type InteractionVisual = {
@@ -670,6 +681,7 @@ export type CategoryNode = {
   /** Compatibility metadata for V3.0 imports; runtime uses inheritDown first. */
   policies?: { fields: InheritanceMode; display: InheritanceMode; card: InheritanceMode; workflow?: InheritanceMode };
   fields: FieldDefinition[];
+  fieldSettings?:NodeFieldSettings;
   /** Once selected, descendants may only resolve this geometry kind. */
   geometryType?: GeometryKind;
   geometryProfiles: Partial<Record<GeometryKind, GeometryProfile>>;

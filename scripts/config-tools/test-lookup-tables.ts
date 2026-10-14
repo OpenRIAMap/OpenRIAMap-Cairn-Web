@@ -9,9 +9,10 @@ import { coerceWorkflowValues } from '../../src/configStudio/workflowValues';
 import { categoryArtifactBlob,createCategoryArtifact,prepareCategoryImport,prepareClassTreeCommit,readCategoryArtifact } from '../../src/configStudio/categoryArtifact';
 import { buildConfigPackageArchive,readConfigPackage } from '../../src/configStudio/package';
 import { HUB_RETURN_POINTS } from '../../src/components/Navigation/teleportHubReturnPoints';
+import {migrateConfigToR10} from '../../src/configStudio/r10Migration';
 import {buildWorkflowArtifact,prepareWorkflowArtifactImport} from '../../src/configStudio/workflowArtifact';
 
-const config=JSON.parse(fs.readFileSync('src/configStudio/defaults/r9-r5.config.json','utf8')) as ConfigPackageV3;
+const config=migrateConfigToR10(JSON.parse(fs.readFileSync('src/configStudio/defaults/r9-r5.config.json','utf8')) as ConfigPackageV3).config;
 config.contractRevision=10;config.lookupTables=defaultLookupTables();
 const tables=config.lookupTables;
 assert.deepEqual(tables[1].rows.map(row=>[row.value,row.functionValue]),[['WALK',4.3],['HORSE',10]]);
