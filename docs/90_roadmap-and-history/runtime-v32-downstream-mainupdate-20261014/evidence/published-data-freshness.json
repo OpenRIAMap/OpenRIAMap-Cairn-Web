@@ -1,0 +1,49 @@
+{
+  "checkedAt": "2026-10-14T15:23:21.748446+00:00",
+  "rows": [
+    {
+      "url": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com/current/worlds/_release-set.json",
+      "sha256": "70b2c7aaeba46de165d56d8b080ec16ee71d7bb449c4ea92bdcbe8eaa2b54349",
+      "matchesFrozen": true,
+      "accessControlAllowOrigin": null,
+      "status": 200
+    },
+    {
+      "url": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com/current/worlds/zth.json",
+      "sha256": "ec5372c6eadfc02d2b29f9ab64ee10690a5bdf7dfe1ceda4d202f034a2c93f58",
+      "matchesFrozen": true,
+      "accessControlAllowOrigin": null,
+      "status": 200
+    },
+    {
+      "url": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com/releases/geometry-v1-aeb7cd1531696c31995cff53/manifests/worlds/zth.json",
+      "sha256": "ba1f9417f80983176198715e186bbb5910ed4ccff3a21bc7375155dce22be9b8",
+      "matchesFrozen": true,
+      "accessControlAllowOrigin": null,
+      "status": 200
+    },
+    {
+      "url": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com/releases/geometry-v1-aeb7cd1531696c31995cff53/manifests/chunk-catalog/zth-00.json",
+      "sha256": "7b1123f2b84a0199659543845ec7996ba8c16c41f74b8b0f9bc0a987183be087",
+      "matchesFrozen": true,
+      "accessControlAllowOrigin": null,
+      "status": 200
+    },
+    {
+      "url": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com/releases/geometry-v1-aeb7cd1531696c31995cff53/data-merge/zth/zth-chunk-001.json",
+      "sha256": "fcb9ff32bb55c9358adbfbb7fcf7f93473004e95c14a9e8381b1cbe3d02ea4c0",
+      "matchesFrozen": true,
+      "accessControlAllowOrigin": null,
+      "status": 200
+    },
+    {
+      "url": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com/releases/geometry-v1-aeb7cd1531696c31995cff53/data-merge/zth/zth-chunk-002.json",
+      "sha256": "df860958497da916abbd372041e5c89d31816f436401030f6b17b09f89cdac1e",
+      "matchesFrozen": true,
+      "accessControlAllowOrigin": null,
+      "status": 200
+    }
+  ],
+  "allFrozenResponsesUnchanged": true,
+  "scope": "read-only HTTPS check; not browser-origin CORS verification"
+}

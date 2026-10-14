@@ -1,0 +1,7 @@
+{
+  "checks": [
+    "role editor has no opposite Class restriction; changing identity clears incompatible fields; required/optional fields match role",
+    "search and structure modules have distinct headers and contain at all five widths"
+  ],
+  "runtime_errors": []
+}

@@ -1,0 +1,16 @@
+{
+  "snapshot": {
+    "revision": 6,
+    "contract": 10,
+    "nodes": 95,
+    "workflows": 28,
+    "editing": 24,
+    "hash": "051b8519667fcc795d48920f2a8ff0c49f634ae8653baac854d87e93c82a07d3",
+    "expected": "051b8519667fcc795d48920f2a8ff0c49f634ae8653baac854d87e93c82a07d3"
+  },
+  "checks": [
+    "disk ZIP read by actual Studio handler, exact semantic fingerprint, refresh does not select Class or mount validator",
+    "same imported r10/r6 package activates in actual Lab"
+  ],
+  "runtimeErrors": []
+}

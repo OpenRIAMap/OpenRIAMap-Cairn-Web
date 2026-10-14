@@ -1,3 +1,5 @@
+import { writeTemporaryRuleSources, writeTemporaryRuleOverrideIds, writeTemporaryRuleDeleteIds } from '../../src/components/Rules/data/temporaryRuleSession';
+import subjectSeed from '../../src/configStudio/defaults/r10-r6.config.json';
 // Local browser acceptance entry; never imported by the application entry point.
 import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -25,7 +27,7 @@ function Ready({ ready }: { ready: (map: L.Map) => void }) {
 }
 function Harness() {
   const params = new URLSearchParams(location.search);
-  const [config, setConfig] = useState(()=>params.get('final')==='1'?structuredClone(finalSeed) as ConfigPackageV3:createConfigPackageFromCurrentProject());
+  const [config, setConfig] = useState(()=>params.get('subject')==='1'?structuredClone(subjectSeed) as ConfigPackageV3:params.get('final')==='1'?structuredClone(finalSeed) as ConfigPackageV3:createConfigPackageFromCurrentProject());
   // Controlled geometry probes may intentionally combine authoring-incompatible
   // profiles. This test-only entry compiles them; production activation validates.
   const runtimeConfig = useMemo(() => compileConfigRuntime(config, true), [config]);
@@ -37,13 +39,13 @@ function Harness() {
   const dataset = useMemo(() => ({ features: (datasetOverride?.features ?? makeConfigPreviewFixture(config, node, scenario).features).map((feature) => ({ ...(feature as object), ...featurePatch })) }), [config, node, scenario, featurePatch, datasetOverride]);
   const projection = useMemo(() => new DynmapProjection(ZTH_FLAT_CONFIG), []);
   useEffect(() => {
-    api.acceptance = { map, config, dataset, setConfig, setDataset, setFeaturePatch, compilationStats: () => configCompilationStats(runtimeConfig), geometry: resolveGeometryProfile(config, node.path, scenario.includes('Point') ? 'Point' : scenario.includes('Line') ? 'LineString' : 'Polygon'),
+    api.acceptance = { map, config, dataset, setConfig, setDataset, setFeaturePatch, setTemporary:(items:unknown[],overrideIds:string[],deleteIds:string[])=>{writeTemporaryRuleSources({zth:[{uid:'acceptance-state',worldId:'zth',enabled:true,items}]});writeTemporaryRuleOverrideIds({zth:overrideIds});writeTemporaryRuleDeleteIds({zth:deleteIds});window.dispatchEvent(new CustomEvent('ria-temp-rule-sources-changed',{detail:{worldId:'zth'}}));}, compilationStats: () => configCompilationStats(runtimeConfig), geometry: resolveGeometryProfile(config, node.path, scenario.includes('Point') ? 'Point' : scenario.includes('Line') ? 'LineString' : 'Polygon'),
       roundTrip: async () => { const report = validateConfigPackage(config); const archive = await buildConfigPackageArchive(config, report); return readConfigPackage(new File([archive], 'acceptance.zip')); } };
   }, [map, config, runtimeConfig, dataset, node, scenario]);
   return <main style={{ height: 900, width: 1200, margin: 20 }}>
-    {params.get('mode') === 'preview' ? <ConfigRuntimePreview config={config} node={node} scenario={scenario} onMapReady={setMap} /> :
+    {params.get('mode') === 'preview' ? <ConfigRuntimePreview fixture={datasetOverride??undefined} config={config} node={node} scenario={scenario} onMapReady={setMap} /> :
       <MapContainer style={{ height: '100%', width: '100%' }} center={[0, 0]} zoom={toLeafletZoom(6)} zoomAnimation={false} fadeAnimation={false} {...MAP_ZOOM_BOUNDS} crs={createDynmapCRS(ZTH_FLAT_CONFIG)}><Ready ready={setMap} />
-        {map ? <RuleDrivenLayer mapReady map={map} projection={projection} worldId="zth" visible activeButtonIds={[]} bypassButtonFilter runtimeDataset={dataset} disableTransientSources={!params.has('transient')} configRuntime={params.get('mode') === 'v1' ? undefined : runtimeConfig} floorPanelMode="hidden" /> : null}
+        {map ? <RuleDrivenLayer mapReady map={map} projection={projection} worldId="zth" visible activeButtonIds={[]} bypassButtonFilter runtimeDataset={dataset} disableTransientSources={!params.has('transient')} configRuntime={params.get('mode') === 'v1' ? undefined : runtimeConfig} floorPanelMode={params.has('context')?'embedded':'hidden'} /> : null}
       </MapContainer>}
   </main>;
 }

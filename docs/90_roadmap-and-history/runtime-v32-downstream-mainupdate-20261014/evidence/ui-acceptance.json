@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "category inputs contain at 320/390/600/900/1440px; initialization title does not intersect border",
+    "toggle halves equal; true/false both deselect; ordinary form has matching top/bottom navigation",
+    "annotations start empty, add/delete returns to empty, no raw object editor",
+    "search picks return ID and closes suggestions; stable row controls and normal select height"
+  ],
+  "runtime_errors": []
+}

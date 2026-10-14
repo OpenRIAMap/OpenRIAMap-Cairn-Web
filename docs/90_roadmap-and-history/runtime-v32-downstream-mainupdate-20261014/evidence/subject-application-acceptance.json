@@ -1,0 +1,8 @@
+{
+  "checks": [
+    "general workspace has six isolated modules, no map validator; unfinished module blocks tab switch",
+    "saving one module preserves another unsaved draft; durable activity contains only saved module",
+    "structured inputs in all six modules remain inside their containers at 320/390/600/900/1440px"
+  ],
+  "runtime_errors": []
+}

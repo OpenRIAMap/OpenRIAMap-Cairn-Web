@@ -12,7 +12,7 @@ def point(x,z):
  assert b.evaluate('(()=>{const r=document.querySelector(".leaflet-container").getBoundingClientRect();return '+str(r['x'])+'>r.left&&'+str(r['x'])+'<r.right&&'+str(r['y'])+'>r.top&&'+str(r['y'])+'<r.bottom;})()'),r
  for event in ['mousePressed','mouseReleased']:b.call('Input.dispatchMouseEvent',{'type':event,'button':'left','clickCount':1,**r})
  time.sleep(.15)
-b.call('Page.navigate',{'url':APP_URL+'/scripts/config-tools/workflow-acceptance.html?final=1'})
+b.call('Page.navigate',{'url':APP_URL+'/scripts/config-tools/workflow-acceptance.html?subject=1'})
 b.wait('!!window.workflowAcceptance?.measurement',40)
 workflow=b.evaluate("window.workflowAcceptance.config.workflows.find(w=>w.id==='v3-tpp_teleport')")
 b.click('测绘');b.click('开始测绘(快捷)')

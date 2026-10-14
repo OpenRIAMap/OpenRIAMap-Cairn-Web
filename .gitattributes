@@ -92,3 +92,8 @@ docs/90_roadmap-and-history/runtime-v32-sync01-execution-20261014/*.txt text eol
 # Active adaptation blueprint and PR review evidence carry byte digests.
 docs/90_roadmap-and-history/RuntimeV32_Incremental_Revision_Blueprint_2026-10-13.md text eol=lf
 docs/90_roadmap-and-history/runtime-v32-downstream-pr-review-20261014/*.json text eol=lf
+
+# C-stage application delivery resources have reproducible byte digests.
+docs/90_roadmap-and-history/runtime-v32-downstream-mainupdate-20261014/*.json text eol=lf
+docs/90_roadmap-and-history/runtime-v32-downstream-mainupdate-20261014/evidence/*.json text eol=lf
+docs/90_roadmap-and-history/runtime-v32-downstream-mainupdate-20261014/evidence/*.log -text

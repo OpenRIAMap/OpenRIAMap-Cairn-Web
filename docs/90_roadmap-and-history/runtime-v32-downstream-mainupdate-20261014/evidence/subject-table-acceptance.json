@@ -1,0 +1,8 @@
+{
+  "checks": [
+    "binding locks rows; referenced table deletion blocked with owning field",
+    "unbind retains editable options, labels and stored values",
+    "tables/options contain at 320/390/600/900/1440px; typed functional values have no raw JSON editor"
+  ],
+  "runtime_errors": []
+}

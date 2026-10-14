@@ -1,0 +1,132 @@
+{
+  "checks": [
+    "current downstream C application retains all 495 exact published records, formal source/version and complete search pool",
+    "production Lab logical Zoom 0,1,2,3,5,6,8 remains mounted and within shared zoom bounds",
+    "actual App WRP collection, pointer draw/save, process-local mount enable/disable, search inclusion and native label-click card",
+    "refresh clears downstream process-local map drafts and previews, preserving published records and active r10/r6 config",
+    "review bundle still requires downstream GitHub identity admission; absent local auth backend cannot open reviewer workspace",
+    "390px production Lab retains downstream quick-panel layout without document overflow"
+  ],
+  "dataSnapshots": [
+    {
+      "mode": "integrated-v3",
+      "datasetCount": 495,
+      "releaseId": "geometry-v1-aeb7cd1531696c31995cff53",
+      "formalVersion": 19,
+      "probe": {
+        "records": 495,
+        "contract": 10,
+        "revision": 6
+      },
+      "layout": {
+        "scroll": 1440,
+        "width": 1440,
+        "search": true,
+        "labels": 16,
+        "paths": 87
+      },
+      "labToolbarDoesNotObstructDownstreamControls": [
+        {
+          "title": "道路",
+          "clickable": true
+        },
+        {
+          "title": "建筑",
+          "clickable": true
+        },
+        {
+          "title": "测绘",
+          "clickable": true
+        },
+        {
+          "title": "审核",
+          "clickable": true
+        }
+      ],
+      "labToolbarAndRecoveryDoNotObstructZoom": [
+        {
+          "title": "Zoom in",
+          "clickable": true
+        },
+        {
+          "title": "Zoom out",
+          "clickable": true
+        }
+      ]
+    }
+  ],
+  "logicalZoom": [
+    {
+      "logical": 0,
+      "leaflet": -3,
+      "labels": 6,
+      "paths": 14,
+      "labError": false
+    },
+    {
+      "logical": 1,
+      "leaflet": -2,
+      "labels": 6,
+      "paths": 14,
+      "labError": false
+    },
+    {
+      "logical": 2,
+      "leaflet": -1,
+      "labels": 11,
+      "paths": 14,
+      "labError": false
+    },
+    {
+      "logical": 3,
+      "leaflet": 0,
+      "labels": 34,
+      "paths": 39,
+      "labError": false
+    },
+    {
+      "logical": 5,
+      "leaflet": 2,
+      "labels": 24,
+      "paths": 80,
+      "labError": false
+    },
+    {
+      "logical": 6,
+      "leaflet": 3,
+      "labels": 16,
+      "paths": 67,
+      "labError": false
+    },
+    {
+      "logical": 8,
+      "leaflet": 5,
+      "labels": 9,
+      "paths": 21,
+      "labError": false
+    }
+  ],
+  "createdRecord": {
+    "World": "zth",
+    "Class": "WRP",
+    "Kind": "NOM",
+    "SKind": "NOM",
+    "ID": "ZWRPNOMNOM_SYNC01_POINT",
+    "WRPointI2D": "SYNC01",
+    "Name": "S01",
+    "hub": "",
+    "CreateBy": "subject-test",
+    "CreateTime": "20261015",
+    "Type": "Points",
+    "CoordP": [
+      [
+        15,
+        -64,
+        17
+      ]
+    ]
+  },
+  "runtimeErrors": [],
+  "transport": "exact COS v19 bytes through isolated CDP local-CORS accommodation; no production endpoint changes",
+  "authLimit": "local auth service is unavailable; real backend authenticated review/save/publish was not attempted"
+}

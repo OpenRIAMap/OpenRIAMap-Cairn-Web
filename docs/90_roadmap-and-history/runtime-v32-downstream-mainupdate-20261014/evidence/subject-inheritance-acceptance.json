@@ -1,0 +1,7 @@
+{
+  "checks": [
+    "child source/title and bilingual mapping locked; renderer remains editable; parent title updates actual child editor",
+    "clear removes local dictionary/audit, preserves title and source; inherited rows cannot clear parent settings"
+  ],
+  "runtime_errors": []
+}

@@ -1,0 +1,8 @@
+CairnMap Native RelayPackage Validation
+  Package input: docs/30_data-contracts/examples/native-relay-package-sample
+  Package root: docs/30_data-contracts/examples/native-relay-package-sample
+  Features: 39
+  Pictures: 1
+  Deletes: 0
+
+Final result: PASS

@@ -18,8 +18,15 @@ def field(selector,definition,data):
   b.evaluate("(() => {const c=document.querySelector("+json.dumps(selector)+");const e=[...c.querySelectorAll('button')].find(e=>e.textContent.includes("+json.dumps(str(data).strip())+"));if(!e)throw Error('Search candidate missing '+c.innerText);e.click();})()")
  else:value(selector+(' textarea' if kind in ['textarea','json'] else ' select' if kind=='select' else ' input'),data)
 
-for index,fixture in enumerate(fixtures):
- b.call('Page.navigate',{'url':'http://127.0.0.1:5188/scripts/config-tools/workflow-acceptance.html?final=1'})
+for index,original_fixture in enumerate(fixtures):
+ fixture=json.loads(json.dumps(original_fixture));reference_override=None
+ if fixture['expectedRecord'].get('Class')=='FLR':
+  # Frozen fixtures use sample for every unrelated Class. Give the physical
+  # environment a globally unique BUD/STB parent, preserving the original file.
+  parent_class='BUD' if index%2==0 else 'STB';parent_id='Z'+parent_class+'NOMNOM_ui_parent'
+  fixture['inputs']['BuildingID']=parent_id;fixture['expectedRecord']['BuildingID']=parent_id;reference_override={'field':'BuildingID','value':parent_id,'mainClass':parent_class}
+
+ b.call('Page.navigate',{'url':'http://127.0.0.1:5188/scripts/config-tools/workflow-acceptance.html?subject=1'})
  b.wait('!!window.workflowAcceptance?.measurement',40)
  b.evaluate("(() => {const OriginalDate=Date;window.Date=class extends OriginalDate { constructor(...args){if(args.length)super(...args);else super('2026-10-07T00:00:00Z');}static now(){return OriginalDate.now();} };})()")
  workflow=b.evaluate('window.workflowAcceptance.config.workflows.find(w=>w.id==='+json.dumps('v3-'+fixture['schemaKey'])+')')
@@ -28,6 +35,7 @@ for index,fixture in enumerate(fixtures):
  seed=[]
  def seed_search(definition,data):
   p=definition.get('search');target=p['target']
+  if reference_override and p.get('targetRole')=='main':target={'class':reference_override['mainClass']}
   seed.append({'ID':str(data).strip(),'Name':str(data).strip(),'Class':target['class'],'Kind':target.get('kind',''),'SKind':target.get('skind',''),'SKind2':target.get('skind2',''),'World':'zth',p.get('returnField','ID'):str(data).strip()})
  for c in controls:
   slot=c.get('slot');key=c['id'][len(fixture['schemaKey'])+1:-(len(slot)+1)] if slot else ''
@@ -37,6 +45,9 @@ for index,fixture in enumerate(fixtures):
    for row in data:
     for item in c['group']['itemFields']:
      if item['kind'] in ['featureSearch','coarseSearch']:seed_search(item,row[item['key']])
+ if fixture['expectedRecord'].get('Class')=='FLR':
+  host=fixture['expectedRecord']['BuildingID']
+  if not any(row.get('ID')==host for row in seed):seed.append({'World':'zth','Class':reference_override['mainClass'],'ID':host,'Name':host,'CoordG':[[[[0,-64,0],[100,-64,0],[100,-64,100]]]]})
  b.evaluate('window.workflowAcceptance.setRecords('+json.dumps(seed)+')')
  b.click('测绘');b.click('开始测绘(快捷)')
  b.evaluate("(() => {const s=[...document.querySelectorAll('select')].find(e=>[...e.options].some(o=>o.value==="+json.dumps(workflow['id'])+"));s.value="+json.dumps(workflow['id'])+";s.dispatchEvent(new Event('change',{bubbles:true}));})()")
@@ -78,8 +89,8 @@ for index,fixture in enumerate(fixtures):
  actual=b.evaluate('window.workflowAcceptance.measurement.getCommittedFeatures()[0]')
  expected=fixture['expectedRecord']
  assert actual==expected,json.dumps({'key':fixture['schemaKey'],'expected':expected,'actual':actual},ensure_ascii=False)
- results.append({'schemaKey':fixture['schemaKey'],'classification':fixture['classification'],'inputVariant':index%2,'record':actual})
+ results.append({'schemaKey':fixture['schemaKey'],'classification':fixture['classification'],'inputVariant':index%2,'referenceParameterization':reference_override,'record':actual})
  print(f'composed production UI: {index+1}/{len(fixtures)} {fixture["schemaKey"]}',flush=True)
 assert not b.errors,b.errors
-(OUT/'subject-native-workflow-matrix.json').write_text(json.dumps({'cases':results,'errors':b.errors,'sourceSha':'0b82863d4fea3791f98917ba6d13f70e1f27eb15','expected':'frozen schema final-record fixtures','actual':'published r9/r5 production MeasuringModule + native Runner + real map clicks; direct save without adoption'},ensure_ascii=False,indent=2),encoding='utf-8')
-print('All 17 composed workflows, 34 production UI submissions: complete record equality: OK')
+(OUT/'subject-native-workflow-matrix.json').write_text(json.dumps({'cases':results,'errors':b.errors,'sourceSha':'0b82863d4fea3791f98917ba6d13f70e1f27eb15','expected':'32 exact frozen UI fixtures plus two floor cases using globally unique BUD/STB parent IDs; original 34 frozen records independently checked unchanged by r10-final-package','actual':'r10/r6 production MeasuringModule + native Runner + real map clicks; direct save without adoption'},ensure_ascii=False,indent=2),encoding='utf-8')
+print('All 17 composed workflows, 34 production UI submissions (32 frozen, 2 documented unique BUD/STB parent parameters): complete record equality: OK')
