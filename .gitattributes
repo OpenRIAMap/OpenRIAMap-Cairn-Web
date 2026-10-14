@@ -96,4 +96,4 @@ docs/90_roadmap-and-history/runtime-v32-downstream-pr-review-20261014/*.json tex
 # C-stage application delivery resources have reproducible byte digests.
 docs/90_roadmap-and-history/runtime-v32-downstream-mainupdate-20261014/*.json text eol=lf
 docs/90_roadmap-and-history/runtime-v32-downstream-mainupdate-20261014/evidence/*.json text eol=lf
-docs/90_roadmap-and-history/runtime-v32-downstream-mainupdate-20261014/evidence/*.log -text
+docs/90_roadmap-and-history/runtime-v32-downstream-mainupdate-20261014/evidence/*.log text eol=lf
