@@ -110,3 +110,7 @@ html, body, #root {
     padding: 2px 6px !important;
   }
 }
+
+.cm-toolbar-compact button[aria-pressed] { padding: .25rem; }
+
+.cm-parameter-group { grid-column: 1 / -1; min-width: 0; }

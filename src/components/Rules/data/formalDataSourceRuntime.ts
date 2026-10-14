@@ -1,3 +1,4 @@
+import { getApplicationGeneration, applicationWorld } from '@/core/project/applicationRuntime';
 import {
   createBrowserDataSourceSelectionStorage,
   createDataSourceSelectionController,
@@ -9,6 +10,7 @@ import { getOpenRIAMapFormalDataSourceRuntimeConfig } from '@/core/project/openr
 import { buildRawCompatibleUrlFromParts, getCurrentSourceLinkMode } from './sourceLinkModes';
 
 export type RuleDataSourceSnapshot = {
+  worldId?:string;
   sourceId: string;
   label: string;
   readerKind: string;
@@ -19,10 +21,10 @@ export type RuleDataSourceSnapshot = {
   generation: number;
 };
 
-const runtimeConfig = getOpenRIAMapFormalDataSourceRuntimeConfig();
-const selectionConfig = parseDataSourceSelectionConfig(runtimeConfig.selection);
-const bindingsById = new Map(runtimeConfig.bindings.map((binding) => [String(binding.id).trim(), binding]));
-const githubRawTransport = runtimeConfig.githubRawTransport;
+let runtimeConfig = getOpenRIAMapFormalDataSourceRuntimeConfig();
+let selectionConfig = parseDataSourceSelectionConfig(runtimeConfig.selection);
+let bindingsById = new Map(runtimeConfig.bindings.map((binding) => [String(binding.id).trim(), binding]));
+let githubRawTransport = runtimeConfig.githubRawTransport;
 
 for (const source of selectionConfig.sources) {
   const binding = bindingsById.get(source.id);
@@ -45,27 +47,33 @@ if (githubRawTransport) {
   }
 }
 
-const selectionController: DataSourceSelectionController = createDataSourceSelectionController({
+let selectionController: DataSourceSelectionController = createDataSourceSelectionController({
   sources: selectionConfig.sources,
   policy: selectionConfig.policy,
   storage: createBrowserDataSourceSelectionStorage(),
   storageKey: selectionConfig.storageKey,
 });
 
+let applicationEpoch=getApplicationGeneration();
+function refreshApplicationSource(){
+  if(applicationEpoch===getApplicationGeneration())return;
+  applicationEpoch=getApplicationGeneration();runtimeConfig=getOpenRIAMapFormalDataSourceRuntimeConfig();selectionConfig=parseDataSourceSelectionConfig(runtimeConfig.selection);bindingsById=new Map(runtimeConfig.bindings.map(binding=>[binding.id,binding]));githubRawTransport=runtimeConfig.githubRawTransport;
+  selectionController=createDataSourceSelectionController({sources:selectionConfig.sources,policy:selectionConfig.policy,storage:createBrowserDataSourceSelectionStorage(),storageKey:selectionConfig.storageKey});
+}
 export function getRuleDataSourceSelectionController(): DataSourceSelectionController {
-  return selectionController;
+  refreshApplicationSource();return selectionController;
 }
 
 export function getRuleDataSourceSelectionPolicy(): DataSourceSelectionPolicy {
-  return { ...selectionConfig.policy };
+  refreshApplicationSource();return { ...selectionConfig.policy };
 }
 
 export function isFormalGithubTransportSource(sourceId: string | null | undefined): boolean {
-  return !!sourceId && !!githubRawTransport?.sourceIds.includes(String(sourceId));
+  refreshApplicationSource();return !!sourceId && !!githubRawTransport?.sourceIds.includes(String(sourceId));
 }
 
 export function getFormalGithubTransportSourceIds(): string[] {
-  return [...(githubRawTransport?.sourceIds ?? [])];
+  refreshApplicationSource();return [...(githubRawTransport?.sourceIds ?? [])];
 }
 
 function resolveRootUrl(sourceId: string, fallbackRootUrl: string): { rootUrl: string; transportId: string } {
@@ -80,16 +88,18 @@ function resolveRootUrl(sourceId: string, fallbackRootUrl: string): { rootUrl: s
     branch: githubRawTransport.repository.branch,
     path: '',
   }).replace(/\/+$/, '');
-  return { rootUrl, transportId: `github-raw-compatible:${mode.id}` };
+  return { rootUrl, transportId: `github-raw-compatible:${mode.id}:${rootUrl}` };
 }
 
-export function getRuleDataSourceSnapshot(): RuleDataSourceSnapshot {
-  const state = selectionController.getState();
-  const source = selectionConfig.sources.find((item) => item.id === state.sourceId);
-  const binding = bindingsById.get(state.sourceId);
+export function getRuleDataSourceSnapshot(worldId?:string): RuleDataSourceSnapshot {
+  refreshApplicationSource();const state = selectionController.getState();
+  const sourceId=worldId&&state.sourceId===selectionConfig.policy.defaultSourceId?applicationWorld(worldId).dataSourceId:state.sourceId;
+  const source = selectionConfig.sources.find((item) => item.id === sourceId);
+  const binding = bindingsById.get(sourceId);
   if (!source || !binding) throw new Error(`openriamap-formal-data-source:active-source-invalid:${state.sourceId}`);
   const transport = resolveRootUrl(source.id, String(binding.rootUrl).trim());
   return {
+    ...(worldId?{worldId}:{}),
     sourceId: source.id,
     label: source.label,
     readerKind: source.readerKind,
@@ -97,6 +107,10 @@ export function getRuleDataSourceSnapshot(): RuleDataSourceSnapshot {
     rootUrl: transport.rootUrl,
     mediaRootUrl: String(binding.mediaRootUrl ?? '').trim().replace(/\/+$/, '') || null,
     transportId: transport.transportId,
-    generation: state.generation,
+    generation: applicationEpoch * 1000000 + state.generation,
   };
+}
+
+export function retiredSourceNotice():string {
+  try{const raw=localStorage.getItem(selectionConfig.storageKey);if(raw&&JSON.parse(raw).sourceId==='legacy-github')return '旧兼容数据源已退役。当前仅提供现役正式来源；请确认来源并显式应用，旧缓存不会重新启用旧接口。';}catch{}return '';
 }

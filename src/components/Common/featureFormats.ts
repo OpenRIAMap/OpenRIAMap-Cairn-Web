@@ -1,3 +1,4 @@
+import { subscribeApplication } from '@/core/project/applicationRuntime';
 // CairnMap FINAL CLEANUP: legacy format facade + special formatter executor bridge only.
 // Do not add Class/field/display/workflow definitions here. Runtime definitions belong in project-config presets.
 import { getClassConfigWorkflowCatalogEntries } from '../../core/project/classCatalogAdapter';
@@ -385,7 +386,7 @@ const TYPE_NAME_BY_MODE: Record<DrawMode, 'Points' | 'Polyline' | 'Polygon'> = {
   polygon: 'Polygon',
 };
 
-export const WORLD_CODE_BY_WORLD_ID: Record<string, number> = buildWorldCodeMapFromConfig();
+export let WORLD_CODE_BY_WORLD_ID: Record<string, number> = buildWorldCodeMapFromConfig();
 
 const formatYYYYMMDD = (d: Date) => {
   const y = d.getFullYear();
@@ -809,3 +810,5 @@ export const parseCoordListFlexible = (raw: string): Coord2D[] | null => {
   }
   return out;
 };
+
+subscribeApplication(()=>{WORLD_CODE_BY_WORLD_ID=buildWorldCodeMapFromConfig();});

@@ -1,3 +1,4 @@
+import { retiredSourceNotice } from '@/components/Rules/data/formalDataSourceRuntime';
 /**
  * 设置面板组件
  * 显示 Rules 世界版本、缓存状态、PWA 状态等信息
@@ -441,7 +442,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
             draftSourceId={dataSourceDraft}
             appliedSourceId={dataSource.sourceId}
             isApplying={dataSourceApplying}
-            status={dataSourceStatus}
+            status={dataSourceStatus??(retiredSourceNotice()?{tone:'info',text:retiredSourceNotice()}:null)}
             onDraftSourceIdChange={setDataSourceDraft}
             onApply={() => { void handleApplyDataSource(); }}
             title="运行数据读取来源"

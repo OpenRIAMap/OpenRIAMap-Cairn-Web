@@ -1,3 +1,4 @@
+import { getApplicationSettings } from '@/core/project/applicationRuntime';
 import AppCard from '@/components/ui/AppCard';
 import ToolIconButton from '@/components/Toolbar/ToolIconButton';
 import { RULE_BUTTON_DEFS } from './buttonRuleConfig';
@@ -21,6 +22,7 @@ export default function RuleButtonPanel({ activeButtonIds, onToggle, mode = 'des
       {RULE_BUTTON_DEFS.map((d) => (
         <ToolIconButton
           key={d.id}
+          style={{width:getApplicationSettings().buttons.items.find(item=>item.id===d.id)?.size,height:getApplicationSettings().buttons.items.find(item=>item.id===d.id)?.size}}
           label={d.label}
           icon={d.icon}
           active={active.has(d.id)}

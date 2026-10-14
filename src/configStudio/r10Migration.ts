@@ -1,3 +1,4 @@
+import { defaultApplicationSettings } from '../core/project/applicationDefaults';
 import type { CategorySearch, ConfigPackageV3 } from './types';
 import { resolveNodeFieldSettings } from './nodeFieldSettings';
 import { STRUCTURE_CONTEXT_ID } from './structureRoleIndex';
@@ -15,6 +16,7 @@ export function migrateConfigToR10(value:ConfigPackageV3):{config:ConfigPackageV
   if(value.contractRevision===10)return {config:structuredClone(value),report};
   const original=value.contractRevision<9?migrateConfigToR9(value):structuredClone(value),config=structuredClone(original);
   config.contractRevision=10;config.revision=Math.max(value.revision+1,6);
+  config.application=defaultApplicationSettings();
   config.lookupTables=defaultLookupTables();report.changes.push({path:'lookupTables',message:'加入所属枢纽区/四返回点与出行方式表；未替换导航消费者。'});
   const names=new Map(SEARCH_CATEGORY_OVERRIDE_LINES.map(line=>{const value=JSON.parse('{'+line+'}') as {Class:string;Name:string};return [value.Class,value.Name];}));
   const priorities=SEARCH_RULE_PRIORITY_LINES.map(line=>(JSON.parse('{'+line+'}') as {Class:string}).Class),blacklist=new Set(SEARCH_RULE_BLACKLIST_LINES.map(line=>(JSON.parse('{'+line+'}') as {Class:string}).Class));

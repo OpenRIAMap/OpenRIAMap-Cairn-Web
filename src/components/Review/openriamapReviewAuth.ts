@@ -1,3 +1,4 @@
+import { reviewEndpoint } from '@/core/project/applicationRuntime';
 import {
   normalizeReviewAuthSession,
   type ReviewAuthPort,
@@ -33,7 +34,7 @@ function popupNonce(): string {
  */
 async function beginPopupLogin(): Promise<void> {
   const nonce = popupNonce();
-  const start = new URL('/api/auth/github/start', window.location.origin);
+  const start = new URL(reviewEndpoint('start'), window.location.origin);
   start.searchParams.set('mode', 'popup');
   start.searchParams.set('nonce', nonce);
   const popup = window.open(start.toString(), 'cairn-review-login', 'popup=yes,width=560,height=720,resizable=yes,scrollbars=yes');
@@ -68,8 +69,8 @@ export const openriamapGithubReviewAuth: ReviewAuthPort = {
   async getSession(options: ReviewAuthSessionOptions = {}): Promise<ReviewAuthSessionState> {
     try {
       const path = options.includeRoles === false
-        ? '/api/auth/github/session?includeRoles=0'
-        : '/api/auth/github/session';
+        ? reviewEndpoint('session')+'?includeRoles=0'
+        : reviewEndpoint('session');
       const { response, body } = await jsonRequest(path);
       if (response.ok) return normalizeReviewAuthSession(body);
       if (response.status === 401) return { status: 'expired', message: 'GitHub 登录会话已过期，请重新登录。' };
@@ -80,7 +81,7 @@ export const openriamapGithubReviewAuth: ReviewAuthPort = {
   },
   beginLogin: beginPopupLogin,
   async logout(): Promise<void> {
-    const { response, body } = await jsonRequest('/api/auth/github/logout', { method: 'POST' });
+    const { response, body } = await jsonRequest(reviewEndpoint('logout'), { method: 'POST' });
     if (!response.ok) throw new Error(message(body, 'GitHub 登录退出失败。'));
   },
 };

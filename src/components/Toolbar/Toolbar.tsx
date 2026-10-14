@@ -1,3 +1,4 @@
+import { moduleEnabled } from '@/core/project/applicationRuntime';
 /**
  * 工具栏组件
  * 包含路径规划等快捷功能图标
@@ -10,8 +11,7 @@ import ToolIconButton from '@/components/Toolbar/ToolIconButton';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 
-const PLAYER_FEATURE_ENABLED = true;
-const LINES_FEATURE_ENABLED = false;
+
 
 interface ToolbarProps {
   onNavigationClick: () => void;
@@ -33,6 +33,7 @@ function ToolbarButtons({
   onSettingsClick,
   mobile = false,
 }: Omit<ToolbarProps, 'frameless'>) {
+  const PLAYER_FEATURE_ENABLED=moduleEnabled('players'),LINES_FEATURE_ENABLED=false;
   const buttonClass = mobile
     ? 'p-2.5 rounded-lg text-gray-600 transition-colors group relative active:scale-[0.98]'
     : 'p-2 rounded-lg transition-colors group relative';
@@ -40,7 +41,7 @@ function ToolbarButtons({
   return (
     <>
       <AppButton
-        onClick={onNavigationClick}
+        disabled={!moduleEnabled('navigation')} onClick={onNavigationClick}
         className={`${buttonClass} hover:bg-blue-50 hover:text-blue-600`}
         title="路径规划"
       >
@@ -101,7 +102,7 @@ function ToolbarButtons({
       </AppButton>
 
       <AppButton
-        onClick={onSettingsClick}
+        disabled={!moduleEnabled('settings')} onClick={onSettingsClick}
         className={`${buttonClass} hover:bg-gray-100 hover:text-gray-800`}
         title="设置"
       >

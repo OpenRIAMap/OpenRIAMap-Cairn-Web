@@ -1,3 +1,4 @@
+import { reviewEndpoint } from '@/core/project/applicationRuntime';
 import { useCallback, useEffect, useState } from 'react';
 import { Download, RefreshCw } from 'lucide-react';
 import AppButton from '@/components/ui/AppButton';
@@ -55,8 +56,8 @@ export function PublicReleaseRecordPanel({ onClose }: { onClose?: () => void }) 
     setBusy('refresh');
     setMessage(null);
     try {
-      const feed = await json<Feed>('/api/public-review-releases?limit=20');
-      const details = await Promise.all((feed.items ?? []).map((item) => json<PublicRelease>(`/api/public-review-releases?releaseId=${encodeURIComponent(item.releaseId)}`)));
+      const feed = await json<Feed>(reviewEndpoint('publicReleases')+'?limit=20');
+      const details = await Promise.all((feed.items ?? []).map((item) => json<PublicRelease>(`${reviewEndpoint('publicReleases')}?releaseId=${encodeURIComponent(item.releaseId)}`)));
       setRecords(details);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
@@ -71,7 +72,7 @@ export function PublicReleaseRecordPanel({ onClose }: { onClose?: () => void }) 
     setBusy(key);
     setMessage(null);
     try {
-      const grant = await json<{ download: { url: string } }>('/api/public-review-releases', {
+      const grant = await json<{ download: { url: string } }>(reviewEndpoint('publicReleases'), {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ operation: 'package-download', releaseId: release.releaseId, submissionId: pkg.submissionId, revisionId: pkg.decisionRevisionId }),
       });

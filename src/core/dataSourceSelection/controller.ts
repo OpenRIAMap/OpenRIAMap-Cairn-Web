@@ -59,7 +59,7 @@ export function validateDataSourceSelectionConfig(
     const id = normalizedId(source.id);
     if (!id) fail('source-id-required');
     if (seen.has(id)) fail(`duplicate-source-id:${id}`);
-    if (!String(source.label ?? '').trim()) fail(`source-label-required:${id}`);
+    if (typeof source.label !== 'string') fail(`source-label-required:${id}`);
     if (!String(source.readerKind ?? '').trim()) fail(`source-reader-kind-required:${id}`);
     seen.add(id);
   }

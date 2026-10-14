@@ -5,9 +5,20 @@
     "schemaVersion": "cairnmap.data-source-selection.v1",
     "storageKey": "openriamap_formal_data_source_v1",
     "sources": [
-      { "id": "formal-cos", "label": "正式数据源（COS）", "readerKind": "formal-release-v2", "enabled": true, "selectable": true },
-      { "id": "formal-github", "label": "正式数据源（GitHub 镜像）", "readerKind": "formal-release-v2", "enabled": true, "selectable": true },
-      { "id": "legacy-github", "label": "兼容数据源（GitHub Raw）", "readerKind": "legacy-merge-v1", "enabled": true, "selectable": true }
+      {
+        "id": "formal-cos",
+        "label": "正式数据源（COS）",
+        "readerKind": "formal-release-v2",
+        "enabled": true,
+        "selectable": true
+      },
+      {
+        "id": "formal-github",
+        "label": "正式数据源（GitHub 镜像）",
+        "readerKind": "formal-release-v2",
+        "enabled": true,
+        "selectable": true
+      }
     ],
     "policy": {
       "defaultSourceId": "formal-cos",
@@ -19,7 +30,9 @@
     }
   },
   "githubRawTransport": {
-    "sourceIds": ["formal-github"],
+    "sourceIds": [
+      "formal-github"
+    ],
     "repository": {
       "owner": "OpenRIAMap",
       "repo": "OpenRIAMap-Cairn-Data",
@@ -42,13 +55,6 @@
       "rootUrl": "https://raw.githubusercontent.com/OpenRIAMap/OpenRIAMap-Cairn-Data/main",
       "mediaRootUrl": "https://openriamap-cairn-media-1433163128.cos.ap-shanghai.myqcloud.com",
       "transport": "github-raw-compatible"
-    },
-    {
-      "id": "legacy-github",
-      "readerKind": "legacy-merge-v1",
-      "readerSchemaVersion": "openriamap.legacy-merge-reader.v1",
-      "rootUrl": "https://raw.githubusercontent.com/OpenRIAMap/OpenRIAMap-Data/main",
-      "transport": "direct"
     }
   ]
 }

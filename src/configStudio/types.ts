@@ -894,6 +894,7 @@ export type ConfigPackageV3 = {
   engine?: ConfigEngineSettings;
   registries: ConfigRegistries;
   lookupTables?: LookupTable[];
+  application?: import('../core/project/applicationTypes').ApplicationSettings;
   nodes: CategoryNode[];
   /** Required for V3.2-native packages; legacy node.containment is import-only. */
   contextBindings?: ContextBinding[];

@@ -1,3 +1,4 @@
+import { getApplicationSettings } from '@/core/project/applicationRuntime';
 /**
  * 搜索组件
  * 支持搜索站点、地标和线路
@@ -41,6 +42,7 @@ export interface SearchResult {
 }
 
 interface SearchBarProps {
+  disabled?:boolean;
   configRuntime?:ConfigPackageV3;
   stations: ParsedStation[];
   landmarks: ParsedLandmark[];
@@ -128,12 +130,15 @@ function getRuleCenterCoord(r: FeatureRecord): { x: number; y: number; z: number
   };
 }
 
-export function SearchBar({ configRuntime, stations, landmarks, lines, players = [], worldId, onSelect, onLineSelect, mobile = false, variant, onAboutClick }: SearchBarProps) {
+export function SearchBar({ disabled=false, configRuntime, stations, landmarks, lines, players = [], worldId, onSelect, onLineSelect, mobile = false, variant, onAboutClick }: SearchBarProps) {
   const poolVersion=useSyncExternalStore(listener=>subscribeRuleSearchPool(worldId,listener),()=>getRuleSearchPoolVersion(worldId));
   const nativeSearch=Boolean(configRuntime&&configRuntime.contractRevision>=10);
   const [query, setQuery] = useState('');
+  const [deferredQuery,setDeferredQuery]=useState('');
+  useEffect(()=>{const timer=setTimeout(()=>setDeferredQuery(query),getApplicationSettings().preferences.search.debounceMs);return()=>clearTimeout(timer);},[query]);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  useEffect(()=>{const close=(event:Event)=>{if((event as CustomEvent).detail?.id==='search')setIsOpen(false);};window.addEventListener('cairn:close-module',close);return()=>window.removeEventListener('cairn:close-module',close);},[]);
   const [railIndex, setRailIndex] = useState<RailNewIndex | null>(null);
   const [dropdownWidth, setDropdownWidth] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -151,10 +156,10 @@ export function SearchBar({ configRuntime, stations, landmarks, lines, players =
       .catch(() => {
         if (!cancelled) setRailIndex(null);
       });
-    return () => {
+  return () => {
       cancelled = true;
     };
-  }, [worldId]);
+  }, [worldId,poolVersion]);
 
   // 用于楼层类（FLR/STF）的“所属建筑/车站建筑”名映射。
   // - 尽量复用 SearchPool（无需额外 fetch）
@@ -302,12 +307,12 @@ export function SearchBar({ configRuntime, stations, landmarks, lines, players =
 
   // 搜索逻辑
   useEffect(() => {
-    if (query.length < 1) {
+    if (deferredQuery.length < 1) {
       setResults([]);
       return;
     }
 
-    const searchQuery = normalizeQuery(query);
+    const searchQuery = normalizeQuery(deferredQuery);
     const matchedResults: SearchResult[] = [];
 
     // 搜索线路（优先显示）
@@ -458,8 +463,8 @@ export function SearchBar({ configRuntime, stations, landmarks, lines, players =
     const finalResults = [...nonRule, ...ruleWithOrder.map((it) => it.x)];
 
     // 限制结果数量
-    setResults(finalResults.slice(0, 35));
-  }, [query, stations, landmarks, lines, players, worldId,poolVersion,configRuntime]);
+    setResults(finalResults.slice(0, getApplicationSettings().preferences.search.homepageLimit));
+  }, [deferredQuery, stations, landmarks, lines, players, worldId,poolVersion,configRuntime]);
 
   // 点击外部关闭
   useEffect(() => {
@@ -525,6 +530,7 @@ export function SearchBar({ configRuntime, stations, landmarks, lines, players =
     setIsOpen(false);
   };
 
+  if(disabled)return null;
   return (
     <div ref={containerRef} className={`relative ${isMobileVariant ? 'flex items-stretch gap-2' : ''}`}>
       <AppCard className={`${shellClassName} ${isMobileVariant && onAboutClick ? 'flex-1 min-w-0' : ''}`}>

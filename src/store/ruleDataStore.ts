@@ -1,3 +1,4 @@
+import { getApplicationSettings, subscribeApplication } from '@/core/project/applicationRuntime';
 import { create } from 'zustand';
 import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
 import {
@@ -51,7 +52,7 @@ function currentWorldId(): string {
 }
 
 function isCurrentSource(source: RuleDataSourceSnapshot): boolean {
-  const active = getRuleDataSourceSnapshot();
+  const active = getRuleDataSourceSnapshot(source.worldId);
   return active.sourceId === source.sourceId
     && active.transportId === source.transportId
     && active.rootUrl === source.rootUrl
@@ -80,7 +81,7 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
   dataSourceFailure: null,
   ensureWorldLoaded: async (worldId: string) => {
     worldId = normalizeRuleSourceWorldId(worldId);
-    const source = getRuleDataSourceSnapshot();
+    const source = getRuleDataSourceSnapshot(worldId);
     const pending = get().pending[worldId];
     if (pending && get().pendingGeneration[worldId] === source.generation) return pending;
 
@@ -250,3 +251,6 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
   },
   clearDataSourceFailure: () => set({ dataSourceFailure: null }),
 }));
+
+let appliedSources=JSON.stringify(getApplicationSettings().sources);
+subscribeApplication(()=>{const next=JSON.stringify(getApplicationSettings().sources),changed=next!==appliedSources;appliedSources=next;abortActiveRuleDatasetRequests();if(changed)clearAllRuleWorldCaches();useRuleDataStore.setState({...(changed?{datasets:{}}:{}),pending:{},pendingGeneration:{},loadingWorld:null,dataSource:getRuleDataSourceSnapshot(),dataSourceFailure:null});});

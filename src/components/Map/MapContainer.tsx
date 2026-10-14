@@ -1,3 +1,5 @@
+import { getApplicationGeneration, getApplicationSettings, applicationWorld, moduleEnabled, subscribeApplication, registerApplicationGuard } from '@/core/project/applicationRuntime';
+import { useSyncExternalStore } from 'react';
 import { isNativeConfigRevision } from '../../configStudio/contract';
 import { MAP_ZOOM_BOUNDS, TILE_ZOOM_BOUNDS } from '@/lib/mapZoom';
 import { Suspense, lazy, useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -8,7 +10,7 @@ import MobileFeatureSharePanel from '@/components/Mobile/MobileFeatureSharePanel
 import MobileFloorPanel from '@/components/Mobile/MobileFloorPanel';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { createDynmapCRS, ZTH_FLAT_CONFIG, DynmapProjection } from '@/lib/DynmapProjection';
+import { createDynmapCRS, getWorldConfig, DynmapProjection } from '@/lib/DynmapProjection';
 import { DynmapTileLayer, createDynmapTileLayer } from '@/lib/DynmapTileLayer';
 import { createSketchTileLayer } from '@/lib/SketchTileLayer';
 import { createWatercolorTileLayer } from '@/lib/SketchTileLayer';
@@ -136,16 +138,6 @@ const LazyLineDetailCard = lazy(() => import('@/components/Legacy/detail/LineDet
 const LazyPointDetailCard = lazy(() => import('@/components/Legacy/detail/PointDetailCard').then((mod) => ({ default: mod.PointDetailCard })));
 const LazyLinesPage = lazy(() => import('@/components/Legacy/lines/LinesPage').then((mod) => ({ default: mod.LinesPage })));
 
-const WORLDS = [
-  { id: 'zth', name: '零洲', center: { x: -643, y: 35, z: -1562 } },
-  { id: 'eden', name: '伊甸', center: { x: 0, y: 64, z: 0 } },
-  { id: 'naraku', name: '奈落洲', center: { x: 0, y: 64, z: 0 } },
-  { id: 'houtu', name: '后土洲', center: { x: 0, y: 64, z: 0 } },
-  { id: 'laputa', name: '拉普塔', center: { x: 272, y: 64, z: 104 } }
-];
-
-const PLAYER_FEATURE_ENABLED = true;
-const LINES_FEATURE_ENABLED = false;
 
 function getRuleCenterCoord(r: FeatureRecord): Coordinate | null {
   if (r?.p3) return { x: r.p3.x, y: r.p3.y ?? 64, z: r.p3.z };
@@ -243,6 +235,9 @@ function buildNavigationInitialPointFromPlayer(player: Player): NavigationInitia
 }
 
 function MapContainer({ configRuntime, configLab = false }: { configRuntime?: ConfigPackageV3; configLab?: boolean }) {
+  const application=getApplicationSettings();
+  const WORLDS=application.worlds.filter(world=>world.enabled).map(world=>({id:world.id,name:world.label[application.preferences.language],center:world.center}));
+  const PLAYER_FEATURE_ENABLED=moduleEnabled('players'),LINES_FEATURE_ENABLED=false;
   // The V3 lab is an isolated native-rendering environment.  Its configured
   // features must not be visually mixed with the old railway/landmark layers
   // or be filtered by the V1 rule-button registry.  The V1 lab and ordinary
@@ -615,6 +610,7 @@ useEffect(() => {
   }, [clearReviewWorkspaceState, failWorkspaceAdmission, syncWorkspaceCoordinator]);
 
   const requestWorkspaceEntry = useCallback(async (target: Exclude<WorkspaceKind, 'runtime'>) => {
+    const extra=getApplicationSettings().modules.items.find(item=>item.id===target)?.exclusiveWith??[];if(extra.includes('navigation'))setShowNavigation(false);if(extra.includes('settings'))setShowSettings(false);if(extra.includes('search'))window.dispatchEvent(new CustomEvent('cairn:close-module',{detail:{id:'search'}}));
     const transition = workspaceTransitionCoordinatorRef.current.request(target);
     if (!transition) return;
     // A repeated fixed-entry click belongs to the already-mounted workspace.
@@ -668,7 +664,24 @@ useEffect(() => {
     await activateWorkspaceTarget(transition);
   }, [activateWorkspaceTarget, clearReviewWorkspaceState, measuringModuleLoaded, requestFeatureModuleActivation, reviewModuleLoaded, syncWorkspaceCoordinator]);
 
+  useEffect(()=>registerApplicationGuard(async()=>{
+    const reason='应用总体规则';
+    const accepted=activeWorkspace==='measurement'?await (measurementToolsRef.current?.requestCloseAndClear(reason)??Promise.resolve(true)):activeWorkspace==='mapping'||activeWorkspace==='review'?await (measuringModuleRef.current?.requestCloseAndClear(reason)??Promise.resolve(true)):true;
+    if(accepted){clearReviewWorkspaceState();if(activeWorkspace!=='runtime')workspaceTransitionCoordinatorRef.current.reportInactive(activeWorkspace);}
+    return accepted;
+  }),[activeWorkspace,clearReviewWorkspaceState]);
+
+  async function openNavigation(){
+    if(!moduleEnabled('navigation'))return;
+    const exclusive=getApplicationSettings().modules.items.find(item=>item.id==='navigation')?.exclusiveWith??[];
+    if(activeWorkspace!=='runtime'&&exclusive.includes(activeWorkspace)){
+      const okay=activeWorkspace==='measurement'?await (measurementToolsRef.current?.requestCloseAndClear('启动导航')??Promise.resolve(true)):await (measuringModuleRef.current?.requestCloseAndClear('启动导航')??Promise.resolve(true));
+      if(!okay)return;workspaceTransitionCoordinatorRef.current.reportInactive(activeWorkspace);clearReviewWorkspaceState();syncWorkspaceCoordinator();
+    }
+    setShowNavigation(true);
+  }
   const requestMeasuringModuleEntry = useCallback((target: 'measuring' | 'mtools') => {
+    if(!moduleEnabled(target==='measuring'?'mapping':'measurement'))return;
     void requestWorkspaceEntry(target === 'measuring' ? 'mapping' : 'measurement');
   }, [requestWorkspaceEntry]);
 
@@ -695,6 +708,7 @@ useEffect(() => {
   }, [pendingWorkspaceAdmission]);
 
   const requestReviewModuleEntry = useCallback(() => {
+    if(!moduleEnabled('review'))return;
     void requestWorkspaceEntry('review');
   }, [requestWorkspaceEntry]);
 
@@ -956,7 +970,7 @@ useEffect(() => {
         return;
       }
 
-      setShowNavigation(true);
+      void openNavigation();
     };
 
     window.addEventListener('ria:featureCardNavigate', handler as EventListener);
@@ -1535,11 +1549,11 @@ const handleRouteFound = useCallback((route: RouteHighlightData | Array<{ coord:
 
 
   // 世界切换处理
-  const handleWorldChange = useCallback((worldId: string) => {
+  const handleWorldChange = useCallback(async (worldId: string) => {
     const normalizedWorldId = normalizeRuleSourceWorldId(worldId);
     // 世界切换前默认触发“关闭测绘”。若用户不确认，则禁止切换。
     // 注意：必须在 setCurrentWorld 之前执行，否则会导致临时挂载/图层归属混乱。
-    const ok = measuringModuleRef.current?.requestCloseAndClear?.('切换世界') ?? true;
+    const ok = await (measuringModuleRef.current?.requestCloseAndClear?.('切换世界') ?? Promise.resolve(true));
     if (!ok) return;
 
     // 同步关闭“测量工具”（不需要二次确认）
@@ -1549,8 +1563,8 @@ const handleRouteFound = useCallback((route: RouteHighlightData | Array<{ coord:
 
     // 更新瓦片图层
     const map = leafletMapRef.current;
-    const proj = projectionRef.current;
-    if (!map || !proj) return;
+    if (!map) return;
+    const crs=createDynmapCRS(getWorldConfig(normalizedWorldId));map.options.crs=crs;const proj=(crs as any).dynmapProjection as DynmapProjection;projectionRef.current=proj;
 
     // 移除旧瓦片图层
     if (tileLayerRef.current) {
@@ -1589,10 +1603,10 @@ if (mapStyle === 'sketch') {
     if (!mapRef.current || leafletMapRef.current) return;
 
     // 从 cookie 读取初始世界设置
-    const savedWorld = normalizeRuleSourceWorldId(initialPendingShareRef.current?.target.worldId ?? loadMapSettings()?.currentWorld ?? 'zth');
+    const savedWorld = normalizeRuleSourceWorldId(initialPendingShareRef.current?.target.worldId ?? loadMapSettings()?.currentWorld ?? applicationWorld('').id);
 
     // 创建 Dynmap CRS
-    const crs = createDynmapCRS(ZTH_FLAT_CONFIG);
+    const crs = createDynmapCRS(getWorldConfig(savedWorld));
     const projection = (crs as any).dynmapProjection as DynmapProjection;
     projectionRef.current = projection;
 
@@ -1612,7 +1626,10 @@ const maxZoom = MAP_ZOOM_BOUNDS.maxZoom;
 const map = L.map(mapRef.current, {
   crs: crs,
   center: centerLatLng,
-  zoom: 2,
+  zoom: application.preferences.map.logicalInitialZoom+application.preferences.map.leafletOffset,
+  scrollWheelZoom: application.preferences.map.scrollWheelZoom,
+  doubleClickZoom: application.preferences.map.doubleClickZoom,
+  dragging: application.preferences.map.dragging,
   minZoom,
   maxZoom,
 
@@ -1941,7 +1958,7 @@ case 'players':
 
   return (
     <div
-      className="relative w-full h-full"
+      className={`relative w-full h-full ${application.preferences.toolbar.compact?'cm-toolbar-compact':''}`}
       style={{ ['--ria-mobile-bottom-offset' as any]: `${mobileSheetOffset}px` }}
     >
       {/* 地图容器 */}
@@ -2106,6 +2123,7 @@ case 'players':
         </AppCard>
 
         <SearchBar
+          disabled={!moduleEnabled('search')}
           configRuntime={configRuntime}
           variant="desktop"
           stations={searchStations}
@@ -2118,7 +2136,7 @@ case 'players':
         />
 
         <Toolbar
-          onNavigationClick={() => { setNavigationInitialEndPoint(null); setShowNavigation(true); }}
+          onNavigationClick={() => { setNavigationInitialEndPoint(null); void openNavigation(); }}
           onAttributeQueryClick={() => { setShowAttributeQuery(true); }}
           onLinesClick={handleOpenLegacyLinesPage}
           onPlayersClick={() => { setShowPlayersPage(true); }}
@@ -2141,6 +2159,7 @@ case 'players':
 
       <div className="sm:hidden absolute top-2 left-2 right-2 z-[1003]">
         <SearchBar
+          disabled={!moduleEnabled('search')}
           configRuntime={configRuntime}
           variant="mobile"
           mobile
@@ -2186,7 +2205,7 @@ case 'players':
                 <Toolbar
                   frameless
                   mobile
-                  onNavigationClick={() => openMobilePanel('navigation')}
+                  onNavigationClick={() => moduleEnabled('navigation')&&openMobilePanel('navigation')}
                   onAttributeQueryClick={() => openMobilePanel('attributeQuery')}
                   onLinesClick={() => {
                     setMobileQuickPanel(null);
@@ -2194,7 +2213,7 @@ case 'players':
                   }}
                   onPlayersClick={() => openMobilePanel('players')}
                   onHelpClick={() => openMobilePanel('about')}
-                  onSettingsClick={() => openMobilePanel('settings')}
+                  onSettingsClick={() => moduleEnabled('settings')&&openMobilePanel('settings')}
                 />
               );
             }
@@ -2220,8 +2239,8 @@ case 'players':
                 onToggleMapStyle={setMapStyle}
               >
                 <ToolIconButton label="发布记录" icon={<History className="w-5 h-5" />} tone="purple" onClick={() => openMobilePanel('releaseRecords')} />
-                <ToolIconButton label="测量工具" icon={<Ruler className="w-5 h-5" />} active={activeWorkspace === 'measurement'} disabled={workspaceTransitionPhase !== 'idle'} onClick={() => { requestMeasuringModuleEntry('mtools'); setMobileQuickPanel(null); }} />
-                <ToolIconButton label="测绘" icon={<Pencil className="w-5 h-5" />} active={activeWorkspace === 'mapping'} disabled={workspaceTransitionPhase !== 'idle'} onClick={() => { requestMeasuringModuleEntry('measuring'); setMobileQuickPanel(null); }} />
+                <ToolIconButton label="测量工具" icon={<Ruler className="w-5 h-5" />} active={activeWorkspace === 'measurement'} disabled={!moduleEnabled('measurement')||workspaceTransitionPhase !== 'idle'} onClick={() => { requestMeasuringModuleEntry('mtools'); setMobileQuickPanel(null); }} />
+                <ToolIconButton label="测绘" icon={<Pencil className="w-5 h-5" />} active={activeWorkspace === 'mapping'} disabled={!moduleEnabled('mapping')||workspaceTransitionPhase !== 'idle'} onClick={() => { requestMeasuringModuleEntry('measuring'); setMobileQuickPanel(null); }} />
               </LayerControl>
             );
           }}
@@ -2278,7 +2297,7 @@ case 'players':
       )}
 
       {/* 设置面板 */}
-      {showSettings && (
+      {moduleEnabled('settings')&&showSettings && (
         <div className="hidden sm:block">
         <DraggablePanel
           id="settings"
@@ -2290,7 +2309,7 @@ case 'players':
       )}
 
       {/* 路径规划面板 */}
-      {showNavigation && (
+      {moduleEnabled('navigation')&&showNavigation && (
         <div className="hidden sm:block">
         <DraggablePanel
           id="navigation"
@@ -2351,7 +2370,7 @@ case 'players':
             }}
             onNavigateToPlayer={(player) => {
               setNavigationInitialEndPoint(buildNavigationInitialPointFromPlayer(player));
-              setShowNavigation(true);
+              void openNavigation();
             }}
           />
         </DraggablePanel>
@@ -2433,7 +2452,7 @@ case 'players':
             onClose={() => setSelectedPlayer(null)}
             onNavigate={(player) => {
               setNavigationInitialEndPoint(buildNavigationInitialPointFromPlayer(player));
-              setShowNavigation(true);
+              void openNavigation();
             }}
           />
         </DraggablePanel>
@@ -2441,7 +2460,7 @@ case 'players':
       )}
 
       {/* 桌面端：右上角图层控制 */}
-      <div className="hidden sm:block absolute top-4 right-4 z-[1000]">
+      <div className={`hidden sm:block absolute top-4 ${application.preferences.toolbar.position==='left'?'left-4':'right-4'} z-[1000]`}>
         <div className="flex items-start gap-2">
           {rulePanelCollapsed ? <ToolIconButton label="展开图层面板" icon={<Layers3 className="w-5 h-5" />} tone="green" onClick={() => setRulePanelCollapsed(false)} /> : <div className="flex items-start gap-1"><RuleButtonPanel
             activeButtonIds={activeRuleButtonIds}
@@ -2463,7 +2482,7 @@ case 'players':
               icon={<Ruler className="w-5 h-5" />}
               active={activeWorkspace === 'measurement'}
               tone="blue"
-              disabled={workspaceTransitionPhase !== 'idle'}
+              disabled={!moduleEnabled('measurement')||workspaceTransitionPhase !== 'idle'}
               onClick={() => requestMeasuringModuleEntry('mtools')}
             />
           </div>
@@ -2473,7 +2492,7 @@ case 'players':
               icon={<Pencil className="w-5 h-5" />}
               active={activeWorkspace === 'mapping'}
               tone="blue"
-              disabled={workspaceTransitionPhase !== 'idle'}
+              disabled={!moduleEnabled('mapping')||workspaceTransitionPhase !== 'idle'}
               onClick={() => requestMeasuringModuleEntry('measuring')}
               className="h-11 w-11"
             />
@@ -2482,7 +2501,7 @@ case 'players':
             <ReviewModuleLauncher
               active={activeWorkspace === 'review'}
               onClick={requestReviewModuleEntry}
-              disabled={workspaceTransitionPhase !== 'idle'}
+              disabled={!moduleEnabled('review')||workspaceTransitionPhase !== 'idle'}
             />
           </div>
 
@@ -2599,4 +2618,5 @@ case 'players':
   );
 }
 
-export default MapContainer;
+function ConfiguredMap(props:Parameters<typeof MapContainer>[0]){const generation=useSyncExternalStore(subscribeApplication,getApplicationGeneration,getApplicationGeneration);return <MapContainer key={generation} {...props}/>;}
+export default ConfiguredMap;

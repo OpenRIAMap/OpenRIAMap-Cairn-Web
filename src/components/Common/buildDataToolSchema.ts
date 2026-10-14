@@ -1,3 +1,4 @@
+import { subscribeApplication } from '@/core/project/applicationRuntime';
 import { getClassConfigWorkflowCatalogEntries } from '@/core/project/classCatalogAdapter';
 import { listClassConfigs } from '@/core/project/classMetadata';
 import { getOpenRIAMapWorldsConfig } from '@/core/project/openriamapRiaEnvironment';
@@ -102,3 +103,5 @@ export function buildDataToolSchema(): DataToolSchema {
 }
 
 export const DATA_TOOL_SCHEMA = buildDataToolSchema();
+
+subscribeApplication(()=>{DATA_TOOL_SCHEMA.worlds=buildWorldCodeMapFromConfig();});

@@ -1,3 +1,4 @@
+import { applicationWorld } from '../core/project/applicationRuntime';
 import { coerceWorkflowValues } from './workflowValues';
 import { resolveNodeFieldSettings } from './nodeFieldSettings';
 import { WorkflowCategoryInput } from './WorkflowCategoryInput';
@@ -23,8 +24,7 @@ export type V3GeometryCapture = WorkflowDrawingCapture;
 
 export function resolveV3WorldPrefix(world: unknown): string {
   const raw = normalizeV3WorldId(world);
-  const byId: Record<string, string> = { zth: 'Z', naraku: 'N', houtu: 'H', eden: 'E', laputa: 'L', yunduan: 'Y' };
-  return byId[raw] ?? (/^[ZNHELY]$/i.test(raw) ? raw.toUpperCase() : 'Z');
+  return applicationWorld(raw).prefix;
 }
 
 /** One canonical World value is used by workflow output, search, and the

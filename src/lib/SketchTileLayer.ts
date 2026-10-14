@@ -1,3 +1,4 @@
+import { applicationWorld } from '@/core/project/applicationRuntime';
 import { TILE_ZOOM_BOUNDS } from './mapZoom';
 /**
  * 手绘素描风格瓦片图层
@@ -392,7 +393,12 @@ export function createSketchTileLayer(
 
   const merged: DynmapTileLayerOptions = {
     ...defaultOptions,
-    ...options
+    ...applicationWorld(worldId).tiles,
+    ...options,
+    baseUrl:applicationWorld(worldId).tiles.filteredBaseUrl,
+    prefix:applicationWorld(worldId).tiles.prefix,
+    minNativeZoom:applicationWorld(worldId).tiles.minNativeZoom,
+    maxNativeZoom:applicationWorld(worldId).tiles.maxNativeZoom
   };
 
   if (merged.maxNativeZoom === undefined && typeof merged.maxZoom === 'number') {
@@ -594,7 +600,12 @@ export function createWatercolorTileLayer(
 
   const merged: DynmapTileLayerOptions = {
     ...defaultOptions,
-    ...options
+    ...applicationWorld(worldId).tiles,
+    ...options,
+    baseUrl:applicationWorld(worldId).tiles.filteredBaseUrl,
+    prefix:applicationWorld(worldId).tiles.prefix,
+    minNativeZoom:applicationWorld(worldId).tiles.minNativeZoom,
+    maxNativeZoom:applicationWorld(worldId).tiles.maxNativeZoom
   };
 
   if (merged.maxNativeZoom === undefined && typeof merged.maxZoom === 'number') {

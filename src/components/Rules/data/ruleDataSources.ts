@@ -1,3 +1,4 @@
+import { getApplicationSettings, applicationWorld, subscribeApplication } from '@/core/project/applicationRuntime';
 import { getOpenRIAMapDataSourcesConfig } from '../../../core/project/openriamapRiaEnvironment';
 import { loadWorldRuleDataset } from '@/components/Rules/data/worldRuleDatasetLoader';
 
@@ -40,84 +41,15 @@ function buildRuleDataSources(): Record<string, WorldRuleDataSource> {
   return out;
 }
 
-export const RULE_DATA_SOURCES: Record<string, WorldRuleDataSource> = buildRuleDataSources();
+export let RULE_DATA_SOURCES: Record<string, WorldRuleDataSource> = buildRuleDataSources();
 
 
-export function normalizeRuleSourceWorldId(worldId: string): string {
-  const wid = String(worldId ?? '').trim();
-  if (!wid) return 'zth';
-  if ((RULE_DATA_SOURCES as any)[wid]) return wid;
-  // V1 exports, share links and workflow IDs have all used the one-letter
-  // world prefix at some point.  Normalize it at the data boundary as well as
-  // in V3 so `Z` and `zth` can never split an otherwise identical dataset.
-  const aliases: Record<string, string> = {
-    z: 'zth', n: 'naraku', h: 'houtu', e: 'eden', l: 'laputa', y: 'yunduan',
-  };
-  const lowercase = wid.toLowerCase();
-  if (aliases[lowercase]) return aliases[lowercase];
-  if ((RULE_DATA_SOURCES as any)[lowercase]) return lowercase;
-  if (/^\d+$/.test(wid)) {
-    const n = parseInt(wid, 10);
-    if (n === 0) return 'zth';
-    if (n === 1) return 'naraku';
-    if (n === 2) return 'houtu';
-    if (n === 3) return 'eden';
-    if (n === 4) return 'laputa';
-    if (n === 5) return 'yunduan';
-  }
-  const map: Record<string, string> = {
-    零洲: 'zth',
-    奈落: 'naraku',
-    后土: 'houtu',
-    伊甸: 'eden',
-    拉普塔: 'laputa',
-    云端: 'yunduan',
-  };
-  return map[wid] ?? wid;
+export function normalizeRuleSourceWorldId(worldId:string):string {
+  const raw=String(worldId??'').trim(),worlds=getApplicationSettings().worlds;
+  return worlds.find(world=>world.id.toLowerCase()===raw.toLowerCase()||world.prefix.toLowerCase()===raw.toLowerCase()||String(world.numericCode)===raw||world.label.zh===raw||world.label.en&&world.label.en===raw)?.id??(raw||applicationWorld('').id);
+}
+export async function loadRuleItemsForWorld(worldId:string,_opt?:{fetcher?:(url:string)=>Promise<any[]>}):Promise<any[]> {
+  return (await loadWorldRuleDataset(normalizeRuleSourceWorldId(worldId))).features;
 }
 
-async function fetchPublicJsonArray(url: string, fetcher?: (url: string) => Promise<any[]>): Promise<any[]> {
-  if (fetcher) return fetcher(url);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`fetch failed: ${res.status} ${url}`);
-  const data = await res.json();
-  return Array.isArray(data) ? data : [];
-}
-
-/**
- * 统一获取某个 world 的规则要素集合。
- * - dat：优先读取 world 级缓存；若缓存缺失则触发 world 数据集加载
- * - pub：沿用旧 public JSON 文件清单读取
- */
-export async function loadRuleItemsForWorld(worldId: string, opt?: { fetcher?: (url: string) => Promise<any[]> }): Promise<any[]> {
-  const wid = normalizeRuleSourceWorldId(worldId);
-  const ds = RULE_DATA_SOURCES[wid];
-  if (!ds) return [];
-
-  if ((ds.sourceMode ?? 'pub') === 'dat') {
-    try {
-      const dataset = await loadWorldRuleDataset(wid);
-      if (Array.isArray(dataset?.features)) return dataset.features as any[];
-    } catch {
-      return [];
-      // 若 Data 仓库链路失败，继续向下尝试旧 public 清单（若存在）
-    }
-  }
-
-  const files = Array.isArray(ds.files) ? ds.files : [];
-  if (!ds.baseUrl || files.length === 0) return [];
-  const out: any[] = [];
-  const results = await Promise.all(files.map(async (file) => {
-    const url = `${ds.baseUrl.replace(/\/$/, '')}/${file}`;
-    try {
-      return await fetchPublicJsonArray(url, opt?.fetcher);
-    } catch {
-      return [];
-    }
-  }));
-  for (const arr of results) {
-    if (!Array.isArray(arr)) continue;
-    for (const item of arr) out.push(item);
-  }
-  return out;
-}
+subscribeApplication(()=>{RULE_DATA_SOURCES=buildRuleDataSources();});

@@ -1,3 +1,4 @@
+import { applyApplicationSettings, checkApplicationTransition } from '../core/project/applicationRuntime';
 import manifest from './defaults/manifest.json';
 import type { ConfigPackageV3 } from './types';
 import type { StudioEditingSession } from './studioSession';
@@ -47,12 +48,12 @@ export function loadActiveConfig(): Promise<ConfigPackageV3> {
     try {if(latestRaw)latest=prepareConfigForActivation(JSON.parse(latestRaw));}catch{if(latestRaw)await archiveConfigRecovery('rejected-local-latest',latestRaw);}
     const latestFingerprint=latest?await fingerprint(latest):undefined;
     const untouchedPreviousDefault=latestFingerprint!==undefined&&manifest.legacyDefaultFingerprints.includes(latestFingerprint);
-    if(selected?.kind==='custom'&&latest&&(!selected.fingerprint||latestFingerprint===selected.fingerprint)) {await preserveSessionDrafts(latest);state.active=latest;mirror(state.active);return state.active;}
+    if(selected?.kind==='custom'&&latest&&(!selected.fingerprint||latestFingerprint===selected.fingerprint)) {await preserveSessionDrafts(latest);state.active=latest;applyApplicationSettings(state.active.application);mirror(state.active);return state.active;}
     const seed=await loadDefaultConfig();
     if(selected?.kind!=='default') {
       if(latest&&latestFingerprint!==manifest.semanticFingerprint)await archiveConfigRecovery(untouchedPreviousDefault?'previous-default-seed':'previous-local-latest',JSON.stringify(latest));
     }
-    await preserveSessionDrafts(seed);await saveActiveConfigChoice({kind:'default'});state.active=seed;try{localStorage.setItem(CHOICE,JSON.stringify({kind:'default'}));}catch{/* durable pointer is in IndexedDB */}mirror(state.active);return state.active;
+    await preserveSessionDrafts(seed);await saveActiveConfigChoice({kind:'default'});state.active=seed;try{localStorage.setItem(CHOICE,JSON.stringify({kind:'default'}));}catch{/* durable pointer is in IndexedDB */}applyApplicationSettings(state.active.application);mirror(state.active);return state.active;
   })();
 }
 
@@ -62,10 +63,11 @@ export function persistActiveConfig(value: ConfigPackageV3, increment=false, exp
     let candidate=value;
     if(increment&&state.active?.packageId===value.packageId&&stableConfigText(state.active)!==stableConfigText(value))candidate={...value,revision:Math.max(value.revision,state.active.revision+1)};
     let config=prepareConfigForActivation(candidate);
+    if(config.application)await checkApplicationTransition(config.application);
     for(let attempt=0;;attempt++) {
       try {await saveConfigLabPackage(config,{kind:'custom',fingerprint:await fingerprint(config)},true,expected);break;}catch(error){const savingSeed=await fingerprint(value)===manifest.semanticFingerprint;if((!increment&&!savingSeed)||attempt>=3||!(error instanceof Error)||!error.message.includes('ID/revision'))throw error;config=prepareConfigForActivation({...config,revision:Math.max(config.revision+1,(await highestConfigLabRevision(config.packageId))+1)});}
     }
-    try{localStorage.setItem(CHOICE,JSON.stringify({kind:'custom',fingerprint:await fingerprint(config)}));}catch{/* durable pointer is in IndexedDB */}state.active=config;state.editingSession=undefined;mirror(config);return config;
+    try{localStorage.setItem(CHOICE,JSON.stringify({kind:'custom',fingerprint:await fingerprint(config)}));}catch{/* durable pointer is in IndexedDB */}state.active=config;applyApplicationSettings(config.application);state.editingSession=undefined;mirror(config);return config;
   });
   state.writes=task;return task;
 }

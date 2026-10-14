@@ -21,8 +21,8 @@ export const MODULE_HELP: Record<string, string> = {
   '有效扩展值与来源': '这里只读展示全局默认、本规则覆写和静态合成值，便于查出某个参数来自哪里。需要调整时回到对应模块或全局设置；具体要素的字段条件、关联颜色和交互状态还会影响实际运行结果。',
   '全局扩展默认': '这里为同一几何类型设置共用的候选、密度和稳定性默认，未被具体规则覆写的项目都会使用这些值。先保留默认；只影响一个分类时在该规则中修改，并可恢复继承。',
 };
-export function ModuleHelp({ title, helpKey }: { title: string; helpKey?: string }) {
-  const content = MODULE_HELP[helpKey ?? title] ?? (title.startsWith('扩展规则') ? MODULE_HELP['扩展规则'] : title.includes('通用候选、密度与稳定性默认') ? MODULE_HELP['全局扩展默认'] : undefined);
+export function ModuleHelp({ title, helpKey, text }: { title: string; helpKey?: string; text?: string }) {
+  const content = text ?? MODULE_HELP[helpKey ?? title] ?? (title.startsWith('扩展规则') ? MODULE_HELP['扩展规则'] : title.includes('通用候选、密度与稳定性默认') ? MODULE_HELP['全局扩展默认'] : undefined);
   const id = useId(), button = useRef<HTMLButtonElement>(null), popup = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(); const beforePointer = useRef(false);
   const pinned = useRef(false);

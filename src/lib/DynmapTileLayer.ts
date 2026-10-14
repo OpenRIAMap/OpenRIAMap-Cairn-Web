@@ -1,3 +1,4 @@
+import { applicationWorld } from '@/core/project/applicationRuntime';
 import { TILE_ZOOM_BOUNDS } from './mapZoom';
 /**
  * Dynmap 瓦片图层
@@ -271,6 +272,7 @@ export function createDynmapTileLayer(
   mapName: string = 'flat',
   options?: Partial<DynmapTileLayerOptions>
 ): DynmapTileLayer {
+  const configured=applicationWorld(worldId).tiles;
   const defaultOptions: DynmapTileLayerOptions = {
     // 正确的 URL 格式: https://satellite.ria.red/map/_zth/tiles/world/flat/5_-1/zzzzz_160_-32.jpg
     baseUrl: `https://satellite.ria.red/map/_${worldId}/tiles/world/`,
@@ -291,7 +293,9 @@ export function createDynmapTileLayer(
 
   const merged: DynmapTileLayerOptions = {
     ...defaultOptions,
-    ...options
+    ...configured,
+    ...options,
+    baseUrl: configured.baseUrl, prefix: configured.prefix, minNativeZoom: configured.minNativeZoom, maxNativeZoom: configured.maxNativeZoom
   };
 
   // 如果调用方没显式给 maxNativeZoom，则根据 maxZoom/extraZoomLevels 推导

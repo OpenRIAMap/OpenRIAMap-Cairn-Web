@@ -1,3 +1,4 @@
+import { getApplicationSettings, moduleEnabled, subscribeApplication } from '@/core/project/applicationRuntime';
 import { create } from 'zustand';
 
 /** `measuring` remains the stable persisted key for the mapping base bundle. */
@@ -206,6 +207,9 @@ export const useFeatureModuleStore = create<FeatureModuleState>((set, get) => ({
   },
 
   requestModuleActivation: (moduleKey, options) => {
+    const id=moduleKey==='measuring'?'mapping':moduleKey==='review'?'review':undefined;
+    if(id&&!moduleEnabled(id))return;
+    if(id&&getApplicationSettings().modules.items.find(item=>item.id===id)?.load!=='lazy'){void get().ensureModuleLoaded(moduleKey).catch(()=>{});return;}
     const existing = get().modules[moduleKey];
     if (existing.enabledByUser) {
       void get().ensureModuleLoaded(moduleKey).catch((error: unknown) => {
@@ -371,3 +375,11 @@ export const useFeatureModuleStore = create<FeatureModuleState>((set, get) => ({
 export function getFeatureModuleStatus(moduleKey: FeatureModuleKey) {
   return useFeatureModuleStore.getState().modules[moduleKey];
 }
+
+function preloadApplicationModules(){
+  if(!useFeatureModuleStore.getState().hydrated)return;
+  const modules=getApplicationSettings().modules.items;
+  for(const [id,key] of [['mapping','measuring'],['measurement','measuring'],['review','review']] as const)if(modules.some(module=>module.id===id&&module.enabled&&module.load!=='lazy'))void useFeatureModuleStore.getState().ensureModuleLoaded(key).catch(()=>{});
+}
+subscribeApplication(preloadApplicationModules);
+useFeatureModuleStore.subscribe((current,previous)=>{if(current.hydrated&&!previous.hydrated)preloadApplicationModules();});

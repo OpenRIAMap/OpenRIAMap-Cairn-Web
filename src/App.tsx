@@ -53,7 +53,7 @@ function App() {
 
   return (
     <div className="app-root h-screen w-screen">
-      {isConfigStudio || isConfigLab || isWorkflowStudio ? <ConfigBootstrap>{workspaceContent}</ConfigBootstrap> : workspaceContent}
+      {<ConfigBootstrap>{workspaceContent}</ConfigBootstrap>}
       <FeatureModuleLoadDialog />
       <FeatureModuleLoadingOverlay />
       <DataSourceRecoveryHost />

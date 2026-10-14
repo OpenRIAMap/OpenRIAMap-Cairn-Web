@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import AppButton from '@/components/ui/AppButton';
 
 type Tone = 'blue' | 'green' | 'cyan' | 'purple' | 'gray' | 'orange' | 'slate';
@@ -14,6 +14,7 @@ const TONE_ACTIVE_CLASS: Record<Tone, string> = {
 };
 
 type ToolIconButtonProps = {
+  style?:CSSProperties;
   label: string;
   icon: ReactNode;
   onClick?: () => void;
@@ -27,6 +28,7 @@ type ToolIconButtonProps = {
 
 export default function ToolIconButton({
   label,
+  style,
   icon,
   onClick,
   active = false,
@@ -47,6 +49,7 @@ export default function ToolIconButton({
 
   return (
     <AppButton
+      style={style}
       type={type}
       onClick={disabled ? undefined : onClick}
       className={`${base} ${stateCls} ${shadowCls} ${className}`.trim()}

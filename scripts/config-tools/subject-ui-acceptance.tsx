@@ -1,3 +1,6 @@
+import { ConfigBootstrap } from '../../src/configStudio/ConfigBootstrap';
+import { ConfigStudio } from '../../src/configStudio/ConfigStudio';
+import { getActiveConfigSnapshot, restoreApplicationDefault } from '../../src/configStudio/defaultConfigProvider';
 import {SearchBar} from '../../src/components/Search/SearchBar';
 import {NavigationPanel} from '../../src/components/Navigation/NavigationPanel';
 import {setRuleSearchPool} from '../../src/components/Rules/search/ruleSearchRegistry';
@@ -37,6 +40,7 @@ async function main(){
     (window as unknown as {tableAcceptance:unknown}).tableAcceptance={config,field};
     return <div id="table-harness" className="config-editor min-h-screen min-w-0 bg-white p-4"><LookupTablesEditor config={config} onChange={setConfig}/><TableOptionsEditor config={config} value={field} onChange={next=>setConfig({...config,nodes:config.nodes.map((node,index)=>index?node:{...node,fields:node.fields.map(field=>field.fieldId==='TABLE_UI'?{...field,...next}:field)})})}/></div>;
   }
-  createRoot(document.getElementById('subject-ui')!).render(<React.StrictMode>{new URLSearchParams(location.search).get('mode')==='inherit'?<CardHarness/>:new URLSearchParams(location.search).get('mode')==='role'?<RoleHarness/>:new URLSearchParams(location.search).get('mode')==='search'?<SearchHarness/>:<Harness/>}</React.StrictMode>);
+  (window as unknown as {applicationAcceptance:unknown}).applicationAcceptance={snapshot:getActiveConfigSnapshot,restoreDefault:restoreApplicationDefault};
+  createRoot(document.getElementById('subject-ui')!).render(<React.StrictMode>{new URLSearchParams(location.search).get('mode')==='general'?<ConfigBootstrap><ConfigStudio initialTab="general" mountedRecords={[]} onClose={()=>undefined}/></ConfigBootstrap>:new URLSearchParams(location.search).get('mode')==='inherit'?<CardHarness/>:new URLSearchParams(location.search).get('mode')==='role'?<RoleHarness/>:new URLSearchParams(location.search).get('mode')==='search'?<SearchHarness/>:<Harness/>}</React.StrictMode>);
 }
 void main();

@@ -1,17 +1,10 @@
+import { getApplicationSettings, moduleEnabled } from '@/core/project/applicationRuntime';
 /**
  * 玩家数据 API
  * 支持代理链路（/api/dynmap）与直连链路（https://satellite.ria.red/map）双通道读取
  */
 
 import type { Player } from '@/types';
-
-const WORLD_MAP: Record<string, string> = {
-  zth: '_zth',
-  eden: '_eden',
-  naraku: '_naraku',
-  houtu: '_houtu',
-  laputa: '_laputa',
-};
 
 interface DynmapUpdateResponse {
   currentcount: number;
@@ -45,31 +38,6 @@ export interface PlayerFetchResult {
   error: string | null;
 }
 
-const DEFAULT_DIRECT_BASE_URL = 'https://satellite.ria.red/map';
-const DEFAULT_PLAYER_API_MODE: PlayerFetchMode = 'proxy';
-
-function normalizeBaseUrl(raw: string | undefined): string {
-  const v = String(raw ?? '').trim();
-  if (!v) return DEFAULT_DIRECT_BASE_URL;
-  return v.replace(/\/+$/, '');
-}
-
-function getConfiguredMode(): PlayerFetchMode {
-  const raw = String(import.meta.env.VITE_PLAYER_API_MODE ?? '').trim().toLowerCase();
-  // Direct satellite reads are known to require a compatible CORS response.
-  // Keep them opt-in for diagnostics; normal users stay on the same-origin proxy.
-  return raw === 'direct' ? 'direct' : DEFAULT_PLAYER_API_MODE;
-}
-
-function buildProxyUrl(apiWorld: string, timestamp: number): string {
-  return `/api/dynmap/${apiWorld}/up/world/world/${timestamp}`;
-}
-
-function buildDirectUrl(apiWorld: string, timestamp: number): string {
-  const base = normalizeBaseUrl(import.meta.env.VITE_DYNMAP_BASE_URL);
-  return `${base}/${apiWorld}/up/world/world/${timestamp}`;
-}
-
 function mapPlayers(data: DynmapUpdateResponse): Player[] {
   return (data.players || []).map((p) => ({
     name: p.name,
@@ -85,6 +53,7 @@ function mapPlayers(data: DynmapUpdateResponse): Player[] {
 
 async function tryFetchPlayers(url: string, source: PlayerFetchMode): Promise<PlayerFetchResult> {
   const res = await fetch(url, {
+    signal:AbortSignal.timeout(getApplicationSettings().modules.players.requestTimeoutMs),
     cache: 'no-store',
     mode: source === 'proxy' ? 'same-origin' : 'cors',
     credentials: 'omit',
@@ -102,17 +71,10 @@ async function tryFetchPlayers(url: string, source: PlayerFetchMode): Promise<Pl
 }
 
 export async function fetchPlayersDetailed(worldId: string): Promise<PlayerFetchResult> {
-  const apiWorld = WORLD_MAP[worldId] || `_${worldId}`;
-  const timestamp = Date.now();
-  const preferredMode = getConfiguredMode();
-  const candidates: Array<{ source: PlayerFetchMode; url: string }> =
-    preferredMode === 'proxy'
-      ? [{ source: 'proxy', url: buildProxyUrl(apiWorld, timestamp) }]
-      : [
-          { source: 'direct', url: buildDirectUrl(apiWorld, timestamp) },
-          { source: 'proxy', url: buildProxyUrl(apiWorld, timestamp) },
-        ];
-
+  if(!moduleEnabled('players'))return {players:[],source:null,error:null};
+  const settings=getApplicationSettings().modules.players, timestamp=Date.now();
+  const build=(template:string)=>template.replace('{world}',encodeURIComponent(worldId)).replace('{timestamp}',String(timestamp));
+  const candidates:Array<{source:PlayerFetchMode;url:string}>=settings.mode==='proxy'?[{source:'proxy',url:build(settings.endpoint)}]:[{source:'direct',url:build(settings.directEndpoint)},{source:'proxy',url:build(settings.endpoint)}];
   let lastError: string | null = null;
   for (const candidate of candidates) {
     try {

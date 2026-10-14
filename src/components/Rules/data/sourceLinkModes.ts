@@ -1,3 +1,4 @@
+import { subscribeApplication } from '@/core/project/applicationRuntime';
 import { getOpenRIAMapSourceLinkModesConfig } from '../../../core/project/openriamapRiaEnvironment';
 
 /**
@@ -15,20 +16,22 @@ export type SourceLinkModeDef = {
   isDefault?: boolean;
 };
 
-const sourceLinkModesConfig = getOpenRIAMapSourceLinkModesConfig();
+let sourceLinkModesConfig = getOpenRIAMapSourceLinkModesConfig();
 
-export const SOURCE_LINK_MODE_STORAGE_KEY = sourceLinkModesConfig.storageKey;
+export let SOURCE_LINK_MODE_STORAGE_KEY = sourceLinkModesConfig.storageKey;
 
-export const SOURCE_LINK_MODE_LEGACY_STORAGE_KEYS = sourceLinkModesConfig.legacyStorageKeys ?? [];
+export let SOURCE_LINK_MODE_LEGACY_STORAGE_KEYS = sourceLinkModesConfig.legacyStorageKeys ?? [];
 
 export const RAW_GITHUB_BASE_URL = 'https://raw.githubusercontent.com';
 
-export const SOURCE_LINK_MODE_DEFS: SourceLinkModeDef[] = sourceLinkModesConfig.items.map((item) => ({
+export let SOURCE_LINK_MODE_DEFS: SourceLinkModeDef[] = sourceLinkModesConfig.items.map((item) => ({
   id: item.id,
   label: item.label,
   rawCompatibleBaseUrl: item.rawCompatibleBaseUrl,
   isDefault: item.default,
 }));
+
+subscribeApplication(()=>{sourceLinkModesConfig=getOpenRIAMapSourceLinkModesConfig();SOURCE_LINK_MODE_STORAGE_KEY=sourceLinkModesConfig.storageKey;SOURCE_LINK_MODE_LEGACY_STORAGE_KEYS=sourceLinkModesConfig.legacyStorageKeys??[];SOURCE_LINK_MODE_DEFS=sourceLinkModesConfig.items.map(item=>({id:item.id,label:item.label,rawCompatibleBaseUrl:item.rawCompatibleBaseUrl,isDefault:item.default}));});
 
 function trimSlash(value: string): string {
   return String(value ?? '').trim().replace(/\/+$/, '');
@@ -107,23 +110,6 @@ export function buildRawCompatibleUrlFromParts(
 
 export function buildCurrentRawCompatibleUrl(parts: { owner: string; repo: string; branch: string; path: string }): string {
   return buildRawCompatibleUrlFromParts(getCurrentSourceLinkMode().rawCompatibleBaseUrl, parts);
-}
-
-export function resolveOpenRIAMapDataRootUrl(): string {
-  return buildCurrentRawCompatibleUrl({
-    owner: 'OpenRIAMap',
-    repo: 'OpenRIAMap-Data',
-    branch: 'main',
-    path: '',
-  }).replace(/\/+$/, '');
-}
-
-export function resolveOpenRIAMapDataMergeBaseUrl(): string {
-  return `${resolveOpenRIAMapDataRootUrl()}/Data_Merge`;
-}
-
-export function resolveOpenRIAMapPictureBaseUrl(): string {
-  return `${resolveOpenRIAMapDataRootUrl()}/Picture`;
 }
 
 export type RawCompatibleUrlParts = {

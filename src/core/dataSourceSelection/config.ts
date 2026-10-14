@@ -38,7 +38,7 @@ function source(value: unknown, index: number): DataSourceDefinition {
   const item = record(value, `sources[${index}]`);
   const parsed: DataSourceDefinition = {
     id: nonEmptyString(item.id, `sources[${index}].id`),
-    label: nonEmptyString(item.label, `sources[${index}].label`),
+    label: typeof item.label==='string'?item.label.trim():fail(`sources[${index}].label-must-be-a-string`),
     readerKind: nonEmptyString(item.readerKind, `sources[${index}].readerKind`),
   };
   if ('enabled' in item) parsed.enabled = boolean(item.enabled, `sources[${index}].enabled`);

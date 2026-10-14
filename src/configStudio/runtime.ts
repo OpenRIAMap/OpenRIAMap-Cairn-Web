@@ -1,3 +1,4 @@
+import { validateApplication } from '../core/project/applicationValidation';
 import { labelTemplateTokens, parseLabelTemplate } from './labelTemplate';
 import {validateExternalEditBinding} from './externalEditRegistry';
 import {testWorkflowEditConversion} from './workflowEditCommit';
@@ -1188,6 +1189,8 @@ function validateContextBindings(config: ConfigPackageV3, issues: ConfigValidati
 
 export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: MountedFeatureRecord[] = []): ConfigValidationReport {
   const issues: ConfigValidationIssue[] = [];
+  if(config.contractRevision>=10&&!config.application)issue(issues,'error','application-required','application','r10 完整应用包必须包含总体规则。');
+  if (config.contractRevision >= 10 && config.application) for (const row of validateApplication(config.application, new Set(config.nodes.map(node=>node.path.class)))) issue(issues,'error','application-invalid','application/'+row.path,row.message);
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: false, createdAt: new Date().toISOString(), issues: structure.map(item => ({ severity: 'error', code: 'native-contract-structure-invalid', ...item })) };
   issues.push(...validateLookupTables(config));

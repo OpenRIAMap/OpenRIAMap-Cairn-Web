@@ -1,3 +1,4 @@
+import { applicationWorld } from '@/core/project/applicationRuntime';
 /**
  * Dynmap 投影系统
  * 基于 Dynmap hdmap.js 的 HDProjection 实现
@@ -248,6 +249,5 @@ export const WORLD_CENTERS = {
  * 获取世界配置
  */
 export function getWorldConfig(worldId: string): DynmapProjectionOptions {
-  void worldId;
-  return ZTH_FLAT_CONFIG;
+  return applicationWorld(worldId).projection;
 }

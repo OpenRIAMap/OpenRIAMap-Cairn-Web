@@ -1,3 +1,4 @@
+import { getApplicationSettings } from '@/core/project/applicationRuntime';
 /**
  * 导航面板组件
  * - 旧版：调用 lib/pathfinding（铁路/传送/步行）
@@ -366,19 +367,21 @@ function PointSearchInput({ configRuntime, value, onChange, items, placeholder, 
   const nativeSearch=Boolean(configRuntime&&configRuntime.contractRevision>=10);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState(value?.name || '');
+  const [deferredQuery,setDeferredQuery]=useState(query);
+  useEffect(()=>{const timer=setTimeout(()=>setDeferredQuery(query),getApplicationSettings().preferences.search.debounceMs);return()=>clearTimeout(timer);},[query]);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const filteredItems = useMemo(() => {
-    if (query.length === 0) return [];
-    const q = query.toLowerCase();
+    if (deferredQuery.length === 0) return [];
+    const q = deferredQuery.toLowerCase();
     return items
       .filter((item) => {
         const key = String(item.searchKey ?? item.name ?? '').toLowerCase();
         return key.includes(q);
       })
-      .slice(0, 30);
-  }, [query, items]);
+      .slice(0, getApplicationSettings().preferences.search.navigationLimit);
+  }, [deferredQuery, items]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

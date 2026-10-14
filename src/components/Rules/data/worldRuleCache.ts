@@ -47,7 +47,7 @@ function parseMeta(raw: string | null): RuleCacheMeta | null {
   if (!raw) return null;
   try {
     const meta = JSON.parse(raw) as RuleCacheMeta;
-    if (meta.schemaVersion !== SCHEMA_VERSION) return null;
+    if (meta.schemaVersion !== SCHEMA_VERSION || meta.readerSchemaVersion!=='openriamap.formal-release-reader.v2'||meta.sourceId==='legacy-github') return null;
     if (!normalized(meta.sourceId) || !normalized(meta.transportId) || !normalized(meta.releaseId) || !normalized(meta.worldId) || !normalized(meta.readerSchemaVersion)) return null;
     if (!Number.isFinite(meta.cachedAt)) return null;
     return meta;
@@ -77,7 +77,7 @@ export function readRuleWorldCache(scopeOrWorld: RuleCacheScope | string): RuleW
   const scope = isScope(scopeOrWorld)
     ? scopeOrWorld
     : readLatestMetaForWorld(scopeOrWorld);
-  if (!scope) return null;
+  if (!scope||scope.readerSchemaVersion!=='openriamap.formal-release-reader.v2'||scope.sourceId==='legacy-github') return null;
   try {
     const raw = localStorage.getItem(cacheKey(scope));
     if (!raw) return null;

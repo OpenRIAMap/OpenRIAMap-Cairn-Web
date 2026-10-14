@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type * as L from 'leaflet';
 import { MapContainer, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { createDynmapCRS, DynmapProjection, ZTH_FLAT_CONFIG } from '@/lib/DynmapProjection';
+import { createDynmapCRS, DynmapProjection, getWorldConfig } from '@/lib/DynmapProjection';
 import { createDynmapTileLayer } from '@/lib/DynmapTileLayer';
 import RuleDrivenLayer from '@/components/Rules/core/RuleDrivenLayer';
 import { compileConfigRuntime, resolveGeometryProfile, validateConfigPackage } from './runtime';
@@ -186,7 +186,7 @@ export function ConfigRuntimePreview({ config, node, scenario, onRuntimeError, o
   const selectedBinding = (config.contextBindings ?? []).find((candidate) => candidate.enabled && samePath(candidate.member.classification, node.path));
   const dataset = useMemo(() => makeConfigPreviewFixture(config, node, scenario), [config, node, scenario]);
   useEffect(() => { if (map) onMapReady?.(map); }, [map, onMapReady]);
-  const projection = useMemo(() => new DynmapProjection(ZTH_FLAT_CONFIG), []);
+  const projection = useMemo(() => new DynmapProjection(getWorldConfig('zth')), []);
   const [zoom, setZoom] = useState(scenarioDefinition.zoom);
   useEffect(() => setZoom(scenarioDefinition.zoom), [scenarioDefinition.zoom]);
   const leafletZoom = toLeafletZoom(zoom);
@@ -210,7 +210,7 @@ export function ConfigRuntimePreview({ config, node, scenario, onRuntimeError, o
     return () => { cancelAnimationFrame(frame); observer.disconnect(); };
   }, [map]);
   return <div ref={containerRef} className="relative h-full min-h-[300px] w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 bg-slate-950">
-    <MapContainer center={[0, 0]} zoom={leafletZoom} minZoom={MAP_ZOOM_BOUNDS.minZoom} maxZoom={MAP_ZOOM_BOUNDS.maxZoom} zoomControl={false} attributionControl crs={createDynmapCRS(ZTH_FLAT_CONFIG)} className="absolute inset-0 h-full min-h-[300px] w-full" dragging={false} touchZoom={false} doubleClickZoom={false} boxZoom={false} keyboard={false} scrollWheelZoom={false} zoomSnap={1} zoomDelta={1}>
+    <MapContainer center={[0, 0]} zoom={leafletZoom} minZoom={MAP_ZOOM_BOUNDS.minZoom} maxZoom={MAP_ZOOM_BOUNDS.maxZoom} zoomControl={false} attributionControl crs={createDynmapCRS(getWorldConfig('zth'))} className="absolute inset-0 h-full min-h-[300px] w-full" dragging={false} touchZoom={false} doubleClickZoom={false} boxZoom={false} keyboard={false} scrollWheelZoom={false} zoomSnap={1} zoomDelta={1}>
       <TileLayer onError={setTileError} />
       <LockedViewport zoom={leafletZoom} onReady={setMap} onZoom={(value) => setZoom(toZoomLevel(value))} />
       {map && activeConfig ? <RuleDrivenLayer mapReady map={map} projection={projection} worldId="zth" visible activeButtonIds={[]} bypassButtonFilter runtimeDataset={dataset} disableTransientSources configRuntime={activeConfig} floorPanelMode={selectedBinding ? 'embedded' : 'hidden'} /> : null}
