@@ -1,3 +1,4 @@
+import { labelTemplateTokens, parseLabelTemplate } from './labelTemplate';
 import {validateExternalEditBinding} from './externalEditRegistry';
 import {testWorkflowEditConversion} from './workflowEditCommit';
 import {compileRenderFormula} from './renderBooleanFormula';
@@ -104,6 +105,7 @@ export function compileConfigRuntime(value: ConfigPackageV3, validated = false):
     for (const node of config.nodes) for (const rule of node.geometryProfiles[geometry]?.zoomPriority.rules ?? []) resolveRenderExtensions(config, geometry, rule.extensions);
   }
   for(const node of config.nodes)for(const profile of Object.values(node.geometryProfiles))for(const rule of profile?.zoomPriority.rules??[]) {
+    if(rule.label?.sourceMode==='combined')labelTemplateTokens(rule.label);
     if(rule.when?.fields?.formula)compileRenderFormula(rule.when.fields.formula);
     for(const binding of [rule.style?.stroke,rule.style?.fill,rule.label?.style?.color,...Object.values(rule.extensions?.interaction??{}).map(state=>state?.strokeColorBinding)])if(binding?.mode==='valueMap')resolveMappedColor(binding,undefined);
   }
@@ -523,7 +525,12 @@ function validateRuleLabel(
     if (metric.kind === 'field' && !resolveEffectiveFields(config, sourcePath).some(field => field.key === metric.field)) issue(issues, 'error', 'label-metric-field-invalid', rulePath, '碰撞指标字段不存在。');
   }
   const fields = new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key));
-  if (label.source && !sourceExists(label.source, fields)) issue(issues, 'error', 'render-label-source-invalid', rulePath, 'Label 来源必须是当前分类的有效字段、tags.xxx 或 extensions.xxx。', { field: label.source });
+  if (label.sourceMode === 'combined') {
+    if (config.contractRevision < 10) issue(issues, 'error', 'label-template-revision', rulePath, '组合 Label 来源需要 r10 契约。');
+    try { for (const token of parseLabelTemplate(label.template ?? '')) if (token.kind === 'field' && !sourceExists(token.value, fields)) issue(issues, 'error', 'label-template-field', rulePath, `组合来源字段不存在：${token.value}`); }
+    catch (error) { issue(issues, 'error', 'label-template-invalid', rulePath, (error as Error).message); }
+  }
+  if (label.sourceMode !== 'combined' && label.source && !sourceExists(label.source, fields)) issue(issues, 'error', 'render-label-source-invalid', rulePath, 'Label 来源必须是当前分类的有效字段、tags.xxx 或 extensions.xxx。', { field: label.source });
   for (const fallback of label.fallbackSources ?? []) if (!sourceExists(fallback, fields)) issue(issues, 'error', 'render-label-fallback-source-invalid', rulePath, 'Label 回退来源必须是当前分类的有效字段、tags.xxx 或 extensions.xxx。', { field: fallback });
   if (label.valueFormat && !['plain', 'floorLabel'].includes(label.valueFormat)) issue(issues, 'error', 'render-label-value-format-invalid', rulePath, 'Label 值格式无效。');
   for (const [source, format] of Object.entries(label.fallbackValueFormats ?? {})) {

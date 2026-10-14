@@ -1,3 +1,4 @@
+import { resolveLabelText } from '@/configStudio/labelTemplate';
 import {resolveMappedColor} from '../../../configStudio/renderScalar';
 import {buildStructureIndex,structureSelector,STRUCTURE_CONTEXT_ID,type StructureIndex} from '../../../configStudio/structureRoleIndex';
 import { isNativeConfigRevision } from '../../../configStudio/contract';
@@ -677,18 +678,8 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
       label: {
         enabled: label.visible,
         textFrom: (candidate: FeatureRecord) => {
-          if (!label.source) return 'Null';
-          const sources = [label.source, ...(label.fallbackSources ?? [])].filter((source): source is string => Boolean(source));
-          for (const source of sources) {
-            const value = String(featureValue(candidate, source) ?? '').trim();
-            if (value) {
-              const format = source === label.source
-                ? label.valueFormat
-                : label.fallbackValueFormats?.[source] ?? label.valueFormat;
-              return format === 'floorLabel' ? fmtFloorLabel(value) : value;
-            }
-          }
-          return fallback?.whenNoLabelText === 'showID' ? String(featureValue(candidate, 'ID') ?? '') : fallback?.whenNoLabelText === 'showClassKind' ? [path.class,path.kind,path.skind,path.skind2].filter(Boolean).join('/') : fallback?.whenNoLabelText === 'placeholder' ? '—' : '';
+          return resolveLabelText(label, source => featureValue(candidate, source), (value, format) => format === 'floorLabel' ? fmtFloorLabel(value) : value,
+            () => fallback?.whenNoLabelText === 'showID' ? String(featureValue(candidate, 'ID') ?? '') : fallback?.whenNoLabelText === 'showClassKind' ? [path.class,path.kind,path.skind,path.skind2].filter(Boolean).join('/') : fallback?.whenNoLabelText === 'placeholder' ? '—' : '');
         },
         ...(labelText?.maxChars !== undefined ? { maxChars: labelText.maxChars, abbreviation: { enabled: labelText.abbreviationEnabled !== false, maxChars: labelText.maxChars, suffix: labelText.suffix ?? '…' } } : {}),
         ...(labelText?.minChars !== undefined ? { minChars: labelText.minChars } : {}),

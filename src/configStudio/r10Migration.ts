@@ -57,6 +57,16 @@ export function migrateConfigToR10(value:ConfigPackageV3):{config:ConfigPackageV
     if(field&&control.kind==='select')control.prefillAudit=createPrefillAudit(scope,field);
     if(field&&control.kind==='group'&&control.group?.storage==='scalar'&&control.group.itemFields[0])control.group.itemFields[0].prefillAudit=createPrefillAudit(scope,field);
   }
+  const rail=config.nodes.find(node=>node.path.class==='RLE'&&!node.path.kind)?.geometryProfiles.LineString;
+  if(rail){
+    const rules=rail.zoomPriority.rules,base=rules.find(rule=>rule.when?.zoom.min===0&&rule.when?.zoom.max===4),full=rules.find(rule=>rule.when?.zoom.min===5&&rule.when?.zoom.max===7&&rule.when?.fields);
+    if(base&&full&&full.label){
+      const low=structuredClone(base);low.id=base.id+'--zoom2-4';low.when!.zoom.min=2;base.when!.zoom.max=1;
+      const pill=structuredClone(full);pill.id='r10-rle-code-pill-zoom2-4';pill.when!.zoom={min:2,max:4};pill.label={...pill.label!,sourceMode:'combined',template:'"bureau""line"',style:{...pill.label!.style!,size:11}};
+      const position=rules.indexOf(base);rules.splice(position+1,0,low,pill);
+      report.changes.push({path:'RLE/LineString/zoom2-4',message:'用户批准的 V1 偏离：direction=3 显示 bureau+line 11px 线路色代码胶囊；0–1、5–7、8 保持原意。'});
+    }else throw Error('RLE 基线缺少 0–4/5–7 原生规则，无法自动创建代码胶囊。');
+  }
   return {config,report};
 }
 

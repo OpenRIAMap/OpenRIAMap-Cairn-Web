@@ -160,6 +160,9 @@ export type RenderLabelStyle = {
   underline?: boolean;
   /** The source is kept configurable for exact V1 migration. */
   source?: string;
+  sourceMode?: 'single' | 'combined';
+  /** Label syntax: quoted field paths and adjacent literal text; never an expression. */
+  template?: string;
   /** Ordered alternatives used when the primary V1 source is empty. */
   fallbackSources?: string[];
   /**

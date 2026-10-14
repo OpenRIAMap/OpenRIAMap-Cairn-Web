@@ -4772,6 +4772,23 @@
             }
           ]
         },
+        "sourceMode": {
+          "anyOf": [
+            {
+              "const": "single"
+            },
+            {
+              "const": "combined"
+            }
+          ]
+        },
+        "template": {
+          "anyOf": [
+            {
+              "type": "string"
+            }
+          ]
+        },
         "fallbackSources": {
           "anyOf": [
             {
