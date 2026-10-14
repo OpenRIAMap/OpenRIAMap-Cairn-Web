@@ -417,7 +417,7 @@ export function SearchBar({ disabled=false, configRuntime, stations, landmarks, 
     // - 这里只做模糊检索（name/id）；点击后由 MapContainer 负责聚焦/缩放 & 发事件给 RuleDrivenLayer 打开信息卡。
     const rulePool = getRuleSearchPool(worldId);
     const buildingNameIndex = rulePool.length ? buildBuildingNameIndex(rulePool) : null;
-    if(nativeSearch&&configRuntime){const index=categorySearchIndex(configRuntime,rulePool);for(const entry of findCategorySearchEntries(configRuntime,rulePool,worldId,searchQuery)){const r=entry.record;matchedResults.push({type:'rule',name:getRuleDisplayName(r).name,coord:getRuleCenterCoord(r),extra:categorySearchSubtitle(configRuntime,index,entry),ruleRecord:r,configExtension:entry.search.extension.mode!=='none'});}}
+    if(nativeSearch&&configRuntime){const index=categorySearchIndex(configRuntime,rulePool);for(const entry of findCategorySearchEntries(configRuntime,rulePool,worldId,searchQuery)){const r=entry.record;matchedResults.push({type:'rule',name:getRuleDisplayName(r).name,coord:getRuleCenterCoord(r),extra:categorySearchSubtitle(configRuntime,index,entry,getApplicationSettings().preferences.language),ruleRecord:r,configExtension:entry.search.extension.mode!=='none'});}}
     if (rulePool.length&&!nativeSearch) {
       for (const r of rulePool) {
         const fi: any = r?.featureInfo ?? {};

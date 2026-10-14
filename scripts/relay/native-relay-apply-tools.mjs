@@ -313,7 +313,7 @@ function mediaIdForPicture(entry) {
   return `IMG_${raw}`;
 }
 
-export function buildMediaIndexPlan(pictureEntries, storageProfile = 'media.github.currentOpenRIAMapDataPicture') {
+export function buildMediaIndexPlan(pictureEntries, storageProfile = 'media.formal.current') {
   const assets = [];
   const bindings = [];
   for (const entry of pictureEntries) {

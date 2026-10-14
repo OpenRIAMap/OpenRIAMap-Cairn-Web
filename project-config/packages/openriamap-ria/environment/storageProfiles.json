@@ -1,98 +1,88 @@
 {
   "schemaVersion": "cairnmap.storage-profiles.v1",
   "projectId": "openriamap-ria",
-  "description": "Storage profile contract for the Cairn distributed framework. This file declares future FeatureData, media, MediaIndex, and RelayPool storage locations without replacing the current dataSources/sourceLinkModes runtime chain.",
+  "description": "Contract-only maintenance/storage declarations. Active browser data and media are controlled by the V3 application.sources formal-release-v2 configuration.",
   "runtimeStatus": "contract-only",
   "defaults": {
-    "featureData": "featureData.github.currentOpenRIAMapData",
-    "media": "media.github.currentOpenRIAMapDataPicture",
-    "mediaIndex": "mediaIndex.github.plannedOpenRIAMapData",
+    "featureData": "featureData.formal.current",
+    "media": "media.formal.current",
+    "mediaIndex": "mediaIndex.formal.current",
     "relayPool": "relayPool.github.plannedCairnMapRelayPool"
   },
   "profiles": [
     {
-      "id": "featureData.github.currentOpenRIAMapData",
+      "id": "featureData.formal.current",
       "role": "featureData",
-      "label": "Current OpenRIAMap feature data repository",
-      "kind": "github-repo",
+      "label": "Formal release data storage",
+      "kind": "object-storage",
       "mode": "external",
-      "owner": "Ozstk639",
-      "repo": "OpenRIAMap-Data",
-      "branch": "main",
-      "root": "",
+      "root": "releases",
       "paths": {
         "splitRoot": "Data_Spilt",
-        "mergeRoot": "Data_Merge",
-        "indexRoot": "Data_Index",
-        "toolRoot": "Data_Merge_Tool"
+        "mergeRoot": "releases",
+        "indexRoot": "current/worlds"
       },
       "read": {
-        "rawCompatible": true,
-        "sourceLinkModeRef": "sourceLinkModes.current"
+        "rawCompatible": false,
+        "baseUrl": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com"
       },
       "write": {
         "enabled": false,
-        "reason": "CM_STORAGE_PROFILE_1 only introduces the profile contract. Write operations remain reserved for future RelayPackage/apply patches."
+        "reason": "Contract declaration only; browser writes use the registered review broker and immutable-revision protocol."
       },
       "compatibility": {
         "currentRuntimeReplacement": false,
-        "currentRuntimeChain": "sourceLinkModes.json + dataSources.json + dat sourceMode",
-        "notes": "The current service site continues to read Data_Merge through the existing dat-mode data source logic."
+        "currentRuntimeChain": "application.sources + formal-release-v2 / formal-media-reader",
+        "notes": "Maintenance split roots remain local staged-contract paths, not browser HTTP endpoints. The retired OpenRIAMap-Data source is not selectable or callable."
       }
     },
     {
-      "id": "media.github.currentOpenRIAMapDataPicture",
+      "id": "media.formal.current",
       "role": "media",
-      "label": "Current OpenRIAMap picture repository area",
-      "kind": "github-repo",
+      "label": "Formal immutable media storage",
+      "kind": "object-storage",
       "mode": "external",
-      "owner": "Ozstk639",
-      "repo": "OpenRIAMap-Data",
-      "branch": "main",
-      "root": "Picture",
+      "root": "worlds",
       "paths": {
-        "objectRoot": "Picture"
+        "objectRoot": "worlds"
       },
       "read": {
-        "rawCompatible": true,
-        "sourceLinkModeRef": "sourceLinkModes.current"
+        "rawCompatible": false,
+        "baseUrl": "https://openriamap-cairn-media-1433163128.cos.ap-shanghai.myqcloud.com"
       },
       "write": {
         "enabled": false,
-        "reason": "Media writes remain handled by the existing data-maintenance workflow until MediaIndex and RelayPackage apply tools are introduced."
+        "reason": "Contract declaration only; browser writes use the registered review broker and immutable-revision protocol."
       },
       "compatibility": {
         "currentRuntimeReplacement": false,
-        "currentRuntimeChain": "sourceLinkModes.json + dataSources.json + pictureSourceMode",
-        "notes": "This profile records the current Picture storage area only; it does not move image relationships into MediaIndex yet."
+        "currentRuntimeChain": "application.sources + formal-release-v2 / formal-media-reader",
+        "notes": "Maintenance split roots remain local staged-contract paths, not browser HTTP endpoints. The retired OpenRIAMap-Data source is not selectable or callable."
       }
     },
     {
-      "id": "mediaIndex.github.plannedOpenRIAMapData",
+      "id": "mediaIndex.formal.current",
       "role": "mediaIndex",
-      "label": "Planned MediaIndex area",
-      "kind": "github-repo",
+      "label": "Formal release media index storage",
+      "kind": "object-storage",
       "mode": "external",
-      "owner": "Ozstk639",
-      "repo": "OpenRIAMap-Data",
-      "branch": "main",
-      "root": "",
+      "root": "releases",
       "paths": {
         "splitRoot": "Media_Index_Spilt",
-        "mergeRoot": "Media_Index_Merge"
+        "mergeRoot": "releases"
       },
       "read": {
-        "rawCompatible": true,
-        "sourceLinkModeRef": "sourceLinkModes.current"
+        "rawCompatible": false,
+        "baseUrl": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com"
       },
       "write": {
         "enabled": false,
-        "reason": "MediaIndex schemas and builders are scheduled for DATA_MEDIA_INDEX_CONTRACT_1."
+        "reason": "Contract declaration only; browser writes use the registered review broker and immutable-revision protocol."
       },
       "compatibility": {
         "currentRuntimeReplacement": false,
-        "currentRuntimeChain": "not active",
-        "notes": "Reserved profile for future MediaIndex work. Feature JSON image behavior is unchanged in this patch."
+        "currentRuntimeChain": "application.sources + formal-release-v2 / formal-media-reader",
+        "notes": "Maintenance split roots remain local staged-contract paths, not browser HTTP endpoints. The retired OpenRIAMap-Data source is not selectable or callable."
       }
     },
     {
@@ -124,7 +114,7 @@
   ],
   "compatibility": {
     "doNotReplaceCurrentDataRuntimeInThisPatch": true,
-    "currentDataRuntime": "sourceLinkModes.json selects a raw-compatible base URL; dataSources.json keeps per-world dat-mode Data_Merge/Picture loading.",
-    "nextIntendedPatch": "DATA_FEATURE_REPO_CONTRACT_1 or CM_RELAY_PACKAGE_PROTOCOL_1, after the StorageProfile contract is accepted."
+    "currentDataRuntime": "application.sources supplies formal-release-v2 data and immutable Media; currentRelease pointers remain version-scoped",
+    "nextIntendedPatch": "D template sync only after C acceptance; navigation table consumers remain separate."
   }
 }

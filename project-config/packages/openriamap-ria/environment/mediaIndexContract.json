@@ -4,9 +4,9 @@
   "description": "MediaIndex repository contract for the Cairn distributed framework. DATA_MEDIA_INDEX_WORLD_FIRST_BUILD_1 keeps MediaIndex world-first and separates projects through StorageProfile/baseUrl roots rather than projectId path nesting.",
   "runtimeStatus": "contract-only",
   "storageProfileRefs": {
-    "media": "media.github.currentOpenRIAMapDataPicture",
-    "mediaIndex": "mediaIndex.github.plannedOpenRIAMapData",
-    "featureData": "featureData.github.currentOpenRIAMapData",
+    "media": "media.formal.current",
+    "mediaIndex": "mediaIndex.formal.current",
+    "featureData": "featureData.formal.current",
     "relayPool": "relayPool.github.plannedCairnMapRelayPool"
   },
   "roots": {

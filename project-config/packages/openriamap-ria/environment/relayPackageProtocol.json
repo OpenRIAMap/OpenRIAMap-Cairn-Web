@@ -4,8 +4,8 @@
   "description": "Native CairnMap RelayPackage protocol. CM_RELAY_PACKAGE_PROTOCOL_1 formalizes the existing lightweight package shape: complete upsert feature JSON in Data_Spilt, delete intent in Delete.json, package metadata in INDEX.json, media files in Picture, and review/precheck feedback in Review.json.",
   "runtimeStatus": "contract-only",
   "storageProfileRefs": {
-    "featureData": "featureData.github.currentOpenRIAMapData",
-    "media": "media.github.currentOpenRIAMapDataPicture",
+    "featureData": "featureData.formal.current",
+    "media": "media.formal.current",
     "relayPool": "relayPool.github.plannedCairnMapRelayPool"
   },
   "roots": {

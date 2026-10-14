@@ -1191,7 +1191,7 @@ useEffect(() => {
       const pool = getRuleSearchPool(worldId);
       const buildingNameIndex = buildBuildingNameIndex(pool);
       const ruleItems: SearchItem[] = [];
-      if(nativeSearch&&configRuntime){const index=categorySearchIndex(configRuntime,pool);for(const entry of findCategorySearchEntries(configRuntime,pool,worldId,'')){const r=entry.record,coord=getRepresentativeCoordForRule(r);if(coord)ruleItems.push({type:'rule',name:getRuleDisplayName(r).name,extra:categorySearchSubtitle(configRuntime,index,entry),searchKey:entry.hay,coord,ruleRecord:r,configExtension:entry.search.extension.mode!=='none'});}}
+      if(nativeSearch&&configRuntime){const index=categorySearchIndex(configRuntime,pool);for(const entry of findCategorySearchEntries(configRuntime,pool,worldId,'')){const r=entry.record,coord=getRepresentativeCoordForRule(r);if(coord)ruleItems.push({type:'rule',name:getRuleDisplayName(r).name,extra:categorySearchSubtitle(configRuntime,index,entry,getApplicationSettings().preferences.language),searchKey:entry.hay,coord,ruleRecord:r,configExtension:entry.search.extension.mode!=='none'});}}
       for (const r of nativeSearch?[]:pool) {
         if (isRuleBlacklisted(r)) continue;
         const coord = getRepresentativeCoordForRule(r);

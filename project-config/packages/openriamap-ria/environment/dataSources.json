@@ -4,42 +4,42 @@
   "items": [
     {
       "worldId": "zth",
-      "baseUrl": "/data/JSON",
+      "baseUrl": "",
       "files": [],
       "sourceMode": "dat",
       "pictureSourceMode": "dat"
     },
     {
       "worldId": "eden",
-      "baseUrl": "/data/Mapping/eden",
+      "baseUrl": "",
       "files": [],
       "sourceMode": "dat",
       "pictureSourceMode": "dat"
     },
     {
       "worldId": "naraku",
-      "baseUrl": "/data/Mapping/naraku",
+      "baseUrl": "",
       "files": [],
       "sourceMode": "dat",
       "pictureSourceMode": "dat"
     },
     {
       "worldId": "houtu",
-      "baseUrl": "/data/Mapping/houtu",
+      "baseUrl": "",
       "files": [],
       "sourceMode": "dat",
       "pictureSourceMode": "dat"
     },
     {
       "worldId": "laputa",
-      "baseUrl": "/data/Mapping/laputa",
+      "baseUrl": "",
       "files": [],
       "sourceMode": "dat",
       "pictureSourceMode": "dat"
     },
     {
       "worldId": "yunduan",
-      "baseUrl": "/data/Mapping/yunduan",
+      "baseUrl": "",
       "files": [],
       "sourceMode": "dat",
       "pictureSourceMode": "dat"

@@ -382,7 +382,7 @@ export function buildFeatureMergeOutputs(options) {
     dataVersion: `full-rebuild-${GENERATED_AT.replace(/[-:.]/g, '').slice(0, 15)}Z`,
     generatedAt: GENERATED_AT,
     projectId: options.projectId,
-    sourceProfile: 'featureData.github.currentOpenRIAMapData',
+    sourceProfile: 'featureData.formal.current',
     mergeStrategy: 'full-rebuild-config-worlds-only',
     builderVersion: 'DATA_MERGE_BUILD_LOCAL_1.full-builder',
     featureCount: records.length,
