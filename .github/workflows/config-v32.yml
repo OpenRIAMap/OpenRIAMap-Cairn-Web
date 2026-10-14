@@ -2,7 +2,7 @@ name: Config V3.2 verification
 
 on:
   push:
-    branches: [codex/cm-config-runtime-v32-migration-20261007]
+    branches: [codex/ria-config-runtime-v32-integration-20261014]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -23,3 +23,30 @@ jobs:
       - run: npm ci
       - run: npm run verify:config-v32
       - run: npm run build
+      - name: Verify downstream integration contracts
+        run: |
+          npm run test:workspace-transition-coordinator
+          npm run test:feature-module-contract
+          npm run test:data-source-selection
+          npm run test:formal-release-reader
+          npm run test:formal-media-reader
+          npm run test:player-polling-policy
+          npm run validate:formal-data-source-runtime
+          npm run test:review-package-contract
+          npm run test:review-package-profile-auth
+          npm run test:review-auth-routes
+          npm run test:review-status-board
+          npm run test:review-workspace-contracts
+          npm run test:review-control-binding
+          npm run test:review-automation-gate
+          npm run test:review-relay-transfer-port
+          npm run test:review-control-port
+          npm run test:review-workflow-broker-actor
+          npm run validate:team-review-authorization
+          npm run validate:storage-profiles
+          npm run validate:feature-data-contract
+          npm run validate:media-index-contract
+          npm run test:multipart-geometry
+          npm run validate:project-config
+          npm run validate:native-relay-accept-guards
+          npm run validate:native-relay-config-resolver
