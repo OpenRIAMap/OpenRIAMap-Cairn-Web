@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "openriamap.current-release-set.v2",
+  "releaseId": "geometry-v1-aeb7cd1531696c31995cff53",
+  "formalVersion": 19,
+  "controlCommit": "cf93ef673cff0380b549a078570072c957e77155",
+  "publishedAt": "2026-09-21T18:19:08.033Z",
+  "worlds": [
+    "zth"
+  ]
+}

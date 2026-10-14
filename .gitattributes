@@ -79,7 +79,7 @@ docs/90_roadmap-and-history/runtime-v32-final-execution-20261012/*.config.json t
 docs/90_roadmap-and-history/runtime-v32-final-execution-20261012/r9-r5-delivery-manifest.json text eol=lf
 
 # Historical blueprints carry byte hashes; preserve their original line endings.
-docs/90_roadmap-and-history/RuntimeV32_Incremental_Revision_Blueprint_v*_History_*.md -text
+docs/90_roadmap-and-history/RuntimeV32_Incremental_Revision_Blueprint_v*_History_*.md -text whitespace=cr-at-eol
 
 # Frozen audit inputs are byte-hashed by the inherited r9 acceptance suite.
 docs/90_roadmap-and-history/RuntimeV32_CategoryManagement_Prefill_Editing_Update_Blueprint_2026-10-12.md text eol=lf
@@ -88,3 +88,7 @@ docs/90_roadmap-and-history/runtime-v32-unified-repair-20261011/CairnMap_V32_Fie
 # Synchronization evidence is UTF-8 LF for reproducible byte digests.
 docs/90_roadmap-and-history/runtime-v32-sync01-execution-20261014/*.json text eol=lf
 docs/90_roadmap-and-history/runtime-v32-sync01-execution-20261014/*.txt text eol=lf
+
+# Active adaptation blueprint and PR review evidence carry byte digests.
+docs/90_roadmap-and-history/RuntimeV32_Incremental_Revision_Blueprint_2026-10-13.md text eol=lf
+docs/90_roadmap-and-history/runtime-v32-downstream-pr-review-20261014/*.json text eol=lf
