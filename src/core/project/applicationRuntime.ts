@@ -14,6 +14,9 @@ export function applyApplicationSettings(next?:ApplicationSettings):void {
   if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('cairn:application-change',{detail:{generation}}));
 }
 export const moduleEnabled=(id:ApplicationModuleId)=>current.modules.items.find(item=>item.id===id)?.enabled===true;
+export function enabledApplicationWorldId(id:string):string{return current.worlds.find(world=>world.id===id&&world.enabled)?.id??current.worlds.find(world=>world.enabled&&world.default)!.id;}
+export function applicationWorldCodeMap():Record<string,number>{return Object.fromEntries(current.worlds.flatMap(world=>[[world.id,world.numericCode],[world.id.toLowerCase(),world.numericCode],[world.prefix,world.numericCode],[world.prefix.toLowerCase(),world.numericCode],[String(world.numericCode),world.numericCode]]));}
+export function applicationWorldPrefixMap():Record<number,string>{return Object.fromEntries(current.worlds.map(world=>[world.numericCode,world.prefix]));}
 export function applicationWorld(id:string):ApplicationWorld {
   const value=current.worlds.find(world=>world.id===id)||current.worlds.find(world=>world.enabled&&world.default)||current.worlds.find(world=>world.enabled);if(!value)throw Error('没有已启用世界。');return value;
 }

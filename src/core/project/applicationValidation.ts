@@ -42,5 +42,6 @@ export function validateApplication(value:ApplicationSettings,classCodes?:Set<st
   for(const ref of Object.values(value.review.serverReferences))if(!/^[A-Z][A-Z0-9_]*$/.test(ref))fail('review/serverReferences','仅保存服务端环境变量引用名。');
   const preferences=value.preferences;if(!Number.isInteger(preferences.map.leafletOffset)||Math.abs(preferences.map.leafletOffset)>8||!Number.isInteger(preferences.map.logicalInitialZoom)||preferences.map.logicalInitialZoom<0||preferences.map.logicalInitialZoom>8)fail('preferences/map','逻辑 Zoom 为 0–8，映射偏移须为 -8–8 整数。');
   for(const count of [preferences.search.homepageLimit,preferences.search.navigationLimit])if(!Number.isInteger(count)||count<1||count>200)fail('preferences/search','结果数量须为 1–200 整数。');if(!Number.isFinite(preferences.search.debounceMs)||preferences.search.debounceMs<0||preferences.search.debounceMs>2000)fail('preferences/search','延迟须为 0–2000ms。');
+  for(const [key,number] of Object.entries(value.preferences.navigation))if(!Number.isFinite(number)||number<0||key!=='normalPlatformTransferCost'&&number===0)fail('preferences/navigation/'+key,'导航速度/系数必须为正有限数值，换乘成本可为零。');
   return issues;
 }

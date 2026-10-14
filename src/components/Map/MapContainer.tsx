@@ -1,4 +1,4 @@
-import { getApplicationGeneration, getApplicationSettings, applicationWorld, moduleEnabled, subscribeApplication, registerApplicationGuard } from '@/core/project/applicationRuntime';
+import { getApplicationGeneration, getApplicationSettings, applicationWorld, enabledApplicationWorldId, moduleEnabled, subscribeApplication, registerApplicationGuard } from '@/core/project/applicationRuntime';
 import { useSyncExternalStore } from 'react';
 import { isNativeConfigRevision } from '../../configStudio/contract';
 import { MAP_ZOOM_BOUNDS, TILE_ZOOM_BOUNDS } from '@/lib/mapZoom';
@@ -275,7 +275,7 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
 
   // 从 cookie 读取初始设置；分享链接中的 world 优先，避免先进入 cookie 世界再切换。
   const savedSettings = loadMapSettings();
-  const [currentWorld, setCurrentWorld] = useState(() => normalizeRuleSourceWorldId(initialPendingShareRef.current?.target.worldId ?? savedSettings?.currentWorld ?? 'zth'));
+  const [currentWorld, setCurrentWorld] = useState(() => enabledApplicationWorldId(normalizeRuleSourceWorldId(initialPendingShareRef.current?.target.worldId ?? savedSettings?.currentWorld ?? applicationWorld('').id)));
 
   const applyShareParseResult = useCallback((result: ShareParseResult) => {
     if (result.kind === 'none') return;
@@ -299,6 +299,7 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
     const pending: PendingShareTarget = result.kind === 'player'
       ? { type: 'player', target: normalizeShareWorld(result.target) }
       : { type: 'feature', target: normalizeShareWorld(result.target) };
+    if(!application.worlds.some(world=>world.id===pending.target.worldId&&world.enabled)){setShareLinkMessage('分享链接的世界未启用或不存在。');return;}
     initialPendingShareRef.current = pending;
     shareTargetConsumedRef.current = false;
     setShareLinkMessage(null);
@@ -665,6 +666,7 @@ useEffect(() => {
   }, [activateWorkspaceTarget, clearReviewWorkspaceState, measuringModuleLoaded, requestFeatureModuleActivation, reviewModuleLoaded, syncWorkspaceCoordinator]);
 
   useEffect(()=>registerApplicationGuard(async()=>{
+    if(workspaceTransitionCoordinatorRef.current.snapshot().phase!=='idle')return false;
     const reason='应用总体规则';
     const accepted=activeWorkspace==='measurement'?await (measurementToolsRef.current?.requestCloseAndClear(reason)??Promise.resolve(true)):activeWorkspace==='mapping'||activeWorkspace==='review'?await (measuringModuleRef.current?.requestCloseAndClear(reason)??Promise.resolve(true)):true;
     if(accepted){clearReviewWorkspaceState();if(activeWorkspace!=='runtime')workspaceTransitionCoordinatorRef.current.reportInactive(activeWorkspace);}
@@ -1551,6 +1553,7 @@ const handleRouteFound = useCallback((route: RouteHighlightData | Array<{ coord:
   // 世界切换处理
   const handleWorldChange = useCallback(async (worldId: string) => {
     const normalizedWorldId = normalizeRuleSourceWorldId(worldId);
+    if(!application.worlds.some(world=>world.id===normalizedWorldId&&world.enabled))return;
     // 世界切换前默认触发“关闭测绘”。若用户不确认，则禁止切换。
     // 注意：必须在 setCurrentWorld 之前执行，否则会导致临时挂载/图层归属混乱。
     const ok = await (measuringModuleRef.current?.requestCloseAndClear?.('切换世界') ?? Promise.resolve(true));
@@ -1603,7 +1606,7 @@ if (mapStyle === 'sketch') {
     if (!mapRef.current || leafletMapRef.current) return;
 
     // 从 cookie 读取初始世界设置
-    const savedWorld = normalizeRuleSourceWorldId(initialPendingShareRef.current?.target.worldId ?? loadMapSettings()?.currentWorld ?? applicationWorld('').id);
+    const savedWorld = enabledApplicationWorldId(normalizeRuleSourceWorldId(initialPendingShareRef.current?.target.worldId ?? loadMapSettings()?.currentWorld ?? applicationWorld('').id));
 
     // 创建 Dynmap CRS
     const crs = createDynmapCRS(getWorldConfig(savedWorld));

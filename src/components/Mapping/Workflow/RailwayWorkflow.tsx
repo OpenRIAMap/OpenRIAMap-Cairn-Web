@@ -1,3 +1,4 @@
+import { applicationWorldCodeMap, applicationWorldPrefixMap, subscribeApplication } from '@/core/project/applicationRuntime';
 // File: src/components/Mapping/Workflow/RailwayWorkflow.tsx
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { WorkflowComponentProps, WorldPoint, WorkflowCommitArgs } from './WorkflowHost';
@@ -41,23 +42,9 @@ type InfoForm = {
 };
 
 
-const WORLD_ID_TO_CODE: Record<string, number> = {
-  zth: 0,
-  naraku: 1,
-  houtu: 2,
-  eden: 3,
-  laputa: 4,
-  yunduan: 5,
-};
+let WORLD_ID_TO_CODE=applicationWorldCodeMap();
 
-const WORLD_CODE_TO_PREFIX: Record<number, string> = {
-  0: 'Z',
-  1: 'N',
-  2: 'H',
-  3: 'E',
-  4: 'L',
-  5: 'Y',
-};
+let WORLD_CODE_TO_PREFIX=applicationWorldPrefixMap();
 
 
 function dist2(a: WorldPoint, b: WorldPoint) {
@@ -1010,3 +997,4 @@ if (step === 'branch') {
     );
   }
 }
+subscribeApplication(()=>{WORLD_ID_TO_CODE=applicationWorldCodeMap();WORLD_CODE_TO_PREFIX=applicationWorldPrefixMap();});

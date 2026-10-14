@@ -333,16 +333,7 @@ const TRAVEL_MODES: Array<{ mode: TravelModePanel; label: string; icon: typeof T
 ];
 
 // 新铁路：可调整参数（默认值可按你的需要随时改）
-const DEFAULT_RAIL_NEW_CONFIG = {
-  // 站内换乘步行速度（m/s）
-  transferWalkSpeed: 3.0,
-  // 铁路乘坐速度（m/s）
-  railRideSpeed: 16.0,
-  // 站内换乘成本阈值：距离 cost = dist / factor（你此前要求的“十分之一权重”本质等价）
-  transferCostFactor: 1.0,
-  // 正常站台同台换乘成本（用于让联络线连接节点优先）
-  normalPlatformTransferCost: 5.0,
-};
+
 
 // ---------------------------
 // Search input
@@ -1289,10 +1280,10 @@ if (travelMode === 'rail_new') {
     mode: preferLessTransfer ? 'transfers' : 'time',
 
     // 参数映射：保持你原 UI config 不动
-    transferWalkSpeed: DEFAULT_RAIL_NEW_CONFIG.transferWalkSpeed,
-    railSpeed: DEFAULT_RAIL_NEW_CONFIG.railRideSpeed,
-    stationTransferCostDivisor: DEFAULT_RAIL_NEW_CONFIG.transferCostFactor,
-    normalSamePlatformTransferCost: DEFAULT_RAIL_NEW_CONFIG.normalPlatformTransferCost,
+    transferWalkSpeed: getApplicationSettings().preferences.navigation.transferWalkSpeed,
+    railSpeed: getApplicationSettings().preferences.navigation.railRideSpeed,
+    stationTransferCostDivisor: getApplicationSettings().preferences.navigation.transferCostFactor,
+    normalSamePlatformTransferCost: getApplicationSettings().preferences.navigation.normalPlatformTransferCost,
   });
 
   const plan = buildRailNewPlanFromIntegrated(raw, startPoint.coord, endPoint.coord, useElytra);
