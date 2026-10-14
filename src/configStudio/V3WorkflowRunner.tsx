@@ -3,7 +3,7 @@ import { WorkflowCategoryInput } from './WorkflowCategoryInput';
 import { WorkflowAnnotationsInput } from './WorkflowAnnotationsInput';
 import { annotationsForOutput, mergeAnnotations, annotationPaths } from './workflowAnnotations';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, CSSProperties } from 'react';
 import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
 import type { ClassificationPath, GeometryKind, ConfigPackageV3, MountedFeatureRecord, SearchProfile, WorkflowControl, WorkflowDefinition, WorkflowGroupField, WorkflowStep } from './types';
 import { normalizeSearchProfile, optionLabel, pathMatchesScope, readRecordPath, hasCategoryNode, hasDescendants, resolveGeometryProfile, resolveEffectiveFields, resolveWorkflowSelectOptions } from './runtime';
@@ -256,19 +256,23 @@ export function validateV3WorkflowRecords(config: ConfigPackageV3, workflow: Wor
 
 function decodePath(value: string): ClassificationPath | undefined { try { const parsed = JSON.parse(value); return parsed?.class ? parsed as ClassificationPath : undefined; } catch { return undefined; } }
 
-function ToggleInput({ value, onChange }: { value: unknown; onChange: (value: boolean) => void }) {
-  return <span className="inline-flex overflow-hidden rounded border text-sm"><button type="button" className={`px-3 py-1 ${value === true ? 'bg-blue-600 text-white' : 'bg-white'}`} onClick={() => onChange(true)}>是</button><button type="button" className={`border-l px-3 py-1 ${value === false ? 'bg-slate-700 text-white' : 'bg-white'}`} onClick={() => onChange(false)}>否</button></span>;
+function ToggleInput({ value, onChange }: { value: unknown; onChange: (value: boolean | undefined) => void }) {
+  return <span className="grid w-full grid-cols-2 self-start overflow-hidden rounded border text-sm" role="group" aria-label="是否选择">{([true,false] as const).map(choice => <button type="button" key={String(choice)} aria-pressed={value===choice} className={`min-w-0 px-3 py-1 ${!choice?'border-l ':''}${value===choice?'bg-blue-600 text-white':'bg-white'}`} onClick={()=>onChange(value===choice?undefined:choice)}>{choice?'是':'否'}</button>)}</span>;
 }
 
 function FeatureSearchInput({ profile, records, value, onChange, placeholder, world }: { profile?: SearchProfile; records: MountedFeatureRecord[]; value: unknown; onChange: (value: unknown) => void; placeholder?: string; world?: string }) {
   const [query, setQuery] = useState('');
   const [settledQuery, setSettledQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const container = useRef<HTMLDivElement>(null);
   useEffect(() => { const timer = window.setTimeout(() => setSettledQuery(query), profile?.debounceMs ?? 180); return () => window.clearTimeout(timer); }, [query, profile?.debounceMs]);
   const candidates = useMemo(() => findV3SearchCandidates(records, profile, settledQuery, world ?? String((records[0] as MountedFeatureRecord | undefined)?.World ?? '')), [records, profile, settledQuery, world]);
   const search = normalizeSearchProfile(profile);
-  return <div className="space-y-1"><input className="w-full rounded border px-2 py-1 text-sm" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={placeholder ?? '输入 ID 或 Name 搜索'} />
-    {query && search ? <div className="max-h-32 overflow-auto rounded border bg-white text-xs shadow-sm">{candidates.length ? candidates.map((candidate) => <button type="button" key={`${candidate.id}-${String(candidate.returned)}`} className="block w-full px-2 py-1 text-left hover:bg-blue-50" onClick={() => { onChange(candidate.returned); setQuery(candidate.display); }}>{candidate.display}</button>) : <p className="px-2 py-1 text-slate-500">无匹配要素</p>}</div> : null}
-    <small className="block text-slate-500">返回：{String(value ?? '') || '（尚未选择）'} · 范围：{search ? `${search.target.class}${search.target.kind ? `/${search.target.kind}` : ''}` : '未配置'}</small></div>;
+  useEffect(()=>{if(open)return;const selected=search?records.find(record=>Object.is(readRecordPath(record,search.returnField??'ID'),value)):undefined;setQuery(selected?displaySearchTemplate(search?.displayTemplate??'{{ID}} ({{Name}})',selected):String(value??''));},[records,value,profile,open]);
+  const choose=(candidate:V3SearchCandidate)=>{onChange(candidate.returned);setQuery(candidate.display);setOpen(false);};
+  return <div ref={container} className="min-w-0 space-y-1" onBlur={event=>{if(!container.current?.contains(event.relatedTarget as Node|null))setOpen(false);}}><input role="combobox" aria-label="搜索要素" aria-expanded={open&&Boolean(query)} className="w-full rounded border px-2 py-1 text-sm" value={query} onChange={event=>{setQuery(event.target.value);setOpen(true);onChange(undefined);}} onKeyDown={event=>{if(event.key==='Escape')setOpen(false);if(event.key==='Enter'&&open&&candidates[0]){event.preventDefault();choose(candidates[0]);}}} placeholder={placeholder ?? '输入 ID 或 Name 搜索'} />
+    {open && query && search ? <div role="listbox" className="max-h-32 min-w-0 overflow-y-auto overflow-x-hidden rounded border bg-white text-xs shadow-sm">{candidates.length ? candidates.map(candidate=><button role="option" aria-selected={false} type="button" key={`${candidate.id}-${String(candidate.returned)}`} className="block w-full whitespace-normal px-2 py-1 text-left [overflow-wrap:anywhere] hover:bg-blue-50" onClick={()=>choose(candidate)}>{candidate.display}</button>) : <p className="px-2 py-1 text-slate-500">无匹配要素</p>}</div> : null}
+    <small className="block text-slate-500 [overflow-wrap:anywhere]">返回：{String(value ?? '') || '（尚未选择）'} · 范围：{search ? `${search.target.class}${search.target.kind ? `/${search.target.kind}` : ''}` : '未配置'}</small></div>;
 }
 
 function fieldInput(field: WorkflowGroupField, value: unknown, onChange: (value: unknown) => void, records: MountedFeatureRecord[], world?: string) {
@@ -281,14 +285,17 @@ function fieldInput(field: WorkflowGroupField, value: unknown, onChange: (value:
 }
 
 function GroupControlInput({ control, value, onChange, records, world }: { control: WorkflowControl; value: unknown; onChange: (value: unknown) => void; records: MountedFeatureRecord[]; world?: string }) {
+  const rowIds=useRef<string[]>([]);
   const group = control.group;
   if (!group) return <div className="rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">此重复字段组缺少字段定义。</div>;
   const scalar = group.storage === 'scalar';
   const rows = Array.isArray(value) ? value.map((item) => scalar ? { '': item } : item).filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object' && !Array.isArray(item)) : [];
-  const makeRow = () => Object.fromEntries(group.itemFields.map((field) => [field.key, field.defaultValue ?? (field.kind === 'toggle' ? false : '')]));
+  while(rowIds.current.length<rows.length)rowIds.current.push(crypto.randomUUID());
+  rowIds.current.length=rows.length;
+  const makeRow = () => Object.fromEntries(group.itemFields.map(field=>[field.key,field.defaultValue===undefined?field.kind==='toggle'?undefined:'':structuredClone(field.defaultValue)]));
   const serialize = (next: Array<Record<string, unknown>>) => scalar ? next.map((row) => row['']) : next;
   const updateRow = (index: number, key: string, nextValue: unknown) => onChange(serialize(rows.map((row, rowIndex) => rowIndex === index ? { ...row, [key]: nextValue } : row)));
-  return <div className="space-y-2 rounded border border-slate-200 bg-slate-50 p-2">{rows.map((row, index) => <fieldset key={`${control.id}-${index}`} className="rounded border bg-white p-2"><legend className="px-1 text-xs text-slate-500">第 {index + 1} 项</legend><div className="grid gap-2 md:grid-cols-2">{group.itemFields.map((field) => <label key={`${field.key}-${index}`} className="grid gap-1 text-xs"><span>{field.label.zh}{field.required ? ' *' : ''}</span>{fieldInput(field, row[field.key], (nextValue) => updateRow(index, field.key, nextValue), records, world)}</label>)}</div><button type="button" className="mt-2 text-xs text-rose-700" onClick={() => onChange(serialize(rows.filter((_, rowIndex) => rowIndex !== index)))}>删除此项</button></fieldset>)}<button type="button" className="rounded border bg-white px-2 py-1 text-xs" onClick={() => onChange(serialize([...rows, makeRow()]))}>{group.addLabel?.zh ?? `添加${control.label.zh}`}</button></div>;
+  return <div className="min-w-0 space-y-3 rounded border border-slate-200 bg-slate-50 p-2">{rows.map((row,index)=><fieldset key={rowIds.current[index]} className="min-w-0 rounded border bg-white p-3"><legend className="px-1 text-xs text-slate-500">第 {index+1} 项</legend><div className="cm-flex-grid">{group.itemFields.map(field=><label key={field.key} className="grid min-w-0 content-start items-start gap-1 self-start text-xs"><span>{field.label.zh}{field.required?' *':''}</span>{fieldInput(field,row[field.key],nextValue=>updateRow(index,field.key,nextValue),records,world)}</label>)}</div><button type="button" className="mt-2 text-xs text-rose-700" onClick={()=>{rowIds.current.splice(index,1);onChange(serialize(rows.filter((_,i)=>i!==index)));}}>删除此项</button></fieldset>)}<button type="button" className="rounded border bg-white px-2 py-1 text-xs" onClick={()=>{rowIds.current.push(crypto.randomUUID());onChange(serialize([...rows,makeRow()]));}}>{group.addLabel?.zh??`添加${control.label.zh}`}</button></div>;
 }
 
 export function ControlInput({ control, value, onChange, config, records, world, fixedGeometry }: { control: WorkflowControl; value: unknown; onChange: (value: unknown) => void; config: ConfigPackageV3; records: MountedFeatureRecord[]; world?: string; fixedGeometry?: GeometryKind }) {
@@ -332,11 +339,12 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
   const [inputIssues, setInputIssues] = useState<V3WorkflowInputIssue[]>([]);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
+  const titleRef = useRef<HTMLDivElement>(null);
   const stepCallback = useRef(onStepChange); stepCallback.current = onStepChange;
   const typedSlots=useMemo(()=>normalizeV3WorkflowSlots(workflow,slots),[workflow,slots]);
   const steps = workflow.mode === 'composed' ? workflow.steps.filter(step=>step.kind!=='geometry'||enabledDrawing(step,workflow,typedSlots)) : [];
   const step = steps[Math.min(page,steps.length-1)];
-  useEffect(() => { stepCallback.current?.(step); }, [step?.id, page]);
+  useEffect(() => { stepCallback.current?.(step); titleRef.current?.scrollIntoView({block:"start"}); }, [step?.id, page]);
   useEffect(() => { onPreviewSlotsChange?.(typedSlots); }, [typedSlots, onPreviewSlotsChange]);
   useEffect(() => { setSlots(current => ({ ...defaults(), ...current, World: activeWorld })); }, [workflow, activeWorld]);
   const previewState = useMemo(() => {
@@ -381,10 +389,14 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
       savingRef.current=true;setSaving(true);try{await onSubmit?.(output);setSubmitted(output);}finally{savingRef.current=false;setSaving(false);}
     }catch(error){setInputIssues([{message:error instanceof Error?error.message:'保存失败，请重试。'}]);savingRef.current=false;setSaving(false);}
   };
-  return <section data-workflow-step={step.id} className="rounded-lg border bg-white p-3">
-    <div className="mb-3 flex justify-between"><strong>{step.label.zh}</strong><span className="text-xs">世界：{activeWorld} · 第 {page + 1} / {steps.length} 页</span></div>
+  const navigation=<div className="mt-3 flex justify-between"><button type="button" disabled={page === 0 || saving || step.kind === 'geometry' && step.drawing?.allowBack === false} className="rounded border px-3 py-1 disabled:opacity-40" onClick={() => {setInputIssues([]);if(step.kind==='geometry'&&step.drawing?.keepDrawingWhenBack===false){const key=drawingKey(step);delete captures.current[key];delete actions.current[key];setCoordinates(current=>({...current,[key]:[]}));setGeometryInputs(current=>({...current,[key]:'[]'}));setGeometryErrors(current=>({...current,[key]:''}));setSlots(current=>{const next={...current};for(const slot of [step.drawing?.captureSlot,step.drawing?.pointSlot,...(step.drawing?.auxiliaryPoints??[]).map(point=>point.slot)])if(slot)for(const token of [slot,`${slot}_RAW_POINT`,`${slot}_X`,`${slot}_Y`,`${slot}_Z`,`${slot}_HEIGHT`])delete next[token];return next;});}setPage(value=>Math.max(0,value-1));} }>上一页</button>
+      {page === steps.length - 1 ? <button type="button" disabled={saving || Boolean(submitted)} className="rounded bg-emerald-600 px-3 py-1 text-white disabled:opacity-40" onClick={() => void submit()}>{saving ? '保存中…' : onSubmit ? '确认保存输出' : '生成预览输出'}</button> : <button type="button" className="rounded bg-blue-600 px-3 py-1 text-white" onClick={next}>下一页</button>}
+    </div>;
+  return <section data-workflow-step={step.id} className="cm-workflow-page rounded-lg border bg-white p-3">
+    <div ref={titleRef} className="mb-3 flex flex-wrap justify-between gap-2"><strong>{step.label.zh}</strong><span className="text-xs">世界：{activeWorld} · 第 {page + 1} / {steps.length} 页</span></div>
+    {step.kind!=="actor"&&step.kind!=="geometry"?navigation:null}
     {step.kind === 'actor' ? <label className="block text-sm">填写人<input aria-label="填写人" className="mt-1 w-full rounded border px-2 py-1" value={String(slots.actor ?? '')} onChange={event => setSlots(current => ({ ...current, actor: event.target.value }))} /></label> : null}
-    {step.kind === 'tagsExtensions' ? <div className="grid gap-2 sm:grid-cols-2">{(['tags', 'extensions'] as const).filter(key => step.tagsExtensions?.[key === 'tags' ? 'tagsEnabled' : 'extensionsEnabled'] !== false).map(key => <textarea key={key} className="rounded border p-2 text-sm" rows={3} placeholder={`${key} JSON（可选）`} value={typeof slots[key] === 'object' ? JSON.stringify(slots[key]) : String(slots[key] ?? '')} onChange={event => setSlots(current => ({ ...current, [key]: event.target.value }))} />)}</div> : null}
+    {step.kind === 'tagsExtensions' ? <div className="cm-flex-grid gap-2">{(['tags', 'extensions'] as const).filter(key => step.tagsExtensions?.[key === 'tags' ? 'tagsEnabled' : 'extensionsEnabled'] !== false).map(key => <textarea key={key} className="rounded border p-2 text-sm" rows={3} placeholder={`${key} JSON（可选）`} value={typeof slots[key] === 'object' ? JSON.stringify(slots[key]) : String(slots[key] ?? '')} onChange={event => setSlots(current => ({ ...current, [key]: event.target.value }))} />)}</div> : null}
     {step.kind === 'geometry' ? <div className="rounded border border-dashed p-3 text-sm">
       <p>固定绘制类型：{step.geometry?.[0]} · 已采用 {captures.current[drawingKey(step)]?.coordinates.length ?? 0} 个坐标</p>
       <button type="button" className="mt-2 rounded border px-2 py-1" onClick={() => {
@@ -404,16 +416,14 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
       const update = (next: { x?: number; y?: number; z?: number }) => setSlots(current => ({ ...current, [point.slot]: next }));
       return <fieldset key={point.id} className="mt-3 rounded border p-2 text-sm"><legend>{point.label.zh}{point.required ? ' *' : ''}</legend>{onCaptureGeometry ? <><button type="button" className="rounded border px-2 py-1" disabled={!captures.current[drawingKey(step)]?.coordinates.length} onClick={() => { void onRequestGeometry?.(`auxiliary:${point.id}`, 'Point'); }}>进入{point.label.zh}绘制</button><button type="button" className="ml-2 rounded border px-2 py-1" onClick={() => { try { const capture = onCaptureGeometry(`auxiliary:${point.id}`, 'Point'); const raw = Array.isArray(capture) ? capture[0] : capture.point; if (!raw || !Number.isFinite(raw.x) || !Number.isFinite(raw.z)) throw new Error('请先绘制目标点。'); update(raw); setInputIssues([]); } catch (error) { setInputIssues([{ stepId: step.id, message: error instanceof Error ? error.message : '辅助点无效。' }]); } }}>采用{point.label.zh}</button></> : <div className="grid grid-cols-3 gap-2">{(['x','y','z'] as const).map(axis => <label key={axis}>{axis.toUpperCase()}<input type="number" className="w-full rounded border" value={value?.[axis] ?? ''} onChange={event => update({ ...value, [axis]: event.target.value === '' ? undefined : Number(event.target.value) })} /></label>)}</div>}<p className="mt-1 text-xs">{value ? `已采用：X=${value.x}，Z=${value.z}${value.y === undefined ? '' : `，Y=${value.y}`}` : '尚未采用坐标'}</p></fieldset>;
     })}
-    {step.controls?.length ? <div className="grid gap-2 md:grid-cols-6">{step.controls.filter(control => workflowConditionMatches(control.when, typedSlots)).map(control => <div key={control.id} data-workflow-control={control.id} className={`grid min-w-0 gap-1 text-sm ${control.columns === 1 ? 'md:col-span-6' : control.columns === 2 ? 'md:col-span-3' : 'md:col-span-2'}`}>
+    {step.controls?.length ? <div className="cm-runtime-grid">{step.controls.filter(control => workflowConditionMatches(control.when, typedSlots)).map(control => <div key={control.id} data-workflow-control={control.id} className="grid min-w-0 content-start gap-1 self-start text-sm" style={{"--cm-columns":control.columns===1?6:control.columns===2?3:2} as CSSProperties}>
       <span>{control.label.zh}{control.required ? ' *' : ''}</span>{control.kind==='tagsExtensions'?<WorkflowAnnotationsInput config={config} workflow={workflow} control={control} value={slots[control.id]} classifications={classifications} onChange={value=>{setSlots(current=>({...current,[control.id]:value}));setInputIssues([]);}}/>:<ControlInput control={control} fixedGeometry={workflow.outputs.find(output => output.id === control.outputId)?.geometry.selected} value={slots[control.slot ?? control.id]} config={config} records={records} world={activeWorld} onChange={value => {
         if (control.kind === 'classificationPicker') { const classification = decodePath(String(value)); if (control.outputId) setClassifications(current => ({ ...current, [control.outputId!]: classification })); }
         setSlots(current => ({ ...current, [control.slot ?? control.id]: value })); setInputIssues([]);
       }} />
     }</div>)}</div> : null}
     {currentIssues.length ? <ul role="alert" className="mt-3 rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-800">{currentIssues.map((issue, index) => <li key={index}>{issue.message}</li>)}</ul> : null}
-    <div className="mt-3 flex justify-between"><button type="button" disabled={page === 0 || saving || step.kind === 'geometry' && step.drawing?.allowBack === false} className="rounded border px-3 py-1 disabled:opacity-40" onClick={() => {setInputIssues([]);if(step.kind==='geometry'&&step.drawing?.keepDrawingWhenBack===false){const key=drawingKey(step);delete captures.current[key];delete actions.current[key];setCoordinates(current=>({...current,[key]:[]}));setGeometryInputs(current=>({...current,[key]:'[]'}));setGeometryErrors(current=>({...current,[key]:''}));setSlots(current=>{const next={...current};for(const slot of [step.drawing?.captureSlot,step.drawing?.pointSlot,...(step.drawing?.auxiliaryPoints??[]).map(point=>point.slot)])if(slot)for(const token of [slot,`${slot}_RAW_POINT`,`${slot}_X`,`${slot}_Y`,`${slot}_Z`,`${slot}_HEIGHT`])delete next[token];return next;});}setPage(value=>Math.max(0,value-1));} }>上一页</button>
-      {page === steps.length - 1 ? <button type="button" disabled={saving || Boolean(submitted)} className="rounded bg-emerald-600 px-3 py-1 text-white disabled:opacity-40" onClick={() => void submit()}>{saving ? '保存中…' : onSubmit ? '确认保存输出' : '生成预览输出'}</button> : <button type="button" className="rounded bg-blue-600 px-3 py-1 text-white" onClick={next}>下一页</button>}
-    </div>
+    {navigation}
     {!onSubmit ? <details className="mt-3 rounded border p-2"><summary>最终 record 预览</summary>{previewState.error ? <p role="alert">{previewState.error}</p> : <pre className="max-h-64 overflow-auto text-xs">{JSON.stringify(previewState.outputs, null, 2)}</pre>}</details> : null}
     {submitted && !onSubmit ? <pre className="mt-3 max-h-48 overflow-auto rounded bg-slate-950 p-2 text-xs text-emerald-100">{JSON.stringify(submitted, null, 2)}</pre> : null}
   </section>;

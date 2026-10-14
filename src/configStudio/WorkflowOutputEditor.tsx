@@ -21,7 +21,7 @@ function AssignmentRow({ value, index, targets, tokens, tokenInfo, system, slots
   return <article className="min-w-0 rounded border bg-white p-3" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); onDrop(); }}>
     <div className="flex min-w-0 items-start gap-2">
       <span draggable onDragStart={(event) => { event.stopPropagation(); onDragStart(); }} onDragEnd={onDragEnd} className="mt-2 cursor-grab text-slate-400" title="拖动手柄排序组装行"><GripVertical className="h-4 w-4" /></span>
-      <div className="grid min-w-0 flex-1 gap-2 md:grid-cols-2">
+      <div className="cm-flex-grid min-w-0 flex-1 gap-2">
         <label className="grid min-w-0 gap-1 text-xs">目标字段／tags 或 extensions 路径<input aria-label={`组装目标 ${index + 1}`} list={`targets-${value.id}`} className="min-w-0 rounded border px-2 py-1" value={value.target} onChange={(event) => onChange({ ...value, target: event.target.value })} placeholder="Name、tags.zone、extensions.custom" /><datalist id={`targets-${value.id}`}>{targets.map((target) => <option key={target} value={target} />)}</datalist></label>
         <label className="grid min-w-0 gap-1 text-xs">来源／受控表达式<textarea aria-label={`组装表达式 ${index + 1}`} className="min-h-10 min-w-0 resize-y rounded border px-2 py-1 font-mono" rows={1} value={value.expression} onChange={(event) => expression(event.target.value)} placeholder={'A 或 join("_",WorldPrefix+Class,A)'} /></label>
       </div>

@@ -13,7 +13,7 @@ export function WorkflowControlSettings({ value, onChange }: { value: Settings; 
     else if (structured) { try { next = JSON.parse(text); } catch { /* Invalid editable text remains visible and fails validation. */ } }
     patch({ defaultValue: next });
   };
-  return <div className="mt-2 grid min-w-0 gap-2 rounded border bg-white p-2 text-xs md:grid-cols-3">
+  return <div className="mt-2 cm-flex-grid min-w-0 gap-2 rounded border bg-white p-2 text-xs">
     <label><input type="checkbox" checked={Boolean(value.required)} onChange={event => patch({ required: event.target.checked })} /> 必填</label>
     <label><input type="checkbox" checked={value.defaultValue !== undefined} onChange={event => patch({ defaultValue: event.target.checked ? value.kind === 'toggle' ? false : value.kind === 'group' ? [] : '' : undefined })} /> 使用默认值<input aria-label="输入默认值" disabled={value.defaultValue === undefined} className="mt-1 w-full rounded border px-2 py-1 disabled:bg-slate-100" value={defaultText} onChange={event => setDefault(event.target.value)} /></label>
     <label>英文显示名称<input className="mt-1 w-full rounded border px-2 py-1" value={value.label.en} onChange={event => patch({ label: { ...value.label, en: event.target.value } })} /></label>
