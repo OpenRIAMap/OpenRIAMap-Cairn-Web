@@ -181,6 +181,7 @@ export function normalizeSearchProfile(search: SearchProfile | undefined): Searc
     || (displayFields.length ? displayFields.map((field) => `{{${field}}}`).join(' ') : '{{ID}} ({{Name}})');
   return {
     target: search.target,
+    ...(search.targetRole?{targetRole:search.targetRole}:{}),
     queryFields,
     displayTemplate,
     returnField,
@@ -779,6 +780,10 @@ function validateCard(node: CategoryNode, config: ConfigPackageV3, issues: Confi
     if (item.renderer === 'lineChips' && !item.options?.lineChipSource) issue(issues, 'error', 'card-line-chips-source-required', itemPath, '关联线路胶囊必须选择平台、车站或车站建筑来源。');
     if (item.renderer !== 'relationLink') continue;
     const relation = item.relation;
+    if(config.contractRevision>=10&&relation?.targetRole==='main'){
+      if(relation.targetClassification||relation.targetMatchField!=='ID'||!isSafeWorkflowTarget(relation.targetDisplayField??'Name'))issue(issues,'error','relation-role-target-invalid',itemPath,'通用主结构关系按 ID 匹配，不限制 Class；目标显示字段必须为安全路径。');
+      continue;
+    }
     if (!relation?.targetClassification || !isContinuousPath(relation.targetClassification) || !hasCategoryNode(config, relation.targetClassification)) {
       issue(issues, 'error', 'relation-target-classification-invalid', itemPath, '关系卡必须选择存在且连续的目标分类。');
       continue;
@@ -796,11 +801,13 @@ function controlsFor(workflow: WorkflowDefinition): WorkflowControl[] {
 
 function validateSearch(control: Pick<WorkflowControl, 'kind' | 'search'>, config: ConfigPackageV3, path: string, issues: ConfigValidationIssue[]): void {
   const search = normalizeSearchProfile(control.search);
-  if (!search || !isContinuousPath(search.target) || !hasCategoryNode(config, search.target)) {
+  if (!search || (!search.targetRole&&(!isContinuousPath(search.target) || !hasCategoryNode(config, search.target)))) {
     issue(issues, 'error', 'workflow-search-target-invalid', path, '搜索控件必须选择存在且连续的目标分类范围。');
     return;
   }
-  const selectable = new Set(resolveSelectableFields(config, search.target).map((field) => field.key));
+  const targets=search.targetRole==='main'?config.nodes.filter(node=>{const role=resolveNodeFieldSettings(config,node.path).value.structure;return role?.enabled&&role.role==='main';}):[];
+  if(search.targetRole&&(config.contractRevision<10||!targets.length))issue(issues,'error','workflow-search-role-invalid',path,'通用搜索需要 r10 且至少有一个启用的主结构分类。');
+  const selectable = new Set(search.targetRole?targets.flatMap(node=>resolveSelectableFields(config,node.path).map(field=>field.key)).filter(key=>targets.every(node=>resolveSelectableFields(config,node.path).some(field=>field.key===key))):resolveSelectableFields(config, search.target).map((field) => field.key));
   if (!search.queryFields?.length) issue(issues, 'error', 'workflow-search-fields-required', path, '搜索控件至少需要选择一个可匹配字段。');
   for (const field of search.queryFields ?? []) if (!selectable.has(field)) issue(issues, 'error', 'workflow-search-field-invalid', path, `搜索字段 ${field} 不在目标分类的有效字段集中。`, { field });
   if (!search.returnField || !selectable.has(search.returnField)) issue(issues, 'error', 'workflow-search-return-field-invalid', path, '搜索控件必须选择一个有效的单一返回字段。', { field: search.returnField });

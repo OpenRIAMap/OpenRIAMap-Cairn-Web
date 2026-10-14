@@ -1,4 +1,5 @@
 import type {ConfigPackageV3,WorkflowDefinition} from './types';
+import {assertStructureTargets} from './structureCommit';
 import {compileWorkflowEditPlan,hydrateWorkflowEdit,buildWorkflowEditRecord,workflowEditSlots,recordClassification,assertEditIdentity,type WorkflowEditDraft} from './workflowEditing';
 import {evaluateV3WorkflowOutputs,validateV3WorkflowInputs,validateV3WorkflowRecords} from './V3WorkflowRunner';
 import {coerceWorkflowValues} from './workflowValues';
@@ -13,6 +14,7 @@ export function prepareNativeWorkflowEdit(config:ConfigPackageV3,workflow:Workfl
  let record=buildWorkflowEditRecord(plan,original,draft,{geometry});assertEditIdentity(record,original,world,others);
  record=withCanonicalMultipartGeometry({...record,Type:featureTypeFromGeometryType(geometry.type)},geometry);
  const issues=validateV3WorkflowRecords(config,workflow,[{outputId:workflow.outputs[0].id,classification:draft.classification,geometry:type,record}]);if(issues.length)throw Error(issues.map(i=>i.message).join('\n'));
+ assertStructureTargets(config,[record],others);
  if(!editor.trim())throw Error('编辑人不能为空。');record.ModifityBy=editor.trim();record.ModifityTime=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
  return record;
 }

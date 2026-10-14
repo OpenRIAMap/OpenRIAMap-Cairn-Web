@@ -1,3 +1,6 @@
+import {resolveNodeFieldSettings} from '@/configStudio/nodeFieldSettings';
+import {recordWorld,recordPath} from '@/configStudio/structureRoleIndex';
+import {normalizeRuleSourceWorldId} from '@/components/Rules/data/ruleDataSources';
 import { isNativeConfigRevision } from '../../../configStudio/contract';
 import { featureLabelParts, componentLabelId, filterFeatureGeometryParts } from '@/components/Rules/rendering/multipartLabels';
 import { iconBoundsAtAnchor, type LabelPlacement } from '@/components/Rules/rendering/labelPlacement';
@@ -2536,6 +2539,7 @@ export default function RuleDrivenLayer(props: Props) {
       return String(value ?? "").trim() === key;
     };
 
+    if(configRuntime&&configRuntime.contractRevision>=10){const matches=candidates.filter(record=>recordWorld(record)===normalizeRuleSourceWorldId(worldId)&&matchRecord(record)&&(!linkTarget?.structureRole||resolveNodeFieldSettings(configRuntime,recordPath(record)).value.structure?.role===linkTarget.structureRole));return matches.length===1?matches[0]:undefined;}
     const constrained = candidates.find(matchRecord);
     if (constrained) return constrained;
 

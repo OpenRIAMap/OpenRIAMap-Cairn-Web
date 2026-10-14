@@ -1,4 +1,5 @@
 import type { CategorySearch, ConfigPackageV3 } from './types';
+import { resolveNodeFieldSettings } from './nodeFieldSettings';
 import { STRUCTURE_CONTEXT_ID } from './structureRoleIndex';
 import { SEARCH_CATEGORY_OVERRIDE_LINES,SEARCH_RULE_PRIORITY_LINES,SEARCH_RULE_BLACKLIST_LINES } from '../components/Search/searchRuleTables';
 import { migrateConfigToR9 } from './r9Migration';
@@ -21,6 +22,8 @@ export function migrateConfigToR10(value:ConfigPackageV3):{config:ConfigPackageV
     const code=node.path.class,search:CategorySearch={enabled:!blacklist.has(code),queryFields:['Name','ID','Class'],priority:priorities.includes(code)?priorities.indexOf(code):100,subtitle:{mode:code==='FLR'||code==='STF'?'classificationField':'classification',...(names.has(code)?{classificationLabel:{zh:names.get(code)!,en:''}}:{}),...(code==='FLR'||code==='STF'?{field:code==='FLR'?'BuildingID':'staBuildingID',valueMode:'reference',referenceDisplayField:'Name'}:{})},extension:{mode:'none'}};
     if(['PLF','PFB','STA','STB'].includes(code))search.extension={mode:'lineChips',lineChipSource:code==='PLF'||code==='PFB'?'platform':code==='STA'?'station':'stationBuilding'};
     if(code==='RLE')search.extension={mode:'nameColorCapsule',nameField:'Name',colorField:'color',displayName:false,fallbackColor:'#999999'};
+    if(code==='FLR'||code==='STF')search.subtitle.fallbackClassificationLabel={zh:'楼层',en:''};
+    if(code==='ROD')search.subtitle.fallbackClassificationLabel={zh:'ROD',en:'ROD'};
     node.fieldSettings={...node.fieldSettings,search};
   }
   for(const binding of original.contextBindings??[])if(binding.enabled){
@@ -42,13 +45,14 @@ export function migrateConfigToR10(value:ConfigPackageV3):{config:ConfigPackageV
       linkCardInheritance(node,resolveCardConfiguration(config,parent.path),parent.nodeId,true);
       if(node.card?.mode==='fields')report.changes.push({path:`nodes/${node.nodeId}/card`,message:`保留 ${before.length} 项本地布局/显示器；链接 ${node.card.items.filter(item=>item.inheritFrom).length} 个稳定继承项，旧布局未列出的父项保持隐藏。`});
     }
-    const fields=resolveEffectiveFields(config,node.path);
+    const fields=resolveEffectiveFields(config,node.path),role=resolveNodeFieldSettings(config,node.path).value.structure;
+    if(role?.enabled&&role.role==='member'&&node.card?.mode==='fields')for(const item of node.card.items)if(item.renderer==='relationLink'&&item.source===role.hostField)item.relation={...item.relation,targetClassification:undefined,targetRole:'main',targetMatchField:'ID',targetDisplayField:item.relation?.targetDisplayField??'Name'};
     if(node.card?.mode==='fields')for(const item of node.card.items){const field=fields.find(field=>field.key===item.source);if(field&&!item.inheritFrom)item.prefillAudit=createPrefillAudit(node.path,field);}
   }
   for(const workflow of config.workflows)for(const step of workflow.steps)for(const control of step.controls??[]){
     const binding=workflow.outputs.flatMap(output=>output.assignments.map(assignment=>({output,assignment}))).find(({assignment})=>assignment.expression===control.slot&&assignment.target!=='ID');
     const scope=binding?.output.classification??workflow.outputs[0]?.classification;
-    if(!scope)continue;const fields=resolveEffectiveFields(config,scope),key=control.prefillField??binding?.assignment.target;
+    if(!scope)continue;const role=resolveNodeFieldSettings(config,scope).value.structure;if(role?.enabled&&role.role==='member'&&control.search&&binding?.assignment.target===role.hostField)control.search={...control.search,targetRole:'main'};const fields=resolveEffectiveFields(config,scope),key=control.prefillField??binding?.assignment.target;
     const field=fields.find(field=>field.key===key);
     if(field&&control.kind==='select')control.prefillAudit=createPrefillAudit(scope,field);
     if(field&&control.kind==='group'&&control.group?.storage==='scalar'&&control.group.itemFields[0])control.group.itemFields[0].prefillAudit=createPrefillAudit(scope,field);

@@ -12,7 +12,7 @@
  *     - onRouteFound 仍保持传回 Array<{coord}>，但会额外挂载 styledSegments / stationMarkers（后续 MapContainer/RouteHighlightLayer 可直接复用）
  */
 
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
 import {
   X,
   ArrowUpDown,
@@ -46,6 +46,10 @@ import type { RouteHighlightData, RouteStyledSegment, RouteStationMarker } from 
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 
+import type {ConfigPackageV3} from '@/configStudio/types';
+import {categorySearchIndex,categorySearchSubtitle,findCategorySearchEntries} from '@/components/Search/configSearch';
+import {ConfigSearchExtension} from '@/components/Search/ConfigSearchExtension';
+import {getRuleSearchPoolVersion,subscribeRuleSearchPool} from '@/components/Rules/search/ruleSearchRegistry';
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { hasEnabledTemporaryRuleSources } from '@/components/Rules/data/temporaryRuleSession';
 import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
@@ -224,10 +228,12 @@ export type NavigationInitialPoint = {
   coord: Coordinate;
   extra?: string;
   ruleRecord?: FeatureRecord;
+  configExtension?:boolean;
   nonce?: number;
 };
 
 interface NavigationPanelProps {
+  configRuntime?:ConfigPackageV3;
   stations: ParsedStation[];
   lines: ParsedLine[];
   landmarks: ParsedLandmark[];
@@ -250,6 +256,7 @@ interface SearchItem {
 
   // rule 专用
   ruleRecord?: FeatureRecord;
+  configExtension?:boolean;
 
   // StaBuilding 专用（可选，但建议保留）
   staBuildingId?: string;
@@ -341,6 +348,7 @@ const DEFAULT_RAIL_NEW_CONFIG = {
 // ---------------------------
 
 interface PointSearchInputProps {
+  configRuntime?:ConfigPackageV3;
   value: SearchItem | null;
   onChange: (item: SearchItem | null) => void;
   items: SearchItem[];
@@ -354,7 +362,8 @@ interface PointSearchInputProps {
 
 type LineToken = { label: string; color: string; title?: string };
 
-function PointSearchInput({ value, onChange, items, placeholder, label, labelRight, disabled, railIndex, buildingNameIndex }: PointSearchInputProps) {
+function PointSearchInput({ configRuntime, value, onChange, items, placeholder, label, labelRight, disabled, railIndex, buildingNameIndex }: PointSearchInputProps) {
+  const nativeSearch=Boolean(configRuntime&&configRuntime.contractRevision>=10);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState(value?.name || '');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -538,10 +547,10 @@ function PointSearchInput({ value, onChange, items, placeholder, label, labelRig
                   <div data-sr-left className="flex-1 min-w-0">
                     <div data-sr-left-inner className="flex flex-col min-w-0">
                       <div className="text-sm font-medium text-gray-800 truncate">{item.name}</div>
-                      {item.extra && (
+                      {(item.extra||item.configExtension) && (
                         <div className="text-xs text-gray-500 flex items-center gap-2 min-w-0">
                           <span className="shrink-0">{(() => {
-                            if (item.type !== 'rule') return item.extra;
+                            if (item.type !== 'rule'||nativeSearch) return item.extra;
                             const r = item.ruleRecord;
                             const fi: any = r?.featureInfo ?? {};
                             const cls = String(r?.meta?.Class ?? fi?.Class ?? '').trim();
@@ -560,8 +569,9 @@ function PointSearchInput({ value, onChange, items, placeholder, label, labelRig
                             return item.extra;
                           })()}</span>
 
+                          {nativeSearch&&configRuntime&&item.ruleRecord?<ConfigSearchExtension config={configRuntime} record={item.ruleRecord} railIndex={railIndex}/>:null}
                           {/* 包含线路：PLF/PFB/STA/STB/SBP */}
-                          {item.type === 'rule' && (() => {
+                          {item.type === 'rule' && !nativeSearch && (() => {
                             const r = item.ruleRecord;
                             const fi: any = r?.featureInfo ?? {};
                             const cls = String(r?.meta?.Class ?? fi?.Class ?? '').trim();
@@ -574,7 +584,7 @@ function PointSearchInput({ value, onChange, items, placeholder, label, labelRig
                           })()}
 
                           {/* RLE：颜色条 */}
-                          {item.type === 'rule' && (() => {
+                          {item.type === 'rule' && !nativeSearch && (() => {
                             const r = item.ruleRecord;
                             const fi: any = r?.featureInfo ?? {};
                             const cls = String(r?.meta?.Class ?? fi?.Class ?? '').trim();
@@ -814,6 +824,7 @@ function buildRailNewPlanFromIntegrated(raw: NavRailNewIntegratedPlan, startCoor
 // ---------------------------
 
 export function NavigationPanel({
+  configRuntime,
   stations,
   lines,
   landmarks,
@@ -824,6 +835,8 @@ export function NavigationPanel({
   onPointClick,
   initialEndPoint,
 }: NavigationPanelProps) {
+  const poolVersion=useSyncExternalStore(listener=>subscribeRuleSearchPool(worldId,listener),()=>getRuleSearchPoolVersion(worldId));
+  const nativeSearch=Boolean(configRuntime&&configRuntime.contractRevision>=10);
   const [startPoint, setStartPoint] = useState<SearchItem | null>(null);
   const [endPoint, setEndPoint] = useState<SearchItem | null>(null);
   const [travelMode, setTravelMode] = useState<TravelModePanel>('rail_new');
@@ -1175,7 +1188,8 @@ useEffect(() => {
       const pool = getRuleSearchPool(worldId);
       const buildingNameIndex = buildBuildingNameIndex(pool);
       const ruleItems: SearchItem[] = [];
-      for (const r of pool) {
+      if(nativeSearch&&configRuntime){const index=categorySearchIndex(configRuntime,pool);for(const entry of findCategorySearchEntries(configRuntime,pool,worldId,'')){const r=entry.record,coord=getRepresentativeCoordForRule(r);if(coord)ruleItems.push({type:'rule',name:getRuleDisplayName(r).name,extra:categorySearchSubtitle(configRuntime,index,entry),searchKey:entry.hay,coord,ruleRecord:r,configExtension:entry.search.extension.mode!=='none'});}}
+      for (const r of nativeSearch?[]:pool) {
         if (isRuleBlacklisted(r)) continue;
         const coord = getRepresentativeCoordForRule(r);
         if (!coord) continue;
@@ -1197,8 +1211,8 @@ useEffect(() => {
         ruleItems.push({ type: 'rule', name: disp.name, extra, searchKey, coord, ruleRecord: r });
       }
       ruleItems.sort((a, b) => {
-        const pa = a.ruleRecord ? getRulePriorityIndex(a.ruleRecord) : Number.POSITIVE_INFINITY;
-        const pb = b.ruleRecord ? getRulePriorityIndex(b.ruleRecord) : Number.POSITIVE_INFINITY;
+        const pa = a.ruleRecord ? nativeSearch&&configRuntime?categorySearchIndex(configRuntime,pool).byRecord.get(a.ruleRecord)?.priority??100:getRulePriorityIndex(a.ruleRecord) : Number.POSITIVE_INFINITY;
+        const pb = b.ruleRecord ? nativeSearch&&configRuntime?categorySearchIndex(configRuntime,pool).byRecord.get(b.ruleRecord)?.priority??100:getRulePriorityIndex(b.ruleRecord) : Number.POSITIVE_INFINITY;
         if (pa !== pb) return pa - pb;
         return a.name.localeCompare(b.name, 'zh-Hans-CN');
       });
@@ -1208,7 +1222,7 @@ useEffect(() => {
     }
 
     return items;
-  }, [stations, landmarks, players, railNewStaBuildingItems, worldId]);
+  }, [stations, landmarks, players, railNewStaBuildingItems, worldId,poolVersion,configRuntime]);
 
   const railwayGraph = useMemo(() => (legacyBundle ? legacyBundle.buildRailwayGraph(lines) : null), [legacyBundle, lines]);
   const toriiList = useMemo(() => (legacyBundle ? legacyBundle.extractToriiList(landmarks) : []), [legacyBundle, landmarks]);
@@ -1519,6 +1533,7 @@ if (travelMode === 'road') {
         <div className="flex items-start gap-2 mb-2">
           <div className="flex-1">
             <PointSearchInput
+              configRuntime={configRuntime}
               value={startPoint}
               onChange={(v) => {
                 setStartPoint(v);
@@ -1558,6 +1573,7 @@ if (travelMode === 'road') {
 
         <div className="mb-2">
           <PointSearchInput
+              configRuntime={configRuntime}
             value={endPoint}
             onChange={(v) => {
               setEndPoint(v);

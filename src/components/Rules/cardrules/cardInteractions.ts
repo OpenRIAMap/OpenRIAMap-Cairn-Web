@@ -9,6 +9,7 @@ export type CardExternalLinkValue = {
 
 /** 信息卡 ID 跳转的目标匹配约束。 */
 export type CardFeatureLinkTarget = {
+  structureRole?:'main';
   /** 目标范围约束。 */
   classCode?: string;
   kind?: string;

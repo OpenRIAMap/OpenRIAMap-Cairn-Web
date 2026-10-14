@@ -1888,6 +1888,7 @@ map.on('mousemove', handleMouseMove);
       case 'navigation':
         return (
           <NavigationPanel
+            configRuntime={configRuntime}
             stations={stations}
             lines={lines}
             landmarks={landmarks}
@@ -2105,6 +2106,7 @@ case 'players':
         </AppCard>
 
         <SearchBar
+          configRuntime={configRuntime}
           variant="desktop"
           stations={searchStations}
           landmarks={searchLandmarks}
@@ -2139,6 +2141,7 @@ case 'players':
 
       <div className="sm:hidden absolute top-2 left-2 right-2 z-[1003]">
         <SearchBar
+          configRuntime={configRuntime}
           variant="mobile"
           mobile
           stations={searchStations}
@@ -2294,6 +2297,7 @@ case 'players':
           defaultPosition={{ x: 16, y: 240 }}
         >
           <NavigationPanel
+            configRuntime={configRuntime}
             stations={stations}
             lines={lines}
             landmarks={landmarks}

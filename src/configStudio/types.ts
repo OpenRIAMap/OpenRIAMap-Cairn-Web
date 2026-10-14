@@ -560,7 +560,7 @@ export type CategorySearch = {
   inheritance?:'sealed'|'overridable';
   queryFields:string[];
   priority?:number;
-  subtitle:{mode:'classification'|'classificationField'|'field';classificationLabel?:LocalizedText;field?:string;valueMode?:'value'|'meaning'|'reference';referenceDisplayField?:string;valueOptions?:SelectOption[];prefillAudit?:PrefillAudit};
+  subtitle:{mode:'classification'|'classificationField'|'field';classificationLabel?:LocalizedText;fallbackClassificationLabel?:LocalizedText;field?:string;valueMode?:'value'|'meaning'|'reference';referenceDisplayField?:string;valueOptions?:SelectOption[];prefillAudit?:PrefillAudit};
   extension:{mode:'none'|'nameColorCapsule'|'lineChips';nameField?:string;displayName?:boolean;colorField?:string;fallbackColor?:string;lineChipSource?:'platform'|'station'|'stationBuilding'};
 };
 export type NodeFieldSettings={structure?:StructureRole;search?:CategorySearch};
@@ -618,6 +618,7 @@ export type ConfigEngineSettings = {
 export type CardRenderer = 'text' | 'tag' | 'colorCapsule' | 'nameColorCapsule' | 'relationLink' | 'lineChips' | 'media';
 export type CardSection = 'main' | 'other';
 export type CardRelation = {
+  targetRole?:'main';
   targetClassification?: ClassificationPath;
   targetMatchField?: string;
   targetDisplayField?: string;
@@ -699,6 +700,7 @@ export type CategoryNode = {
 
 export type SearchProfile = {
   target: ClassificationPath;
+  targetRole?:'main';
   /** One reusable feature-search model replaces the old duplicate coarse
    * search control. The old fields remain import-only compatibility data. */
   queryFields?: string[];

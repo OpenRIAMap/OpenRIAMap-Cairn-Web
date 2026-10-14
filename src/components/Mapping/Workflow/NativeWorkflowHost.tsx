@@ -1,4 +1,5 @@
 import { NativeDrawingSession } from './nativeDrawingSession';
+import {assertStructureTargets} from '@/configStudio/structureCommit';
 import {isQuickMappingWorkflow} from '@/configStudio/workflowEditing';
 import { drawingKey, enabledDrawing } from '@/configStudio/workflowDrawing';
 import { migrateWorkflowDrawings } from '@/configStudio/workflowDrawingMigration';
@@ -59,6 +60,6 @@ export function NativeWorkflowHost({ config, workflow, bridge, registry, onCommi
       if(coords.length>=(geometry==='Point'?1:geometry==='LineString'?2:3))bridgeRef.current.upsertWorkflowPreview(`native:${outputId}`,geometry==='Point'?'point':geometry==='LineString'?'polyline':'polygon',coords);
       return {coordinates:coords,point:rawPoint?{x:rawPoint.x,y:rawPoint.y,z:rawPoint.z}:undefined};
     }}
-    onSubmit={outputs => { if (normalizeV3WorldId(bridgeRef.current.getCurrentWorldId()) !== snapshot.world) throw new Error('当前世界与工作流坐标不一致。'); onCommit(snapshot.config, snapshot.workflow, outputs); exit(); }}
+    onSubmit={outputs => { if (normalizeV3WorldId(bridgeRef.current.getCurrentWorldId()) !== snapshot.world) throw new Error('当前世界与工作流坐标不一致。');const latest=[...Object.values(useRuleDataStore.getState().datasets).flatMap(dataset=>dataset.features),...(bridgeRef.current.getCommittedLayerJsonInfos?.().map(item=>item.featureInfo)??[])].map(raw=>(raw.featureInfo&&typeof raw.featureInfo==='object'?raw.featureInfo:raw) as MountedFeatureRecord);const removed=new Set(bridgeRef.current.getDeleteMarkedFeatureIds?.()??[]);assertStructureTargets(snapshot.config,outputs.map(output=>output.record),latest.filter(record=>!removed.has(String(record.ID??''))));onCommit(snapshot.config, snapshot.workflow, outputs); exit(); }}
   /></fieldset></div>;
 }

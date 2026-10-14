@@ -20,7 +20,7 @@ for(const node of old.nodes){
   for(const item of before.items.filter(item=>item.visible)){
     const next=after.items.find(next=>next.id===item.id);
     assert(next?.visible,`${node.nodeId}/${item.id} visible row lost`);
-    assert.equal(next.renderer,item.renderer);assert.equal(next.section,item.section);assert.deepEqual(next.relation,item.relation);
+    assert.equal(next.renderer,item.renderer);assert.equal(next.section,item.section);if(next.relation?.targetRole==='main'){assert.equal(next.relation.targetMatchField,'ID');assert.equal(next.relation.targetDisplayField,item.relation?.targetDisplayField);}else assert.deepEqual(next.relation,item.relation);
     if(JSON.stringify([next.source,next.label,next.valueOptions])!==JSON.stringify([item.source,item.label,item.valueOptions]))cardChanges.push({node:node.nodeId,item:item.id,before:[item.source,item.label,item.valueOptions],after:[next.source,next.label,next.valueOptions]});
   }
 }

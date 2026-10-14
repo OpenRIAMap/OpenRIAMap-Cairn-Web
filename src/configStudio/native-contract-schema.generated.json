@@ -3669,6 +3669,13 @@
             }
           ]
         },
+        "fallbackClassificationLabel": {
+          "anyOf": [
+            {
+              "ref": "t1"
+            }
+          ]
+        },
         "field": {
           "anyOf": [
             {
@@ -5612,6 +5619,13 @@
     "t108": {
       "type": "object",
       "properties": {
+        "targetRole": {
+          "anyOf": [
+            {
+              "const": "main"
+            }
+          ]
+        },
         "targetClassification": {
           "anyOf": [
             {
@@ -6572,6 +6586,13 @@
       "properties": {
         "target": {
           "ref": "t16"
+        },
+        "targetRole": {
+          "anyOf": [
+            {
+              "const": "main"
+            }
+          ]
         },
         "queryFields": {
           "anyOf": [

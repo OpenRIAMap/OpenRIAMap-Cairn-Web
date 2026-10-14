@@ -46,7 +46,9 @@ function relationEditor({ config, item, onChange }: { config: ConfigPackageV3; i
     ...item,
     relation: { ...item.relation, targetClassification: { ...target, ...patch }, targetMatchField: '', targetDisplayField: '' },
   });
+  if(config.contractRevision>=10&&item.relation?.targetRole==='main')return <div className="mt-2 rounded border border-violet-200 bg-violet-50 p-2 text-xs"><label><input type="checkbox" checked onChange={()=>onChange({...item,relation:{...item.relation,targetRole:undefined,targetClassification:{class:''}}})}/> 按 ID 指向任意主结构</label><label className="mt-2 block">目标显示字段<input className="mt-1 w-full rounded border px-2 py-1" value={item.relation.targetDisplayField??'Name'} onChange={event=>onChange({...item,relation:{...item.relation,targetDisplayField:event.target.value}})}/></label></div>;
   return <div className="mt-2 rounded border border-violet-200 bg-violet-50 p-2">
+    {config.contractRevision>=10?<label className="block text-xs"><input type="checkbox" checked={false} onChange={()=>onChange({...item,relation:{...item.relation,targetRole:'main',targetClassification:undefined,targetMatchField:'ID',targetDisplayField:'Name'}})}/> 按 ID 指向任意主结构</label>:null}
     <p className="text-xs text-violet-800">目标范围变更时，目标匹配字段与目标展示字段会自动清空，避免误绑定。</p>
     <div className="mt-2 cm-flex-grid gap-2">
       <label className="text-xs">Class<select className="mt-1 w-full rounded border px-2 py-1" value={target.class} onChange={(event) => updatePath({ class: event.target.value, kind: undefined, skind: undefined, skind2: undefined })}><option value="">选择 Class</option>{classes.map((value) => <option key={value}>{value}</option>)}</select></label>
