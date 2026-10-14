@@ -10,8 +10,8 @@ Node 24.21.0 / npm 11.19.0 下锁文件安装、合并基线的 39 组核验及 
 | --- | --- | --- |
 | 合并基线冻结 | 完成 | 0fa9b98；`.cache/main-update/baseline-build.txt` |
 | 新契约及默认迁移 | 待实施 | |
-| UI-01/02 与 FORM-01～04 | 第一批完成，最终全编辑器复核待后续模块 | 21 个编辑器柔性布局；真实控件宽度、双导航、三态、搜索关闭及标签零行验收通过，39 组核验/build 通过 |
-| DRAW-01/02 | 待实施 | |
+| UI-01/02 与 FORM-01～04 | 第一批完成，最终全编辑器复核待后续模块 | b64f21c；21 个编辑器柔性布局；真实控件宽度、双导航、三态、搜索关闭及标签零行验收通过，39 组核验/build 通过 |
+| DRAW-01/02 | 完成，最终全量回归保留 | 40 组核验/build 通过；17 个原生工作流、34 份最终 record 与冻结 V1 fixture 完全一致；真实地图 TPP 目标点→主点→信息页回退/撤销/重画后，主坐标与目标坐标/高度独立保留。证据 `.cache/main-update/subject-native-workflow-matrix.json`、`subject-drawing-session.json`、`draw-verify.txt`、`draw-build.txt` |
 | INHERIT-01 / PREFILL-01 | 待实施 | |
 | REL-01 / SEARCH-01 | 待实施 | |
 | TABLE-01 | 待实施 | |

@@ -70,6 +70,8 @@ export type WorkflowBridge = {
 
   /** 草稿点序 */
   getTempPoints: () => WorldPoint[];
+  /** Event driven notifications, including drag, undo/redo and explicit clears. */
+  subscribeDrawingChanges?: (listener: () => void) => () => void;
   setTempPoints: (pts: WorldPoint[]) => void;
   clearTempPoints: () => void;
 

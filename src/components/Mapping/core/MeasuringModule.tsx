@@ -12,7 +12,7 @@ import { validateConfigPackage } from '@/configStudio/runtime';
 import { getClassConfigByCode } from '@/core/project/classMetadata';
 import type { ConfigPackageV3, WorkflowDefinition } from '@/configStudio/types';
 import type { V3WorkflowRunResult } from '@/configStudio/V3WorkflowRunner';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type ChangeEvent, type RefObject } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type ChangeEvent, type RefObject, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -347,7 +347,14 @@ useEffect(() => { if (configRuntime && !workflowRunning && !configRuntime.workfl
 
 // 当前临时点集合（临时绘制的坐标）
 // 说明：y 为可选（仅在部分 JSON 子类型需要输出 [x,y,z] 时使用；地图渲染仍使用固定 y=64）
-const [tempPoints, setTempPoints] = useState<Array<{ x: number; z: number; y?: number }>>([]);
+const [tempPoints, setTempPointState] = useState<Array<{ x: number; z: number; y?: number }>>([]);
+const tempPointsRef=useRef(tempPoints);
+const drawingListeners=useRef(new Set<()=>void>());
+const setTempPoints=useCallback((value:typeof tempPoints|((previous:typeof tempPoints)=>typeof tempPoints))=>{
+  const next=typeof value==='function'?value(tempPointsRef.current):value;
+  tempPointsRef.current=next;setTempPointState(next);
+},[]);
+useEffect(()=>{for(const listener of drawingListeners.current)listener();},[tempPoints]);
 
 // 对外广播测绘激活态（用于禁用导航“图上选点”等交互）
 useEffect(() => {
@@ -4905,7 +4912,8 @@ const workflowBridge: WorkflowBridge = {
 
   setDrawColor: (hex: string) => setDrawColor(hex),
 
-  getTempPoints: () => tempPoints,
+  getTempPoints: () => tempPointsRef.current,
+  subscribeDrawingChanges: listener => {drawingListeners.current.add(listener);return()=>{drawingListeners.current.delete(listener);};},
   setTempPoints: (pts: WorldPoint[]) => {
     const next = (pts ?? []) as any;
     // Workflow data is always a flat single-component draft.  It must not

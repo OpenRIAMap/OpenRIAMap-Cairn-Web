@@ -313,11 +313,15 @@ export function ControlInput({ control, value, onChange, config, records, world,
 
 /** Usable generic runner. It runs V3-composed flows and performs the same
  * target-scoped search used by saved workflows; external units remain intact. */
-export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = [], worldId, initialActor = '', onSubmit, onRequestExternal, onRequestGeometry, onCaptureGeometry, onPreviewGeometry, onStepChange, onPreviewSlotsChange }: {
+export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = [], worldId, initialActor = '', onSubmit, onRequestExternal, onRequestGeometry, onCaptureGeometry, onPreviewGeometry, onStepChange, onPreviewSlotsChange, activeDrawingKey, drawingRevision=0, drawingPaused=false, onInvalidateGeometry }: {
   config: ConfigPackageV3; workflow: WorkflowDefinition; records?: MountedFeatureRecord[]; worldId?: string; initialActor?: string;
   onSubmit?: (result: V3WorkflowRunResult) => void | Promise<void>;
   onRequestExternal?: (workflow: WorkflowDefinition) => void;
   onRequestGeometry?: (outputId: string, geometry: string, options?:{newPart?:boolean;multiple?:boolean}) => void | MultipartCoord[] | Promise<void | MultipartCoord[]>;
+  activeDrawingKey?:string;
+  drawingRevision?:number;
+  drawingPaused?:boolean;
+  onInvalidateGeometry?:(id:string)=>void;
   onPreviewGeometry?:(id:string,geometry:MultipartGeometry)=>void;
   onCaptureGeometry?: (outputId: string, geometry: string) => MultipartCoord[] | V3GeometryCapture;
   onStepChange?: (step: WorkflowStep | undefined) => void;
@@ -325,6 +329,8 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
 }) {
   const [coordinates, setCoordinates] = useState<Record<string, MultipartCoord[] | MultipartGeometry>>({});
   const captures=useRef<Record<string,WorkflowDrawingCapture>>({});
+  const liveCapture=useRef<(()=>void)|undefined>();
+  const [liveCounts,setLiveCounts]=useState<Record<string,number>>({});
   const actions=useRef<Record<string,'replace'|'part'|'ring'>>({});
   const [createdAt] = useState(() => new Date());
   const [geometryErrors, setGeometryErrors] = useState<Record<string, string>>({});
@@ -344,6 +350,9 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
   const typedSlots=useMemo(()=>normalizeV3WorkflowSlots(workflow,slots),[workflow,slots]);
   const steps = workflow.mode === 'composed' ? workflow.steps.filter(step=>step.kind!=='geometry'||enabledDrawing(step,workflow,typedSlots)) : [];
   const step = steps[Math.min(page,steps.length-1)];
+  const activeTask=workflow.steps.find(task=>task.kind==='geometry'&&drawingKey(task)===activeDrawingKey);
+  const activeHeight=activeTask?.drawing?.heightSlot?typedSlots[activeTask.drawing.heightSlot]:undefined;
+  useEffect(()=>{liveCapture.current?.();},[drawingRevision,activeDrawingKey,drawingPaused,activeHeight]);
   useEffect(() => { stepCallback.current?.(step); titleRef.current?.scrollIntoView({block:"start"}); }, [step?.id, page]);
   useEffect(() => { onPreviewSlotsChange?.(typedSlots); }, [typedSlots, onPreviewSlotsChange]);
   useEffect(() => { setSlots(current => ({ ...defaults(), ...current, World: activeWorld })); }, [workflow, activeWorld]);
@@ -365,7 +374,22 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
     setCoordinates(current=>({...current,[id]:result.geometry}));setGeometryInputs(current=>({...current,[id]:JSON.stringify(value.coordinates)}));setGeometryErrors(current=>({...current,[id]:''}));
     setSlots(current=>({...current,...captureDrawingSnapshot({...workflow,steps:[task]},coerceWorkflowValues(workflow,current),{[id]:value}).slots}));
   };
-  const captureGeometry=()=>{const id=drawingKey(step),type=step.geometry![0];try{acceptGeometry(id,type,onCaptureGeometry!(id,type));}catch(error){setGeometryErrors(current=>({...current,[id]:error instanceof Error?error.message:'几何无效。'}));}};
+  liveCapture.current=()=>{
+    if(!onCaptureGeometry||!activeDrawingKey||drawingPaused)return;
+    const task=workflow.steps.find(item=>item.kind==='geometry'&&drawingKey(item)===activeDrawingKey);
+    if(!task||!enabledDrawing(task,workflow,typedSlots))return;
+    try {
+      const capture=onCaptureGeometry(activeDrawingKey,task.geometry![0]);
+      const raw=Array.isArray(capture)?capture:capture.coordinates;
+      setLiveCounts(current=>({...current,[activeDrawingKey]:raw.length}));
+      acceptGeometry(activeDrawingKey,task.geometry![0],capture);
+    } catch(error) {
+      const message=error instanceof Error?error.message:'几何无效。';
+      setGeometryErrors(current=>({...current,[activeDrawingKey]:message}));
+      onInvalidateGeometry?.(activeDrawingKey);
+    }
+  };
+
   const newPart=(action:'part'|'ring')=>{const id=drawingKey(step);try{if(onCaptureGeometry)acceptGeometry(id,step.geometry![0],onCaptureGeometry(id,step.geometry![0]));else if(!captures.current[id])throw new Error('请先完成当前部件。');actions.current[id]=action;setGeometryInputs(current=>({...current,[id]:'[]'}));void onRequestGeometry?.(id,step.geometry![0],{newPart:true,multiple:true});}catch(error){setInputIssues([{stepId:step.id,message:error instanceof Error?error.message:'无法添加部件。'}]);}};
 
   const snapshot=(tasks:WorkflowStep[])=>{
@@ -389,8 +413,9 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
       savingRef.current=true;setSaving(true);try{await onSubmit?.(output);setSubmitted(output);}finally{savingRef.current=false;setSaving(false);}
     }catch(error){setInputIssues([{message:error instanceof Error?error.message:'保存失败，请重试。'}]);savingRef.current=false;setSaving(false);}
   };
+  const geometryBlocked=step.kind==='geometry'&&Boolean(onCaptureGeometry)&&(drawingPaused||!captures.current[drawingKey(step)]?.geometry||Boolean(geometryErrors[drawingKey(step)]));
   const navigation=<div className="mt-3 flex justify-between"><button type="button" disabled={page === 0 || saving || step.kind === 'geometry' && step.drawing?.allowBack === false} className="rounded border px-3 py-1 disabled:opacity-40" onClick={() => {setInputIssues([]);if(step.kind==='geometry'&&step.drawing?.keepDrawingWhenBack===false){const key=drawingKey(step);delete captures.current[key];delete actions.current[key];setCoordinates(current=>({...current,[key]:[]}));setGeometryInputs(current=>({...current,[key]:'[]'}));setGeometryErrors(current=>({...current,[key]:''}));setSlots(current=>{const next={...current};for(const slot of [step.drawing?.captureSlot,step.drawing?.pointSlot,...(step.drawing?.auxiliaryPoints??[]).map(point=>point.slot)])if(slot)for(const token of [slot,`${slot}_RAW_POINT`,`${slot}_X`,`${slot}_Y`,`${slot}_Z`,`${slot}_HEIGHT`])delete next[token];return next;});}setPage(value=>Math.max(0,value-1));} }>上一页</button>
-      {page === steps.length - 1 ? <button type="button" disabled={saving || Boolean(submitted)} className="rounded bg-emerald-600 px-3 py-1 text-white disabled:opacity-40" onClick={() => void submit()}>{saving ? '保存中…' : onSubmit ? '确认保存输出' : '生成预览输出'}</button> : <button type="button" className="rounded bg-blue-600 px-3 py-1 text-white" onClick={next}>下一页</button>}
+      {page === steps.length - 1 ? <button type="button" disabled={saving || Boolean(submitted) || geometryBlocked} className="rounded bg-emerald-600 px-3 py-1 text-white disabled:opacity-40" onClick={() => void submit()}>{saving ? '保存中…' : onSubmit ? '确认保存输出' : '生成预览输出'}</button> : <button type="button" disabled={saving||geometryBlocked} className="rounded bg-blue-600 px-3 py-1 text-white disabled:opacity-40" onClick={next}>下一页</button>}
     </div>;
   return <section data-workflow-step={step.id} className="cm-workflow-page rounded-lg border bg-white p-3">
     <div ref={titleRef} className="mb-3 flex flex-wrap justify-between gap-2"><strong>{step.label.zh}</strong><span className="text-xs">世界：{activeWorld} · 第 {page + 1} / {steps.length} 页</span></div>
@@ -398,17 +423,17 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
     {step.kind === 'actor' ? <label className="block text-sm">填写人<input aria-label="填写人" className="mt-1 w-full rounded border px-2 py-1" value={String(slots.actor ?? '')} onChange={event => setSlots(current => ({ ...current, actor: event.target.value }))} /></label> : null}
     {step.kind === 'tagsExtensions' ? <div className="cm-flex-grid gap-2">{(['tags', 'extensions'] as const).filter(key => step.tagsExtensions?.[key === 'tags' ? 'tagsEnabled' : 'extensionsEnabled'] !== false).map(key => <textarea key={key} className="rounded border p-2 text-sm" rows={3} placeholder={`${key} JSON（可选）`} value={typeof slots[key] === 'object' ? JSON.stringify(slots[key]) : String(slots[key] ?? '')} onChange={event => setSlots(current => ({ ...current, [key]: event.target.value }))} />)}</div> : null}
     {step.kind === 'geometry' ? <div className="rounded border border-dashed p-3 text-sm">
-      <p>固定绘制类型：{step.geometry?.[0]} · 已采用 {captures.current[drawingKey(step)]?.coordinates.length ?? 0} 个坐标</p>
-      <button type="button" className="mt-2 rounded border px-2 py-1" onClick={() => {
+      <p>固定绘制类型：{step.geometry?.[0]} · 当前 {onCaptureGeometry?liveCounts[drawingKey(step)]??0:captures.current[drawingKey(step)]?.coordinates.length??0} 个坐标{captures.current[drawingKey(step)]?.geometry?` · ${captures.current[drawingKey(step)]!.geometry!.parts.length} 个部件`:null}</p>
+      {!onCaptureGeometry||drawingPaused||step.drawing?.enabledFromThisPage===false?<button type="button" className="mt-2 rounded border px-2 py-1" onClick={() => {
         const outputId = drawingKey(step); const geometry = step.geometry![0];
         if (onRequestGeometry) void Promise.resolve(onRequestGeometry(outputId, geometry)).then(coords => { if (Array.isArray(coords)) acceptGeometry(outputId, geometry, coords); }).catch(error => setGeometryErrors(current => ({ ...current, [outputId]: error.message })));
         else { const coords = geometry === 'Point' ? [{ x: 0, y: -64, z: 0 }] : geometry === 'LineString' ? [{ x: 0, y: -64, z: 0 }, { x: 20, y: -64, z: 10 }] : [{ x: 0, y: -64, z: 0 }, { x: 20, y: -64, z: 0 }, { x: 20, y: -64, z: 20 }, { x: 0, y: -64, z: 0 }]; acceptGeometry(outputId, geometry, coords); }
-      }}>{onRequestGeometry ? '进入绘制' : '使用预览样例几何'}</button>
-      {onCaptureGeometry ? <button type="button" className="ml-2 rounded bg-blue-600 px-2 py-1 text-white" onClick={captureGeometry}>采用当前绘制</button> : <label className="mt-2 grid gap-1 text-xs">预览坐标（x / y / z）<textarea className="w-full rounded border p-2 font-mono" rows={3} value={geometryInputs[drawingKey(step)] ?? '[]'} onChange={event => {
+      }}>{onRequestGeometry ? '恢复绘制' : '使用预览样例几何'}</button>:null}
+      {!onCaptureGeometry ? <label className="mt-2 grid gap-1 text-xs">预览坐标（x / y / z）<textarea className="w-full rounded border p-2 font-mono" rows={3} value={geometryInputs[drawingKey(step)] ?? '[]'} onChange={event => {
         const outputId = drawingKey(step); setGeometryInputs(current => ({ ...current, [outputId]: event.target.value }));
         try { const coords = JSON.parse(event.target.value); if (!Array.isArray(coords)) throw new Error('坐标必须是数组。'); acceptGeometry(outputId, step.geometry![0], coords); }
         catch (error) { setGeometryErrors(current => ({ ...current, [outputId]: error instanceof Error ? error.message : '几何无效。' })); }
-      }} /></label>}
+      }} /></label>:null}
       {step.drawing?.multiple&&step.geometry?.[0]!=='Point'?<div className="mt-2 flex gap-2"><button type="button" onClick={()=>{newPart('part');}}>添加部件</button>{step.geometry?.[0]==='Polygon'?<button type="button" onClick={()=>{newPart('ring');}}>添加孔环</button>:null}</div>:null}{geometryErrors[drawingKey(step)] ? <p role="alert" className="text-rose-700">{geometryErrors[drawingKey(step)]}</p> : null}
     </div> : null}
     {(step.drawing?.auxiliaryPoints ?? []).filter(point => workflowConditionMatches(point.when, slots)).map(point => {
