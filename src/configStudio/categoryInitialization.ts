@@ -1,6 +1,7 @@
 import type { CategoryNode, ConfigPackageV3, FieldDefinition, GeometryKind, LabelAnchor } from './types';
-import { classificationPathKey, fieldScope, inheritanceControls, pathDepth, resolveCardConfiguration, resolveCategoryNodes, resolveEffectiveFields, resolveGeometryProfile, resolveSelectableFields, validateConfigPackage } from './runtime';
+import { classificationPathKey, fieldScope, inheritanceControls, pathDepth, resolveCardConfiguration, resolveCategoryNodes, resolveEffectiveFields, resolveGeometryProfile, resolveIncomingFields, resolveSelectableFields, validateConfigPackage } from './runtime';
 import { editableGeometryProfile, newConfigId } from './renderRuleTemplates';
+import { linkCardInheritance } from './cardInheritance';
 import { migrateConfigToR9 } from './r9Migration';
 
 export type CategoryInitialization = {
@@ -12,7 +13,7 @@ export type CategoryInitialization = {
 export type CategoryInitializationReport={actions:string[];renamed:Record<string,string>};
 const reserved=new Set(['World','Class','Kind','SKind','SKind2','Skind','Skind2','Type','ID','CreateBy','CreateTime','ModifityBy','ModifityTime']);
 function semanticField(field:FieldDefinition):string {
-  const {fieldId:_id,overrideOf:_override,scope:_scope,...definition}=field;
+  const {fieldId:_id,overrideOf:_override,scope:_scope,inheritance:_inheritance,...definition}=field;
   const stable=(value:unknown):string=>Array.isArray(value)?'['+value.map(stable).join(',')+']':value&&typeof value==='object'?'{'+Object.entries(value).filter(([,item])=>item!==undefined).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>JSON.stringify(key)+':'+stable(item)).join(',')+'}':JSON.stringify(value);
   return stable({...definition,scope:fieldScope(field)});
 }
@@ -55,7 +56,7 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
   if(sync.geometry&&!sourceCapability)throw Error('来源分类没有可用的几何设置。');
   const geometry=sync.geometry?sourceType!:request.geometry,multiple=sync.geometry?sourceCapability!.allowMultipleParts:request.multiple,anchor=multiple?(sync.geometry?sourceCapability!.anchor??'featureBbox':request.anchor):'featureBbox';
   if(parent&&resolveCategoryNodes(config,parent.path).some(node=>node.geometryType&&node.geometryType!==geometry))throw Error(`几何 ${geometry} 与目标祖先固定几何冲突。`);
-  const base=parent&&inheritanceControls(parent).fields?resolveEffectiveFields(config,parent.path).filter(field=>field.inheritance!=='localOnly'):[];
+  const base=config.contractRevision>=10?resolveIncomingFields(config,path):parent&&inheritanceControls(parent).fields?resolveEffectiveFields(config,parent.path).filter(field=>field.inheritance!=='localOnly'):[];
   const occupied=new Map(base.map(field=>[field.key,field]));
   actions.push(`目标 ${classificationPathKey(path)}；保留父级向下传递字段 ${base.length} 项与系统字段。`);
   const originals=sync.fields&&source?resolveEffectiveFields(config,source.path):[],copies=new Map<string,FieldDefinition>();
@@ -67,7 +68,7 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
     const {overrideOf:_override,...local}=structuredClone(field);const copied={...local,...(local.optionsTableId?{options:undefined}:{}),key,fieldId:newConfigId('field')};occupied.set(key,copied);copies.set(field.key,copied);actions.push(`复制字段：${key}`);
   }
   const fields=originals.flatMap(field=>{const copied=copies.get(field.key);return copied?[rewriteCategoryReferences(copied,renamed)]:[];});
-  const profile=editableGeometryProfile(geometry,9);
+  const profile=editableGeometryProfile(geometry,config.contractRevision);
   profile.allowMultipleParts=multiple;profile.anchor=anchor;
   if(sync.geometry&&sourceCapability)profile.interaction=structuredClone(sourceCapability.interaction);
   const display=source?resolveGeometryProfile(config,source.path,geometry):undefined;
@@ -76,8 +77,9 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
     profile.zoomPriority=rewriteCategoryReferences(structuredClone(display.zoomPriority),renamed);profile.zoomPriority.rules=profile.zoomPriority.rules.map(rule=>({...rule,id:newConfigId('render')}));profile.renderState=profile.zoomPriority.rules.length?'enabled':'unconfigured';actions.push(`复制显示规则 ${profile.zoomPriority.rules.length} 条。`);
   }else {profile.zoomPriority.rules=[];profile.renderState='unconfigured';actions.push('显示未配置：不会隐式继承或渲染。');}
   const card=sync.card&&source?rewriteCategoryReferences(structuredClone(resolveCardConfiguration(config,source.path)??{mode:'fields' as const,items:[]}),renamed):{mode:'fields' as const,items:[]};
-  if(card.mode==='fields')card.items=card.items.map(item=>({...item,id:newConfigId('card')}));
+  if(card.mode==='fields')card.items=card.items.map(item=>({...item,...(config.contractRevision>=10?{inheritFrom:undefined}:{}),id:newConfigId('card')}));
   const node:CategoryNode={nodeId:newConfigId('node'),path,classificationLabels:{...parent?.classificationLabels,[level]:{zh:request.labels.zh.trim()||code,en:request.labels.en}},children:[],inheritDown:source?structuredClone(inheritanceControls(source)):{fields:true,display:true,card:true},fields,geometryType:geometry,geometryProfiles:{[geometry]:profile},card};
+  if(config.contractRevision>=10&&parent&&inheritanceControls(parent).card)linkCardInheritance(node,resolveCardConfiguration(config,parent.path),parent.nodeId);
   const next=structuredClone(config);next.nodes.push(node);if(parent)next.nodes.find(item=>item.nodeId===parent.nodeId)!.children.push(node.nodeId);
   const available=new Set(resolveSelectableFields(next,path).map(field=>field.key));
   for(const dependency of localDependencies([profile.zoomPriority,card]))if(!available.has(dependency))throw Error(`未同步依赖字段 ${dependency}；请同步字段设计或调整初始化选择。`);

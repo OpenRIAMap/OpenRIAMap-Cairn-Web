@@ -68,6 +68,12 @@ export type FieldDefinition = {
   overrideOf?: string;
   inheritance?: InheritanceMode;
 };
+/** Validation evidence only. Never used to resolve a runtime value or source. */
+export type PrefillAudit = {
+  source: { path: ClassificationPath; fieldId: string; key: string };
+  fingerprint: string;
+  confirmedFingerprint?: string;
+};
 
 export type LabelRole = 'ignore' | 'soft' | 'optional' | 'important' | 'required';
 export type LabelAnchor = 'perPart' | 'featureBbox';
@@ -612,6 +618,8 @@ export type CardRelation = {
 };
 export type CardItem = {
   id: string;
+  inheritFrom?: { nodeId: string; itemId: string };
+  prefillAudit?: PrefillAudit;
   source: string;
   fallbackSources?: string[];
   afterRemaining?: boolean;
@@ -707,6 +715,7 @@ export type WorkflowControlKind = ComposedWorkflowControlKind | 'notice' | 'json
  * keep their individual fields, options and required state editable.
  */
 export type WorkflowGroupField = {
+  prefillAudit?: PrefillAudit;
   /** Local target hint copied once by prefill; no source identity is retained. */
   prefillField?: string;
   key: string;
@@ -741,6 +750,7 @@ export type WorkflowRepeatGroup = {
   addLabel?: LocalizedText;
 };
 export type WorkflowControl = {
+  prefillAudit?: PrefillAudit;
   prefillField?: string;
   id: string;
   slot?: string;

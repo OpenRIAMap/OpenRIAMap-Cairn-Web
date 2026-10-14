@@ -1,6 +1,6 @@
-import type { ConfigPackageV3, ConfigValidationIssue, FieldDefinition, LookupTable, SelectOption } from './types';
+import type { ConfigPackageV3, ConfigValidationIssue, FieldDefinition, LookupTable, PrefillAudit, SelectOption } from './types';
 
-export type OptionsOwner = { options?: SelectOption[]; optionsTableId?: string; optionValueType?: FieldDefinition['optionValueType'] };
+export type OptionsOwner = { options?: SelectOption[]; optionsTableId?: string; optionValueType?: FieldDefinition['optionValueType'];prefillAudit?:PrefillAudit };
 export function effectiveOptions(config: Pick<ConfigPackageV3,'lookupTables'>, owner: OptionsOwner): SelectOption[] {
   const rows = owner.optionsTableId ? config.lookupTables?.find(table=>table.id===owner.optionsTableId)?.rows ?? [] : owner.options ?? [];
   return rows.map(({value,label})=>({value,label}));
@@ -10,9 +10,9 @@ export function effectiveOptionsOwner<T extends OptionsOwner>(config: Pick<Confi
   return table?{...owner,options:effectiveOptions(config,owner),optionValueType:table.valueType}:owner;
 }
 export function bindOptionsTable<T extends OptionsOwner>(config:ConfigPackageV3, owner:T, tableId?:string):T {
-  if(!tableId){const {optionsTableId:_id,...copy}=effectiveOptionsOwner(config,owner);return {...copy,optionsTableId:undefined,options:structuredClone(effectiveOptions(config,owner))} as T;}
+  if(!tableId){const {optionsTableId:_id,...copy}=effectiveOptionsOwner(config,owner);return {...copy,optionsTableId:undefined,prefillAudit:undefined,options:structuredClone(effectiveOptions(config,owner))} as T;}
   const table=config.lookupTables?.find(item=>item.id===tableId);if(!table)throw Error('所选对照表不存在。');
-  return {...owner,optionsTableId:tableId,options:undefined,optionValueType:table.valueType};
+  return {...owner,optionsTableId:tableId,prefillAudit:undefined,options:undefined,optionValueType:table.valueType};
 }
 export function tableReferences(config:ConfigPackageV3, id:string):string[] {
   return [

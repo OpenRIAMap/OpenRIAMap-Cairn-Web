@@ -9,6 +9,7 @@ import { coerceWorkflowValues } from '../../src/configStudio/workflowValues';
 import { categoryArtifactBlob,createCategoryArtifact,prepareCategoryImport,prepareClassTreeCommit,readCategoryArtifact } from '../../src/configStudio/categoryArtifact';
 import { buildConfigPackageArchive,readConfigPackage } from '../../src/configStudio/package';
 import { HUB_RETURN_POINTS } from '../../src/components/Navigation/teleportHubReturnPoints';
+import {buildWorkflowArtifact,prepareWorkflowArtifactImport} from '../../src/configStudio/workflowArtifact';
 
 const config=JSON.parse(fs.readFileSync('src/configStudio/defaults/r9-r5.config.json','utf8')) as ConfigPackageV3;
 config.contractRevision=10;config.lookupTables=defaultLookupTables();
@@ -45,5 +46,9 @@ const destination=structuredClone(config);destination.lookupTables=destination.l
 const imported=prepareCategoryImport(destination,artifact);assert(imported.report.valid);assert(imported.config.lookupTables?.some(table=>table.id==='road-travel-modes'));
 const committed=prepareClassTreeCommit(destination,destination,imported.config,'ROD');assert(committed.lookupTables?.some(table=>table.id==='road-travel-modes'));
 const conflicting=structuredClone(destination);conflicting.lookupTables!.push({...tables[1],label:{zh:'不同名称',en:''}});assert.throws(()=>prepareCategoryImport(conflicting,artifact),/对照表.*存在差异/);
+const flowArtifact=buildWorkflowArtifact(config,flow);assert.equal(flowArtifact.contractRevision,10);assert.equal(flowArtifact.lookupTables!.length,2);
+const flowImport=prepareWorkflowArtifactImport(destination,flowArtifact);assert.equal(flowImport.tables.length,1);assert(!destination.lookupTables?.some(table=>table.id==='road-travel-modes'));
+assert.throws(()=>prepareWorkflowArtifactImport(conflicting,flowArtifact),/对照表.*冲突/);
+assert.throws(()=>prepareWorkflowArtifactImport(destination,{...flowArtifact,workflow:{...flowArtifact.workflow,unknown:true}}),/未知/);
 const archive=await buildConfigPackageArchive(config,validateConfigPackage(config));assert.deepEqual((await readConfigPackage(new File([archive],'config.zip'))),JSON.parse(JSON.stringify(config)));
 console.log('lookup-tables: V1 speeds/four return points, explicit binding/copy, scalar types, missing/conflicting references, category dependencies and package roundtrip passed');

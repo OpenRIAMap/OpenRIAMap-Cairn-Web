@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
-import type { CategoryNode, ClassificationPath, ConfigPackageV3, ConfigValidationReport, LookupTable } from './types';
-import { classificationPathKey, parentClassificationPath, pathDepth, resolveEffectiveFields, validateConfigPackage } from './runtime';
+import type { CategoryNode, ClassificationPath, ConfigPackageV3, ConfigValidationReport, FieldDefinition, LookupTable } from './types';
+import { classificationPathKey, parentClassificationPath, pathDepth, resolveIncomingFields, validateConfigPackage } from './runtime';
 import { validateNativeStructure } from './nativeContractValidation';
 import { createBlankV32Package } from './v32Defaults';
 import { migrateConfigToR9 } from './r9Migration';
@@ -10,6 +10,11 @@ export type CategoryArtifactPayload={schemaVersion:'cairnmap.category-artifact.v
 export type CategoryArtifact={payload:CategoryArtifactPayload;sha256:string};
 export function categoryStableText(value:unknown):string {if(Array.isArray(value))return '['+value.map(categoryStableText).join(',')+']';if(value&&typeof value==='object')return '{'+Object.entries(value).filter(([,v])=>v!==undefined).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>JSON.stringify(k)+':'+categoryStableText(v)).join(',')+'}';return JSON.stringify(value);}
 async function digest(value:unknown):Promise<string>{return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(categoryStableText(value))))].map(b=>b.toString(16).padStart(2,'0')).join('');}
+function inheritedFieldText(field:FieldDefinition,config:ConfigPackageV3):string{
+  const {fieldId:_id,overrideOf:_override,...definition}=field;
+  if(config.contractRevision>=10){const original=config.nodes.flatMap(node=>node.fields).find(row=>row.fieldId===field.fieldId);definition.inheritance=original?.inheritance??field.inheritance;if(field.optionsTableId)delete definition.options;}
+  return categoryStableText(definition);
+}
 
 function checkPayload(payload:CategoryArtifactPayload) {
   if(!payload||!([9,10].includes(payload.contractRevision))||payload.schemaVersion!==(payload.contractRevision===10?'cairnmap.category-artifact.v2':'cairnmap.category-artifact.v1')||!['node','classTree'].includes(payload.kind)||!payload.classCode||!Array.isArray(payload.nodes)||!payload.nodes.length||payload.nodes.length>2048||!Array.isArray(payload.ancestors))throw Error('文件不是受支持的单分类/Class 树输出。');
@@ -60,12 +65,12 @@ export function prepareCategoryImport(input:ConfigPackageV3,artifact:CategoryArt
   const incoming=structuredClone(payload.nodes),old=config.nodes.filter(n=>payload.kind==='classTree'?n.path.class===payload.classCode:classificationPathKey(n.path)===classificationPathKey(payload.path));
   const retained=config.nodes.filter(n=>!old.some(item=>item.nodeId===n.nodeId)),used=new Set(retained.map(n=>n.nodeId)),idMap=new Map<string,string>();
   for(const node of incoming){const previous=old.find(n=>classificationPathKey(n.path)===classificationPathKey(node.path));let id=previous?.nodeId??node.nodeId;if(used.has(id)){conflicts.push(`节点 ID 冲突：${id}`);id=newConfigId('node');}used.add(id);idMap.set(node.nodeId,id);node.nodeId=id;}
-  for(const node of incoming)node.children=node.children.map(id=>idMap.get(id)??id);
+  for(const node of incoming){node.children=node.children.map(id=>idMap.get(id)??id);if(node.card?.mode==='fields')for(const item of node.card.items)if(item.inheritFrom)item.inheritFrom.nodeId=idMap.get(item.inheritFrom.nodeId)??item.inheritFrom.nodeId;}
   if(payload.kind==='node')incoming[0].children=old[0]?.children??[];
   const fieldIds=new Set(retained.flatMap(n=>n.fields.map(f=>f.fieldId)));
-  for(const node of incoming){const parent=parentClassificationPath(node.path),upstream=parent?resolveEffectiveFields({...config,nodes:[...retained,...incoming]},parent).filter(f=>f.inheritance==='sealed'):[];
-    for(const field of node.fields){const fixed=upstream.find(f=>f.key===(field.overrideOf??field.key));if(fixed){const {fieldId:_a,overrideOf:_b,...local}=field,{fieldId:_c,overrideOf:_d,...inherited}=fixed;if(categoryStableText(local)!==categoryStableText(inherited))conflicts.push(`固定继承字段冲突：${classificationPathKey(node.path)} / ${field.key}`);}}
-    node.fields=node.fields.filter(field=>{const fixed=upstream.find(f=>f.key===(field.overrideOf??field.key));if(!fixed)return true;const {fieldId:_a,overrideOf:_b,...local}=field,{fieldId:_c,overrideOf:_d,...inherited}=fixed;return !fixConflicts&&categoryStableText(local)!==categoryStableText(inherited);});
+  for(const node of incoming){const parent=parentClassificationPath(node.path),upstream=parent?resolveIncomingFields({...config,nodes:[...retained,...incoming]},node.path):[];
+    for(const field of node.fields){const fixed=upstream.find(f=>f.key===(field.overrideOf??field.key));if(fixed){if(inheritedFieldText(field,config)!==inheritedFieldText(fixed,config))conflicts.push(`固定继承字段冲突：${classificationPathKey(node.path)} / ${field.key}`);}}
+    node.fields=node.fields.filter(field=>{const fixed=upstream.find(f=>f.key===(field.overrideOf??field.key));if(!fixed)return true;return !fixConflicts&&inheritedFieldText(field,config)!==inheritedFieldText(fixed,config);});
     const previous=old.find(n=>classificationPathKey(n.path)===classificationPathKey(node.path));
     for(const field of node.fields){const same=previous?.fields.find(f=>f.key===field.key);if(same)field.fieldId=same.fieldId;else if(fieldIds.has(field.fieldId)){conflicts.push(`字段 ID 冲突：${field.fieldId}`);field.fieldId=newConfigId('field');}fieldIds.add(field.fieldId);}
   }

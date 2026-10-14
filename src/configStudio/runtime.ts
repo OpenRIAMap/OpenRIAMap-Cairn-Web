@@ -5,6 +5,8 @@ import {resolveMappedColor} from './renderScalar';
 import {scalarValueErrors, validMappedColor} from './renderScalar';
 import { isNativeConfigRevision } from './contract';
 import { effectiveOptionsOwner, effectiveOptions, validateLookupTables } from './lookupTables';
+import { mergeInheritedCard } from './cardInheritance';
+import { validatePrefillCopies } from './prefillAudit';
 import { canonicalRenderFields, matchesRenderFields, renderRuleRange, validateRenderFields } from './renderRuleConditions';
 import type {
   AffectedFeature,
@@ -266,7 +268,11 @@ export function resolveEffectiveFields(config: ConfigPackageV3, path: Classifica
   const values = new Map<string, FieldDefinition>();
   let inherited = true;
   for (const [index, node] of resolveCategoryNodes(config, path).entries()) {
-    if (index > 0 && !inherited) values.clear();
+    if (index > 0 && !inherited) {
+      if(config.contractRevision>=10){for(const [key,field] of values)if(field.inheritance!=='sealed')values.delete(key);}
+      else values.clear();
+    }
+    if(index>0&&config.contractRevision>=10&&inherited)for(const [key,field] of values)if(field.inheritance!=='localOnly')values.set(key,{...field,inheritance:'sealed'});
     if(index>0&&config.contractRevision>=9&&node.receiveFromParent?.fields===false)for(const [key,field] of values)if(field.inheritance!=='sealed')values.delete(key);
     if (index > 0) for (const [key,field] of values) if (field.inheritance === 'localOnly') values.delete(key);
     for (const field of node.fields) {
@@ -278,6 +284,14 @@ export function resolveEffectiveFields(config: ConfigPackageV3, path: Classifica
   }
   const result = [...values.values()];
   return compiled ? cachedPathValue(compiled.fields, cacheKey, freezeData(result)) : result;
+}
+/** Incoming fixed fields, before any local declaration can mask them. */
+export function resolveIncomingFields(config:ConfigPackageV3,path:ClassificationPath):FieldDefinition[]{
+  const parent=parentClassificationPath(path);if(!parent)return [];
+  const node=config.nodes.find(node=>classificationPathKey(node.path)===classificationPathKey(parent));
+  const fields=resolveEffectiveFields(config,parent);
+  if(config.contractRevision<10)return fields.filter(field=>field.inheritance==='sealed');
+  return fields.filter(field=>field.inheritance==='sealed'||node&&inheritanceControls(node).fields&&field.inheritance!=='localOnly').map(field=>({...field,inheritance:'sealed'}));
 }
 
 export function resolveWorkflowSelectOptions(config: ConfigPackageV3, control: Pick<WorkflowControl, 'options' | 'optionSource' | 'optionsTableId'>): SelectOption[] {
@@ -362,7 +376,15 @@ export function resolveRenderExtensions(config: ConfigPackageV3, geometry: Geome
 export function resolveCardConfiguration(config: ConfigPackageV3, path: ClassificationPath): CardConfiguration | undefined {
   const compiled = compiledConfigs.get(config); const key = compiledPathKey(path);
   if (compiled?.cards.has(key)) { compiled.hits++; return compiled.cards.get(key); }
-  const result = resolveInheritedValue(config, path, 'card', (node) => node.card);
+  let result = resolveInheritedValue(config, path, 'card', (node) => node.card);
+  if(config.contractRevision>=10){
+    result=undefined;let parentId='',propagate=true;
+    for(const node of resolveCategoryNodes(config,path)){
+      const continuing=result?.mode==='fields'?{...result,items:result.items.filter(item=>item.inheritFrom)}:undefined;
+      result=mergeInheritedCard(propagate?result:continuing,node.card,parentId);
+      parentId=node.nodeId;propagate=inheritanceControls(node).card;
+    }
+  }
   return compiled ? cachedPathValue(compiled.cards, key, result) : result;
 }
 
@@ -713,6 +735,10 @@ function sourceExists(source: string, fields: Set<string>): boolean {
 
 function validateCard(node: CategoryNode, config: ConfigPackageV3, issues: ConfigValidationIssue[]): void {
   const path = `nodes/${node.nodeId}/card`;
+  if(config.contractRevision>=10&&node.card?.mode==='fields'){
+    const origins=new Set<string>(),ancestors=resolveCategoryNodes(config,node.path).filter(parent=>parent.nodeId!==node.nodeId);
+    for(const item of node.card.items)if(item.inheritFrom){const key=`${item.inheritFrom.nodeId}/${item.inheritFrom.itemId}`;if(origins.has(key)||!ancestors.some(parent=>parent.nodeId===item.inheritFrom!.nodeId))issue(issues,'error','card-inheritance-origin-invalid',`${path}/${item.id}`,'硬继承条目来源必须是同分支祖先且不能重复。');origins.add(key);}
+  }
   if(config.contractRevision>=9&&node.card?.mode==='fields'&&node.card.items.some(item=>item.labelMode||item.valueMode))issue(issues,'error','live-card-source-forbidden',path,'r9 信息卡不保留跟随/覆写状态，请先迁移。');
   const card = resolveCardConfiguration(config, node.path);
   if (!card) {
@@ -991,6 +1017,9 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
 export function validateWorkflowDefinition(workflow: WorkflowDefinition, config: ConfigPackageV3): ConfigValidationReport {
   const issues: ConfigValidationIssue[] = [];
   validateWorkflow(workflow, config, issues);
+  const scoped={...config,nodes:[],workflows:[workflow]};
+  issues.push(...validatePrefillCopies(scoped,(_config,path)=>resolveEffectiveFields(config,path)));
+  issues.push(...validateLookupTables(scoped));
   return {
     schemaVersion: 'cairnmap.config-validation-report.v3',
     valid: !issues.some((item) => item.severity === 'error'),
@@ -1145,6 +1174,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: false, createdAt: new Date().toISOString(), issues: structure.map(item => ({ severity: 'error', code: 'native-contract-structure-invalid', ...item })) };
   issues.push(...validateLookupTables(config));
+  issues.push(...validatePrefillCopies(config,resolveEffectiveFields));
   if (config.contractRevision>=8 && (config.registries.optionSets || config.nodes.some(node=>node.fields.some(field=>field.optionSource)) || config.workflows.some(workflow=>controlsFor(workflow).some(control=>control.optionSource)))) issue(issues,'error','legacy-option-source-forbidden','registries','r8 使用字段内对照；旧全局选项来源必须先迁移。');
   if (config.schemaVersion !== 'cairnmap.config-package.v3') issue(issues, 'error', 'schema-version-invalid', 'manifest', '配置包不是 cairnmap.config-package.v3。');
   if (!isNativeConfigRevision(config.contractRevision)) issue(issues, 'error', 'contract-revision-invalid', 'manifest', '配置包必须使用 V3.2 原生契约 revision 5/6。');
@@ -1164,7 +1194,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
     const base = `nodes/${node.nodeId}`;
     if(config.contractRevision>=9)for(const field of node.fields)if(field.defaultValue!==undefined||field.placeholder!==undefined)issue(issues,'error','field-input-setting-forbidden',base,'输入默认值和提示属于控件，不属于字段定义。');
     const parentScope = parentClassificationPath(node.path);
-    const inheritedFields = parentScope ? resolveEffectiveFields(config, parentScope) : [];
+    const inheritedFields = config.contractRevision>=10?resolveIncomingFields(config,node.path):parentScope ? resolveEffectiveFields(config, parentScope) : [];
     for (const field of node.fields) {
       if (inheritedFields.some(inherited => inherited.key === (field.overrideOf ?? field.key) && inherited.inheritance === 'sealed')) issue(issues, 'error', 'field-sealed-override', base, `字段 ${field.key} 已锁定继承，不能覆盖。`);
       if (field.optionSource && !config.registries.optionSets?.some(set => set.id === field.optionSource?.registryKey)) issue(issues, 'error', 'field-option-source-invalid', base, `字段 ${field.key} 的共享选项来源不存在。`);
