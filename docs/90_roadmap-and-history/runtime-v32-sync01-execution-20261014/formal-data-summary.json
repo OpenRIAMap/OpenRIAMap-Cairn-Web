@@ -1,0 +1,32 @@
+{
+  "release": {
+    "schemaVersion": "openriamap.current-release-set.v2",
+    "releaseId": "geometry-v1-aeb7cd1531696c31995cff53",
+    "formalVersion": 19,
+    "controlCommit": "cf93ef673cff0380b549a078570072c957e77155",
+    "publishedAt": "2026-09-21T18:19:08.033Z",
+    "worlds": [
+      "zth"
+    ]
+  },
+  "responseCount": 6,
+  "chunkCount": 2,
+  "records": 495,
+  "classes": {
+    "BUD": 37,
+    "FLR": 19,
+    "ISG": 16,
+    "PFB": 62,
+    "PLF": 140,
+    "RLE": 41,
+    "ROD": 34,
+    "STA": 69,
+    "STB": 54,
+    "STF": 10,
+    "TPP": 6,
+    "TRP": 1,
+    "WRP": 6
+  },
+  "featuresSha256": "836f601b48a54150db54dc556ff25824d9573f2311ac8ab99d8742cef76cf273",
+  "transportNote": "COS omits Access-Control-Allow-Origin for localhost. Isolated CDP acceptance fulfills exact captured remote bytes with local CORS headers; application and configured production endpoints are unchanged."
+}

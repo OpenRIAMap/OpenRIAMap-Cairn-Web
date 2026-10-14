@@ -1,0 +1,20 @@
+{
+  "comparisons": [
+    {
+      "mode": "v1",
+      "records": 495,
+      "visibleLabels": 10,
+      "paths": 37,
+      "sameLabelPositionsStylesAndPathGeometry": true
+    },
+    {
+      "mode": "v3",
+      "records": 495,
+      "visibleLabels": 9,
+      "paths": 76,
+      "sameLabelPositionsStylesAndPathGeometry": true
+    }
+  ],
+  "scope": "production RuleDrivenLayer inside identical controlled map harnesses; exact COS v19 records; fixed logical Zoom6 city viewport; no transient sources",
+  "runtimeErrors": []
+}

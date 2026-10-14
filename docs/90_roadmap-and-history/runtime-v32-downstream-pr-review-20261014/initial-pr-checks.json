@@ -1,0 +1,47 @@
+{
+  "baseRefOid": "0f075e4c3075e1210c812f90932c8a47abb1fbc9",
+  "headRefOid": "949644820814a0836b274584119e204da584fe3d",
+  "isDraft": true,
+  "number": 40,
+  "state": "OPEN",
+  "statusCheckRollup": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T06:39:45Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/OpenRIAMap/OpenRIAMap-Cairn-Web/actions/runs/38523225696/job/115717511890",
+      "name": "verify",
+      "startedAt": "2026-10-14T06:36:46Z",
+      "status": "COMPLETED",
+      "workflowName": "Config V3.2 verification"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T06:38:44Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/OpenRIAMap/OpenRIAMap-Cairn-Web/actions/runs/38523211826/job/115717466733",
+      "name": "verify",
+      "startedAt": "2026-10-14T06:36:38Z",
+      "status": "COMPLETED",
+      "workflowName": "Config V3.2 verification"
+    },
+    {
+      "__typename": "StatusContext",
+      "context": "Vercel",
+      "startedAt": "2026-10-14T06:40:15Z",
+      "state": "SUCCESS",
+      "targetUrl": "https://vercel.com/ozstk639s-projects/openriamap-cairn-web/6wPFfyGQgMZ4yaAfLVpgtSAmdd98"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T06:40:16Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://vercel.com/github",
+      "name": "Vercel Preview Comments",
+      "startedAt": "2026-10-14T06:40:16Z",
+      "status": "COMPLETED",
+      "workflowName": ""
+    }
+  ],
+  "url": "https://github.com/OpenRIAMap/OpenRIAMap-Cairn-Web/pull/40"
+}

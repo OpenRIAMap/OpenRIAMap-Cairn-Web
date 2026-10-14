@@ -1,0 +1,179 @@
+{
+  "schemaVersion": "cairnmap.sync01-execution.v1",
+  "date": "2026-10-14",
+  "timezone": "Asia/Shanghai",
+  "sourceHead": "aa0bc688649dddc9fbc7ba55481e5ad5d312cc6a",
+  "downstreamBase": "0f075e4c3075e1210c812f90932c8a47abb1fbc9",
+  "downstreamCodeHead": "10330d5f62a3d4db46911304b278183a3c371794",
+  "downstreamBranch": "codex/ria-config-runtime-v32-integration-20261014",
+  "upstreamPR": "https://github.com/Ozstk639/CairnMap-Web/pull/26",
+  "upstreamConfigCI": "both push and PR verification jobs passed",
+  "upstreamVercel": "failure; cause unavailable because local CLI token invalid",
+  "downstreamRemotePush": false,
+  "configurationVerificationGroups": 39,
+  "downstreamRegressionGroups": 23,
+  "realDataRecords": 495,
+  "formalVersion": 19,
+  "blueprintHistorySha256": {
+    "RuntimeV32_Incremental_Revision_Blueprint_v0.1_History_2026-10-13.md": "a39091c9edbe93bff73adadd7ac027a9494d613e69331aa8fdf81d6a78e3f212",
+    "RuntimeV32_Incremental_Revision_Blueprint_v0.2_History_2026-10-14.md": "94bfb1faa28ee004c70992ce7c73fe9f712e9fd1c1026c175d8f00ff13079749"
+  },
+  "scope": "SYNC-01 A/B local integration; C/D not started",
+  "externalAcceptanceLimits": [
+    "localhost COS CORS: exact captured bytes fulfilled by isolated CDP only",
+    "satellite tile service not available in these local screenshots",
+    "authenticated review save/publish not exercised without live identity/backend"
+  ],
+  "artifacts": [
+    {
+      "path": "baseline-build.txt",
+      "sha256": "ed5f0d21275bad1b6d849cfd0dc0b52828d5d6dc4b4d38d47464d6c1696963e0",
+      "bytes": 2201
+    },
+    {
+      "path": "downstream-regression.json",
+      "sha256": "b94ec801b1a004a5aef053539665960837d43f45fed6d157586b07ec9e6439da",
+      "bytes": 2882
+    },
+    {
+      "path": "formal-data-summary.json",
+      "sha256": "a348a77ce3b4983a7f733a77ec1f5d608a0da4bfbbab529d2001b548393f01e4",
+      "bytes": 891
+    },
+    {
+      "path": "module-entry-v3-narrow-measurement.png",
+      "sha256": "7bb2c6247f171111384212f4dca48e5ba286b8c47e8fc0c97534dd66531189de",
+      "bytes": 50255
+    },
+    {
+      "path": "module-entry-v3-narrow-measuring.png",
+      "sha256": "9fc81d477feae906beb67b186d68954abde0e75673247e3a1a4be124f87e671e",
+      "bytes": 47389
+    },
+    {
+      "path": "r9-final-default-acceptance.json",
+      "sha256": "f669469a54a43b0faa277cf075f33be3d3ede808c39cfe9cfb64f0e249101365",
+      "bytes": 858
+    },
+    {
+      "path": "r9-final-module-entry-result.json",
+      "sha256": "058bf0b79f927eff61bef8b3b9664552990508e241dbeae221168eb6ddd4cc69",
+      "bytes": 1602
+    },
+    {
+      "path": "r9-final-native-workflow-matrix.json",
+      "sha256": "b247d3b0215935cfc1d20610a64e0d778b6f85fa5c61362e64a19592f045c2b5",
+      "bytes": 35864
+    },
+    {
+      "path": "r9-final-rail-edit-acceptance.json",
+      "sha256": "78b8956c5ab284ee80e7f32cf1945d25c78f95be90bf725577733260fd1ca3da",
+      "bytes": 9477
+    },
+    {
+      "path": "r9-final-studio-acceptance.json",
+      "sha256": "2c625f3bc0bfe5dd836a9571f0012c84ca4c30bc03a373d5af633e59f8dd6abe",
+      "bytes": 529
+    },
+    {
+      "path": "r9-final-trp-edit-acceptance.json",
+      "sha256": "26db022cbfd6abdfba5be00ab954f6d7f869f262605671d17ee15d049a7eb849",
+      "bytes": 5894
+    },
+    {
+      "path": "r9-final-workflow-edit-acceptance.json",
+      "sha256": "6bceadd9be2db954eb4e8dbbb1f26dc98958065133db2fe9a846d5f9207e570e",
+      "bytes": 1641
+    },
+    {
+      "path": "r9-native-edit.png",
+      "sha256": "bcc51dda25e0c1f08f219d099a9e5494069b50bf4f2897433863a8fc928af21d",
+      "bytes": 78603
+    },
+    {
+      "path": "r9-rail-edit-templates.png",
+      "sha256": "9bc04f00abf76e1fe0509c63d63f9f2c4e499bdac1083b554ed1e79b0c52b68c",
+      "bytes": 89477
+    },
+    {
+      "path": "r9-trp-external-edit.png",
+      "sha256": "fb6cca090e71fcfca464ab5fb4dfc62ce8d6236963db1191cf6f51e24da916cf",
+      "bytes": 61192
+    },
+    {
+      "path": "real-data-runtime-audit.json",
+      "sha256": "bf633d1f1e8166f875570c6f71d11435cab9830440160ddaa7da11e274863c6d",
+      "bytes": 22396
+    },
+    {
+      "path": "release-build.txt",
+      "sha256": "292de8cd9f57e6cd8a8d9207de1d25eddf2dfcd948cdacb413b973b7e94a413e",
+      "bytes": 14294
+    },
+    {
+      "path": "scope-audit.json",
+      "sha256": "3adcd4b435c0ecf5a354472e24e7925866c3c8ba547e1fb008422669ab677f54",
+      "bytes": 23419
+    },
+    {
+      "path": "sync01-actual-workflow-mounted.png",
+      "sha256": "8aaf22798b5248964538883bc509f4efaa55b1002cec8ad0659a166731114c43",
+      "bytes": 108565
+    },
+    {
+      "path": "sync01-app-acceptance.json",
+      "sha256": "d510d1c7eae3e574370498c10cfb9f2433a8449bc092eef5a3faa206792bb696",
+      "bytes": 3891
+    },
+    {
+      "path": "sync01-baseline-desktop.png",
+      "sha256": "adc347781ba868b8a698a085a36898c790fe80a5b4e3705314c2bdcac8865041",
+      "bytes": 81399
+    },
+    {
+      "path": "sync01-integrated-v1-desktop.png",
+      "sha256": "adc347781ba868b8a698a085a36898c790fe80a5b4e3705314c2bdcac8865041",
+      "bytes": 81399
+    },
+    {
+      "path": "sync01-integrated-v3-desktop.png",
+      "sha256": "a14305c76ba3e9ae24183568e0a5ce84642be4e09e07e8deac46c0218f4a25c9",
+      "bytes": 95382
+    },
+    {
+      "path": "sync01-review-admission-gate.png",
+      "sha256": "a0c24e4a7aa905a5a2c1cad26e1d512d453ef63e527a5834177f27d5d6c71400",
+      "bytes": 86180
+    },
+    {
+      "path": "sync01-source-render-comparison.json",
+      "sha256": "c7021316968f57ef93e48c374fd6b01aeaede8d6707b63b180228e78b730790b",
+      "bytes": 520
+    },
+    {
+      "path": "sync01-v1-pixel-comparison.json",
+      "sha256": "e07956290f6b9bd3c84c5b8a541c905e496a458401b1236f856c19431e0d5a04",
+      "bytes": 204
+    },
+    {
+      "path": "sync01-v3-mobile.png",
+      "sha256": "48c7d739ad15ce9df05f8409c3e2c22b72b8dbf9ad1f4e0154e190ce8e6ab883",
+      "bytes": 43813
+    },
+    {
+      "path": "sync01-v3-zoom-0.png",
+      "sha256": "90785193a5194a41ea484f34a20b149aceb1ff7f1be17698c1c7d96ff805cd37",
+      "bytes": 83579
+    },
+    {
+      "path": "sync01-v3-zoom-2.png",
+      "sha256": "f771a9af4ea568d0e1ab4c676a9bf3a66e28a54ea11fba9a0e935cbbec2b14e6",
+      "bytes": 83369
+    },
+    {
+      "path": "upstream-pr-status.json",
+      "sha256": "34047fa3b17487c36b8d07e2946538920ea501937193838ed8d004267155ca0f",
+      "bytes": 1231
+    }
+  ]
+}

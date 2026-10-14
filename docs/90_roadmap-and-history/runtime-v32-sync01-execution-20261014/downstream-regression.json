@@ -1,0 +1,117 @@
+[
+  {
+    "test": "test:workspace-transition-coordinator",
+    "exitCode": 0,
+    "log": ".cache/test-workspace-transition-coordinator.log"
+  },
+  {
+    "test": "test:feature-module-contract",
+    "exitCode": 0,
+    "log": ".cache/test-feature-module-contract.log"
+  },
+  {
+    "test": "test:data-source-selection",
+    "exitCode": 0,
+    "log": ".cache/test-data-source-selection.log"
+  },
+  {
+    "test": "test:formal-release-reader",
+    "exitCode": 0,
+    "log": ".cache/test-formal-release-reader.log"
+  },
+  {
+    "test": "test:formal-media-reader",
+    "exitCode": 0,
+    "log": ".cache/test-formal-media-reader.log"
+  },
+  {
+    "test": "test:player-polling-policy",
+    "exitCode": 0,
+    "log": ".cache/test-player-polling-policy.log"
+  },
+  {
+    "test": "validate:formal-data-source-runtime",
+    "exitCode": 0,
+    "log": ".cache/validate-formal-data-source-runtime.log"
+  },
+  {
+    "test": "test:review-package-contract",
+    "exitCode": 0,
+    "log": ".cache/test-review-package-contract.log"
+  },
+  {
+    "test": "test:review-package-profile-auth",
+    "exitCode": 0,
+    "log": ".cache/test-review-package-profile-auth.log"
+  },
+  {
+    "test": "test:review-auth-routes",
+    "exitCode": 0,
+    "log": ".cache/test-review-auth-routes.log"
+  },
+  {
+    "test": "test:review-status-board",
+    "exitCode": 0,
+    "log": ".cache/test-review-status-board.log"
+  },
+  {
+    "test": "test:review-workspace-contracts",
+    "exitCode": 0,
+    "log": ".cache/test-review-workspace-contracts.log"
+  },
+  {
+    "test": "test:review-control-binding",
+    "exitCode": 0,
+    "log": ".cache/test-review-control-binding.log"
+  },
+  {
+    "test": "test:review-automation-gate",
+    "exitCode": 0,
+    "log": ".cache/test-review-automation-gate.log"
+  },
+  {
+    "test": "test:review-relay-transfer-port",
+    "exitCode": 0,
+    "log": ".cache/test-review-relay-transfer-port.log"
+  },
+  {
+    "test": "test:review-control-port",
+    "exitCode": 0,
+    "log": ".cache/test-review-control-port.log"
+  },
+  {
+    "test": "test:review-workflow-broker-actor",
+    "exitCode": 0,
+    "log": ".cache/test-review-workflow-broker-actor.log"
+  },
+  {
+    "test": "validate:team-review-authorization",
+    "exitCode": 0,
+    "log": ".cache/validate-team-review-authorization.log"
+  },
+  {
+    "test": "validate:storage-profiles",
+    "exitCode": 0,
+    "log": ".cache/validate-storage-profiles.log"
+  },
+  {
+    "test": "validate:feature-data-contract",
+    "exitCode": 0,
+    "log": ".cache/validate-feature-data-contract.log"
+  },
+  {
+    "test": "validate:media-index-contract",
+    "exitCode": 0,
+    "log": ".cache/validate-media-index-contract.log"
+  },
+  {
+    "test": "test:multipart-geometry",
+    "exitCode": 0,
+    "log": ".cache/test-multipart-geometry.log"
+  },
+  {
+    "test": "validate:project-config",
+    "exitCode": 0,
+    "log": ".cache/validate-project-config.log"
+  }
+]

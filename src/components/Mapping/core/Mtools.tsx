@@ -211,9 +211,11 @@ const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToo
   }, [mapReady, active, leafletMapRef]);
 
   // ---------- 强制关闭：来自 MapContainer 的 closeSignal ----------
+  const lastCloseSignalRef = useRef(closeSignal);
   useEffect(() => {
-    if (closeSignal === undefined) return;
-    // 只要变化就强制清空并关闭
+    if (closeSignal === undefined || closeSignal === lastCloseSignalRef.current) return;
+    lastCloseSignalRef.current = closeSignal;
+    // Initial mount is not a close request: it must not cancel a queued open.
     hardResetAndClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [closeSignal]);
@@ -953,7 +955,7 @@ const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToo
          ========================= */}
       {active && (
         <>
-          <div className="hidden fixed left-2 right-2 bottom-40 z-[2200]">
+          <div className="sm:hidden fixed left-2 right-2 bottom-40 z-[2200] max-h-[55vh] overflow-y-auto">
             <AppCard className="overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b">
                 <h3 className="font-bold text-gray-800">测量工具</h3>
@@ -1071,7 +1073,7 @@ const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToo
             </AppCard>
           </div>
 
-          <div className="hidden fixed left-2 right-2 bottom-8 z-[2200]">
+          <div className="sm:hidden fixed left-2 right-2 bottom-8 z-[2200]">
             <AppCard className="overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b">
                 <h3 className="font-bold text-gray-800">测量结果</h3>
