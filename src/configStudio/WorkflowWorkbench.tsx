@@ -1,3 +1,4 @@
+import {NewWorkflowDialog} from './NewWorkflowDialog';
 import {buildWorkflowArtifact,prepareWorkflowArtifactImport,type WorkflowArtifact} from './workflowArtifact';
 import { Download, FileUp, FolderOpen, Plus, Save, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -7,15 +8,6 @@ import { validateConfigPackage, validateWorkflowDefinition, resolveEffectiveFiel
 import { canonicalizeWorkflow, V3WorkflowEditor } from './V3WorkflowEditor';
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
-
-const blankWorkflow = (): WorkflowDefinition => ({
-  id: `workflow-${Date.now().toString(36)}`,
-  label: { zh: '新工作流', en: '' },
-  mode: 'composed',
-  target: { class: '' },
-  steps: [],
-  outputs: [{ id: `output-${Date.now().toString(36)}`, classification: { class: '' }, assignments: [], geometry: { selected: 'Point' } }],
-});
 
 export interface WorkflowWorkbenchProps {
   config: ConfigPackageV3;
@@ -39,6 +31,7 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
   const [selectedId, setSelectedId] = useState(config.workflows[0]?.id ?? '');
   const [draftTables,setDraftTables]=useState<LookupTable[]>([]);
   const draftConfig=useMemo(()=>draftTables.length?{...config,lookupTables:[...config.lookupTables??[],...draftTables]}:config,[config,draftTables]);
+  const [creating,setCreating]=useState(false);
   const [draft, setDraft] = useState<WorkflowDefinition | null>(null);
   const [report, setReport] = useState<ConfigValidationReport | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -61,10 +54,7 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
   };
   const create = () => {
     if (!confirmDiscardDraft('新建工作流')) return;
-    const next = canonicalizeWorkflow(blankWorkflow(), config);
-    setSelectedId('');
-    setDraft(next);
-    setReport(null);
+    setCreating(true);
   };
   const validate = () => {
     if (!draft) return;
@@ -109,6 +99,7 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
   };
 
   return <section aria-label="工作流编辑区域" className="h-full max-h-full min-h-0 overflow-y-auto overscroll-contain rounded-xl border bg-white p-4">
+    {creating?<NewWorkflowDialog config={config} onClose={()=>setCreating(false)} onCreate={(next,report)=>{setDraftTables([]);setSelectedId('');setDraft(canonicalizeWorkflow(next,config));setReport(report??null);setCreating(false);}}/>:null}
     <input ref={fileRef} className="hidden" type="file" accept="application/json,.json" onChange={(event) => {
       const file = event.target.files?.[0];
       if (file) void importFile(file);

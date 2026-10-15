@@ -72,6 +72,7 @@ export function unbindCardField(config:ConfigPackageV3,item:CardItem):CardItem {
 }
 export function tableReferences(config:ConfigPackageV3, id:string):string[] {
   return [
+    ...(config.lookupTables??[]).flatMap(table=>table.rows.filter(row=>row.functionValue&&typeof row.functionValue==='object'&&'valueTableId' in row.functionValue&&row.functionValue.valueTableId===id).map(row=>`标签目录 ${table.id}/${row.value}`)),
     ...config.nodes.flatMap(node=>node.fields.filter(field=>field.optionsTableId===id).map(field=>`分类 ${node.nodeId} / ${field.key}`)),
     ...config.nodes.flatMap(node=>node.card?.mode==='fields'?node.card.items.filter(item=>item.optionsTableId===id).map(item=>`信息卡 ${node.nodeId} / ${item.id}`):[]),
     ...config.workflows.flatMap(workflow=>workflow.steps.flatMap(step=>(step.controls??[]).flatMap(control=>[
@@ -82,10 +83,12 @@ export function tableReferences(config:ConfigPackageV3, id:string):string[] {
 }
 export function renameLookupTable(input:ConfigPackageV3,from:string,to:string):ConfigPackageV3 {
   if(from===to)return input;
+  if(input.contractRevision>=11&&['teleport-hubs','road-travel-modes','standard-tag-fields'].includes(from))throw Error('系统标准表 ID 不能更名。');
   if(!/^[a-z][a-z0-9-]{1,80}$/.test(to)||input.lookupTables?.some(table=>table.id===to))throw Error('表格 ID 格式无效或与已有表格重复。');
   if(!input.lookupTables?.some(table=>table.id===from))throw Error('原表格已不存在。');
   const config=structuredClone(input);
   config.lookupTables!.find(table=>table.id===from)!.id=to;
+  for(const table of config.lookupTables??[])for(const row of table.rows)if(row.functionValue&&typeof row.functionValue==='object'&&'valueTableId' in row.functionValue&&row.functionValue.valueTableId===from)row.functionValue.valueTableId=to;
   const update=(owner:OptionsOwner)=>{if(owner.optionsTableId===from)owner.optionsTableId=to;};
   config.nodes.forEach(node=>{node.fields.forEach(update);if(node.card?.mode==='fields')node.card.items.forEach(item=>{if(item.optionsTableId===from)item.optionsTableId=to;});});
   config.workflows.forEach(workflow=>workflow.steps.forEach(step=>step.controls?.forEach(control=>{update(control);control.group?.itemFields.forEach(update);})));
@@ -113,7 +116,7 @@ export function validateLookupTables(config:ConfigPackageV3,includeNodes=true):C
       if(table.functionKind==='speed'&&(typeof row.functionValue!=='number'||!Number.isFinite(row.functionValue)||row.functionValue<=0))error(at,'出行速度必须为正数，单位为方块/秒。');
       if(table.functionKind==='teleportHub'){
         const hub=row.functionValue;
-        if(!hub||typeof hub==='number'||!hub.world.trim()||!Number.isFinite(hub.range)||hub.range<=0||!hub.returnPoints.length){error(at,'枢纽需设置世界、正数范围及至少一个返回点。');continue;}
+        if(!hub||typeof hub==='number'||!('world' in hub)||!hub.world.trim()||!Number.isFinite(hub.range)||hub.range<=0||!hub.returnPoints.length){error(at,'枢纽需设置世界、正数范围及至少一个返回点。');continue;}
         for(const point of hub.returnPoints){if(!point.id.trim()||pointIds.has(`${hub.world}/${point.id}`)||![point.x,point.y,point.z].every(Number.isFinite)||!point.label.zh.trim())error(at,'返回点 ID/名称/坐标无效，或同世界 ID 重复。');pointIds.add(`${hub.world}/${point.id}`);}
       }
     }

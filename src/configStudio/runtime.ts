@@ -8,6 +8,7 @@ import {resolveMappedColor} from './renderScalar';
 import {scalarValueErrors, validMappedColor} from './renderScalar';
 import { isNativeConfigRevision } from './contract';
 import { effectiveOptionsOwner, effectiveOptions, resolveBoundCard, validateLookupTables } from './lookupTables';
+import {standardTagTableErrors} from './standardTagFields';
 import { mergeInheritedCard } from './cardInheritance';
 import { validatePrefillCopies } from './prefillAudit';
 import { resolveNodeFieldSettings,validateNodeFieldSettings } from './nodeFieldSettings';
@@ -1041,6 +1042,7 @@ export function validateWorkflowDefinition(workflow: WorkflowDefinition, config:
   const scoped={...config,nodes:[],workflows:[workflow]};
   issues.push(...validatePrefillCopies(scoped,(_config,path)=>resolveEffectiveFields(config,path)));
   issues.push(...validateLookupTables({...config,workflows:[workflow]},false));
+  for(const error of standardTagTableErrors(config))issue(issues,'error','standard-tag-table-invalid',error.path,error.message);
   return {
     schemaVersion: 'cairnmap.config-validation-report.v3',
     valid: !issues.some((item) => item.severity === 'error'),
@@ -1199,6 +1201,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: false, createdAt: new Date().toISOString(), issues: structure.map(item => ({ severity: 'error', code: 'native-contract-structure-invalid', ...item })) };
   issues.push(...validateLookupTables(config));
+  for(const error of standardTagTableErrors(config))issue(issues,'error','standard-tag-table-invalid',error.path,error.message);
   issues.push(...validatePrefillCopies(config,resolveEffectiveFields));
   issues.push(...validateNodeFieldSettings(config,resolveEffectiveFields));
   if (config.contractRevision>=8 && (config.registries.optionSets || config.nodes.some(node=>node.fields.some(field=>field.optionSource)) || config.workflows.some(workflow=>controlsFor(workflow).some(control=>control.optionSource)))) issue(issues,'error','legacy-option-source-forbidden','registries','r8 使用字段内对照；旧全局选项来源必须先迁移。');

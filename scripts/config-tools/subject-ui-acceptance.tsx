@@ -19,6 +19,7 @@ import {defaultLookupTables} from '../../src/configStudio/lookupTables';
 import {migrateConfigToR10} from '../../src/configStudio/r10Migration';
 import {NodeFieldSettingsEditor} from '../../src/configStudio/NodeFieldSettingsEditor';
 import {V3CardEditor} from '../../src/configStudio/V3CardEditor';
+import {WorkflowAnnotationsInput} from '../../src/configStudio/WorkflowAnnotationsInput';
 import {bindOptionsTable} from '../../src/configStudio/lookupTables';
 import type {WorkflowControl} from '../../src/configStudio/types';
 
@@ -52,8 +53,14 @@ async function main(){
     (window as unknown as {reuseAcceptance:unknown}).reuseAcceptance={config,control};
     return <div id="reuse-harness" className="config-editor min-h-screen bg-white p-4"><button className="rounded border p-2" onClick={()=>{const next=structuredClone(config);next.lookupTables!.find(t=>t.id==='road-travel-modes')!.rows[0].label.zh='更新后步行';next.nodes.find(n=>n.nodeId===node.nodeId)!.fields.find(f=>f.fieldId==='reuse-source')!.labels.zh='更新后字段';setConfig(next);}}>更新来源验收</button><section aria-label="下拉对照验收"><TableOptionsEditor config={config} value={control} onChange={next=>setControl({...control,...next})} initialPath={node.path}/></section><V3CardEditor config={config} node={node} onChange={next=>setConfig({...config,nodes:config.nodes.map(n=>n.nodeId===next.nodeId?next:n)})}/></div>;
   }
+  function TagsHarness(){
+    const [value,setValue]=useState({}),config=getActiveConfigSnapshot(),workflow=config.workflows.find(flow=>flow.mode==='composed'&&flow.outputs[0]?.classification.class==='BUD')!,control=workflow.steps.flatMap(step=>step.controls??[]).find(control=>control.kind==='tagsExtensions')!;
+    (window as unknown as {tagsAcceptance:unknown}).tagsAcceptance={config,workflow,value};
+    return <div className="config-editor min-h-screen bg-white p-4"><WorkflowAnnotationsInput config={config} workflow={workflow} control={control} value={value} onChange={setValue} classifications={{}}/></div>;
+  }
   if(new URLSearchParams(location.search).get('resources')==='1'){await loadActiveConfig();if(new URLSearchParams(location.search).get('reset')==='1')await restoreApplicationDefault();const active=getActiveConfigSnapshot();if(active.contractRevision<11)await persistActiveConfig(migrateConfigToR11(active).config,true);}
+  if(new URLSearchParams(location.search).get('mode')==='tags')await loadActiveConfig();
   (window as unknown as {applicationAcceptance:unknown}).applicationAcceptance={snapshot:getActiveConfigSnapshot,restoreDefault:restoreApplicationDefault,resourceWorld:applicationWorld,resourceSource:getRuleDataSourceSnapshot};
-  createRoot(document.getElementById('subject-ui')!).render(<React.StrictMode>{new URLSearchParams(location.search).get('mode')==='reuse'?<ReuseHarness/>:new URLSearchParams(location.search).get('mode')==='general'?<ConfigBootstrap><ConfigStudio initialTab="general" mountedRecords={[]} onClose={()=>undefined}/></ConfigBootstrap>:new URLSearchParams(location.search).get('mode')==='inherit'?<CardHarness/>:new URLSearchParams(location.search).get('mode')==='role'?<RoleHarness/>:new URLSearchParams(location.search).get('mode')==='search'?<SearchHarness/>:<Harness/>}</React.StrictMode>);
+  createRoot(document.getElementById('subject-ui')!).render(<React.StrictMode>{new URLSearchParams(location.search).get('mode')==='tags'?<TagsHarness/>:new URLSearchParams(location.search).get('mode')==='reuse'?<ReuseHarness/>:new URLSearchParams(location.search).get('mode')==='general'?<ConfigBootstrap><ConfigStudio initialTab="general" mountedRecords={[]} onClose={()=>undefined}/></ConfigBootstrap>:new URLSearchParams(location.search).get('mode')==='inherit'?<CardHarness/>:new URLSearchParams(location.search).get('mode')==='role'?<RoleHarness/>:new URLSearchParams(location.search).get('mode')==='search'?<SearchHarness/>:<Harness/>}</React.StrictMode>);
 }
 void main();

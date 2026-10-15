@@ -1,3 +1,4 @@
+import {resolveWorkflowFields} from './fieldReuse';
 import type {ClassificationPath,ConfigPackageV3,WorkflowControl,WorkflowDefinition} from './types';
 import {annotationEqual,annotationsForOutput,type AnnotationRow,type WorkflowAnnotations} from './workflowAnnotations';
 import {parseWorkflowExpression,workflowExpressionTokens,evaluateWorkflowExpression,isSafeWorkflowTarget} from './workflowExpression';
@@ -11,6 +12,7 @@ export type WorkflowEditDraft={slots:Record<string,unknown>;classification:Class
 export const recordClassification=(record:Record<string,unknown>):ClassificationPath=>({class:String(record.Class??''),...(record.Kind?{kind:String(record.Kind)}:{}),...(record.SKind??record.Skind?{skind:String(record.SKind??record.Skind)}:{}),...(record.SKind2??record.Skind2?{skind2:String(record.SKind2??record.Skind2)}:{})});
 export const isQuickMappingWorkflow=(workflow:WorkflowDefinition)=>workflow.quickMapping!==false&&!workflow.editor?.dedicated&&workflow.external?.purpose!=='edit';
 export function compileWorkflowEditPlan(workflow:WorkflowDefinition,config:ConfigPackageV3):WorkflowEditPlan {
+ workflow=resolveWorkflowFields(config,workflow);
  const errors:string[]=[];
  if(workflow.mode!=='composed')throw Error('外部方案通过已登记的编辑接口执行，不转换标准工作流。');
  if(workflow.steps.length!==3||workflow.steps.map(s=>s.kind).join(',')!=='actor,form,geometry')errors.push('必须恰为填写人、信息收集、要素绘制三页。');

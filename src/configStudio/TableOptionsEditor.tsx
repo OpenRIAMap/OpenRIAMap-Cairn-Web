@@ -22,7 +22,7 @@ export function TableOptionsEditor({config,value,disabled=false,onChange,title,a
       <p className="text-sm">{mode==='bind'?'直接引用来源，不另存独立行。':'按相同保存值更新名称，保留其他本地行；仅注入名称、存储值和类型。'}</p>
       <label className="grid min-w-0 gap-1 text-sm">公共表<select aria-label="对照来源表格" value={tableId} onChange={event=>setTableId(event.target.value)}><option value="">选择表格</option>{config.lookupTables?.map(row=><option key={row.id} value={row.id}>{row.label.zh||row.label.en}（{row.id}）</option>)}</select></label>
       <button type="button" disabled={!tableId||disabled} className="rounded border px-3 py-1" onClick={()=>run(()=>{const table=config.lookupTables?.find(row=>row.id===tableId);if(!table)throw Error('表格不存在。');onChange(mode==='bind'?bindOptionsTable(config,value,table.id):prefillOptionTable(config,value,{valueType:table.valueType,rows:table.rows.map(({value,label})=>({value,label}))}));setMode(undefined);})}>{mode==='bind'?'绑定表格':'导入预填'}</button>
-      {mode==='bind'&&allowFieldBinding?<FieldPrefill config={config} initialPath={initialPath} buttonLabel="绑定字段对照" optionsOnly single onApply={(_field,_audit,ref)=>{if(!ref)return;onChange(bindOptionsField(config,value,ref));setMode(undefined);}}/>:null}
+      {mode==='bind'&&allowFieldBinding&&config.contractRevision>=11?<FieldPrefill config={config} initialPath={initialPath} buttonLabel="绑定字段对照" optionsOnly single onApply={(_field,_audit,ref)=>{if(!ref)return;onChange(bindOptionsField(config,value,ref));setMode(undefined);}}/>:null}
       {error?<p role="alert" className="text-rose-700">{error}</p>:null}
     </ConfigDialog>:error?<p role="alert" className="text-xs text-rose-700">{error}</p>:null}
   </div>;

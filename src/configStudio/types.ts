@@ -17,13 +17,14 @@ export type SelectOption = { value: string; label: LocalizedText };
 /** The same dictionary body is used inline and by public lookup tables. */
 export type OptionTable = { valueType: 'string' | 'number' | 'boolean'; rows: SelectOption[] };
 export type FieldDefinitionRef = { nodeId: string; fieldId: string };
+export type TagFieldMetadata = {kind:'tagField';type:'text'|'number'|'bool'|'select';format?:'plain'|'externalLink'|'date';valueTable?:OptionTable;valueTableId?:string};
 /** Explicit table binding is live; prefill copies effective rows without it. */
 export type LookupTable = {
   id: string;
   label: LocalizedText;
   valueType: 'string' | 'number' | 'boolean';
-  functionKind: 'none' | 'speed' | 'teleportHub';
-  rows: Array<SelectOption & { functionValue?: number | { world: string; range: number; returnPoints: Array<{ id: string; label: LocalizedText; x: number; y: number; z: number }> } }>;
+  functionKind: 'none' | 'speed' | 'teleportHub' | 'tagField';
+  rows: Array<SelectOption & { functionValue?: TagFieldMetadata | number | { world: string; range: number; returnPoints: Array<{ id: string; label: LocalizedText; x: number; y: number; z: number }> } }>;
 };
 /** `tags` and `extensions` are optional field groups, never synthetic root
  * fields named "tags" or "extensions". `key` remains the full data path so

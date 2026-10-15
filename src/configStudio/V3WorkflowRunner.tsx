@@ -1,3 +1,4 @@
+import {tagRecordErrors} from './standardTagFields';
 import { applicationWorld } from '../core/project/applicationRuntime';
 import { coerceWorkflowValues } from './workflowValues';
 import { resolveNodeFieldSettings } from './nodeFieldSettings';
@@ -236,6 +237,7 @@ export function validateV3WorkflowRecords(config: ConfigPackageV3, workflow: Wor
   for (const output of result) {
     const definition = workflow.outputs.find(item => item.id === output.outputId);
     if (!definition || !hasCategoryNode(config, output.classification) || !pathMatchesScope(output.classification, definition.classification)) { issues.push({ message: `输出 ${output.outputId} 的分类无效。` }); continue; }
+    for(const message of tagRecordErrors(config,output.classification,output.record))issues.push({message});
     const geometry=readMultipartGeometry(output.record,definition.geometry.selected).geometry;
     if(geometry&&geometry.parts.length>1&&resolveGeometryProfile(config,output.classification,definition.geometry.selected)?.allowMultipleParts===false)issues.push({message:`输出 ${output.outputId} 的分类只允许单部件几何。`});
     if (!String(output.record.ID ?? '').trim()) issues.push({ message: `输出 ${output.outputId} 缺少有效 ID。` });
