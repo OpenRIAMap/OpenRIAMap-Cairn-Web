@@ -1,0 +1,65 @@
+{
+  "scenes": [
+    {
+      "scene": "general-all",
+      "controls": 525,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "feature-BUD",
+      "controls": 1316,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "feature-ROD",
+      "controls": 1715,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "feature-ISG",
+      "controls": 994,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "feature-RLE",
+      "controls": 2842,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "feature-ISP",
+      "controls": 952,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "workflow-v3-rod_road",
+      "controls": 482,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "workflow-v3-tpp_teleport",
+      "controls": 263,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "workflow-v3-isg_ngf_wtb",
+      "controls": 126,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "workflow-external-railway-integrated",
+      "controls": 6,
+      "missing": [],
+      "fallbacks": []
+    }
+  ],
+  "runtime_errors": []
+}

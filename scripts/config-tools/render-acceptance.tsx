@@ -1,5 +1,5 @@
 import { writeTemporaryRuleSources, writeTemporaryRuleOverrideIds, writeTemporaryRuleDeleteIds } from '../../src/components/Rules/data/temporaryRuleSession';
-import subjectSeed from '../../src/configStudio/defaults/r10-r6.config.json';
+import subjectSeed from '../../src/configStudio/defaults/r11-r7.config.json';
 // Local browser acceptance entry; never imported by the application entry point.
 import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';

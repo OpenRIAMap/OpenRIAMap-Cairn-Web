@@ -1,4 +1,4 @@
-import subjectSeed from '../../src/configStudio/defaults/r10-r6.config.json';
+import subjectSeed from '../../src/configStudio/defaults/r11-r7.config.json';
 import {createTrpEditingWorkflow} from '../../src/configStudio/externalEditRegistry';
 import {installRailEditingWorkflows} from '../../src/configStudio/railEditingTemplates';
 import {migrateConfigToR9} from '../../src/configStudio/r9Migration';

@@ -30,7 +30,7 @@ async function preserveSessionDrafts(candidate:ConfigPackageV3) {
 }
 
 export function loadDefaultConfig(): Promise<ConfigPackageV3> {
-  return state.seedPromise??=fetch(new URL('./defaults/r10-r6.config.json',import.meta.url).href).then(async response=>{
+  return state.seedPromise??=fetch(new URL('./defaults/r11-r7.config.json',import.meta.url).href).then(async response=>{
     if(!response.ok)throw Error('无法加载应用默认配置。');
     const text=await response.text();if(await hash(text)!==manifest.sha256)throw Error('应用默认配置摘要不一致，未启用。');
     return prepareConfigForActivation(JSON.parse(text));

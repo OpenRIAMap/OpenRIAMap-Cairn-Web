@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "world editor uses preset explanation, remote key and group selector without repeated matrices/tile parameters",
+    "new complete server group and world membership save atomically; actual runtime data/media/tiles resolve B while default worlds remain A",
+    "world editor saves world metadata and owned group-reference patch in one transaction; source module cannot overwrite linked draft",
+    "both resource editors contain controls at 320/390/600/900/1440px"
+  ],
+  "runtime_errors": []
+}

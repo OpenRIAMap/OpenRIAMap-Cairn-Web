@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "table binding is readonly and updates with saved source state",
+    "detach copies complete current rows; field dictionary binding uses the category picker",
+    "card field and dictionary bindings detach independently and metadata becomes editable",
+    "copy/binding/card controls fit 320/390/600/900/1440px"
+  ],
+  "runtime_errors": []
+}

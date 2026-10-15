@@ -1,0 +1,30 @@
+{
+  "packageId": "cairnmap-config-v32-semantic",
+  "seedFile": "r11-r7.config.json",
+  "revision": 7,
+  "contractRevision": 11,
+  "sha256": "982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e",
+  "semanticFingerprint": "7e3a838b07308bf14d63921243d35221c83323b2d3938f76c5a19577374f41a2",
+  "legacyDefaultFingerprints": [
+    "5546869a2f009c2b26c6c75b5741b01729f9ba36c5605a3da9961c1c9193e09d",
+    "1f984c6fdbdabfdd5e854678ba6064444289fa4e3b6997dba37224d21b3f1b78",
+    "ccc136ed53df3249646a7775bbfa021c21fde41449c577785944b4b477edace4",
+    "9b190ceadadd74e5e7a9a74b345d5da9937a3a3e42ebd9833b6430c426661962",
+    "051b8519667fcc795d48920f2a8ff0c49f634ae8653baac854d87e93c82a07d3"
+  ],
+  "jsonSha256": "982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e",
+  "zipSha256": "d2666c4f709e6393fabffb5724c533f557a3914b804c72cd450cad1563fb6817",
+  "sourceR10Sha256": "e42b6047c8459ffd00bbe196cdc8194f220dfc65b2e0ce5963fde4e42b9ef292",
+  "nodes": 95,
+  "workflows": 28,
+  "tables": 3,
+  "applicationModules": 6,
+  "stage": "Post-C v1.1; local implementation only; no upstream sync, remote push or V3 promotion",
+  "navigationTableConsumers": "unchanged; deferred until downstream promotion",
+  "migration": [
+    "settlement：未限定 Class 已按当前分类树展开为 ISG/ADM/DBZ、ISP/ADM/DBP；未来新增 Class 必须明确加入。",
+    "planning：未限定 Class 已按当前分类树展开为 ISP/ADM/PLP；未来新增 Class 必须明确加入。",
+    "将默认资源集中到来源组，保留差异世界与非默认投影参数；独立组数据／瓦片身份隔离。",
+    "将本地对照迁移为统一主体，既有公共表引用保持实时。"
+  ]
+}

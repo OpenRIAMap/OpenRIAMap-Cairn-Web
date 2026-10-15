@@ -1,0 +1,8 @@
+{
+  "checks": [
+    "TPP template including extra drawing, conditions and output assembly copies and saves without altering source",
+    "system table deletion and IDs locked; typed tag metadata edited and saved through independent table transaction",
+    "new standard tag visible without code changes; blank start, false/zero types and inline first-row additions retained"
+  ],
+  "runtime_errors": []
+}

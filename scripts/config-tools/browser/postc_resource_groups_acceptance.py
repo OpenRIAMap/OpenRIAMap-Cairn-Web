@@ -8,7 +8,7 @@ def action(section,text):
  b.evaluate("[...document.querySelectorAll('[data-application-section="+section+"] button')].find(e=>e.textContent.trim()==="+json.dumps(text)+").click()")
  time.sleep(.2)
 def field(scope,title,value):
- b.evaluate("(()=>{const p=document.querySelector("+json.dumps(scope)+");const label=[...p.querySelectorAll('label')].find(e=>(e.getAttribute('data-setting-field')??e.firstChild?.textContent.trim())==="+json.dumps(title)+");if(!label)throw Error('Missing field '+"+json.dumps(title)+");const e=label.querySelector('input,select');const proto=e.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(e,"+json.dumps(value)+");e.dispatchEvent(new Event(e.tagName==='SELECT'?'change':'input',{bubbles:true}));})()")
+ b.evaluate("(()=>{const p=document.querySelector("+json.dumps(scope)+");const label=[...p.querySelectorAll('label')].find(e=>{const text=e.cloneNode(true);text.querySelectorAll('[data-module-help],input,select,textarea').forEach(x=>x.remove());return (e.getAttribute('data-setting-field')??text.textContent.trim())==="+json.dumps(title)+";});if(!label)throw Error('Missing field '+"+json.dumps(title)+");const e=label.querySelector('input,select');const proto=e.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(e,"+json.dumps(value)+");e.dispatchEvent(new Event(e.tagName==='SELECT'?'change':'input',{bubbles:true}));})()")
  time.sleep(.15)
 def save(section,predicate):
  action(section,'保存')

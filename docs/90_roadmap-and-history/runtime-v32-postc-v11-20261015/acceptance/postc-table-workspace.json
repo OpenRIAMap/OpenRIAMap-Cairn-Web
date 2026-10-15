@@ -1,0 +1,10 @@
+{
+  "checks": [
+    "all three tabs have real background styles while general workspace is active",
+    "add then delete clears table draft and permits switching tabs",
+    "table draft blocks tab switch; region validation/save commits and ends only the table draft",
+    "reload returns to the owner of the recovered draft; discard restores last saved table",
+    "table inputs stay within the region at 320/390/600/900/1440px"
+  ],
+  "runtime_errors": []
+}

@@ -1,0 +1,8 @@
+{
+  "checks": [
+    "legacy package stays active during an isolated r11 upgrade; switching tabs is blocked and discard retains the original",
+    "validated upgrade saves and survives refresh with complete groups and dictionary metadata",
+    "actual V1 regeneration entry activates a valid complete r11 contract"
+  ],
+  "runtimeErrors": []
+}

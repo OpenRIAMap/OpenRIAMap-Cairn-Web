@@ -1,14 +1,15 @@
 {
   "packageId": "cairnmap-config-v32-semantic",
-  "seedFile": "r10-r6.config.json",
-  "revision": 6,
-  "contractRevision": 10,
-  "sha256": "e42b6047c8459ffd00bbe196cdc8194f220dfc65b2e0ce5963fde4e42b9ef292",
-  "semanticFingerprint": "051b8519667fcc795d48920f2a8ff0c49f634ae8653baac854d87e93c82a07d3",
+  "seedFile": "r11-r7.config.json",
+  "revision": 7,
+  "contractRevision": 11,
+  "sha256": "982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e",
+  "semanticFingerprint": "7e3a838b07308bf14d63921243d35221c83323b2d3938f76c5a19577374f41a2",
   "legacyDefaultFingerprints": [
     "5546869a2f009c2b26c6c75b5741b01729f9ba36c5605a3da9961c1c9193e09d",
     "1f984c6fdbdabfdd5e854678ba6064444289fa4e3b6997dba37224d21b3f1b78",
     "ccc136ed53df3249646a7775bbfa021c21fde41449c577785944b4b477edace4",
-    "9b190ceadadd74e5e7a9a74b345d5da9937a3a3e42ebd9833b6430c426661962"
+    "9b190ceadadd74e5e7a9a74b345d5da9937a3a3e42ebd9833b6430c426661962",
+    "051b8519667fcc795d48920f2a8ff0c49f634ae8653baac854d87e93c82a07d3"
   ]
 }

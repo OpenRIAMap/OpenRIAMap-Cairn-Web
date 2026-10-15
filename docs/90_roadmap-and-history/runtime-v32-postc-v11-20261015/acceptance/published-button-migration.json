@@ -1,0 +1,73 @@
+{
+  "root": "https://raw.githubusercontent.com/OpenRIAMap/OpenRIAMap-Cairn-Data/main",
+  "checkedAt": "2026-10-15T15:52:33.459Z",
+  "worlds": [
+    {
+      "world": "zth",
+      "releaseId": "review-9058422d381006cd5110",
+      "records": 489,
+      "buttons": [
+        {
+          "id": "railway_new",
+          "before": 376,
+          "after": 376
+        },
+        {
+          "id": "road",
+          "before": 34,
+          "after": 34
+        },
+        {
+          "id": "natural_geo",
+          "before": 10,
+          "after": 10
+        },
+        {
+          "id": "settlement",
+          "before": 1,
+          "after": 1
+        },
+        {
+          "id": "planning",
+          "before": 0,
+          "after": 0
+        },
+        {
+          "id": "teleport_point",
+          "before": 12,
+          "after": 12
+        },
+        {
+          "id": "trade_point",
+          "before": 1,
+          "after": 1
+        },
+        {
+          "id": "building",
+          "before": 118,
+          "after": 118
+        }
+      ]
+    },
+    {
+      "world": "eden",
+      "status": "not-published",
+      "records": 0
+    },
+    {
+      "world": "naraku",
+      "status": "not-published",
+      "records": 0
+    },
+    {
+      "world": "houtu",
+      "status": "not-published",
+      "records": 0
+    },
+    {
+      "world": "laputa",
+      "status": "not-published",
+      "records": 0
+    }
+  ]
+}

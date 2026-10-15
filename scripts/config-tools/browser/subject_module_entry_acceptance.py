@@ -54,7 +54,7 @@ for mode, narrow, tool in [('v3', False, '测绘'), ('v3', True, '测量工具')
     b.screenshot('module-entry-' + mode + ('-narrow' if narrow else '-desktop') + ('-measuring' if tool == '测绘' else '-measurement') + '.png')
 load('v3', cold=False)
 assert state('s.modules.measuring.enabledByUser') is True
-b.click('测绘')
+open_tool('测绘')
 b.wait("(async()=>{return " + store + ".getState().modules.measuring.status==='loaded';})()", 60)
 assert not state('s.dialog.isOpen')
 checks.append({'mode': 'v3', 'warmActivationWithoutDialog': True})
