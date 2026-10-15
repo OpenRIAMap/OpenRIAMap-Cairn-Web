@@ -1,3 +1,4 @@
+import { TileImageRequests } from './tileImageRequest';
 import { applicationWorld } from '@/core/project/applicationRuntime';
 import { TILE_ZOOM_BOUNDS } from './mapZoom';
 /**
@@ -170,6 +171,7 @@ function addPaperTexture(
  * 继承 Leaflet TileLayer，实现与 DynmapTileLayer 相同的 URL 生成逻辑
  */
 export class SketchTileLayer extends L.TileLayer {
+  private tileImages = new TileImageRequests();
   private _baseUrl: string;
   private _prefix: string;
   private _imageFormat: string;
@@ -186,6 +188,7 @@ export class SketchTileLayer extends L.TileLayer {
       errorTileUrl: ''
     });
 
+    this.on('tileunload',(event:L.TileEvent)=>this.tileImages.cancel(event.tile));
     this._baseUrl = options.baseUrl;
     this._prefix = options.prefix;
     this._imageFormat = options.imageFormat || 'jpg';
@@ -247,33 +250,17 @@ export class SketchTileLayer extends L.TileLayer {
   /**
    * 重写 createTile 方法，返回 Canvas 而非 img
    */
-  createTile(coords: L.Coords, done: L.DoneCallback): HTMLCanvasElement {
-    const canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 128;
-
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-
-    img.onload = () => {
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        done(new Error('Failed to get canvas context'), canvas);
-        return;
-      }
-      ctx.drawImage(img, 0, 0, 128, 128);
-      this.applySketchFilter(canvas, ctx, coords.x, coords.y);
-      done(undefined, canvas);
-    };
-
-    img.onerror = () => {
-      done(new Error('Tile load failed'), canvas);
-    };
-
-    img.src = this.getTileUrl(coords);
-
+  createTile(coords:L.Coords,done:L.DoneCallback):HTMLCanvasElement {
+    const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
+    const image=new Image();image.crossOrigin='anonymous';
+    this.tileImages.load(canvas,image,this.getTileUrl(coords),{maxRetries:(this.options as DynmapTileLayerOptions).maxRetries??3,retryDelay:(this.options as DynmapTileLayerOptions).retryDelay??1000},()=>{
+      const context=canvas.getContext('2d');if(!context)throw Error('Failed to get canvas context');
+      context.drawImage(image,0,0,128,128);
+      this.applySketchFilter(canvas,context,coords.x,coords.y);done(undefined,canvas);
+    },error=>done(error,canvas));
     return canvas;
   }
+  onRemove(map:L.Map):this {this.tileImages.cancelAll();return super.onRemove(map);}
 
   /**
    * 应用手绘素描滤镜（增强版）
@@ -413,6 +400,7 @@ export function createSketchTileLayer(
  * 保留原图色彩但柔化，添加水彩画效果
  */
 export class WatercolorTileLayer extends L.TileLayer {
+  private tileImages = new TileImageRequests();
   private _baseUrl: string;
   private _prefix: string;
   private _imageFormat: string;
@@ -429,6 +417,7 @@ export class WatercolorTileLayer extends L.TileLayer {
       errorTileUrl: ''
     });
 
+    this.on('tileunload',(event:L.TileEvent)=>this.tileImages.cancel(event.tile));
     this._baseUrl = options.baseUrl;
     this._prefix = options.prefix;
     this._imageFormat = options.imageFormat || 'jpg';
@@ -478,33 +467,17 @@ export class WatercolorTileLayer extends L.TileLayer {
     return `${this._baseUrl}${info.prefix}${info.nightday}/${info.scaledx}_${info.scaledy}/${zoomPart}${info.x}_${info.y}.${info.fmt}`;
   }
 
-  createTile(coords: L.Coords, done: L.DoneCallback): HTMLCanvasElement {
-    const canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 128;
-
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-
-    img.onload = () => {
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        done(new Error('Failed to get canvas context'), canvas);
-        return;
-      }
-      ctx.drawImage(img, 0, 0, 128, 128);
-      this.applyWatercolorFilter(canvas, ctx, coords.x, coords.y);
-      done(undefined, canvas);
-    };
-
-    img.onerror = () => {
-      done(new Error('Tile load failed'), canvas);
-    };
-
-    img.src = this.getTileUrl(coords);
-
+  createTile(coords:L.Coords,done:L.DoneCallback):HTMLCanvasElement {
+    const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
+    const image=new Image();image.crossOrigin='anonymous';
+    this.tileImages.load(canvas,image,this.getTileUrl(coords),{maxRetries:(this.options as DynmapTileLayerOptions).maxRetries??3,retryDelay:(this.options as DynmapTileLayerOptions).retryDelay??1000},()=>{
+      const context=canvas.getContext('2d');if(!context)throw Error('Failed to get canvas context');
+      context.drawImage(image,0,0,128,128);
+      this.applyWatercolorFilter(canvas,context,coords.x,coords.y);done(undefined,canvas);
+    },error=>done(error,canvas));
     return canvas;
   }
+  onRemove(map:L.Map):this {this.tileImages.cancelAll();return super.onRemove(map);}
 
   /**
    * 应用淡彩水彩滤镜

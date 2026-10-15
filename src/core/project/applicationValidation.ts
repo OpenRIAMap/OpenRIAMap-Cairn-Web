@@ -1,7 +1,9 @@
-import type { ApplicationSettings } from './applicationTypes';
+import type { ApplicationSettings, ResolvedApplicationSettings } from './applicationTypes';
+import { resolveApplicationSettings, resourceGroupForWorld, validateResourceGroups } from './applicationResources';
 export type ApplicationIssue={path:string;message:string};
-export function validateApplication(value:ApplicationSettings,classCodes?:Set<string>):ApplicationIssue[]{
-  const issues:ApplicationIssue[]=[],fail=(path:string,message:string)=>issues.push({path,message});
+export function validateApplication(input:ApplicationSettings,classCodes?:Set<string>):ApplicationIssue[]{
+  const issues:ApplicationIssue[]=validateResourceGroups(input),fail=(path:string,message:string)=>issues.push({path,message});
+  let value:ResolvedApplicationSettings;try{value=resolveApplicationSettings(input);}catch(error){fail('sources',error instanceof Error?error.message:String(error));return issues;}
   const unique=(rows:Array<{id:string}>,path:string)=>{const ids=new Set<string>();for(const row of rows){if(!/^[A-Za-z0-9_-]+$/.test(row.id)||ids.has(row.id))fail(path,`ID 非法或重复：${row.id}`);ids.add(row.id);}return ids;};
   const url=(value:string,path:string,empty=false)=>{if(empty&&!value)return;try{const parsed=new URL(value);if(!['http:','https:'].includes(parsed.protocol)||parsed.username||parsed.password)throw Error();}catch{fail(path,'必须是无凭据的 HTTP(S) 地址。');}};
   const worlds=unique(value.worlds,'worlds'),buttons=unique(value.buttons.items,'buttons/items'),sources=unique(value.sources.items,'sources/items'),modes=unique(value.sources.linkModes.items,'sources/linkModes');
@@ -10,7 +12,8 @@ export function validateApplication(value:ApplicationSettings,classCodes?:Set<st
   for(const world of value.worlds){const path=`worlds/${world.id}`;
     if(!Number.isSafeInteger(world.numericCode)||world.numericCode<0||numbers.has(world.numericCode))fail(path,'世界数字编号必须唯一且为非负整数。');numbers.add(world.numericCode);
     if(!/^[A-Z]$/.test(world.prefix)||prefixes.has(world.prefix))fail(path,'简称必须是唯一的大写字母。');prefixes.add(world.prefix);
-    if(!sources.has(world.dataSourceId)||world.enabled&&!value.sources.items.some(source=>source.id===world.dataSourceId&&source.enabled))fail(path,'世界绑定的数据源不存在或未启用。');
+    const worldSources=resourceGroupForWorld(input,world.id)?.sources??value.sources;
+    if(!worldSources.items.some(source=>source.id===world.dataSourceId&&(!world.enabled||source.enabled)))fail(path,'世界绑定的数据源不存在或未启用。');
     if(!Object.values(world.center).every(Number.isFinite))fail(path,'世界中心必须是有限坐标。');
     url(world.mapLink,path+'/mapLink');url(world.tiles.baseUrl,path+'/tiles/baseUrl');if(!world.tiles.filteredBaseUrl.startsWith('/')||world.tiles.filteredBaseUrl.startsWith('//'))url(world.tiles.filteredBaseUrl,path+'/tiles/filteredBaseUrl');
     const projection=world.projection;if(projection.id!=='dynmap-flat'||projection.worldToMap.length!==9||projection.mapToWorld.length!==9||![...projection.worldToMap,...projection.mapToWorld].every(Number.isFinite))fail(path,'投影必须使用注册的 dynmap-flat 和两组 9 项有限参数。');

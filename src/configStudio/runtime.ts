@@ -1,3 +1,4 @@
+import { isWorldGroups } from '../core/project/applicationResources';
 import { validateApplication } from '../core/project/applicationValidation';
 import { labelTemplateTokens, parseLabelTemplate } from './labelTemplate';
 import {validateExternalEditBinding} from './externalEditRegistry';
@@ -1190,6 +1191,7 @@ function validateContextBindings(config: ConfigPackageV3, issues: ConfigValidati
 
 export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: MountedFeatureRecord[] = []): ConfigValidationReport {
   const issues: ConfigValidationIssue[] = [];
+  if(config.contractRevision<11&&config.application&&isWorldGroups(config.application.sources))issue(issues,'error','resource-groups-revision','application/sources','World resource groups require contract r11.');
   if(config.contractRevision>=10&&!config.application)issue(issues,'error','application-required','application','r10 完整应用包必须包含总体规则。');
   if (config.contractRevision >= 10 && config.application) for (const row of validateApplication(config.application, new Set(config.nodes.map(node=>node.path.class)))) issue(issues,'error','application-invalid','application/'+row.path,row.message);
   const structure = validateNativeStructure(config);

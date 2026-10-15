@@ -77,7 +77,7 @@ export async function loadFormalMediaAssets(args: {
 }): Promise<FormalMediaAsset[]> {
   if (!args.source.mediaRootUrl) return [];
   const releaseId = safeSegment(args.releaseId, 'release');
-  const worldId = safeSegment(args.worldId, 'world');
+  const worldId = safeSegment(args.source.remoteWorldId??args.worldId, 'world');
   const classCode = safeSegment(args.classCode, 'class');
   const kindPath = safeKindPath(args.kindPath);
   const featureId = safeSegment(args.featureId, 'feature');

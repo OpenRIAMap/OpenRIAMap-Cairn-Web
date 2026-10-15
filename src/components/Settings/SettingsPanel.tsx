@@ -4,7 +4,8 @@ import { retiredSourceNotice } from '@/components/Rules/data/formalDataSourceRun
  * 显示 Rules 世界版本、缓存状态、PWA 状态等信息
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { getApplicationSettings, subscribeApplication } from '@/core/project/applicationRuntime';
 import { X, RefreshCw, Trash2, Database, Smartphone, CheckCircle, AlertCircle, Loader2, Download, SlidersHorizontal } from 'lucide-react';
 
 // PWA 安装事件类型
@@ -59,14 +60,6 @@ type RuleWorldRow = {
   isLoaded: boolean;
 };
 
-const RULE_WORLDS: Array<{ id: string; name: string }> = [
-  { id: 'zth', name: '零洲' },
-  { id: 'eden', name: '伊甸' },
-  { id: 'naraku', name: '奈落洲' },
-  { id: 'houtu', name: '后土洲' },
-  { id: 'laputa', name: '拉普塔' },
-];
-
 /** Keep the compact card readable while the title retains both immutable IDs. */
 function compactFormalVersion(value: string | null): string {
   const version = String(value ?? '').trim();
@@ -75,6 +68,8 @@ function compactFormalVersion(value: string | null): string {
 }
 
 export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, reviewAuth, reviewAuthTitle, reviewAuthLoginLabel }: SettingsPanelProps) {
+  const application = useSyncExternalStore(subscribeApplication, getApplicationSettings);
+  const RULE_WORLDS = application.worlds.filter(world => world.enabled).map(world => ({id:world.id,name:world.label.zh||world.label.en||world.id}));
   const { isLoading, activeRuleWorldId } = useLoadingStore();
   const datasets = useRuleDataStore((s) => s.datasets);
   const refreshWorlds = useRuleDataStore((s) => s.refreshWorlds);
@@ -99,12 +94,12 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   });
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalling, setIsInstalling] = useState(false);
-  const sourceLinkModeDefs = getSourceLinkModeDefs();
-  const [sourceLinkModeDraft, setSourceLinkModeDraft] = useState(() => getCurrentSourceLinkModeId());
-  const [sourceLinkModeApplied, setSourceLinkModeApplied] = useState(() => getCurrentSourceLinkModeId());
+  const sourceLinkModeDefs = getSourceLinkModeDefs(dataSource.worldId);
+  const [sourceLinkModeDraft, setSourceLinkModeDraft] = useState(() => getCurrentSourceLinkModeId(dataSource.worldId));
+  const [sourceLinkModeApplied, setSourceLinkModeApplied] = useState(() => getCurrentSourceLinkModeId(dataSource.worldId));
   const [sourceLinkModeStatus, setSourceLinkModeStatus] = useState<string>('');
-  const dataSourceController = getRuleDataSourceSelectionController();
-  const dataSourcePolicy = getRuleDataSourceSelectionPolicy();
+  const dataSourceController = getRuleDataSourceSelectionController(dataSource.worldId);
+  const dataSourcePolicy = getRuleDataSourceSelectionPolicy(dataSource.worldId);
   const [dataSourceDraft, setDataSourceDraft] = useState(() => dataSource.sourceId);
   const [dataSourceStatus, setDataSourceStatus] = useState<{ tone: 'success' | 'error' | 'info'; text: string } | null>(null);
 
@@ -112,7 +107,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   const rulesRefreshBlocked = anyRefreshBusy || (isLoading && !!activeRuleWorldId);
 
   useEffect(() => {
-    const current = getCurrentSourceLinkModeId();
+    const current = getCurrentSourceLinkModeId(dataSource.worldId);
     setSourceLinkModeDraft(current);
     setSourceLinkModeApplied(current);
   }, []);
@@ -128,11 +123,11 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   }, [sourceLinkModeStatus]);
 
   const handleApplySourceLinkMode = async () => {
-    if (!isFormalGithubTransportSource(dataSource.sourceId)) {
+    if (!isFormalGithubTransportSource(dataSource.sourceId,dataSource.worldId)) {
       setSourceLinkModeStatus('请先应用 GitHub 镜像作为运行数据读取来源。');
       return;
     }
-    const next = setCurrentSourceLinkMode(sourceLinkModeDraft);
+    const next = setCurrentSourceLinkMode(sourceLinkModeDraft,dataSource.worldId);
     const nextId = next.id;
     const changed = nextId !== sourceLinkModeApplied;
     setSourceLinkModeDraft(nextId);
@@ -442,7 +437,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
             draftSourceId={dataSourceDraft}
             appliedSourceId={dataSource.sourceId}
             isApplying={dataSourceApplying}
-            status={dataSourceStatus??(retiredSourceNotice()?{tone:'info',text:retiredSourceNotice()}:null)}
+            status={dataSourceStatus??(retiredSourceNotice(dataSource.worldId)?{tone:'info',text:retiredSourceNotice(dataSource.worldId)}:null)}
             onDraftSourceIdChange={setDataSourceDraft}
             onApply={() => { void handleApplyDataSource(); }}
             title="运行数据读取来源"
@@ -451,9 +446,9 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
             defaultSuffix="（默认）"
             hint="切换后会清除仅依赖当前运行数据源的缓存，并重新读取当前世界；读取失败不会自动改用其他来源。"
             renderSupplemental={(context) => {
-              const isGithubCandidate = isFormalGithubTransportSource(context.draftSource?.id);
+              const isGithubCandidate = isFormalGithubTransportSource(context.draftSource?.id,dataSource.worldId);
               const isGithubApplied = context.appliedSource?.id === context.draftSource?.id
-                && isFormalGithubTransportSource(context.appliedSource?.id);
+                && isFormalGithubTransportSource(context.appliedSource?.id,dataSource.worldId);
               if (!isGithubCandidate) return null;
               return (
                 <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-3 space-y-2">

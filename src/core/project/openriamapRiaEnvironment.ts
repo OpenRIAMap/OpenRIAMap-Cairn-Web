@@ -1,4 +1,5 @@
-import { getApplicationSettings } from './applicationRuntime';
+import { getApplicationDefinition, getApplicationSettings } from './applicationRuntime';
+import { defaultSourceSettings, resourceGroupForWorld } from './applicationResources';
 import type {
   CairnMapDataSourcesConfig,
   CairnMapFormalDataSourceRuntimeConfig,
@@ -21,16 +22,16 @@ import storageProfilesConfigJson from '../../../project-config/packages/openriam
 import relayPackageProtocolConfigJson from '../../../project-config/packages/openriamap-ria/environment/relayPackageProtocol.json';
 import mediaIndexContractConfigJson from '../../../project-config/packages/openriamap-ria/environment/mediaIndexContract.json';
 
-export function getOpenRIAMapSourceLinkModesConfig(): CairnMapSourceLinkModesConfig {
-  const value=getApplicationSettings().sources.linkModes;return {...sourceLinkModesConfigJson,storageKey:value.storageKey,legacyStorageKeys:value.legacyStorageKeys,items:value.items.map(item=>({id:item.id,label:item.label[getApplicationSettings().preferences.language],rawCompatibleBaseUrl:item.baseUrl,default:item.default}))} as CairnMapSourceLinkModesConfig;
+export function getOpenRIAMapSourceLinkModesConfig(worldId?:string): CairnMapSourceLinkModesConfig {
+  const application=getApplicationDefinition(),value=(worldId?resourceGroupForWorld(application,worldId)?.sources:undefined)?.linkModes??defaultSourceSettings(application).linkModes;return {...sourceLinkModesConfigJson,storageKey:value.storageKey,legacyStorageKeys:value.legacyStorageKeys,items:value.items.map(item=>({id:item.id,label:item.label[getApplicationSettings().preferences.language],rawCompatibleBaseUrl:item.baseUrl,default:item.default}))} as CairnMapSourceLinkModesConfig;
 }
 
 export function getOpenRIAMapDataSourcesConfig(): CairnMapDataSourcesConfig {
   return {...dataSourcesConfigJson,items:getApplicationSettings().worlds.map(world=>({id:world.id,worldId:world.id,baseUrl:'',files:[],sourceMode:'dat' as const,pictureSourceMode:'dat' as const}))};
 }
 
-export function getOpenRIAMapFormalDataSourceRuntimeConfig(): CairnMapFormalDataSourceRuntimeConfig {
-  const value=getApplicationSettings().sources;return {...formalDataSourcesConfigJson,selection:{schemaVersion:'cairnmap.data-source-selection.v1',storageKey:value.storageKey,sources:value.items.map(item=>({id:item.id,label:item.label[getApplicationSettings().preferences.language],readerKind:item.readerKind,enabled:item.enabled,selectable:item.selectable})),policy:{defaultSourceId:value.defaultSourceId,selectionMode:value.selectionMode,requireExplicitApply:true,automaticFallback:false,clearCacheOnApply:'source-dependent',retryOnFailure:value.retryOnFailure}},bindings:value.items.map(({label:_label,enabled:_enabled,selectable:_selectable,...binding})=>binding),githubRawTransport:{sourceIds:value.github.sourceIds,repository:{owner:value.github.owner,repo:value.github.repo,branch:value.github.branch}}};
+export function getOpenRIAMapFormalDataSourceRuntimeConfig(worldId?:string): CairnMapFormalDataSourceRuntimeConfig {
+  const application=getApplicationDefinition(),value=(worldId?resourceGroupForWorld(application,worldId)?.sources:undefined)??defaultSourceSettings(application);return {...formalDataSourcesConfigJson,selection:{schemaVersion:'cairnmap.data-source-selection.v1',storageKey:value.storageKey,sources:value.items.map(item=>({id:item.id,label:item.label[getApplicationSettings().preferences.language],readerKind:item.readerKind,enabled:item.enabled,selectable:item.selectable})),policy:{defaultSourceId:value.defaultSourceId,selectionMode:value.selectionMode,requireExplicitApply:true,automaticFallback:false,clearCacheOnApply:'source-dependent',retryOnFailure:value.retryOnFailure}},bindings:value.items.map(({label:_label,enabled:_enabled,selectable:_selectable,...binding})=>binding),githubRawTransport:{sourceIds:value.github.sourceIds,repository:{owner:value.github.owner,repo:value.github.repo,branch:value.github.branch}}};
 }
 
 export function getOpenRIAMapRuleButtonsConfig(): CairnMapRuleButtonsConfig {

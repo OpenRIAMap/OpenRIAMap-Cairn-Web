@@ -37,15 +37,16 @@ function trimSlash(value: string): string {
   return String(value ?? '').trim().replace(/\/+$/, '');
 }
 
-function getDefaultSourceLinkMode(): SourceLinkModeDef {
-  return SOURCE_LINK_MODE_DEFS.find((item) => item.isDefault) ?? SOURCE_LINK_MODE_DEFS[0];
+function getDefaultSourceLinkMode(worldId?: string): SourceLinkModeDef {
+  const defs=getSourceLinkModeDefs(worldId);return defs.find((item) => item.isDefault) ?? defs[0];
 }
 
-function readStoredSourceLinkModeId(): string {
+function readStoredSourceLinkModeId(worldId?: string): string {
+  const config=getOpenRIAMapSourceLinkModesConfig(worldId);
   try {
-    const current = localStorage.getItem(SOURCE_LINK_MODE_STORAGE_KEY) ?? '';
+    const current = localStorage.getItem(config.storageKey) ?? '';
     if (current) return current;
-    for (const key of SOURCE_LINK_MODE_LEGACY_STORAGE_KEYS) {
+    for (const key of config.legacyStorageKeys??[]) {
       const legacy = localStorage.getItem(key) ?? '';
       if (legacy) return legacy;
     }
@@ -55,48 +56,50 @@ function readStoredSourceLinkModeId(): string {
   return '';
 }
 
-function writeStoredSourceLinkModeId(modeId: string): void {
+function writeStoredSourceLinkModeId(modeId: string, worldId?: string): void {
+  const config=getOpenRIAMapSourceLinkModesConfig(worldId);
   try {
-    localStorage.setItem(SOURCE_LINK_MODE_STORAGE_KEY, modeId);
+    localStorage.setItem(config.storageKey, modeId);
   } catch {}
 }
 
-export function getSourceLinkModeDefs(): SourceLinkModeDef[] {
-  return SOURCE_LINK_MODE_DEFS;
+export function getSourceLinkModeDefs(worldId?: string): SourceLinkModeDef[] {
+  if(!worldId)return SOURCE_LINK_MODE_DEFS;
+  return getOpenRIAMapSourceLinkModesConfig(worldId).items.map(item=>({id:item.id,label:item.label,rawCompatibleBaseUrl:item.rawCompatibleBaseUrl,isDefault:item.default}));
 }
 
-export function getDefaultSourceLinkModeId(): string {
-  return getDefaultSourceLinkMode().id;
+export function getDefaultSourceLinkModeId(worldId?: string): string {
+  return getDefaultSourceLinkMode(worldId).id;
 }
 
-export function findSourceLinkMode(modeId: string | null | undefined): SourceLinkModeDef | null {
+export function findSourceLinkMode(modeId: string | null | undefined, worldId?: string): SourceLinkModeDef | null {
   const id = String(modeId ?? '').trim();
   if (!id) return null;
-  return SOURCE_LINK_MODE_DEFS.find((item) => item.id === id) ?? null;
+  return getSourceLinkModeDefs(worldId).find((item) => item.id === id) ?? null;
 }
 
-export function getCurrentSourceLinkMode(): SourceLinkModeDef {
-  const stored = readStoredSourceLinkModeId();
-  const found = findSourceLinkMode(stored);
+export function getCurrentSourceLinkMode(worldId?: string): SourceLinkModeDef {
+  const stored = readStoredSourceLinkModeId(worldId);
+  const found = findSourceLinkMode(stored,worldId);
   if (found) {
-    writeStoredSourceLinkModeId(found.id);
+    writeStoredSourceLinkModeId(found.id,worldId);
     return found;
   }
 
-  const fallback = getDefaultSourceLinkMode();
-  writeStoredSourceLinkModeId(fallback.id);
+  const fallback = getDefaultSourceLinkMode(worldId);
+  writeStoredSourceLinkModeId(fallback.id,worldId);
   return fallback;
 }
 
-export function getCurrentSourceLinkModeId(): string {
-  return getCurrentSourceLinkMode().id;
+export function getCurrentSourceLinkModeId(worldId?: string): string {
+  return getCurrentSourceLinkMode(worldId).id;
 }
 
-export function setCurrentSourceLinkMode(modeId: string): SourceLinkModeDef {
-  const found = findSourceLinkMode(modeId) ?? getDefaultSourceLinkMode();
-  writeStoredSourceLinkModeId(found.id);
+export function setCurrentSourceLinkMode(modeId: string, worldId?: string): SourceLinkModeDef {
+  const found = findSourceLinkMode(modeId,worldId) ?? getDefaultSourceLinkMode(worldId);
+  writeStoredSourceLinkModeId(found.id,worldId);
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('ria:source-link-mode-change', { detail: { modeId: found.id } }));
+    window.dispatchEvent(new CustomEvent('ria:source-link-mode-change', { detail: { modeId: found.id, worldId } }));
   }
   return found;
 }

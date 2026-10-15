@@ -9,6 +9,11 @@ import { isRuleWorldCacheValid, readRuleWorldCache, writeRuleWorldCache, type Ru
 import type { RuleWorldDataset } from './sourceTypes';
 
 function cacheScope(source: RuleDataSourceSnapshot, releaseId: string, worldId: string): RuleCacheScope { return {sourceId:source.sourceId,transportId:source.transportId,releaseId,worldId,readerSchemaVersion:source.readerSchemaVersion}; }
+/** A view normalizes World for the app; cache/warehouse records stay untouched. */
+export function applicationWorldDataset(dataset:RuleWorldDataset,source:RuleDataSourceSnapshot,worldId:string):RuleWorldDataset {
+  if(!source.resourceGroupId)return dataset;
+  return {...dataset,worldId,resourceGroupId:source.resourceGroupId,remoteWorldId:source.remoteWorldId,features:source.remoteWorldId&&source.remoteWorldId!==worldId?dataset.features.map(feature=>({...feature,World:worldId})):dataset.features};
+}
 export type RuleWorldVersion = {
   formalVersion: string | null;
   releaseId: string;
@@ -26,8 +31,8 @@ export async function fetchWorldMergeVersion(
   throw Error('已退役数据格式不能恢复；请选择现役正式数据源。');
 }
 
-export function abortActiveRuleDatasetRequests(): void {
-  abortActiveFormalDataRequests();
+export function abortActiveRuleDatasetRequests(worldIds?:readonly string[]): void {
+  abortActiveFormalDataRequests(worldIds);
 
 }
 
@@ -41,12 +46,12 @@ export async function loadWorldRuleDataset(
   }
 
   const release = await resolveFormalWorldRelease({ source, worldId });
-  const scope = cacheScope(source, release.releaseId, release.worldId);
+  const scope = cacheScope(source, release.releaseId, worldId);
   onProgress?.({ stage: 'world-cache-check', status: 'loading' });
   if (isRuleWorldCacheValid(scope)) {
     onProgress?.({ stage: 'world-cache-check', status: 'success' });
     const cached = readRuleWorldCache(scope);
-    if (cached) return cached;
+    if (cached) return applicationWorldDataset(cached,source,worldId);
   } else {
     onProgress?.({ stage: 'world-cache-check', status: 'success', message: 'Cache requires refresh' });
   }
@@ -54,7 +59,7 @@ export async function loadWorldRuleDataset(
   const features = await loadFormalWorldFeatures({ source, release, onProgress });
   onProgress?.({ stage: 'world-cache-write', status: 'loading' });
   const dataset: RuleWorldDataset = {
-    worldId: release.worldId,
+    worldId,
     mergeVersion: release.releaseId,
     releaseId: release.releaseId,
     formalVersion: release.formalVersion ?? undefined,
@@ -67,5 +72,5 @@ export async function loadWorldRuleDataset(
   writeRuleWorldCache(scope, dataset);
   onProgress?.({ stage: 'world-cache-write', status: 'success' });
   onProgress?.({ stage: 'world-ready', status: 'success' });
-  return dataset;
+  return applicationWorldDataset(dataset,source,worldId);
 }

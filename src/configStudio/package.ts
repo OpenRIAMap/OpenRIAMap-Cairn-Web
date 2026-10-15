@@ -1,3 +1,4 @@
+import { DYNMAP_FLAT_PRESET, isWorldGroups } from '../core/project/applicationResources';
 import { validateConfigPackage } from './runtime';
 import { isNativeConfigRevision } from './contract';
 import { normalizeImportedLocalization, normalizeImportedText } from './localization';
@@ -23,7 +24,7 @@ import { createV32EngineDefaults } from './v32Defaults';
 
 type PackageManifestV3 = {
   schemaVersion: 'cairnmap.config-package-manifest.v3';
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
   packageId: string;
   projectId: string;
   revision: number;
@@ -61,7 +62,7 @@ export async function buildConfigPackageArchive(config: ConfigPackageV3, report:
     { path: 'reports/validation-report.json', body: stableStringify(report) },
     { path: 'reports/v1-parity-report.json', body: stableStringify(parity) },
   ];
-  if(config.application)files.push({path:'reports/application-dependencies.json',body:stableStringify({schemaVersion:'cairnmap.application-dependencies.v1',projectionIds:[...new Set(config.application.worlds.map(world=>world.projection.id))],readers:config.application.sources.items.map(source=>({sourceId:source.id,readerKind:source.readerKind,schemaVersion:source.readerSchemaVersion,transport:source.transport})),reviewProtocol:config.application.review.protocol,authProvider:config.application.review.provider,serverEnvironmentReferences:Object.values(config.application.review.serverReferences),externalWorkflowKeys:config.workflows.filter(workflow=>workflow.mode==='external').map(workflow=>workflow.external?.componentKey),labelTemplate:'cairnmap.label-template.v1',lookupTables:(config.lookupTables??[]).map(table=>({id:table.id,functionKind:table.functionKind}))})});
+  if(config.application)files.push({path:'reports/application-dependencies.json',body:stableStringify({schemaVersion:'cairnmap.application-dependencies.v1',projectionIds:[...new Set(config.application.worlds.map(world=>(world.projectionOverride??world.projection??DYNMAP_FLAT_PRESET).id))],readers:(isWorldGroups(config.application.sources)?config.application.sources.groups.flatMap(group=>group.sources.items):config.application.sources.items).map(source=>({sourceId:source.id,readerKind:source.readerKind,schemaVersion:source.readerSchemaVersion,transport:source.transport})),reviewProtocol:config.application.review.protocol,authProvider:config.application.review.provider,serverEnvironmentReferences:Object.values(config.application.review.serverReferences),externalWorkflowKeys:config.workflows.filter(workflow=>workflow.mode==='external').map(workflow=>workflow.external?.componentKey),labelTemplate:'cairnmap.label-template.v1',lookupTables:(config.lookupTables??[]).map(table=>({id:table.id,functionKind:table.functionKind}))})});
   const manifestFiles = await Promise.all(files.map(async (file) => {
     const bytes = textEncoder.encode(file.body);
     return { path: file.path, sha256: await sha256(bytes), byteLength: bytes.byteLength };

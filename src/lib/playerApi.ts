@@ -1,4 +1,4 @@
-import { getApplicationSettings, moduleEnabled } from '@/core/project/applicationRuntime';
+import { getApplicationSettings, moduleEnabled, worldUsesSharedInterfaces } from '@/core/project/applicationRuntime';
 /**
  * 玩家数据 API
  * 支持代理链路（/api/dynmap）与直连链路（https://satellite.ria.red/map）双通道读取
@@ -72,6 +72,7 @@ async function tryFetchPlayers(url: string, source: PlayerFetchMode): Promise<Pl
 
 export async function fetchPlayersDetailed(worldId: string): Promise<PlayerFetchResult> {
   if(!moduleEnabled('players'))return {players:[],source:null,error:null};
+  if(!worldUsesSharedInterfaces(worldId))return {players:[],source:null,error:'此来源组尚未绑定玩家服务。'};
   const settings=getApplicationSettings().modules.players, timestamp=Date.now();
   const build=(template:string)=>template.replace('{world}',encodeURIComponent(worldId)).replace('{timestamp}',String(timestamp));
   const candidates:Array<{source:PlayerFetchMode;url:string}>=settings.mode==='proxy'?[{source:'proxy',url:build(settings.endpoint)}]:[{source:'direct',url:build(settings.directEndpoint)},{source:'proxy',url:build(settings.endpoint)}];

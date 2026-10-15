@@ -1,3 +1,4 @@
+import { TileImageRequests } from './tileImageRequest';
 import { applicationWorld } from '@/core/project/applicationRuntime';
 import { TILE_ZOOM_BOUNDS } from './mapZoom';
 /**
@@ -61,7 +62,7 @@ export class DynmapTileLayer extends L.TileLayer {
   private _maxRetries: number;
   private _retryDelay: number;
   // 记录每个瓦片的重试次数
-  private _tileRetries: Map<string, number> = new Map();
+  private tileImages = new TileImageRequests();
 
   constructor(options: DynmapTileLayerOptions) {
     // 使用占位符 URL，实际 URL 在 getTileUrl 中生成
@@ -77,6 +78,7 @@ export class DynmapTileLayer extends L.TileLayer {
       errorTileUrl: ''
     });
 
+    this.on('tileunload',(event:L.TileEvent)=>this.tileImages.cancel(event.tile));
     this._baseUrl = options.baseUrl;
     this._prefix = options.prefix;
     this._imageFormat = options.imageFormat || 'jpg';
@@ -91,54 +93,12 @@ export class DynmapTileLayer extends L.TileLayer {
    * 重写 createTile 方法，添加重试逻辑
    */
   createTile(coords: L.Coords, done: L.DoneCallback): HTMLImageElement {
-    const tile = document.createElement('img');
-    const tileKey = `${coords.x}:${coords.y}:${coords.z}`;
-
-    tile.alt = '';
-    tile.setAttribute('role', 'presentation');
-
-    // 设置 crossOrigin 以支持 CORS
-    if (this.options.crossOrigin || this.options.crossOrigin === '') {
-      tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
-    }
-
-    const loadTile = (retryCount: number) => {
-      const url = this.getTileUrl(coords);
-
-      tile.onload = () => {
-        // 加载成功，清除重试记录
-        this._tileRetries.delete(tileKey);
-        done(undefined, tile);
-      };
-
-      tile.onerror = () => {
-        if (retryCount < this._maxRetries) {
-          // 还有重试次数，延迟后重试
-          const nextRetry = retryCount + 1;
-          this._tileRetries.set(tileKey, nextRetry);
-
-          setTimeout(() => {
-            // 添加时间戳参数避免缓存
-            tile.src = `${url}${url.includes('?') ? '&' : '?'}_retry=${nextRetry}&_t=${Date.now()}`;
-          }, this._retryDelay * nextRetry); // 递增延迟
-        } else {
-          // 重试次数用尽，报告错误
-          this._tileRetries.delete(tileKey);
-          done(new Error(`Tile load failed after ${this._maxRetries} retries`), tile);
-        }
-      };
-
-      // 设置初始 URL
-      if (retryCount === 0) {
-        tile.src = url;
-      }
-    };
-
-    // 开始加载
-    loadTile(this._tileRetries.get(tileKey) || 0);
-
+    const tile=document.createElement('img');tile.alt='';tile.setAttribute('role','presentation');
+    if(this.options.crossOrigin||this.options.crossOrigin==='')tile.crossOrigin=this.options.crossOrigin===true?'':this.options.crossOrigin;
+    this.tileImages.load(tile,tile,this.getTileUrl(coords),{maxRetries:this._maxRetries,retryDelay:this._retryDelay},()=>done(undefined,tile),error=>done(error,tile));
     return tile;
   }
+  onRemove(map:L.Map):this {this.tileImages.cancelAll();return super.onRemove(map);}
 
   /**
    * 生成缩放前缀

@@ -13,7 +13,7 @@ export type FormalWorldRelease = {
 
 export type FormalReleaseFetchJson = <T>(key: string, stage: FormalReleaseReaderError['stage']) => Promise<T>;
 
-const activeRequests = new Set<AbortController>();
+const activeRequests = new Map<AbortController,string|undefined>();
 
 export class FormalReleaseReaderError extends Error {
   readonly stage: 'release-set' | 'world-pointer' | 'manifest' | 'chunk-catalog' | 'chunk' | 'unknown';
@@ -55,7 +55,7 @@ function safeObjectKey(value: string, stage: FormalReleaseReaderError['stage']):
 
 async function fetchFormalJson<T>(source: RuleDataSourceSnapshot, key: string, stage: FormalReleaseReaderError['stage']): Promise<T> {
   const controller = new AbortController();
-  activeRequests.add(controller);
+  activeRequests.set(controller,source.worldId);
   const url = `${source.rootUrl}/${safeObjectKey(key, stage)}`;
   try {
     const response = await fetch(url, { signal: controller.signal, cache: 'no-store' });
@@ -74,9 +74,8 @@ function sourceFetcher(source: RuleDataSourceSnapshot, fetchJson?: FormalRelease
   return fetchJson ?? ((key, stage) => fetchFormalJson(source, key, stage));
 }
 
-export function abortActiveFormalDataRequests(): void {
-  for (const controller of activeRequests) controller.abort();
-  activeRequests.clear();
+export function abortActiveFormalDataRequests(worldIds?:readonly string[]): void {
+  for (const [controller,worldId] of activeRequests) if(!worldIds||worldId&&worldIds.includes(worldId)){controller.abort();activeRequests.delete(controller);}
 }
 
 export async function resolveFormalWorldRelease(args: {
@@ -84,7 +83,7 @@ export async function resolveFormalWorldRelease(args: {
   worldId: string;
   fetchJson?: FormalReleaseFetchJson;
 }): Promise<FormalWorldRelease> {
-  const worldId = String(args.worldId ?? '').trim();
+  const worldId = String(args.source.remoteWorldId ?? args.worldId ?? '').trim();
   if (!worldId) throw new FormalReleaseReaderError('world-pointer', 'worldId is required');
   const fetchJson = sourceFetcher(args.source, args.fetchJson);
   const releaseSet = asRecord(await fetchJson<JsonRecord>('current/worlds/_release-set.json', 'release-set'), 'release-set', 'release set');

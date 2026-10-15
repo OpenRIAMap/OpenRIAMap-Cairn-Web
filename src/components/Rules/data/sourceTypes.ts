@@ -24,6 +24,8 @@ export type TradeImageSourceDef = {
 
 export type RuleWorldDataset = {
   worldId: string;
+  remoteWorldId?:string;
+  resourceGroupId?:string;
   mergeVersion: number | string;
   releaseId?: string;
   formalVersion?: number | string;
