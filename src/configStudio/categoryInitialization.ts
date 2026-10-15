@@ -7,6 +7,7 @@ import { resolveNodeFieldSettings,incomingNodeFieldSettings } from './nodeFieldS
 import { STRUCTURE_CONTEXT_ID } from './structureRoleIndex';
 import { linkCardInheritance } from './cardInheritance';
 import { migrateConfigToR9 } from './r9Migration';
+import { canonicalDictionaries, canonicalDictionaryOwner } from './dictionaryContract';
 
 export type CategoryInitialization = {
   parentId?:string; code:string; labels:{zh:string;en:string};
@@ -17,7 +18,7 @@ export type CategoryInitialization = {
 export type CategoryInitializationReport={actions:string[];renamed:Record<string,string>};
 const reserved=new Set(['World','Class','Kind','SKind','SKind2','Skind','Skind2','Type','ID','CreateBy','CreateTime','ModifityBy','ModifityTime']);
 function semanticField(field:FieldDefinition):string {
-  const {fieldId:_id,overrideOf:_override,scope:_scope,inheritance:_inheritance,...definition}=field;
+  const {fieldId:_id,overrideOf:_override,scope:_scope,inheritance:_inheritance,...definition}=canonicalDictionaryOwner(field);
   const stable=(value:unknown):string=>Array.isArray(value)?'['+value.map(stable).join(',')+']':value&&typeof value==='object'?'{'+Object.entries(value).filter(([,item])=>item!==undefined).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>JSON.stringify(key)+':'+stable(item)).join(',')+'}':JSON.stringify(value);
   return stable({...definition,scope:fieldScope(field)});
 }
@@ -82,7 +83,7 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
     if(!display?.enabled||display.allowMultipleParts!==multiple||(multiple&&(display.anchor??'featureBbox')!==anchor))throw Error('显示模板与目标几何、多部件或部件显示模式不兼容。');
     profile.zoomPriority=rewriteCategoryReferences(structuredClone(display.zoomPriority),renamed);profile.zoomPriority.rules=profile.zoomPriority.rules.map(rule=>({...rule,id:newConfigId('render')}));profile.renderState=profile.zoomPriority.rules.length?'enabled':'unconfigured';actions.push(`复制显示规则 ${profile.zoomPriority.rules.length} 条。`);
   }else {profile.zoomPriority.rules=[];profile.renderState='unconfigured';actions.push('显示未配置：不会隐式继承或渲染。');}
-  const card=sync.card&&source?rewriteCategoryReferences(structuredClone(resolveCardConfiguration(config,source.path)??{mode:'fields' as const,items:[]}),renamed):{mode:'fields' as const,items:[]};
+  const card=sync.card&&source?rewriteCategoryReferences(structuredClone(resolveCardConfiguration(config,source.path,false)??{mode:'fields' as const,items:[]}),renamed):{mode:'fields' as const,items:[]};
   if(card.mode==='fields')card.items=card.items.map(item=>({...item,...(config.contractRevision>=10?{inheritFrom:undefined}:{}),id:newConfigId('card')}));
   const node:CategoryNode={nodeId:newConfigId('node'),path,classificationLabels:{...parent?.classificationLabels,[level]:{zh:request.labels.zh.trim()||code,en:request.labels.en}},children:[],inheritDown:source?structuredClone(inheritanceControls(source)):{fields:true,display:true,card:true},fields,geometryType:geometry,geometryProfiles:{[geometry]:profile},card};
   if(config.contractRevision>=10&&sync.fields&&source){const inherited=incomingNodeFieldSettings({...config,nodes:[...config.nodes,node]},node),copy=rewriteCategoryReferences(structuredClone(resolveNodeFieldSettings(config,source.path).value),renamed);if(inherited.structure&&copy.structure&&JSON.stringify(inherited.structure)!==JSON.stringify(copy.structure))throw Error('模板身份/绑定字段与父级固定包含关系冲突，无法增量合并。');node.fieldSettings={...copy};if(inherited.structure)delete node.fieldSettings.structure;if(inherited.search?.inheritance==='sealed')delete node.fieldSettings.search;}
@@ -92,6 +93,6 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
   for(const dependency of localDependencies([profile.zoomPriority,card,node.fieldSettings]))if(!available.has(dependency))throw Error(`未同步依赖字段 ${dependency}；请同步字段设计或调整初始化选择。`);
   for(const rule of profile.zoomPriority.rules){const visibility=rule.extensions?.visibility;if(visibility?.mode==='activeContextMember'&&visibility.activeContextMember?.bindingId){if(config.contractRevision>=10){const role=resolveNodeFieldSettings(next,path).value.structure;if(visibility.activeContextMember.bindingId!==STRUCTURE_CONTEXT_ID||!role?.enabled||role.role!=='member')throw Error('模板的附属可见性需要同步可用的附属身份与字段。');}else{const binding=next.contextBindings?.find(binding=>binding.id===visibility.activeContextMember?.bindingId);if(binding?.member?.classification.class!==path.class)throw Error('模板显示引用的上下文绑定不适用于目标 Class。');}}}
   next.workflows=syncSystemClassification(next).workflows;
-  const validation=validateConfigPackage(next);if(!validation.valid)throw Error(validation.issues.filter(issue=>issue.severity==='error').map(issue=>`${issue.path}：${issue.message}`).join('\n'));
-  actions.push('完整配置核验通过，新分类草稿可以继续编辑。');return {config:next,node,report:{actions,renamed}};
+  const candidate=canonicalDictionaries(next),validation=validateConfigPackage(candidate);if(!validation.valid)throw Error(validation.issues.filter(issue=>issue.severity==='error').map(issue=>`${issue.path}：${issue.message}`).join('\n'));
+  actions.push('完整配置核验通过，新分类草稿可以继续编辑。');return {config:candidate,node:candidate.nodes.find(item=>item.nodeId===node.nodeId)!,report:{actions,renamed}};
 }

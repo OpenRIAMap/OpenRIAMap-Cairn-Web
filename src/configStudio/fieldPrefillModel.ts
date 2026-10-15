@@ -3,7 +3,7 @@ import { workflowControlFromField } from './workflowFieldControl';
 
 export function prefillWorkflowControl(value:WorkflowControl,field:FieldDefinition,audit?:PrefillAudit):WorkflowControl {
   const generated=workflowControlFromField({...field,defaultValue:undefined,placeholder:undefined},value.slot??value.id,value.id);
-  const {fieldSource:_source,optionSource:_options,optionsTableId:_table,...original}=value;
+  const {fieldSource:_source,optionSource:_options,optionsTableId:_table,optionsFieldRef:_ref,optionTable:_body,...original}=value;
   const next:WorkflowControl={...original,kind:generated.kind,label:structuredClone(field.labels),prefillField:field.key,fieldFormat:field.format??'plain',options:structuredClone(generated.options),optionValueType:generated.optionValueType,group:generated.group,columns:value.columns};
   delete next.prefillAudit;if(audit)next.prefillAudit=structuredClone(audit);
   if(generated.search)next.search=generated.search;
@@ -21,11 +21,11 @@ export function prefillGroupField(value:WorkflowGroupField,field:FieldDefinition
   const control=prefillWorkflowControl({...value,id:'group-prefill',slot:'GROUP_VALUE',columns:1},field,audit);
   const {id:_id,slot:_slot,columns:_columns,group:_group,...result}=control;
   if(['classificationPicker','group','tagsExtensions','component','notice','runtimeValue'].includes(result.kind))throw Error('此字段不能预填到组内单控件。');
-  const {fieldSource:_source,optionsTableId:_table,prefillAudit:_audit,...original}=value;
+  const {fieldSource:_source,optionsTableId:_table,optionsFieldRef:_ref,optionTable:_body,prefillAudit:_audit,...original}=value;
   return {...original,...result,key:value.key,kind:result.kind as WorkflowGroupField['kind']};
 }
 export function prefillCardItem(value:CardItem,field:FieldDefinition,audit?:PrefillAudit):CardItem {
-  const {labelMode:_label,valueMode:_value,prefillAudit:_audit,...item}=value;
+  const {labelMode:_label,valueMode:_value,prefillAudit:_audit,fieldBinding:_binding,optionsFieldRef:_ref,optionsTableId:_table,optionTable:_body,...item}=value;
   return {...item,...(audit?{prefillAudit:structuredClone(audit)}:{}),source:field.key,label:structuredClone(field.labels),valueOptions:structuredClone(field.options??[]),options:{...item.options,format:field.options?.length?'enum':field.format??'plain'}};
 }
 export function clearCardMapping(item:CardItem):CardItem {

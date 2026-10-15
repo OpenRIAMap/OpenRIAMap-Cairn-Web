@@ -14,6 +14,9 @@ export type FieldValueType = 'string' | 'number' | 'boolean' | 'enum' | 'json' |
 /** A select always carries the human-facing label separately from its value.
  * V1 uses this for many railway and road fields (for example 上行 -> 1). */
 export type SelectOption = { value: string; label: LocalizedText };
+/** The same dictionary body is used inline and by public lookup tables. */
+export type OptionTable = { valueType: 'string' | 'number' | 'boolean'; rows: SelectOption[] };
+export type FieldDefinitionRef = { nodeId: string; fieldId: string };
 /** Explicit table binding is live; prefill copies effective rows without it. */
 export type LookupTable = {
   id: string;
@@ -53,6 +56,7 @@ export type FieldDefinition = {
   description: LocalizedText;
   options?: SelectOption[];
   optionsTableId?: string;
+  optionTable?: OptionTable;
   /** Options are serialized text keys; this controls the actual stored scalar. */
   optionValueType?: 'string' | 'number' | 'boolean';
   format?: 'plain' | 'externalLink' | 'boolean' | 'json' | 'date';
@@ -633,6 +637,11 @@ export type CardRelation = {
 };
 export type CardItem = {
   id: string;
+  fieldBinding?: FieldDefinitionRef;
+  optionsFieldRef?: FieldDefinitionRef;
+  optionsTableId?: string;
+  optionTable?: OptionTable;
+  optionValueType?: OptionTable['valueType'];
   inheritFrom?: { nodeId: string; itemId: string };
   prefillAudit?: PrefillAudit;
   source: string;
@@ -732,6 +741,8 @@ export type WorkflowControlKind = ComposedWorkflowControlKind | 'notice' | 'json
  * keep their individual fields, options and required state editable.
  */
 export type WorkflowGroupField = {
+  optionTable?: OptionTable;
+  optionsFieldRef?: FieldDefinitionRef;
   prefillAudit?: PrefillAudit;
   /** Local target hint copied once by prefill; no source identity is retained. */
   prefillField?: string;
@@ -767,6 +778,8 @@ export type WorkflowRepeatGroup = {
   addLabel?: LocalizedText;
 };
 export type WorkflowControl = {
+  optionTable?: OptionTable;
+  optionsFieldRef?: FieldDefinitionRef;
   prefillAudit?: PrefillAudit;
   prefillField?: string;
   id: string;

@@ -1,6 +1,7 @@
 import type { ConfigPackageV3 } from './types';
 import { migrateV31Package, migrateV4Package, migrateV5Package } from './package';
 import { compileConfigRuntime, validateConfigPackage } from './runtime';
+import { canonicalDictionaries } from './dictionaryContract';
 /** One validation boundary for persisted packages and runtime activation.
  * Import/edit may retain a diagnostic draft, but never bypass this boundary. */
 export function prepareConfigForActivation(value: ConfigPackageV3): ConfigPackageV3 {
@@ -10,6 +11,7 @@ export function prepareConfigForActivation(value: ConfigPackageV3): ConfigPackag
   if (config.contractRevision === 4) config = migrateV4Package(config);
   if (config.contractRevision === 5) config = migrateV5Package(config);
   if (![6,7,8,9,10,11].includes(config.contractRevision)) throw new Error(`无法启用：未知的原生契约 revision ${config.contractRevision}。`);
+  config=canonicalDictionaries(config);
   const report = validateConfigPackage(config);
   if (!report.valid) throw new Error(`无法保存或启用无效配置：${report.issues.filter(issue => issue.severity === 'error').slice(0,5).map(issue => `${issue.path}：${issue.message}`).join('；')}`);
   return compileConfigRuntime(config, true);

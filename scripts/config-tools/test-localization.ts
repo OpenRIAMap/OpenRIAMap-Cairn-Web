@@ -6,7 +6,8 @@ assert.deepEqual(normalizeImportedText('道路', ''), { zh: '道路', en: '' });
 assert.deepEqual(normalizeImportedText('道路', '道路'), { zh: '道路', en: '' });
 assert.deepEqual(normalizeImportedText('道路', 'Road'), { zh: '道路', en: 'Road' });
 assert.deepEqual(normalizeImportedText('ID', 'ID'), { zh: 'ID', en: 'ID' });
-assert.equal(optionLabel({ value: '1', label: { zh: '上行', en: '' } }, 'en'), '');
+assert.equal(optionLabel({ value: '1', label: { zh: '上行', en: '' } }, 'en'), '1'); // terminal value fallback; never Chinese
+assert.equal(optionLabel({ value: '1', label: { zh: '', en: 'Up' } }, 'zh'), 'Up');
 const config = createConfigPackageFromCurrentProject();
 const field = config.nodes.flatMap((node) => node.fields)[0];
 field.labels = { zh: '旧草稿中文', en: '旧草稿中文' };

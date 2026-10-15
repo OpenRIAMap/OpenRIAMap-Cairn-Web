@@ -23,7 +23,7 @@ export function validatePrefillCopies(config:ConfigPackageV3,resolve:(config:Con
     const audit=owner.prefillAudit;if(!audit)return;
     const fields=resolve(config,audit.source.path),field=fields.find(field=>field.fieldId===audit.source.fieldId)??fields.find(field=>field.key===audit.source.key);
     const source=Object.values(audit.source.path).filter(Boolean).join('/');
-    if(!field){issues.push({severity:'error',code:'prefill-source-field-missing',path,field:audit.source.key,message:`预填来源 ${source} / ${audit.source.key} 已不存在；请在该模块重新预填或清除对照摘要。`});return;}
+    if(!field){issues.push({severity:config.contractRevision>=11?'warning':'error',code:'prefill-source-field-missing',path,field:audit.source.key,message:`预填来源 ${source} / ${audit.source.key} 已不存在；当前副本仍独立保存，请确认是否需要更新。`});return;}
     const current=fieldFingerprint(field);
     if(current!==audit.fingerprint&&current!==audit.confirmedFingerprint)issues.push({severity:'warning',code:'prefill-copy-outdated',path,field:field.key,message:`来源 ${source} / ${field.key} 的定义、名称、类型或对照已变化；${path} 仍保留独立副本。请重新预填，或确认保留本次自定义副本。`});
   });return issues;

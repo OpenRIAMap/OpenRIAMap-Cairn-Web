@@ -1,7 +1,7 @@
 import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
 import { isNativeConfigRevision } from './contract';
 import type { CardItem, ClassificationPath, ConfigPackageV3 } from './types';
-import { resolveCardConfiguration, resolveEffectiveFields } from './runtime';
+import { resolveCardConfiguration, resolveEffectiveFields, optionLabel } from './runtime';
 import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
 import type { CardRow, InfoSections } from '@/components/Rules/cardrules/fieldRules';
 import type { RailNewIndex } from '@/components/Navigation/railNewIndex';
@@ -59,8 +59,8 @@ function text(value: unknown): string {
 function labelFor(item: CardItem, config?: ConfigPackageV3, record?: FeatureRecord): string {
   const language=config?.application?.preferences.language??'zh';
   if (item.labelMode === 'field' && config && record) return resolveEffectiveFields(config,classificationFor(record)).find(field=>field.key===item.source)?.labels[language] ?? (language==='en'?'':item.source);
-  if(language==='en')return item.label?.en??'';
-  return item.label?.zh?.trim() || item.source;
+  if(language==='en')return item.label?.en||(config&&config.contractRevision>=11?item.source:'');
+  return item.label?.zh?.trim() || item.label?.en?.trim() || item.source;
 }
 
 function relationTarget(item: CardItem) {
@@ -144,8 +144,9 @@ function rowFor(item: CardItem, record: FeatureRecord, config: ConfigPackageV3, 
     return { label, value: language==='en'?(node?.classificationLabels?.[level]?.en??''):(node?.classificationLabels?.[level]?.zh||[path.kind,path.skind,path.skind2].filter(Boolean).join('/')||path.class) };
   }
   const mappedOptions = item.valueMode === 'field' ? defined?.options : item.valueOptions;
-  const shown = mappedOptions?.find(option=>option.value===rawText)?.label[language];
-  if(item.renderer==='text'&&Array.isArray(raw)&&mappedOptions?.length){const values=raw.map(value=>mappedOptions.find(option=>option.value===text(value))?.label[language]??value);return {label,value:values};}
+  const mappedOption=mappedOptions?.find(option=>option.value===rawText);
+  const shown=mappedOption?optionLabel(mappedOption,language):undefined;
+  if(item.renderer==='text'&&Array.isArray(raw)&&mappedOptions?.length){const values=raw.map(value=>((option)=>option?optionLabel(option,language):value)(mappedOptions.find(option=>option.value===text(value))));return {label,value:values};}
   if (shown !== undefined && item.renderer === 'text') return {label,value:shown};
   if (item.options?.format === 'enum') {
     if (config.contractRevision>=9 || item.valueMode === 'override') return {label,value:shown ?? rawText};

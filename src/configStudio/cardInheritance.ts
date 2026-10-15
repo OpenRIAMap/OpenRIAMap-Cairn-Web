@@ -14,7 +14,7 @@ export function mergeInheritedCard(parent:CardConfiguration|undefined,local:Card
     const key=identity(item.inheritFrom),source=upstream.get(key);
     if(!source)return []; // An upstream deletion removes its inherited row.
     represented.add(key);
-    return [{...item,source:source.source,label:source.label,valueOptions:source.valueOptions,prefillAudit:undefined}];
+    return [{...item,source:source.source,label:source.label,valueOptions:source.valueOptions,fieldBinding:source.fieldBinding,optionTable:source.optionTable,optionsFieldRef:source.optionsFieldRef,optionsTableId:source.optionsTableId,optionValueType:source.optionValueType,prefillAudit:undefined}];
   });
   for(const [key,item] of upstream)if(!represented.has(key))items.push({...item,id:`inherited:${key}`,inheritFrom:item.inheritFrom??{nodeId:parentId,itemId:item.id},prefillAudit:undefined});
   return {...local,items};

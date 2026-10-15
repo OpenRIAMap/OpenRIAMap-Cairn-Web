@@ -19,6 +19,8 @@ import {defaultLookupTables} from '../../src/configStudio/lookupTables';
 import {migrateConfigToR10} from '../../src/configStudio/r10Migration';
 import {NodeFieldSettingsEditor} from '../../src/configStudio/NodeFieldSettingsEditor';
 import {V3CardEditor} from '../../src/configStudio/V3CardEditor';
+import {bindOptionsTable} from '../../src/configStudio/lookupTables';
+import type {WorkflowControl} from '../../src/configStudio/types';
 
 async function main(){
   const initial=await(await fetch('/src/configStudio/defaults/r9-r5.config.json')).json() as ConfigPackageV3;
@@ -43,8 +45,15 @@ async function main(){
     (window as unknown as {tableAcceptance:unknown}).tableAcceptance={config,field};
     return <div id="table-harness" className="config-editor min-h-screen min-w-0 bg-white p-4"><LookupTablesEditor config={config} onChange={setConfig}/><TableOptionsEditor config={config} value={field} onChange={next=>setConfig({...config,nodes:config.nodes.map((node,index)=>index?node:{...node,fields:node.fields.map(field=>field.fieldId==='TABLE_UI'?{...field,...next}:field)})})}/></div>;
   }
+  function ReuseHarness(){
+    const [config,setConfig]=useState(()=>{const seed=structuredClone(initial);seed.nodes[0].fields=seed.nodes[0].fields.filter(f=>f.fieldId!=='TABLE_UI');const next=migrateConfigToR11({...seed,contractRevision:9}).config,node=next.nodes.find(n=>n.path.class==='BUD'&&!n.path.kind)!;node.fields.push(bindOptionsTable(next,{fieldId:'reuse-source',key:'SharedTest',type:'enum',cardinality:'single',input:'select',labels:{zh:'共用字段',en:'Shared'},description:{zh:'',en:''}},'road-travel-modes'));node.card={mode:'fields',items:[{id:'reuse-card',source:'SharedTest',visible:true,renderer:'text',label:{zh:'本地',en:''}}]};return next;});
+    const [control,setControl]=useState<WorkflowControl>({id:'reuse-select',slot:'TEST',kind:'select',columns:1,label:{zh:'选项',en:''}});
+    const node=config.nodes.find(n=>n.path.class==='BUD'&&!n.path.kind)!;
+    (window as unknown as {reuseAcceptance:unknown}).reuseAcceptance={config,control};
+    return <div id="reuse-harness" className="config-editor min-h-screen bg-white p-4"><button className="rounded border p-2" onClick={()=>{const next=structuredClone(config);next.lookupTables!.find(t=>t.id==='road-travel-modes')!.rows[0].label.zh='更新后步行';next.nodes.find(n=>n.nodeId===node.nodeId)!.fields.find(f=>f.fieldId==='reuse-source')!.labels.zh='更新后字段';setConfig(next);}}>更新来源验收</button><section aria-label="下拉对照验收"><TableOptionsEditor config={config} value={control} onChange={next=>setControl({...control,...next})} initialPath={node.path}/></section><V3CardEditor config={config} node={node} onChange={next=>setConfig({...config,nodes:config.nodes.map(n=>n.nodeId===next.nodeId?next:n)})}/></div>;
+  }
   if(new URLSearchParams(location.search).get('resources')==='1'){await loadActiveConfig();if(new URLSearchParams(location.search).get('reset')==='1')await restoreApplicationDefault();const active=getActiveConfigSnapshot();if(active.contractRevision<11)await persistActiveConfig(migrateConfigToR11(active).config,true);}
   (window as unknown as {applicationAcceptance:unknown}).applicationAcceptance={snapshot:getActiveConfigSnapshot,restoreDefault:restoreApplicationDefault,resourceWorld:applicationWorld,resourceSource:getRuleDataSourceSnapshot};
-  createRoot(document.getElementById('subject-ui')!).render(<React.StrictMode>{new URLSearchParams(location.search).get('mode')==='general'?<ConfigBootstrap><ConfigStudio initialTab="general" mountedRecords={[]} onClose={()=>undefined}/></ConfigBootstrap>:new URLSearchParams(location.search).get('mode')==='inherit'?<CardHarness/>:new URLSearchParams(location.search).get('mode')==='role'?<RoleHarness/>:new URLSearchParams(location.search).get('mode')==='search'?<SearchHarness/>:<Harness/>}</React.StrictMode>);
+  createRoot(document.getElementById('subject-ui')!).render(<React.StrictMode>{new URLSearchParams(location.search).get('mode')==='reuse'?<ReuseHarness/>:new URLSearchParams(location.search).get('mode')==='general'?<ConfigBootstrap><ConfigStudio initialTab="general" mountedRecords={[]} onClose={()=>undefined}/></ConfigBootstrap>:new URLSearchParams(location.search).get('mode')==='inherit'?<CardHarness/>:new URLSearchParams(location.search).get('mode')==='role'?<RoleHarness/>:new URLSearchParams(location.search).get('mode')==='search'?<SearchHarness/>:<Harness/>}</React.StrictMode>);
 }
 void main();

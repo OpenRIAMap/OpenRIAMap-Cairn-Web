@@ -7,7 +7,7 @@ import {compileRenderFormula} from './renderBooleanFormula';
 import {resolveMappedColor} from './renderScalar';
 import {scalarValueErrors, validMappedColor} from './renderScalar';
 import { isNativeConfigRevision } from './contract';
-import { effectiveOptionsOwner, effectiveOptions, validateLookupTables } from './lookupTables';
+import { effectiveOptionsOwner, effectiveOptions, resolveBoundCard, validateLookupTables } from './lookupTables';
 import { mergeInheritedCard } from './cardInheritance';
 import { validatePrefillCopies } from './prefillAudit';
 import { resolveNodeFieldSettings,validateNodeFieldSettings } from './nodeFieldSettings';
@@ -152,7 +152,7 @@ export function readRecordPath(record: Record<string, unknown>, path: string): u
 }
 
 export function optionLabel(option: SelectOption, locale: keyof SelectOption['label'] = 'zh'): string {
-  return locale === 'en' ? option.label.en ?? '' : option.label.zh || option.value;
+  return locale === 'en' ? option.label.en || option.value : option.label.zh || option.label.en || option.value;
 }
 
 export function normalizeSelectOptions(value: unknown): SelectOption[] {
@@ -301,8 +301,8 @@ export function resolveIncomingFields(config:ConfigPackageV3,path:Classification
   return fields.filter(field=>field.inheritance==='sealed'||node&&inheritanceControls(node).fields&&field.inheritance!=='localOnly').map(field=>({...field,inheritance:'sealed'}));
 }
 
-export function resolveWorkflowSelectOptions(config: ConfigPackageV3, control: Pick<WorkflowControl, 'options' | 'optionSource' | 'optionsTableId'>): SelectOption[] {
-  if (control.optionsTableId) return effectiveOptions(config,control);
+export function resolveWorkflowSelectOptions(config: ConfigPackageV3, control: Pick<WorkflowControl, 'options' | 'optionSource' | 'optionsTableId' | 'optionsFieldRef' | 'optionTable'>): SelectOption[] {
+  if (control.optionsTableId||control.optionsFieldRef||control.optionTable) return effectiveOptions(config,control);
   if (config.contractRevision >= 8) return control.options ?? [];
   return control.optionSource ? config.registries.optionSets?.find(set => set.id === control.optionSource?.registryKey)?.options ?? [] : control.options ?? [];
 }
@@ -380,8 +380,8 @@ export function resolveRenderExtensions(config: ConfigPackageV3, geometry: Geome
   return result;
 }
 
-export function resolveCardConfiguration(config: ConfigPackageV3, path: ClassificationPath): CardConfiguration | undefined {
-  const compiled = compiledConfigs.get(config); const key = compiledPathKey(path);
+export function resolveCardConfiguration(config: ConfigPackageV3, path: ClassificationPath,bindings=true): CardConfiguration | undefined {
+  const compiled = bindings?compiledConfigs.get(config):undefined; const key = compiledPathKey(path);
   if (compiled?.cards.has(key)) { compiled.hits++; return compiled.cards.get(key); }
   let result = resolveInheritedValue(config, path, 'card', (node) => node.card);
   if(config.contractRevision>=10){
@@ -392,6 +392,7 @@ export function resolveCardConfiguration(config: ConfigPackageV3, path: Classifi
       parentId=node.nodeId;propagate=inheritanceControls(node).card;
     }
   }
+  if(bindings&&config.contractRevision>=11&&result?.mode==='fields')result={...result,items:result.items.map(item=>resolveBoundCard(config,item))};
   return compiled ? cachedPathValue(compiled.cards, key, result) : result;
 }
 
@@ -436,7 +437,7 @@ function validateField(field: FieldDefinition, path: string, known: Set<string>,
   if (PROTECTED_FIELD_KEYS.has(field.key)) issue(issues, 'error', 'system-field-redefined', path, `系统字段 ${field.key} 不能在分类配置中重新定义。`, { field: field.key });
   if (known.has(field.key)) issue(issues, 'error', 'field-key-duplicate', path, `字段 ${field.key} 在同一分类节点中重复。`, { field: field.key });
   known.add(field.key);
-  if (!field.labels.zh.trim()) issue(issues, 'error', 'field-label-zh-required', path, '字段必须提供中文标签。', { field: field.key });
+  if (!(field.labels.zh.trim()||field.labels.en.trim())) issue(issues, 'error', 'field-label-zh-required', path, '字段必须提供中文或英文标签。', { field: field.key });
   if (field.type === 'enum' && (!field.options?.length && !field.optionSource?.registryKey)) issue(issues, 'error', 'enum-options-required', path, '枚举字段必须提供静态选项或受控选项注册表。', { field: field.key });
   const optionValues = new Set<string>();
   for (const option of field.options ?? []) {
@@ -1039,7 +1040,7 @@ export function validateWorkflowDefinition(workflow: WorkflowDefinition, config:
   validateWorkflow(workflow, config, issues);
   const scoped={...config,nodes:[],workflows:[workflow]};
   issues.push(...validatePrefillCopies(scoped,(_config,path)=>resolveEffectiveFields(config,path)));
-  issues.push(...validateLookupTables(scoped));
+  issues.push(...validateLookupTables({...config,workflows:[workflow]},false));
   return {
     schemaVersion: 'cairnmap.config-validation-report.v3',
     valid: !issues.some((item) => item.severity === 'error'),
