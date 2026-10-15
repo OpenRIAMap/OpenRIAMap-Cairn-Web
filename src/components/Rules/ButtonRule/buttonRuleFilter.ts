@@ -1,3 +1,4 @@
+import { matchesButtonClassification } from '@/core/project/buttonClassification';
 import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
 import { RULE_BUTTON_DEFS, type RuleButtonCriteria } from './buttonRuleConfig';
 
@@ -34,6 +35,7 @@ function matchCriteria(r: FeatureRecord, criteria: RuleButtonCriteria): boolean 
   }
 
   const kk = extractKindTriplet(r);
+  if(criteria.paths)return matchesButtonClassification({class:cls,...kk},{paths:criteria.paths});
 
   if (criteria.Kind && criteria.Kind.length > 0) {
     if (!criteria.Kind.includes(kk.kind)) return false;

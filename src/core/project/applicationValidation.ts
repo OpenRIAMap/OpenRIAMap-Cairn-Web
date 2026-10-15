@@ -1,5 +1,6 @@
 import type { ApplicationSettings, ResolvedApplicationSettings } from './applicationTypes';
 import { resolveApplicationSettings, resourceGroupForWorld, validateResourceGroups } from './applicationResources';
+import {isButtonIcon,isButtonTone} from './buttonVisualCatalog';
 export type ApplicationIssue={path:string;message:string};
 export function validateApplication(input:ApplicationSettings,classCodes?:Set<string>):ApplicationIssue[]{
   const issues:ApplicationIssue[]=validateResourceGroups(input),fail=(path:string,message:string)=>issues.push({path,message});
@@ -21,7 +22,8 @@ export function validateApplication(input:ApplicationSettings,classCodes?:Set<st
     if(!Number.isInteger(world.tiles.minNativeZoom)||!Number.isInteger(world.tiles.maxNativeZoom)||world.tiles.minNativeZoom>world.tiles.maxNativeZoom||world.tiles.minNativeZoom<value.preferences.map.leafletOffset||world.tiles.maxNativeZoom>8+value.preferences.map.leafletOffset)fail(path,'原生瓦片范围必须位于逻辑 Zoom 映射内且下限不大于上限。');
     if(!Number.isInteger(world.tiles.maxRetries)||world.tiles.maxRetries<0||world.tiles.maxRetries>10||!Number.isFinite(world.tiles.retryDelay)||world.tiles.retryDelay<0)fail(path,'瓦片重试次数/间隔无效。');
   }
-  for(const button of value.buttons.items){const path=`buttons/${button.id}`;if(!['train','route','leaf','home','map','zap','shoppingCart','building2'].includes(button.iconKey))fail(path,'图标未注册。');
+  for(const button of value.buttons.items){const path=`buttons/${button.id}`;if(!isButtonIcon(button.iconKey))fail(path,'图标未注册。');if(!isButtonTone(button.tone))fail(path,'配色未注册。');
+    if(button.criteria.paths){if(!button.criteria.paths.length)fail(path,'至少需要一条显示内容。');if(Object.keys(button.criteria).some(key=>key!=='paths'))fail(path,'完整分类范围不能与旧条件数组并存。');for(const [index,row] of button.criteria.paths.entries()){if(!row.class||row.skind&&!row.kind||row.skind2&&!row.skind)fail(`${path}/criteria/paths/${index}`,'Class 必填，父级路径必须连续。');if(classCodes&&!classCodes.has(row.class))fail(path,`绑定 Class 不存在：${row.class}`);}}
     if(classCodes)for(const code of button.criteria.classCode??[])if(!classCodes.has(code))fail(path,`绑定 Class 不存在：${code}`);
     const behavior=button.behavior;for(const target of [...behavior?.exclusiveWith??[],...behavior?.disableWhenEnabled??[],...behavior?.enableWhenEnabled??[],...(behavior?.linkedButtons??[]).map(row=>row.targetId)])if(target===button.id||!buttons.has(target))fail(path,`关联按钮不存在或引用自身：${target}`);
     const enables=new Set([...(behavior?.enableWhenEnabled??[]),...(behavior?.linkedButtons??[]).filter(row=>row.mode!=='disableWhenThisEnabled').map(row=>row.targetId)]),disables=new Set([...(behavior?.disableWhenEnabled??[]),...(behavior?.exclusiveWith??[]),...(behavior?.linkedButtons??[]).filter(row=>row.mode==='disableWhenThisEnabled').map(row=>row.targetId)]);for(const id of enables)if(disables.has(id))fail(path,`按钮同时要求开/关：${id}`);

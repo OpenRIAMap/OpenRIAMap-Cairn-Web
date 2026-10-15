@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {migrateConfigToR11} from '../../src/configStudio/r11Migration';
+import {migrateButtonClassification,matchesButtonClassification} from '../../src/core/project/buttonClassification';
+import {BUTTON_ICONS,BUTTON_TONES,isButtonIcon,isButtonTone} from '../../src/core/project/buttonVisualCatalog';
+import {validateConfigPackage} from '../../src/configStudio/runtime';
+import {applyApplicationSettings} from '../../src/core/project/applicationRuntime';
+import {filterRecordsByRuleButtons,getMatchingRuleButtonIds} from '../../src/components/Rules/ButtonRule/buttonRuleFilter';
+import type {ConfigPackageV3} from '../../src/configStudio/types';
+import type {FeatureRecord} from '../../src/components/Rules/rendering/renderRules';
+const old=JSON.parse(fs.readFileSync('src/configStudio/defaults/r10-r6.config.json','utf8')) as ConfigPackageV3;
+const paths=old.nodes.map(node=>node.path),migrated=migrateButtonClassification(old.application!.buttons,paths,paths);
+assert.equal(migrated.changes.length,2);const config=migrateConfigToR11(old).config;
+assert.deepEqual(config.application!.buttons.items.find(b=>b.id==='natural_geo')!.criteria.paths,[{class:'ISG',kind:'NGF'},{class:'ISL',kind:'NGF'}]);
+for(const path of paths)for(const button of old.application!.buttons.items)assert.equal(matchesButtonClassification(path,button.criteria),matchesButtonClassification(path,migrated.buttons.items.find(row=>row.id===button.id)!.criteria),`${button.id}/${Object.values(path).join('/')}`);
+const scoped={paths:[{class:'ISG',kind:'NGF'},{class:'ISP',kind:'ADM'}]};assert(matchesButtonClassification({class:'ISG',kind:'NGF',skind:'LAD'},scoped));assert(!matchesButtonClassification({class:'ISG',kind:'ADM'},scoped));assert(!matchesButtonClassification({class:'ISP',kind:'NGF'},scoped));
+assert.throws(()=>migrateButtonClassification(old.application!.buttons,paths,[{class:'FUTURE',kind:'ADM',skind:'DBZ'}]),/不等价/);
+assert(validateConfigPackage(config).valid);
+const invalid=structuredClone(config);invalid.application!.buttons.items[0].criteria={paths:[{class:'',skind:'NOM'}]};assert(!validateConfigPackage(invalid).valid);
+const redundant=structuredClone(config);redundant.application!.buttons.items[0].criteria={paths:[{class:'BUD'},{class:'BUD',kind:'NOM'}]};assert(validateConfigPackage(redundant).issues.some(i=>i.code==='button-path-redundant'));
+for(const tone of Object.keys(BUTTON_TONES)){assert(isButtonTone(tone));const candidate=structuredClone(config);candidate.application!.buttons.items[0].tone=tone as keyof typeof BUTTON_TONES;assert(validateConfigPackage(candidate).valid);}
+assert.equal(new Set(BUTTON_ICONS.map(([id])=>id)).size,BUTTON_ICONS.length);for(const [id] of BUTTON_ICONS)assert(isButtonIcon(id));assert(!isButtonIcon('injected'));assert(!isButtonTone('bg-arbitrary'));
+applyApplicationSettings(config.application);
+const record=(Class:string,Kind:string):FeatureRecord=>({uid:Class+Kind,type:'Polygon',featureInfo:{Class,Kind,SKind:'NOM',ID:Class+Kind},meta:{Class,Type:'Polygons',World:'zth',idField:'ID',idValue:Class+Kind,sig:{},signatureKey:Class+Kind,groups:{}}} as FeatureRecord);
+const features=[record('ISG','NGF'),record('ISL','NGF'),record('ISG','ADM'),record('BUD','NOM')];
+assert.equal(filterRecordsByRuleButtons(features,['natural_geo','natural_geo']).length,2);assert.deepEqual(getMatchingRuleButtonIds(features[0]),['natural_geo']);assert.equal(filterRecordsByRuleButtons([features[3]],['building','railway_new']).length,1);
+applyApplicationSettings(undefined);
+console.log('r11-buttons: all category paths match legacy, exact OR rows, no cross combinations, required valid Class, redundancy, shared palette/icon registry and actual forward/reverse filters passed');

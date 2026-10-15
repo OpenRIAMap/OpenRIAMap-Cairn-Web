@@ -14,6 +14,7 @@ import { resolveRuleButtonIcon } from './ruleButtonIconRegistry';
  */
 
 export type RuleButtonCriteria = {
+  paths?:CairnMapRuleButtonCriteria['paths'];
   /** featureInfo.Class（优先读取 record.meta.className） */
   Class?: string[];
   /**
@@ -30,7 +31,7 @@ export type RuleButtonCriteria = {
   SKind2?: string[];
 };
 
-export type RuleButtonTone = 'blue' | 'green' | 'cyan' | 'purple' | 'gray' | 'orange' | 'slate';
+export type RuleButtonTone = import('../../../core/project/buttonVisualCatalog').ButtonTone;
 
 export type RuleButtonDef = {
   id: string;
@@ -64,6 +65,7 @@ function asStringArray(values: string[] | undefined): string[] | undefined {
 
 function toLegacyCriteria(criteria: CairnMapRuleButtonCriteria | undefined): RuleButtonCriteria {
   return {
+    paths:criteria?.paths,
     Class: asStringArray(criteria?.classCode),
     Kind: asStringArray(criteria?.kind),
     SKind: asStringArray(criteria?.skind),

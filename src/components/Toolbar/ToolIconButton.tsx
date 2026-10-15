@@ -1,17 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import AppButton from '@/components/ui/AppButton';
 
-type Tone = 'blue' | 'green' | 'cyan' | 'purple' | 'gray' | 'orange' | 'slate';
-
-const TONE_ACTIVE_CLASS: Record<Tone, string> = {
-  blue: 'bg-blue-100 text-blue-600',
-  green: 'bg-green-100 text-green-600',
-  cyan: 'bg-cyan-100 text-cyan-600',
-  purple: 'bg-purple-100 text-purple-600',
-  gray: 'bg-gray-100 text-gray-700',
-  orange: 'bg-orange-100 text-orange-700',
-  slate: 'bg-slate-300 text-slate-800',
-};
+import { BUTTON_TONES, type ButtonTone as Tone } from '@/core/project/buttonVisualCatalog';
 
 type ToolIconButtonProps = {
   style?:CSSProperties;
@@ -42,7 +32,7 @@ export default function ToolIconButton({
     'relative group flex flex-col items-center justify-center h-9 w-9 p-1.5 transition-colors';
   const inactive = 'bg-white/90 text-gray-600 hover:bg-gray-100';
   const disabledCls = 'bg-gray-100 text-gray-300 cursor-not-allowed';
-  const activeCls = TONE_ACTIVE_CLASS[tone];
+  const activeCls = BUTTON_TONES[tone]?.active;
   const shadowCls = shadow ? 'shadow-lg' : '';
 
   const stateCls = disabled ? disabledCls : active ? activeCls : inactive;

@@ -1192,6 +1192,7 @@ function validateContextBindings(config: ConfigPackageV3, issues: ConfigValidati
 
 export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: MountedFeatureRecord[] = []): ConfigValidationReport {
   const issues: ConfigValidationIssue[] = [];
+  if(config.contractRevision>=11)for(const button of config.application?.buttons.items??[]){const rows=button.criteria.paths;if(!rows)issue(issues,'error','button-path-migration-required',`application/buttons/${button.id}`,'r11 按钮需要完整分类路径。');else for(const [index,row] of rows.entries()){if(!hasCategoryNode(config,row))issue(issues,'error','button-path-invalid',`application/buttons/${button.id}/${index}`,'按钮显示内容不是有效分类路径。');if(rows.some((other,at)=>at!==index&&Object.entries(other).every(([key,value])=>!value||row[key as keyof ClassificationPath]===value)))issue(issues,'warning','button-path-redundant',`application/buttons/${button.id}/${index}`,'该范围已被另一条上级或重复范围包含，可删除冗余行。');}}
   if(config.contractRevision<11&&config.application&&isWorldGroups(config.application.sources))issue(issues,'error','resource-groups-revision','application/sources','World resource groups require contract r11.');
   if(config.contractRevision>=10&&!config.application)issue(issues,'error','application-required','application','r10 完整应用包必须包含总体规则。');
   if (config.contractRevision >= 10 && config.application) for (const row of validateApplication(config.application, new Set(config.nodes.map(node=>node.path.class)))) issue(issues,'error','application-invalid','application/'+row.path,row.message);

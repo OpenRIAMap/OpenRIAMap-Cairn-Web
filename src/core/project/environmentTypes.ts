@@ -71,9 +71,10 @@ export type CairnMapFormalDataSourceRuntimeConfig = CairnMapProjectTaggedConfig 
   githubRawTransport?: CairnMapFormalGithubRawTransport;
 };
 
-export type CairnMapRuleButtonTone = 'blue' | 'green' | 'cyan' | 'purple' | 'gray' | 'orange' | 'slate';
+export type CairnMapRuleButtonTone = import('./buttonVisualCatalog').ButtonTone;
 
 export type CairnMapRuleButtonCriteria = {
+  paths?: Array<{class:string;kind?:string;skind?:string;skind2?:string}>;
   classCode?: string[];
   kind?: string[];
   skind?: string[];
