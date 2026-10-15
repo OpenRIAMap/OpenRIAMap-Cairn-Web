@@ -23,7 +23,7 @@ export const MODULE_HELP: Record<string, string> = {
 };
 export function ModuleHelp({ title, helpKey, text }: { title: string; helpKey?: string; text?: string }) {
   const content = text ?? MODULE_HELP[helpKey ?? title] ?? (title.startsWith('扩展规则') ? MODULE_HELP['扩展规则'] : title.includes('通用候选、密度与稳定性默认') ? MODULE_HELP['全局扩展默认'] : undefined);
-  const id = useId(), button = useRef<HTMLButtonElement>(null), popup = useRef<HTMLDivElement>(null);
+  const id = useId(), button = useRef<HTMLSpanElement>(null), popup = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(); const beforePointer = useRef(false);
   const pinned = useRef(false);
   const [open, setOpen] = useState(false), [position, setPosition] = useState({ left: 8, top: 8, width: 360 });
@@ -46,9 +46,9 @@ export function ModuleHelp({ title, helpKey, text }: { title: string; helpKey?: 
     return () => { cancel(); observer.disconnect(); window.removeEventListener('scroll', place, true); window.removeEventListener('resize', place); document.removeEventListener('keydown', key, true); document.removeEventListener('pointerdown', outside, true); };
   }, [open]);
   if (!content) return null;
-  return <><button ref={button} type="button" aria-label={`${title}说明`} aria-describedby={open ? id : undefined} aria-expanded={open} className="ml-2 inline-flex align-middle text-slate-500 hover:text-blue-700" onPointerEnter={e => { if (e.pointerType !== 'touch') { cancel(); setOpen(true); } }} onPointerLeave={closeSoon} onFocus={() => { cancel(); setOpen(true); }} onBlur={closeSoon} onPointerDown={e => { beforePointer.current = open; if (e.pointerType === 'touch') { pinned.current = true; cancel(); } e.stopPropagation(); }} onClick={e => { e.preventDefault(); e.stopPropagation(); cancel(); if (e.detail === 0 || !beforePointer.current) { pinned.current = true; setOpen(true); } else close(); }}>
+  return <><span ref={button} role="button" tabIndex={0} data-module-help={helpKey??title} aria-label={`${title}说明`} aria-describedby={open ? id : undefined} aria-expanded={open} className="cm-help-trigger ml-2 inline-flex cursor-help align-middle text-slate-500 hover:text-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600" onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();pinned.current=true;cancel();setOpen(true);}}} onPointerEnter={e => { if (e.pointerType !== 'touch') { cancel(); setOpen(true); } }} onPointerLeave={closeSoon} onFocus={() => { cancel(); setOpen(true); }} onBlur={closeSoon} onPointerDown={e => { beforePointer.current = open; if (e.pointerType === 'touch') { pinned.current = true; cancel(); } e.stopPropagation(); }} onClick={e => { e.preventDefault(); e.stopPropagation(); cancel(); if (e.detail === 0 || !beforePointer.current) { pinned.current = true; setOpen(true); } else close(); }}>
     <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M9 1 L17 9 L9 17 L1 9 Z" fill="white" stroke="currentColor" /><text x="9" y="12" textAnchor="middle" fontSize="10" fill="currentColor">?</text></svg>
-  </button>{open ? createPortal(<div ref={popup} id={id} role="tooltip" aria-label={`${title}说明`} className="fixed rounded-lg border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 shadow-xl" style={{ ...position, zIndex: 14000, maxHeight: Math.min(420, innerHeight - 24), overflowY: 'auto' }} onPointerEnter={cancel} onPointerLeave={closeSoon}>
+  </span>{open ? createPortal(<div ref={popup} id={id} role="tooltip" aria-label={`${title}说明`} className="fixed rounded-lg border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 shadow-xl" style={{ ...position, zIndex: 14000, maxHeight: Math.min(420, innerHeight - 24), overflowY: 'auto' }} onPointerEnter={cancel} onPointerLeave={closeSoon}>
     <div className="mb-1 flex items-center justify-between gap-3"><strong>{title}</strong><button type="button" aria-label="关闭模块说明" className="rounded px-1" onClick={close}>×</button></div>
     <p>{content}</p>
   </div>, document.body) : null}</>;

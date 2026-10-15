@@ -1,3 +1,4 @@
+import {HelpLabel} from './SettingHelp';
 import type { ClassificationPath, ConfigPackageV3, GeometryKind } from './types';
 import { hasDescendants, pathDepth, pathMatchesScope, resolveGeometryProfile } from './runtime';
 const levels=['class','kind','skind','skind2'] as const;
@@ -11,6 +12,6 @@ export function WorkflowCategoryInput({config,scope,value,onChange,geometry}:{co
     if(index>depth&&!selected[levels[index-1]])return null;
     const options=config.nodes.filter(node=>pathDepth(node.path)===index+1&&levels.slice(0,index).every(key=>node.path[key]===selected[key])&&pathMatchesScope(node.path,scope)&&(!geometry||hasDescendants(config,node.path)||resolveGeometryProfile(config,node.path,geometry)?.enabled));
     if(!options.length)return null;
-    return <label key={level} className="grid gap-1 text-xs"><span>{names[index]}</span><select aria-label={`工作流分类 ${names[index]}`} className="w-full rounded border px-2 py-1 text-sm" value={selected[level]??''} onChange={event=>{const next:ClassificationPath={class:scope.class};for(const key of levels.slice(0,index))if(selected[key])next[key]=selected[key];if(event.target.value)next[level]=event.target.value;onChange(JSON.stringify(next));}}><option value="">请选择分类</option>{options.map(node=><option key={node.nodeId} value={node.path[level]}>{node.path[level]}（{node.classificationLabels?.[level]?.zh??node.path[level]}）</option>)}</select></label>;
+    return <HelpLabel context="WorkflowCategoryInput" key={level} className="grid gap-1 text-xs"><span>{names[index]}</span><select aria-label={`工作流分类 ${names[index]}`} className="w-full rounded border px-2 py-1 text-sm" value={selected[level]??''} onChange={event=>{const next:ClassificationPath={class:scope.class};for(const key of levels.slice(0,index))if(selected[key])next[key]=selected[key];if(event.target.value)next[level]=event.target.value;onChange(JSON.stringify(next));}}><option value="">请选择分类</option>{options.map(node=><option key={node.nodeId} value={node.path[level]}>{node.path[level]}（{node.classificationLabels?.[level]?.zh??node.path[level]}）</option>)}</select></HelpLabel>;
   })}</div>;
 }

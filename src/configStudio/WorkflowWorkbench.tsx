@@ -1,3 +1,4 @@
+import {HelpControl} from './SettingHelp';
 import {NewWorkflowDialog} from './NewWorkflowDialog';
 import {buildWorkflowArtifact,prepareWorkflowArtifactImport,type WorkflowArtifact} from './workflowArtifact';
 import { Download, FileUp, FolderOpen, Plus, Save, ShieldCheck } from 'lucide-react';
@@ -107,14 +108,14 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
     }} />
     <div className="flex flex-wrap items-center gap-2">
       <h2 className="mr-auto text-lg font-semibold">工作流设计</h2>
-      <select className="max-w-xs rounded border px-2 py-1" value={selectedId} onChange={(event) => {
+      <HelpControl context="WorkflowWorkbench"><select aria-label="已保存工作流" className="max-w-xs rounded border px-2 py-1" value={selectedId} onChange={(event) => {
         if (!confirmDiscardDraft('切换工作流')) return;
         setSelectedId(event.target.value);
         clearDraft();
       }}>
         <option value="">选择已保存工作流</option>
         {config.workflows.map((workflow) => <option key={workflow.id} value={workflow.id}>{workflow.label.zh}（{workflow.id}）</option>)}
-      </select>
+      </select></HelpControl>
       <button type="button" className="inline-flex items-center gap-1 rounded border px-2 py-1 text-sm" disabled={!selected} onClick={load}><FolderOpen className="h-4 w-4" />读取</button>
       <button type="button" className="inline-flex items-center gap-1 rounded border px-2 py-1 text-sm" onClick={create}><Plus className="h-4 w-4" />新建</button>
       <button type="button" className="inline-flex items-center gap-1 rounded border px-2 py-1 text-sm" disabled={!draft} onClick={validate}><ShieldCheck className="h-4 w-4" />核验</button>

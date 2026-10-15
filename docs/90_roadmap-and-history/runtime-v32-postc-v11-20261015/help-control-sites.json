@@ -1,0 +1,1982 @@
+[
+  {
+    "file": "src\\configStudio\\ButtonIconGallery.tsx",
+    "kind": "label",
+    "title": "搜索图标"
+  },
+  {
+    "file": "src\\configStudio\\CategoryCreationPanel.tsx",
+    "kind": "label",
+    "title": "代码"
+  },
+  {
+    "file": "src\\configStudio\\CategoryCreationPanel.tsx",
+    "kind": "label",
+    "title": "名称 zh"
+  },
+  {
+    "file": "src\\configStudio\\CategoryCreationPanel.tsx",
+    "kind": "label",
+    "title": "名称 en"
+  },
+  {
+    "file": "src\\configStudio\\CategoryCreationPanel.tsx",
+    "kind": "control",
+    "title": "初始化状态"
+  },
+  {
+    "file": "src\\configStudio\\CategoryCreationPanel.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\CategoryCreationPanel.tsx",
+    "kind": "label",
+    "title": "几何"
+  },
+  {
+    "file": "src\\configStudio\\CategoryCreationPanel.tsx",
+    "kind": "label",
+    "title": "多部件"
+  },
+  {
+    "file": "src\\configStudio\\CategoryCreationPanel.tsx",
+    "kind": "label",
+    "title": "多部件显示模式"
+  },
+  {
+    "file": "src\\configStudio\\CategoryFileControls.tsx",
+    "kind": "control",
+    "title": "分类导出范围"
+  },
+  {
+    "file": "src\\configStudio\\CategoryPathPicker.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\CollisionMetricEditor.tsx",
+    "kind": "label",
+    "title": "保留导入 r5 的碰撞 / C 优先级联动"
+  },
+  {
+    "file": "src\\configStudio\\CollisionMetricEditor.tsx",
+    "kind": "label",
+    "title": "指标"
+  },
+  {
+    "file": "src\\configStudio\\CollisionMetricEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\CollisionMetricEditor.tsx",
+    "kind": "label",
+    "title": "取整"
+  },
+  {
+    "file": "src\\configStudio\\CollisionMetricEditor.tsx",
+    "kind": "label",
+    "title": "指标字段"
+  },
+  {
+    "file": "src\\configStudio\\ColorBindingEditor.tsx",
+    "kind": "label",
+    "title": "颜色模式"
+  },
+  {
+    "file": "src\\configStudio\\ColorBindingEditor.tsx",
+    "kind": "label",
+    "title": "颜色"
+  },
+  {
+    "file": "src\\configStudio\\ColorBindingEditor.tsx",
+    "kind": "label",
+    "title": "绑定颜色指示字段"
+  },
+  {
+    "file": "src\\configStudio\\ColorBindingEditor.tsx",
+    "kind": "label",
+    "title": "关联线路解析"
+  },
+  {
+    "file": "src\\configStudio\\ColorBindingEditor.tsx",
+    "kind": "label",
+    "title": "未找到线路时的回退色"
+  },
+  {
+    "file": "src\\configStudio\\ColorBindingEditor.tsx",
+    "kind": "label",
+    "title": "关系目标分类"
+  },
+  {
+    "file": "src\\configStudio\\ColorBindingEditor.tsx",
+    "kind": "label",
+    "title": "颜色目标要素 ID"
+  },
+  {
+    "file": "src\\configStudio\\ColorBindingEditor.tsx",
+    "kind": "label",
+    "title": "目标要素颜色字段"
+  },
+  {
+    "file": "src\\configStudio\\ConfigLab.tsx",
+    "kind": "label",
+    "title": "本地版本"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "条件"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "字段"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "字段存在时命中"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "该分支显示种类"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "覆盖显示效果"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "覆盖 Label 效果"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "显示 Label"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "样式"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "来源"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "屏幕阈值"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "Pane 覆盖"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "多行 Label"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "截断后缀"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "候选锚点策略"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "大要素优先视窗中心"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "密度预算"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "线标签算法"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "线文字模式"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "显示种类"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "显示效果"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "线端"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "转角"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "使用外部图标字段"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "图标 URL 字段"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "URL 缺失时"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "显示 Label"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "样式"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "来源"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "斜体"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "下划线"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "回退来源（逗号分隔，按顺序）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "主来源格式"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "标签位置"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "首个回退格式"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "显示锚点圆点"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "圆点位置"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "Label 角色"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "动态指标"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "权重合成"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "指标字段"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "取整方式"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "显示种类"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "显示效果"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "线端"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "转角"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "使用图标字段"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "图标 URL 字段"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "显示 Label"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "样式"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "斜体"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "下划线"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "回退来源（逗号分隔，按顺序）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "主来源格式"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "标签位置"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "Label 角色"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "启用"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "允许多部件"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "锚点"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "字段名"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "数据类型"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "值数量"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "输入控件"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "必填"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "名称（zh）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "名称（en）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "定义（zh）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "定义（en）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "枚举选项（用逗号分隔）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "字段名"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "数据类型"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "值数量"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "输入控件"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "必填"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "名称（zh）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "名称（en）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "定义（zh）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "定义（en）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "代码"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "名称（zh）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "名称（en）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "World 系统字段"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "几何"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "启用"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "描边颜色"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "填色颜色"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "强制显示 Label"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "启用"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "成员显示"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "分类"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "引用字段"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "附属/单元切换字段（可选）"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "样例状态"
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ConfigStudio.tsx",
+    "kind": "label",
+    "title": "几何类型"
+  },
+  {
+    "file": "src\\configStudio\\DisplayPrioritySettings.tsx",
+    "kind": "label",
+    "title": "合成"
+  },
+  {
+    "file": "src\\configStudio\\DisplayPrioritySettings.tsx",
+    "kind": "label",
+    "title": "显示权重指标"
+  },
+  {
+    "file": "src\\configStudio\\DisplayPrioritySettings.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\DisplayPrioritySettings.tsx",
+    "kind": "label",
+    "title": "取整"
+  },
+  {
+    "file": "src\\configStudio\\DisplayPrioritySettings.tsx",
+    "kind": "label",
+    "title": "指标字段"
+  },
+  {
+    "file": "src\\configStudio\\ExtraRuleSettings.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ExtraRuleSettings.tsx",
+    "kind": "control",
+    "title": "候选名称"
+  },
+  {
+    "file": "src\\configStudio\\ExtraRuleSettings.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ExtraRuleSettings.tsx",
+    "kind": "label",
+    "title": "复用前一个锚点"
+  },
+  {
+    "file": "src\\configStudio\\ExtraRuleSettings.tsx",
+    "kind": "label",
+    "title": "保留选中"
+  },
+  {
+    "file": "src\\configStudio\\ExtraRuleSettings.tsx",
+    "kind": "label",
+    "title": "保留必显"
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "label",
+    "title": "输入提示"
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "label",
+    "title": "使用默认值"
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "label",
+    "title": "空字符串"
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "label",
+    "title": "检查已有数据"
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "label",
+    "title": "选项保存值类型"
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "label",
+    "title": "显示格式"
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "label",
+    "title": "坐标结构（可选）"
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "label",
+    "title": "继承"
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "label",
+    "title": "字段引用"
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "label",
+    "title": "有值时必填"
+  },
+  {
+    "file": "src\\configStudio\\FieldAdvancedSettings.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\FieldPrefillDialog.tsx",
+    "kind": "label",
+    "title": "搜索字段"
+  },
+  {
+    "file": "src\\configStudio\\FieldPrefillDialog.tsx",
+    "kind": "control",
+    "title": "预填字段"
+  },
+  {
+    "file": "src\\configStudio\\GeneralParameterEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\GeneralParameterEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\GeneralParameterEditor.tsx",
+    "kind": "label",
+    "title": "添加世界 ID"
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": "符号"
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": "图钉"
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": "圆点半径"
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": "虚线 px"
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": "主线颜色来源字段"
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": "外描边"
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": "外描边颜色"
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": "启用"
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": "主线颜色"
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": "填色"
+  },
+  {
+    "file": "src\\configStudio\\InteractionShapeSettings.tsx",
+    "kind": "label",
+    "title": "强显 Label"
+  },
+  {
+    "file": "src\\configStudio\\LabelPlacementSettings.tsx",
+    "kind": "label",
+    "title": "候选位移方式"
+  },
+  {
+    "file": "src\\configStudio\\LabelPlacementSettings.tsx",
+    "kind": "label",
+    "title": "标签附加圆点"
+  },
+  {
+    "file": "src\\configStudio\\LabelPlacementSettings.tsx",
+    "kind": "label",
+    "title": "圆点布局"
+  },
+  {
+    "file": "src\\configStudio\\LabelPlacementSettings.tsx",
+    "kind": "label",
+    "title": "粗体"
+  },
+  {
+    "file": "src\\configStudio\\LabelSourceEditor.tsx",
+    "kind": "label",
+    "title": "来源"
+  },
+  {
+    "file": "src\\configStudio\\LabelSourceEditor.tsx",
+    "kind": "label",
+    "title": "主来源"
+  },
+  {
+    "file": "src\\configStudio\\LabelSourceEditor.tsx",
+    "kind": "label",
+    "title": "字段组合公式"
+  },
+  {
+    "file": "src\\configStudio\\LabelSourceEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\LayerButtonsEditor.tsx",
+    "kind": "label",
+    "title": "（ ）"
+  },
+  {
+    "file": "src\\configStudio\\LayerButtonsEditor.tsx",
+    "kind": "label",
+    "title": "记忆按钮状态"
+  },
+  {
+    "file": "src\\configStudio\\LayerButtonsEditor.tsx",
+    "kind": "control",
+    "title": "联动目标按钮"
+  },
+  {
+    "file": "src\\configStudio\\LayerButtonsEditor.tsx",
+    "kind": "control",
+    "title": "联动方式"
+  },
+  {
+    "file": "src\\configStudio\\LayerButtonsEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\LookupTablesEditor.tsx",
+    "kind": "label",
+    "title": "表格 ID"
+  },
+  {
+    "file": "src\\configStudio\\LookupTablesEditor.tsx",
+    "kind": "label",
+    "title": "标签值输入类型"
+  },
+  {
+    "file": "src\\configStudio\\LookupTablesEditor.tsx",
+    "kind": "label",
+    "title": "输入格式"
+  },
+  {
+    "file": "src\\configStudio\\LookupTablesEditor.tsx",
+    "kind": "label",
+    "title": "世界"
+  },
+  {
+    "file": "src\\configStudio\\LookupTablesEditor.tsx",
+    "kind": "label",
+    "title": "范围（方块）"
+  },
+  {
+    "file": "src\\configStudio\\LookupTablesEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\LookupTablesEditor.tsx",
+    "kind": "label",
+    "title": "表格名"
+  },
+  {
+    "file": "src\\configStudio\\LookupTablesEditor.tsx",
+    "kind": "label",
+    "title": "名称 en"
+  },
+  {
+    "file": "src\\configStudio\\LookupTablesEditor.tsx",
+    "kind": "label",
+    "title": "存储值类型"
+  },
+  {
+    "file": "src\\configStudio\\LookupTablesEditor.tsx",
+    "kind": "label",
+    "title": "功能值格式"
+  },
+  {
+    "file": "src\\configStudio\\LookupTablesEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\LookupTablesEditor.tsx",
+    "kind": "label",
+    "title": "功能值（方块/秒）"
+  },
+  {
+    "file": "src\\configStudio\\NativeSymbolSettings.tsx",
+    "kind": "label",
+    "title": "符号 偏移 px"
+  },
+  {
+    "file": "src\\configStudio\\NativeSymbolSettings.tsx",
+    "kind": "label",
+    "title": "符号锚点"
+  },
+  {
+    "file": "src\\configStudio\\NativeSymbolSettings.tsx",
+    "kind": "label",
+    "title": "符号可见性"
+  },
+  {
+    "file": "src\\configStudio\\NativeSymbolSettings.tsx",
+    "kind": "label",
+    "title": "线端"
+  },
+  {
+    "file": "src\\configStudio\\NativeSymbolSettings.tsx",
+    "kind": "label",
+    "title": "转角"
+  },
+  {
+    "file": "src\\configStudio\\NativeSymbolSettings.tsx",
+    "kind": "label",
+    "title": "图标锚点"
+  },
+  {
+    "file": "src\\configStudio\\NativeSymbolSettings.tsx",
+    "kind": "label",
+    "title": "图标缺失时"
+  },
+  {
+    "file": "src\\configStudio\\NewCategoryPanel.tsx",
+    "kind": "label",
+    "title": "作为一级分类"
+  },
+  {
+    "file": "src\\configStudio\\NewCategoryPanel.tsx",
+    "kind": "label",
+    "title": "分类代码"
+  },
+  {
+    "file": "src\\configStudio\\NewCategoryPanel.tsx",
+    "kind": "label",
+    "title": "显示名称"
+  },
+  {
+    "file": "src\\configStudio\\NewCategoryPanel.tsx",
+    "kind": "label",
+    "title": "几何"
+  },
+  {
+    "file": "src\\configStudio\\NewCategoryPanel.tsx",
+    "kind": "label",
+    "title": "多部件"
+  },
+  {
+    "file": "src\\configStudio\\NewCategoryPanel.tsx",
+    "kind": "label",
+    "title": "锚点"
+  },
+  {
+    "file": "src\\configStudio\\NewCategoryPanel.tsx",
+    "kind": "label",
+    "title": "模板搜索"
+  },
+  {
+    "file": "src\\configStudio\\NewCategoryPanel.tsx",
+    "kind": "label",
+    "title": "初始化"
+  },
+  {
+    "file": "src\\configStudio\\NewRenderRulePanel.tsx",
+    "kind": "label",
+    "title": "预填完整内容"
+  },
+  {
+    "file": "src\\configStudio\\NewRenderRulePanel.tsx",
+    "kind": "label",
+    "title": "Zoom 下界"
+  },
+  {
+    "file": "src\\configStudio\\NewRenderRulePanel.tsx",
+    "kind": "label",
+    "title": "Zoom 上界"
+  },
+  {
+    "file": "src\\configStudio\\NewWorkflowDialog.tsx",
+    "kind": "control",
+    "title": "工作流模板"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "可被主页／导航搜索"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "固定搜索控制向下继承"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "排序优先级（越小越先）"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "显示模式"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "分类名称 zh（留空用最深分类名）"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "分类名称 en"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "本要素字段"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "解释方式"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "目标显示字段（不限分类）"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "名称"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "显示模式"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "名称字段"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "颜色字段"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "显示胶囊名称"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "回退颜色"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "关联线路来源"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "启用包含关系"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "自身身份"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "指向附属单元字段（可选）"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "指向主单元字段（必填）"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "附属结构层级切换字段（必填）"
+  },
+  {
+    "file": "src\\configStudio\\NodeFieldSettingsEditor.tsx",
+    "kind": "label",
+    "title": "附属显示策略"
+  },
+  {
+    "file": "src\\configStudio\\RenderFieldConditionsEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\RenderFieldConditionsEditor.tsx",
+    "kind": "control",
+    "title": "条件字段"
+  },
+  {
+    "file": "src\\configStudio\\RenderFieldConditionsEditor.tsx",
+    "kind": "control",
+    "title": "字段条件操作"
+  },
+  {
+    "file": "src\\configStudio\\RenderFieldConditionsEditor.tsx",
+    "kind": "control",
+    "title": "字段存在条件"
+  },
+  {
+    "file": "src\\configStudio\\RenderFieldConditionsEditor.tsx",
+    "kind": "control",
+    "title": "字段条件保存值"
+  },
+  {
+    "file": "src\\configStudio\\RenderFieldConditionsEditor.tsx",
+    "kind": "control",
+    "title": "字段条件保存值"
+  },
+  {
+    "file": "src\\configStudio\\RenderFieldConditionsEditor.tsx",
+    "kind": "label",
+    "title": "启用字段组合条件（仅非分类字段）"
+  },
+  {
+    "file": "src\\configStudio\\RenderFormulaEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\RenderFormulaEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\RenderFormulaEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\RenderFormulaEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\RenderFormulaEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\RenderFormulaEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\RenderFormulaEditor.tsx",
+    "kind": "label",
+    "title": "手动组合公式（行连接关系暂停；排序保留编号，删除引用须修复公式）"
+  },
+  {
+    "file": "src\\configStudio\\RenderFormulaEditor.tsx",
+    "kind": "control",
+    "title": "组合公式"
+  },
+  {
+    "file": "src\\configStudio\\RenderFormulaEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\RenderFormulaEditor.tsx",
+    "kind": "control",
+    "title": "条件预览记录"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "几何 zIndex 偏移"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "几何 Pane 名称覆盖"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "截断后缀"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "上下文绑定"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "目标分类"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "本要素匹配字段"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "目标匹配字段"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "目标分类"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "目标条件字段"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "目标字段等于"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "方向/类型字段"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "低 Zoom 主值"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "高 Zoom 覆盖值（逗号）"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "重定位碰撞范围（逗号分隔）"
+  },
+  {
+    "file": "src\\configStudio\\RenderRuleExtensionsEditor.tsx",
+    "kind": "label",
+    "title": "重要性字段"
+  },
+  {
+    "file": "src\\configStudio\\SettingField.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\TableOptionsEditor.tsx",
+    "kind": "label",
+    "title": "对照保存值类型"
+  },
+  {
+    "file": "src\\configStudio\\TableOptionsEditor.tsx",
+    "kind": "label",
+    "title": "公共表"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "按 ID 指向任意主结构"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "目标显示字段"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "按 ID 指向任意主结构"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "Class"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "Kind"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "Skind"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "Skind2"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "目标匹配字段"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "目标展示字段"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "可点击跳转"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "多目标列表"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "对象内 ID 路径（可选）"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "显示剩余字段"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "显示系统元数据"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "隐藏空值"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "排除路径（逗号分隔）"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "排序"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "区域"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "显示字段"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "显示名称"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "显示器"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "区域"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "覆写显示名称"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "覆写值对照"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "名称（en）"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "回退来源"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "放在剩余字段之后"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "显示"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "空值隐藏"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "文本格式"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "链接显示文字"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "颜色字段"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "名称字段"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "回退颜色"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "标签颜色"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "关联线路来源"
+  },
+  {
+    "file": "src\\configStudio\\V3CardEditor.tsx",
+    "kind": "label",
+    "title": "图片来源"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "搜索全部启用的主结构（不限定 Class）"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "搜索字段（可多选）"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "返回字段（仅一个）"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "展示格式"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "匹配方式"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "最短输入"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "结果上限"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "搜索延迟 ms"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "候选世界范围"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "control",
+    "title": "保存键（纯值数组留空）"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "control",
+    "title": "显示名称"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "允许为空"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "保存形式"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "最少项目数"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "添加按钮名称"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "英文添加名称"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "control",
+    "title": "槽位"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "control",
+    "title": "控件标题"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "工作流名称"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "工作流名称"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "control",
+    "title": "输出绘制标题"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "此绘制页固定类型"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "control",
+    "title": "额外绘制标题"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "绘制格式"
+  },
+  {
+    "file": "src\\configStudio\\V3WorkflowEditor.tsx",
+    "kind": "label",
+    "title": "填写人必填"
+  },
+  {
+    "file": "src\\configStudio\\ValueMapColorEditor.tsx",
+    "kind": "label",
+    "title": "设色字段"
+  },
+  {
+    "file": "src\\configStudio\\ValueMapColorEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ValueMapColorEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ValueMapColorEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ValueMapColorEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\ValueMapColorEditor.tsx",
+    "kind": "label",
+    "title": "未命中/空值回退色"
+  },
+  {
+    "file": "src\\configStudio\\ValueOptionsEditor.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\WorkflowCategoryInput.tsx",
+    "kind": "label",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\WorkflowControlSettings.tsx",
+    "kind": "label",
+    "title": "必填"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowControlSettings.tsx",
+    "kind": "label",
+    "title": "使用默认值"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowControlSettings.tsx",
+    "kind": "label",
+    "title": "英文显示名称"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowControlSettings.tsx",
+    "kind": "label",
+    "title": "输入提示"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowControlSettings.tsx",
+    "kind": "label",
+    "title": "输入行数"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowControlSettings.tsx",
+    "kind": "label",
+    "title": "填写格式"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowControlSettings.tsx",
+    "kind": "label",
+    "title": "选项保存值类型"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowControlSettings.tsx",
+    "kind": "label",
+    "title": "保存值处理"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowDrawingSettings.tsx",
+    "kind": "label",
+    "title": "返回槽位"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowDrawingSettings.tsx",
+    "kind": "label",
+    "title": "返回坐标格式"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowDrawingSettings.tsx",
+    "kind": "label",
+    "title": "允许多部件 / 多点"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowDrawingSettings.tsx",
+    "kind": "label",
+    "title": "高度输入槽位（可选）"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowDrawingSettings.tsx",
+    "kind": "label",
+    "title": "进入此页时启用绘制"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowDrawingSettings.tsx",
+    "kind": "control",
+    "title": "绘制绑定输出"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowDrawingSettings.tsx",
+    "kind": "control",
+    "title": "绘制绑定内容"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowDrawingSettings.tsx",
+    "kind": "control",
+    "title": "绘制绑定目标"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowDrawingSettings.tsx",
+    "kind": "label",
+    "title": "槽位"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowDrawingSettings.tsx",
+    "kind": "label",
+    "title": "显示名称"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowEditingSettings.tsx",
+    "kind": "label",
+    "title": "在便捷测绘中可选"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowEditingSettings.tsx",
+    "kind": "label",
+    "title": "编辑用标准工作流"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowEditingSettings.tsx",
+    "kind": "control",
+    "title": ""
+  },
+  {
+    "file": "src\\configStudio\\WorkflowEditingSettings.tsx",
+    "kind": "control",
+    "title": "原记录字段路径"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowExecutionSettings.tsx",
+    "kind": "label",
+    "title": "执行方式"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowExecutionSettings.tsx",
+    "kind": "label",
+    "title": "外部引用用途"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowExecutionSettings.tsx",
+    "kind": "label",
+    "title": "已登记方案"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowExpressionEditor.tsx",
+    "kind": "label",
+    "title": "字段 / 输入槽位搜索"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowExpressionEditor.tsx",
+    "kind": "label",
+    "title": "函数 / 固有结构"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowExpressionEditor.tsx",
+    "kind": "label",
+    "title": "固定文本"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowExpressionEditor.tsx",
+    "kind": "control",
+    "title": "表达式构造编辑区"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowFieldImport.tsx",
+    "kind": "control",
+    "title": "搜索字段定义"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowFieldImport.tsx",
+    "kind": "control",
+    "title": "导入来源字段"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowFieldImport.tsx",
+    "kind": "label",
+    "title": "同时绑定到输出"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowOutputEditor.tsx",
+    "kind": "label",
+    "title": "目标字段／tags 或 extensions 路径"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowOutputEditor.tsx",
+    "kind": "label",
+    "title": "来源／受控表达式"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowPrefill.tsx",
+    "kind": "label",
+    "title": "同时建立输出组装"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowPrefill.tsx",
+    "kind": "control",
+    "title": "预填绑定输出"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowValueConditionEditor.tsx",
+    "kind": "label",
+    "title": "启用条件"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowValueConditionEditor.tsx",
+    "kind": "control",
+    "title": "条件组合方式"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowValueConditionEditor.tsx",
+    "kind": "label",
+    "title": "先前槽位"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowValueConditionEditor.tsx",
+    "kind": "label",
+    "title": "判断"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowValueConditionEditor.tsx",
+    "kind": "label",
+    "title": "比较值"
+  },
+  {
+    "file": "src\\configStudio\\WorkflowWorkbench.tsx",
+    "kind": "control",
+    "title": ""
+  }
+]

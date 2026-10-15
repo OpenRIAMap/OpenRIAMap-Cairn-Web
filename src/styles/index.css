@@ -118,6 +118,24 @@ html, body, #root {
 
 .cm-option-row { display:flex; flex-wrap:wrap; align-items:center; }
 .cm-option-row > span { flex:0 0 1.25rem; }
+.cm-option-row > .cm-help-control { flex:1 1 10rem; min-width:0; }
+.cm-help-heading { display:inline-flex; flex-wrap:wrap; align-items:center; gap:.15rem; max-width:100%; min-width:0; }
+.cm-help-heading > .cm-help-trigger { flex:none; }
+.cm-help-control { display:inline-flex; align-items:flex-start; gap:.2rem; min-width:0; max-width:100%; }
+.cm-help-control > :is(input:not([type="checkbox"]),select,textarea) { flex:1 1 0; width:100%; min-width:0; max-width:100%; }
+.cm-help-control > .cm-help-trigger { flex:none; margin-left:0; margin-top:.35rem; }
+.cm-help-checkbox { align-items:center; }
+.cm-studio-header { max-height:35vh; overflow:auto; }
+.cm-studio-title { flex-basis:24rem; overflow-wrap:anywhere; }
+.cm-studio-header > svg, .cm-studio-header > button { flex-shrink:0; }
+.cm-studio-tabs > button { flex-shrink:0; white-space:nowrap; }
+@media (max-width:639px) {
+  .cm-studio-header { padding:.6rem .75rem; gap:.4rem; }
+  .cm-studio-title { flex-basis:calc(100% - 2rem); }
+  .cm-studio-tabs { padding:.5rem .75rem; gap:.3rem; }
+  .cm-studio-tabs > button { flex:1 1 auto; padding:.4rem .5rem; }
+  .cm-studio-tabs > [role="status"] { flex:1 1 100%; }
+}
 .cm-option-row > input, .cm-option-row > label { flex:1 1 10rem; min-width:0; }
 .cm-option-row > button { flex:0 0 auto; }
 .cm-option-row > div { flex:1 1 100%; min-width:0; }
