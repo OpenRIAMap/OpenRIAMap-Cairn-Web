@@ -186,7 +186,8 @@ for(const extra of [0,100,400]){
  else row.errors=report.issues.filter(i=>i.severity==='error').slice(0,3);
  scale.push(row);console.log('scale',JSON.stringify(row));
 }
-const summary={testedCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),configSha256:sha(raw),contractRevision:base.contractRevision,packageRevision:base.revision,baseline:view(baseline),scenarioCount:results.length,detectedErrors:results.filter(r=>r.expected==='error'&&r.package&&!r.package.valid).length,gaps:results.filter(r=>!r.matchesExpectation).map(r=>r.id),runtimeGuard,duplicateIdReferenceProbe,mountedAudit,compatibility,integrity,scale};
+function auditCommit():string {const declared=process.env.CAIRNMAP_AUDIT_COMMIT??process.env.VERCEL_GIT_COMMIT_SHA??process.env.GITHUB_SHA;if(declared)return declared;try{return execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',stdio:'pipe'}).trim();}catch{return 'unavailable: source export without Git metadata';}}
+const summary={testedCommit:auditCommit(),configSha256:sha(raw),contractRevision:base.contractRevision,packageRevision:base.revision,baseline:view(baseline),scenarioCount:results.length,detectedErrors:results.filter(r=>r.expected==='error'&&r.package&&!r.package.valid).length,gaps:results.filter(r=>!r.matchesExpectation).map(r=>r.id),runtimeGuard,duplicateIdReferenceProbe,mountedAudit,compatibility,integrity,scale};
 fs.writeFileSync(path.join(out,'mutation-scenarios.json'),JSON.stringify(results,null,2)+'\n');
 fs.writeFileSync(path.join(out,'audit-summary.json'),JSON.stringify(summary,null,2)+'\n');
 console.log('AUDIT COMPLETE',JSON.stringify({scenarios:results.length,gaps:summary.gaps,output:out}));
