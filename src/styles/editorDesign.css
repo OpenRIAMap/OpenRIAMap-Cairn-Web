@@ -165,6 +165,17 @@
 .config-editor.cm-editor-design .cm-workflow-control-head > :is(span, button) { align-self: center; flex: none; }
 .config-editor.cm-editor-design .cm-workflow-page-head { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
 .config-editor.cm-editor-design .cm-workflow-page-head > .cm-help-control { flex: 1 1 18rem; }
+.config-editor.cm-editor-design .cm-workflow-toolbar { align-items: end; }
+.config-editor.cm-editor-design .cm-workflow-toolbar > h2 { flex: 1 0 100%; }
+.config-editor.cm-editor-design .cm-workflow-toolbar > .cm-help-control { flex: 1 1 18rem; max-width: 24rem; }
+.config-editor.cm-editor-design .cm-workflow-toolbar > button { min-height: 36px; }
+.config-editor.cm-editor-design .cm-output-definition { border-left-color: #34d399; }
+.config-editor.cm-editor-design .cm-auxiliary-definition { border-left-color: #60a5fa; }
+.config-editor.cm-editor-design .cm-aligned-fields > label:is([data-field-layout="field"], [data-field-layout="compound"]) {
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  align-self: stretch;
+}
 .config-editor.cm-editor-design .cm-workflow-settings { margin-block: 12px; }
 .config-editor.cm-editor-design .cm-workflow-settings > .cm-flags { padding-bottom: 8px; border-bottom: 1px solid var(--cm-line); }
 .config-editor.cm-editor-design .cm-workflow-settings > fieldset { grid-column: 1 / -1; }
@@ -211,6 +222,8 @@
   .config-editor.cm-editor-design .cm-panel { padding: 10px; }
   .config-editor.cm-editor-design .cm-item { padding: 10px; }
   .config-editor.cm-editor-design .cm-subsection { padding: 8px; }
+  .config-editor.cm-editor-design .cm-panel .cm-panel { padding-inline: 0; border-inline: 0; }
+  .config-editor.cm-editor-design .cm-workflow-control .cm-subsection { padding-inline: 0; border: 0; border-top: 1px solid var(--cm-line); border-radius: 0; background: transparent; }
   .config-editor.cm-editor-design .cm-option-row { grid-template-columns: auto minmax(0, 1fr) auto; }
   .config-editor.cm-editor-design .cm-option-row > .cm-help-control { grid-column: 2; }
   .config-editor.cm-editor-design .cm-option-row > span { grid-row: 1; }

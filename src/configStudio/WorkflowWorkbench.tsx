@@ -99,14 +99,14 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
     }
   };
 
-  return <section aria-label="工作流编辑区域" className="h-full max-h-full min-h-0 overflow-y-auto overscroll-contain rounded-xl border bg-white p-4">
+  return <section aria-label="工作流编辑区域" className="cm-authoring-pane h-full max-h-full min-h-0 overflow-y-auto overscroll-contain rounded-xl border bg-white p-4">
     {creating?<NewWorkflowDialog config={config} onClose={()=>setCreating(false)} onCreate={(next,report)=>{setDraftTables([]);setSelectedId('');setDraft(canonicalizeWorkflow(next,config));setReport(report??null);setCreating(false);}}/>:null}
     <input ref={fileRef} className="hidden" type="file" accept="application/json,.json" onChange={(event) => {
       const file = event.target.files?.[0];
       if (file) void importFile(file);
       event.currentTarget.value = '';
     }} />
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="cm-workflow-toolbar cm-action-bar">
       <h2 className="mr-auto text-lg font-semibold">工作流设计</h2>
       <HelpControl context="WorkflowWorkbench"><select aria-label="已保存工作流" className="max-w-xs rounded border px-2 py-1" value={selectedId} onChange={(event) => {
         if (!confirmDiscardDraft('切换工作流')) return;

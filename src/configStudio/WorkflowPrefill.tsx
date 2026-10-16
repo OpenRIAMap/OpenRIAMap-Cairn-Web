@@ -8,7 +8,7 @@ import type { ConfigPackageV3, WorkflowControl, WorkflowDefinition, WorkflowGrou
 
 export function WorkflowPrefill({config,workflow,value,onChange,onImport,groupField=false}:{config:ConfigPackageV3;workflow:WorkflowDefinition;value:WorkflowControl|WorkflowGroupField;onChange:(value:WorkflowControl|WorkflowGroupField)=>void;onImport?:(value:WorkflowControl,key:string,outputId?:string)=>void;groupField?:boolean}) {
   const [bind,setBind]=useState(false),[outputId,setOutputId]=useState(workflow.outputs[0]?.id??'');
-  return <div className="mt-2 flex flex-wrap items-center gap-2 rounded border bg-white p-2 text-xs"><FieldPrefill config={config} initialPath={workflow.outputs[0]?.classification} single={groupField} onApply={(field,audit)=>{
+  return <div className="cm-action-bar cm-reference-status text-xs"><FieldPrefill config={config} initialPath={workflow.outputs[0]?.classification} single={groupField} onApply={(field,audit)=>{
     if(groupField){const next=prefillGroupField(value as WorkflowGroupField,field,audit);onChange(config.contractRevision>=11?canonicalDictionaryOwner(next):next);return;}
     const generated=prefillWorkflowControl(value as WorkflowControl,field,audit),control=config.contractRevision>=11?canonicalDictionaryOwner(generated):generated;
     const output=workflow.outputs.find(output=>output.id===outputId),existing=output?.assignments.find(item=>item.target===field.key);
