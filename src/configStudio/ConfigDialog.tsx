@@ -22,5 +22,11 @@ export function ConfigDialog({open,title,children,onClose,busy=false}:{open:bool
     document.addEventListener('keydown',keydown);
     return()=>{document.removeEventListener('keydown',keydown);const index=dialogStack.indexOf(root);if(index>=0)dialogStack.splice(index,1);for(const element of blocked){const lock=inertLocks.get(element);if(lock&&--lock.count===0){element.inert=lock.original;inertLocks.delete(element);}}queueMicrotask(()=>{if(previous?.isConnected&&!previous.closest('[inert]'))previous.focus();});};
   },[open]);
-  return <BlockingFullscreenModal open={open}><div ref={content} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} aria-busy={busy} className="config-editor cm-editor-design max-h-[90vh] w-[min(42rem,90vw)] space-y-3 overflow-auto rounded-xl bg-white p-4 text-slate-800 shadow-xl"><h3 className="cm-dialog-heading font-semibold">{title}</h3>{children}</div></BlockingFullscreenModal>;
+  return <BlockingFullscreenModal open={open}><div ref={content} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} aria-busy={busy} className="config-editor cm-editor-design max-h-[90vh] w-[min(42rem,90vw)] space-y-3 overflow-auto rounded-xl bg-white p-4 text-slate-800 shadow-xl">
+    <div className="cm-dialog-heading">
+      <h3 className="min-w-0 break-words font-semibold">{title}</h3>
+      {onClose?<button type="button" aria-label={`关闭${title}`} disabled={busy} className="shrink-0 rounded border bg-white px-3 py-1 text-sm" onClick={onClose}>关闭</button>:null}
+    </div>
+    {children}
+  </div></BlockingFullscreenModal>;
 }

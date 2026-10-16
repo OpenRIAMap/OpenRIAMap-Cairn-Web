@@ -228,7 +228,7 @@
 .config-editor.cm-editor-design .cm-field-definition > .cm-flex-grid { padding-block: 4px 12px; }
 .config-editor.cm-editor-design .cm-field-group { background: #f1f5f9; }
 .config-editor.cm-editor-design .cm-field-group .cm-item { margin-block: 12px; }
-.config-editor.cm-editor-design .cm-dialog-heading { padding-bottom: 12px; border-bottom: 1px solid var(--cm-line); }
+.config-editor.cm-editor-design .cm-dialog-heading { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--cm-line); background: white; }
 .config-editor.cm-editor-design fieldset > legend { padding-inline: 6px; font-size: 13px; font-weight: 600; }
 .config-editor.cm-editor-design .cm-drawing-settings > .cm-flex-grid > p { margin: 0; align-self: center; font-size: 13px; }
 .config-editor.cm-editor-design .cm-condition-settings > .cm-help-control { margin-block: 12px; }
