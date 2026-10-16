@@ -4,7 +4,8 @@ import { resolveEffectiveFields } from './runtime';
 export type OptionsOwner = { options?: SelectOption[]; optionTable?:OptionTable; optionsFieldRef?:FieldDefinitionRef; optionsTableId?: string; optionValueType?: FieldDefinition['optionValueType'];prefillAudit?:PrefillAudit };
 export function referencedField(config:ConfigPackageV3,ref:FieldDefinitionRef):FieldDefinition|undefined {
   const node=config.nodes.find(node=>node.nodeId===ref.nodeId);
-  return node?resolveEffectiveFields(config,node.path).find(field=>field.fieldId===ref.fieldId):undefined;
+  const matches=node?resolveEffectiveFields(config,node.path).filter(field=>field.fieldId===ref.fieldId):[];
+  return matches.length===1?matches[0]:undefined;
 }
 export function effectiveOptionTable(config:Pick<ConfigPackageV3,'lookupTables'>,owner:OptionsOwner):OptionTable {
   if(owner.optionsFieldRef){

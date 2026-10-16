@@ -1,4 +1,10 @@
 import { isWorldGroups } from '../core/project/applicationResources';
+import { validateWorkflowWrites } from './workflowPreflight';
+import { migrateWorkflowDrawings } from './workflowDrawingMigration';
+import { validCssColor } from './cssColor';
+let packageValidationRuns=0,workflowValidationRuns=0;
+/** Read-only QA counters: history pagination must never validate/compile trees. */
+export function configPreflightStats(){return {packageValidations:packageValidationRuns,workflowValidations:workflowValidationRuns,compilations:compiledEpoch};}
 import { validateApplication } from '../core/project/applicationValidation';
 import { labelTemplateTokens, parseLabelTemplate } from './labelTemplate';
 import {validateExternalEditBinding} from './externalEditRegistry';
@@ -459,6 +465,8 @@ function validateField(field: FieldDefinition, path: string, known: Set<string>,
 function validateRenderColorBinding(binding: unknown, config: ConfigPackageV3, sourcePath: ClassificationPath, path: string, issues: ConfigValidationIssue[]): void {
   if (!binding || typeof binding !== 'object') { issue(issues, 'error', 'render-color-binding-required', path, '渲染颜色必须设置为直接颜色、当前字段或外部要素字段。'); return; }
   const value = binding as { mode?: string; color?: string; field?: string; target?: ClassificationPath; targetIdField?: string; targetColorField?: string; strategy?: string };
+  const fallback = (binding as {fallbackColor?:string}).fallbackColor;
+  if (fallback !== undefined && !validCssColor(fallback)) issue(issues,'error','render-color-fallback-invalid',path,'回退颜色需要有效的十六进制、RGB/HSL、命名色或 transparent。');
   const sourceFields = new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key));
   if(value.mode==='valueMap') {
     const mapping=binding as Extract<import('./types').RenderColorBinding,{mode:'valueMap'}>, field=resolveSelectableFields(config,sourcePath).find(f=>f.key===mapping.field);
@@ -475,7 +483,7 @@ function validateRenderColorBinding(binding: unknown, config: ConfigPackageV3, s
     return;
   }
   if (value.mode === 'fixed') {
-    if (!value.color?.trim()) issue(issues, 'error', 'render-color-fixed-required', path, '直接颜色模式必须选择颜色。');
+    if (!validCssColor(value.color)) issue(issues, 'error', 'render-color-fixed-required', path, '直接颜色必须为有效的十六进制、RGB/HSL、命名色或 transparent。');
     return;
   }
   if (value.mode === 'field') {
@@ -506,6 +514,11 @@ function allowedMetrics(geometry: GeometryKind): Set<string> {
   return geometry === 'Point' ? new Set(['partCount', 'field']) : geometry === 'LineString' ? new Set(['length', 'partCount', 'field']) : new Set(['area', 'partCount', 'field']);
 }
 
+function numericMetricField(config: ConfigPackageV3, path: ClassificationPath, key?: string): boolean {
+  const field = resolveEffectiveFields(config,path).find(field=>field.key===key);
+  return Boolean(field && field.cardinality==='single' && (field.type==='number' || field.type==='enum' && field.optionValueType==='number'));
+}
+
 function validateRuleLabel(
   rule: ZoomPriorityRule,
   rulePath: string,
@@ -526,7 +539,7 @@ function validateRuleLabel(
     if (!['area', 'length', 'partCount', 'field'].includes(metric.kind)) issue(issues, 'error', 'label-metric-kind-invalid', rulePath, '碰撞指标类型无效。');
     for (const key of ['multiplier', 'divisor', 'min', 'max'] as const) if (metric[key] !== undefined && (!Number.isFinite(metric[key]) || key === 'divisor' && metric[key] === 0)) issue(issues, 'error', 'label-metric-value-invalid', rulePath, '碰撞指标参数必须为有限数字，除数不可为零。');
     if (metric.min !== undefined && metric.max !== undefined && metric.min > metric.max) issue(issues, 'error', 'label-metric-range-invalid', rulePath, '碰撞指标下限不能大于上限。');
-    if (metric.kind === 'field' && !resolveEffectiveFields(config, sourcePath).some(field => field.key === metric.field)) issue(issues, 'error', 'label-metric-field-invalid', rulePath, '碰撞指标字段不存在。');
+    if (metric.kind === 'field' && !numericMetricField(config, sourcePath, metric.field)) issue(issues, 'error', 'label-metric-field-invalid', rulePath, '碰撞指标需要存在的单值数值字段或数值枚举字段。');
   }
   const fields = new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key));
   if (label.sourceMode === 'combined') {
@@ -704,7 +717,7 @@ function validateProfile(profile: GeometryProfile, geometry: GeometryKind, path:
     const metric = rule.priority?.metric;
     if (metric && !allowedMetrics(geometry).has(metric.kind)) issue(issues, 'error', 'dynamic-priority-metric-geometry-invalid', rulePath, `${metric.kind} 不适用于 ${geometry}。`);
     if (metric && (!Number.isFinite(metric.multiplier) || (metric.divisor !== undefined && (!Number.isFinite(metric.divisor) || metric.divisor === 0)) || (metric.min !== undefined && metric.max !== undefined && metric.min > metric.max))) issue(issues, 'error', 'dynamic-priority-invalid', rulePath, '动态优先级的倍率、除数或上下界无效。');
-    if (metric?.kind === 'field' && !metric.field?.trim()) issue(issues, 'error', 'dynamic-priority-field-required', rulePath, '字段型动态优先级必须指定字段。');
+    if (metric?.kind === 'field' && !numericMetricField(config,sourcePath,metric.field)) issue(issues, 'error', 'dynamic-priority-field-required', rulePath, '字段型动态优先级需要存在的单值数值字段或数值枚举字段。');
     validateRuleExtensions({ ...rule, extensions: resolveRenderExtensions(config, geometry, rule.extensions) }, geometry, rulePath, config, sourcePath, issues);
     const overrideIds = new Set<string>();
     for (const [overrideIndex, override] of (rule.conditionalOverrides ?? []).entries()) {
@@ -751,12 +764,22 @@ function sourceExists(source: string, fields: Set<string>): boolean {
 
 function validateCard(node: CategoryNode, config: ConfigPackageV3, issues: ConfigValidationIssue[]): void {
   const path = `nodes/${node.nodeId}/card`;
+  const checkItemIds = (card: CardConfiguration | undefined, scope: string) => {
+    if (card?.mode !== 'fields') return;
+    const ids = new Map<string,string>();
+    for (const item of card.items) {
+      if (!item.id?.trim() || ids.has(item.id)) issue(issues,'error','card-item-id-duplicate',`${path}/${scope}/${item.id}`,`信息卡条目 ID ${item.id || '（空）'} 重复或为空：${ids.get(item.id) ?? ''} / ${item.source}。请为条目使用独立 ID。`);
+      ids.set(item.id,item.source);
+    }
+  };
+  checkItemIds(node.card,'local');
   if(config.contractRevision>=10&&node.card?.mode==='fields'){
     const origins=new Set<string>(),ancestors=resolveCategoryNodes(config,node.path).filter(parent=>parent.nodeId!==node.nodeId);
     for(const item of node.card.items)if(item.inheritFrom){const key=`${item.inheritFrom.nodeId}/${item.inheritFrom.itemId}`;if(origins.has(key)||!ancestors.some(parent=>parent.nodeId===item.inheritFrom!.nodeId))issue(issues,'error','card-inheritance-origin-invalid',`${path}/${item.id}`,'硬继承条目来源必须是同分支祖先且不能重复。');origins.add(key);}
   }
   if(config.contractRevision>=9&&node.card?.mode==='fields'&&node.card.items.some(item=>item.labelMode||item.valueMode))issue(issues,'error','live-card-source-forbidden',path,'r9 信息卡不保留跟随/覆写状态，请先迁移。');
   const card = resolveCardConfiguration(config, node.path);
+  checkItemIds(card,'effective');
   if (!card) {
     // A blank r5 package may intentionally contain only rendering rules.
     // Treat that as a warning so authors can test native rendering first;
@@ -1031,13 +1054,19 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
     if (targetSupportsClassificationPicker(config, output.classification) !== Boolean(managed.length)) issue(issues, 'error', 'workflow-classification-picker-stale', `${base}/outputs/${output.id}`, '工作流输出分类的子分类状态已变化；请打开工作流以刷新系统 Classification 控件。');
     validateWorkflowOutput(output, outputIndex, workflow, config, slots, issues);
   }
+  // r6/r7 factory capture overrides are an explicitly recognised old drawing
+  // representation. Analyse its lossless r8 view, without editing the source.
+  issues.push(...validateWorkflowWrites(config.contractRevision<8?migrateWorkflowDrawings(workflow):workflow, path => resolveSelectableFields(config,path)));
 }
 
 /** Standalone workflow workbench validation. It deliberately validates only
  * the drafted workflow while still resolving fields/classes from the current
  * package, so save/import has a real read -> validate -> save lifecycle. */
 export function validateWorkflowDefinition(workflow: WorkflowDefinition, config: ConfigPackageV3): ConfigValidationReport {
+  workflowValidationRuns++;
   const issues: ConfigValidationIssue[] = [];
+  const structure = validateNativeStructure({...config,workflows:[workflow]});
+  if (structure.length) return {schemaVersion:'cairnmap.config-validation-report.v3',valid:false,createdAt:new Date().toISOString(),issues:structure.map(item=>({severity:'error',code:'native-contract-structure-invalid',...item}))};
   validateWorkflow(workflow, config, issues);
   const scoped={...config,nodes:[],workflows:[workflow]};
   issues.push(...validatePrefillCopies(scoped,(_config,path)=>resolveEffectiveFields(config,path)));
@@ -1056,12 +1085,15 @@ function conditionMatches(record: MountedFeatureRecord, conditions: Condition[] 
   if (!conditions?.length) return true;
   return conditions.every((condition) => {
     if (condition.kind === 'always' || condition.kind === 'zoomRange' || condition.kind === 'bboxArea') return true;
-    const value = String(record[condition.field] ?? '').trim();
+    const raw = readRecordPath(record,condition.field);
+    const value = String(raw ?? '').trim();
     if (condition.kind === 'fieldEquals') return value === condition.value;
     if (condition.kind === 'fieldIn') return condition.values.includes(value);
-    return condition.present ? value.length > 0 : value.length === 0;
+    return condition.present ? !empty(raw) : empty(raw);
   });
 }
+
+function empty(value: unknown): boolean { return value == null || typeof value === 'string' && !value.trim() || Array.isArray(value) && !value.length; }
 
 function recordId(record: MountedFeatureRecord, index: number): string { return String(record.ID ?? `${String(record.World ?? 'unknown-world')}/${String(record.Class ?? 'unknown-class')}/${index}`); }
 function recordName(record: MountedFeatureRecord): string { return String(record.Name ?? record.ID ?? '未命名要素'); }
@@ -1072,7 +1104,7 @@ function aggregateMountedIssues(records: MountedFeatureRecord[], config: ConfigP
   records.forEach((record, index) => {
     const path: ClassificationPath = { class: String(record.Class ?? ''), ...(record.Kind ? { kind: String(record.Kind) } : {}), ...((record.Skind ?? record.SKind) ? { skind: String(record.Skind ?? record.SKind) } : {}), ...((record.Skind2 ?? record.SKind2) ? { skind2: String(record.Skind2 ?? record.SKind2) } : {}) };
     for (const field of resolveEffectiveFields(config, path).filter((item) => item.required && item.validateExistingData && conditionMatches(record, item.requiredWhen))) {
-      if (record[field.key] !== null && record[field.key] !== undefined && record[field.key] !== '') continue;
+      if (!empty(readRecordPath(record,field.key))) continue;
       const key = `mounted-data-required-field-missing|${field.key}|${classificationPathKey(path)}`;
       const prior = grouped.get(key) ?? { severity: 'error' as const, code: 'mounted-data-required-field-missing', path: `mounted/${classificationPathKey(path)}/${field.key}`, field: field.key, expected: 'required', message: `缺少必填字段 ${field.key}（${classificationPathKey(path)}）。`, affectedFeatures: [], count: 0 };
       prior.affectedFeatures?.push({ id: recordId(record, index), name: recordName(record) });
@@ -1088,6 +1120,7 @@ function aggregateMountedIssues(records: MountedFeatureRecord[], config: ConfigP
 }
 
 function validateInteractionShape(visual: import('./types').InteractionVisual, path: string, issues: ConfigValidationIssue[]): void {
+  if (!validCssColor(visual.strokeColor) || visual.fillColor!==undefined&&!validCssColor(visual.fillColor) || visual.outline&&!validCssColor(visual.outline.color)) issue(issues,'error','interaction-color-invalid',path,'交互描边、填充和外描边必须使用有效 CSS 颜色。');
   if (typeof visual.enabled !== 'boolean' || !visual.strokeColor?.trim() || !Number.isFinite(visual.strokeWidth) || visual.strokeWidth < 0 || !Number.isFinite(visual.strokeOpacity) || visual.strokeOpacity < 0 || visual.strokeOpacity > 1 || visual.fillOpacity !== undefined && (!Number.isFinite(visual.fillOpacity) || visual.fillOpacity < 0 || visual.fillOpacity > 1)) issue(issues, 'error', 'interaction-visual-invalid', path, '交互颜色、线宽和透明度无效。');
   if (visual.symbol && (!['circle','pin'].includes(visual.symbol.kind) || visual.symbol.radius !== undefined && (!Number.isFinite(visual.symbol.radius) || visual.symbol.radius <= 0) || visual.symbol.size?.some(value => !Number.isFinite(value) || value <= 0))) issue(issues, 'error', 'interaction-symbol-invalid', path, '交互符号类型、半径和尺寸无效。');
   if (visual.outline && (!visual.outline.color?.trim() || !Number.isFinite(visual.outline.width) || visual.outline.width < 0 || !Number.isFinite(visual.outline.opacity) || visual.outline.opacity < 0 || visual.outline.opacity > 1)) issue(issues, 'error', 'interaction-outline-invalid', path, '外描边参数无效。');
@@ -1193,13 +1226,14 @@ function validateContextBindings(config: ConfigPackageV3, issues: ConfigValidati
 }
 
 export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: MountedFeatureRecord[] = []): ConfigValidationReport {
+  packageValidationRuns++;
   const issues: ConfigValidationIssue[] = [];
+  const structure = validateNativeStructure(config);
+  if (structure.length) return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: false, createdAt: new Date().toISOString(), issues: structure.map(item => ({ severity: 'error', code: 'native-contract-structure-invalid', ...item })) };
   if(config.contractRevision>=11)for(const button of config.application?.buttons.items??[]){const rows=button.criteria.paths;if(!rows)issue(issues,'error','button-path-migration-required',`application/buttons/${button.id}`,'r11 按钮需要完整分类路径。');else for(const [index,row] of rows.entries()){if(!hasCategoryNode(config,row))issue(issues,'error','button-path-invalid',`application/buttons/${button.id}/${index}`,'按钮显示内容不是有效分类路径。');if(rows.some((other,at)=>at!==index&&Object.entries(other).every(([key,value])=>!value||row[key as keyof ClassificationPath]===value)))issue(issues,'warning','button-path-redundant',`application/buttons/${button.id}/${index}`,'该范围已被另一条上级或重复范围包含，可删除冗余行。');}}
   if(config.contractRevision<11&&config.application&&isWorldGroups(config.application.sources))issue(issues,'error','resource-groups-revision','application/sources','World resource groups require contract r11.');
   if(config.contractRevision>=10&&!config.application)issue(issues,'error','application-required','application','r10 完整应用包必须包含总体规则。');
   if (config.contractRevision >= 10 && config.application) for (const row of validateApplication(config.application, new Set(config.nodes.map(node=>node.path.class)))) issue(issues,'error','application-invalid','application/'+row.path,row.message);
-  const structure = validateNativeStructure(config);
-  if (structure.length) return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: false, createdAt: new Date().toISOString(), issues: structure.map(item => ({ severity: 'error', code: 'native-contract-structure-invalid', ...item })) };
   issues.push(...validateLookupTables(config));
   for(const error of standardTagTableErrors(config))issue(issues,'error','standard-tag-table-invalid',error.path,error.message);
   issues.push(...validatePrefillCopies(config,resolveEffectiveFields));
@@ -1242,6 +1276,12 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
     if (parent && !hasCategoryNode(config, parent)) issue(issues, 'error', 'category-parent-missing', base, '子分类节点必须具有连续的父分类节点。');
     const keys = new Set<string>();
     node.fields.forEach((field, index) => validateField(effectiveOptionsOwner(config,field), `${base}/fields/${index}`, keys, issues));
+    const identities = new Map<string,string>();
+    for (const field of resolveEffectiveFields(config,node.path)) {
+      const prior = identities.get(field.fieldId);
+      if (prior !== undefined && prior !== field.key) issue(issues,'error','field-id-duplicate',`${base}/fields/${field.fieldId}`,`有效分类 ${pathKey} 的 fieldId ${field.fieldId} 同时属于 ${prior} 和 ${field.key}。请修复身份及其引用后再保存。`);
+      identities.set(field.fieldId,field.key);
+    }
     for (const geometry of GEOMETRIES) {
       const profile = node.geometryProfiles[geometry];
       if (config.contractRevision >= 7 && profile?.enabled && resolveCategoryNodes(config, node.path).some(ancestor => ancestor.nodeId !== node.nodeId && ancestor.geometryType && ancestor.geometryType !== geometry)) issue(issues, 'error', 'geometry-type-inheritance-invalid', `${base}/geometry/${geometry}`, '本级几何与祖先已指定的类型不一致。');
@@ -1262,7 +1302,17 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
     }
     validateCard(node, config, issues);
   }
-  for (const node of config.nodes) for (const childId of node.children) if (!nodeIds.has(childId)) issue(issues, 'error', 'category-child-missing', `nodes/${node.nodeId}/children`, `子分类节点 ${childId} 不存在。`);
+  for (const node of config.nodes) {
+    const expected = config.nodes.filter(child=>classificationPathKey(parentClassificationPath(child.path) ?? {class:''})===classificationPathKey(node.path)).map(child=>child.nodeId);
+    const seen = new Set<string>();
+    for (const childId of node.children) {
+      if (!nodeIds.has(childId)) issue(issues,'error','category-child-missing',`nodes/${node.nodeId}/children`,`子分类节点 ${childId} 不存在。`);
+      else if (!expected.includes(childId)) issue(issues,'error','category-child-parent-conflict',`nodes/${node.nodeId}/children`,`子分类 ${childId} 的 path 不属于该直接父级，请依据连续 path 修复 children。`);
+      if (seen.has(childId)) issue(issues,'error','category-child-duplicate',`nodes/${node.nodeId}/children`,`子分类 ${childId} 重复。`);
+      seen.add(childId);
+    }
+    for (const id of expected) if (!seen.has(id)) issue(issues,'error','category-child-omitted',`nodes/${node.nodeId}/children`,`children 遗漏 path 定义的直接子分类 ${id}。`);
+  }
   const workflowIds = new Set<string>();
   for (const workflow of config.workflows) {
     if (workflowIds.has(workflow.id)) issue(issues, 'error', 'workflow-id-duplicate', `workflows/${workflow.id}`, '工作流 ID 重复。');

@@ -23,7 +23,7 @@ const reject = (mutate: (draft: typeof workflow) => void, code: string) => {
   assert.ok(validateWorkflowDefinition(draft, config).issues.some((issue) => issue.code === code), code);
 };
 reject((draft) => { draft.outputs[0].classification = { class: 'UNKNOWN' }; }, 'workflow-output-classification-invalid');
-reject((draft) => { draft.outputs[0].geometry.selected = '' as never; }, 'workflow-output-geometry-required');
+reject((draft) => { draft.outputs[0].geometry.selected = '' as never; }, 'native-contract-structure-invalid');
 reject((draft) => { const controls = draft.steps.flatMap((step) => step.controls ?? []).filter((control) => control.slot); controls[1].slot = controls[0].slot; }, 'workflow-slot-invalid');
 reject((draft) => { draft.steps.flatMap((step) => step.controls ?? []).find((control) => !control.systemManaged)!.slot = ''; }, 'workflow-slot-required');
 reject((draft) => { draft.steps[1].id = draft.steps[0].id; }, 'workflow-id-invalid');
