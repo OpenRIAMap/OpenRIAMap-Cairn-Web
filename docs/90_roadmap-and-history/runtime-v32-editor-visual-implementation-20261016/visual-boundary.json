@@ -1,0 +1,220 @@
+{
+  "baseline": "ebaf17b",
+  "auditedFiles": [
+    {
+      "file": "src/configStudio/CategoryCreationPanel.tsx",
+      "bindingCount": 43,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/CollisionMetricEditor.tsx",
+      "bindingCount": 18,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/ConfigDialog.tsx",
+      "bindingCount": 1,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/ConfigStudio.tsx",
+      "bindingCount": 774,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/DisplayPrioritySettings.tsx",
+      "bindingCount": 19,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/ExtraRuleSettings.tsx",
+      "bindingCount": 34,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/FieldAdvancedSettings.tsx",
+      "bindingCount": 62,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/GeneralParameterEditor.tsx",
+      "bindingCount": 32,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/GeneralRulesEditor.tsx",
+      "bindingCount": 26,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/InteractionShapeSettings.tsx",
+      "bindingCount": 51,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/LabelSourceEditor.tsx",
+      "bindingCount": 17,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/LookupTablesEditor.tsx",
+      "bindingCount": 79,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/NodeFieldSettingsEditor.tsx",
+      "bindingCount": 74,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/RenderFormulaEditor.tsx",
+      "bindingCount": 52,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/RenderRuleExtensionsEditor.tsx",
+      "bindingCount": 216,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/SettingHelp.tsx",
+      "bindingCount": 1,
+      "helpShell": true
+    },
+    {
+      "file": "src/configStudio/TableOptionsEditor.tsx",
+      "bindingCount": 31,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/UnifiedRuleExtensions.tsx",
+      "bindingCount": 6,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/V3CardEditor.tsx",
+      "bindingCount": 157,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/V3WorkflowEditor.tsx",
+      "bindingCount": 197,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/ValueOptionsEditor.tsx",
+      "bindingCount": 16,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/WorkflowControlSettings.tsx",
+      "bindingCount": 37,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/WorkflowDrawingSettings.tsx",
+      "bindingCount": 48,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/WorkflowEditingSettings.tsx",
+      "bindingCount": 23,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/WorkflowExpressionEditor.tsx",
+      "bindingCount": 29,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/WorkflowOutputEditor.tsx",
+      "bindingCount": 31,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/WorkflowPrefill.tsx",
+      "bindingCount": 10,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/WorkflowValueConditionEditor.tsx",
+      "bindingCount": 38,
+      "helpShell": false
+    },
+    {
+      "file": "src/configStudio/WorkflowWorkbench.tsx",
+      "bindingCount": 33,
+      "helpShell": false
+    }
+  ],
+  "unchangedProtectedFiles": [
+    {
+      "file": "public/data/JSON.zip",
+      "sha256": "cba4dada327a5a225796f580898961ab7e1e31aee69d6408d4676c280548cafa"
+    },
+    {
+      "file": "public/manifest-icon-192.png",
+      "sha256": "50b7b43e6e5e769da373c568f5780698a054c170760af9ab228cb83a0296a2ee"
+    },
+    {
+      "file": "public/manifest-icon-512.png",
+      "sha256": "0fdba84112472baf1d6c89738d1ca27f2776b0383e19bafc212ee027736b6f9a"
+    },
+    {
+      "file": "public/web.config",
+      "sha256": "fcffed95a97f633fd3e222c3ecf332ad017435ca6a669e0bbb506d534dcb7c84"
+    },
+    {
+      "file": "src/configStudio/defaults/manifest-r10-r6.json",
+      "sha256": "09b93e7f0558ff5300aea45448863a3d856d741209dea16384f69df46f413f18"
+    },
+    {
+      "file": "src/configStudio/defaults/manifest-r8-r4.json",
+      "sha256": "87b4a786c68fb4e7dfe4df55f12b196384aa21e02adc79f7b2306b07892bead1"
+    },
+    {
+      "file": "src/configStudio/defaults/manifest-r9-r5.json",
+      "sha256": "5778563816e71c48d8aad2ab1830e29b39e5b0e59f1a32e14a05cd2cb0dd3082"
+    },
+    {
+      "file": "src/configStudio/defaults/manifest.json",
+      "sha256": "570728b91584e62adb2adcd362f2bc19519588e26bcebe299b3206cbd143d9f6"
+    },
+    {
+      "file": "src/configStudio/defaults/r10-r6.config.json",
+      "sha256": "e42b6047c8459ffd00bbe196cdc8194f220dfc65b2e0ce5963fde4e42b9ef292"
+    },
+    {
+      "file": "src/configStudio/defaults/r11-r7.config.json",
+      "sha256": "982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e"
+    },
+    {
+      "file": "src/configStudio/defaults/r8-r4.config.json",
+      "sha256": "ffcf77938eb83ea7054ebde4bdbe42980c36cde73c4cad864af5e329a216a2f5"
+    },
+    {
+      "file": "src/configStudio/defaults/r9-r5.config.json",
+      "sha256": "999d4afee9e1bfe9daf86639d95e2dae721d6c887cef3771fb1afa0d79df816e"
+    },
+    {
+      "file": "src/configStudio/types.ts",
+      "sha256": "1908c3b4132682a26be31abd2a164cf71f83f2bfa401842d36e2f74490868a26"
+    },
+    {
+      "file": "src/configStudio/runtime.ts",
+      "sha256": "3bdd34c795273fc1218ba1c9093f1d1720ac750a3038c55529d5b9b96f4c9a1c"
+    },
+    {
+      "file": "src/configStudio/V3WorkflowRunner.tsx",
+      "sha256": "0cd1766a5ae5032dfb13c12c221776c3bf71660e5ba56b84521b9f0e0313291c"
+    },
+    {
+      "file": "src/configStudio/workflowExpression.ts",
+      "sha256": "14d2c1a7bc726c6fb9b3c50c31d9ba9617104ae1776c2c25b7e14dd931f6eac1"
+    },
+    {
+      "file": "src/components/Rules/core/RuleDrivenLayer.tsx",
+      "sha256": "f7555b83eb09e70dd57f41c6c7efcccca47bf8fa88b4b41d73f129eb6c07cce6"
+    }
+  ]
+}

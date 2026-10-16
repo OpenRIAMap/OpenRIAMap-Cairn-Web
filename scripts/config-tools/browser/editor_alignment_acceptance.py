@@ -1,10 +1,11 @@
 """Stress authoring label wrapping and measure controls in each visual row."""
 import json
+import os
 import time
 from browser_check import Browser,APP_URL,OUT
 
 b=Browser();b.ws.settimeout(10)
-b.call('Page.navigate',{'url':APP_URL+'/scripts/config-tools/subject-ui-acceptance.html?mode=general&resources=1'})
+b.call('Page.navigate',{'url':os.environ.get('CAIRNMAP_EDITOR_PAGE_URL',APP_URL+'/scripts/config-tools/subject-ui-acceptance.html?mode=general&resources=1')})
 time.sleep(.5);b.wait("document.querySelector('[role=tab]')!==null")
 b.evaluate('window.confirm=()=>true')
 for _ in range(6):

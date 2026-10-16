@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "workflow table binding locks option cells",
+    "source update is immediately reflected in bound options",
+    "detach clones current table and enables independent editing",
+    "card field binding locks source/name inputs",
+    "bound card fits 1440/600/390 widths",
+    "detach field binding re-enables source editing"
+  ],
+  "runtimeErrors": []
+}

@@ -1,0 +1,1137 @@
+{
+  "checks": [
+    "reference button and world layouts; viewing leaves active package unchanged",
+    "lookup table local/function columns fit desktop and narrow containers",
+    "card path help stays in its field heading; no duplicate help icon",
+    "seven feature widths and short window; preview/editor never overlap",
+    "workflow page/control/repeat boundaries and full-width expression editor",
+    "input node/focus survive heading updates; calculator undo/redo preserved",
+    "embedded runtime form typography and control styles unchanged",
+    "diamond help keyboard open and Escape close",
+    "new workflow dialog fits three widths and preserves Escape close",
+    "100/125/150/200 percent equivalent CSS viewports; active config unchanged",
+    "TPP extra drawing and registered external workflow settings fit narrow panels"
+  ],
+  "metrics": [
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        1399,
+        1399
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 129,
+        "w": 1416,
+        "h": 826
+      },
+      "overflows": [],
+      "phase": "reference-buttons"
+    },
+    {
+      "viewport": 600,
+      "height": 1000,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        559,
+        559
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 200.15625,
+        "w": 576,
+        "h": 754.84375
+      },
+      "overflows": [],
+      "phase": "reference-buttons"
+    },
+    {
+      "viewport": 390,
+      "height": 1000,
+      "document": [
+        390,
+        390
+      ],
+      "pane": [
+        349,
+        349
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 272.546875,
+        "w": 366,
+        "h": 666.453125
+      },
+      "overflows": [],
+      "phase": "reference-buttons"
+    },
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        1399,
+        1399
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 129,
+        "w": 1416,
+        "h": 826
+      },
+      "overflows": [],
+      "phase": "reference-worlds"
+    },
+    {
+      "viewport": 600,
+      "height": 1000,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        559,
+        559
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 200.15625,
+        "w": 576,
+        "h": 754.84375
+      },
+      "overflows": [],
+      "phase": "reference-worlds"
+    },
+    {
+      "viewport": 390,
+      "height": 1000,
+      "document": [
+        390,
+        390
+      ],
+      "pane": [
+        349,
+        349
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 272.546875,
+        "w": 366,
+        "h": 666.453125
+      },
+      "overflows": [],
+      "phase": "reference-worlds"
+    },
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        1399,
+        1399
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 129,
+        "w": 1416,
+        "h": 826
+      },
+      "overflows": [],
+      "phase": "general-sources"
+    },
+    {
+      "viewport": 600,
+      "height": 1000,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        559,
+        559
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 200.15625,
+        "w": 576,
+        "h": 754.84375
+      },
+      "overflows": [],
+      "phase": "general-sources"
+    },
+    {
+      "viewport": 390,
+      "height": 1000,
+      "document": [
+        390,
+        390
+      ],
+      "pane": [
+        349,
+        349
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 272.546875,
+        "w": 366,
+        "h": 666.453125
+      },
+      "overflows": [],
+      "phase": "general-sources"
+    },
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        1399,
+        1399
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 129,
+        "w": 1416,
+        "h": 826
+      },
+      "overflows": [],
+      "phase": "general-modules"
+    },
+    {
+      "viewport": 600,
+      "height": 1000,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        559,
+        559
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 200.15625,
+        "w": 576,
+        "h": 754.84375
+      },
+      "overflows": [],
+      "phase": "general-modules"
+    },
+    {
+      "viewport": 390,
+      "height": 1000,
+      "document": [
+        390,
+        390
+      ],
+      "pane": [
+        349,
+        349
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 272.546875,
+        "w": 366,
+        "h": 666.453125
+      },
+      "overflows": [],
+      "phase": "general-modules"
+    },
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        1399,
+        1399
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 129,
+        "w": 1416,
+        "h": 826
+      },
+      "overflows": [],
+      "phase": "general-review"
+    },
+    {
+      "viewport": 600,
+      "height": 1000,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        559,
+        559
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 200.15625,
+        "w": 576,
+        "h": 754.84375
+      },
+      "overflows": [],
+      "phase": "general-review"
+    },
+    {
+      "viewport": 390,
+      "height": 1000,
+      "document": [
+        390,
+        390
+      ],
+      "pane": [
+        349,
+        349
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 272.546875,
+        "w": 366,
+        "h": 666.453125
+      },
+      "overflows": [],
+      "phase": "general-review"
+    },
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        1399,
+        1399
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 129,
+        "w": 1416,
+        "h": 826
+      },
+      "overflows": [],
+      "phase": "general-preferences"
+    },
+    {
+      "viewport": 600,
+      "height": 1000,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        559,
+        559
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 200.15625,
+        "w": 576,
+        "h": 754.84375
+      },
+      "overflows": [],
+      "phase": "general-preferences"
+    },
+    {
+      "viewport": 390,
+      "height": 1000,
+      "document": [
+        390,
+        390
+      ],
+      "pane": [
+        349,
+        349
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 272.546875,
+        "w": 366,
+        "h": 666.453125
+      },
+      "overflows": [],
+      "phase": "general-preferences"
+    },
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        1399,
+        1399
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 145,
+        "w": 1416,
+        "h": 810
+      },
+      "overflows": [],
+      "phase": "lookup-table"
+    },
+    {
+      "viewport": 600,
+      "height": 1000,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        559,
+        559
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 240.546875,
+        "w": 576,
+        "h": 714.453125
+      },
+      "overflows": [],
+      "phase": "lookup-table"
+    },
+    {
+      "viewport": 390,
+      "height": 1000,
+      "document": [
+        390,
+        390
+      ],
+      "pane": [
+        349,
+        349
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 272.546875,
+        "w": 366,
+        "h": 666.453125
+      },
+      "overflows": [],
+      "phase": "lookup-table"
+    },
+    {
+      "viewport": 1920,
+      "height": 1000,
+      "document": [
+        1920,
+        1920
+      ],
+      "pane": [
+        925,
+        925
+      ],
+      "paneRect": {
+        "x": 966,
+        "y": 129,
+        "w": 942,
+        "h": 826
+      },
+      "overflows": [],
+      "phase": "feature-fields"
+    },
+    {
+      "phase": "preview-boundary",
+      "viewport": 1920,
+      "preview": {
+        "x": 12,
+        "y": 129,
+        "w": 942,
+        "b": 955
+      },
+      "editor": {
+        "x": 966,
+        "y": 129,
+        "w": 942,
+        "b": 955
+      },
+      "mapBottom": 941,
+      "overlap": -12
+    },
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        685,
+        685
+      ],
+      "paneRect": {
+        "x": 726,
+        "y": 145,
+        "w": 702,
+        "h": 810
+      },
+      "overflows": [],
+      "phase": "feature-fields"
+    },
+    {
+      "phase": "preview-boundary",
+      "viewport": 1440,
+      "preview": {
+        "x": 12,
+        "y": 145,
+        "w": 702,
+        "b": 955
+      },
+      "editor": {
+        "x": 726,
+        "y": 145,
+        "w": 702,
+        "b": 955
+      },
+      "mapBottom": 941,
+      "overlap": -12
+    },
+    {
+      "viewport": 1280,
+      "height": 1000,
+      "document": [
+        1280,
+        1280
+      ],
+      "pane": [
+        605,
+        605
+      ],
+      "paneRect": {
+        "x": 646,
+        "y": 145,
+        "w": 622,
+        "h": 810
+      },
+      "overflows": [],
+      "phase": "feature-fields"
+    },
+    {
+      "phase": "preview-boundary",
+      "viewport": 1280,
+      "preview": {
+        "x": 12,
+        "y": 145,
+        "w": 622,
+        "b": 955
+      },
+      "editor": {
+        "x": 646,
+        "y": 145,
+        "w": 622,
+        "b": 955
+      },
+      "mapBottom": 941,
+      "overlap": -12
+    },
+    {
+      "viewport": 900,
+      "height": 1000,
+      "document": [
+        900,
+        900
+      ],
+      "pane": [
+        859,
+        859
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 538.328125,
+        "w": 876,
+        "h": 416.671875
+      },
+      "overflows": [],
+      "phase": "feature-fields"
+    },
+    {
+      "phase": "preview-boundary",
+      "viewport": 900,
+      "preview": {
+        "x": 12,
+        "y": 193,
+        "w": 876,
+        "b": 526.328125
+      },
+      "editor": {
+        "x": 12,
+        "y": 538.328125,
+        "w": 876,
+        "b": 955
+      },
+      "mapBottom": 512.328125,
+      "overlap": -12
+    },
+    {
+      "viewport": 768,
+      "height": 1000,
+      "document": [
+        768,
+        768
+      ],
+      "pane": [
+        727,
+        727
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 538.328125,
+        "w": 744,
+        "h": 416.671875
+      },
+      "overflows": [],
+      "phase": "feature-fields"
+    },
+    {
+      "phase": "preview-boundary",
+      "viewport": 768,
+      "preview": {
+        "x": 12,
+        "y": 193,
+        "w": 744,
+        "b": 526.328125
+      },
+      "editor": {
+        "x": 12,
+        "y": 538.328125,
+        "w": 744,
+        "b": 955
+      },
+      "mapBottom": 512.328125,
+      "overlap": -12
+    },
+    {
+      "viewport": 600,
+      "height": 1000,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        559,
+        559
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 564.734375,
+        "w": 576,
+        "h": 390.265625
+      },
+      "overflows": [],
+      "phase": "feature-fields"
+    },
+    {
+      "phase": "preview-boundary",
+      "viewport": 600,
+      "preview": {
+        "x": 12,
+        "y": 240.546875,
+        "w": 576,
+        "b": 552.734375
+      },
+      "editor": {
+        "x": 12,
+        "y": 564.734375,
+        "w": 576,
+        "b": 955
+      },
+      "mapBottom": 538.734375,
+      "overlap": -12
+    },
+    {
+      "viewport": 390,
+      "height": 1000,
+      "document": [
+        390,
+        390
+      ],
+      "pane": [
+        349,
+        349
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 566.515625,
+        "w": 366,
+        "h": 372.484375
+      },
+      "overflows": [],
+      "phase": "feature-fields"
+    },
+    {
+      "phase": "preview-boundary",
+      "viewport": 390,
+      "preview": {
+        "x": 12,
+        "y": 256.546875,
+        "w": 366,
+        "b": 554.515625
+      },
+      "editor": {
+        "x": 12,
+        "y": 566.515625,
+        "w": 366,
+        "b": 939
+      },
+      "mapBottom": 540.515625,
+      "overlap": -12
+    },
+    {
+      "viewport": 600,
+      "height": 650,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        544,
+        544
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 492.546875,
+        "w": 561,
+        "h": 180
+      },
+      "overflows": [],
+      "phase": "short-window"
+    },
+    {
+      "viewport": 1920,
+      "height": 1000,
+      "document": [
+        1920,
+        1920
+      ],
+      "pane": [
+        1879,
+        1879
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 129,
+        "w": 1896,
+        "h": 826
+      },
+      "overflows": [],
+      "phase": "workflow-repeat"
+    },
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        1399,
+        1399
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 129,
+        "w": 1416,
+        "h": 826
+      },
+      "overflows": [],
+      "phase": "workflow-repeat"
+    },
+    {
+      "viewport": 1280,
+      "height": 1000,
+      "document": [
+        1280,
+        1280
+      ],
+      "pane": [
+        1239,
+        1239
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 145,
+        "w": 1256,
+        "h": 810
+      },
+      "overflows": [],
+      "phase": "workflow-repeat"
+    },
+    {
+      "viewport": 900,
+      "height": 1000,
+      "document": [
+        900,
+        900
+      ],
+      "pane": [
+        859,
+        859
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 193,
+        "w": 876,
+        "h": 762
+      },
+      "overflows": [],
+      "phase": "workflow-repeat"
+    },
+    {
+      "viewport": 768,
+      "height": 1000,
+      "document": [
+        768,
+        768
+      ],
+      "pane": [
+        727,
+        727
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 193,
+        "w": 744,
+        "h": 762
+      },
+      "overflows": [],
+      "phase": "workflow-repeat"
+    },
+    {
+      "viewport": 600,
+      "height": 1000,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        559,
+        559
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 200.15625,
+        "w": 576,
+        "h": 754.84375
+      },
+      "overflows": [],
+      "phase": "workflow-repeat"
+    },
+    {
+      "viewport": 390,
+      "height": 1000,
+      "document": [
+        390,
+        390
+      ],
+      "pane": [
+        349,
+        349
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 256.546875,
+        "w": 366,
+        "h": 682.453125
+      },
+      "overflows": [],
+      "phase": "workflow-repeat"
+    },
+    {
+      "phase": "formula-width",
+      "builderWidth": 1249,
+      "formulaWidth": 1225
+    },
+    {
+      "phase": "embedded-runtime-style",
+      "count": 4,
+      "differences": []
+    },
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        685,
+        685
+      ],
+      "paneRect": {
+        "x": 726,
+        "y": 145,
+        "w": 702,
+        "h": 810
+      },
+      "overflows": [],
+      "phase": "zoom-equivalent-1"
+    },
+    {
+      "viewport": 1152,
+      "height": 800,
+      "document": [
+        1152,
+        1152
+      ],
+      "pane": [
+        1111,
+        1111
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 422.765625,
+        "w": 1128,
+        "h": 332.234375
+      },
+      "overflows": [],
+      "phase": "zoom-equivalent-1.25"
+    },
+    {
+      "viewport": 960,
+      "height": 667,
+      "document": [
+        960,
+        960
+      ],
+      "pane": [
+        904,
+        904
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 445,
+        "w": 921,
+        "h": 180
+      },
+      "overflows": [],
+      "phase": "zoom-equivalent-1.5"
+    },
+    {
+      "viewport": 720,
+      "height": 500,
+      "document": [
+        720,
+        720
+      ],
+      "pane": [
+        664,
+        664
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 445,
+        "w": 681,
+        "h": 180
+      },
+      "overflows": [],
+      "phase": "zoom-equivalent-2"
+    },
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        1399,
+        1399
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 129,
+        "w": 1416,
+        "h": 826
+      },
+      "overflows": [],
+      "phase": "workflow-v3-tpp_teleport"
+    },
+    {
+      "viewport": 600,
+      "height": 1000,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        559,
+        559
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 200.15625,
+        "w": 576,
+        "h": 754.84375
+      },
+      "overflows": [],
+      "phase": "workflow-v3-tpp_teleport"
+    },
+    {
+      "viewport": 390,
+      "height": 1000,
+      "document": [
+        390,
+        390
+      ],
+      "pane": [
+        349,
+        349
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 256.546875,
+        "w": 366,
+        "h": 682.453125
+      },
+      "overflows": [],
+      "phase": "workflow-v3-tpp_teleport"
+    },
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        1414,
+        1414
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 129,
+        "w": 1416,
+        "h": 826
+      },
+      "overflows": [],
+      "phase": "workflow-external-railway-integrated"
+    },
+    {
+      "viewport": 600,
+      "height": 1000,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        574,
+        574
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 200.15625,
+        "w": 576,
+        "h": 754.84375
+      },
+      "overflows": [],
+      "phase": "workflow-external-railway-integrated"
+    },
+    {
+      "viewport": 390,
+      "height": 1000,
+      "document": [
+        390,
+        390
+      ],
+      "pane": [
+        349,
+        349
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 256.546875,
+        "w": 366,
+        "h": 682.453125
+      },
+      "overflows": [],
+      "phase": "workflow-external-railway-integrated"
+    },
+    {
+      "viewport": 1440,
+      "height": 1000,
+      "document": [
+        1440,
+        1440
+      ],
+      "pane": [
+        1414,
+        1414
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 129,
+        "w": 1416,
+        "h": 826
+      },
+      "overflows": [],
+      "phase": "workflow-external-trp-integrated"
+    },
+    {
+      "viewport": 600,
+      "height": 1000,
+      "document": [
+        600,
+        600
+      ],
+      "pane": [
+        574,
+        574
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 200.15625,
+        "w": 576,
+        "h": 754.84375
+      },
+      "overflows": [],
+      "phase": "workflow-external-trp-integrated"
+    },
+    {
+      "viewport": 390,
+      "height": 1000,
+      "document": [
+        390,
+        390
+      ],
+      "pane": [
+        349,
+        349
+      ],
+      "paneRect": {
+        "x": 12,
+        "y": 256.546875,
+        "w": 366,
+        "h": 682.453125
+      },
+      "overflows": [],
+      "phase": "workflow-external-trp-integrated"
+    }
+  ],
+  "activeConfigSha256": "350e5ab2e644d000b0452634d4d5eeb88c1bfcec31491185040ec4b202570369",
+  "runtimeErrors": [],
+  "nativeBrowserZoom": false,
+  "zoomMethod": "physical 1440x1000 / factor CSS viewport, device scale factor=factor"
+}
