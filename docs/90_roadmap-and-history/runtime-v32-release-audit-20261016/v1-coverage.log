@@ -1,0 +1,51 @@
+{
+  "sourceConfigFiles": 76,
+  "sourceClasses": 16,
+  "sourceWorkflows": 16,
+  "sourceNodes": 95,
+  "deliveredNodes": 95,
+  "deliveredWorkflows": 28,
+  "missingPaths": [],
+  "missingFields": [
+    {
+      "path": {
+        "class": "RLE"
+      },
+      "missing": [
+        "LineName",
+        "LineID"
+      ]
+    }
+  ],
+  "approvedAliasRemovals": [
+    {
+      "path": {
+        "class": "RLE"
+      },
+      "missing": [
+        "LineName",
+        "LineID"
+      ]
+    }
+  ],
+  "unexplainedMissingFields": [],
+  "missingWorkflows": [],
+  "parityStatuses": {
+    "resolved": 32,
+    "registryReference": 4
+  },
+  "unsupportedParity": [],
+  "cardCases": 98,
+  "cardDifferences": [
+    "flr_unit",
+    "flr_unit",
+    "catalog:FLR///",
+    "catalog:FLR/NOM/NOM/",
+    "catalog:FLR/SPE/SPE/",
+    "catalog:STF///"
+  ],
+  "approvedCardChangeCount": 6,
+  "unexplainedCardDifferences": [],
+  "applicationDifferences": [],
+  "seedValid": true
+}

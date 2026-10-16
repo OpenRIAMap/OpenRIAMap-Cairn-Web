@@ -1,0 +1,11 @@
+
+> cairnmap-web@0.1.0 audit:card-config
+> node ./scripts/audit-card-config.mjs
+
+CairnMap Card Config Audit
+Summary
+  Classes checked: 16
+  Layouts: 15
+  Enhancements: 7
+  Contracts: 16
+Result: PASS

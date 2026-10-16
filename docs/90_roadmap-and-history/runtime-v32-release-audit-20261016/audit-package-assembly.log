@@ -1,0 +1,12 @@
+
+> cairnmap-web@0.1.0 audit:package-assembly
+> node ./scripts/audit-package-assembly.mjs
+
+CairnMap Package Assembly Audit
+Summary
+  Presets checked: 7
+  Classes checked: 16
+  Errors: 0
+  Warnings: 0
+
+Result: PASS

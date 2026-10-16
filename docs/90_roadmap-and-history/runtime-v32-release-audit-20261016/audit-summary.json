@@ -1,0 +1,225 @@
+{
+  "testedCommit": "955030ffaaad562bbddf9e2c9642def8f9e804ac",
+  "configSha256": "982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e",
+  "contractRevision": 11,
+  "packageRevision": 7,
+  "baseline": {
+    "valid": true,
+    "errors": [],
+    "warnings": []
+  },
+  "scenarioCount": 71,
+  "detectedErrors": 58,
+  "gaps": [
+    "WF18",
+    "WF19",
+    "WF20",
+    "FD05",
+    "RD12",
+    "RD13",
+    "CD03",
+    "CT04",
+    "CT05"
+  ],
+  "runtimeGuard": [
+    {
+      "message": "Level 必须是有限数值。"
+    },
+    {
+      "message": "输出 rod_road-output-1 的 Oneway 为必填项。"
+    }
+  ],
+  "duplicateIdReferenceProbe": {
+    "selectedField": "AuditValue",
+    "resolvedField": "Name"
+  },
+  "mountedAudit": [
+    {
+      "mode": "present-nested-required",
+      "configurationValidWithoutRecords": true,
+      "mountedIssues": [
+        {
+          "code": "mounted-data-required-field-missing",
+          "message": "缺少必填字段 tags.nomenclator（ROD/NOM）。",
+          "field": "tags.nomenclator"
+        }
+      ]
+    },
+    {
+      "mode": "nested-condition-missing-required",
+      "configurationValidWithoutRecords": true,
+      "mountedIssues": []
+    },
+    {
+      "mode": "existing-value-wrong-type",
+      "configurationValidWithoutRecords": true,
+      "mountedIssues": []
+    }
+  ],
+  "compatibility": [
+    {
+      "file": "r8-r4.config.json",
+      "originalContract": 8,
+      "importedContract": 8,
+      "readValid": true,
+      "migratedContract": 11,
+      "migratedValid": true,
+      "sourceUnchanged": true,
+      "zipBytes": 60393,
+      "roundtripEqual": true,
+      "workflowArtifacts": 20,
+      "categoryTrees": 0,
+      "rawTreeConflicts": [],
+      "rawTreeExportRequiresUpgrade": true,
+      "migratedCategoryTrees": 16
+    },
+    {
+      "file": "r9-r5.config.json",
+      "originalContract": 9,
+      "importedContract": 9,
+      "readValid": true,
+      "migratedContract": 11,
+      "migratedValid": true,
+      "sourceUnchanged": true,
+      "zipBytes": 62220,
+      "roundtripEqual": true,
+      "workflowArtifacts": 28,
+      "categoryTrees": 14,
+      "rawTreeConflicts": [
+        {
+          "class": "FLR",
+          "codes": [
+            "visibility-context-binding-invalid",
+            "visibility-structure-role-invalid"
+          ],
+          "explicitRepairValid": false
+        },
+        {
+          "class": "STF",
+          "codes": [
+            "visibility-context-binding-invalid",
+            "visibility-structure-role-invalid"
+          ],
+          "explicitRepairValid": false
+        }
+      ],
+      "migratedCategoryTrees": 16
+    },
+    {
+      "file": "r10-r6.config.json",
+      "originalContract": 10,
+      "importedContract": 10,
+      "readValid": true,
+      "migratedContract": 11,
+      "migratedValid": true,
+      "sourceUnchanged": true,
+      "zipBytes": 62230,
+      "roundtripEqual": true,
+      "workflowArtifacts": 28,
+      "categoryTrees": 16,
+      "rawTreeConflicts": [],
+      "migratedCategoryTrees": 16
+    },
+    {
+      "file": "r11-r7.config.json",
+      "originalContract": 11,
+      "importedContract": 11,
+      "readValid": true,
+      "migratedContract": 11,
+      "migratedValid": true,
+      "sourceUnchanged": true,
+      "zipBytes": 62222,
+      "roundtripEqual": true,
+      "workflowArtifacts": 28,
+      "categoryTrees": 16,
+      "rawTreeConflicts": [],
+      "migratedCategoryTrees": 16
+    }
+  ],
+  "integrity": [
+    {
+      "name": "config tamper",
+      "rejected": true,
+      "message": "Error: 配置包 config.json 哈希校验失败。"
+    },
+    {
+      "name": "report tamper",
+      "rejected": false,
+      "message": ""
+    },
+    {
+      "name": "unknown manifest schema",
+      "rejected": false,
+      "message": ""
+    },
+    {
+      "name": "manifest package identity mismatch",
+      "rejected": false,
+      "message": ""
+    },
+    {
+      "name": "manifest wrong byteLength",
+      "rejected": false,
+      "message": ""
+    }
+  ],
+  "scale": [
+    {
+      "nodes": 95,
+      "workflows": 28,
+      "bytes": 1621980,
+      "validateMs": 160.80890000000363,
+      "valid": true,
+      "compileMs": 34.81669999999576,
+      "stats": {
+        "epoch": 15,
+        "nodes": 95,
+        "classes": 16,
+        "cachedPaths": 95,
+        "hits": 570
+      },
+      "exportZipMs": 222.73589999999967,
+      "zipBytes": 62222,
+      "readZipMs": 30.80800000000454,
+      "roundtripNodes": 95
+    },
+    {
+      "nodes": 195,
+      "workflows": 28,
+      "bytes": 4055460,
+      "validateMs": 348.0280000000057,
+      "valid": true,
+      "compileMs": 74.06750000000466,
+      "stats": {
+        "epoch": 16,
+        "nodes": 195,
+        "classes": 116,
+        "cachedPaths": 195,
+        "hits": 1170
+      },
+      "exportZipMs": 505.3895000000048,
+      "zipBytes": 84783,
+      "readZipMs": 79.15670000000682,
+      "roundtripNodes": 195
+    },
+    {
+      "nodes": 495,
+      "workflows": 28,
+      "bytes": 11356560,
+      "validateMs": 1421.262200000012,
+      "valid": true,
+      "compileMs": 188.53510000000824,
+      "stats": {
+        "epoch": 17,
+        "nodes": 495,
+        "classes": 416,
+        "cachedPaths": 495,
+        "hits": 2970
+      },
+      "exportZipMs": 1828.3501000000106,
+      "zipBytes": 136953,
+      "readZipMs": 216.49259999999776,
+      "roundtripNodes": 495
+    }
+  ]
+}

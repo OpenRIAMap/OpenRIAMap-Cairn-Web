@@ -1,0 +1,31 @@
+{
+  "missingTargetErrorShown": true,
+  "saveInvalidTargetBlocked": true,
+  "constantTypePreflightGapConfirmed": true,
+  "invalidCssColorSupported": false,
+  "activeConfigUnchanged": true,
+  "history": [
+    {
+      "historyCount": 1,
+      "listedCount": 1,
+      "writeMs": 63.90000009536743,
+      "listMs": 303.2999999523163,
+      "latestReadMs": 25.299999952316284
+    },
+    {
+      "historyCount": 10,
+      "listedCount": 10,
+      "writeMs": 405.5,
+      "listMs": 2543.899999856949,
+      "latestReadMs": 18.700000047683716
+    },
+    {
+      "historyCount": 25,
+      "listedCount": 25,
+      "writeMs": 843.5,
+      "listMs": 6015.100000143051,
+      "latestReadMs": 18
+    }
+  ],
+  "runtimeErrors": []
+}
