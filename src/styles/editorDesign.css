@@ -74,6 +74,7 @@
   line-height: 1.5;
   width: 100%;
   max-width: 100%;
+  font-weight: 400;
 }
 .config-editor.cm-editor-design .cm-help-heading {
   display: flex;
@@ -120,12 +121,13 @@
 .config-editor.cm-editor-design .cm-field-identity { padding: 0 0 12px; border-bottom: 1px solid var(--cm-line); }
 .config-editor.cm-editor-design .cm-field-actions { margin-block: 8px 12px; }
 .config-editor.cm-editor-design .cm-rule-range {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: end;
 }
-.config-editor.cm-editor-design .cm-rule-range > .cm-zoom-join { align-self: center; padding: 20px 0 0; }
+.config-editor.cm-editor-design .cm-rule-range > label { flex: 1 1 9rem; }
+.config-editor.cm-editor-design .cm-rule-range > .cm-zoom-join { align-self: end; padding: 0 0 8px; }
 .config-editor.cm-editor-design .cm-rule-range > button { align-self: end; }
 .config-editor.cm-editor-design .cm-rule-range > section { grid-column: 1 / -1; }
 .config-editor.cm-editor-design .cm-condition-row {
@@ -192,6 +194,10 @@
 .config-editor.cm-editor-design .cm-preview-frame { min-height: 0; flex: 1; overflow: hidden; }
 .config-editor.cm-editor-design .cm-preview-frame > div, .config-editor.cm-editor-design .cm-preview-frame .leaflet-container { min-height: 0; }
 .config-editor.cm-editor-design .cm-authoring-pane { container: authoring / inline-size; }
+.config-editor.cm-editor-design .cm-field-identity { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.config-editor.cm-editor-design .cm-field-definition > .cm-flex-grid { padding-block: 4px 12px; }
+.config-editor.cm-editor-design .cm-field-group { background: #f1f5f9; }
+.config-editor.cm-editor-design .cm-field-group .cm-item { margin-block: 12px; }
 .config-editor.cm-editor-design .cm-dialog-heading { padding-bottom: 12px; border-bottom: 1px solid var(--cm-line); }
 .config-editor.cm-editor-design .cm-report { overflow-wrap: anywhere; }
 @media (min-width: 1280px) {
@@ -205,6 +211,12 @@
   .config-editor.cm-editor-design .cm-option-row > .cm-help-control { grid-column: 2; }
   .config-editor.cm-editor-design .cm-option-row > span { grid-row: 1; }
   .config-editor.cm-editor-design .cm-option-row > button { grid-column: 3; grid-row: 1; }
+}
+@container authoring (min-width: 760px) {
+  .config-editor.cm-editor-design .cm-field-identity { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@container authoring (max-width: 380px) {
+  .config-editor.cm-editor-design .cm-field-identity { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 520px) {
   .config-editor.cm-editor-design .cm-panel { padding: 10px; }
