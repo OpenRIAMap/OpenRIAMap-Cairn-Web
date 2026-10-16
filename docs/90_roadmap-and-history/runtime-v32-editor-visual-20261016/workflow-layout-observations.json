@@ -1,0 +1,107 @@
+[
+  {
+    "viewport": 1440,
+    "document": {
+      "client": 1440,
+      "scroll": 1440
+    },
+    "pane": {
+      "client": 1399,
+      "scroll": 1399
+    },
+    "visibleOverflow": [
+      {
+        "tag": "LABEL",
+        "w": 248,
+        "scroll": 252,
+        "t": "保存形式?对象数组 [{key:value}]纯值数组 [value]"
+      },
+      {
+        "tag": "LABEL",
+        "w": 248,
+        "scroll": 252,
+        "t": "最少项目数?"
+      },
+      {
+        "tag": "LABEL",
+        "w": 248,
+        "scroll": 252,
+        "t": "添加按钮名称?"
+      },
+      {
+        "tag": "LABEL",
+        "w": 248,
+        "scroll": 252,
+        "t": "英文添加名称?"
+      }
+    ]
+  },
+  {
+    "viewport": 900,
+    "document": {
+      "client": 900,
+      "scroll": 900
+    },
+    "pane": {
+      "client": 859,
+      "scroll": 859
+    },
+    "visibleOverflow": [
+      {
+        "tag": "LABEL",
+        "w": 241,
+        "scroll": 245,
+        "t": "保存形式?对象数组 [{key:value}]纯值数组 [value]"
+      },
+      {
+        "tag": "LABEL",
+        "w": 241,
+        "scroll": 245,
+        "t": "最少项目数?"
+      },
+      {
+        "tag": "LABEL",
+        "w": 241,
+        "scroll": 245,
+        "t": "添加按钮名称?"
+      },
+      {
+        "tag": "LABEL",
+        "w": 241,
+        "scroll": 245,
+        "t": "英文添加名称?"
+      }
+    ]
+  },
+  {
+    "viewport": 600,
+    "document": {
+      "client": 600,
+      "scroll": 600
+    },
+    "pane": {
+      "client": 559,
+      "scroll": 559
+    },
+    "visibleOverflow": [
+      {
+        "tag": "LABEL",
+        "w": 447,
+        "scroll": 451,
+        "t": "保存形式?对象数组 [{key:value}]纯值数组 [value]"
+      }
+    ]
+  },
+  {
+    "viewport": 390,
+    "document": {
+      "client": 390,
+      "scroll": 390
+    },
+    "pane": {
+      "client": 349,
+      "scroll": 349
+    },
+    "visibleOverflow": []
+  }
+]

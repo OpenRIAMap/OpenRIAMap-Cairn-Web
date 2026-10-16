@@ -1,0 +1,8 @@
+{
+  "viewport": { "width": 600, "height": 1000 },
+  "source": "CDP getBoundingClientRect measurement on the isolated local editor",
+  "grid": { "y": 231.546875, "bottom": 967, "height": 735.453125 },
+  "previewSection": { "y": 243.546875, "bottom": 643.546875, "height": 400 },
+  "editorSection": { "y": 605.265625, "bottom": 955, "height": 349.734375 },
+  "overlapPx": 38.28125
+}
