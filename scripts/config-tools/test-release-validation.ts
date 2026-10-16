@@ -25,6 +25,7 @@ assert.equal(disjoint({token:'F',operator:'in',values:[1,2]},leaf('equals',3)),t
 assert.equal(disjoint(any(leaf('equals',1),leaf('equals',2)),leaf('equals',2)),false);
 assert.equal(disjoint(all(leaf('present'),leaf('equals',1)),leaf('equals',2)),true);
 assert.equal(disjoint(any(...Array.from({length:129},(_,i)=>leaf('equals',i))),leaf('equals',200)),undefined);
+assert.equal(disjoint({token:'F',operator:'in',values:Array.from({length:4096},(_,i)=>i)},leaf('equals',5000)),undefined,'large membership sets consume the condition budget');
 const analyse=(expression:string,modify?:(w:typeof workflow)=>void)=>{const w=structuredClone(workflow);w.editor={enabled:false};w.outputs[0].assignments=w.outputs[0].assignments.filter(a=>a.target==='Level');w.outputs[0].assignments[0].expression=expression;modify?.(w);return validateWorkflowWrites(w,path=>resolveSelectableFields(base,path));};
 for(const expression of ['"bad"','"12"','join("",A)','coalesce(F,"bad")','point(A)'])assert.ok(analyse(expression).some(i=>i.code==='workflow-expression-type-conflict'),expression);
 for(const expression of ['0','12','null','""','F','add(F,2)','coalesce(F,0)','coalesce(F,"")'])assert.ok(!analyse(expression).some(i=>i.severity==='error'),expression);

@@ -18,6 +18,8 @@ function clauses(condition?: WorkflowValueCondition, depth = 0, budget={remainin
     if (result.length * next.length > CONDITION_BUDGET) throw new Error('condition budget');
     return result.flatMap(left => next.map(right => [...left, ...right]));
   }, [[]]);
+  budget.remaining-=condition.values?.length??0;
+  if(budget.remaining<0)throw new Error('condition value budget');
   return unstable.has(condition.token)?[[]]:[[condition]];
 }
 const isEmpty = (value: unknown) => value == null || typeof value === 'string' && !value.trim();
@@ -32,7 +34,8 @@ function impossible(clause: Clause): boolean {
     } else {
       const values = item.operator === 'equals' && item.value !== undefined ? [item.value] : item.operator === 'in' ? item.values : undefined;
       if (!values) throw new Error('unknown condition');
-      prior.values = prior.values ? prior.values.filter(value => values.includes(value)) : values;
+      const allowed=new Set(values);
+      prior.values = prior.values ? prior.values.filter(value => allowed.has(value)) : values;
     }
     if (prior.values && !prior.values.some(value => prior.presence === undefined || !isEmpty(value) === prior.presence)) return true;
     constraints.set(item.token, prior);
