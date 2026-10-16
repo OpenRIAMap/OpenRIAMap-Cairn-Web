@@ -31,7 +31,7 @@ export function HelpLabel({context,children,controlStart,...props}:LabelHTMLAttr
   if(split<0)split=rows.length;
   if(controlStart!==undefined)split=controlStart;
   const marked=Children.toArray(annotate(children,resolution));
-  const layout=first?.props.type==='checkbox'?(rows.slice(split).some(isControl)?'compound':'switch'):'field';
+  const layout=first?.props.type==='checkbox'?(rows.filter(isControl).length>1?'compound':'switch'):'field';
   return <label {...props} data-field-layout={layout} data-setting-help={resolution.key} data-help-kind={resolution.kind}><inheritedHelp.Provider value={resolution}><span className="cm-help-heading">{split?marked.slice(0,split):title}{supplied?null:<ModuleHelp title={title} helpKey={resolution.key} text={resolution.text}/>}</span>{marked.slice(split)}</inheritedHelp.Provider></label>;
 }
 /** Unlabelled compact cells get the same local help; nested controls reuse the

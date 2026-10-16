@@ -14,7 +14,7 @@ export function InteractionShapeSettings({ visual, onChange, colorEditor }: { vi
   </div>;
 }
 export function RuleInteractionSettings({ rule, baseline, onChange, colorEditor }: { rule: ZoomPriorityRule; baseline: GeometryInteractionBaseline; onChange: (value: ZoomPriorityRule) => void; colorEditor?:(visual:InteractionVisual,onChange:(value:Partial<InteractionVisual>)=>void)=>ReactNode }) {
-  return <details className="mt-2 rounded border p-2"><summary className="text-xs" data-module-title="本规则交互视觉覆盖">本规则交互视觉覆盖<ModuleHelp title="本规则交互视觉覆盖" /></summary>{(['hover', 'selected', 'searchResult', 'editing', 'deletionMarked'] as const).map(state => {
+  return <details className="cm-subsection mt-2 rounded border p-2"><summary className="text-xs" data-module-title="本规则交互视觉覆盖">本规则交互视觉覆盖<ModuleHelp title="本规则交互视觉覆盖" /></summary>{(['hover', 'selected', 'searchResult', 'editing', 'deletionMarked'] as const).map(state => {
     const override = rule.extensions?.interaction?.[state];
     const visual = { ...baseline[state], ...override };
     const update = (value: Partial<InteractionVisual>) => onChange({ ...rule, extensions: { ...rule.extensions, interaction: { ...rule.extensions?.interaction, [state]: { ...override, ...value } } } });

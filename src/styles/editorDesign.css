@@ -8,8 +8,9 @@
   line-height: 1.5;
 }
 .config-editor.cm-editor-design :is(section, article, fieldset, header, label, details, .cm-help-control) { min-width: 0; }
-.config-editor.cm-editor-design :is(h2, h3) { font-size: 16px; font-weight: 600; line-height: 1.5; }
-.config-editor.cm-editor-design :is(h4, h5) { font-size: 14px; font-weight: 600; line-height: 1.5; }
+.config-editor.cm-editor-design :is(h2, h3):not(:where(.cm-runtime-surface *)) { font-size: 16px; font-weight: 600; line-height: 1.5; }
+.config-editor.cm-editor-design :is(h4, h5):not(:where(.cm-runtime-surface *)) { font-size: 14px; font-weight: 600; line-height: 1.5; }
+.config-editor.cm-editor-design .cm-runtime-surface { font-size: 16px; line-height: 1.5; }
 .config-editor.cm-editor-design .cm-panel {
   margin-block: 20px;
   padding: 16px;
@@ -58,6 +59,8 @@
   gap: 8px 12px;
   margin-block: 10px;
 }
+.config-editor.cm-editor-design :is(.cm-action-bar, .cm-panel-heading, .cm-item-heading, .cm-item, .cm-subsection) > button { min-height: 36px; }
+.config-editor.cm-editor-design .cm-value-options > button { min-height: 32px; }
 .config-editor.cm-editor-design .cm-flex-grid {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
   gap: 12px;
@@ -93,9 +96,11 @@
   width: auto;
   align-self: start;
   min-height: 24px;
+  padding-top: 0;
 }
 .config-editor.cm-editor-design [data-field-layout="switch"] > .cm-help-heading { min-height: 24px; }
 .config-editor.cm-editor-design .cm-flex-grid > [data-field-layout="switch"] { grid-column: 1 / -1; }
+.config-editor.cm-editor-design .cm-flex-grid > [data-setting-field][data-field-layout="switch"] { grid-column: auto; }
 .config-editor.cm-editor-design [data-field-layout="compound"] > .cm-help-heading { min-height: 20px; }
 .config-editor.cm-editor-design :is([data-field-layout], .cm-help-control) > :is(input, textarea, select) { margin: 0; max-width: 100%; }
 .config-editor.cm-editor-design :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]), textarea, select):not(:where(.cm-runtime-surface *)) {
@@ -141,7 +146,7 @@
   background: #fff;
 }
 .config-editor.cm-editor-design .cm-condition-row > .cm-help-control { flex: 1 1 10rem; }
-.config-editor.cm-editor-design .cm-condition-row > b { align-self: center; }
+.config-editor.cm-editor-design .cm-condition-row > b { align-self: end; display: flex; align-items: center; min-height: 36px; }
 .config-editor.cm-editor-design .cm-condition-row > button { min-height: 36px; }
 .config-editor.cm-editor-design details:not(:where(.cm-runtime-surface *)) > summary {
   padding-block: 4px;
@@ -163,6 +168,7 @@
 .config-editor.cm-editor-design .cm-workflow-control-head > .cm-help-control { flex: 1 1 10rem; }
 .config-editor.cm-editor-design .cm-workflow-control-head > .cm-help-control:has(textarea) { flex: 3 1 18rem; }
 .config-editor.cm-editor-design .cm-workflow-control-head > :is(span, button) { align-self: center; flex: none; }
+.config-editor.cm-editor-design :is(.cm-workflow-control-head, .cm-workflow-page-head) textarea { min-height: 36px; }
 .config-editor.cm-editor-design .cm-workflow-page-head { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
 .config-editor.cm-editor-design .cm-workflow-page-head > .cm-help-control { flex: 1 1 18rem; }
 .config-editor.cm-editor-design .cm-workflow-toolbar { align-items: end; }
@@ -180,6 +186,8 @@
 .config-editor.cm-editor-design .cm-workflow-settings > .cm-flags { padding-bottom: 8px; border-bottom: 1px solid var(--cm-line); }
 .config-editor.cm-editor-design .cm-workflow-settings > fieldset { grid-column: 1 / -1; }
 .config-editor.cm-editor-design .cm-option-row { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)) auto; gap: 8px; align-items: end; }
+.config-editor.cm-editor-design .cm-option-row.cm-functional-row { grid-template-columns: auto repeat(4, minmax(0, 1fr)) auto; }
+.config-editor.cm-editor-design .cm-option-row > div { grid-column: 1 / -1; }
 .config-editor.cm-editor-design .cm-option-row > span { align-self: center; }
 .config-editor.cm-editor-design .cm-option-row > .cm-help-control { min-width: 0; }
 .config-editor.cm-editor-design .cm-option-row > button { min-height: 32px; align-self: end; }
@@ -192,7 +200,8 @@
 .config-editor.cm-editor-design .cm-value-options .cm-option-row { margin-top: 10px; }
 .config-editor.cm-editor-design .cm-expression-editor > .cm-help-control { margin-top: 12px; width: 100%; }
 .config-editor.cm-editor-design .cm-expression-editor :is(code, output, p), .config-editor.cm-editor-design .cm-item code { overflow-wrap: anywhere; }
-.config-editor.cm-editor-design .cm-expression-editor textarea { min-height: 112px; }
+/* Override the legacy config-editor compound input selector, scoped here only. */
+.config-editor.cm-editor-design .cm-expression-editor textarea { min-height: 112px !important; }
 .config-editor.cm-editor-design .cm-design-preview { border: 2px dashed var(--cm-border); }
 .config-editor.cm-editor-design .cm-workspace-grid {
   display: grid;
@@ -214,6 +223,10 @@
 .config-editor.cm-editor-design .cm-field-group { background: #f1f5f9; }
 .config-editor.cm-editor-design .cm-field-group .cm-item { margin-block: 12px; }
 .config-editor.cm-editor-design .cm-dialog-heading { padding-bottom: 12px; border-bottom: 1px solid var(--cm-line); }
+.config-editor.cm-editor-design fieldset > legend { padding-inline: 6px; font-size: 13px; font-weight: 600; }
+.config-editor.cm-editor-design .cm-drawing-settings > .cm-flex-grid > p { margin: 0; align-self: center; font-size: 13px; }
+.config-editor.cm-editor-design .cm-condition-settings > .cm-help-control { margin-block: 12px; }
+.config-editor.cm-editor-design .cm-condition-settings .cm-condition-settings { padding-inline: 8px; border-inline: 0; border-radius: 0; }
 .config-editor.cm-editor-design .cm-report { overflow-wrap: anywhere; }
 @media (min-width: 1280px) {
   .config-editor.cm-editor-design .cm-workspace-grid:has(> .cm-validator-pane) { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); overflow: hidden; }
@@ -224,8 +237,8 @@
   .config-editor.cm-editor-design .cm-subsection { padding: 8px; }
   .config-editor.cm-editor-design .cm-panel .cm-panel { padding-inline: 0; border-inline: 0; }
   .config-editor.cm-editor-design .cm-workflow-control .cm-subsection { padding-inline: 0; border: 0; border-top: 1px solid var(--cm-line); border-radius: 0; background: transparent; }
-  .config-editor.cm-editor-design .cm-option-row { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .config-editor.cm-editor-design .cm-option-row > .cm-help-control { grid-column: 2; }
+  .config-editor.cm-editor-design .cm-option-row, .config-editor.cm-editor-design .cm-option-row.cm-functional-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .config-editor.cm-editor-design .cm-option-row > label { grid-column: 2; }
   .config-editor.cm-editor-design .cm-option-row > span { grid-row: 1; }
   .config-editor.cm-editor-design .cm-option-row > button { grid-column: 3; grid-row: 1; }
 }
