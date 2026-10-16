@@ -1,0 +1,2474 @@
+{
+  "checks": [
+    {
+      "mode": "main",
+      "path": {
+        "class": "BUD"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验\n          生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验\n          生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "BUD",
+        "kind": "NOM"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验\n          生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验\n          生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "BUD",
+        "kind": "SPE"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验\n          生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验\n          生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "BUD",
+        "kind": "NOM",
+        "skind": "NOM"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验\n          生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验\n          生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "BUD",
+        "kind": "SPE",
+        "skind": "SPE"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验\n          生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验\n          生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG"
+      },
+      "variant": 0,
+      "high": 2,
+      "low": 1,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF"
+      },
+      "variant": 0,
+      "high": 2,
+      "low": 1,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM"
+      },
+      "variant": 0,
+      "high": 2,
+      "low": 1,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD",
+        "skind2": "ISD"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD",
+        "skind2": "SBC"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD",
+        "skind2": "RGC"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD",
+        "skind2": "PEN"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD",
+        "skind2": "IST"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS",
+        "skind2": "MTN"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS",
+        "skind2": "BSN"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS",
+        "skind2": "PLN"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB",
+        "skind2": "LKE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB",
+        "skind2": "STR"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB",
+        "skind2": "EST"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ",
+        "skind2": "L1"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ",
+        "skind2": "L2"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ",
+        "skind2": "L3"
+      },
+      "variant": 0,
+      "high": 8,
+      "low": 7,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "PLZ",
+        "skind2": "L1"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "PLZ",
+        "skind2": "L2"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "PLZ",
+        "skind2": "L3"
+      },
+      "variant": 0,
+      "high": 8,
+      "low": 7,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISP",
+        "kind": "NGF"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "PLP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP",
+        "skind2": "SPP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP",
+        "skind2": "LIP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "PLP",
+        "skind2": "PLP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "PLP",
+        "skind2": "COP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP",
+        "skind2": "SHR"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "PLF"
+      },
+      "variant": 1,
+      "high": 8,
+      "low": 7,
+      "highLabels": [],
+      "offLabels": [],
+      "reentryLabels": []
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "RLE"
+      },
+      "variant": 0,
+      "high": 2,
+      "low": 1,
+      "highLabels": [
+        "T1"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "T1"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "RLE"
+      },
+      "variant": 1,
+      "high": 8,
+      "low": 7,
+      "highLabels": [],
+      "offLabels": [],
+      "reentryLabels": []
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ROD"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ROD",
+        "kind": "NOM"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ROD",
+        "kind": "TUK"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ROD",
+        "kind": "PRI"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ROD",
+        "kind": "SEC"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ROD",
+        "kind": "SED"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ROD",
+        "kind": "RES"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ROD",
+        "kind": "SVS"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ROD",
+        "kind": "IDR"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "ROD",
+        "kind": "SPE"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "SBP"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "STA"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "STB"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验\n          生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验\n          生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "TPP"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "TPP",
+        "kind": "NOM"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "TPP",
+        "kind": "SPE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "TPP",
+        "kind": "NOM",
+        "skind": "NOM"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "TPP",
+        "kind": "SPE",
+        "skind": "SPE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "TRP"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "TRP",
+        "kind": "NOM"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "TRP",
+        "kind": "SPE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "TRP",
+        "kind": "NOM",
+        "skind": "NOM"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "TRP",
+        "kind": "SPE",
+        "skind": "SPE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "WRP"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "WRP",
+        "kind": "NOM"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "WRP",
+        "kind": "SPE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "WRP",
+        "kind": "NOM",
+        "skind": "NOM"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "path": {
+        "class": "WRP",
+        "kind": "SPE",
+        "skind": "SPE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "BUD"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验\n          生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验\n          生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "BUD",
+        "kind": "NOM"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验\n          生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验\n          生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "BUD",
+        "kind": "SPE"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验\n          生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验\n          生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "BUD",
+        "kind": "NOM",
+        "skind": "NOM"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验\n          生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验\n          生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "BUD",
+        "kind": "SPE",
+        "skind": "SPE"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验\n          生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验\n          生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG"
+      },
+      "variant": 0,
+      "high": 2,
+      "low": 1,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF"
+      },
+      "variant": 0,
+      "high": 2,
+      "low": 1,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM"
+      },
+      "variant": 0,
+      "high": 2,
+      "low": 1,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD",
+        "skind2": "ISD"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD",
+        "skind2": "SBC"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD",
+        "skind2": "RGC"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD",
+        "skind2": "PEN"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD",
+        "skind2": "IST"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS",
+        "skind2": "MTN"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS",
+        "skind2": "BSN"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS",
+        "skind2": "PLN"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB",
+        "skind2": "LKE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB",
+        "skind2": "STR"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB",
+        "skind2": "EST"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ",
+        "skind2": "L1"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ",
+        "skind2": "L2"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ",
+        "skind2": "L3"
+      },
+      "variant": 0,
+      "high": 8,
+      "low": 7,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "PLZ",
+        "skind2": "L1"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "PLZ",
+        "skind2": "L2"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "PLZ",
+        "skind2": "L3"
+      },
+      "variant": 0,
+      "high": 8,
+      "low": 7,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISP",
+        "kind": "NGF"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "PLP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP",
+        "skind2": "SPP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP",
+        "skind2": "LIP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "PLP",
+        "skind2": "PLP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "PLP",
+        "skind2": "COP"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP",
+        "skind2": "SHR"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "PLF"
+      },
+      "variant": 1,
+      "high": 8,
+      "low": 7,
+      "highLabels": [],
+      "offLabels": [],
+      "reentryLabels": []
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "RLE"
+      },
+      "variant": 0,
+      "high": 2,
+      "low": 1,
+      "highLabels": [],
+      "offLabels": [],
+      "reentryLabels": []
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "RLE"
+      },
+      "variant": 1,
+      "high": 8,
+      "low": 7,
+      "highLabels": [],
+      "offLabels": [],
+      "reentryLabels": []
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ROD"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ROD",
+        "kind": "NOM"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ROD",
+        "kind": "TUK"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ROD",
+        "kind": "PRI"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ROD",
+        "kind": "SEC"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ROD",
+        "kind": "SED"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ROD",
+        "kind": "RES"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ROD",
+        "kind": "SVS"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ROD",
+        "kind": "IDR"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "ROD",
+        "kind": "SPE"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        ".ria-line-textpath{font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:#ffffff;stroke:#000000;stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}\n      \n      \n      生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "SBP"
+      },
+      "variant": 0,
+      "high": 6,
+      "low": 5,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "STA"
+      },
+      "variant": 0,
+      "high": 4,
+      "low": 3,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "STB"
+      },
+      "variant": 0,
+      "high": 3,
+      "low": 2,
+      "highLabels": [
+        "生命周期核验\n          生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验\n          生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "TPP"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "TPP",
+        "kind": "NOM"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "TPP",
+        "kind": "SPE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "TPP",
+        "kind": "NOM",
+        "skind": "NOM"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "TPP",
+        "kind": "SPE",
+        "skind": "SPE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "TRP"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "TRP",
+        "kind": "NOM"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "TRP",
+        "kind": "SPE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "TRP",
+        "kind": "NOM",
+        "skind": "NOM"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "TRP",
+        "kind": "SPE",
+        "skind": "SPE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "WRP"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "WRP",
+        "kind": "NOM"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "WRP",
+        "kind": "SPE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "WRP",
+        "kind": "NOM",
+        "skind": "NOM"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "v1",
+      "path": {
+        "class": "WRP",
+        "kind": "SPE",
+        "skind": "SPE"
+      },
+      "variant": 0,
+      "high": 5,
+      "low": 4,
+      "highLabels": [
+        "生命周期核验"
+      ],
+      "offLabels": [],
+      "reentryLabels": [
+        "生命周期核验"
+      ]
+    },
+    {
+      "mode": "main",
+      "rleDescendingAndReentry": true,
+      "fieldConditionAndMultipart": true
+    },
+    {
+      "mode": "preview",
+      "rleDescendingAndReentry": true,
+      "fieldConditionAndMultipart": true
+    },
+    {
+      "densityEmptyAndReentry": true,
+      "limit": 1,
+      "initial": [
+        "T2"
+      ]
+    }
+  ],
+  "boundaryCount": 70,
+  "highLabelsVisible": 135,
+  "runtimeErrors": []
+}
