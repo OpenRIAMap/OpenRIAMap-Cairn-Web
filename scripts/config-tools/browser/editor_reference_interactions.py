@@ -29,8 +29,8 @@ assert b.evaluate("!window.reuseAcceptance.control.optionsTableId&&window.reuseA
 assert b.evaluate(f"[...{scope}.querySelectorAll('[data-value-option] input')].every(e=>!e.disabled)")
 click('绑定字段设计',"document.querySelector('.cm-card-item')")
 b.wait("document.querySelector('[role=dialog]')!==null")
-select('预填字段','SharedTest')
-click('导入预填',"document.querySelector('[role=dialog]')")
+select('绑定字段','SharedTest')
+click('确认绑定',"document.querySelector('[role=dialog]')")
 assert b.evaluate("!!window.reuseAcceptance.config.nodes.find(n=>n.path.class==='BUD'&&!n.path.kind).card.items[0].fieldBinding")
 assert b.evaluate("(()=>{const e=[...document.querySelectorAll('.cm-card-item label')].find(e=>e.textContent.startsWith('显示字段'));return e.querySelector('input').disabled})()")
 for width in [1440,600,390]:
