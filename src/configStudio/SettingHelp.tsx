@@ -36,9 +36,9 @@ export function HelpLabel({context,children,controlStart,...props}:LabelHTMLAttr
 }
 /** Unlabelled compact cells get the same local help; nested controls reuse the
  * enclosing label's explanation without adding a second icon. */
-export function HelpControl({context,children}:{context:string;children:ReactElement<ControlProps>}){
+export function HelpControl({context,children,displayLabel}:{context:string;children:ReactElement<ControlProps>;displayLabel?:string}){
   const parent=useContext(inheritedHelp),props=children.props,title=props['aria-label']||props.placeholder||context,resolution=parent??resolveSettingHelp(title,context);
   const control=cloneElement(children,{'data-config-setting':resolution.key,'data-help-kind':resolution.kind});
   if(parent)return control;
-  return <label data-setting-help={resolution.key} data-help-kind={resolution.kind} data-field-layout={props.type==='checkbox'?'switch':'field'} className={`cm-help-control ${props.type==='checkbox'?'cm-help-checkbox':''}`}><span className="cm-help-heading"><span>{props['aria-label']||props.placeholder||'设置值'}</span><ModuleHelp title={title} helpKey={resolution.key} text={resolution.text}/></span>{control}</label>;
+  return <label data-setting-help={resolution.key} data-help-kind={resolution.kind} data-field-layout={props.type==='checkbox'?'switch':'field'} className={`cm-help-control ${props.type==='checkbox'?'cm-help-checkbox':''}`}><span className="cm-help-heading"><span>{displayLabel||props['aria-label']||props.placeholder||'设置值'}</span><ModuleHelp title={title} helpKey={resolution.key} text={resolution.text}/></span>{control}</label>;
 }

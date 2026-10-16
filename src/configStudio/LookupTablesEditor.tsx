@@ -26,7 +26,7 @@ export function LookupTablesEditor({config,onChange}:{config:ConfigPackageV3;onC
   useEffect(()=>setMessage(''),[config]);
   const update=(id:string,patch:Partial<LookupTable>)=>onChange({...config,lookupTables:config.lookupTables?.map(table=>table.id===id?{...table,...patch}:table)});
   return <details className="mb-3 min-w-0 rounded border bg-slate-50 p-3"><summary className="cursor-pointer font-medium">预留对照表格</summary><p className="mt-2 text-xs text-slate-600">字段与下拉控件可显式绑定表格；预填只复制当时的名称与存储值。功能值供已接入的外部模块读取。</p>
-    {(config.lookupTables??[]).map((table,tableIndex)=><article key={tableIndex} className="cm-field-card mt-3"><header>{table.label.zh}（{table.id}）</header><div className="cm-flex-grid gap-2 text-xs">
+    {(config.lookupTables??[]).map((table,tableIndex)=><article key={tableIndex} className="cm-item mt-3"><header>{table.label.zh}（{table.id}）</header><div className="cm-flex-grid gap-2 text-xs">
       <HelpLabel context="LookupTablesEditor">表格名<input className={inputClass} value={table.label.zh} onChange={event=>update(table.id,{label:{...table.label,zh:event.target.value}})}/></HelpLabel>
       <HelpLabel context="LookupTablesEditor">名称 en<input className={inputClass} value={table.label.en} onChange={event=>update(table.id,{label:{...table.label,en:event.target.value}})}/></HelpLabel>
       <TableIdInput disabled={config.contractRevision>=11&&isStandardTable(table.id)} id={table.id} onRename={next=>{try{onChange(renameLookupTable(config,table.id,next));return true;}catch(error){setMessage(String(error));return false;}}}/>

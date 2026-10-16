@@ -175,6 +175,10 @@
 .config-editor.cm-editor-design .cm-option-row :is(input, select) { min-height: 32px; }
 .config-editor.cm-editor-design [data-table-options] { grid-column: 1 / -1; }
 .config-editor.cm-editor-design .cm-reference-status { padding-block: 10px; border-top: 1px solid var(--cm-line); overflow-wrap: anywhere; }
+.config-editor.cm-editor-design .cm-search-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: 8px 12px; }
+.config-editor.cm-editor-design .cm-card-item > .cm-flex-grid > button { min-height: 36px; }
+.config-editor.cm-editor-design .cm-value-options > p { margin-bottom: 10px; font-size: 13px; font-weight: 600; }
+.config-editor.cm-editor-design .cm-value-options .cm-option-row { margin-top: 10px; }
 .config-editor.cm-editor-design .cm-expression-editor > .cm-help-control { margin-top: 12px; width: 100%; }
 .config-editor.cm-editor-design .cm-expression-editor :is(code, output, p), .config-editor.cm-editor-design .cm-item code { overflow-wrap: anywhere; }
 .config-editor.cm-editor-design .cm-expression-editor textarea { min-height: 112px; }
