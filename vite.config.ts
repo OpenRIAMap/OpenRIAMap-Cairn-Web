@@ -17,7 +17,7 @@ export default defineConfig({
   server: {
     watch: {
       // Local browser profiles and acceptance outputs are not application sources.
-      ignored: ['**/.cache/**'],
+      ignored: ['**/.cache/**', '**/migration-runs/**'],
     },
     proxy: {
       '/api/dynmap': {

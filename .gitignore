@@ -26,6 +26,7 @@ npm-debug.log*
 
 # Cache
 .cache/
+migration-runs/
 .parcel-cache/
 # Local browser acceptance artifacts
 scripts/config-tools/browser/artifacts/

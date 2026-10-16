@@ -75,7 +75,7 @@
     "test:multipart-geometry": "tsx --tsconfig ./tsconfig.app.json ./scripts/geometry/test-multipart-geometry.ts",
     "test:config-studio-v3": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-config-studio-v3.ts",
     "audit:eol": "node ./scripts/quality/check-eol.mjs",
-    "prebuild": "npm run verify:config-v32",
+    "prebuild": "npm run verify:config-v32 && npm run test:release-repair",
     "validate:review-contract-boundary": "node ./scripts/review/validate-review-contract-boundary.mjs",
     "test:v3-semantic-parity": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-v3-semantic-parity.ts",
     "test:v1-render-baseline": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-v1-render-baseline.ts",
@@ -134,7 +134,11 @@
     "test:r11-workflow-tags": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r11-workflow-tags.ts",
     "test:setting-help": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-setting-help.ts",
     "test:r11-final-package": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r11-final-package.ts",
-    "test:label-zoom-lifecycle": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-label-zoom-lifecycle.ts"
+    "test:label-zoom-lifecycle": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-label-zoom-lifecycle.ts",
+    "test:release-validation": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-validation.ts",
+    "test:release-archive": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-archive.ts",
+    "test:release-gate": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-gate.ts",
+    "test:release-repair": "npm run test:release-validation && npm run test:release-archive && npm run test:release-gate"
   },
   "dependencies": {
     "jszip": "^3.10.1",
