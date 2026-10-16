@@ -78,6 +78,9 @@ for step in workflow['steps'][1:]:
  if step['kind']=='geometry':
   b.evaluate(PROBE);point=b.evaluate('('+POINT+')(15,17)')
   for typ in ['mousePressed','mouseReleased']:b.call('Input.dispatchMouseEvent',{'type':typ,'button':'left','clickCount':1,**point})
+  b.wait("document.body.innerText.includes('当前 1 个坐标')")
+  b.evaluate('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))')
+  time.sleep(.25)
  click('确认保存输出' if step is workflow['steps'][-1] else '下一页')
 b.wait(PROBE.replace('return map&&projection?', 'return map&&projection&&measurement?'),20)
 b.wait('appProbe.measurement.getCommittedFeatures().length===1')

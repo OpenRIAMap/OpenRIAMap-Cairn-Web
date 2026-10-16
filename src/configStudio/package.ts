@@ -67,8 +67,10 @@ export async function buildConfigPackageArchive(config: ConfigPackageV3, report:
   if(config.application)files.push({path:'reports/application-dependencies.json',body:stableStringify({schemaVersion:'cairnmap.application-dependencies.v1',projectionIds:[...new Set(config.application.worlds.map(world=>(world.projectionOverride??world.projection??DYNMAP_FLAT_PRESET).id))],readers:(isWorldGroups(config.application.sources)?config.application.sources.groups.flatMap(group=>group.sources.items):config.application.sources.items).map(source=>({sourceId:source.id,readerKind:source.readerKind,schemaVersion:source.readerSchemaVersion,transport:source.transport})),reviewProtocol:config.application.review.protocol,authProvider:config.application.review.provider,serverEnvironmentReferences:Object.values(config.application.review.serverReferences),externalWorkflowKeys:config.workflows.filter(workflow=>workflow.mode==='external').map(workflow=>workflow.external?.componentKey),labelTemplate:'cairnmap.label-template.v1',lookupTables:(config.lookupTables??[]).map(table=>({id:table.id,functionKind:table.functionKind}))})});
   const manifestFiles = await Promise.all(files.map(async (file) => {
     const bytes = textEncoder.encode(file.body);
+    if(bytes.byteLength>CONFIG_IMPORT_LIMITS.fileBytes)throw Error(`导出文件 ${file.path} 为 ${bytes.byteLength} 字节，超过可重新导入的单文件预算 ${CONFIG_IMPORT_LIMITS.fileBytes}；请调整集中策略或离线检查。`);
     return { path: file.path, sha256: await sha256(bytes), byteLength: bytes.byteLength };
   }));
+  if(manifestFiles.reduce((total,file)=>total+file.byteLength,0)>CONFIG_IMPORT_LIMITS.totalBytes)throw Error('导出内容超过可重新导入的累计解压预算，请调整集中策略或离线检查。');
   const manifest: PackageManifestV3 = {
     schemaVersion: 'cairnmap.config-package-manifest.v3',
     contractRevision: config.contractRevision,
@@ -568,10 +570,12 @@ export async function readConfigPackage(file: File, options:ConfigImportOptions=
   if (!manifestRaw || !zip.file('config.json')) throw new Error('配置包缺少 manifest.json 或 config.json。');
   const manifest = parseConfigJson(manifestRaw);
   if(!isRecord(manifest)||manifest.schemaVersion!=='cairnmap.config-package-manifest.v3')throw Error('不支持此配置 manifest 版本；请使用兼容版本升级后重新导出。');
+  const manifestKeys=new Set(['schemaVersion','contractRevision','packageId','projectId','revision','createdAt','sourceManifestSha256','files']);
+  if(Object.keys(manifest).some(key=>!manifestKeys.has(key)))throw Error('manifest 包含当前 schema 未定义的属性。');
   if(!Array.isArray(manifest.files)||!manifest.files.length||manifest.files.length>CONFIG_IMPORT_LIMITS.entries||typeof manifest.packageId!=='string'||typeof manifest.projectId!=='string'||!Number.isSafeInteger(manifest.revision)||!Number.isSafeInteger(manifest.contractRevision)||typeof manifest.createdAt!=='string'||!Number.isFinite(Date.parse(manifest.createdAt)))throw Error('配置 manifest 结构或身份无效。');
   const declared=new Set<string>(),bodies=new Map<string,Uint8Array>();
   for(const item of manifest.files){
-    if(!isRecord(item)||typeof item.path!=='string'||!safeArchivePath(item.path)||item.path.endsWith('/')||item.path==='manifest.json'||declared.has(item.path)||typeof item.sha256!=='string'||!/^[0-9a-f]{64}$/i.test(item.sha256)||!Number.isSafeInteger(item.byteLength)||Number(item.byteLength)<0)throw Error('manifest 文件声明存在无效路径、重复或摘要格式错误。');
+    if(!isRecord(item)||Object.keys(item).some(key=>!['path','sha256','byteLength'].includes(key))||typeof item.path!=='string'||!safeArchivePath(item.path)||item.path.endsWith('/')||item.path==='manifest.json'||declared.has(item.path)||typeof item.sha256!=='string'||!/^[0-9a-f]{64}$/i.test(item.sha256)||!Number.isSafeInteger(item.byteLength)||Number(item.byteLength)<0)throw Error('manifest 文件声明存在无效属性、路径、重复或摘要格式错误。');
     declared.add(item.path);importProgress(options,`核对文件完整性：${item.path}`);
     const entry=zip.file(item.path);if(!entry)throw Error(`配置包缺少声明文件 ${item.path}。`);
     const body=await entry.async('uint8array');

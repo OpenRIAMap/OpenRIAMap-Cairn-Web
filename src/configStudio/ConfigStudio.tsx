@@ -575,6 +575,7 @@ export function ConfigStudio({ onClose, mountedRecords, initialTab }: { onClose:
   const uploadRef = useRef<HTMLInputElement>(null);
   const importController=useRef<AbortController>();
   const [importing,setImporting]=useState(false);
+  useEffect(()=>()=>importController.current?.abort(),[]);
   const records = useMemo(() => mountedRecords ?? readMountedRecords(), [mountedRecords]);
   const config = draftConfig ?? treeSession?.staged ?? savedConfig;
   const editingSnapshot=useRef<StudioEditingSession|null>(null);
@@ -675,6 +676,7 @@ export function ConfigStudio({ onClose, mountedRecords, initialTab }: { onClose:
       const importedReport = validateConfigPackage(next, records);
       if (importedReport.issues.some(issue => issue.code === 'native-contract-structure-invalid')) { setReport(importedReport); setMessage('导入结构无效；已保存版本保持原样。请按问题路径修正文件后重新导入。'); return; }
       if (!importedReport.valid) { setDraftConfig(next); setSelectedId(''); setEditing(true); setReport(importedReport); setMessage('已载入隔离草案；修正阻断问题前不能保存或启用。'); return; }
+      controller.signal.throwIfAborted();importController.current=undefined;setImporting(false);
       const saved=await persistActiveConfig(prepareConfigForActivation(next));setSavedConfig(saved); setDraftConfig(null); setSelectedId(''); setEditing(false); setReport(importedReport); setMessage(`已导入 ${saved.packageId} r${saved.revision}。${saved.revision!==next.revision?'原修订版已有不同历史内容，已使用新修订版并保留历史。':''}`);
     } catch (error) { setMessage(controller.signal.aborted?'已取消本次导入，当前配置保持原样。':error instanceof Error ? error.message : '配置包读取失败。'); }
     finally {importController.current=undefined;setImporting(false);if(uploadRef.current)uploadRef.current.value='';}

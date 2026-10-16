@@ -12,6 +12,7 @@ const manifestWrite=(zip:JSZip,manifest:any)=>zip.file('manifest.json',JSON.stri
 await bad(zip=>zip.file('reports/validation-report.json','{}'),/哈希校验失败/);
 await bad(zip=>zip.file('reports/v1-parity-report.json','{}'),/哈希校验失败/);
 await bad((zip,m)=>manifestWrite(zip,{...m,schemaVersion:'unknown'}),/manifest 版本/);
+await bad((zip,m)=>manifestWrite(zip,{...m,unknownSetting:true}),/未定义的属性/);
 for(const key of ['packageId','projectId','revision','contractRevision','sourceManifestSha256'])await bad((zip,m)=>manifestWrite(zip,{...m,[key]:typeof m[key]==='number'?m[key]+1:'other'}),/身份/);
 await bad((zip,m)=>{m.files[0].byteLength++;manifestWrite(zip,m);},/byteLength/);
 await bad((zip,m)=>{m.files[0].sha256='no';manifestWrite(zip,m);},/摘要格式/);
