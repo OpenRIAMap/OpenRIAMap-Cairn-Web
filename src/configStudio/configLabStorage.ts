@@ -1,6 +1,9 @@
 import { isNativeConfigRevision } from './contract';
 import type { ConfigPackageV3 } from './types';
 import { prepareConfigForActivation } from './configActivation';
+// Read-only instrumentation follows this module's activation dependency, even
+// when the development server has multiple HMR generations of runtime.ts.
+export {configActivationStats as configHistoryPreflightStats} from './configActivation';
 import type { StudioEditingSession } from './studioSession';
 
 // V32 deliberately uses a separate store so a partial V3.1 adapter package
@@ -32,13 +35,14 @@ function packageKey(config: ConfigPackageV3): string {
 function db(): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 2);
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE);
       if (!request.result.objectStoreNames.contains(SUMMARIES)) {
         const store=request.result.createObjectStore(SUMMARIES,{keyPath:'key'});
         store.createIndex('revision-key',['revision','key'],{unique:true});
         store.createIndex('package-revision',['packageId','revision']);
       }
+      if(event.oldVersion===0)request.transaction!.objectStore(STORE).put({done:true},BACKFILL);
     };
     request.onerror = () => reject(request.error ?? new Error('无法打开本地配置仓库。'));
     request.onsuccess = () => {request.result.onversionchange=()=>request.result.close();resolve(request.result);};
@@ -64,13 +68,13 @@ let backfillTask:Promise<boolean>|undefined;
 export function backfillConfigHistory():Promise<boolean>{
   if(backfillTask)return backfillTask;
   backfillTask=(async()=>{const database=await db();try{
-    const batch=await new Promise<{rows:Array<{key:string;value:unknown}>;last?:string;done:boolean}>((resolve,reject)=>{
-      const transaction=database.transaction(STORE,'readonly'),store=transaction.objectStore(STORE),state=store.get(BACKFILL),rows:Array<{key:string;value:unknown}>=[];let last:string|undefined,done=false;
-      state.onsuccess=()=>{if(state.result?.done){done=true;return;}last=state.result?.last;const range=IDBKeyRange.bound(last??HISTORY_PREFIX,HISTORY_PREFIX+'\uffff',Boolean(last),false),request=store.openCursor(range);
+    const batch=await new Promise<{rows:Array<{key:string;value:unknown}>;last?:string;done:boolean;knownComplete:boolean}>((resolve,reject)=>{
+      const transaction=database.transaction(STORE,'readonly'),store=transaction.objectStore(STORE),state=store.get(BACKFILL),rows:Array<{key:string;value:unknown}>=[];let last:string|undefined,done=false,knownComplete=false;
+      state.onsuccess=()=>{if(state.result?.done){done=true;knownComplete=true;return;}last=state.result?.last;const range=IDBKeyRange.bound(last??HISTORY_PREFIX,HISTORY_PREFIX+'\uffff',Boolean(last),false),request=store.openCursor(range);
         request.onsuccess=()=>{const cursor=request.result;if(!cursor){done=true;return;}last=String(cursor.key);rows.push({key:last,value:cursor.value});if(rows.length<8)cursor.continue();};};
-      transaction.oncomplete=()=>resolve({rows,last,done});transaction.onerror=()=>reject(transaction.error);
+      transaction.oncomplete=()=>resolve({rows,last,done,knownComplete});transaction.onerror=()=>reject(transaction.error);
     });
-    if(!batch.rows.length&&batch.done)return false;
+    if(batch.knownComplete)return false;
     const summaries=await Promise.all(batch.rows.map(row=>historySummary(row.key,row.value)));
     await new Promise<void>((resolve,reject)=>{const transaction=database.transaction([STORE,SUMMARIES],'readwrite'),store=transaction.objectStore(SUMMARIES);
       for(const summary of summaries){const request=store.get(summary.key);request.onsuccess=()=>{if(!request.result)store.put(summary);};}

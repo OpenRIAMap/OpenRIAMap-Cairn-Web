@@ -84,7 +84,9 @@ export async function buildConfigPackageArchive(config: ConfigPackageV3, report:
   const zip = new JSZip();
   for (const file of files) zip.file(file.path, file.body);
   zip.file('manifest.json', stableStringify(manifest));
-  return zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 9 } });
+  const blob=await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 9 } });
+  if(blob.size>CONFIG_IMPORT_LIMITS.compressedBytes)throw Error(`导出 ZIP 为 ${blob.size} 字节，超过可重新导入的压缩包预算 ${CONFIG_IMPORT_LIMITS.compressedBytes}。请调整集中策略或离线检查。`);
+  return blob;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

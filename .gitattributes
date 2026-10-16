@@ -102,3 +102,6 @@ docs/90_roadmap-and-history/runtime-v32-downstream-mainupdate-20261014/evidence/
 docs/90_roadmap-and-history/runtime-v32-release-audit-20261016/*.json text eol=lf
 docs/90_roadmap-and-history/runtime-v32-release-audit-20261016/*.log text eol=lf
 docs/90_roadmap-and-history/runtime-v32-release-audit-20261016/*.md text eol=lf
+docs/90_roadmap-and-history/runtime-v32-release-repair-20261017/*.json text eol=lf
+docs/90_roadmap-and-history/runtime-v32-release-repair-20261017/*.log text eol=lf
+docs/90_roadmap-and-history/runtime-v32-release-repair-20261017/*.md text eol=lf

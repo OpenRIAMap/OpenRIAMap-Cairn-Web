@@ -2,6 +2,7 @@ import type { ConfigPackageV3 } from './types';
 import { migrateV31Package, migrateV4Package, migrateV5Package } from './package';
 import { compileConfigRuntime, validateConfigPackage } from './runtime';
 import { canonicalDictionaries } from './dictionaryContract';
+export {configPreflightStats as configActivationStats} from './runtime';
 /** One validation boundary for persisted packages and runtime activation.
  * Import/edit may retain a diagnostic draft, but never bypass this boundary. */
 export function prepareConfigForActivation(value: ConfigPackageV3): ConfigPackageV3 {
