@@ -138,7 +138,8 @@
     "test:release-validation": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-validation.ts",
     "test:release-archive": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-archive.ts",
     "test:release-gate": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-gate.ts",
-    "test:release-repair": "npm run test:release-validation && npm run test:release-archive && npm run test:release-gate"
+    "test:release-repair": "npm run test:release-validation && npm run test:release-template-identities && npm run test:release-archive && npm run test:release-gate",
+    "test:release-template-identities": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-template-identities.ts"
   },
   "dependencies": {
     "jszip": "^3.10.1",

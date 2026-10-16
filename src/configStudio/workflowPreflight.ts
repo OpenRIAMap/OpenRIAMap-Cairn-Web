@@ -95,7 +95,10 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
     return shape('string');
   };
   for (const step of workflow.steps) {
-    for (const control of step.controls ?? []) if (control.slot) tokens.set(control.slot, controlShape(control));
+    for (const control of step.controls ?? []) {
+      for(const leaf of [control,...(control.group?.itemFields??[])])if(leaf.kind==='toggle'&&leaf.valueNormalization&&leaf.valueNormalization!=='none')add('workflow-value-normalization-kind-conflict',`${base}/steps/${step.id}/controls/${control.id}`,'布尔控件应保存布尔值，不能残留文字或数值规范化。需要数值时请在组装表达式中显式转换。');
+      if (control.slot) tokens.set(control.slot, controlShape(control));
+    }
     for (const slot of [step.drawing?.pointSlot, step.drawing?.captureSlot, ...(step.drawing?.auxiliaryPoints ?? []).map(point => point.slot)]) if (slot) {
       tokens.set(slot, step.drawing?.returnFormat === 'pointObject' ? shape('object') : { kinds: ['array'], item: shape('array', 'number') });
       for (const dimension of ['X', 'Y', 'Z', 'HEIGHT']) tokens.set(`${slot}_${dimension}`, shape('number'));
