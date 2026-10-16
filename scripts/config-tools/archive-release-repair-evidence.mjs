@@ -7,7 +7,7 @@ const run='migration-runs/release-repair-20261017',out='docs/90_roadmap-and-hist
 fs.mkdirSync(out,{recursive:true});
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 if(fs.existsSync(path.join(out,'evidence-manifest.json'))){const frozen=JSON.parse(fs.readFileSync(path.join(out,'evidence-manifest.json'),'utf8'));for(const file of frozen.files)assert.equal(digest(fs.readFileSync(path.join(out,file.file))),file.sha256,file.file);console.log('Frozen release-repair evidence verified; no files overwritten');process.exit(0);}
-const copy=(source,name=path.basename(source))=>fs.copyFileSync(source,path.join(out,name));
+const copy=(source,name=path.basename(source))=>{const bytes=fs.readFileSync(source);fs.writeFileSync(path.join(out,name),/\.(json|md|log)$/i.test(name)?bytes.toString('utf8').replace(/\r\n/g,'\n'):bytes);};
 const log=(source,name=path.basename(source))=>fs.writeFileSync(path.join(out,name),fs.readFileSync(source,'utf8').replace(/\r\n/g,'\n').split('\n').map(line=>line.trimEnd()).join('\n'));
 for(const file of ['audit-summary.json','mutation-scenarios.json'])copy(path.join(run,'final-audit',file));
 for(const file of ['v1-delivered-coverage.json','v1-source-inventory.json']){const source=path.join(run,'coverage',file);assert.deepEqual(JSON.parse(fs.readFileSync(source,'utf8')),JSON.parse(fs.readFileSync('docs/90_roadmap-and-history/runtime-v32-release-audit-20261016/'+file,'utf8')),'Frozen V1 comparison drifted');copy(source);}
