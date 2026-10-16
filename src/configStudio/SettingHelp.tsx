@@ -23,14 +23,16 @@ function annotate(value:ReactNode,resolution:HelpResolution):ReactNode {
     return typeof node.type==='string'?cloneElement(node,{},annotate(node.props.children,resolution)):node;
   });
 }
-export function HelpLabel({context,children,...props}:LabelHTMLAttributes<HTMLLabelElement>&{context:string}){
+export function HelpLabel({context,children,controlStart,...props}:LabelHTMLAttributes<HTMLLabelElement>&{context:string;controlStart?:number}){
   const rows=Children.toArray(children),first=rows.find(isControl),title=words(children).replace(/\s+/g,' ').trim()||first?.props['aria-label']||first?.props.placeholder||context;
   const supplied=explicitHelp(children),resolution=supplied??resolveSettingHelp(title,context);
   let split=rows.findIndex(isControl);
   if(split===0&&first?.props.type==='checkbox'){const next=rows.findIndex((row,index)=>index>0&&isControl(row));split=next<0?rows.length:next;}
   if(split<0)split=rows.length;
+  if(controlStart!==undefined)split=controlStart;
   const marked=Children.toArray(annotate(children,resolution));
-  return <label {...props} data-setting-help={resolution.key} data-help-kind={resolution.kind}><inheritedHelp.Provider value={resolution}>{supplied?marked:<><span className="cm-help-heading">{split?marked.slice(0,split):title}<ModuleHelp title={title} helpKey={resolution.key} text={resolution.text}/></span>{marked.slice(split)}</>}</inheritedHelp.Provider></label>;
+  const layout=first?.props.type==='checkbox'?(rows.slice(split).some(isControl)?'compound':'switch'):'field';
+  return <label {...props} data-field-layout={layout} data-setting-help={resolution.key} data-help-kind={resolution.kind}><inheritedHelp.Provider value={resolution}><span className="cm-help-heading">{split?marked.slice(0,split):title}{supplied?null:<ModuleHelp title={title} helpKey={resolution.key} text={resolution.text}/>}</span>{marked.slice(split)}</inheritedHelp.Provider></label>;
 }
 /** Unlabelled compact cells get the same local help; nested controls reuse the
  * enclosing label's explanation without adding a second icon. */
@@ -38,5 +40,5 @@ export function HelpControl({context,children}:{context:string;children:ReactEle
   const parent=useContext(inheritedHelp),props=children.props,title=props['aria-label']||props.placeholder||context,resolution=parent??resolveSettingHelp(title,context);
   const control=cloneElement(children,{'data-config-setting':resolution.key,'data-help-kind':resolution.kind});
   if(parent)return control;
-  return <span data-setting-help={resolution.key} data-help-kind={resolution.kind} className={`cm-help-control ${props.type==='checkbox'?'cm-help-checkbox':''}`}>{control}<ModuleHelp title={title} helpKey={resolution.key} text={resolution.text}/></span>;
+  return <label data-setting-help={resolution.key} data-help-kind={resolution.kind} data-field-layout={props.type==='checkbox'?'switch':'field'} className={`cm-help-control ${props.type==='checkbox'?'cm-help-checkbox':''}`}><span className="cm-help-heading"><span>{props['aria-label']||props.placeholder||'设置值'}</span><ModuleHelp title={title} helpKey={resolution.key} text={resolution.text}/></span>{control}</label>;
 }

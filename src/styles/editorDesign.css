@@ -1,0 +1,213 @@
+/* Configuration authoring surfaces only. Embedded workflow forms keep their UI. */
+.config-editor.cm-editor-design {
+  --cm-border: #cbd5e1;
+  --cm-line: #e2e8f0;
+  --cm-surface: #f8fafc;
+  --cm-gap: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.config-editor.cm-editor-design :is(section, article, fieldset, header, label, details, .cm-help-control) { min-width: 0; }
+.config-editor.cm-editor-design :is(h2, h3) { font-size: 16px; font-weight: 600; line-height: 1.5; }
+.config-editor.cm-editor-design :is(h4, h5) { font-size: 14px; font-weight: 600; line-height: 1.5; }
+.config-editor.cm-editor-design .cm-panel {
+  margin-block: 20px;
+  padding: 16px;
+  border: 1px solid var(--cm-border);
+  border-radius: 10px;
+  background: var(--cm-surface);
+}
+.config-editor.cm-editor-design .cm-panel-heading, .config-editor.cm-editor-design .cm-item-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--cm-line);
+}
+.config-editor.cm-editor-design .cm-item {
+  margin-block: 12px;
+  padding: 12px;
+  border: 1px solid var(--cm-border);
+  border-left-width: 3px;
+  border-radius: 8px;
+  background: #fff;
+}
+.config-editor.cm-editor-design .cm-item-heading { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.config-editor.cm-editor-design .cm-item-heading small, .config-editor.cm-editor-design .cm-item-meta {
+  font-size: 12px;
+  font-weight: 400;
+  color: #475569;
+  overflow-wrap: anywhere;
+}
+.config-editor.cm-editor-design .cm-subsection {
+  grid-column: 1 / -1;
+  margin-block: 12px;
+  padding: 12px;
+  border: 1px solid var(--cm-line);
+  border-radius: 6px;
+  background: #f8fafc;
+}
+.config-editor.cm-editor-design .cm-subsection > :is(h4, h5, header) { margin-bottom: 10px; }
+.config-editor.cm-editor-design .cm-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-block: 10px;
+}
+.config-editor.cm-editor-design .cm-flex-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.config-editor.cm-editor-design :is([data-field-layout], .cm-help-control) {
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: start;
+  align-items: start;
+  gap: 6px;
+  margin-left: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  width: 100%;
+  max-width: 100%;
+}
+.config-editor.cm-editor-design .cm-help-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+  overflow-wrap: anywhere;
+}
+.config-editor.cm-editor-design .cm-help-heading > .cm-help-trigger { margin: 0; align-self: center; flex: none; }
+.config-editor.cm-editor-design [data-setting-field] > span:first-child { display: flex; align-items: center; gap: 6px; min-height: 20px; }
+.config-editor.cm-editor-design [data-setting-field] > span:first-child > .cm-help-trigger { margin: 0; }
+.config-editor.cm-editor-design [data-field-layout="switch"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  width: auto;
+  align-self: start;
+  min-height: 24px;
+}
+.config-editor.cm-editor-design [data-field-layout="switch"] > .cm-help-heading { min-height: 24px; }
+.config-editor.cm-editor-design .cm-flex-grid > [data-field-layout="switch"] { grid-column: 1 / -1; }
+.config-editor.cm-editor-design [data-field-layout="compound"] > .cm-help-heading { min-height: 20px; }
+.config-editor.cm-editor-design :is([data-field-layout], .cm-help-control) > :is(input, textarea, select) { margin: 0; max-width: 100%; }
+.config-editor.cm-editor-design :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]), textarea, select):not(:where(.cm-runtime-surface *)) {
+  min-width: 0;
+  min-height: 36px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.config-editor.cm-editor-design :is(input[type="checkbox"], input[type="radio"]):not(:where(.cm-runtime-surface *)) {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin: 0;
+  accent-color: #7c3aed;
+}
+.config-editor.cm-editor-design .cm-help-control > :is(input, select, textarea) { width: 100%; flex: initial; }
+.config-editor.cm-editor-design .cm-help-control { display: grid; }
+.config-editor.cm-editor-design .cm-help-checkbox { display: flex; align-items: center; }
+.config-editor.cm-editor-design .cm-flags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; grid-column: 1 / -1; }
+.config-editor.cm-editor-design .cm-label-source, .config-editor.cm-editor-design .cm-full-row { grid-column: 1 / -1; width: 100%; }
+.config-editor.cm-editor-design .cm-label-source { border-left: 0; }
+.config-editor.cm-editor-design .cm-label-source > [data-field-layout] + [data-field-layout] { margin-top: 12px; }
+.config-editor.cm-editor-design .cm-field-identity { padding: 0 0 12px; border-bottom: 1px solid var(--cm-line); }
+.config-editor.cm-editor-design .cm-field-actions { margin-block: 8px 12px; }
+.config-editor.cm-editor-design .cm-rule-range {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: 12px;
+  align-items: end;
+}
+.config-editor.cm-editor-design .cm-rule-range > .cm-zoom-join { align-self: center; padding: 20px 0 0; }
+.config-editor.cm-editor-design .cm-rule-range > button { align-self: end; }
+.config-editor.cm-editor-design .cm-rule-range > section { grid-column: 1 / -1; }
+.config-editor.cm-editor-design .cm-condition-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--cm-border);
+  border-radius: 6px;
+  background: #fff;
+}
+.config-editor.cm-editor-design .cm-condition-row > .cm-help-control { flex: 1 1 10rem; }
+.config-editor.cm-editor-design .cm-condition-row > b { align-self: center; }
+.config-editor.cm-editor-design .cm-condition-row > button { min-height: 36px; }
+.config-editor.cm-editor-design details:not(:where(.cm-runtime-surface *)) > summary {
+  padding-block: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.config-editor.cm-editor-design .cm-render-rule > summary { padding: 10px 0; border-bottom: 1px solid var(--cm-line); }
+.config-editor.cm-editor-design .cm-workflow-control-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--cm-line);
+}
+.config-editor.cm-editor-design .cm-workflow-control-head > .cm-help-control { flex: 1 1 10rem; }
+.config-editor.cm-editor-design .cm-workflow-control-head > .cm-help-control:has(textarea) { flex: 3 1 18rem; }
+.config-editor.cm-editor-design .cm-workflow-control-head > :is(span, button) { align-self: center; flex: none; }
+.config-editor.cm-editor-design .cm-workflow-page-head { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.config-editor.cm-editor-design .cm-workflow-page-head > .cm-help-control { flex: 1 1 18rem; }
+.config-editor.cm-editor-design .cm-workflow-settings { margin-block: 12px; }
+.config-editor.cm-editor-design .cm-workflow-settings > .cm-flags { padding-bottom: 8px; border-bottom: 1px solid var(--cm-line); }
+.config-editor.cm-editor-design .cm-workflow-settings > fieldset { grid-column: 1 / -1; }
+.config-editor.cm-editor-design .cm-option-row { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)) auto; gap: 8px; align-items: end; }
+.config-editor.cm-editor-design .cm-option-row > span { align-self: center; }
+.config-editor.cm-editor-design .cm-option-row > .cm-help-control { min-width: 0; }
+.config-editor.cm-editor-design .cm-option-row > button { min-height: 32px; align-self: end; }
+.config-editor.cm-editor-design .cm-option-row :is(input, select) { min-height: 32px; }
+.config-editor.cm-editor-design [data-table-options] { grid-column: 1 / -1; }
+.config-editor.cm-editor-design .cm-reference-status { padding-block: 10px; border-top: 1px solid var(--cm-line); overflow-wrap: anywhere; }
+.config-editor.cm-editor-design .cm-expression-editor > .cm-help-control { margin-top: 12px; width: 100%; }
+.config-editor.cm-editor-design .cm-expression-editor :is(code, output, p), .config-editor.cm-editor-design .cm-item code { overflow-wrap: anywhere; }
+.config-editor.cm-editor-design .cm-expression-editor textarea { min-height: 112px; }
+.config-editor.cm-editor-design .cm-design-preview { border: 2px dashed var(--cm-border); }
+.config-editor.cm-editor-design .cm-workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  flex: 1;
+  gap: 12px;
+  overflow: hidden;
+  padding: 12px;
+}
+.config-editor.cm-editor-design .cm-workspace-grid:has(> .cm-validator-pane) { grid-template-rows: minmax(240px, .8fr) minmax(180px, 1fr); overflow-y: auto; }
+.config-editor.cm-editor-design .cm-validator-pane { min-height: 0; height: 100%; }
+.config-editor.cm-editor-design .cm-preview-frame { min-height: 0; flex: 1; overflow: hidden; }
+.config-editor.cm-editor-design .cm-preview-frame > div, .config-editor.cm-editor-design .cm-preview-frame .leaflet-container { min-height: 0; }
+.config-editor.cm-editor-design .cm-authoring-pane { container: authoring / inline-size; }
+.config-editor.cm-editor-design .cm-dialog-heading { padding-bottom: 12px; border-bottom: 1px solid var(--cm-line); }
+.config-editor.cm-editor-design .cm-report { overflow-wrap: anywhere; }
+@media (min-width: 1280px) {
+  .config-editor.cm-editor-design .cm-workspace-grid:has(> .cm-validator-pane) { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); overflow: hidden; }
+}
+@container authoring (max-width: 520px) {
+  .config-editor.cm-editor-design .cm-panel { padding: 10px; }
+  .config-editor.cm-editor-design .cm-item { padding: 10px; }
+  .config-editor.cm-editor-design .cm-subsection { padding: 8px; }
+  .config-editor.cm-editor-design .cm-option-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .config-editor.cm-editor-design .cm-option-row > .cm-help-control { grid-column: 2; }
+  .config-editor.cm-editor-design .cm-option-row > span { grid-row: 1; }
+  .config-editor.cm-editor-design .cm-option-row > button { grid-column: 3; grid-row: 1; }
+}
+@media (max-width: 520px) {
+  .config-editor.cm-editor-design .cm-panel { padding: 10px; }
+  .config-editor.cm-editor-design .cm-item { padding: 10px; }
+  .config-editor.cm-editor-design .cm-subsection { padding: 8px; }
+}
