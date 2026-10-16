@@ -35,6 +35,7 @@ assert.ok(analyse('P').some(i=>i.code==='workflow-expression-type-conflict'),'gr
 const writes=(left?:C,right?:C)=>analyse('F',w=>{const original=w.outputs[0].assignments[0];original.when=left;w.outputs[0].assignments.push({...original,id:'second',when:right});});
 assert.ok(writes().some(i=>i.code==='workflow-target-write-conflict'));
 assert.ok(!writes(leaf('empty'),leaf('present')).some(i=>i.code==='workflow-target-write-conflict'));
+assert.ok(analyse('A',w=>{const row=w.outputs[0].assignments[0];row.target='ID';row.when=leaf('empty',undefined,'ID');w.outputs[0].assignments.push({...row,id:'mutable-id',when:leaf('present',undefined,'ID')});}).some(i=>i.code==='workflow-target-write-conflict'),'mutable system ID is not a stable mutually exclusive condition');
 assert.ok(analyse('F',w=>{w.steps.find(s=>s.kind==='geometry')!.drawing={captureSlot:'CAPTURE',bindings:[{outputId:w.outputs[0].id,target:'Level',value:'height'}]};}).some(i=>i.code==='workflow-target-write-conflict'));
 assert.ok(!analyse('F',w=>{w.outputs.push({...structuredClone(w.outputs[0]),id:'separate'});}).some(i=>i.code==='workflow-target-write-conflict'));
 assert.ok(analyse('F',w=>{w.outputs[0].assignments.push({id:'parent',target:'extensions.a',expression:'A'},{id:'child',target:'extensions.a.b',expression:'A'});}).some(i=>i.code==='workflow-target-path-overlap'));

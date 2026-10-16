@@ -154,7 +154,7 @@ export function fieldShortKey(field: Pick<FieldDefinition, 'key' | 'scope'>): st
 export function readRecordPath(record: Record<string, unknown>, path: string): unknown {
   if (Object.prototype.hasOwnProperty.call(record, path)) return record[path];
   return path.split('.').reduce<unknown>((current, part) => (
-    current && typeof current === 'object' ? (current as Record<string, unknown>)[part] : undefined
+    current && typeof current === 'object' && Object.prototype.hasOwnProperty.call(current,part) ? (current as Record<string, unknown>)[part] : undefined
   ), record);
 }
 

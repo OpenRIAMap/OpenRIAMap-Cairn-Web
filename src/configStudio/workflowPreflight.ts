@@ -5,20 +5,20 @@ type Scalar = string | number | boolean;
 type Clause = WorkflowValueCondition[];
 const CONDITION_BUDGET = 128;
 /** Bounded DNF, using precisely the runtime's empty/present and strict scalar equality. */
-function clauses(condition?: WorkflowValueCondition, depth = 0, budget={remaining:2048}): Clause[] {
+function clauses(condition?: WorkflowValueCondition, depth = 0, budget={remaining:2048}, unstable=new Set<string>()): Clause[] {
   if (depth > 32 || --budget.remaining<0) throw new Error('condition budget');
   if (!condition) return [[]];
   if (condition.any) {
-    const result = condition.any.flatMap(child => clauses(child, depth + 1,budget));
+    const result = condition.any.flatMap(child => clauses(child, depth + 1,budget,unstable));
     if (result.length > CONDITION_BUDGET) throw new Error('condition budget');
     return result;
   }
   if (condition.all) return condition.all.reduce<Clause[]>((result, child) => {
-    const next = clauses(child, depth + 1,budget);
+    const next = clauses(child, depth + 1,budget,unstable);
     if (result.length * next.length > CONDITION_BUDGET) throw new Error('condition budget');
     return result.flatMap(left => next.map(right => [...left, ...right]));
   }, [[]]);
-  return [[condition]];
+  return unstable.has(condition.token)?[[]]:[[condition]];
 }
 const isEmpty = (value: unknown) => value == null || typeof value === 'string' && !value.trim();
 function impossible(clause: Clause): boolean {
@@ -39,10 +39,10 @@ function impossible(clause: Clause): boolean {
   }
   return false;
 }
-export function workflowConditionsDisjoint(left: Array<WorkflowValueCondition | undefined>, right: Array<WorkflowValueCondition | undefined>): boolean | undefined {
+export function workflowConditionsDisjoint(left: Array<WorkflowValueCondition | undefined>, right: Array<WorkflowValueCondition | undefined>,unstable=new Set<string>()): boolean | undefined {
   try {
     const items = [...left, ...right].filter(Boolean) as WorkflowValueCondition[];
-    const combined = clauses({ all: items } as WorkflowValueCondition);
+    const combined = clauses({ all: items } as WorkflowValueCondition,0,{remaining:2048},unstable);
     return combined.every(impossible);
   } catch { return undefined; }
 }
@@ -148,7 +148,10 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
       pairs:for (let a = 0; a < group.length; a++) for (let b = a + 1; b < group.length; b++) {
         const left = group[a], right = group[b];
         if(++comparisons>2048){add('workflow-target-write-conflict',right.path,`目标 ${right.target} 的重复写入数量超过互斥分析预算，无法证明安全。请合并组装行。`);break pairs;}
-        const disjoint = workflowConditionsDisjoint(left.conditions, right.conditions);
+        // ID is updated between assembly rows. Conditions on that mutable token
+        // cannot prove mutual exclusion for two writers of ID itself.
+        const unstable=right.target==='ID'?new Set(['ID',`ID_${workflow.outputs.indexOf(output)+1}`]):undefined;
+        const disjoint = workflowConditionsDisjoint(left.conditions, right.conditions,unstable);
         if (disjoint !== true) add('workflow-target-write-conflict', right.path, `目标 ${right.target} 同时由 ${left.path} 与 ${right.path} 写入${disjoint === undefined ? '，条件超出分析预算，无法证明互斥' : '，执行条件不能证明互斥'}。请合并组装或设置互斥条件。`);
       }
     }
