@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "actual file-input rejects unknown ZIP manifest; active and durable latest unchanged",
+    "visible Cancel during delayed disk read cancels only this import; active/latest unchanged",
+    "actual Studio reads, validates and saves original r8 JSON; 95 nodes retained",
+    "frozen initial r11 ZIP imports through real Studio handler after old-file restoration",
+    "actual Lab More history button appends next summary page",
+    "selecting preserved unknown history fails safely and offers raw diagnostic download",
+    "selected valid history survives full reload, then can restore application default"
+  ],
+  "runtimeErrors": []
+}

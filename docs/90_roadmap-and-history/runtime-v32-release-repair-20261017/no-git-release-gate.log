@@ -1,0 +1,80 @@
+WF01 EXPECTED 删除仍被组装引用的根字段
+WF02 EXPECTED 数值目标改为布尔类型
+WF03 EXPECTED 单值目标改为多值
+WF04 EXPECTED 数值控件改为布尔控件
+WF05 EXPECTED 引用不存在的槽位
+WF06 EXPECTED 非法表达式
+WF07 EXPECTED 原型污染目标路径
+WF08 EXPECTED 覆盖系统分类
+WF09 EXPECTED 重复槽位
+WF10 EXPECTED 引用不存在的输出分类
+WF11 EXPECTED 输入默认值不合法
+WF12 EXPECTED 重复组字段名重复
+WF13 EXPECTED 启用条件引用不存在的槽位
+WF14 EXPECTED 绘制页使用未来页面的条件槽位
+WF15 EXPECTED 搜索返回不存在的字段
+WF16 EXPECTED 绘制返回格式与线类型不符
+WF17 EXPECTED 额外绘制不声明返回槽位
+WF18 EXPECTED 同一目标有两条无条件组装
+WF19 EXPECTED 常量文字写入数值字段
+WF20 EXPECTED 复合表达式返回文本写入数值字段
+WF21 EXPECTED number 控件默认值为可规范化的数值字符串
+WF22 EXPECTED 直接槽位选项超出目标枚举
+WF23 EXPECTED 已删除的 tags 字段仍被 assignment 引用（动态路径）
+WF24 EXPECTED 专供编辑工作流错误开放给便捷测绘
+FD01 EXPECTED 字段 key 重复
+FD02 EXPECTED 字段显示名称全空
+FD03 EXPECTED 不存在的引用分类
+FD04 EXPECTED 子级覆盖强制固定继承字段
+FD05 EXPECTED 字段 ID 重复但 key 不同
+FD06 EXPECTED 非法嵌套路径
+TB01 EXPECTED 删除被字段引用的公共表
+TB02 EXPECTED 被引用表为空
+TB03 EXPECTED 表格中保存值重复
+TB04 EXPECTED 表格修改值类型与绑定方不一致
+TB05 EXPECTED 对照行无任何语言显示名
+TB06 EXPECTED 速度功能值非法
+TB07 EXPECTED 信息卡绑定不存在的字段定义
+TB08 EXPECTED 工作流绑定不存在的字段对照
+TB09 EXPECTED 绑定来源和本地对照同时保存
+RD01 EXPECTED 完整命中条件重复
+RD02 EXPECTED Zoom 范围反向
+RD03 EXPECTED 字段组合错误使用分类字段
+RD04 EXPECTED 字段条件引用不存在的根字段
+RD05 EXPECTED 布尔条件值和字段类型不一致
+RD06 EXPECTED 公式引用不存在的 C9
+RD07 EXPECTED 可证明的矛盾条件
+RD08 EXPECTED 后规则无条件完全遮蔽前规则
+RD09 EXPECTED 不同范围部分交叠且样式相反
+RD10 EXPECTED Label 来源引用不存在的根字段
+RD11 EXPECTED Label 组合模板引用不存在字段
+RD12 EXPECTED 固定颜色无效
+RD13 EXPECTED 几何动态优先级引用不存在字段
+RD14 EXPECTED 几何/Label 透明度超界
+CD01 EXPECTED 显示不存在的根字段
+CD02 EXPECTED 引用不存在的专用显示组件
+CD03 EXPECTED 卡片条目 ID 重复
+CD04 EXPECTED 字段继承来源来自平级分类
+CT01 EXPECTED 父节点缺失
+CT02 EXPECTED 分类路径重复
+CT03 EXPECTED children 记录不存在的节点
+CT04 EXPECTED children 指向不匹配父路径的其他 Class
+CT05 EXPECTED 父级 children 遗漏真实子分类
+CT06 EXPECTED 几何类型与已启用样式矛盾
+AP01 EXPECTED 世界数字编号重复
+AP02 EXPECTED 世界绑定不存在的来源组
+AP03 EXPECTED 图层按钮分类路径不存在
+AP04 EXPECTED 按钮联动循环
+AP05 EXPECTED 无效模块互斥目标
+AP06 EXPECTED 启用审核却缺少会话接口
+AP07 EXPECTED 未知原生属性
+AP08 EXPECTED 未知契约版本
+compatibility r8-r4.config.json {"file":"r8-r4.config.json","originalContract":8,"importedContract":8,"readValid":true,"migratedContract":11,"migratedValid":true,"sourceUnchanged":true,"zipBytes":60391,"roundtripEqual":true,"workflowArtifacts":20,"categoryTrees":0,"rawTreeConflicts":[],"rawTreeExportRequiresUpgrade":true,"migratedCategoryTrees":16}
+compatibility r9-r5.config.json {"file":"r9-r5.config.json","originalContract":9,"importedContract":9,"readValid":true,"migratedContract":11,"migratedValid":true,"sourceUnchanged":true,"zipBytes":62221,"roundtripEqual":true,"workflowArtifacts":28,"categoryTrees":0,"rawTreeConflicts":[],"error":"Error: 旧 r9 分类文件未携带完整 contextBindings 与新版结构身份/搜索模块所需迁移上下文，不能可靠转换；直接覆盖还可能丢失当前主结构设置。请先在配置工作台导入原旧版完整配置包，升级后重新导出该单分类或 Class 树，再导入本包。原文件及当前配置未修改。"}
+compatibility r10-r6.config.json {"file":"r10-r6.config.json","originalContract":10,"importedContract":10,"readValid":true,"migratedContract":11,"migratedValid":true,"sourceUnchanged":true,"zipBytes":62230,"roundtripEqual":true,"workflowArtifacts":28,"categoryTrees":16,"rawTreeConflicts":[],"migratedCategoryTrees":16}
+compatibility r11-r7.config.json {"file":"r11-r7.config.json","originalContract":11,"importedContract":11,"readValid":true,"migratedContract":11,"migratedValid":true,"sourceUnchanged":true,"zipBytes":62221,"roundtripEqual":true,"workflowArtifacts":28,"categoryTrees":16,"rawTreeConflicts":[],"migratedCategoryTrees":16}
+scale {"nodes":95,"workflows":28,"bytes":1621980,"validateMs":267.3729000000021,"valid":true,"compileMs":31.430999999996857,"stats":{"epoch":5,"nodes":95,"classes":16,"cachedPaths":95,"hits":570},"exportZipMs":320.8214000000007,"zipBytes":62222,"readZipMs":94.7606999999989,"roundtripNodes":95}
+scale {"nodes":195,"workflows":28,"bytes":4055460,"validateMs":523.8288999999932,"valid":true,"compileMs":78.84760000000824,"stats":{"epoch":6,"nodes":195,"classes":116,"cachedPaths":195,"hits":1170},"exportZipMs":718.986699999994,"zipBytes":84782,"readZipMs":228.90320000000065,"roundtripNodes":195}
+scale {"nodes":495,"workflows":28,"bytes":11356560,"validateMs":1972.4208000000071,"valid":true,"compileMs":292.8466999999946,"stats":{"epoch":7,"nodes":495,"classes":416,"cachedPaths":495,"hits":2970},"exportZipMs":2345.44279999999,"zipBytes":136952,"readZipMs":667.9606000000058,"roundtripNodes":495}
+AUDIT COMPLETE {"scenarios":71,"gaps":[],"output":"G:\\RIAWebGIS\\NewPRES\\CairnMap_Codex\\wt\\ria-config-runtime-v32-subject-20261014\\migration-runs\\release-repair-20261017\\no-git-audit"}
+RELEASE GATE PASS: 71/71 expectations, 67 errors blocked at all four boundaries, all historical full packages and 495-node scale retained

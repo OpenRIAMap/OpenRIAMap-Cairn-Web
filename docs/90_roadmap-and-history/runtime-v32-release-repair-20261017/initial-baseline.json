@@ -1,0 +1,41 @@
+{
+  "productBaseline": "955030f",
+  "auditBaseline": "754f111",
+  "blueprint": "ebb6aac",
+  "contractRevision": 11,
+  "revision": 7,
+  "inputs": [
+    {
+      "file": "src/configStudio/defaults/r11-r7.config.json",
+      "bytes": 3538283,
+      "sha256": "982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e"
+    },
+    {
+      "file": "src/configStudio/defaults/r10-r6.config.json",
+      "bytes": 3537684,
+      "sha256": "e42b6047c8459ffd00bbe196cdc8194f220dfc65b2e0ce5963fde4e42b9ef292"
+    },
+    {
+      "file": "src/configStudio/defaults/r9-r5.config.json",
+      "bytes": 3315459,
+      "sha256": "999d4afee9e1bfe9daf86639d95e2dae721d6c887cef3771fb1afa0d79df816e"
+    },
+    {
+      "file": "src/configStudio/defaults/r8-r4.config.json",
+      "bytes": 3346868,
+      "sha256": "ffcf77938eb83ea7054ebde4bdbe42980c36cde73c4cad864af5e329a216a2f5"
+    },
+    {
+      "file": "src/configStudio/native-contract-schema.generated.json",
+      "bytes": 178318,
+      "sha256": "46a868e7ddb8e3735b167a96d3a9098340efbf7bbf7f8fb624e49ad31b033995"
+    }
+  ],
+  "zip": {
+    "file": "r11-r7.initial.cairn-config-v3.zip",
+    "bytes": 62221,
+    "sha256": "64bfa05fd7ff1fcb957fdf9806f4d1f7272c7a841a62d6ee1c2801e81881d2f7"
+  },
+  "originalEvidenceFilesVerified": 18,
+  "policy": "Keep these tracked inputs immutable; add new revision files and explicit migrations. The ZIP is a functional archive of the same JSON content; its config.json is canonical compact text, while the source JSON SHA refers to the original source bytes."
+}

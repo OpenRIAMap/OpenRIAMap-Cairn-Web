@@ -1,0 +1,8 @@
+{
+  "checks": [
+    "production homepage and navigation searches share the same subtype/parent subtitle and result source",
+    "temporary/data snapshot replacement refreshes both open result panels without world switching or typing again"
+  ],
+  "runtime_errors": [],
+  "transport": "exact frozen public COS responses fulfilled in CDP; not proof of live backend/CORS"
+}

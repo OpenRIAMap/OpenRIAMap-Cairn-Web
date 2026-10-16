@@ -1,0 +1,198 @@
+{
+  "testedCommit": "b34c1e77b93905e6b55ae8f6b8cc1470a6e6cff4",
+  "configSha256": "982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e",
+  "contractRevision": 11,
+  "packageRevision": 7,
+  "baseline": {
+    "valid": true,
+    "errors": [],
+    "warnings": []
+  },
+  "scenarioCount": 71,
+  "detectedErrors": 67,
+  "gaps": [],
+  "runtimeGuard": [
+    {
+      "message": "Level 必须是有限数值。"
+    },
+    {
+      "message": "输出 rod_road-output-1 的 Oneway 为必填项。"
+    }
+  ],
+  "duplicateIdReferenceProbe": {
+    "selectedField": "AuditValue",
+    "resolvedField": "AuditValue"
+  },
+  "mountedAudit": [
+    {
+      "mode": "present-nested-required",
+      "configurationValidWithoutRecords": true,
+      "mountedIssues": []
+    },
+    {
+      "mode": "nested-condition-missing-required",
+      "configurationValidWithoutRecords": true,
+      "mountedIssues": [
+        {
+          "code": "mounted-data-required-field-missing",
+          "message": "缺少必填字段 tags.nomenclator（ROD/NOM）。",
+          "field": "tags.nomenclator"
+        }
+      ]
+    },
+    {
+      "mode": "existing-value-wrong-type",
+      "configurationValidWithoutRecords": true,
+      "mountedIssues": []
+    }
+  ],
+  "compatibility": [
+    {
+      "file": "r8-r4.config.json",
+      "originalContract": 8,
+      "importedContract": 8,
+      "readValid": true,
+      "migratedContract": 11,
+      "migratedValid": true,
+      "sourceUnchanged": true,
+      "zipBytes": 60391,
+      "roundtripEqual": true,
+      "workflowArtifacts": 20,
+      "categoryTrees": 0,
+      "rawTreeConflicts": [],
+      "rawTreeExportRequiresUpgrade": true,
+      "migratedCategoryTrees": 16
+    },
+    {
+      "file": "r9-r5.config.json",
+      "originalContract": 9,
+      "importedContract": 9,
+      "readValid": true,
+      "migratedContract": 11,
+      "migratedValid": true,
+      "sourceUnchanged": true,
+      "zipBytes": 62218,
+      "roundtripEqual": true,
+      "workflowArtifacts": 28,
+      "categoryTrees": 0,
+      "rawTreeConflicts": [],
+      "error": "Error: 旧 r9 分类文件未携带完整 contextBindings 与新版结构身份/搜索模块所需迁移上下文，不能可靠转换；直接覆盖还可能丢失当前主结构设置。请先在配置工作台导入原旧版完整配置包，升级后重新导出该单分类或 Class 树，再导入本包。原文件及当前配置未修改。"
+    },
+    {
+      "file": "r10-r6.config.json",
+      "originalContract": 10,
+      "importedContract": 10,
+      "readValid": true,
+      "migratedContract": 11,
+      "migratedValid": true,
+      "sourceUnchanged": true,
+      "zipBytes": 62229,
+      "roundtripEqual": true,
+      "workflowArtifacts": 28,
+      "categoryTrees": 16,
+      "rawTreeConflicts": [],
+      "migratedCategoryTrees": 16
+    },
+    {
+      "file": "r11-r7.config.json",
+      "originalContract": 11,
+      "importedContract": 11,
+      "readValid": true,
+      "migratedContract": 11,
+      "migratedValid": true,
+      "sourceUnchanged": true,
+      "zipBytes": 62223,
+      "roundtripEqual": true,
+      "workflowArtifacts": 28,
+      "categoryTrees": 16,
+      "rawTreeConflicts": [],
+      "migratedCategoryTrees": 16
+    }
+  ],
+  "integrity": [
+    {
+      "name": "config tamper",
+      "rejected": true,
+      "message": "Error: 配置包 config.json 哈希校验失败或 byteLength 不一致。"
+    },
+    {
+      "name": "report tamper",
+      "rejected": true,
+      "message": "Error: 配置包 reports/validation-report.json 哈希校验失败或 byteLength 不一致。"
+    },
+    {
+      "name": "unknown manifest schema",
+      "rejected": true,
+      "message": "Error: 不支持此配置 manifest 版本；请使用兼容版本升级后重新导出。"
+    },
+    {
+      "name": "manifest package identity mismatch",
+      "rejected": true,
+      "message": "Error: manifest 与 config 的包身份、revision 或契约不一致。"
+    },
+    {
+      "name": "manifest wrong byteLength",
+      "rejected": true,
+      "message": "Error: 配置包 config.json 哈希校验失败或 byteLength 不一致。"
+    }
+  ],
+  "scale": [
+    {
+      "nodes": 95,
+      "workflows": 28,
+      "bytes": 1621980,
+      "validateMs": 203.171800000011,
+      "valid": true,
+      "compileMs": 35.03079999999318,
+      "stats": {
+        "epoch": 5,
+        "nodes": 95,
+        "classes": 16,
+        "cachedPaths": 95,
+        "hits": 570
+      },
+      "exportZipMs": 270.27889999999024,
+      "zipBytes": 62224,
+      "readZipMs": 64.94800000000396,
+      "roundtripNodes": 95
+    },
+    {
+      "nodes": 195,
+      "workflows": 28,
+      "bytes": 4055460,
+      "validateMs": 448.5899000000063,
+      "valid": true,
+      "compileMs": 77.43409999999858,
+      "stats": {
+        "epoch": 6,
+        "nodes": 195,
+        "classes": 116,
+        "cachedPaths": 195,
+        "hits": 1170
+      },
+      "exportZipMs": 637.3849999999948,
+      "zipBytes": 84785,
+      "readZipMs": 181.8350999999966,
+      "roundtripNodes": 195
+    },
+    {
+      "nodes": 495,
+      "workflows": 28,
+      "bytes": 11356560,
+      "validateMs": 1843.2525999999925,
+      "valid": true,
+      "compileMs": 214.86140000000887,
+      "stats": {
+        "epoch": 7,
+        "nodes": 495,
+        "classes": 416,
+        "cachedPaths": 495,
+        "hits": 2970
+      },
+      "exportZipMs": 2252.300900000002,
+      "zipBytes": 136952,
+      "readZipMs": 507.7583999999915,
+      "roundtripNodes": 495
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+const run='migration-runs/release-repair-20261017',out='docs/90_roadmap-and-history/runtime-v32-release-repair-20261017';
+fs.mkdirSync(out,{recursive:true});
+const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
+if(fs.existsSync(path.join(out,'evidence-manifest.json'))){const frozen=JSON.parse(fs.readFileSync(path.join(out,'evidence-manifest.json'),'utf8'));for(const file of frozen.files)assert.equal(digest(fs.readFileSync(path.join(out,file.file))),file.sha256,file.file);console.log('Frozen release-repair evidence verified; no files overwritten');process.exit(0);}
+const copy=(source,name=path.basename(source))=>fs.copyFileSync(source,path.join(out,name));
+const log=(source,name=path.basename(source))=>fs.writeFileSync(path.join(out,name),fs.readFileSync(source,'utf8').replace(/\r\n/g,'\n').split('\n').map(line=>line.trimEnd()).join('\n'));
+for(const file of ['audit-summary.json','mutation-scenarios.json'])copy(path.join(run,'final-audit',file));
+for(const file of ['v1-delivered-coverage.json','v1-source-inventory.json']){const source=path.join(run,'coverage',file);assert.deepEqual(JSON.parse(fs.readFileSync(source,'utf8')),JSON.parse(fs.readFileSync('docs/90_roadmap-and-history/runtime-v32-release-audit-20261016/'+file,'utf8')),'Frozen V1 comparison drifted');copy(source);}
+for(const file of ['browser-repair-results.json','browser-import-history-ui.json','postc-native-workflow-matrix.json','subject-drawing-session.json','subject-rail-edit-acceptance.json','subject-search-acceptance.json','subject-trp-edit-acceptance.json','release-app-acceptance.json'])copy(path.join(run,'browser',file));
+copy(path.join(run,'production','release-app-acceptance.json'),'production-app-acceptance.json');
+for(const file of ['workflow-expression-blocked.png'])copy(path.join(run,'browser',file));
+for(const file of ['subject-integrated-v3-desktop.png','subject-v3-mobile.png','subject-actual-workflow-mounted.png'])copy(path.join(run,'production',file));
+log(path.join(run,'current-build-and-release-checks.log'),'build-and-release-checks.log');
+for(const file of ['final-production-build.log','final-release-gate.log','no-git-release-gate.log'])log(path.join(run,file));
+const noGit=JSON.parse(fs.readFileSync(path.join(run,'no-git-audit/audit-summary.json'),'utf8'));assert.ok(noGit.testedCommit.startsWith('unavailable:'));assert.deepEqual(noGit.gaps,[]);copy(path.join(run,'no-git-audit/audit-summary.json'),'no-git-audit-summary.json');
+const audits=['validate-project-config','class-config','display-config','card-config','workflow-config','package-assembly'];for(const name of audits)log(path.join(run,name+'.log'));
+const build=fs.readFileSync(path.join(run,'current-build-and-release-checks.log'),'utf8');assert.ok(build.includes('RELEASE GATE PASS'));assert.ok(build.includes('built in'));assert.ok(!build.includes('AssertionError'));
+const summary=JSON.parse(fs.readFileSync(path.join(out,'audit-summary.json'),'utf8')),rows=JSON.parse(fs.readFileSync(path.join(out,'mutation-scenarios.json'),'utf8'));assert.deepEqual(summary.gaps,[]);assert.equal(rows.length,71);assert.ok(rows.filter(row=>row.expected==='error').every(row=>row.activationBlocked&&row.exportBlocked&&!row.module.valid&&!row.package.valid));
+const codeCommit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+assert.equal(summary.testedCommit,codeCommit,'Final release gate must use the current code commit');
+fs.writeFileSync(path.join(out,'verification-summary.json'),JSON.stringify({codeCommit,originalSuites:57,originalSuitesPassed:57,scenarios:71,errorsBlockedAtAllFourBoundaries:67,warnings:1,allowed:3,archiveNegativeCases:21,standardBrowserSubmissions:34,railEditingCases:7,trpEditingCases:3,baselineUnchanged:true,defaultRevision:7,defaultContract:11,audits:audits.map(name=>({name,exitCode:0})),note:'The complete prebuild suite and release gate are preserved in build-and-release-checks.log. Final targeted type-normalisation/JSON-shape tests and TypeScript/Vite build are preserved separately. No deployment or remote write was performed.'},null,2)+'\n');
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+const files=fs.readdirSync(out).filter(name=>name!=='evidence-manifest.json').sort().map(file=>{const bytes=fs.readFileSync(path.join(out,file));return {file,bytes:bytes.length,sha256:hash(bytes)};});
+const sources=execFileSync('git',['diff','--name-only','ebb6aac','--','src','package.json','vite.config.ts'],{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean).map(file=>({file,sha256:hash(execFileSync('git',['show',`${codeCommit}:${file}`]))}));
+fs.writeFileSync(path.join(out,'evidence-manifest.json'),JSON.stringify({codeCommit,textNormalization:'UTF-8 LF; trailing log whitespace removed',sourceHashBasis:'git blob bytes at codeCommit',files,sources},null,2)+'\n');
+console.log(`Archived ${files.length} evidence files; original V1 comparisons unchanged`);

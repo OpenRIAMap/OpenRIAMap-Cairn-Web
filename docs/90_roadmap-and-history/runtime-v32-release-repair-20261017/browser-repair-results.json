@@ -1,0 +1,86 @@
+{
+  "expressionErrorShown": true,
+  "invalidSaveBlocked": true,
+  "correctionUnblocked": true,
+  "activeConfigUnchanged": true,
+  "history": [
+    {
+      "count": 1,
+      "firstPage": 1,
+      "pages": 1,
+      "listMs": 1.2999999523162842,
+      "readMs": 18.300000190734863,
+      "parseMs": 9,
+      "validateMs": 304.89999985694885,
+      "compileMs": 37.5,
+      "valid": true,
+      "listValidations": 0,
+      "listCompilations": 0,
+      "selectedValidations": 1,
+      "selectedCompilations": 1
+    },
+    {
+      "count": 10,
+      "firstPage": 10,
+      "pages": 1,
+      "listMs": 1.5,
+      "readMs": 16.09999990463257,
+      "parseMs": 7.799999952316284,
+      "validateMs": 277.30000019073486,
+      "compileMs": 37.299999952316284,
+      "valid": true,
+      "listValidations": 0,
+      "listCompilations": 0,
+      "selectedValidations": 1,
+      "selectedCompilations": 1
+    },
+    {
+      "count": 25,
+      "firstPage": 25,
+      "pages": 1,
+      "listMs": 1.9000000953674316,
+      "readMs": 15.5,
+      "parseMs": 5.900000095367432,
+      "validateMs": 277.7999999523163,
+      "compileMs": 36.700000047683716,
+      "valid": true,
+      "listValidations": 0,
+      "listCompilations": 0,
+      "selectedValidations": 1,
+      "selectedCompilations": 1
+    },
+    {
+      "count": 100,
+      "firstPage": 25,
+      "pages": 4,
+      "listMs": 2.4000000953674316,
+      "readMs": 27,
+      "parseMs": 5.800000190734863,
+      "validateMs": 283.2999999523163,
+      "compileMs": 36.39999985694885,
+      "valid": true,
+      "listValidations": 0,
+      "listCompilations": 0,
+      "selectedValidations": 1,
+      "selectedCompilations": 1
+    }
+  ],
+  "legacyUpgrade": {
+    "latestReadMs": 17.700000047683716,
+    "firstCount": 8,
+    "batches": 4,
+    "total": 25,
+    "rejected": true,
+    "retained": true,
+    "listValidations": 0,
+    "listCompilations": 0
+  },
+  "atomicSave": {
+    "collision": true,
+    "unchanged": true,
+    "choiceUnchanged": true,
+    "oneWinner": true,
+    "summaryAtomic": true
+  },
+  "runtimeErrors": []
+}

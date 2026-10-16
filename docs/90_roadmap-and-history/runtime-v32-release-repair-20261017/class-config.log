@@ -1,0 +1,34 @@
+CairnMap Class Config Audit
+Baseline package: openriamap-ria
+Classes source: project-config/presets/*/classes
+
+Summary
+  Classes found: 16
+  OK: 2
+  Info: 0
+  Warnings: 0
+  Errors: 0
+
+Checks
+  [OK] preset class directories are used as the class config source
+  [OK] Loaded 16 class config file(s)
+
+Per-Class Summary
+  BUD: fields=8 groups=0 classification=2 tags=true extensions=true
+  FLR: fields=10 groups=0 classification=2 tags=true extensions=true
+  ISG: fields=6 groups=2 classification=21 tags=true extensions=true
+  ISL: fields=6 groups=2 classification=6 tags=true extensions=true
+  ISP: fields=7 groups=2 classification=5 tags=true extensions=true
+  PFB: fields=5 groups=0 classification=0 tags=true extensions=true
+  PLF: fields=5 groups=1 classification=0 tags=true extensions=true
+  RLE: fields=8 groups=0 classification=0 tags=true extensions=true
+  ROD: fields=12 groups=3 classification=9 tags=true extensions=true
+  SBP: fields=3 groups=2 classification=0 tags=true extensions=true
+  STA: fields=4 groups=1 classification=0 tags=true extensions=true
+  STB: fields=4 groups=1 classification=0 tags=true extensions=true
+  STF: fields=7 groups=0 classification=0 tags=true extensions=true
+  TPP: fields=11 groups=0 classification=2 tags=true extensions=true
+  TRP: fields=9 groups=2 classification=2 tags=true extensions=true
+  WRP: fields=8 groups=0 classification=2 tags=true extensions=true
+
+Result: PASS

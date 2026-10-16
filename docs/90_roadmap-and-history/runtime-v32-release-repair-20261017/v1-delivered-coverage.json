@@ -1,0 +1,1123 @@
+{
+  "sourceConfigFiles": 76,
+  "sourceClasses": 16,
+  "sourceWorkflows": 16,
+  "sourceNodes": 95,
+  "deliveredNodes": 95,
+  "deliveredWorkflows": 28,
+  "missingPaths": [],
+  "missingFields": [
+    {
+      "path": {
+        "class": "RLE"
+      },
+      "missing": [
+        "LineName",
+        "LineID"
+      ]
+    }
+  ],
+  "approvedAliasRemovals": [
+    {
+      "path": {
+        "class": "RLE"
+      },
+      "missing": [
+        "LineName",
+        "LineID"
+      ]
+    }
+  ],
+  "unexplainedMissingFields": [],
+  "missingWorkflows": [],
+  "parityStatuses": {
+    "resolved": 32,
+    "registryReference": 4
+  },
+  "unsupportedParity": [],
+  "cardCases": 98,
+  "cardDifferences": [
+    {
+      "key": "flr_unit",
+      "record": {
+        "ID": "ZFLR_AB-1",
+        "Name": "sample",
+        "NofFloor": "sample",
+        "Kind": "NOM",
+        "SKind": "NOM",
+        "BuildingID": "sample",
+        "tags": {
+          "nomenclator": "sample",
+          "Land": "sample",
+          "Adm": "sample",
+          "Pop": "sample"
+        },
+        "extensions": {
+          "link": {
+            "wiki": "sample"
+          },
+          "character": {
+            "brief": "sample"
+          }
+        },
+        "CoordG": [
+          [
+            [
+              [
+                0,
+                -64,
+                0
+              ],
+              [
+                20,
+                -64,
+                0
+              ],
+              [
+                20,
+                -64,
+                20
+              ]
+            ]
+          ]
+        ],
+        "Type": "Polygon",
+        "Class": "FLR",
+        "World": "zth",
+        "CreateTime": "20261007",
+        "CreateBy": "fixture-user"
+      },
+      "expected": {
+        "mainRows": [
+          {
+            "label": "类型",
+            "value": "默认"
+          },
+          {
+            "label": "所属建筑",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "BUD",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "所属地理单元",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "ISG",
+                "kind": "NGF",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "所属聚落",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "ISG",
+                "kind": "ADM",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "楼层名/楼层号",
+            "value": "sample"
+          },
+          {
+            "label": "命名者",
+            "value": "sample"
+          },
+          {
+            "label": "相关成员",
+            "value": "sample"
+          },
+          {
+            "label": "WIKI链接",
+            "value": {
+              "kind": "externalLink",
+              "href": "https://sample"
+            }
+          },
+          {
+            "label": "简介",
+            "value": "sample"
+          }
+        ],
+        "otherRows": [
+          {
+            "label": "ID",
+            "value": "ZFLR_AB-1"
+          },
+          {
+            "label": "Name",
+            "value": "sample"
+          },
+          {
+            "label": "Type",
+            "value": "Polygon"
+          },
+          {
+            "label": "World",
+            "value": "zth"
+          },
+          {
+            "label": "创建时间",
+            "value": "20261007"
+          },
+          {
+            "label": "创建者",
+            "value": "fixture-user"
+          }
+        ]
+      },
+      "actual": {
+        "mainRows": [
+          {
+            "label": "类型",
+            "value": "默认"
+          },
+          {
+            "label": "所属建筑",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "structureRole": "main",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "所属地理单元",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "ISG",
+                "kind": "NGF",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "所属聚落",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "ISG",
+                "kind": "ADM",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "楼层名/楼层号",
+            "value": "sample"
+          },
+          {
+            "label": "命名者",
+            "value": "sample"
+          },
+          {
+            "label": "相关成员",
+            "value": "sample"
+          },
+          {
+            "label": "WIKI链接",
+            "value": {
+              "kind": "externalLink",
+              "href": "https://sample"
+            }
+          },
+          {
+            "label": "简介",
+            "value": "sample"
+          }
+        ],
+        "otherRows": [
+          {
+            "label": "ID",
+            "value": "ZFLR_AB-1"
+          },
+          {
+            "label": "Name",
+            "value": "sample"
+          },
+          {
+            "label": "Type",
+            "value": "Polygon"
+          },
+          {
+            "label": "World",
+            "value": "zth"
+          },
+          {
+            "label": "创建时间",
+            "value": "20261007"
+          },
+          {
+            "label": "创建者",
+            "value": "fixture-user"
+          }
+        ]
+      }
+    },
+    {
+      "key": "flr_unit",
+      "record": {
+        "ID": "ZFLR_CAT_AB-1",
+        "Name": "sample",
+        "NofFloor": "sample",
+        "Kind": "NOM",
+        "SKind": "NOM",
+        "BuildingID": "sample",
+        "tags": {
+          "nomenclator": "sample",
+          "Land": "sample",
+          "Adm": "sample",
+          "Pop": "sample"
+        },
+        "extensions": {
+          "link": {
+            "wiki": "sample"
+          },
+          "character": {
+            "brief": "sample"
+          }
+        },
+        "CoordG": [
+          [
+            [
+              [
+                0,
+                -64,
+                0
+              ],
+              [
+                20,
+                -64,
+                0
+              ],
+              [
+                20,
+                -64,
+                20
+              ]
+            ]
+          ]
+        ],
+        "Type": "Polygon",
+        "Class": "FLR",
+        "World": "zth",
+        "CreateTime": "20261007",
+        "CreateBy": "fixture-user"
+      },
+      "expected": {
+        "mainRows": [
+          {
+            "label": "类型",
+            "value": "默认"
+          },
+          {
+            "label": "所属建筑",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "BUD",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "所属地理单元",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "ISG",
+                "kind": "NGF",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "所属聚落",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "ISG",
+                "kind": "ADM",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "楼层名/楼层号",
+            "value": "sample"
+          },
+          {
+            "label": "命名者",
+            "value": "sample"
+          },
+          {
+            "label": "相关成员",
+            "value": "sample"
+          },
+          {
+            "label": "WIKI链接",
+            "value": {
+              "kind": "externalLink",
+              "href": "https://sample"
+            }
+          },
+          {
+            "label": "简介",
+            "value": "sample"
+          }
+        ],
+        "otherRows": [
+          {
+            "label": "ID",
+            "value": "ZFLR_CAT_AB-1"
+          },
+          {
+            "label": "Name",
+            "value": "sample"
+          },
+          {
+            "label": "Type",
+            "value": "Polygon"
+          },
+          {
+            "label": "World",
+            "value": "zth"
+          },
+          {
+            "label": "创建时间",
+            "value": "20261007"
+          },
+          {
+            "label": "创建者",
+            "value": "fixture-user"
+          }
+        ]
+      },
+      "actual": {
+        "mainRows": [
+          {
+            "label": "类型",
+            "value": "默认"
+          },
+          {
+            "label": "所属建筑",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "structureRole": "main",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "所属地理单元",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "ISG",
+                "kind": "NGF",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "所属聚落",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "ISG",
+                "kind": "ADM",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "楼层名/楼层号",
+            "value": "sample"
+          },
+          {
+            "label": "命名者",
+            "value": "sample"
+          },
+          {
+            "label": "相关成员",
+            "value": "sample"
+          },
+          {
+            "label": "WIKI链接",
+            "value": {
+              "kind": "externalLink",
+              "href": "https://sample"
+            }
+          },
+          {
+            "label": "简介",
+            "value": "sample"
+          }
+        ],
+        "otherRows": [
+          {
+            "label": "ID",
+            "value": "ZFLR_CAT_AB-1"
+          },
+          {
+            "label": "Name",
+            "value": "sample"
+          },
+          {
+            "label": "Type",
+            "value": "Polygon"
+          },
+          {
+            "label": "World",
+            "value": "zth"
+          },
+          {
+            "label": "创建时间",
+            "value": "20261007"
+          },
+          {
+            "label": "创建者",
+            "value": "fixture-user"
+          }
+        ]
+      }
+    },
+    {
+      "key": "catalog:FLR///",
+      "record": {
+        "ID": "card-oracle",
+        "Name": "Card sample",
+        "Class": "FLR",
+        "Kind": "",
+        "SKind": "",
+        "SKind2": "",
+        "Type": "Polygon",
+        "World": "zth",
+        "CreateBy": "card-author",
+        "CreateTime": "20261007",
+        "NofFloor": "sample",
+        "BuildingID": "sample",
+        "Situation": "sample",
+        "elevation": 0,
+        "height": 0
+      },
+      "expected": {
+        "mainRows": [
+          {
+            "label": "类型",
+            "value": "建筑楼层"
+          },
+          {
+            "label": "所属建筑",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "BUD",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "楼层名/楼层号",
+            "value": "sample"
+          },
+          {
+            "label": "状态",
+            "value": "sample"
+          },
+          {
+            "label": "高度(y)",
+            "value": 0
+          },
+          {
+            "label": "层高",
+            "value": 0
+          }
+        ],
+        "otherRows": [
+          {
+            "label": "ID",
+            "value": "card-oracle"
+          },
+          {
+            "label": "Name",
+            "value": "Card sample"
+          },
+          {
+            "label": "Type",
+            "value": "Polygon"
+          },
+          {
+            "label": "World",
+            "value": "zth"
+          },
+          {
+            "label": "创建时间",
+            "value": "20261007"
+          },
+          {
+            "label": "创建者",
+            "value": "card-author"
+          }
+        ]
+      },
+      "actual": {
+        "mainRows": [
+          {
+            "label": "类型",
+            "value": "建筑楼层"
+          },
+          {
+            "label": "所属建筑",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "structureRole": "main",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "楼层名/楼层号",
+            "value": "sample"
+          },
+          {
+            "label": "状态",
+            "value": "sample"
+          },
+          {
+            "label": "高度(y)",
+            "value": 0
+          },
+          {
+            "label": "层高",
+            "value": 0
+          }
+        ],
+        "otherRows": [
+          {
+            "label": "ID",
+            "value": "card-oracle"
+          },
+          {
+            "label": "Name",
+            "value": "Card sample"
+          },
+          {
+            "label": "Type",
+            "value": "Polygon"
+          },
+          {
+            "label": "World",
+            "value": "zth"
+          },
+          {
+            "label": "创建时间",
+            "value": "20261007"
+          },
+          {
+            "label": "创建者",
+            "value": "card-author"
+          }
+        ]
+      }
+    },
+    {
+      "key": "catalog:FLR/NOM/NOM/",
+      "record": {
+        "ID": "card-oracle",
+        "Name": "Card sample",
+        "Class": "FLR",
+        "Kind": "NOM",
+        "SKind": "NOM",
+        "SKind2": "",
+        "Type": "Polygon",
+        "World": "zth",
+        "CreateBy": "card-author",
+        "CreateTime": "20261007",
+        "NofFloor": "sample",
+        "BuildingID": "sample",
+        "Situation": "sample",
+        "elevation": 0,
+        "height": 0
+      },
+      "expected": {
+        "mainRows": [
+          {
+            "label": "类型",
+            "value": "默认"
+          },
+          {
+            "label": "所属建筑",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "BUD",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "楼层名/楼层号",
+            "value": "sample"
+          },
+          {
+            "label": "状态",
+            "value": "sample"
+          },
+          {
+            "label": "高度(y)",
+            "value": 0
+          },
+          {
+            "label": "层高",
+            "value": 0
+          }
+        ],
+        "otherRows": [
+          {
+            "label": "ID",
+            "value": "card-oracle"
+          },
+          {
+            "label": "Name",
+            "value": "Card sample"
+          },
+          {
+            "label": "Type",
+            "value": "Polygon"
+          },
+          {
+            "label": "World",
+            "value": "zth"
+          },
+          {
+            "label": "创建时间",
+            "value": "20261007"
+          },
+          {
+            "label": "创建者",
+            "value": "card-author"
+          }
+        ]
+      },
+      "actual": {
+        "mainRows": [
+          {
+            "label": "类型",
+            "value": "默认"
+          },
+          {
+            "label": "所属建筑",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "structureRole": "main",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "楼层名/楼层号",
+            "value": "sample"
+          },
+          {
+            "label": "状态",
+            "value": "sample"
+          },
+          {
+            "label": "高度(y)",
+            "value": 0
+          },
+          {
+            "label": "层高",
+            "value": 0
+          }
+        ],
+        "otherRows": [
+          {
+            "label": "ID",
+            "value": "card-oracle"
+          },
+          {
+            "label": "Name",
+            "value": "Card sample"
+          },
+          {
+            "label": "Type",
+            "value": "Polygon"
+          },
+          {
+            "label": "World",
+            "value": "zth"
+          },
+          {
+            "label": "创建时间",
+            "value": "20261007"
+          },
+          {
+            "label": "创建者",
+            "value": "card-author"
+          }
+        ]
+      }
+    },
+    {
+      "key": "catalog:FLR/SPE/SPE/",
+      "record": {
+        "ID": "card-oracle",
+        "Name": "Card sample",
+        "Class": "FLR",
+        "Kind": "SPE",
+        "SKind": "SPE",
+        "SKind2": "",
+        "Type": "Polygon",
+        "World": "zth",
+        "CreateBy": "card-author",
+        "CreateTime": "20261007",
+        "NofFloor": "sample",
+        "BuildingID": "sample",
+        "Situation": "sample",
+        "elevation": 0,
+        "height": 0
+      },
+      "expected": {
+        "mainRows": [
+          {
+            "label": "类型",
+            "value": "特殊"
+          },
+          {
+            "label": "所属建筑",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "BUD",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "楼层名/楼层号",
+            "value": "sample"
+          },
+          {
+            "label": "状态",
+            "value": "sample"
+          },
+          {
+            "label": "高度(y)",
+            "value": 0
+          },
+          {
+            "label": "层高",
+            "value": 0
+          }
+        ],
+        "otherRows": [
+          {
+            "label": "ID",
+            "value": "card-oracle"
+          },
+          {
+            "label": "Name",
+            "value": "Card sample"
+          },
+          {
+            "label": "Type",
+            "value": "Polygon"
+          },
+          {
+            "label": "World",
+            "value": "zth"
+          },
+          {
+            "label": "创建时间",
+            "value": "20261007"
+          },
+          {
+            "label": "创建者",
+            "value": "card-author"
+          }
+        ]
+      },
+      "actual": {
+        "mainRows": [
+          {
+            "label": "类型",
+            "value": "特殊"
+          },
+          {
+            "label": "所属建筑",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "structureRole": "main",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "楼层名/楼层号",
+            "value": "sample"
+          },
+          {
+            "label": "状态",
+            "value": "sample"
+          },
+          {
+            "label": "高度(y)",
+            "value": 0
+          },
+          {
+            "label": "层高",
+            "value": 0
+          }
+        ],
+        "otherRows": [
+          {
+            "label": "ID",
+            "value": "card-oracle"
+          },
+          {
+            "label": "Name",
+            "value": "Card sample"
+          },
+          {
+            "label": "Type",
+            "value": "Polygon"
+          },
+          {
+            "label": "World",
+            "value": "zth"
+          },
+          {
+            "label": "创建时间",
+            "value": "20261007"
+          },
+          {
+            "label": "创建者",
+            "value": "card-author"
+          }
+        ]
+      }
+    },
+    {
+      "key": "catalog:STF///",
+      "record": {
+        "ID": "card-oracle",
+        "Name": "Card sample",
+        "Class": "STF",
+        "Kind": "",
+        "SKind": "",
+        "SKind2": "",
+        "Type": "Polygon",
+        "World": "zth",
+        "CreateBy": "card-author",
+        "CreateTime": "20261007",
+        "NofFloor": "sample",
+        "staBuildingID": "sample",
+        "Situation": "sample",
+        "elevation": 0,
+        "height": 0
+      },
+      "expected": {
+        "mainRows": [
+          {
+            "label": "类型",
+            "value": "车站建筑楼层"
+          },
+          {
+            "label": "所属车站建筑",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "classCode": "STB",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "楼层名/楼层号",
+            "value": "sample"
+          },
+          {
+            "label": "状态",
+            "value": "sample"
+          },
+          {
+            "label": "高度(y)",
+            "value": 0
+          },
+          {
+            "label": "高度/层高(height)",
+            "value": 0
+          }
+        ],
+        "otherRows": [
+          {
+            "label": "ID",
+            "value": "card-oracle"
+          },
+          {
+            "label": "Name",
+            "value": "Card sample"
+          },
+          {
+            "label": "Type",
+            "value": "Polygon"
+          },
+          {
+            "label": "World",
+            "value": "zth"
+          },
+          {
+            "label": "创建时间",
+            "value": "20261007"
+          },
+          {
+            "label": "创建者",
+            "value": "card-author"
+          }
+        ]
+      },
+      "actual": {
+        "mainRows": [
+          {
+            "label": "类型",
+            "value": "车站建筑楼层"
+          },
+          {
+            "label": "所属车站建筑",
+            "value": {
+              "kind": "featureLink",
+              "targetId": "sample",
+              "linkTarget": {
+                "structureRole": "main",
+                "matchField": "ID",
+                "displayField": "Name",
+                "fallbackDisplay": "raw"
+              }
+            }
+          },
+          {
+            "label": "楼层名/楼层号",
+            "value": "sample"
+          },
+          {
+            "label": "状态",
+            "value": "sample"
+          },
+          {
+            "label": "高度(y)",
+            "value": 0
+          },
+          {
+            "label": "高度/层高(height)",
+            "value": 0
+          }
+        ],
+        "otherRows": [
+          {
+            "label": "ID",
+            "value": "card-oracle"
+          },
+          {
+            "label": "Name",
+            "value": "Card sample"
+          },
+          {
+            "label": "Type",
+            "value": "Polygon"
+          },
+          {
+            "label": "World",
+            "value": "zth"
+          },
+          {
+            "label": "创建时间",
+            "value": "20261007"
+          },
+          {
+            "label": "创建者",
+            "value": "card-author"
+          }
+        ]
+      }
+    }
+  ],
+  "approvedCardChangeCount": 6,
+  "unexplainedCardDifferences": [],
+  "applicationDifferences": [],
+  "seedValid": true
+}
