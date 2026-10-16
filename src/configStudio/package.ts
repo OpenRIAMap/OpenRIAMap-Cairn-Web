@@ -556,7 +556,7 @@ function asConfig(value: unknown): ConfigPackageV3 {
   if (isNativeConfigRevision(value.contractRevision)) return migrateV5Package(value as ConfigPackageV3);
   if (value.contractRevision === 4) return migrateV5Package(migrateV4Package(value));
   if (value.contractRevision === 3) return migrateV5Package(migrateV4Package(migrateV31Package(value)));
-  throw new Error('该配置包属于无法读取的旧 V3 契约。请先使用兼容版本导出后再导入。');
+  throw new Error(`不支持此 V3 配置契约 revision ${value.contractRevision ?? '未声明'}。请使用支持该版本的工具检查或升级读取器，不能按当前契约启用。`);
 }
 
 export async function readConfigPackage(file: File, options:ConfigImportOptions={}): Promise<ConfigPackageV3> {
