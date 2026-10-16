@@ -34,6 +34,7 @@ assert.ok(analyse('divide(1,0)').some(i=>i.code==='workflow-expression-result-in
 assert.ok(analyse('A',w=>{w.steps.flatMap(s=>s.controls??[]).find(c=>c.slot==='A')!.kind='json';}).some(i=>i.code==='workflow-expression-type-unknown'));
 assert.ok(analyse('C').some(i=>i.code==='workflow-expression-type-conflict'),'search ID is text');
 assert.ok(analyse('P').some(i=>i.code==='workflow-expression-type-conflict'),'group is an array');
+for(const [expression,cardinality,coordinateFormat,conflict] of [['F','multiple',undefined,true],['P','multiple',undefined,false],['F','single','pointObject',true],['point(A)','single','pointObject',false]] as const){const w=structuredClone(workflow);w.outputs[0].assignments=[{id:'json-shape',target:'AuditJson',expression}];const field={fieldId:'audit-json',key:'AuditJson',type:'json',cardinality,coordinateFormat,input:'json',labels:{zh:'JSON',en:''},description:{zh:'',en:''}} as any;assert.equal(validateWorkflowWrites(w,()=>[field]).some(i=>i.code==='workflow-expression-type-conflict'),conflict,`${expression} / ${cardinality} / ${coordinateFormat}`);}
 const writes=(left?:C,right?:C)=>analyse('F',w=>{const original=w.outputs[0].assignments[0];original.when=left;w.outputs[0].assignments.push({...original,id:'second',when:right});});
 assert.ok(writes().some(i=>i.code==='workflow-target-write-conflict'));
 assert.ok(!writes(leaf('empty'),leaf('present')).some(i=>i.code==='workflow-target-write-conflict'));

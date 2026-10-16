@@ -64,7 +64,7 @@ function union(values: Shape[]): Shape {
 function fieldShape(field?: FieldDefinition): Shape {
   if (!field) return shape('unknown');
   const type = field.type === 'enum' ? field.optionValueType ?? 'string' : field.type === 'reference' ? 'string' : field.type;
-  const result = type === 'json' ? shape('unknown') : shape(type as Kind);
+  const result = type === 'json' ? field.coordinateFormat ? shape(field.coordinateFormat==='pointObject'?'object':'array') : shape('unknown') : shape(type as Kind);
   if (field.cardinality === 'multiple') return { kinds: ['array'], item: result };
   return result;
 }
@@ -121,13 +121,13 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
       try {
         const ast = parseWorkflowExpression(assignment.expression);
         const actual = workflowExpressionTokens(ast).length ? infer(ast) : constant(evaluateWorkflowExpression(assignment.expression, {}, {}));
-        if (!field || field.type === 'json') continue;
+        if (!field || field.type === 'json' && field.cardinality==='single' && !field.coordinateFormat) continue;
         // Optional empties retain the existing finalizer's omit/preserve rules.
         if (actual.constants?.every(isEmpty)) continue;
         const expected = fieldShape(field);
         const actualKinds = actual.kinds.filter(kind => kind !== 'null');
         const incompatible = actualKinds.some(kind => kind !== 'unknown' && !expected.kinds.includes(kind)) ||
-          actual.kinds.includes('array') && expected.item && actual.item?.kinds.some(kind => kind !== 'unknown' && !expected.item!.kinds.includes(kind));
+          actual.kinds.includes('array') && expected.item && !expected.item.kinds.includes('unknown') && actual.item?.kinds.some(kind => kind !== 'unknown' && !expected.item!.kinds.includes(kind));
         if (incompatible) add('workflow-expression-type-conflict', path, `表达式返回 ${actual.kinds.join('/')}，目标 ${field.key} 需要 ${field.cardinality === 'multiple' ? '多值 ' : '单值 '}${field.type}。请调整表达式或控件保存类型。`);
         else if (actualKinds.includes('unknown') || actual.item?.kinds.includes('unknown')) add('workflow-expression-type-unknown', path, `目标 ${field.key} 的动态结果类型无法静态确定，请使用试运行核对；提交前仍会检查实际记录。`, 'warning');
         const constants=actual.constants??(actual.kinds.length===1&&actual.kinds[0]==='array'?actual.item?.constants:undefined);
