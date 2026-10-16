@@ -881,7 +881,7 @@ export function validateWorkflowOutput(output: WorkflowOutput, _outputIndex: num
     if (control && field && (control.fieldSource||config.contractRevision>=8)) {
       const leaf=control.kind==='group'?control.group?.itemFields[0]:control;
       const returned=leaf&&(leaf.kind==='featureSearch'||leaf.kind==='coarseSearch')&&leaf.search?resolveSelectableFields(config,leaf.search.target).find(field=>field.key===leaf.search!.returnField):undefined;
-      const actualType=control.kind==='group'&&control.group?.storage==='object'?'json':leaf?.kind==='number'?'number':leaf?.kind==='toggle'?'boolean':leaf?.kind==='select'?leaf.optionValueType??'string':returned?returned.type==='enum'?returned.optionValueType??'string':returned.type==='reference'?'string':returned.type:leaf?.kind==='json'?'json':'string';
+      const actualType=control.kind==='group'&&control.group?.storage==='object'?'json':leaf?.kind==='select'?leaf.optionValueType??'string':leaf?.kind==='json'?'json':leaf?.valueNormalization==='trim'||leaf?.valueNormalization==='abbr'?'string':leaf?.kind==='number'||leaf?.valueNormalization==='number'?'number':leaf?.kind==='toggle'?'boolean':returned?returned.type==='enum'?returned.optionValueType??'string':returned.type==='reference'?'string':returned.type:'string';
       const actualMultiple=control.kind==='group'||returned?.cardinality==='multiple';
       const expectedType=field.type==='enum'?field.optionValueType??'string':field.type==='reference'?'string':field.type;
       if (field.type!=='json' && ((field.cardinality==='multiple')!==Boolean(actualMultiple)||actualType!==expectedType))issue(issues,'error','field-import-target-conflict',assignmentPath,'输入控件与输出目标的保存值类型或值数量不兼容。');

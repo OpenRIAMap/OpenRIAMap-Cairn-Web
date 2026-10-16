@@ -28,6 +28,8 @@ assert.equal(disjoint(any(...Array.from({length:129},(_,i)=>leaf('equals',i))),l
 const analyse=(expression:string,modify?:(w:typeof workflow)=>void)=>{const w=structuredClone(workflow);w.editor={enabled:false};w.outputs[0].assignments=w.outputs[0].assignments.filter(a=>a.target==='Level');w.outputs[0].assignments[0].expression=expression;modify?.(w);return validateWorkflowWrites(w,path=>resolveSelectableFields(base,path));};
 for(const expression of ['"bad"','"12"','join("",A)','coalesce(F,"bad")','point(A)'])assert.ok(analyse(expression).some(i=>i.code==='workflow-expression-type-conflict'),expression);
 for(const expression of ['0','12','null','""','F','add(F,2)','coalesce(F,0)','coalesce(F,"")'])assert.ok(!analyse(expression).some(i=>i.severity==='error'),expression);
+const normalized=structuredClone(workflow);normalized.editor={enabled:false};const numericInput=normalized.steps.flatMap(s=>s.controls??[]).find(c=>c.slot==='F')!;numericInput.kind='text';numericInput.valueNormalization='number';assert.ok(validateWorkflowDefinition(normalized,base).valid,'text controls explicitly normalised to numbers preserve their actual stored type');
+assert.ok(analyse('F',w=>{const c=w.steps.flatMap(s=>s.controls??[]).find(c=>c.slot==='F')!;c.valueNormalization='trim';}).some(i=>i.code==='workflow-expression-type-conflict'),'trim produces text even for a numeric input kind');
 assert.ok(analyse('divide(1,0)').some(i=>i.code==='workflow-expression-result-invalid'));
 assert.ok(analyse('A',w=>{w.steps.flatMap(s=>s.controls??[]).find(c=>c.slot==='A')!.kind='json';}).some(i=>i.code==='workflow-expression-type-unknown'));
 assert.ok(analyse('C').some(i=>i.code==='workflow-expression-type-conflict'),'search ID is text');

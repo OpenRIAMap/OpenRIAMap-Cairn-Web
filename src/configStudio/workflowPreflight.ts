@@ -82,15 +82,16 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
   }
   const controlShape = (control: WorkflowControl | WorkflowGroupField): Shape => {
     if (control.kind === 'group' && 'group' in control) return { kinds: ['array'], item: control.group?.storage === 'scalar' ? controlShape(control.group.itemFields[0]) : shape('object') };
-    if (control.kind === 'number' || control.valueNormalization === 'number') return shape('number');
-    if (control.kind === 'toggle') return shape('boolean');
     if (control.kind === 'json' || control.kind === 'runtimeValue' || control.kind === 'component') return shape('unknown');
-    if ((control.kind === 'featureSearch' || control.kind === 'coarseSearch') && control.search) return fieldShape(fields(control.search.target).find(field => field.key === control.search!.returnField));
     if (control.kind === 'select') {
       const type = control.optionValueType ?? 'string';
       const options = control.options?.map(option => type === 'number' ? Number(option.value) : type === 'boolean' ? option.value === 'true' : option.value);
       return { kinds: [type], ...(options?.length ? { constants: options } : {}) };
     }
+    if (control.valueNormalization === 'trim' || control.valueNormalization === 'abbr') return shape('string');
+    if (control.kind === 'number' || control.valueNormalization === 'number') return shape('number');
+    if (control.kind === 'toggle') return shape('boolean');
+    if ((control.kind === 'featureSearch' || control.kind === 'coarseSearch') && control.search) return fieldShape(fields(control.search.target).find(field => field.key === control.search!.returnField));
     return shape('string');
   };
   for (const step of workflow.steps) {
