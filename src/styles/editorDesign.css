@@ -177,10 +177,16 @@
 .config-editor.cm-editor-design .cm-workflow-toolbar > button { min-height: 36px; }
 .config-editor.cm-editor-design .cm-output-definition { border-left-color: #34d399; }
 .config-editor.cm-editor-design .cm-auxiliary-definition { border-left-color: #60a5fa; }
+.config-editor.cm-editor-design .cm-aligned-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
 .config-editor.cm-editor-design .cm-aligned-fields > label:is([data-field-layout="field"], [data-field-layout="compound"]) {
-  grid-row: span 2;
-  grid-template-rows: subgrid;
+  flex: 1 1 14rem;
+  grid-template-rows: minmax(20px, 1fr) auto;
   align-self: stretch;
+  align-content: stretch;
 }
 .config-editor.cm-editor-design .cm-workflow-settings { margin-block: 12px; }
 .config-editor.cm-editor-design .cm-workflow-settings > .cm-flags { padding-bottom: 8px; border-bottom: 1px solid var(--cm-line); }
