@@ -25,6 +25,7 @@ checks.append('actual file-input rejects unknown ZIP manifest; active and durabl
 b.evaluate("window.originalRepairRead=File.prototype.arrayBuffer;File.prototype.arrayBuffer=function(){const file=this;return new Promise((resolve,reject)=>setTimeout(()=>originalRepairRead.call(file).then(resolve,reject),1200));}")
 upload('migration-runs/release-repair-20261017/import-fixtures/cancel-repair.zip')
 b.wait("[...document.querySelectorAll('button')].some(e=>e.textContent==='取消导入')")
+assert b.evaluate("[...document.querySelectorAll('header button')].find(e=>e.textContent.trim()==='导入').disabled")
 click('取消导入');b.wait("document.body.innerText.includes('已取消本次导入')")
 b.evaluate('File.prototype.arrayBuffer=window.originalRepairRead')
 assert snapshot()==before
