@@ -19,6 +19,7 @@
 
 ## 配置包参考
 
+- [当前 V3.2 完整 JSON 对照手册（r11/r7）](20_config-reference/runtime-v32-json-handbook-r11-r7-20261017/README.md)：当前完整配置副本、中文全字段表、实例行号索引及离线阅读器。下列项目包文档用于 V1 分文件来源体系，阅读当前 V3 整包请先使用此手册。
 - `20_config-reference/ProjectConfigPackage.md`：项目配置包说明。
 - `20_config-reference/ProjectPackageStructure.md`：项目包目录结构说明。
 - `20_config-reference/PresetAssembly.md`：Preset 与 assembly 组装说明。

@@ -105,3 +105,7 @@ docs/90_roadmap-and-history/runtime-v32-release-audit-20261016/*.md text eol=lf
 docs/90_roadmap-and-history/runtime-v32-release-repair-20261017/*.json text eol=lf
 docs/90_roadmap-and-history/runtime-v32-release-repair-20261017/*.log text eol=lf
 docs/90_roadmap-and-history/runtime-v32-release-repair-20261017/*.md text eol=lf
+
+# JSON handbook source copies and manifest digests use stable LF bytes.
+docs/20_config-reference/runtime-v32-json-handbook-r11-r7-20261017/* text eol=lf
+scripts/config-tools/json-handbook/* text eol=lf
