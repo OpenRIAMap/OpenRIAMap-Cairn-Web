@@ -24,6 +24,7 @@ Web 分支包含此前已批准、尚未进入 main 的 65 个配置体系依赖
 - r11/r7 冻结首版保持原始字节：config SHA `982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e`；ZIP 248639 字节，SHA `73f1eecb895e80e2ee188e47f8d030202dab8447862faaf9b50a77642eed5a9e`。
 - 提交前额外核对 Git 暂存区字节，发现冻结 V1 的 `filter.ts` 与快照 `manifest.json` 会被换行转换。使用两条精确 `-text` 属性保留其原始字节；冻结文件本身和运行逻辑没有修改，避免新检出代码时摘要失配。
 - 首次 GitHub Linux CI 发现说明核验脚本直接按当前 OS 解析历史 Windows 路径，误报 `LayerButtonsEditor` 的已有语义说明缺失。修正核验脚本统一路径分隔符，并覆盖两种路径的回归；配置、应用和 SCF 代码保持不变。首次失败日志不等同于后续重建结果。
+- 后续 Linux CI 已通过全量配置验证及正式构建；审核控制绑定的测试启动命令缺少应用 `tsconfig`，无法解析 `@/core`。补齐测试命令后，本地按 CI 顺序跑完全部 25 项下游集成核验，全部通过。对应运行代码的 Vercel 预览构建已成功；最终提交状态另以 GitHub 检查为准。
 
 `validation-summary.json` 是交付阶段 A 的历史结果，其部署/PR 标志不能代替本节的后续状态。`readiness.json`、`routing-cors.json` 为本次只读检查；它们没有云端写入或成功登录证据。
 

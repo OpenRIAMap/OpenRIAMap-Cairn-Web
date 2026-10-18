@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-18T10:16:11.647Z",
+  "checkedAt": "2026-10-18T10:32:56.122Z",
   "sourceChecks": [
     {
       "name": "web",
@@ -8,6 +8,7 @@
       "filesChecked": 1602,
       "documentationAttributesOrVerificationChangesSinceDelivery": [
         ".gitattributes",
+        "package.json",
         "scripts/config-tools/test-setting-help.ts"
       ]
     },

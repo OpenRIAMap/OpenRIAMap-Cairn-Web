@@ -52,7 +52,7 @@
     "list:relay-review-inbox": "node ./scripts/review/list-relay-review-inbox.mjs",
     "sync:relay-review-report": "node ./scripts/review/sync-relay-review-report.mjs",
     "validate:review-control-binding": "node ./scripts/review/validate-review-control-binding.mjs",
-    "test:review-control-binding": "tsx ./scripts/review/test-review-control-binding.ts",
+    "test:review-control-binding": "tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-review-control-binding.ts",
     "test:review-automation-gate": "node ./scripts/review/test-review-automation-gate.mjs",
     "test:review-relay-transfer-port": "node ./scripts/review/test-review-relay-transfer-port.mjs",
     "test:review-control-port": "node ./scripts/review/test-review-control-port.mjs",
