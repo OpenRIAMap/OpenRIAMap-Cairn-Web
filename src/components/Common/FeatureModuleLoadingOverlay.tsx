@@ -7,9 +7,13 @@ const MODULE_LABELS = {
   measuring: '测绘扩展模块',
   review: '审核与测绘扩展模块',
   legacy: '旧图层扩展模块',
+  configuration: '配置编辑分包',
+  'legacy-v1': 'V1 兼容分包',
 } as const;
 
 const STEP_TEXTS = {
+  configuration: ['正在加载配置编辑分包', '正在准备工作台'],
+  'legacy-v1': ['正在准备 V1 兼容页面'],
   measuring: [
     '正在准备测绘扩展模块',
     '正在请求测绘资源',

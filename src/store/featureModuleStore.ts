@@ -2,7 +2,7 @@ import { getApplicationSettings, moduleEnabled, subscribeApplication } from '@/c
 import { create } from 'zustand';
 
 /** `measuring` remains the stable persisted key for the mapping base bundle. */
-export type FeatureModuleKey = 'measuring' | 'review' | 'legacy';
+export type FeatureModuleKey = 'measuring' | 'review' | 'legacy' | 'configuration' | 'legacy-v1';
 export type FeatureModuleStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
 type FeatureModuleRuntime = {
@@ -57,12 +57,16 @@ export const FEATURE_MODULE_DEPENDENCIES: Record<FeatureModuleKey, readonly Feat
   measuring: [],
   review: ['measuring'],
   legacy: [],
+  configuration: [],
+  'legacy-v1': [],
 };
 
 const DEFAULT_TITLES: Record<FeatureModuleKey, string> = {
   measuring: '需要启用测绘扩展模块',
   review: '需要下载审核与测绘分包',
   legacy: '需要启用旧图层扩展模块',
+  configuration: '配置编辑分包',
+  'legacy-v1': 'V1 兼容分包',
 };
 
 const DEFAULT_DESCRIPTIONS: Record<FeatureModuleKey, string> = {
@@ -70,6 +74,8 @@ const DEFAULT_DESCRIPTIONS: Record<FeatureModuleKey, string> = {
     '该功能属于按需加载的扩展模块。本次确认仅用于启用该模块；在当前浏览器缓存条件和版本匹配的情况下，后续点击此入口将自动加载并进入功能，无需再次确认。',
   review:
     '审核工作区依赖测绘基础分包和审核分包。确认后将按“测绘 → 审核”顺序下载并启用；只会记录分包启用状态，不会保存审核包、图片、图层或草稿。',
+  configuration: '加载配置工作台、运行实验室和工作流编辑器。取消不会修改本地配置。',
+  'legacy-v1': '在独立页面加载固定版本的 V1 显示和测绘功能。',
   legacy:
     '该功能属于按需加载的扩展模块。本次确认仅用于启用该模块；在当前浏览器缓存条件和版本匹配的情况下，后续点击此入口将自动加载并进入功能，无需再次确认。',
 };
@@ -78,6 +84,8 @@ const makeDefaultModuleState = (): Record<FeatureModuleKey, FeatureModuleRuntime
   measuring: { status: 'idle', enabledByUser: false, lastLoadedVersion: null, error: null },
   review: { status: 'idle', enabledByUser: false, lastLoadedVersion: null, error: null },
   legacy: { status: 'idle', enabledByUser: false, lastLoadedVersion: null, error: null },
+  configuration: { status: 'idle', enabledByUser: false, lastLoadedVersion: null, error: null },
+  'legacy-v1': { status: 'idle', enabledByUser: false, lastLoadedVersion: null, error: null },
 });
 
 const defaultDialogState = (): FeatureModuleDialogState => ({
@@ -95,6 +103,8 @@ const defaultLoadingOverlayState = (): FeatureModuleLoadingOverlayState => ({
 });
 
 const loaders: Record<FeatureModuleKey, () => Promise<unknown>> = {
+  configuration: async () => { await import('@/entrypoints/configurationEntry'); },
+  'legacy-v1': async () => { /* Standalone document loads only after admission. */ },
   measuring: async () => {
     const mod = await import('@/entrypoints/measuringEntry');
     await mod.loadMeasuringModuleBundle();
@@ -139,6 +149,8 @@ export function normalizePersistedFeatureModuleState(raw: string | null): Persis
           enabledByUser: !!parsed.modules?.review?.enabledByUser,
           lastLoadedVersion: typeof parsed.modules?.review?.lastLoadedVersion === 'string' ? parsed.modules?.review?.lastLoadedVersion : null,
         },
+        configuration: { enabledByUser: !!parsed.modules?.configuration?.enabledByUser, lastLoadedVersion: parsed.modules?.configuration?.lastLoadedVersion ?? null },
+        'legacy-v1': { enabledByUser: !!parsed.modules?.['legacy-v1']?.enabledByUser, lastLoadedVersion: parsed.modules?.['legacy-v1']?.lastLoadedVersion ?? null },
         legacy: {
           enabledByUser: !!parsed.modules?.legacy?.enabledByUser,
           lastLoadedVersion: typeof parsed.modules?.legacy?.lastLoadedVersion === 'string' ? parsed.modules?.legacy?.lastLoadedVersion : null,
@@ -168,6 +180,8 @@ function persistState(modules: Record<FeatureModuleKey, FeatureModuleRuntime>) {
         enabledByUser: modules.review.enabledByUser,
         lastLoadedVersion: modules.review.lastLoadedVersion,
       },
+      configuration: { enabledByUser: modules.configuration.enabledByUser, lastLoadedVersion: modules.configuration.lastLoadedVersion },
+      'legacy-v1': { enabledByUser: modules['legacy-v1'].enabledByUser, lastLoadedVersion: modules['legacy-v1'].lastLoadedVersion },
       legacy: {
         enabledByUser: modules.legacy.enabledByUser,
         lastLoadedVersion: modules.legacy.lastLoadedVersion,
@@ -195,7 +209,7 @@ export const useFeatureModuleStore = create<FeatureModuleState>((set, get) => ({
     const savedVersion = persisted?.appVersion ?? null;
     const versionMatches = savedVersion === CURRENT_APP_VERSION;
 
-    (['measuring', 'review', 'legacy'] as FeatureModuleKey[]).forEach((moduleKey) => {
+    (['measuring', 'review', 'legacy', 'configuration', 'legacy-v1'] as FeatureModuleKey[]).forEach((moduleKey) => {
       const saved = persisted?.modules?.[moduleKey];
       if (!saved) return;
       nextModules[moduleKey].enabledByUser = saved.enabledByUser;

@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/config-tools/install-legacy-v1.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "validate:project-config": "node ./scripts/validate-project-config.mjs",
@@ -75,7 +75,8 @@
     "test:multipart-geometry": "tsx --tsconfig ./tsconfig.app.json ./scripts/geometry/test-multipart-geometry.ts",
     "test:config-studio-v3": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-config-studio-v3.ts",
     "audit:eol": "node ./scripts/quality/check-eol.mjs",
-    "prebuild": "npm run verify:config-v32 && npm run test:release-repair",
+    "prebuild": "npm run verify:config-v32 && npm run test:release-repair && npm run test:production-runtime && npm run test:deployment-finalization",
+    "test:deployment-finalization": "tsx --tsconfig tsconfig.app.json scripts/data-source/test-deployment-finalization.ts",
     "validate:review-contract-boundary": "node ./scripts/review/validate-review-contract-boundary.mjs",
     "test:v3-semantic-parity": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-v3-semantic-parity.ts",
     "test:v1-render-baseline": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-v1-render-baseline.ts",
@@ -139,7 +140,9 @@
     "test:release-archive": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-archive.ts",
     "test:release-gate": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-gate.ts",
     "test:release-repair": "npm run test:release-validation && npm run test:release-template-identities && npm run test:release-archive && npm run test:release-gate",
-    "test:release-template-identities": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-template-identities.ts"
+    "test:release-template-identities": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-template-identities.ts",
+    "build:legacy-v1": "node scripts/config-tools/install-legacy-v1.mjs",
+    "test:production-runtime": "node scripts/config-tools/build-server-validation.mjs --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-production-runtime.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-production-mirror.ts && node scripts/config-tools/test-configuration-publication-api.mjs && tsx --tsconfig tsconfig.app.json scripts/config-tools/prepare-production-seed.ts --check"
   },
   "dependencies": {
     "jszip": "^3.10.1",

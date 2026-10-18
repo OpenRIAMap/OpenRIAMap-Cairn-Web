@@ -1,6 +1,6 @@
 import type {ConfigPackageV3} from '@/configStudio/types';
 import {prepareNativeFeatureImport} from '@/configStudio/nativeFeatureImport';
-import {normalizeV3WorldId} from '@/configStudio/V3WorkflowRunner';
+import {normalizeV3WorldId} from '@/configStudio/workflowKernel';
 import {annotationEqual,assembleAnnotations} from '@/configStudio/workflowAnnotations';
 import {resolveGeometryProfile} from '@/configStudio/runtime';
 import {geometryTypeFromFeatureType,readMultipartGeometry,validateMultipartGeometry,withCanonicalMultipartGeometry} from '@/core/geometry/multipartGeometry';

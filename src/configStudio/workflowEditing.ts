@@ -4,7 +4,7 @@ import {annotationEqual,annotationsForOutput,type AnnotationRow,type WorkflowAnn
 import {parseWorkflowExpression,workflowExpressionTokens,evaluateWorkflowExpression,isSafeWorkflowTarget} from './workflowExpression';
 import {pathMatchesScope,classificationPathKey,readRecordPath,resolveSelectableFields} from './runtime';
 import {coerceWorkflowValues} from './workflowValues';
-import {normalizeRuleSourceWorldId} from '../components/Rules/data/ruleDataSources';
+import {normalizeRuleSourceWorldId} from '../core/project/worldIdentity';
 import {readMultipartGeometry,type MultipartGeometry} from '../core/geometry/multipartGeometry';
 import {captureDrawingSnapshot,drawingKey} from './workflowDrawing';
 export type WorkflowEditPlan={workflow:WorkflowDefinition;scope:ClassificationPath;controls:WorkflowControl[];removed:WorkflowControl[];bindings:Array<{slot:string;target:string}>};

@@ -423,6 +423,7 @@ export async function buildComparison(args, mode = 'compare') {
     generatedAt,
     mode,
     projectId: args.projectId,
+    configuration: {identity:configContext.configurationIdentity,rulesVersion:configContext.rulesVersion},
     inputs: {
       relayInput: args.relayInputPath ? rel(args.relayInputPath) : rel(args.relayRoot),
       relayInputType: relayInput?.inputType ?? 'directory',

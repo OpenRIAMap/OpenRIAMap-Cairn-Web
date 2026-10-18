@@ -1,0 +1,34 @@
+{
+    "functions":  [
+                      {
+                          "name":  "cairn-pipeline-dispatcher",
+                          "handler":  "scf-dispatcher.handler",
+                          "role":  "CairnReviewDispatcherRole",
+                          "sha256":  "6d895c432392e56d2544a88ec5c8c7ac1cca7c2d01d7fd3e236786a92d1c97c5",
+                          "zip":  "dist/scf/cairn-pipeline-dispatcher.zip"
+                      },
+                      {
+                          "name":  "cairn-pipeline-worker",
+                          "handler":  "scf-worker.handler",
+                          "role":  "CairnReviewWorkerRole",
+                          "sha256":  "06cebaad63103fd511c45b7a6db21d5ba361ac2d75192be914e6063e07c0aee4",
+                          "zip":  "dist/scf/cairn-pipeline-worker.zip"
+                      },
+                      {
+                          "name":  "cairn-github-mirror-worker",
+                          "handler":  "scf-mirror.handler",
+                          "role":  "CairnReviewMirrorRole",
+                          "sha256":  "708dd4250f8ff3a7ca2497e2ae6d891183576d440ecc09b4cdf43255443a3693",
+                          "zip":  "dist/scf/cairn-github-mirror-worker.zip"
+                      },
+                      {
+                          "name":  "cairn-review-archive-worker",
+                          "handler":  "scf-archive.handler",
+                          "role":  "CairnReviewArchiveRole",
+                          "sha256":  "92042565f3a6e5e6f664ca5750bd66e784f47c9ecb226ad2fe0cb6eacd283c80",
+                          "zip":  "dist/scf/cairn-review-archive-worker.zip"
+                      }
+                  ],
+    "schemaVersion":  "openriamap.scf-zip-manifest.v1",
+    "generatedAt":  "2026-10-17T09:26:53.2078303Z"
+}

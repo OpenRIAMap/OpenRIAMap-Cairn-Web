@@ -1,0 +1,114 @@
+{
+  "readOnly": true,
+  "releaseId": "geometry-v1-aeb7cd1531696c31995cff53",
+  "formalVersion": 19,
+  "worldId": "zth",
+  "recordCount": 495,
+  "classCounts": {
+    "BUD": 37,
+    "FLR": 19,
+    "ISG": 16,
+    "PFB": 62,
+    "PLF": 140,
+    "RLE": 41,
+    "ROD": 34,
+    "STA": 69,
+    "STB": 54,
+    "STF": 10,
+    "TPP": 6,
+    "TRP": 1,
+    "WRP": 6
+  },
+  "geometryAndClassificationIssues": [
+    {
+      "id": "Test1",
+      "path": {
+        "class": "BUD",
+        "kind": "IDS",
+        "skind": "OLD"
+      },
+      "message": "Unknown final classification"
+    },
+    {
+      "id": "FLRtest",
+      "path": {
+        "class": "FLR",
+        "kind": "T",
+        "skind": "T"
+      },
+      "message": "Unknown final classification"
+    },
+    {
+      "id": "TEST2",
+      "path": {
+        "class": "FLR",
+        "kind": "T",
+        "skind": "T"
+      },
+      "message": "Unknown final classification"
+    },
+    {
+      "id": "Test3",
+      "path": {
+        "class": "FLR",
+        "kind": "TTS",
+        "skind": "TTS"
+      },
+      "message": "Unknown final classification"
+    },
+    {
+      "id": "Test4",
+      "path": {
+        "class": "FLR",
+        "kind": "TTS",
+        "skind": "TTS"
+      },
+      "message": "Unknown final classification"
+    },
+    {
+      "id": "Test5",
+      "path": {
+        "class": "FLR",
+        "kind": "TTS",
+        "skind": "TTS"
+      },
+      "message": "Unknown final classification"
+    }
+  ],
+  "existingDataValidation": {
+    "valid": true,
+    "issues": []
+  },
+  "strictIncomingInvalid": 79,
+  "legacy": {
+    "retained": 489,
+    "unknown": 6,
+    "malformed": 0
+  },
+  "requests": [
+    {
+      "key": "current/worlds/_release-set.json",
+      "bytes": 241
+    },
+    {
+      "key": "current/worlds/zth.json",
+      "bytes": 579
+    },
+    {
+      "key": "releases/geometry-v1-aeb7cd1531696c31995cff53/manifests/worlds/zth.json",
+      "bytes": 20144
+    },
+    {
+      "key": "releases/geometry-v1-aeb7cd1531696c31995cff53/manifests/chunk-catalog/zth-00.json",
+      "bytes": 1065
+    },
+    {
+      "key": "releases/geometry-v1-aeb7cd1531696c31995cff53/data-merge/zth/zth-chunk-001.json",
+      "bytes": 170586
+    },
+    {
+      "key": "releases/geometry-v1-aeb7cd1531696c31995cff53/data-merge/zth/zth-chunk-002.json",
+      "bytes": 149454
+    }
+  ]
+}

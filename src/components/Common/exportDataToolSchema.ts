@@ -1,6 +1,7 @@
 import { buildDataToolSchema, type DataToolSchema } from './buildDataToolSchema.ts';
+import {getFormalConfiguration} from '@/configRuntime/formalConfiguration';
 
-export function serializeDataToolSchema(schema: DataToolSchema = buildDataToolSchema()): string {
+export function serializeDataToolSchema(schema: DataToolSchema = buildDataToolSchema(getFormalConfiguration()?.config)): string {
   return JSON.stringify(schema, null, 2) + '\n';
 }
 

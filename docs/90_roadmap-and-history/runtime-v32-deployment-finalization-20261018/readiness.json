@@ -1,0 +1,223 @@
+{
+  "checkedAt": "2026-10-18T09:38:03.054Z",
+  "readOnly": true,
+  "cloudManagementCredentialsAvailable": false,
+  "sourceChecks": [
+    {
+      "name": "web",
+      "sourceIdentitySha256": "b1092158b91179fbb52678d8ac893a20021b326976afcebd18274db00fd11975",
+      "filesChecked": 1602,
+      "changed": []
+    },
+    {
+      "name": "pipeline",
+      "sourceIdentitySha256": "8a0bf1ffa44917314043c094244a968a103f31ab5c95c9d5f5e44515647fe987",
+      "filesChecked": 175,
+      "changed": []
+    }
+  ],
+  "userReportedDeployment": {
+    "camUpdatedBeforeGeneration": true,
+    "functions": [
+      {
+        "name": "cairn-review-archive-worker",
+        "alias": "staging",
+        "version": 6
+      },
+      {
+        "name": "cairn-github-mirror-worker",
+        "alias": "staging",
+        "version": 14
+      },
+      {
+        "name": "cairn-pipeline-worker",
+        "alias": "staging",
+        "version": 36,
+        "configurationFlagsAdded": true
+      },
+      {
+        "name": "cairn-pipeline-dispatcher",
+        "alias": "staging",
+        "version": 30,
+        "configurationFlagsAdded": true
+      }
+    ],
+    "expectedFlagValues": {
+      "CAIRN_CONFIGURATION_PUBLICATION_ENABLED": "false",
+      "CAIRN_CONFIGURATION_RUNTIME_ENABLED": "false"
+    },
+    "flagValuesIndependentlyVerified": false
+  },
+  "probes": [
+    {
+      "name": "production-main",
+      "url": "https://cairn.ria9.top/",
+      "method": "GET",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "byteLength": 1012,
+      "sha256": "3cfb08f243507d9edf1efb0ec01e0f3d5f9413a4c0512269b735ccb2493024dd",
+      "elapsedMs": 6289,
+      "htmlTitle": "CairnMap - OpenRIAMap Profile",
+      "mainScript": "/assets/index-BJfncDm6.js",
+      "cors": {
+        "origin": "*",
+        "methods": null,
+        "headers": null
+      }
+    },
+    {
+      "name": "anonymous-session",
+      "url": "https://cairn.ria9.top/api/auth/github/session",
+      "method": "GET",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "byteLength": 1012,
+      "sha256": "3cfb08f243507d9edf1efb0ec01e0f3d5f9413a4c0512269b735ccb2493024dd",
+      "elapsedMs": 6385,
+      "htmlTitle": "CairnMap - OpenRIAMap Profile",
+      "mainScript": "/assets/index-BJfncDm6.js",
+      "cors": {
+        "origin": "*",
+        "methods": null,
+        "headers": null
+      }
+    },
+    {
+      "name": "public-review-feed-via-dispatcher",
+      "url": "https://cairn.ria9.top/api/public-review-releases?limit=1",
+      "method": "GET",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "byteLength": 1012,
+      "sha256": "3cfb08f243507d9edf1efb0ec01e0f3d5f9413a4c0512269b735ccb2493024dd",
+      "elapsedMs": 6574,
+      "htmlTitle": "CairnMap - OpenRIAMap Profile",
+      "mainScript": "/assets/index-BJfncDm6.js",
+      "cors": {
+        "origin": "*",
+        "methods": null,
+        "headers": null
+      }
+    },
+    {
+      "name": "configuration-api-before-pr",
+      "url": "https://cairn.ria9.top/api/configuration",
+      "method": "GET",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "byteLength": 1012,
+      "sha256": "3cfb08f243507d9edf1efb0ec01e0f3d5f9413a4c0512269b735ccb2493024dd",
+      "elapsedMs": 10962,
+      "htmlTitle": "CairnMap - OpenRIAMap Profile",
+      "mainScript": "/assets/index-BJfncDm6.js",
+      "cors": {
+        "origin": "*",
+        "methods": null,
+        "headers": null
+      }
+    },
+    {
+      "name": "configuration-mirror-before-pr",
+      "url": "https://cairn.ria9.top/configuration/current.json",
+      "method": "GET",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "byteLength": 1012,
+      "sha256": "3cfb08f243507d9edf1efb0ec01e0f3d5f9413a4c0512269b735ccb2493024dd",
+      "elapsedMs": 7038,
+      "htmlTitle": "CairnMap - OpenRIAMap Profile",
+      "mainScript": "/assets/index-BJfncDm6.js",
+      "cors": {
+        "origin": "*",
+        "methods": null,
+        "headers": null
+      }
+    },
+    {
+      "name": "frozen-seed-before-pr",
+      "url": "https://cairn.ria9.top/configuration/releases/982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e/config.json",
+      "method": "GET",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "byteLength": 1012,
+      "sha256": "3cfb08f243507d9edf1efb0ec01e0f3d5f9413a4c0512269b735ccb2493024dd",
+      "elapsedMs": 6650,
+      "htmlTitle": "CairnMap - OpenRIAMap Profile",
+      "mainScript": "/assets/index-BJfncDm6.js",
+      "cors": {
+        "origin": "*",
+        "methods": null,
+        "headers": null
+      }
+    },
+    {
+      "name": "cos-current-release",
+      "url": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com/current/worlds/_release-set.json",
+      "method": "GET",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "byteLength": 232,
+      "sha256": "e474788acf3346864b5a8951f6af49666ffa03500a0c235292c59a36f3f9bf16",
+      "elapsedMs": 6251,
+      "json": {
+        "schemaVersion": "openriamap.current-release-set.v2",
+        "releaseId": "review-57588fe47f9dac63bfb9",
+        "formalVersion": 20,
+        "worlds": [
+          "zth"
+        ]
+      },
+      "cors": {
+        "origin": null,
+        "methods": null,
+        "headers": null
+      }
+    },
+    {
+      "name": "github-current-release",
+      "url": "https://raw.githubusercontent.com/OpenRIAMap/OpenRIAMap-Cairn-Data/main/Current/_release-set.json",
+      "method": "GET",
+      "error": "The operation was aborted due to timeout",
+      "elapsedMs": 22007
+    },
+    {
+      "name": "cdn-current-release",
+      "url": "https://data.ozk639.top/OpenRIAMap/OpenRIAMap-Cairn-Data/main/Current/_release-set.json",
+      "method": "GET",
+      "status": 200,
+      "contentType": "text/plain; charset=utf-8",
+      "byteLength": 232,
+      "sha256": "e474788acf3346864b5a8951f6af49666ffa03500a0c235292c59a36f3f9bf16",
+      "elapsedMs": 8355,
+      "json": {
+        "schemaVersion": "openriamap.current-release-set.v2",
+        "releaseId": "review-57588fe47f9dac63bfb9",
+        "formalVersion": 20,
+        "worlds": [
+          "zth"
+        ]
+      },
+      "cors": {
+        "origin": "*",
+        "methods": null,
+        "headers": null
+      }
+    },
+    {
+      "name": "control-config-upload-cors",
+      "url": "https://openriamap-cairn-control-1433163128.cos.ap-shanghai.myqcloud.com/ConfigPackages/config-post-scf-readonly-probe/package.zip",
+      "method": "OPTIONS",
+      "status": 403,
+      "contentType": "application/xml",
+      "byteLength": 681,
+      "sha256": "fd843e03fae3fb71024caddfa1578a35d932241447cf6ef9c96596d1601d1268",
+      "elapsedMs": 6306,
+      "cors": {
+        "origin": null,
+        "methods": null,
+        "headers": null
+      }
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import {resolveWorkflowFields} from './fieldReuse';
 import type {ConfigPackageV3,WorkflowDefinition} from './types';
 import {assertStructureTargets} from './structureCommit';
 import {compileWorkflowEditPlan,hydrateWorkflowEdit,buildWorkflowEditRecord,workflowEditSlots,recordClassification,assertEditIdentity,type WorkflowEditDraft} from './workflowEditing';
-import {evaluateV3WorkflowOutputs,validateV3WorkflowInputs,validateV3WorkflowRecords} from './V3WorkflowRunner';
+import {evaluateV3WorkflowOutputs,validateV3WorkflowInputs,validateV3WorkflowRecords} from './workflowKernel';
 import {coerceWorkflowValues} from './workflowValues';
 import {featureTypeFromGeometryType,validateMultipartGeometry,withCanonicalMultipartGeometry,type MultipartGeometry} from '../core/geometry/multipartGeometry';
 import {hasDescendants,pathMatchesScope,resolveGeometryProfile} from './runtime';

@@ -1,0 +1,55 @@
+{
+  "checkedAt": "2026-10-18T09:42:35.809Z",
+  "readOnly": true,
+  "vercelDeployment": {
+    "id": 7059250480,
+    "sha": "0fa9b98c47bc7107a6b53922f335795203f575a3",
+    "state": "success",
+    "source": "GitHub deployment status API"
+  },
+  "probes": [
+    {
+      "url": "https://cairn.ria9.top/api/auth/github/session",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "server": "Vercel",
+        "content-type": "text/html; charset=utf-8",
+        "x-vercel-id": "iad1::ckgqr-1792316263385-2ec13a657a7c",
+        "x-vercel-cache": "HIT",
+        "cf-cache-status": null,
+        "via": null,
+        "access-control-allow-origin": "*",
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null
+      },
+      "htmlTitle": "CairnMap - OpenRIAMap Profile"
+    },
+    {
+      "url": "https://openriamap-cairn-9hw80c2go-ozstk639s-projects.vercel.app/api/auth/github/session",
+      "error": "fetch failed"
+    },
+    {
+      "url": "https://openriamap-cairn-9hw80c2go-ozstk639s-projects.vercel.app/api/public-review-releases?limit=1",
+      "error": "fetch failed"
+    },
+    {
+      "url": "https://openriamap-cairn-control-1433163128.cos.ap-shanghai.myqcloud.com/ConfigPackages/config-post-scf-readonly-probe/package.zip",
+      "method": "OPTIONS",
+      "status": 403,
+      "headers": {
+        "server": "tencent-cos",
+        "content-type": "application/xml",
+        "x-vercel-id": null,
+        "x-vercel-cache": null,
+        "cf-cache-status": null,
+        "via": null,
+        "access-control-allow-origin": null,
+        "access-control-allow-methods": null,
+        "access-control-allow-headers": null
+      },
+      "xmlCode": "AccessForbidden",
+      "xmlMessage": "CORSResponse: This CORS request is not allowed. This is usually because the evalution of Origin, request method / Access-Control-Request-Method or Access-Control-Requet-Headers are not whitelisted by the resource&apos;s CORS spec"
+    }
+  ]
+}

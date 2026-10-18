@@ -1,4 +1,6 @@
 import type { RuleDataSourceSnapshot } from './formalDataSourceRuntime';
+import { fetchFormalObject, formalObjectLayout } from './formalObjectAccess';
+import { readFormalReleaseSet, FormalReleaseReaderError } from './formalReleaseReader';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -82,10 +84,14 @@ export async function loadFormalMediaAssets(args: {
   const kindPath = safeKindPath(args.kindPath);
   const featureId = safeSegment(args.featureId, 'feature');
   const key = featureIndexKey(releaseId, worldId, classCode, kindPath);
+  const checkCurrent = async()=>{
+    const current=await readFormalReleaseSet({source:args.source});
+    if(current.releaseId!==releaseId||!current.worlds.includes(worldId))throw new FormalReleaseReaderError('release-set','图片所属发布已更新，请重新同步该世界。','release-changed');
+  };
+  const mutableMirror=!args.fetchJson&&formalObjectLayout(args.source)==='github-stable-v1';
+  if(mutableMirror)await checkCurrent();
   const fetchJson = args.fetchJson ?? (async <T>(objectKey: string) => {
-    const response = await fetch(`${args.source.rootUrl.replace(/\/+$/, '')}/${objectKey}`, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`formal-media-index-http-${response.status}`);
-    return await response.json() as T;
+    return fetchFormalObject<T>(args.source,objectKey,{releaseId});
   });
   const document = await fetchJson<JsonRecord>(key);
   if (!document || typeof document !== 'object' || Array.isArray(document)
@@ -97,6 +103,7 @@ export async function loadFormalMediaAssets(args: {
   const rawByFeature = document.assetsByFeature;
   if (!rawByFeature || typeof rawByFeature !== 'object' || Array.isArray(rawByFeature)) throw new Error('formal-media-index-assets-invalid');
   const rawAssets = (rawByFeature as JsonRecord)[featureId];
+  if(mutableMirror)await checkCurrent();
   if (!Array.isArray(rawAssets)) return [];
   return rawAssets
     .map((asset) => readAsset(asset, worldId))

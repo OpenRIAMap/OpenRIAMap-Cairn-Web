@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "Full editor disables part selector/add/remove, keeps holes available, and saves one Polygon with two rings after panel collapse/reopen.",
+    "Native workflow automatically enters drawing; its add-part button is disabled and add-hole button remains enabled for the actual BUD leaf."
+  ],
+  "runtimeErrors": [],
+  "isolatedFixtureRevision": 100000,
+  "recordFile": "single-part-polygon-with-hole.json"
+}

@@ -30,6 +30,7 @@ export default defineConfig({
   },
 
   build: {
+    manifest: true,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -45,33 +46,9 @@ export default defineConfig({
             return 'vendor-main';
           }
 
-          // Do not chunk whole internal directories such as components/Mapping or
-          // components/Legacy. Several shared helpers are intentionally imported by
-          // the main map/navigation runtime. Directory-level manual chunks can create
-          // production-only TDZ errors when Rollup changes module initialization order.
-          // Instead, pin only the actual lazy entry roots; Rollup will keep their
-          // exclusive dependencies in async chunks and leave shared utilities where
-          // the dependency graph requires them.
-          const isMeasuringEntry =
-            normalized.endsWith('/src/entrypoints/measuringEntry.ts') ||
-            normalized.endsWith('/src/components/Mapping/core/MeasuringModule.tsx') ||
-            normalized.endsWith('/src/components/Mapping/core/Mtools.tsx');
-          if (isMeasuringEntry) {
-            return 'measuring-ext';
-          }
+          // Let Rollup preserve the actual async entry boundaries. Pinning a
+          // shared helper into a UI chunk would eagerly download that whole UI.
 
-          const isLegacyEntry =
-            normalized.endsWith('/src/entrypoints/legacyEntry.ts') ||
-            normalized.endsWith('/src/components/Legacy/map/RailwayLayer.tsx') ||
-            normalized.endsWith('/src/components/Legacy/map/LandmarkLayer.tsx') ||
-            normalized.endsWith('/src/components/Legacy/detail/LineDetailCard.tsx') ||
-            normalized.endsWith('/src/components/Legacy/detail/PointDetailCard.tsx') ||
-            normalized.endsWith('/src/components/Legacy/lines/LinesPage.tsx') ||
-            normalized.endsWith('/src/components/Legacy/data/pathfinding.ts') ||
-            normalized.endsWith('/src/components/Legacy/data/toriiTeleport.ts');
-          if (isLegacyEntry) {
-            return 'legacy-ext';
-          }
         },
       },
     },

@@ -1,7 +1,7 @@
 import type {ConfigPackageV3,ConfigValidationIssue,MountedFeatureRecord,StructureRole} from './types';
 import type {FeatureRecord} from '../components/Rules/rendering/renderRules';
 import type {FeatureStore} from '../components/Rules/data/featureStore';
-import {normalizeRuleSourceWorldId} from '../components/Rules/data/ruleDataSources';
+import {normalizeRuleSourceWorldId} from '../core/project/worldIdentity';
 import {resolveNodeFieldSettings} from './nodeFieldSettings';
 
 export const STRUCTURE_CONTEXT_ID='structure-role-context';

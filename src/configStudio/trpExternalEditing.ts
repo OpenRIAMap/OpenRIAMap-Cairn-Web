@@ -5,7 +5,7 @@ import {residualAnnotations,buildWorkflowEditRecord,recordClassification,assertE
 import {validateExternalEditBinding} from './externalEditRegistry';
 import type {ConfigPackageV3,WorkflowDefinition} from './types';
 import {hasCategoryNode,hasDescendants,pathMatchesScope,resolveGeometryProfile} from './runtime';
-import {validateV3WorkflowRecords} from './V3WorkflowRunner';
+import {validateV3WorkflowRecords} from './workflowKernel';
 import {readMultipartGeometry,validateMultipartGeometry,withCanonicalMultipartGeometry,type MultipartGeometry} from '../core/geometry/multipartGeometry';
 export type TrpExternalEditSession={original:Record<string,unknown>;view:ProjectedRegistryScene;values:WorkflowEditorDraftValues;initialValues:WorkflowEditorDraftValues;unparsed:WorkflowEditorUnparsedEntry[];initialUnparsed:WorkflowEditorUnparsedEntry[];annotations:WorkflowAnnotations;initialAnnotations:WorkflowAnnotations;annotationPlan:WorkflowEditPlan;originalGeometry:MultipartGeometry};
 export function createTrpExternalEditSession(config:ConfigPackageV3,workflow:WorkflowDefinition,initialRecord:Record<string,unknown>):TrpExternalEditSession {

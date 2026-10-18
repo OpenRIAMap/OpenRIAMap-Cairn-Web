@@ -1,6 +1,6 @@
 import type {ConfigPackageV3} from './types';
 import {recordClassification} from './workflowEditing';
-import {normalizeV3WorldId,validateV3WorkflowRecords} from './V3WorkflowRunner';
+import {normalizeV3WorldId,validateV3WorkflowRecords} from './workflowKernel';
 import {assembleAnnotations} from './workflowAnnotations';
 import {hasCategoryNode,hasDescendants,resolveGeometryProfile} from './runtime';
 import {geometryTypeFromFeatureType,readMultipartGeometry,validateMultipartGeometry,withCanonicalMultipartGeometry} from '../core/geometry/multipartGeometry';

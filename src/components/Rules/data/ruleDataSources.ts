@@ -1,4 +1,4 @@
-import { getApplicationSettings, applicationWorld, subscribeApplication } from '@/core/project/applicationRuntime';
+import { subscribeApplication } from '@/core/project/applicationRuntime';
 import { getOpenRIAMapDataSourcesConfig } from '../../../core/project/openriamapRiaEnvironment';
 import { loadWorldRuleDataset } from '@/components/Rules/data/worldRuleDatasetLoader';
 
@@ -44,10 +44,8 @@ function buildRuleDataSources(): Record<string, WorldRuleDataSource> {
 export let RULE_DATA_SOURCES: Record<string, WorldRuleDataSource> = buildRuleDataSources();
 
 
-export function normalizeRuleSourceWorldId(worldId:string):string {
-  const raw=String(worldId??'').trim(),worlds=getApplicationSettings().worlds;
-  return worlds.find(world=>world.id.toLowerCase()===raw.toLowerCase()||world.prefix.toLowerCase()===raw.toLowerCase()||String(world.numericCode)===raw||world.label.zh===raw||world.label.en&&world.label.en===raw)?.id??(raw||applicationWorld('').id);
-}
+export {normalizeRuleSourceWorldId} from '@/core/project/worldIdentity';
+import {normalizeRuleSourceWorldId} from '@/core/project/worldIdentity';
 export async function loadRuleItemsForWorld(worldId:string,_opt?:{fetcher?:(url:string)=>Promise<any[]>}):Promise<any[]> {
   return (await loadWorldRuleDataset(normalizeRuleSourceWorldId(worldId))).features;
 }

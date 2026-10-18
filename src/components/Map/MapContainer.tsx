@@ -242,7 +242,7 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   // features must not be visually mixed with the old railway/landmark layers
   // or be filtered by the V1 rule-button registry.  The V1 lab and ordinary
   // map deliberately keep their existing paths unchanged.
-  const nativeConfigLabActive = Boolean(configLab && isNativeConfigRevision(configRuntime?.contractRevision));
+  const nativeConfigRuntimeActive = Boolean(isNativeConfigRevision(configRuntime?.contractRevision));
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const projectionRef = useRef<DynmapProjection | null>(null);
@@ -2069,13 +2069,13 @@ case 'players':
           visible={true}
           activeButtonIds={activeRuleButtonIds}
           configRuntime={configRuntime}
-          bypassButtonFilter={nativeConfigLabActive}
+          bypassButtonFilter={nativeConfigRuntimeActive && configLab}
         />
       )}
 
 
       {/* 铁路图层 - 有路径规划结果时隐藏 */}
-      {!nativeConfigLabActive && legacyModuleLoaded && mapReady && leafletMapRef.current && projectionRef.current && (
+      {!nativeConfigRuntimeActive && legacyModuleLoaded && mapReady && leafletMapRef.current && projectionRef.current && (
         <Suspense fallback={null}>
           <LazyRailwayLayer
             map={leafletMapRef.current}
@@ -2089,7 +2089,7 @@ case 'players':
       )}
 
       {/* 地标图层 - 有路径规划结果时隐藏 */}
-      {!nativeConfigLabActive && legacyModuleLoaded && mapReady && leafletMapRef.current && projectionRef.current && (
+      {!nativeConfigRuntimeActive && legacyModuleLoaded && mapReady && leafletMapRef.current && projectionRef.current && (
         <Suspense fallback={null}>
           <LazyLandmarkLayer
             map={leafletMapRef.current}

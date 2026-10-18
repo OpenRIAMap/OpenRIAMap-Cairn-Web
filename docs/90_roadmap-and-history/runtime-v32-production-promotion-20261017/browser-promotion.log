@@ -1,0 +1,7 @@
+Main pins formal r11/r7 and 489 readable records; no authoring/measuring/V1 UI is eagerly requested.
+Direct V1 entry asks for admission; frozen page has isolated JS/CSS and Storage.clear cannot clear main state.
+Cancelling the V1 feature gate returns to the formal main page.
+Unsaved category/module drafts block global export; module validation does not unlock it.
+Global verification unlocks export; export allocates revision r100002 automatically and invalidates the gate after saving.
+The 390px export dialog fits the viewport and closes with Escape without losing the saved configuration.
+A local exported revision still does not replace the formal main r7; no application Runtime exceptions occurred.

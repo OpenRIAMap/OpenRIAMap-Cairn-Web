@@ -56,7 +56,7 @@ function parseMeta(raw: string | null): RuleCacheMeta | null {
   }
 }
 
-function readLatestMetaForWorld(worldId: string): RuleCacheMeta | null {
+function readLatestMetaForWorld(worldId: string,source?:Pick<RuleCacheScope,'sourceId'|'transportId'>): RuleCacheMeta | null {
   const normalizedWorld = normalized(worldId);
   let latest: RuleCacheMeta | null = null;
   try {
@@ -65,6 +65,7 @@ function readLatestMetaForWorld(worldId: string): RuleCacheMeta | null {
       if (!key || !key.startsWith(RULE_META_PREFIX)) continue;
       const meta = parseMeta(localStorage.getItem(key));
       if (!meta || meta.worldId !== normalizedWorld) continue;
+      if(source&&(meta.sourceId!==source.sourceId||meta.transportId!==source.transportId))continue;
       if (!latest || meta.cachedAt > latest.cachedAt) latest = meta;
     }
   } catch {
@@ -90,8 +91,8 @@ export function readRuleWorldCache(scopeOrWorld: RuleCacheScope | string): RuleW
   }
 }
 
-export function readRuleWorldMeta(scopeOrWorld: RuleCacheScope | string): RuleCacheMeta | null {
-  if (!isScope(scopeOrWorld)) return readLatestMetaForWorld(scopeOrWorld);
+export function readRuleWorldMeta(scopeOrWorld: RuleCacheScope | string, source?:Pick<RuleCacheScope,'sourceId'|'transportId'>): RuleCacheMeta | null {
+  if (!isScope(scopeOrWorld)) return readLatestMetaForWorld(scopeOrWorld,source);
   try {
     return parseMeta(localStorage.getItem(metaKey(scopeOrWorld)));
   } catch {
@@ -178,6 +179,16 @@ export function clearAllRuleWorldCaches(): void {
   } catch {
     // ignore
   }
+}
+
+export function removeRuleWorldCachesForSource(worldId:string,source:Pick<RuleCacheScope,'sourceId'|'transportId'>):void{
+  const scopes:RuleCacheScope[]=[];
+  for(let index=0;index<localStorage.length;index++){
+    const key=localStorage.key(index);if(!key?.startsWith(RULE_META_PREFIX))continue;
+    const meta=parseMeta(localStorage.getItem(key));
+    if(meta?.worldId===worldId&&meta.sourceId===source.sourceId&&meta.transportId===source.transportId)scopes.push(meta);
+  }
+  for(const scope of scopes)removeRuleWorldCache(scope);
 }
 
 export function getRuleWorldFeatureCount(worldId: string): number | null {

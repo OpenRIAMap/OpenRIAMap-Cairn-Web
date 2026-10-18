@@ -1,9 +1,13 @@
+import {runtimeDatasetView} from '@/configRuntime/runtimeDataView';
 import type { ProgressCallback } from '@/lib/fetchWithMirror';
 import { getRuleDataSourceSnapshot, type RuleDataSourceSnapshot } from './formalDataSourceRuntime';
 import {
   abortActiveFormalDataRequests,
   loadFormalWorldFeatures,
   resolveFormalWorldRelease,
+  assertFormalReleaseCurrent,
+  withStableFormalRelease,
+  type FormalReleaseSet,
 } from './formalReleaseReader';
 import { isRuleWorldCacheValid, readRuleWorldCache, writeRuleWorldCache, type RuleCacheScope } from './worldRuleCache';
 import type { RuleWorldDataset } from './sourceTypes';
@@ -11,8 +15,8 @@ import type { RuleWorldDataset } from './sourceTypes';
 function cacheScope(source: RuleDataSourceSnapshot, releaseId: string, worldId: string): RuleCacheScope { return {sourceId:source.sourceId,transportId:source.transportId,releaseId,worldId,readerSchemaVersion:source.readerSchemaVersion}; }
 /** A view normalizes World for the app; cache/warehouse records stay untouched. */
 export function applicationWorldDataset(dataset:RuleWorldDataset,source:RuleDataSourceSnapshot,worldId:string):RuleWorldDataset {
-  if(!source.resourceGroupId)return dataset;
-  return {...dataset,worldId,resourceGroupId:source.resourceGroupId,remoteWorldId:source.remoteWorldId,features:source.remoteWorldId&&source.remoteWorldId!==worldId?dataset.features.map(feature=>({...feature,World:worldId})):dataset.features};
+  if(!source.resourceGroupId)return runtimeDatasetView(dataset);
+  return runtimeDatasetView({...dataset,worldId,resourceGroupId:source.resourceGroupId,remoteWorldId:source.remoteWorldId,features:source.remoteWorldId&&source.remoteWorldId!==worldId?dataset.features.map(feature=>({...feature,World:worldId})):dataset.features});
 }
 export type RuleWorldVersion = {
   formalVersion: string | null;
@@ -23,9 +27,11 @@ export async function fetchWorldMergeVersion(
   worldId: string,
   _onProgress?: ProgressCallback,
   source: RuleDataSourceSnapshot = getRuleDataSourceSnapshot(worldId),
+  releaseSet?: FormalReleaseSet,
 ): Promise<RuleWorldVersion> {
   if (source.readerKind === 'formal-release-v2') {
-    const release = await resolveFormalWorldRelease({ source, worldId });
+    let initialSet=releaseSet;
+    const release = await withStableFormalRelease(async()=>{const selectedSet=initialSet;initialSet=undefined;const value=await resolveFormalWorldRelease({source,worldId,releaseSet:selectedSet});await assertFormalReleaseCurrent({source,release:value});return value;});
     return { formalVersion: release.formalVersion === null ? null : String(release.formalVersion), releaseId: release.releaseId };
   }
   throw Error('已退役数据格式不能恢复；请选择现役正式数据源。');
@@ -45,13 +51,14 @@ export async function loadWorldRuleDataset(
     throw Error('已退役数据格式不能加载；请选择现役正式数据源。');
   }
 
+  return withStableFormalRelease(async()=>{
   const release = await resolveFormalWorldRelease({ source, worldId });
   const scope = cacheScope(source, release.releaseId, worldId);
   onProgress?.({ stage: 'world-cache-check', status: 'loading' });
   if (isRuleWorldCacheValid(scope)) {
     onProgress?.({ stage: 'world-cache-check', status: 'success' });
     const cached = readRuleWorldCache(scope);
-    if (cached) return applicationWorldDataset(cached,source,worldId);
+    if (cached && cached.features.length===release.worldManifest.featureCount) {await assertFormalReleaseCurrent({source,release});return applicationWorldDataset(cached,source,worldId);}
   } else {
     onProgress?.({ stage: 'world-cache-check', status: 'success', message: 'Cache requires refresh' });
   }
@@ -73,4 +80,5 @@ export async function loadWorldRuleDataset(
   onProgress?.({ stage: 'world-cache-write', status: 'success' });
   onProgress?.({ stage: 'world-ready', status: 'success' });
   return applicationWorldDataset(dataset,source,worldId);
+  });
 }

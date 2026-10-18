@@ -1,4 +1,4 @@
-import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
+import { normalizeRuleSourceWorldId } from '../core/project/worldIdentity';
 import { isNativeConfigRevision } from './contract';
 import type { CardItem, ClassificationPath, ConfigPackageV3 } from './types';
 import { resolveCardConfiguration, resolveEffectiveFields, optionLabel } from './runtime';

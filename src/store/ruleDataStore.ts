@@ -1,3 +1,4 @@
+import {subscribeRuntimeConfiguration,runtimeDatasetView} from '@/configRuntime/runtimeDataView';
 import { getApplicationSettings, subscribeApplication } from '@/core/project/applicationRuntime';
 import { create } from 'zustand';
 import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
@@ -260,3 +261,5 @@ function dropWorldState(state:RuleDataState,ids:readonly string[]){return {datas
 function sourceFingerprints():Map<string,string>{return new Map(getApplicationSettings().worlds.map(world=>{const source=getRuleDataSourceSnapshot(world.id);return [world.id,JSON.stringify([source.sourceId,source.transportId,source.generation])];}));}
 let appliedSources=sourceFingerprints();
 subscribeApplication(()=>{const next=sourceFingerprints(),affected=[...new Set([...appliedSources.keys(),...next.keys()])].filter(world=>next.get(world)!==appliedSources.get(world));appliedSources=next;if(!affected.length)return;abortActiveRuleDatasetRequests(affected);for(const world of affected)removeRuleWorldCache(world);const state=useRuleDataStore.getState();useRuleDataStore.setState({...dropWorldState(state,affected),...(state.loadingWorld&&affected.includes(state.loadingWorld)?{loadingWorld:null}:{}),dataSource:getRuleDataSourceSnapshot(currentWorldId()),dataSourceFailure:null});});
+
+subscribeRuntimeConfiguration(()=>{useRuleDataStore.setState(state=>({datasets:Object.fromEntries(Object.entries(state.datasets).map(([key,dataset])=>[key,runtimeDatasetView(dataset)]))}));});

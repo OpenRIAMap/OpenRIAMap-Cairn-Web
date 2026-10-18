@@ -2,13 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   featureIdentity,
-  loadClassConfigs,
-  loadWorlds,
   nativeFeaturePathInfo,
   packagePaths,
   readJson,
   rel,
 } from './native-relay-package-tools.mjs';
+import {readFormalRelayContext} from './formal-configuration-context.mjs';
 
 function normalizeSlashes(value) {
   return String(value || '').replaceAll(path.sep, '/');
@@ -18,12 +17,8 @@ function nonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-export function createNativeRelayConfigContext(projectId = 'openriamap-ria') {
-  return {
-    projectId,
-    worlds: loadWorlds(),
-    classConfigs: loadClassConfigs(),
-  };
+export function createNativeRelayConfigContext(projectId = 'openriamap-ria', pinnedIdentity) {
+  return readFormalRelayContext(projectId,{identity:pinnedIdentity});
 }
 
 function classificationFields(classConfigEntry) {
@@ -54,6 +49,7 @@ function hasMatchingClassificationOption(feature, classConfigEntry) {
 export function resolveNativeFeatureFile(packageRoot, filePath, data, context, diagnostics = {}) {
   const warnings = diagnostics.warnings ?? [];
   const errors = diagnostics.errors ?? [];
+  const initialErrors=errors.length;
   const info = nativeFeaturePathInfo(packageRoot, filePath);
   const relative = normalizeSlashes(path.relative(packageRoot, filePath));
   if (!info.validPathShape) {
@@ -62,10 +58,10 @@ export function resolveNativeFeatureFile(packageRoot, filePath, data, context, d
   }
 
   const world = context.worlds.byId.get(info.worldId);
-  if (!world) errors.push(`[world] ${relative} worldId "${info.worldId}" is not registered in worlds.json`);
+  if (!world) errors.push(`[world] ${relative} worldId "${info.worldId}" is not registered in formal configuration`);
 
   const classConfigEntry = context.classConfigs.get(info.classCode);
-  if (!classConfigEntry) errors.push(`[class] ${relative} classCode "${info.classCode}" is not registered in class configs`);
+  if (!classConfigEntry) errors.push(`[class] ${relative} classCode "${info.classCode}" is not registered in formal configuration`);
 
   if (data && typeof data === 'object' && !Array.isArray(data)) {
     const identity = featureIdentity(data, classConfigEntry?.data);
@@ -96,6 +92,7 @@ export function resolveNativeFeatureFile(packageRoot, filePath, data, context, d
     if (!hasMatchingClassificationOption(data, classConfigEntry)) {
       warnings.push(`[classification] ${relative} classification tuple is not present in class option config`);
     }
+    for(const issue of context.validateRecord(data,info.worldId))errors.push(`[configuration] ${relative} ${issue}`);
   }
 
   const ref = {
@@ -106,7 +103,7 @@ export function resolveNativeFeatureFile(packageRoot, filePath, data, context, d
     featureId: info.featureIdFromFile,
   };
   const key = [ref.projectId, ref.worldId, ref.classCode, ...(ref.kindPath ?? []), ref.featureId].join('/');
-  return { valid: true, info, ref, key, relative };
+  return { valid: errors.length===initialErrors, info, ref, key, relative };
 }
 
 export function resolveNativePictureFile(packageRoot, filePath, context, diagnostics = {}) {

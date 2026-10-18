@@ -1,0 +1,570 @@
+{
+  "readOnly": true,
+  "total": 495,
+  "strictIncomingInvalid": 79,
+  "issues": [
+    {
+      "id": "Test1",
+      "Class": "BUD",
+      "issues": [
+        "configuration-unknown-final-classification"
+      ]
+    },
+    {
+      "id": "FLRtest",
+      "Class": "FLR",
+      "issues": [
+        "configuration-unknown-final-classification"
+      ]
+    },
+    {
+      "id": "TEST2",
+      "Class": "FLR",
+      "issues": [
+        "configuration-unknown-final-classification"
+      ]
+    },
+    {
+      "id": "Test3",
+      "Class": "FLR",
+      "issues": [
+        "configuration-unknown-final-classification"
+      ]
+    },
+    {
+      "id": "Test4",
+      "Class": "FLR",
+      "issues": [
+        "configuration-unknown-final-classification"
+      ]
+    },
+    {
+      "id": "Test5",
+      "Class": "FLR",
+      "issues": [
+        "configuration-unknown-final-classification"
+      ]
+    },
+    {
+      "id": "ZRT13STA_01",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT13STA_02",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT13STA_03",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT13STA_04",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT13STA_05",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT13STA_06",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_01",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_02",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_03",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_04",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_05",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_06",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_07",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_08",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_09",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_10",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_11",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_12",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_14",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_15",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_16",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_17",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_18",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_20",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_21",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT1STA_22",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_01",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_02",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_03",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_04",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_05",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_06",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_07",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_08",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_09",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_11",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_12",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_13",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_14",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_15",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_16",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_17",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_18",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_19",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_20",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_21",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_22",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT4STA_23",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_01",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_02",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_03",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_04",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_05",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_07",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_08",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_09",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_10",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_11",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_12",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_13",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_14",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_15",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRT7STA_16",
+      "Class": "STA",
+      "issues": [
+        "输出 incoming-record 的 STBuilding 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRTSTF_BL_01",
+      "Class": "STF",
+      "issues": [
+        "输出 incoming-record 缺少单值主结构 ID（staBuildingID）。",
+        "输出 incoming-record 的 staBuildingID 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRTSTF_BL_02",
+      "Class": "STF",
+      "issues": [
+        "输出 incoming-record 缺少单值主结构 ID（staBuildingID）。",
+        "输出 incoming-record 的 staBuildingID 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRTSTF_BL_03",
+      "Class": "STF",
+      "issues": [
+        "输出 incoming-record 缺少单值主结构 ID（staBuildingID）。",
+        "输出 incoming-record 的 staBuildingID 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRTSTF_BL_04",
+      "Class": "STF",
+      "issues": [
+        "输出 incoming-record 缺少单值主结构 ID（staBuildingID）。",
+        "输出 incoming-record 的 staBuildingID 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRTSTF_QHC_01",
+      "Class": "STF",
+      "issues": [
+        "输出 incoming-record 缺少单值主结构 ID（staBuildingID）。",
+        "输出 incoming-record 的 staBuildingID 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRTSTF_SD_01",
+      "Class": "STF",
+      "issues": [
+        "输出 incoming-record 缺少单值主结构 ID（staBuildingID）。",
+        "输出 incoming-record 的 staBuildingID 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRTSTF_SD_02",
+      "Class": "STF",
+      "issues": [
+        "输出 incoming-record 缺少单值主结构 ID（staBuildingID）。",
+        "输出 incoming-record 的 staBuildingID 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRTSTF_SD_03",
+      "Class": "STF",
+      "issues": [
+        "输出 incoming-record 缺少单值主结构 ID（staBuildingID）。",
+        "输出 incoming-record 的 staBuildingID 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRTSTF_SD_04",
+      "Class": "STF",
+      "issues": [
+        "输出 incoming-record 缺少单值主结构 ID（staBuildingID）。",
+        "输出 incoming-record 的 staBuildingID 为必填项。"
+      ]
+    },
+    {
+      "id": "ZRTSTF_SD_05",
+      "Class": "STF",
+      "issues": [
+        "输出 incoming-record 缺少单值主结构 ID（staBuildingID）。",
+        "输出 incoming-record 的 staBuildingID 为必填项。"
+      ]
+    }
+  ]
+}

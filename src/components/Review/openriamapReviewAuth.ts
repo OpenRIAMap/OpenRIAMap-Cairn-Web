@@ -23,6 +23,15 @@ function message(body: unknown, fallback: string): string {
 
 const AUTH_MESSAGE = 'cairn-review-auth-complete';
 
+export async function readReviewSessionResponse(response:Response,localPreview=false):Promise<ReviewAuthSessionState>{
+  if(response.status===401)return {status:'expired',message:'GitHub 登录会话已过期，请重新登录。'};
+  const json=/\bapplication\/(?:[a-z0-9.-]+\+)?json\b/i.test(response.headers.get('content-type')??'');
+  if(!json)return {status:'unavailable',message:localPreview?'本地预览未接入审核服务，会话接口没有返回JSON。部署或接入本地后端后，可刷新状态重试。':'登录服务接口返回异常，未取得会话JSON。请检查API部署后刷新状态。'};
+  let body:unknown;try{body=await response.json();}catch{return {status:'unavailable',message:'登录服务返回的JSON无效，请刷新状态重试。'};}
+  if(!response.ok)return {status:'unavailable',message:message(body,`无法读取 GitHub 登录状态（HTTP ${response.status}）。`)};
+  return normalizeReviewAuthSession(body);
+}
+
 function popupNonce(): string {
   return crypto.randomUUID();
 }
@@ -71,10 +80,8 @@ export const openriamapGithubReviewAuth: ReviewAuthPort = {
       const path = options.includeRoles === false
         ? reviewEndpoint('session')+'?includeRoles=0'
         : reviewEndpoint('session');
-      const { response, body } = await jsonRequest(path);
-      if (response.ok) return normalizeReviewAuthSession(body);
-      if (response.status === 401) return { status: 'expired', message: 'GitHub 登录会话已过期，请重新登录。' };
-      return { status: 'unavailable', message: message(body, '无法读取 GitHub 登录状态。') };
+      const response=await fetch(path,{credentials:'same-origin',cache:'no-store'});
+      return readReviewSessionResponse(response,['localhost','127.0.0.1','[::1]'].includes(window.location.hostname));
     } catch {
       return { status: 'unavailable', message: '无法连接 GitHub 登录状态服务。' };
     }

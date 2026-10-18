@@ -1,3 +1,6 @@
+import {stableConfigText} from '../configRuntime/configurationFingerprint';
+export {stableConfigText} from '../configRuntime/configurationFingerprint';
+import {setRuntimeConfiguration} from '../configRuntime/runtimeDataView';
 import { applyApplicationSettings, checkApplicationTransition } from '../core/project/applicationRuntime';
 import manifest from './defaults/manifest.json';
 import type { ConfigPackageV3 } from './types';
@@ -15,11 +18,6 @@ const providers=globalThis as unknown as Record<symbol,ProviderState>;
 const state=providers[slot]??={writes:Promise.resolve()};
 if(state.seedHash!==manifest.sha256){state.seedPromise=undefined;state.activePromise=undefined;state.seedHash=manifest.sha256;}
 
-export function stableConfigText(value: unknown): string {
-  if (Array.isArray(value)) return '['+value.map(item=>stableConfigText(item)??'null').join(',')+']';
-  if (value && typeof value==='object') {const record=value as Record<string,unknown>;return '{'+Object.keys(record).sort().filter(key=>record[key]!==undefined).map(key=>JSON.stringify(key)+':'+stableConfigText(record[key])).join(',')+'}';}
-  return JSON.stringify(value);
-}
 async function hash(text: string): Promise<string> {return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))].map(byte=>byte.toString(16).padStart(2,'0')).join('');}
 async function fingerprint(config: ConfigPackageV3): Promise<string> {const {parity:_parity,...content}=config;return hash(stableConfigText(content));}
 function choice(): {kind:'default'|'custom';fingerprint?:string} | undefined {try {return JSON.parse(localStorage.getItem(CHOICE)??'null')??undefined;}catch{return undefined;}}
@@ -48,12 +46,12 @@ export function loadActiveConfig(): Promise<ConfigPackageV3> {
     try {if(latestRaw)latest=prepareConfigForActivation(JSON.parse(latestRaw));}catch{if(latestRaw)await archiveConfigRecovery('rejected-local-latest',latestRaw);}
     const latestFingerprint=latest?await fingerprint(latest):undefined;
     const untouchedPreviousDefault=latestFingerprint!==undefined&&manifest.legacyDefaultFingerprints.includes(latestFingerprint);
-    if(selected?.kind==='custom'&&latest&&(!selected.fingerprint||latestFingerprint===selected.fingerprint)) {await preserveSessionDrafts(latest);state.active=latest;applyApplicationSettings(state.active.application);mirror(state.active);return state.active;}
+    if(selected?.kind==='custom'&&latest&&(!selected.fingerprint||latestFingerprint===selected.fingerprint)) {await preserveSessionDrafts(latest);state.active=latest;setRuntimeConfiguration(state.active);applyApplicationSettings(state.active.application);mirror(state.active);return state.active;}
     const seed=await loadDefaultConfig();
     if(selected?.kind!=='default') {
       if(latest&&latestFingerprint!==manifest.semanticFingerprint)await archiveConfigRecovery(untouchedPreviousDefault?'previous-default-seed':'previous-local-latest',JSON.stringify(latest));
     }
-    await preserveSessionDrafts(seed);await saveActiveConfigChoice({kind:'default'});state.active=seed;applyApplicationSettings(seed.application);try{localStorage.setItem(CHOICE,JSON.stringify({kind:'default'}));}catch{/* durable pointer is in IndexedDB */}applyApplicationSettings(state.active.application);mirror(state.active);return state.active;
+    await preserveSessionDrafts(seed);await saveActiveConfigChoice({kind:'default'});state.active=seed;setRuntimeConfiguration(seed);applyApplicationSettings(seed.application);try{localStorage.setItem(CHOICE,JSON.stringify({kind:'default'}));}catch{/* durable pointer is in IndexedDB */}setRuntimeConfiguration(state.active);applyApplicationSettings(state.active.application);mirror(state.active);return state.active;
   })();
 }
 
@@ -67,11 +65,11 @@ export function persistActiveConfig(value: ConfigPackageV3, increment=false, exp
     for(let attempt=0;;attempt++) {
       try {await saveConfigLabPackage(config,{kind:'custom',fingerprint:await fingerprint(config)},true,expected);break;}catch(error){const savingSeed=await fingerprint(value)===manifest.semanticFingerprint;if((!increment&&!savingSeed)||attempt>=3||!(error instanceof Error)||!error.message.includes('ID/revision'))throw error;config=prepareConfigForActivation({...config,revision:Math.max(config.revision+1,(await highestConfigLabRevision(config.packageId))+1)});}
     }
-    try{localStorage.setItem(CHOICE,JSON.stringify({kind:'custom',fingerprint:await fingerprint(config)}));}catch{/* durable pointer is in IndexedDB */}state.active=config;applyApplicationSettings(config.application);state.editingSession=undefined;mirror(config);return config;
+    try{localStorage.setItem(CHOICE,JSON.stringify({kind:'custom',fingerprint:await fingerprint(config)}));}catch{/* durable pointer is in IndexedDB */}state.active=config;setRuntimeConfiguration(config);applyApplicationSettings(config.application);state.editingSession=undefined;mirror(config);return config;
   });
   state.writes=task;return task;
 }
-export async function restoreApplicationDefault():Promise<void> {await state.writes.catch(()=>undefined);const seed=await loadDefaultConfig();if(seed.application)await checkApplicationTransition(seed.application);if(state.active&&await fingerprint(state.active)!==await fingerprint(seed))await archiveConfigRecovery('before-restore-default',JSON.stringify(state.active));await saveActiveConfigChoice({kind:'default'});state.active=seed;applyApplicationSettings(seed.application);try{localStorage.setItem(CHOICE,JSON.stringify({kind:'default'}));}catch{/* durable pointer is in IndexedDB */}mirror(seed);}
+export async function restoreApplicationDefault():Promise<void> {await state.writes.catch(()=>undefined);const seed=await loadDefaultConfig();if(seed.application)await checkApplicationTransition(seed.application);if(state.active&&await fingerprint(state.active)!==await fingerprint(seed))await archiveConfigRecovery('before-restore-default',JSON.stringify(state.active));await saveActiveConfigChoice({kind:'default'});state.active=seed;setRuntimeConfiguration(seed);applyApplicationSettings(seed.application);try{localStorage.setItem(CHOICE,JSON.stringify({kind:'default'}));}catch{/* durable pointer is in IndexedDB */}mirror(seed);}
 export async function restoreConfigRecovery(key:string):Promise<void> {const raw=await readConfigRecovery(key);if(!raw)throw Error('恢复副本不存在。');await persistActiveConfig(JSON.parse(raw.raw),true);}
 export async function downloadConfigRecovery(key:string):Promise<void> {const entry=await readConfigRecovery(key);if(!entry)throw Error('恢复副本不存在。');const url=URL.createObjectURL(new Blob([entry.raw],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='cairnmap-recovery-'+entry.source+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 export const getConfigRecoveries=():Promise<ConfigRecovery[]>=>listConfigRecoveries();
