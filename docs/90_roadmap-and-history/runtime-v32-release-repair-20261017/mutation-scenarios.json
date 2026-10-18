@@ -1,0 +1,4067 @@
+[
+  {
+    "id": "WF01",
+    "area": "工作流",
+    "name": "删除仍被组装引用的根字段",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod/card/items/rod_road-card-Level-4",
+          "message": "信息卡字段 Level 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-nom/card/items/rod_road-card-Level-4",
+          "message": "信息卡字段 Level 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-tuk/card/items/rod_road-card-Level-4",
+          "message": "信息卡字段 Level 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-pri/card/items/rod_road-card-Level-4",
+          "message": "信息卡字段 Level 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-sec/card/items/rod_road-card-Level-4",
+          "message": "信息卡字段 Level 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-sed/card/items/rod_road-card-Level-4",
+          "message": "信息卡字段 Level 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-res/card/items/rod_road-card-Level-4",
+          "message": "信息卡字段 Level 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-svs/card/items/rod_road-card-Level-4",
+          "message": "信息卡字段 Level 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-idr/card/items/rod_road-card-Level-4",
+          "message": "信息卡字段 Level 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-spe/card/items/rod_road-card-Level-4",
+          "message": "信息卡字段 Level 未定义。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "字段组装目标 Level 不是有效字段、tags 或 extensions 路径。"
+        }
+      ],
+      "warnings": [
+        {
+          "code": "prefill-source-field-missing",
+          "path": "nodes/class-rod/card/rod_road-card-Level-4",
+          "message": "预填来源 ROD / Level 已不存在；当前副本仍独立保存，请确认是否需要更新。"
+        }
+      ]
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "字段组装目标 Level 不是有效字段、tags 或 extensions 路径。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/card/items/rod_road-card-Level-4：信息卡字段 Level 未定义。；nodes/class-rod-nom/card/items/rod_road-card-Level-4：信息卡字段 Level 未定义。；nodes/class-rod-tuk/card/items/rod_road-card-Level-4：信息卡字段 Level 未定义。；nodes/class-rod-pri/card/items/rod_road-card-Level-4：信息卡字段 Level 未定义。；nodes",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF02",
+    "area": "工作流",
+    "name": "数值目标改为布尔类型",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-import-target-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "输入控件与输出目标的保存值类型或值数量不兼容。"
+        },
+        {
+          "code": "workflow-expression-type-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "表达式返回 number，目标 Level 需要 单值 boolean。请调整表达式或控件保存类型。"
+        }
+      ],
+      "warnings": [
+        {
+          "code": "prefill-copy-outdated",
+          "path": "nodes/class-rod/card/rod_road-card-Level-4",
+          "message": "来源 ROD / Level 的定义、名称、类型或对照已变化；nodes/class-rod/card/rod_road-card-Level-4 仍保留独立副本。请重新预填，或确认保留本次自定义副本。"
+        }
+      ]
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-import-target-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "输入控件与输出目标的保存值类型或值数量不兼容。"
+        },
+        {
+          "code": "workflow-expression-type-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "表达式返回 number，目标 Level 需要 单值 boolean。请调整表达式或控件保存类型。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F：输入控件与输出目标的保存值类型或值数量不兼容。；workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F：表达式返回 number，目标 Level 需要 单值 boolean。请调整表达式或控件保存类型。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF03",
+    "area": "工作流",
+    "name": "单值目标改为多值",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-import-target-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "输入控件与输出目标的保存值类型或值数量不兼容。"
+        },
+        {
+          "code": "workflow-expression-type-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "表达式返回 number，目标 Level 需要 多值 number。请调整表达式或控件保存类型。"
+        }
+      ],
+      "warnings": [
+        {
+          "code": "prefill-copy-outdated",
+          "path": "nodes/class-rod/card/rod_road-card-Level-4",
+          "message": "来源 ROD / Level 的定义、名称、类型或对照已变化；nodes/class-rod/card/rod_road-card-Level-4 仍保留独立副本。请重新预填，或确认保留本次自定义副本。"
+        }
+      ]
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-import-target-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "输入控件与输出目标的保存值类型或值数量不兼容。"
+        },
+        {
+          "code": "workflow-expression-type-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "表达式返回 number，目标 Level 需要 多值 number。请调整表达式或控件保存类型。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F：输入控件与输出目标的保存值类型或值数量不兼容。；workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F：表达式返回 number，目标 Level 需要 多值 number。请调整表达式或控件保存类型。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF04",
+    "area": "工作流",
+    "name": "数值控件改为布尔控件",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-value-normalization-kind-conflict",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Level-F",
+          "message": "布尔控件应保存布尔值，不能残留文字或数值规范化。需要数值时请在组装表达式中显式转换。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-value-normalization-kind-conflict",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Level-F",
+          "message": "布尔控件应保存布尔值，不能残留文字或数值规范化。需要数值时请在组装表达式中显式转换。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Level-F：布尔控件应保存布尔值，不能残留文字或数值规范化。需要数值时请在组装表达式中显式转换。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF05",
+    "area": "工作流",
+    "name": "引用不存在的槽位",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "控件 F（道路层级（Level，必选））缺少可逆直接赋值或明确回填映射。"
+        },
+        {
+          "code": "workflow-assignment-slot-missing",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "字段组装引用了不存在的输入槽位或系统字段 MISSING_SLOT。"
+        }
+      ],
+      "warnings": [
+        {
+          "code": "workflow-expression-type-unknown",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "目标 Level 的动态结果类型无法静态确定，请使用试运行核对；提交前仍会检查实际记录。"
+        }
+      ]
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "控件 F（道路层级（Level，必选））缺少可逆直接赋值或明确回填映射。"
+        },
+        {
+          "code": "workflow-assignment-slot-missing",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "字段组装引用了不存在的输入槽位或系统字段 MISSING_SLOT。"
+        }
+      ],
+      "warnings": [
+        {
+          "code": "workflow-expression-type-unknown",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "目标 Level 的动态结果类型无法静态确定，请使用试运行核对；提交前仍会检查实际记录。"
+        }
+      ]
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road：控件 F（道路层级（Level，必选））缺少可逆直接赋值或明确回填映射。；workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F：字段组装引用了不存在的输入槽位或系统字段 MISSING_SLOT。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF06",
+    "area": "工作流",
+    "name": "非法表达式",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "无法解析第 6 个字符；只允许槽位、系统字段、文本、+ 和 join。"
+        },
+        {
+          "code": "workflow-output-dependency-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "无法解析第 6 个字符；只允许槽位、系统字段、文本、+ 和 join。"
+        },
+        {
+          "code": "workflow-assignment-expression-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "无法解析第 6 个字符；只允许槽位、系统字段、文本、+ 和 join。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "无法解析第 6 个字符；只允许槽位、系统字段、文本、+ 和 join。"
+        },
+        {
+          "code": "workflow-output-dependency-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "无法解析第 6 个字符；只允许槽位、系统字段、文本、+ 和 join。"
+        },
+        {
+          "code": "workflow-assignment-expression-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "无法解析第 6 个字符；只允许槽位、系统字段、文本、+ 和 join。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road：无法解析第 6 个字符；只允许槽位、系统字段、文本、+ 和 join。；workflows/v3-rod_road：无法解析第 6 个字符；只允许槽位、系统字段、文本、+ 和 join。；workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F：无法解析第 6 个字符；只允许槽位、系统字段、文本、+ 和 join。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF07",
+    "area": "工作流",
+    "name": "原型污染目标路径",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "无效组装路径：extensions.__proto__.polluted"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "字段组装目标 extensions.__proto__.polluted 不是有效字段、tags 或 extensions 路径。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "无效组装路径：extensions.__proto__.polluted"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "字段组装目标 extensions.__proto__.polluted 不是有效字段、tags 或 extensions 路径。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road：无效组装路径：extensions.__proto__.polluted；workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F：字段组装目标 extensions.__proto__.polluted 不是有效字段、tags 或 extensions 路径。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF08",
+    "area": "工作流",
+    "name": "覆盖系统分类",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "系统字段 Class 不能由组装覆盖。"
+        },
+        {
+          "code": "workflow-system-target-protected",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "系统字段 Class 不能由字段组装覆盖。"
+        },
+        {
+          "code": "workflow-expression-type-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "表达式返回 number，目标 Class 需要 单值 string。请调整表达式或控件保存类型。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "系统字段 Class 不能由组装覆盖。"
+        },
+        {
+          "code": "workflow-system-target-protected",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "系统字段 Class 不能由字段组装覆盖。"
+        },
+        {
+          "code": "workflow-expression-type-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "表达式返回 number，目标 Class 需要 单值 string。请调整表达式或控件保存类型。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road：系统字段 Class 不能由组装覆盖。；workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F：系统字段 Class 不能由字段组装覆盖。；workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F：表达式返回 number，目标 Class 需要 单值 string。请调整表达式",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF09",
+    "area": "工作流",
+    "name": "重复槽位",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-slot-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Oneway-G",
+          "message": "输出槽位 F 无效、重复或与系统 token 冲突。"
+        },
+        {
+          "code": "workflow-assignment-slot-missing",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Oneway-G",
+          "message": "字段组装引用了不存在的输入槽位或系统字段 G。"
+        },
+        {
+          "code": "workflow-expression-type-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "表达式返回 boolean，目标 Level 需要 单值 number。请调整表达式或控件保存类型。"
+        }
+      ],
+      "warnings": [
+        {
+          "code": "workflow-expression-type-unknown",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Oneway-G",
+          "message": "目标 Oneway 的动态结果类型无法静态确定，请使用试运行核对；提交前仍会检查实际记录。"
+        }
+      ]
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-slot-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Oneway-G",
+          "message": "输出槽位 F 无效、重复或与系统 token 冲突。"
+        },
+        {
+          "code": "workflow-assignment-slot-missing",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Oneway-G",
+          "message": "字段组装引用了不存在的输入槽位或系统字段 G。"
+        },
+        {
+          "code": "workflow-expression-type-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "表达式返回 boolean，目标 Level 需要 单值 number。请调整表达式或控件保存类型。"
+        }
+      ],
+      "warnings": [
+        {
+          "code": "workflow-expression-type-unknown",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Oneway-G",
+          "message": "目标 Oneway 的动态结果类型无法静态确定，请使用试运行核对；提交前仍会检查实际记录。"
+        }
+      ]
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Oneway-G：输出槽位 F 无效、重复或与系统 token 冲突。；workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Oneway-G：字段组装引用了不存在的输入槽位或系统字段 G。；workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-ass",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF10",
+    "area": "工作流",
+    "name": "引用不存在的输出分类",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "编辑作用范围必须为输出范围内的实际分类。"
+        },
+        {
+          "code": "workflow-classification-picker-stale",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1",
+          "message": "工作流输出分类的子分类状态已变化；请打开工作流以刷新系统 Classification 控件。"
+        },
+        {
+          "code": "workflow-output-classification-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1",
+          "message": "工作流输出必须选择存在且连续的目标分类。"
+        },
+        {
+          "code": "workflow-output-geometry-disabled",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1",
+          "message": "输出范围没有最终分类启用 LineString 绘制类型。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "字段组装目标 Level 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Oneway-G",
+          "message": "字段组装目标 Oneway 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Enter-H",
+          "message": "字段组装目标 Enter 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Exit-I",
+          "message": "字段组装目标 Exit 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-SelfJunction-J",
+          "message": "字段组装目标 SelfJunction 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Speed-K",
+          "message": "字段组装目标 Speed 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-ConnectL-P",
+          "message": "字段组装目标 ConnectL 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Blacklist-Q",
+          "message": "字段组装目标 Blacklist 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Mode-R",
+          "message": "字段组装目标 Mode 不是有效字段、tags 或 extensions 路径。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "编辑作用范围必须为输出范围内的实际分类。"
+        },
+        {
+          "code": "workflow-classification-picker-stale",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1",
+          "message": "工作流输出分类的子分类状态已变化；请打开工作流以刷新系统 Classification 控件。"
+        },
+        {
+          "code": "workflow-output-classification-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1",
+          "message": "工作流输出必须选择存在且连续的目标分类。"
+        },
+        {
+          "code": "workflow-output-geometry-disabled",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1",
+          "message": "输出范围没有最终分类启用 LineString 绘制类型。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "字段组装目标 Level 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Oneway-G",
+          "message": "字段组装目标 Oneway 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Enter-H",
+          "message": "字段组装目标 Enter 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Exit-I",
+          "message": "字段组装目标 Exit 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-SelfJunction-J",
+          "message": "字段组装目标 SelfJunction 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Speed-K",
+          "message": "字段组装目标 Speed 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-ConnectL-P",
+          "message": "字段组装目标 ConnectL 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Blacklist-Q",
+          "message": "字段组装目标 Blacklist 不是有效字段、tags 或 extensions 路径。"
+        },
+        {
+          "code": "workflow-assignment-target-invalid",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Mode-R",
+          "message": "字段组装目标 Mode 不是有效字段、tags 或 extensions 路径。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road：编辑作用范围必须为输出范围内的实际分类。；workflows/v3-rod_road/outputs/rod_road-output-1：工作流输出分类的子分类状态已变化；请打开工作流以刷新系统 Classification 控件。；workflows/v3-rod_road/outputs/rod_road-output-1：工作流输出必须选择存在且连续的目标分类。；workflows/v3-rod_road/outputs/rod_road-output-1：输出范围没有最终分类启用 LineString 绘",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF11",
+    "area": "工作流",
+    "name": "输入默认值不合法",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-default-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Level-F",
+          "message": "默认值与输入类型/选项不一致。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-default-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Level-F",
+          "message": "默认值与输入类型/选项不一致。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Level-F：默认值与输入类型/选项不一致。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF12",
+    "area": "工作流",
+    "name": "重复组字段名重复",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-repeat-group-field-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-ConnectL-P/group/mode",
+          "message": "重复字段组字段名必须以字母开头且不能重复。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-repeat-group-field-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-ConnectL-P/group/mode",
+          "message": "重复字段组字段名必须以字母开头且不能重复。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-ConnectL-P/group/mode：重复字段组字段名必须以字母开头且不能重复。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF13",
+    "area": "工作流",
+    "name": "启用条件引用不存在的槽位",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "不能包含输入、页面或输出的启用条件。"
+        },
+        {
+          "code": "workflow-value-condition-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Level-F",
+          "message": "执行条件必须使用已声明 token 与受控操作。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "不能包含输入、页面或输出的启用条件。"
+        },
+        {
+          "code": "workflow-value-condition-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Level-F",
+          "message": "执行条件必须使用已声明 token 与受控操作。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road：不能包含输入、页面或输出的启用条件。；workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Level-F：执行条件必须使用已声明 token 与受控操作。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF14",
+    "area": "工作流",
+    "name": "绘制页使用未来页面的条件槽位",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "必须恰为填写人、信息收集、要素绘制三页。\n不能包含输入、页面或输出的启用条件。"
+        },
+        {
+          "code": "workflow-geometry-must-be-last",
+          "path": "workflows/v3-rod_road",
+          "message": "最后一步必须是任一绘制页。"
+        },
+        {
+          "code": "workflow-form-page-order-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "基本信息页必须位于填写人和 tags/extensions 尾部区之间。"
+        },
+        {
+          "code": "workflow-value-condition-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-geometry",
+          "message": "执行条件必须使用已声明 token 与受控操作。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "必须恰为填写人、信息收集、要素绘制三页。\n不能包含输入、页面或输出的启用条件。"
+        },
+        {
+          "code": "workflow-geometry-must-be-last",
+          "path": "workflows/v3-rod_road",
+          "message": "最后一步必须是任一绘制页。"
+        },
+        {
+          "code": "workflow-form-page-order-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "基本信息页必须位于填写人和 tags/extensions 尾部区之间。"
+        },
+        {
+          "code": "workflow-value-condition-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-geometry",
+          "message": "执行条件必须使用已声明 token 与受控操作。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road：必须恰为填写人、信息收集、要素绘制三页。\n不能包含输入、页面或输出的启用条件。；workflows/v3-rod_road：最后一步必须是任一绘制页。；workflows/v3-rod_road：基本信息页必须位于填写人和 tags/extensions 尾部区之间。；workflows/v3-rod_road/steps/rod_road-geometry：执行条件必须使用已声明 token 与受控操作。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF15",
+    "area": "工作流",
+    "name": "搜索返回不存在的字段",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-search-return-field-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Land-C",
+          "message": "搜索控件必须选择一个有效的单一返回字段。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-search-return-field-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Land-C",
+          "message": "搜索控件必须选择一个有效的单一返回字段。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-Land-C：搜索控件必须选择一个有效的单一返回字段。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF16",
+    "area": "工作流",
+    "name": "绘制返回格式与线类型不符",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "单点坐标对象格式必须且只能采集一个点。"
+        },
+        {
+          "code": "workflow-drawing-format-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-geometry",
+          "message": "返回格式与点/线/面类型不匹配。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "单点坐标对象格式必须且只能采集一个点。"
+        },
+        {
+          "code": "workflow-drawing-format-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-geometry",
+          "message": "返回格式与点/线/面类型不匹配。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road：单点坐标对象格式必须且只能采集一个点。；workflows/v3-rod_road/steps/rod_road-geometry：返回格式与点/线/面类型不匹配。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF17",
+    "area": "工作流",
+    "name": "额外绘制不声明返回槽位",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "不能包含额外绘制。"
+        },
+        {
+          "code": "workflow-geometry-output-count-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "每个工作流输出必须有且只有一个尾部绘制页。"
+        },
+        {
+          "code": "workflow-geometry-output-binding-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "绘制页必须逐一绑定对应工作流输出。"
+        },
+        {
+          "code": "workflow-extra-slot-required",
+          "path": "workflows/v3-rod_road/steps/rod_road-geometry",
+          "message": "额外绘制必须定义返回槽位。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "不能包含额外绘制。"
+        },
+        {
+          "code": "workflow-geometry-output-count-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "每个工作流输出必须有且只有一个尾部绘制页。"
+        },
+        {
+          "code": "workflow-geometry-output-binding-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "绘制页必须逐一绑定对应工作流输出。"
+        },
+        {
+          "code": "workflow-extra-slot-required",
+          "path": "workflows/v3-rod_road/steps/rod_road-geometry",
+          "message": "额外绘制必须定义返回槽位。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road：不能包含额外绘制。；workflows/v3-rod_road：每个工作流输出必须有且只有一个尾部绘制页。；workflows/v3-rod_road：绘制页必须逐一绑定对应工作流输出。；workflows/v3-rod_road/steps/rod_road-geometry：额外绘制必须定义返回槽位。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF18",
+    "area": "工作流",
+    "name": "同一目标有两条无条件组装",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-target-write-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/duplicate-target",
+          "message": "目标 Level 同时由 workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F 与 workflows/v3-rod_road/outputs/rod_road-output-1/assignments/duplicate-target 写入，执行条件不能证明互斥。请合并组装或设置互斥条件。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-target-write-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/duplicate-target",
+          "message": "目标 Level 同时由 workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F 与 workflows/v3-rod_road/outputs/rod_road-output-1/assignments/duplicate-target 写入，执行条件不能证明互斥。请合并组装或设置互斥条件。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road/outputs/rod_road-output-1/assignments/duplicate-target：目标 Level 同时由 workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F 与 workflows/v3-rod_road/outputs/rod_road-output-1/assignments/duplicate-target 写入，执行条件不能证明互斥。请合并组装或设置互斥",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF19",
+    "area": "工作流",
+    "name": "常量文字写入数值字段",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-expression-type-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "表达式返回 string，目标 Level 需要 单值 number。请调整表达式或控件保存类型。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-expression-type-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "表达式返回 string，目标 Level 需要 单值 number。请调整表达式或控件保存类型。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F：表达式返回 string，目标 Level 需要 单值 number。请调整表达式或控件保存类型。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF20",
+    "area": "工作流",
+    "name": "复合表达式返回文本写入数值字段",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-expression-type-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "表达式返回 string，目标 Level 需要 单值 number。请调整表达式或控件保存类型。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-expression-type-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F",
+          "message": "表达式返回 string，目标 Level 需要 单值 number。请调整表达式或控件保存类型。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Level-F：表达式返回 string，目标 Level 需要 单值 number。请调整表达式或控件保存类型。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF21",
+    "area": "工作流",
+    "name": "number 控件默认值为可规范化的数值字符串",
+    "expected": "allow",
+    "package": {
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    "activationBlocked": false,
+    "exportBlocked": false,
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF22",
+    "area": "工作流",
+    "name": "直接槽位选项超出目标枚举",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-import-target-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/audit-enum",
+          "message": "工作流选项包含输出目标字段不允许的保存值。"
+        },
+        {
+          "code": "workflow-expression-enum-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/audit-enum",
+          "message": "表达式包含目标 AuditValue 对照表不允许的保存值。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-import-target-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/audit-enum",
+          "message": "工作流选项包含输出目标字段不允许的保存值。"
+        },
+        {
+          "code": "workflow-expression-enum-conflict",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/audit-enum",
+          "message": "表达式包含目标 AuditValue 对照表不允许的保存值。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road/outputs/rod_road-output-1/assignments/audit-enum：工作流选项包含输出目标字段不允许的保存值。；workflows/v3-rod_road/outputs/rod_road-output-1/assignments/audit-enum：表达式包含目标 AuditValue 对照表不允许的保存值。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF23",
+    "area": "工作流",
+    "name": "已删除的 tags 字段仍被 assignment 引用（动态路径）",
+    "expected": "allow",
+    "package": {
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        {
+          "code": "prefill-source-field-missing",
+          "path": "nodes/class-rod/card/rod_road-card-nomenclator-0",
+          "message": "预填来源 ROD / tags.nomenclator 已不存在；当前副本仍独立保存，请确认是否需要更新。"
+        }
+      ]
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    "activationBlocked": false,
+    "exportBlocked": false,
+    "matchesExpectation": true
+  },
+  {
+    "id": "WF24",
+    "area": "工作流",
+    "name": "专供编辑工作流错误开放给便捷测绘",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-dedicated-visible",
+          "path": "workflows/v3-editor-sta",
+          "message": "专供编辑工作流必须关闭便捷测绘。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-editor-sta",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-editor-dedicated-visible",
+          "path": "workflows/v3-editor-sta",
+          "message": "专供编辑工作流必须关闭便捷测绘。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-editor-sta：专供编辑工作流必须关闭便捷测绘。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "FD01",
+    "area": "字段",
+    "name": "字段 key 重复",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-key-duplicate",
+          "path": "nodes/class-rod/fields/18",
+          "message": "字段 Name 在同一分类节点中重复。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-key-duplicate",
+          "path": "nodes/class-rod/fields/18",
+          "message": "字段 Name 在同一分类节点中重复。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/fields/18：字段 Name 在同一分类节点中重复。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "FD02",
+    "area": "字段",
+    "name": "字段显示名称全空",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-label-zh-required",
+          "path": "nodes/class-rod/fields/0",
+          "message": "字段必须提供中文或英文标签。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-label-zh-required",
+          "path": "nodes/class-rod/fields/0",
+          "message": "字段必须提供中文或英文标签。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/fields/0：字段必须提供中文或英文标签。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "FD03",
+    "area": "字段",
+    "name": "不存在的引用分类",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-reference-invalid",
+          "path": "nodes/class-rod",
+          "message": "字段 AuditValue 的引用分类或匹配字段无效。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-reference-invalid",
+          "path": "nodes/class-rod",
+          "message": "字段 AuditValue 的引用分类或匹配字段无效。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod：字段 AuditValue 的引用分类或匹配字段无效。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "FD04",
+    "area": "字段",
+    "name": "子级覆盖强制固定继承字段",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-sealed-override",
+          "path": "nodes/class-bud-nom",
+          "message": "字段 Name 已锁定继承，不能覆盖。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-sealed-override",
+          "path": "nodes/class-bud-nom",
+          "message": "字段 Name 已锁定继承，不能覆盖。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-bud-nom：字段 Name 已锁定继承，不能覆盖。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "FD05",
+    "area": "字段",
+    "name": "字段 ID 重复但 key 不同",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod/fields/ROD-Name",
+          "message": "有效分类 ROD 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-nom/fields/ROD-Name",
+          "message": "有效分类 ROD/NOM 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-tuk/fields/ROD-Name",
+          "message": "有效分类 ROD/TUK 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-pri/fields/ROD-Name",
+          "message": "有效分类 ROD/PRI 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-sec/fields/ROD-Name",
+          "message": "有效分类 ROD/SEC 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-sed/fields/ROD-Name",
+          "message": "有效分类 ROD/SED 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-res/fields/ROD-Name",
+          "message": "有效分类 ROD/RES 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-svs/fields/ROD-Name",
+          "message": "有效分类 ROD/SVS 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-idr/fields/ROD-Name",
+          "message": "有效分类 ROD/IDR 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-spe/fields/ROD-Name",
+          "message": "有效分类 ROD/SPE 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod/fields/ROD-Name",
+          "message": "有效分类 ROD 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-nom/fields/ROD-Name",
+          "message": "有效分类 ROD/NOM 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-tuk/fields/ROD-Name",
+          "message": "有效分类 ROD/TUK 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-pri/fields/ROD-Name",
+          "message": "有效分类 ROD/PRI 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-sec/fields/ROD-Name",
+          "message": "有效分类 ROD/SEC 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-sed/fields/ROD-Name",
+          "message": "有效分类 ROD/SED 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-res/fields/ROD-Name",
+          "message": "有效分类 ROD/RES 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-svs/fields/ROD-Name",
+          "message": "有效分类 ROD/SVS 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-idr/fields/ROD-Name",
+          "message": "有效分类 ROD/IDR 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        },
+        {
+          "code": "field-id-duplicate",
+          "path": "nodes/class-rod-spe/fields/ROD-Name",
+          "message": "有效分类 ROD/SPE 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/fields/ROD-Name：有效分类 ROD 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。；nodes/class-rod-nom/fields/ROD-Name：有效分类 ROD/NOM 的 fieldId ROD-Name 同时属于 Name 和 AuditValue。请修复身份及其引用后再保存。；nodes/class-rod-tuk/fields/ROD-Name：有效分类 ROD/TUK 的 fieldId ROD-Name 同时属于 Name",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "FD06",
+    "area": "字段",
+    "name": "非法嵌套路径",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-key-unsafe",
+          "path": "nodes/class-rod/fields/0",
+          "message": "字段路径包含不安全的属性名。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "field-key-unsafe",
+          "path": "nodes/class-rod/fields/0",
+          "message": "字段路径包含不安全的属性名。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/fields/0：字段路径包含不安全的属性名。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "TB01",
+    "area": "对照表",
+    "name": "删除被字段引用的公共表",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "standard-tag-table-invalid",
+          "path": "lookupTables/road-travel-modes",
+          "message": "系统标准表缺失，或其固定 ID、用途、保存值类型被修改。"
+        }
+      ],
+      "warnings": []
+    },
+    "lookupSubsystem": {
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "standard-tag-table-invalid",
+          "path": "lookupTables/road-travel-modes",
+          "message": "系统标准表缺失，或其固定 ID、用途、保存值类型被修改。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleBoundary": "LookupTablesWorkspace validates the merged full package",
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：lookupTables/road-travel-modes：系统标准表缺失，或其固定 ID、用途、保存值类型被修改。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "TB02",
+    "area": "对照表",
+    "name": "被引用表为空",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes",
+          "message": "表格至少需要一行。"
+        }
+      ],
+      "warnings": []
+    },
+    "lookupSubsystem": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes",
+          "message": "表格至少需要一行。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes",
+          "message": "表格至少需要一行。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleBoundary": "LookupTablesWorkspace validates the merged full package",
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：lookupTables/road-travel-modes：表格至少需要一行。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "TB03",
+    "area": "对照表",
+    "name": "表格中保存值重复",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/2",
+          "message": "存储值为空、重复或类型不符。"
+        }
+      ],
+      "warnings": []
+    },
+    "lookupSubsystem": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/2",
+          "message": "存储值为空、重复或类型不符。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/2",
+          "message": "存储值为空、重复或类型不符。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleBoundary": "LookupTablesWorkspace validates the merged full package",
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：lookupTables/road-travel-modes/rows/2：存储值为空、重复或类型不符。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "TB04",
+    "area": "对照表",
+    "name": "表格修改值类型与绑定方不一致",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/0",
+          "message": "存储值为空、重复或类型不符。"
+        },
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/1",
+          "message": "存储值为空、重复或类型不符。"
+        },
+        {
+          "code": "standard-tag-table-invalid",
+          "path": "lookupTables/road-travel-modes",
+          "message": "系统标准表缺失，或其固定 ID、用途、保存值类型被修改。"
+        }
+      ],
+      "warnings": []
+    },
+    "lookupSubsystem": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/0",
+          "message": "存储值为空、重复或类型不符。"
+        },
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/1",
+          "message": "存储值为空、重复或类型不符。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/0",
+          "message": "存储值为空、重复或类型不符。"
+        },
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/1",
+          "message": "存储值为空、重复或类型不符。"
+        },
+        {
+          "code": "standard-tag-table-invalid",
+          "path": "lookupTables/road-travel-modes",
+          "message": "系统标准表缺失，或其固定 ID、用途、保存值类型被修改。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleBoundary": "LookupTablesWorkspace validates the merged full package",
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：lookupTables/road-travel-modes/rows/0：存储值为空、重复或类型不符。；lookupTables/road-travel-modes/rows/1：存储值为空、重复或类型不符。；lookupTables/road-travel-modes：系统标准表缺失，或其固定 ID、用途、保存值类型被修改。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "TB05",
+    "area": "对照表",
+    "name": "对照行无任何语言显示名",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/0",
+          "message": "对照行需要中文或英文名称。"
+        }
+      ],
+      "warnings": []
+    },
+    "lookupSubsystem": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/0",
+          "message": "对照行需要中文或英文名称。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/0",
+          "message": "对照行需要中文或英文名称。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleBoundary": "LookupTablesWorkspace validates the merged full package",
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：lookupTables/road-travel-modes/rows/0：对照行需要中文或英文名称。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "TB06",
+    "area": "对照表",
+    "name": "速度功能值非法",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/0",
+          "message": "出行速度必须为正数，单位为方块/秒。"
+        }
+      ],
+      "warnings": []
+    },
+    "lookupSubsystem": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/0",
+          "message": "出行速度必须为正数，单位为方块/秒。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "lookupTables/road-travel-modes/rows/0",
+          "message": "出行速度必须为正数，单位为方块/秒。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleBoundary": "LookupTablesWorkspace validates the merged full package",
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：lookupTables/road-travel-modes/rows/0：出行速度必须为正数，单位为方块/秒。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "TB07",
+    "area": "对照表",
+    "name": "信息卡绑定不存在的字段定义",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "card-field-binding-missing",
+          "path": "nodes/class-rod/card/ROD-classification-card",
+          "message": "信息卡字段绑定来源不存在。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "card-field-binding-missing",
+          "path": "nodes/class-rod/card/ROD-classification-card",
+          "message": "信息卡字段绑定来源不存在。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/card/ROD-classification-card：信息卡字段绑定来源不存在。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "TB08",
+    "area": "工作流",
+    "name": "工作流绑定不存在的字段对照",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "workflows/v3-rod_road/rod_road-ConnectL-P/mode",
+          "message": "副本、字段对照和公共表只能选择一种来源。"
+        },
+        {
+          "code": "lookup-field-reference-missing",
+          "path": "workflows/v3-rod_road/rod_road-ConnectL-P/mode",
+          "message": "绑定字段不存在或在该分类中不再有效。"
+        },
+        {
+          "code": "lookup-binding-empty",
+          "path": "workflows/v3-rod_road/rod_road-ConnectL-P/mode",
+          "message": "绑定来源为空，必须手动修复。"
+        },
+        {
+          "code": "workflow-select-options-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-ConnectL-P/group/mode",
+          "message": "下拉选项必须具有非空且唯一的保存值。"
+        }
+      ],
+      "warnings": []
+    },
+    "moduleWorkflowId": "v3-rod_road",
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "workflow-select-options-invalid",
+          "path": "workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-ConnectL-P/group/mode",
+          "message": "下拉选项必须具有非空且唯一的保存值。"
+        },
+        {
+          "code": "lookup-table-invalid",
+          "path": "workflows/v3-rod_road/rod_road-ConnectL-P/mode",
+          "message": "副本、字段对照和公共表只能选择一种来源。"
+        },
+        {
+          "code": "lookup-field-reference-missing",
+          "path": "workflows/v3-rod_road/rod_road-ConnectL-P/mode",
+          "message": "绑定字段不存在或在该分类中不再有效。"
+        },
+        {
+          "code": "lookup-binding-empty",
+          "path": "workflows/v3-rod_road/rod_road-ConnectL-P/mode",
+          "message": "绑定来源为空，必须手动修复。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：workflows/v3-rod_road/rod_road-ConnectL-P/mode：副本、字段对照和公共表只能选择一种来源。；workflows/v3-rod_road/rod_road-ConnectL-P/mode：绑定字段不存在或在该分类中不再有效。；workflows/v3-rod_road/rod_road-ConnectL-P/mode：绑定来源为空，必须手动修复。；workflows/v3-rod_road/steps/rod_road-form/controls/rod_road-ConnectL-P/group/mode：下拉选",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "TB09",
+    "area": "对照表",
+    "name": "绑定来源和本地对照同时保存",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "nodes/class-rod/fields/ROD-Name",
+          "message": "副本、字段对照和公共表只能选择一种来源。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "lookup-table-invalid",
+          "path": "nodes/class-rod/fields/ROD-Name",
+          "message": "副本、字段对照和公共表只能选择一种来源。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/fields/ROD-Name：副本、字段对照和公共表只能选择一种来源。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD01",
+    "area": "渲染",
+    "name": "完整命中条件重复",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-match-duplicate",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "渲染规则 v1-road-hidden--base 与 audit-duplicate 的完整条件重复。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-match-duplicate",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "渲染规则 v1-road-hidden--base 与 audit-duplicate 的完整条件重复。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/geometry/LineString：渲染规则 v1-road-hidden--base 与 audit-duplicate 的完整条件重复。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD02",
+    "area": "渲染",
+    "name": "Zoom 范围反向",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-match-zoom-required",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base",
+          "message": "r7 必须填写 0–8 的闭区间整数 Zoom，允许单级区间。"
+        },
+        {
+          "code": "zoom-interval-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base",
+          "message": "显示区间必须符合下界 ≤ Zoom ≤ 上界。"
+        }
+      ],
+      "warnings": [
+        {
+          "code": "render-match-shadowed",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "规则 v1-road-hidden--base 被后项 v1-road-low--base 完全覆盖。"
+        },
+        {
+          "code": "render-match-shadowed",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "规则 v1-road-hidden--base 被后项 v1-road-high--base 完全覆盖。"
+        }
+      ]
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-match-zoom-required",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base",
+          "message": "r7 必须填写 0–8 的闭区间整数 Zoom，允许单级区间。"
+        },
+        {
+          "code": "zoom-interval-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base",
+          "message": "显示区间必须符合下界 ≤ Zoom ≤ 上界。"
+        }
+      ],
+      "warnings": [
+        {
+          "code": "render-match-shadowed",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "规则 v1-road-hidden--base 被后项 v1-road-low--base 完全覆盖。"
+        },
+        {
+          "code": "render-match-shadowed",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "规则 v1-road-hidden--base 被后项 v1-road-high--base 完全覆盖。"
+        }
+      ]
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base：r7 必须填写 0–8 的闭区间整数 Zoom，允许单级区间。；nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base：显示区间必须符合下界 ≤ Zoom ≤ 上界。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD03",
+    "area": "渲染",
+    "name": "字段组合错误使用分类字段",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-field-condition-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields",
+          "message": "条件字段 Class 是分类字段、别名或危险路径，不能用于规则条件。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-field-condition-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields",
+          "message": "条件字段 Class 是分类字段、别名或危险路径，不能用于规则条件。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields：条件字段 Class 是分类字段、别名或危险路径，不能用于规则条件。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD04",
+    "area": "渲染",
+    "name": "字段条件引用不存在的根字段",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-field-condition-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields",
+          "message": "当前分类不存在条件字段 MissingField。"
+        },
+        {
+          "code": "render-field-condition-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields",
+          "message": "标量比较需要已定义字段 MissingField。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-field-condition-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields",
+          "message": "当前分类不存在条件字段 MissingField。"
+        },
+        {
+          "code": "render-field-condition-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields",
+          "message": "标量比较需要已定义字段 MissingField。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields：当前分类不存在条件字段 MissingField。；nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields：标量比较需要已定义字段 MissingField。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD05",
+    "area": "渲染",
+    "name": "布尔条件值和字段类型不一致",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-field-condition-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields",
+          "message": "Oneway 的比较值类型不匹配。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-field-condition-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields",
+          "message": "Oneway 的比较值类型不匹配。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields：Oneway 的比较值类型不匹配。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD06",
+    "area": "渲染",
+    "name": "公式引用不存在的 C9",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-field-condition-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields",
+          "message": "未知条件/组 C9。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-field-condition-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields",
+          "message": "未知条件/组 C9。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields：未知条件/组 C9。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD07",
+    "area": "渲染",
+    "name": "可证明的矛盾条件",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-field-condition-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields",
+          "message": "条件公式存在可证明的矛盾，无法命中。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-field-condition-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields",
+          "message": "条件公式存在可证明的矛盾，无法命中。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/when/fields：条件公式存在可证明的矛盾，无法命中。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD08",
+    "area": "渲染",
+    "name": "后规则无条件完全遮蔽前规则",
+    "expected": "warning",
+    "package": {
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        {
+          "code": "render-match-shadowed",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "规则 v1-road-hidden--base 被后项 audit-shadow 完全覆盖。"
+        },
+        {
+          "code": "render-match-shadowed",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "规则 v1-road-low--base 被后项 audit-shadow 完全覆盖。"
+        },
+        {
+          "code": "render-match-shadowed",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "规则 v1-road-high--base 被后项 audit-shadow 完全覆盖。"
+        }
+      ]
+    },
+    "module": {
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        {
+          "code": "render-match-shadowed",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "规则 v1-road-hidden--base 被后项 audit-shadow 完全覆盖。"
+        },
+        {
+          "code": "render-match-shadowed",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "规则 v1-road-low--base 被后项 audit-shadow 完全覆盖。"
+        },
+        {
+          "code": "render-match-shadowed",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "规则 v1-road-high--base 被后项 audit-shadow 完全覆盖。"
+        }
+      ]
+    },
+    "activationBlocked": false,
+    "exportBlocked": false,
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD09",
+    "area": "渲染",
+    "name": "不同范围部分交叠且样式相反",
+    "expected": "allow",
+    "package": {
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    "module": {
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    },
+    "activationBlocked": false,
+    "exportBlocked": false,
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD10",
+    "area": "渲染",
+    "name": "Label 来源引用不存在的根字段",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-label-source-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base",
+          "message": "Label 来源必须是当前分类的有效字段、tags.xxx 或 extensions.xxx。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-label-source-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base",
+          "message": "Label 来源必须是当前分类的有效字段、tags.xxx 或 extensions.xxx。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base：Label 来源必须是当前分类的有效字段、tags.xxx 或 extensions.xxx。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD11",
+    "area": "渲染",
+    "name": "Label 组合模板引用不存在字段",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "label-template-field",
+          "path": "nodes/class-rle/geometry/LineString/renderRules/r10-rle-code-pill-zoom2-4",
+          "message": "组合来源字段不存在：MissingLabel"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "label-template-field",
+          "path": "nodes/class-rle/geometry/LineString/renderRules/r10-rle-code-pill-zoom2-4",
+          "message": "组合来源字段不存在：MissingLabel"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rle/geometry/LineString/renderRules/r10-rle-code-pill-zoom2-4：组合来源字段不存在：MissingLabel",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD12",
+    "area": "渲染",
+    "name": "固定颜色无效",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-color-fixed-required",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/style/stroke",
+          "message": "直接颜色必须为有效的十六进制、RGB/HSL、命名色或 transparent。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-color-fixed-required",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/style/stroke",
+          "message": "直接颜色必须为有效的十六进制、RGB/HSL、命名色或 transparent。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base/style/stroke：直接颜色必须为有效的十六进制、RGB/HSL、命名色或 transparent。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD13",
+    "area": "渲染",
+    "name": "几何动态优先级引用不存在字段",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "dynamic-priority-field-required",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base",
+          "message": "字段型动态优先级需要存在的单值数值字段或数值枚举字段。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "dynamic-priority-field-required",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base",
+          "message": "字段型动态优先级需要存在的单值数值字段或数值枚举字段。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base：字段型动态优先级需要存在的单值数值字段或数值枚举字段。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "RD14",
+    "area": "渲染",
+    "name": "几何/Label 透明度超界",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-stroke-opacity-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base",
+          "message": "描边透明度必须在 0 到 1 之间。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "render-stroke-opacity-invalid",
+          "path": "nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base",
+          "message": "描边透明度必须在 0 到 1 之间。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/geometry/LineString/renderRules/v1-road-hidden--base：描边透明度必须在 0 到 1 之间。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "CD01",
+    "area": "信息卡",
+    "name": "显示不存在的根字段",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-nom/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-tuk/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-pri/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-sec/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-sed/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-res/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-svs/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-idr/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-spe/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-nom/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-tuk/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-pri/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-sec/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-sed/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-res/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-svs/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-idr/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-rod-spe/card/items/ROD-classification-card",
+          "message": "信息卡字段 MissingCardField 未定义。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/card/items/ROD-classification-card：信息卡字段 MissingCardField 未定义。；nodes/class-rod-nom/card/items/ROD-classification-card：信息卡字段 MissingCardField 未定义。；nodes/class-rod-tuk/card/items/ROD-classification-card：信息卡字段 MissingCardField 未定义。；nodes/class-rod-pri/card/items/ROD-c",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "CD02",
+    "area": "信息卡",
+    "name": "引用不存在的专用显示组件",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "card-component-invalid",
+          "path": "nodes/class-rod/card",
+          "message": "专用信息卡组件 missing-component 不在受控注册表中或不适用于该 Class。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "card-component-invalid",
+          "path": "nodes/class-rod/card",
+          "message": "专用信息卡组件 missing-component 不在受控注册表中或不适用于该 Class。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/card：专用信息卡组件 missing-component 不在受控注册表中或不适用于该 Class。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "CD03",
+    "area": "信息卡",
+    "name": "卡片条目 ID 重复",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "card-item-id-duplicate",
+          "path": "nodes/class-rod/card/local/ROD-classification-card",
+          "message": "信息卡条目 ID ROD-classification-card 重复或为空：Class / Class。请为条目使用独立 ID。"
+        },
+        {
+          "code": "card-item-id-duplicate",
+          "path": "nodes/class-rod/card/effective/ROD-classification-card",
+          "message": "信息卡条目 ID ROD-classification-card 重复或为空：Class / Class。请为条目使用独立 ID。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "card-item-id-duplicate",
+          "path": "nodes/class-rod/card/local/ROD-classification-card",
+          "message": "信息卡条目 ID ROD-classification-card 重复或为空：Class / Class。请为条目使用独立 ID。"
+        },
+        {
+          "code": "card-item-id-duplicate",
+          "path": "nodes/class-rod/card/effective/ROD-classification-card",
+          "message": "信息卡条目 ID ROD-classification-card 重复或为空：Class / Class。请为条目使用独立 ID。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/card/local/ROD-classification-card：信息卡条目 ID ROD-classification-card 重复或为空：Class / Class。请为条目使用独立 ID。；nodes/class-rod/card/effective/ROD-classification-card：信息卡条目 ID ROD-classification-card 重复或为空：Class / Class。请为条目使用独立 ID。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "CD04",
+    "area": "信息卡",
+    "name": "字段继承来源来自平级分类",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-rod/card/ROD-classification-card",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-rod/card/ROD-classification-card",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/card/ROD-classification-card：硬继承条目来源必须是同分支祖先且不能重复。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "CT01",
+    "area": "分类",
+    "name": "父节点缺失",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "button-path-invalid",
+          "path": "application/buttons/building/0",
+          "message": "按钮显示内容不是有效分类路径。"
+        },
+        {
+          "code": "category-parent-missing",
+          "path": "nodes/class-bud-nom",
+          "message": "子分类节点必须具有连续的父分类节点。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/BUD-classification-card",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-nomenclator-0",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-Land-1",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-Adm-2",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-Pop-3",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-Situation-4",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-elevation-5",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-height-6",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-wiki-7",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-brief-8",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/BUD-CreateTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/BUD-CreateBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/BUD-ModifityTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/BUD-ModifityBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-nom/card/items/bud_building-card-Situation-4",
+          "message": "信息卡字段 Situation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-nom/card/items/bud_building-card-elevation-5",
+          "message": "信息卡字段 elevation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-nom/card/items/bud_building-card-height-6",
+          "message": "信息卡字段 height 未定义。"
+        },
+        {
+          "code": "category-parent-missing",
+          "path": "nodes/class-bud-spe",
+          "message": "子分类节点必须具有连续的父分类节点。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/BUD-classification-card",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-nomenclator-0",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-Land-1",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-Adm-2",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-Pop-3",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-Situation-4",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-elevation-5",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-height-6",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-wiki-7",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-brief-8",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/BUD-CreateTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/BUD-CreateBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/BUD-ModifityTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/BUD-ModifityBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-spe/card/items/bud_building-card-Situation-4",
+          "message": "信息卡字段 Situation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-spe/card/items/bud_building-card-elevation-5",
+          "message": "信息卡字段 elevation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-spe/card/items/bud_building-card-height-6",
+          "message": "信息卡字段 height 未定义。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/BUD-classification-card",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-nomenclator-0",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-Land-1",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-Adm-2",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-Pop-3",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-Situation-4",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-elevation-5",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-height-6",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-wiki-7",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-brief-8",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/BUD-CreateTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/BUD-CreateBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/BUD-ModifityTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/BUD-ModifityBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-nom-nom/card/items/bud_building-card-Situation-4",
+          "message": "信息卡字段 Situation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-nom-nom/card/items/bud_building-card-elevation-5",
+          "message": "信息卡字段 elevation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-nom-nom/card/items/bud_building-card-height-6",
+          "message": "信息卡字段 height 未定义。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/BUD-classification-card",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-nomenclator-0",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-Land-1",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-Adm-2",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-Pop-3",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-Situation-4",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-elevation-5",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-height-6",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-wiki-7",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-brief-8",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/BUD-CreateTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/BUD-CreateBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/BUD-ModifityTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/BUD-ModifityBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-spe-spe/card/items/bud_building-card-Situation-4",
+          "message": "信息卡字段 Situation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-spe-spe/card/items/bud_building-card-elevation-5",
+          "message": "信息卡字段 elevation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-spe-spe/card/items/bud_building-card-height-6",
+          "message": "信息卡字段 height 未定义。"
+        },
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-bud_building",
+          "message": "编辑作用范围必须为输出范围内的实际分类。"
+        },
+        {
+          "code": "workflow-classification-scope-invalid",
+          "path": "workflows/v3-bud_building/steps/bud_building-form/controls/bud_building-classification",
+          "message": "系统 Classification 控件必须选择有效的分类范围。"
+        },
+        {
+          "code": "workflow-output-classification-invalid",
+          "path": "workflows/v3-bud_building/outputs/bud_building-output-1",
+          "message": "工作流输出必须选择存在且连续的目标分类。"
+        },
+        {
+          "code": "leaf-geometry-type-required",
+          "path": "nodes/class-bud-nom-nom/geometry",
+          "message": "总配置保存时，每个最终分类必须解析为一种明确几何类型。"
+        },
+        {
+          "code": "leaf-geometry-type-required",
+          "path": "nodes/class-bud-spe-spe/geometry",
+          "message": "总配置保存时，每个最终分类必须解析为一种明确几何类型。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "button-path-invalid",
+          "path": "application/buttons/building/0",
+          "message": "按钮显示内容不是有效分类路径。"
+        },
+        {
+          "code": "category-parent-missing",
+          "path": "nodes/class-bud-nom",
+          "message": "子分类节点必须具有连续的父分类节点。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/BUD-classification-card",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-nomenclator-0",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-Land-1",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-Adm-2",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-Pop-3",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-Situation-4",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-elevation-5",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-height-6",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-wiki-7",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/bud_building-card-brief-8",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/BUD-CreateTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/BUD-CreateBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/BUD-ModifityTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom/card/BUD-ModifityBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-nom/card/items/bud_building-card-Situation-4",
+          "message": "信息卡字段 Situation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-nom/card/items/bud_building-card-elevation-5",
+          "message": "信息卡字段 elevation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-nom/card/items/bud_building-card-height-6",
+          "message": "信息卡字段 height 未定义。"
+        },
+        {
+          "code": "category-parent-missing",
+          "path": "nodes/class-bud-spe",
+          "message": "子分类节点必须具有连续的父分类节点。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/BUD-classification-card",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-nomenclator-0",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-Land-1",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-Adm-2",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-Pop-3",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-Situation-4",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-elevation-5",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-height-6",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-wiki-7",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/bud_building-card-brief-8",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/BUD-CreateTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/BUD-CreateBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/BUD-ModifityTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe/card/BUD-ModifityBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-spe/card/items/bud_building-card-Situation-4",
+          "message": "信息卡字段 Situation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-spe/card/items/bud_building-card-elevation-5",
+          "message": "信息卡字段 elevation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-spe/card/items/bud_building-card-height-6",
+          "message": "信息卡字段 height 未定义。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/BUD-classification-card",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-nomenclator-0",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-Land-1",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-Adm-2",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-Pop-3",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-Situation-4",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-elevation-5",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-height-6",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-wiki-7",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/bud_building-card-brief-8",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/BUD-CreateTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/BUD-CreateBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/BUD-ModifityTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-nom-nom/card/BUD-ModifityBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-nom-nom/card/items/bud_building-card-Situation-4",
+          "message": "信息卡字段 Situation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-nom-nom/card/items/bud_building-card-elevation-5",
+          "message": "信息卡字段 elevation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-nom-nom/card/items/bud_building-card-height-6",
+          "message": "信息卡字段 height 未定义。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/BUD-classification-card",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-nomenclator-0",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-Land-1",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-Adm-2",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-Pop-3",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-Situation-4",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-elevation-5",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-height-6",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-wiki-7",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/bud_building-card-brief-8",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/BUD-CreateTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/BUD-CreateBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/BUD-ModifityTime-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-inheritance-origin-invalid",
+          "path": "nodes/class-bud-spe-spe/card/BUD-ModifityBy-meta",
+          "message": "硬继承条目来源必须是同分支祖先且不能重复。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-spe-spe/card/items/bud_building-card-Situation-4",
+          "message": "信息卡字段 Situation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-spe-spe/card/items/bud_building-card-elevation-5",
+          "message": "信息卡字段 elevation 未定义。"
+        },
+        {
+          "code": "card-field-missing",
+          "path": "nodes/class-bud-spe-spe/card/items/bud_building-card-height-6",
+          "message": "信息卡字段 height 未定义。"
+        },
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-bud_building",
+          "message": "编辑作用范围必须为输出范围内的实际分类。"
+        },
+        {
+          "code": "workflow-classification-scope-invalid",
+          "path": "workflows/v3-bud_building/steps/bud_building-form/controls/bud_building-classification",
+          "message": "系统 Classification 控件必须选择有效的分类范围。"
+        },
+        {
+          "code": "workflow-output-classification-invalid",
+          "path": "workflows/v3-bud_building/outputs/bud_building-output-1",
+          "message": "工作流输出必须选择存在且连续的目标分类。"
+        },
+        {
+          "code": "leaf-geometry-type-required",
+          "path": "nodes/class-bud-nom-nom/geometry",
+          "message": "总配置保存时，每个最终分类必须解析为一种明确几何类型。"
+        },
+        {
+          "code": "leaf-geometry-type-required",
+          "path": "nodes/class-bud-spe-spe/geometry",
+          "message": "总配置保存时，每个最终分类必须解析为一种明确几何类型。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：application/buttons/building/0：按钮显示内容不是有效分类路径。；nodes/class-bud-nom：子分类节点必须具有连续的父分类节点。；nodes/class-bud-nom/card/BUD-classification-card：硬继承条目来源必须是同分支祖先且不能重复。；nodes/class-bud-nom/card/bud_building-card-nomenclator-0：硬继承条目来源必须是同分支祖先且不能重复。；nodes/class-bud-nom/card/bud_building-card-La",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "CT02",
+    "area": "分类",
+    "name": "分类路径重复",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "classification-path-duplicate",
+          "path": "nodes/another-node",
+          "message": "分类路径重复。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "classification-path-duplicate",
+          "path": "nodes/another-node",
+          "message": "分类路径重复。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/another-node：分类路径重复。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "CT03",
+    "area": "分类",
+    "name": "children 记录不存在的节点",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "category-child-missing",
+          "path": "nodes/class-rod/children",
+          "message": "子分类节点 missing-node 不存在。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "category-child-missing",
+          "path": "nodes/class-rod/children",
+          "message": "子分类节点 missing-node 不存在。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/children：子分类节点 missing-node 不存在。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "CT04",
+    "area": "分类",
+    "name": "children 指向不匹配父路径的其他 Class",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "category-child-parent-conflict",
+          "path": "nodes/class-rod/children",
+          "message": "子分类 class-bud 的 path 不属于该直接父级，请依据连续 path 修复 children。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "category-child-parent-conflict",
+          "path": "nodes/class-rod/children",
+          "message": "子分类 class-bud 的 path 不属于该直接父级，请依据连续 path 修复 children。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/children：子分类 class-bud 的 path 不属于该直接父级，请依据连续 path 修复 children。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "CT05",
+    "area": "分类",
+    "name": "父级 children 遗漏真实子分类",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-nom。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-tuk。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-pri。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-sec。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-sed。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-res。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-svs。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-idr。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-spe。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-nom。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-tuk。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-pri。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-sec。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-sed。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-res。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-svs。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-idr。"
+        },
+        {
+          "code": "category-child-omitted",
+          "path": "nodes/class-rod/children",
+          "message": "children 遗漏 path 定义的直接子分类 class-rod-spe。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/children：children 遗漏 path 定义的直接子分类 class-rod-nom。；nodes/class-rod/children：children 遗漏 path 定义的直接子分类 class-rod-tuk。；nodes/class-rod/children：children 遗漏 path 定义的直接子分类 class-rod-pri。；nodes/class-rod/children：children 遗漏 path 定义的直接子分类 class-rod-sec。；nodes/class-rod/c",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "CT06",
+    "area": "分类",
+    "name": "几何类型与已启用样式矛盾",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "geometry-type-multiple-enabled",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "同一分类节点只能启用一种几何类型。"
+        },
+        {
+          "code": "geometry-type-profile-missing",
+          "path": "nodes/class-rod/geometry",
+          "message": "已选择的几何类型必须具有启用的几何配置。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-nom/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-tuk/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-pri/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-sec/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-sed/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-res/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-svs/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-idr/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-spe/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "编辑范围没有最终可用分类。"
+        },
+        {
+          "code": "workflow-output-geometry-disabled",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1",
+          "message": "输出范围没有最终分类启用 LineString 绘制类型。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "geometry-type-multiple-enabled",
+          "path": "nodes/class-rod/geometry/LineString",
+          "message": "同一分类节点只能启用一种几何类型。"
+        },
+        {
+          "code": "geometry-type-profile-missing",
+          "path": "nodes/class-rod/geometry",
+          "message": "已选择的几何类型必须具有启用的几何配置。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-nom/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-tuk/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-pri/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-sec/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-sed/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-res/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-svs/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-idr/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "geometry-type-inheritance-invalid",
+          "path": "nodes/class-rod-spe/geometry/LineString",
+          "message": "本级几何与祖先已指定的类型不一致。"
+        },
+        {
+          "code": "workflow-editor-conversion-invalid",
+          "path": "workflows/v3-rod_road",
+          "message": "编辑范围没有最终可用分类。"
+        },
+        {
+          "code": "workflow-output-geometry-disabled",
+          "path": "workflows/v3-rod_road/outputs/rod_road-output-1",
+          "message": "输出范围没有最终分类启用 LineString 绘制类型。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：nodes/class-rod/geometry/LineString：同一分类节点只能启用一种几何类型。；nodes/class-rod/geometry：已选择的几何类型必须具有启用的几何配置。；nodes/class-rod-nom/geometry/LineString：本级几何与祖先已指定的类型不一致。；nodes/class-rod-tuk/geometry/LineString：本级几何与祖先已指定的类型不一致。；nodes/class-rod-pri/geometry/LineString：本级几何与祖先已指定的类型不一致。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "AP01",
+    "area": "总体规则",
+    "name": "世界数字编号重复",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "application-invalid",
+          "path": "application/worlds/eden",
+          "message": "世界数字编号必须唯一且为非负整数。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "application-invalid",
+          "path": "application/worlds/eden",
+          "message": "世界数字编号必须唯一且为非负整数。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：application/worlds/eden：世界数字编号必须唯一且为非负整数。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "AP02",
+    "area": "总体规则",
+    "name": "世界绑定不存在的来源组",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "application-invalid",
+          "path": "application/sources/bindings/zth",
+          "message": "绑定的世界或启用来源组不存在。"
+        },
+        {
+          "code": "application-invalid",
+          "path": "application/sources",
+          "message": "世界 zth 的来源配置组 missing-group 不存在或未启用。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "application-invalid",
+          "path": "application/sources/bindings/zth",
+          "message": "绑定的世界或启用来源组不存在。"
+        },
+        {
+          "code": "application-invalid",
+          "path": "application/sources",
+          "message": "世界 zth 的来源配置组 missing-group 不存在或未启用。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：application/sources/bindings/zth：绑定的世界或启用来源组不存在。；application/sources：世界 zth 的来源配置组 missing-group 不存在或未启用。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "AP03",
+    "area": "总体规则",
+    "name": "图层按钮分类路径不存在",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "button-path-invalid",
+          "path": "application/buttons/railway_new/0",
+          "message": "按钮显示内容不是有效分类路径。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "button-path-invalid",
+          "path": "application/buttons/railway_new/0",
+          "message": "按钮显示内容不是有效分类路径。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：application/buttons/railway_new/0：按钮显示内容不是有效分类路径。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "AP04",
+    "area": "总体规则",
+    "name": "按钮联动循环",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "application-invalid",
+          "path": "application/buttons",
+          "message": "联动存在循环：railway_new"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "application-invalid",
+          "path": "application/buttons",
+          "message": "联动存在循环：railway_new"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：application/buttons：联动存在循环：railway_new",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "AP05",
+    "area": "总体规则",
+    "name": "无效模块互斥目标",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "native-contract-structure-invalid",
+          "path": "config/application/modules/items/0/exclusiveWith/0",
+          "message": "配置值必须为 \"mapping\"。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "native-contract-structure-invalid",
+          "path": "config/application/modules/items/0/exclusiveWith/0",
+          "message": "配置值必须为 \"mapping\"。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：config/application/modules/items/0/exclusiveWith/0：配置值必须为 \"mapping\"。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "AP06",
+    "area": "总体规则",
+    "name": "启用审核却缺少会话接口",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "application-invalid",
+          "path": "application/review/session",
+          "message": "审核使用同源绝对路径；启用时不可为空。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "application-invalid",
+          "path": "application/review/session",
+          "message": "审核使用同源绝对路径；启用时不可为空。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：application/review/session：审核使用同源绝对路径；启用时不可为空。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "AP07",
+    "area": "总体规则",
+    "name": "未知原生属性",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "native-contract-structure-invalid",
+          "path": "config/engine/typo",
+          "message": "未知或不安全的配置属性 typo。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "native-contract-structure-invalid",
+          "path": "config/engine/typo",
+          "message": "未知或不安全的配置属性 typo。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法保存或启用无效配置：config/engine/typo：未知或不安全的配置属性 typo。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  },
+  {
+    "id": "AP08",
+    "area": "总体规则",
+    "name": "未知契约版本",
+    "expected": "error",
+    "package": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "native-contract-structure-invalid",
+          "path": "config/contractRevision",
+          "message": "配置值必须为 3。"
+        }
+      ],
+      "warnings": []
+    },
+    "module": {
+      "valid": false,
+      "errors": [
+        {
+          "code": "native-contract-structure-invalid",
+          "path": "config/contractRevision",
+          "message": "配置值必须为 3。"
+        }
+      ],
+      "warnings": []
+    },
+    "activationBlocked": true,
+    "activationMessage": "Error: 无法启用：未知的原生契约 revision 999。",
+    "exportBlocked": true,
+    "exportMessage": "Error: 配置无效，不能归档导出。请先修复校验报告中的错误。",
+    "matchesExpectation": true
+  }
+]

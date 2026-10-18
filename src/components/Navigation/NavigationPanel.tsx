@@ -1,3 +1,4 @@
+import { getApplicationSettings } from '@/core/project/applicationRuntime';
 /**
  * 导航面板组件
  * - 旧版：调用 lib/pathfinding（铁路/传送/步行）
@@ -12,7 +13,7 @@
  *     - onRouteFound 仍保持传回 Array<{coord}>，但会额外挂载 styledSegments / stationMarkers（后续 MapContainer/RouteHighlightLayer 可直接复用）
  */
 
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
 import {
   X,
   ArrowUpDown,
@@ -46,6 +47,10 @@ import type { RouteHighlightData, RouteStyledSegment, RouteStationMarker } from 
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 
+import type {ConfigPackageV3} from '@/configStudio/types';
+import {categorySearchIndex,categorySearchSubtitle,findCategorySearchEntries} from '@/components/Search/configSearch';
+import {ConfigSearchExtension} from '@/components/Search/ConfigSearchExtension';
+import {getRuleSearchPoolVersion,subscribeRuleSearchPool} from '@/components/Rules/search/ruleSearchRegistry';
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { hasEnabledTemporaryRuleSources } from '@/components/Rules/data/temporaryRuleSession';
 import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
@@ -224,10 +229,12 @@ export type NavigationInitialPoint = {
   coord: Coordinate;
   extra?: string;
   ruleRecord?: FeatureRecord;
+  configExtension?:boolean;
   nonce?: number;
 };
 
 interface NavigationPanelProps {
+  configRuntime?:ConfigPackageV3;
   stations: ParsedStation[];
   lines: ParsedLine[];
   landmarks: ParsedLandmark[];
@@ -250,6 +257,7 @@ interface SearchItem {
 
   // rule 专用
   ruleRecord?: FeatureRecord;
+  configExtension?:boolean;
 
   // StaBuilding 专用（可选，但建议保留）
   staBuildingId?: string;
@@ -325,22 +333,14 @@ const TRAVEL_MODES: Array<{ mode: TravelModePanel; label: string; icon: typeof T
 ];
 
 // 新铁路：可调整参数（默认值可按你的需要随时改）
-const DEFAULT_RAIL_NEW_CONFIG = {
-  // 站内换乘步行速度（m/s）
-  transferWalkSpeed: 3.0,
-  // 铁路乘坐速度（m/s）
-  railRideSpeed: 16.0,
-  // 站内换乘成本阈值：距离 cost = dist / factor（你此前要求的“十分之一权重”本质等价）
-  transferCostFactor: 1.0,
-  // 正常站台同台换乘成本（用于让联络线连接节点优先）
-  normalPlatformTransferCost: 5.0,
-};
+
 
 // ---------------------------
 // Search input
 // ---------------------------
 
 interface PointSearchInputProps {
+  configRuntime?:ConfigPackageV3;
   value: SearchItem | null;
   onChange: (item: SearchItem | null) => void;
   items: SearchItem[];
@@ -354,22 +354,25 @@ interface PointSearchInputProps {
 
 type LineToken = { label: string; color: string; title?: string };
 
-function PointSearchInput({ value, onChange, items, placeholder, label, labelRight, disabled, railIndex, buildingNameIndex }: PointSearchInputProps) {
+function PointSearchInput({ configRuntime, value, onChange, items, placeholder, label, labelRight, disabled, railIndex, buildingNameIndex }: PointSearchInputProps) {
+  const nativeSearch=Boolean(configRuntime&&configRuntime.contractRevision>=10);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState(value?.name || '');
+  const [deferredQuery,setDeferredQuery]=useState(query);
+  useEffect(()=>{const timer=setTimeout(()=>setDeferredQuery(query),getApplicationSettings().preferences.search.debounceMs);return()=>clearTimeout(timer);},[query]);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const filteredItems = useMemo(() => {
-    if (query.length === 0) return [];
-    const q = query.toLowerCase();
+    if (deferredQuery.length === 0) return [];
+    const q = deferredQuery.toLowerCase();
     return items
       .filter((item) => {
         const key = String(item.searchKey ?? item.name ?? '').toLowerCase();
         return key.includes(q);
       })
-      .slice(0, 30);
-  }, [query, items]);
+      .slice(0, getApplicationSettings().preferences.search.navigationLimit);
+  }, [deferredQuery, items]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -538,10 +541,10 @@ function PointSearchInput({ value, onChange, items, placeholder, label, labelRig
                   <div data-sr-left className="flex-1 min-w-0">
                     <div data-sr-left-inner className="flex flex-col min-w-0">
                       <div className="text-sm font-medium text-gray-800 truncate">{item.name}</div>
-                      {item.extra && (
+                      {(item.extra||item.configExtension) && (
                         <div className="text-xs text-gray-500 flex items-center gap-2 min-w-0">
                           <span className="shrink-0">{(() => {
-                            if (item.type !== 'rule') return item.extra;
+                            if (item.type !== 'rule'||nativeSearch) return item.extra;
                             const r = item.ruleRecord;
                             const fi: any = r?.featureInfo ?? {};
                             const cls = String(r?.meta?.Class ?? fi?.Class ?? '').trim();
@@ -560,8 +563,9 @@ function PointSearchInput({ value, onChange, items, placeholder, label, labelRig
                             return item.extra;
                           })()}</span>
 
+                          {nativeSearch&&configRuntime&&item.ruleRecord?<ConfigSearchExtension config={configRuntime} record={item.ruleRecord} railIndex={railIndex}/>:null}
                           {/* 包含线路：PLF/PFB/STA/STB/SBP */}
-                          {item.type === 'rule' && (() => {
+                          {item.type === 'rule' && !nativeSearch && (() => {
                             const r = item.ruleRecord;
                             const fi: any = r?.featureInfo ?? {};
                             const cls = String(r?.meta?.Class ?? fi?.Class ?? '').trim();
@@ -574,7 +578,7 @@ function PointSearchInput({ value, onChange, items, placeholder, label, labelRig
                           })()}
 
                           {/* RLE：颜色条 */}
-                          {item.type === 'rule' && (() => {
+                          {item.type === 'rule' && !nativeSearch && (() => {
                             const r = item.ruleRecord;
                             const fi: any = r?.featureInfo ?? {};
                             const cls = String(r?.meta?.Class ?? fi?.Class ?? '').trim();
@@ -814,6 +818,7 @@ function buildRailNewPlanFromIntegrated(raw: NavRailNewIntegratedPlan, startCoor
 // ---------------------------
 
 export function NavigationPanel({
+  configRuntime,
   stations,
   lines,
   landmarks,
@@ -824,6 +829,8 @@ export function NavigationPanel({
   onPointClick,
   initialEndPoint,
 }: NavigationPanelProps) {
+  const poolVersion=useSyncExternalStore(listener=>subscribeRuleSearchPool(worldId,listener),()=>getRuleSearchPoolVersion(worldId));
+  const nativeSearch=Boolean(configRuntime&&configRuntime.contractRevision>=10);
   const [startPoint, setStartPoint] = useState<SearchItem | null>(null);
   const [endPoint, setEndPoint] = useState<SearchItem | null>(null);
   const [travelMode, setTravelMode] = useState<TravelModePanel>('rail_new');
@@ -1175,7 +1182,8 @@ useEffect(() => {
       const pool = getRuleSearchPool(worldId);
       const buildingNameIndex = buildBuildingNameIndex(pool);
       const ruleItems: SearchItem[] = [];
-      for (const r of pool) {
+      if(nativeSearch&&configRuntime){const index=categorySearchIndex(configRuntime,pool);for(const entry of findCategorySearchEntries(configRuntime,pool,worldId,'')){const r=entry.record,coord=getRepresentativeCoordForRule(r);if(coord)ruleItems.push({type:'rule',name:getRuleDisplayName(r).name,extra:categorySearchSubtitle(configRuntime,index,entry,getApplicationSettings().preferences.language),searchKey:entry.hay,coord,ruleRecord:r,configExtension:entry.search.extension.mode!=='none'});}}
+      for (const r of nativeSearch?[]:pool) {
         if (isRuleBlacklisted(r)) continue;
         const coord = getRepresentativeCoordForRule(r);
         if (!coord) continue;
@@ -1197,8 +1205,8 @@ useEffect(() => {
         ruleItems.push({ type: 'rule', name: disp.name, extra, searchKey, coord, ruleRecord: r });
       }
       ruleItems.sort((a, b) => {
-        const pa = a.ruleRecord ? getRulePriorityIndex(a.ruleRecord) : Number.POSITIVE_INFINITY;
-        const pb = b.ruleRecord ? getRulePriorityIndex(b.ruleRecord) : Number.POSITIVE_INFINITY;
+        const pa = a.ruleRecord ? nativeSearch&&configRuntime?categorySearchIndex(configRuntime,pool).byRecord.get(a.ruleRecord)?.priority??100:getRulePriorityIndex(a.ruleRecord) : Number.POSITIVE_INFINITY;
+        const pb = b.ruleRecord ? nativeSearch&&configRuntime?categorySearchIndex(configRuntime,pool).byRecord.get(b.ruleRecord)?.priority??100:getRulePriorityIndex(b.ruleRecord) : Number.POSITIVE_INFINITY;
         if (pa !== pb) return pa - pb;
         return a.name.localeCompare(b.name, 'zh-Hans-CN');
       });
@@ -1208,7 +1216,7 @@ useEffect(() => {
     }
 
     return items;
-  }, [stations, landmarks, players, railNewStaBuildingItems, worldId]);
+  }, [stations, landmarks, players, railNewStaBuildingItems, worldId,poolVersion,configRuntime]);
 
   const railwayGraph = useMemo(() => (legacyBundle ? legacyBundle.buildRailwayGraph(lines) : null), [legacyBundle, lines]);
   const toriiList = useMemo(() => (legacyBundle ? legacyBundle.extractToriiList(landmarks) : []), [legacyBundle, landmarks]);
@@ -1272,10 +1280,10 @@ if (travelMode === 'rail_new') {
     mode: preferLessTransfer ? 'transfers' : 'time',
 
     // 参数映射：保持你原 UI config 不动
-    transferWalkSpeed: DEFAULT_RAIL_NEW_CONFIG.transferWalkSpeed,
-    railSpeed: DEFAULT_RAIL_NEW_CONFIG.railRideSpeed,
-    stationTransferCostDivisor: DEFAULT_RAIL_NEW_CONFIG.transferCostFactor,
-    normalSamePlatformTransferCost: DEFAULT_RAIL_NEW_CONFIG.normalPlatformTransferCost,
+    transferWalkSpeed: getApplicationSettings().preferences.navigation.transferWalkSpeed,
+    railSpeed: getApplicationSettings().preferences.navigation.railRideSpeed,
+    stationTransferCostDivisor: getApplicationSettings().preferences.navigation.transferCostFactor,
+    normalSamePlatformTransferCost: getApplicationSettings().preferences.navigation.normalPlatformTransferCost,
   });
 
   const plan = buildRailNewPlanFromIntegrated(raw, startPoint.coord, endPoint.coord, useElytra);
@@ -1519,6 +1527,7 @@ if (travelMode === 'road') {
         <div className="flex items-start gap-2 mb-2">
           <div className="flex-1">
             <PointSearchInput
+              configRuntime={configRuntime}
               value={startPoint}
               onChange={(v) => {
                 setStartPoint(v);
@@ -1558,6 +1567,7 @@ if (travelMode === 'road') {
 
         <div className="mb-2">
           <PointSearchInput
+              configRuntime={configRuntime}
             value={endPoint}
             onChange={(v) => {
               setEndPoint(v);

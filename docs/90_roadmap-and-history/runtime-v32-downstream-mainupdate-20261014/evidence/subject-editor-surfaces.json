@@ -1,0 +1,486 @@
+{
+  "checks": [
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 320,
+      "scaleEquivalent": 1,
+      "cssWidth": 320,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 320,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 256,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 320,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 213,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 390,
+      "scaleEquivalent": 1,
+      "cssWidth": 390,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 390,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 312,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 390,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 260,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 600,
+      "scaleEquivalent": 1,
+      "cssWidth": 600,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 600,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 480,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 600,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 400,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 900,
+      "scaleEquivalent": 1,
+      "cssWidth": 900,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 900,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 720,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 900,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 600,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 1440,
+      "scaleEquivalent": 1,
+      "cssWidth": 1440,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 1440,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 1152,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "BUD",
+      "physicalWidth": 1440,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 960,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 320,
+      "scaleEquivalent": 1,
+      "cssWidth": 320,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 320,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 256,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 320,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 213,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 390,
+      "scaleEquivalent": 1,
+      "cssWidth": 390,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 390,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 312,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 390,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 260,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 600,
+      "scaleEquivalent": 1,
+      "cssWidth": 600,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 600,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 480,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 600,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 400,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 900,
+      "scaleEquivalent": 1,
+      "cssWidth": 900,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 900,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 720,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 900,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 600,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 1440,
+      "scaleEquivalent": 1,
+      "cssWidth": 1440,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 1440,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 1152,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "features",
+      "code": "RLE",
+      "physicalWidth": 1440,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 960,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 320,
+      "scaleEquivalent": 1,
+      "cssWidth": 320,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 320,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 256,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 320,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 213,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 390,
+      "scaleEquivalent": 1,
+      "cssWidth": 390,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 390,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 312,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 390,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 260,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 600,
+      "scaleEquivalent": 1,
+      "cssWidth": 600,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 600,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 480,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 600,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 400,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 900,
+      "scaleEquivalent": 1,
+      "cssWidth": 900,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 900,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 720,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 900,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 600,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 1440,
+      "scaleEquivalent": 1,
+      "cssWidth": 1440,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 1440,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 1152,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-tpp_teleport",
+      "physicalWidth": 1440,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 960,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 320,
+      "scaleEquivalent": 1,
+      "cssWidth": 320,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 320,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 256,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 320,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 213,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 390,
+      "scaleEquivalent": 1,
+      "cssWidth": 390,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 390,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 312,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 390,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 260,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 600,
+      "scaleEquivalent": 1,
+      "cssWidth": 600,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 600,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 480,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 600,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 400,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 900,
+      "scaleEquivalent": 1,
+      "cssWidth": 900,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 900,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 720,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 900,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 600,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 1440,
+      "scaleEquivalent": 1,
+      "cssWidth": 1440,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 1440,
+      "scaleEquivalent": 1.25,
+      "cssWidth": 1152,
+      "controlsWithinViewport": true
+    },
+    {
+      "surface": "workflows",
+      "code": "v3-rod_road",
+      "physicalWidth": 1440,
+      "scaleEquivalent": 1.5,
+      "cssWidth": 960,
+      "controlsWithinViewport": true
+    }
+  ],
+  "runtimeErrors": [],
+  "scope": "60 actual nested feature/workflow editor surfaces, 100/125/150 percent equivalent layout; native browser zoom remains a short manual check"
+}

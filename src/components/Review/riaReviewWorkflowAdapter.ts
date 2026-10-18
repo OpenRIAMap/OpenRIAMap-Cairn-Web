@@ -1,3 +1,4 @@
+import { assertReviewWorldContext, reviewEndpoint } from '@/core/project/applicationRuntime';
 import type { ReviewAuthorizationContext, ReviewPackageReference, ReviewWorkflowAdapter, ReviewWorkflowRequest, ReviewWorkflowResult, ReviewWorkflowTransport } from './contracts';
 import type { ReviewInboxItem } from './reviewStatusTypes';
 
@@ -15,7 +16,8 @@ function packageReference(item: ReviewInboxItem): ReviewPackageReference {
 }
 
 async function requestWorkflow(fetcher: ReviewWorkflowFetch, operation: 'dispatch' | 'status' | 'report', body: Record<string, unknown>): Promise<ReviewWorkflowResult> {
-  const response = await fetcher('/api/review-workflow', {
+  assertReviewWorldContext(body);
+  const response = await fetcher(reviewEndpoint('workflow'), {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'content-type': 'application/json' },

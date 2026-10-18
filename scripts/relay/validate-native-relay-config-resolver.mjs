@@ -47,7 +47,10 @@ try {
 }
 
 const packageRoot = zipInput?.packageRoot ?? dirInput?.packageRoot ?? defaultSampleRoot;
-const context = createNativeRelayConfigContext('openriamap-ria');
+// Historical documentation fixtures are checked against their registered
+// baseline; future current configurations may legitimately remove a class.
+const seedIdentity=JSON.parse(fs.readFileSync(path.join(root,'public/configuration/releases/982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e/release.json'),'utf8')).identity;
+const context = createNativeRelayConfigContext('openriamap-ria',seedIdentity);
 const paths = packagePaths(packageRoot);
 const featureFiles = fs.existsSync(paths.splitRoot)
   ? walkFiles(paths.splitRoot, (filePath) => path.extname(filePath).toLowerCase() === '.json')

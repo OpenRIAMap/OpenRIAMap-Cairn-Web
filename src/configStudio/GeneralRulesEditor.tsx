@@ -1,0 +1,37 @@
+import {validateConfigPackage} from './runtime';
+import {LayerButtonsEditor} from './LayerButtonsEditor';
+import { transitionApplicationButtons } from '../core/project/applicationButtons';
+import { useState } from 'react';
+import type { ApplicationSection, ApplicationSettings, ApplicationSources, ApplicationWorld } from '../core/project/applicationTypes';
+import { isWorldGroups } from '../core/project/applicationResources';
+import { ResourceGroupsEditor } from './ResourceGroupsEditor';
+import { ApplicationWorldsEditor } from './ApplicationWorldsEditor';
+import { defaultApplicationSettings } from '../core/project/applicationDefaults';
+import { ParameterEditor, type FormValue } from './GeneralParameterEditor';
+import { ModuleHelp } from './ModuleHelp';
+import { resolveRuleButtonIcon } from '../components/Rules/ButtonRule/ruleButtonIconRegistry';
+import ToolIconButton from '../components/Toolbar/ToolIconButton';
+import type { ConfigPackageV3 } from './types';
+
+export type RelatedSourceDraft={baseline:string;value:ApplicationSources};
+export type GeneralDrafts=Partial<Record<ApplicationSection,{baseline:string;value:ApplicationSettings[ApplicationSection];relatedSources?:RelatedSourceDraft}>>;
+const sections:Array<[ApplicationSection,string,string]>=[['worlds','世界与地图','定义世界身份、中心、注册投影参数、瓦片和逻辑缩放映射。'],['buttons','图层按钮','预览按钮的实际样式，使用握柄排序；设置分类过滤、世界默认值、互斥和联动。'],['sources','数据仓库与来源','配置现役正式发布数据与独立媒体来源；切换仍需显式应用，不自动混用镜像版本。'],['modules','模块开关与接口','控制现有模块入口和加载方式；测绘、测量、审核通过同一个工作区生命周期处理切换。'],['review','审核配置','配置同源 Cookie 审核协议的公开路径。禁用或空接口不会发出请求；服务端凭据仅保留引用名。'],['preferences','其他应用设置','编辑语言、搜索数量与延迟、地图交互和工具栏显示。英文空值保持为空。']];
+export function GeneralRulesEditor({config,drafts,onDraftsChange,onSave,onValidate}:{config:ConfigPackageV3;onValidate:()=>void;drafts:GeneralDrafts;onDraftsChange:(value:GeneralDrafts)=>void;onSave:(section:ApplicationSection,value:ApplicationSettings[ApplicationSection],baseline:string,relatedSources?:RelatedSourceDraft)=>Promise<boolean>}){
+  const [reports,setReports]=useState<Partial<Record<ApplicationSection,string[]>>>({}),[busy,setBusy]=useState(false),[simulated,setSimulated]=useState<string[]>([]);
+  const application=config.application??defaultApplicationSettings();
+  return <div className="cm-authoring-pane h-full overflow-auto rounded-xl border bg-white p-4"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-semibold">总体规则</h2><button type="button" className="rounded border px-3 py-1 text-sm" onClick={onValidate}>整包核验</button></div><p className="my-2 text-sm text-slate-600">各模块分别读取、核验、保存或放弃草稿；保存后应用到实际运行。模块草稿尚未保存时不能切换工作区或配置包。</p>
+    <div className="space-y-4">{sections.map(([key,title,help])=>{
+      const draft=drafts[key],value=draft?.value??application[key],patch=(next:FormValue)=>onDraftsChange({...drafts,[key]:{...draft,baseline:draft?.baseline??JSON.stringify(application[key]),value:next as ApplicationSettings[ApplicationSection]}});
+      const sourceLocked=key==='sources'&&Boolean(drafts.worlds?.relatedSources),effectiveSources=draft?.relatedSources?.value??application.sources;
+      return <section data-application-section={key} key={key} className="rounded-xl border-2 border-slate-200 bg-slate-50 p-3"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{title} <ModuleHelp title={title} text={help}/></h3><div className="flex flex-wrap gap-2">
+        <button type="button" className="rounded border bg-white px-2 py-1 text-sm" disabled={Boolean(draft)||busy||sourceLocked} onClick={()=>{let value=structuredClone(application[key]);if(key==='buttons'){const buttons=value as ApplicationSettings['buttons'];buttons.items=buttons.items.map(item=>({...item,behavior:{exclusiveWith:[],exclusiveGroup:'',linkedButtons:[],disableWhenEnabled:[],enableWhenEnabled:[],persistState:true,...item.behavior},criteria:config.contractRevision>=11?item.criteria:{classCode:[],kind:[],skind:[],skind2:[],...item.criteria}}));}onDraftsChange({...drafts,[key]:{baseline:JSON.stringify(application[key]),value}});}}>读取/编辑</button>
+        <button type="button" className="rounded border bg-white px-2 py-1 text-sm" disabled={!draft||busy} onClick={()=>setReports({...reports,[key]:validateConfigPackage({...config,application:{...application,[key]:value,...(draft?.relatedSources?{sources:draft.relatedSources.value}:{})}}).issues.filter(issue=>issue.path.startsWith('application/')).map(issue=>`${issue.path}：${issue.message}`)})}>核验</button>
+        <button type="button" className="rounded border bg-emerald-600 px-2 py-1 text-sm text-white" disabled={!draft||busy} onClick={async()=>{if(!draft)return;setBusy(true);try{const okay=await onSave(key,value,draft.baseline,draft.relatedSources);if(okay){const next={...drafts};delete next[key];onDraftsChange(next);setReports({...reports,[key]:[]});}}finally{setBusy(false);}}}>保存</button>
+        <button type="button" className="rounded border bg-white px-2 py-1 text-sm" disabled={!draft||busy} onClick={()=>{const next={...drafts};delete next[key];onDraftsChange(next);setReports({...reports,[key]:[]});}}>放弃草稿</button>
+      </div></div>
+      {key==='buttons'?<div className="my-3 rounded border bg-white p-3"><p className="mb-2 text-xs text-slate-500">实际按钮样式预览；点击仅模拟，不改变主图开关。排序使用下方项目握柄。</p><div className="flex flex-wrap gap-1">{(value as ApplicationSettings['buttons']).items.map(button=><div key={button.id} style={{width:button.size,height:button.size}}><ToolIconButton style={{width:button.size,height:button.size}} label={button.names[application.preferences.language]} icon={resolveRuleButtonIcon(button.iconKey)} tone={button.tone} active={simulated.includes(button.id)} onClick={()=>setSimulated(current=>transitionApplicationButtons(current,button.id,value as ApplicationSettings['buttons']))}/></div>)}</div></div>:null}
+      {draft?<div className="mt-3">{key==='buttons'&&config.contractRevision>=11?<LayerButtonsEditor config={config} value={value as ApplicationSettings['buttons']} onChange={next=>patch(next as unknown as FormValue)}/>:key==='sources'&&isWorldGroups(value as ApplicationSources)?<ResourceGroupsEditor application={application} value={value as import('../core/project/applicationTypes').ApplicationWorldGroups} onChange={next=>patch(next as unknown as FormValue)}/>:key==='worlds'&&isWorldGroups(effectiveSources)?<ApplicationWorldsEditor worlds={value as ApplicationWorld[]} sources={effectiveSources} bindingsLocked={Boolean(drafts.sources)} onChange={next=>patch(next as unknown as FormValue)} onSourcesChange={(sources,worlds)=>onDraftsChange({...drafts,worlds:{baseline:draft.baseline,value:worlds??value,relatedSources:JSON.stringify(sources)===JSON.stringify(application.sources)?undefined:{baseline:draft.relatedSources?.baseline??JSON.stringify(application.sources),value:sources}}})}/>:<ParameterEditor field={key} path={key} value={value as unknown as FormValue} onChange={patch}/>}</div>:<p className="mt-2 text-xs text-slate-600">{help} {sourceLocked?'世界模块有待保存的来源绑定，请先处理该草稿。':'点击“读取/编辑”进入本模块。'}</p>}
+      {reports[key]?.length?<div role="alert" className="mt-2 space-y-1 text-xs text-red-700">{reports[key]!.map((message,index)=><p key={index}>{message}</p>)}</div>:reports[key]?<p className="mt-2 text-xs text-green-700">核验通过。</p>:null}
+    </section>;})}</div>
+  </div>;
+}

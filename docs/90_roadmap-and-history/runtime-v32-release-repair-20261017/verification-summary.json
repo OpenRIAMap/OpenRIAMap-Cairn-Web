@@ -1,0 +1,43 @@
+{
+  "codeCommit": "b34c1e77b93905e6b55ae8f6b8cc1470a6e6cff4",
+  "originalSuites": 57,
+  "originalSuitesPassed": 57,
+  "scenarios": 71,
+  "errorsBlockedAtAllFourBoundaries": 67,
+  "warnings": 1,
+  "allowed": 3,
+  "archiveNegativeCases": 21,
+  "standardBrowserSubmissions": 34,
+  "railEditingCases": 7,
+  "trpEditingCases": 3,
+  "baselineUnchanged": true,
+  "defaultRevision": 7,
+  "defaultContract": 11,
+  "audits": [
+    {
+      "name": "validate-project-config",
+      "exitCode": 0
+    },
+    {
+      "name": "class-config",
+      "exitCode": 0
+    },
+    {
+      "name": "display-config",
+      "exitCode": 0
+    },
+    {
+      "name": "card-config",
+      "exitCode": 0
+    },
+    {
+      "name": "workflow-config",
+      "exitCode": 0
+    },
+    {
+      "name": "package-assembly",
+      "exitCode": 0
+    }
+  ],
+  "note": "The complete prebuild suite and release gate are preserved in build-and-release-checks.log. Final targeted type-normalisation/JSON-shape tests and TypeScript/Vite build are preserved separately. No deployment or remote write was performed."
+}

@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-10-18T10:32:56.122Z",
+  "sourceChecks": [
+    {
+      "name": "web",
+      "baselineHead": "5b3e9c2074409d59b9745dc4aa2b14a81f99e62f",
+      "deliveredSourceIdentitySha256": "b1092158b91179fbb52678d8ac893a20021b326976afcebd18274db00fd11975",
+      "filesChecked": 1602,
+      "documentationAttributesOrVerificationChangesSinceDelivery": [
+        ".gitattributes",
+        "package.json",
+        "scripts/config-tools/test-setting-help.ts"
+      ]
+    },
+    {
+      "name": "pipeline",
+      "baselineHead": "7fe4ec5df6cdf66cd7df5c3f489ca05e3f3ba4ba",
+      "deliveredSourceIdentitySha256": "8a0bf1ffa44917314043c094244a968a103f31ab5c95c9d5f5e44515647fe987",
+      "filesChecked": 175,
+      "documentationAttributesOrVerificationChangesSinceDelivery": [
+        "docs/configuration-production-deployment.md"
+      ]
+    }
+  ],
+  "runtimeChangesSinceDelivery": false
+}

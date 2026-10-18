@@ -1,9 +1,24 @@
+import { isWorldGroups } from '../core/project/applicationResources';
+import { validateWorkflowWrites } from './workflowPreflight';
+import { migrateWorkflowDrawings } from './workflowDrawingMigration';
+import { validCssColor } from './cssColor';
+let packageValidationRuns=0,workflowValidationRuns=0;
+/** Read-only QA counters: history pagination must never validate/compile trees. */
+export function configPreflightStats(){return {packageValidations:packageValidationRuns,workflowValidations:workflowValidationRuns,compilations:compiledEpoch};}
+import { validateApplication } from '../core/project/applicationValidation';
+import { labelTemplateTokens, parseLabelTemplate } from './labelTemplate';
 import {validateExternalEditBinding} from './externalEditRegistry';
 import {testWorkflowEditConversion} from './workflowEditCommit';
 import {compileRenderFormula} from './renderBooleanFormula';
 import {resolveMappedColor} from './renderScalar';
 import {scalarValueErrors, validMappedColor} from './renderScalar';
 import { isNativeConfigRevision } from './contract';
+import { effectiveOptionsOwner, effectiveOptions, resolveBoundCard, validateLookupTables } from './lookupTables';
+import {standardTagTableErrors} from './standardTagFields';
+import { mergeInheritedCard } from './cardInheritance';
+import { validatePrefillCopies } from './prefillAudit';
+import { resolveNodeFieldSettings,validateNodeFieldSettings } from './nodeFieldSettings';
+import { STRUCTURE_CONTEXT_ID,validateMountedStructureRoles } from './structureRoleIndex';
 import { canonicalRenderFields, matchesRenderFields, renderRuleRange, validateRenderFields } from './renderRuleConditions';
 import type {
   AffectedFeature,
@@ -99,6 +114,7 @@ export function compileConfigRuntime(value: ConfigPackageV3, validated = false):
     for (const node of config.nodes) for (const rule of node.geometryProfiles[geometry]?.zoomPriority.rules ?? []) resolveRenderExtensions(config, geometry, rule.extensions);
   }
   for(const node of config.nodes)for(const profile of Object.values(node.geometryProfiles))for(const rule of profile?.zoomPriority.rules??[]) {
+    if(rule.label?.sourceMode==='combined')labelTemplateTokens(rule.label);
     if(rule.when?.fields?.formula)compileRenderFormula(rule.when.fields.formula);
     for(const binding of [rule.style?.stroke,rule.style?.fill,rule.label?.style?.color,...Object.values(rule.extensions?.interaction??{}).map(state=>state?.strokeColorBinding)])if(binding?.mode==='valueMap')resolveMappedColor(binding,undefined);
   }
@@ -138,12 +154,12 @@ export function fieldShortKey(field: Pick<FieldDefinition, 'key' | 'scope'>): st
 export function readRecordPath(record: Record<string, unknown>, path: string): unknown {
   if (Object.prototype.hasOwnProperty.call(record, path)) return record[path];
   return path.split('.').reduce<unknown>((current, part) => (
-    current && typeof current === 'object' ? (current as Record<string, unknown>)[part] : undefined
+    current && typeof current === 'object' && Object.prototype.hasOwnProperty.call(current,part) ? (current as Record<string, unknown>)[part] : undefined
   ), record);
 }
 
 export function optionLabel(option: SelectOption, locale: keyof SelectOption['label'] = 'zh'): string {
-  return locale === 'en' ? option.label.en ?? '' : option.label.zh || option.value;
+  return locale === 'en' ? option.label.en || option.value : option.label.zh || option.label.en || option.value;
 }
 
 export function normalizeSelectOptions(value: unknown): SelectOption[] {
@@ -176,6 +192,7 @@ export function normalizeSearchProfile(search: SearchProfile | undefined): Searc
     || (displayFields.length ? displayFields.map((field) => `{{${field}}}`).join(' ') : '{{ID}} ({{Name}})');
   return {
     target: search.target,
+    ...(search.targetRole?{targetRole:search.targetRole}:{}),
     queryFields,
     displayTemplate,
     returnField,
@@ -265,21 +282,34 @@ export function resolveEffectiveFields(config: ConfigPackageV3, path: Classifica
   const values = new Map<string, FieldDefinition>();
   let inherited = true;
   for (const [index, node] of resolveCategoryNodes(config, path).entries()) {
-    if (index > 0 && !inherited) values.clear();
+    if (index > 0 && !inherited) {
+      if(config.contractRevision>=10){for(const [key,field] of values)if(field.inheritance!=='sealed')values.delete(key);}
+      else values.clear();
+    }
+    if(index>0&&config.contractRevision>=10&&inherited)for(const [key,field] of values)if(field.inheritance!=='localOnly')values.set(key,{...field,inheritance:'sealed'});
     if(index>0&&config.contractRevision>=9&&node.receiveFromParent?.fields===false)for(const [key,field] of values)if(field.inheritance!=='sealed')values.delete(key);
     if (index > 0) for (const [key,field] of values) if (field.inheritance === 'localOnly') values.delete(key);
     for (const field of node.fields) {
       const key = field.overrideOf || field.key;
       if (values.get(key)?.inheritance === 'sealed') continue;
-      values.set(key, { ...field, key, ...(field.optionSource ? { options: config.registries.optionSets?.find(set => set.id === field.optionSource?.registryKey)?.options ?? field.options } : {}) });
+      values.set(key, effectiveOptionsOwner(config, { ...field, key, ...(field.optionSource ? { options: config.registries.optionSets?.find(set => set.id === field.optionSource?.registryKey)?.options ?? field.options } : {}) }));
     }
     inherited = inheritanceControls(node).fields;
   }
   const result = [...values.values()];
   return compiled ? cachedPathValue(compiled.fields, cacheKey, freezeData(result)) : result;
 }
+/** Incoming fixed fields, before any local declaration can mask them. */
+export function resolveIncomingFields(config:ConfigPackageV3,path:ClassificationPath):FieldDefinition[]{
+  const parent=parentClassificationPath(path);if(!parent)return [];
+  const node=config.nodes.find(node=>classificationPathKey(node.path)===classificationPathKey(parent));
+  const fields=resolveEffectiveFields(config,parent);
+  if(config.contractRevision<10)return fields.filter(field=>field.inheritance==='sealed');
+  return fields.filter(field=>field.inheritance==='sealed'||node&&inheritanceControls(node).fields&&field.inheritance!=='localOnly').map(field=>({...field,inheritance:'sealed'}));
+}
 
-export function resolveWorkflowSelectOptions(config: ConfigPackageV3, control: Pick<WorkflowControl, 'options' | 'optionSource'>): SelectOption[] {
+export function resolveWorkflowSelectOptions(config: ConfigPackageV3, control: Pick<WorkflowControl, 'options' | 'optionSource' | 'optionsTableId' | 'optionsFieldRef' | 'optionTable'>): SelectOption[] {
+  if (control.optionsTableId||control.optionsFieldRef||control.optionTable) return effectiveOptions(config,control);
   if (config.contractRevision >= 8) return control.options ?? [];
   return control.optionSource ? config.registries.optionSets?.find(set => set.id === control.optionSource?.registryKey)?.options ?? [] : control.options ?? [];
 }
@@ -357,10 +387,19 @@ export function resolveRenderExtensions(config: ConfigPackageV3, geometry: Geome
   return result;
 }
 
-export function resolveCardConfiguration(config: ConfigPackageV3, path: ClassificationPath): CardConfiguration | undefined {
-  const compiled = compiledConfigs.get(config); const key = compiledPathKey(path);
+export function resolveCardConfiguration(config: ConfigPackageV3, path: ClassificationPath,bindings=true): CardConfiguration | undefined {
+  const compiled = bindings?compiledConfigs.get(config):undefined; const key = compiledPathKey(path);
   if (compiled?.cards.has(key)) { compiled.hits++; return compiled.cards.get(key); }
-  const result = resolveInheritedValue(config, path, 'card', (node) => node.card);
+  let result = resolveInheritedValue(config, path, 'card', (node) => node.card);
+  if(config.contractRevision>=10){
+    result=undefined;let parentId='',propagate=true;
+    for(const node of resolveCategoryNodes(config,path)){
+      const continuing=result?.mode==='fields'?{...result,items:result.items.filter(item=>item.inheritFrom)}:undefined;
+      result=mergeInheritedCard(propagate?result:continuing,node.card,parentId);
+      parentId=node.nodeId;propagate=inheritanceControls(node).card;
+    }
+  }
+  if(bindings&&config.contractRevision>=11&&result?.mode==='fields')result={...result,items:result.items.map(item=>resolveBoundCard(config,item))};
   return compiled ? cachedPathValue(compiled.cards, key, result) : result;
 }
 
@@ -405,7 +444,7 @@ function validateField(field: FieldDefinition, path: string, known: Set<string>,
   if (PROTECTED_FIELD_KEYS.has(field.key)) issue(issues, 'error', 'system-field-redefined', path, `系统字段 ${field.key} 不能在分类配置中重新定义。`, { field: field.key });
   if (known.has(field.key)) issue(issues, 'error', 'field-key-duplicate', path, `字段 ${field.key} 在同一分类节点中重复。`, { field: field.key });
   known.add(field.key);
-  if (!field.labels.zh.trim()) issue(issues, 'error', 'field-label-zh-required', path, '字段必须提供中文标签。', { field: field.key });
+  if (!(field.labels.zh.trim()||field.labels.en.trim())) issue(issues, 'error', 'field-label-zh-required', path, '字段必须提供中文或英文标签。', { field: field.key });
   if (field.type === 'enum' && (!field.options?.length && !field.optionSource?.registryKey)) issue(issues, 'error', 'enum-options-required', path, '枚举字段必须提供静态选项或受控选项注册表。', { field: field.key });
   const optionValues = new Set<string>();
   for (const option of field.options ?? []) {
@@ -426,6 +465,8 @@ function validateField(field: FieldDefinition, path: string, known: Set<string>,
 function validateRenderColorBinding(binding: unknown, config: ConfigPackageV3, sourcePath: ClassificationPath, path: string, issues: ConfigValidationIssue[]): void {
   if (!binding || typeof binding !== 'object') { issue(issues, 'error', 'render-color-binding-required', path, '渲染颜色必须设置为直接颜色、当前字段或外部要素字段。'); return; }
   const value = binding as { mode?: string; color?: string; field?: string; target?: ClassificationPath; targetIdField?: string; targetColorField?: string; strategy?: string };
+  const fallback = (binding as {fallbackColor?:string}).fallbackColor;
+  if (fallback !== undefined && !validCssColor(fallback)) issue(issues,'error','render-color-fallback-invalid',path,'回退颜色需要有效的十六进制、RGB/HSL、命名色或 transparent。');
   const sourceFields = new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key));
   if(value.mode==='valueMap') {
     const mapping=binding as Extract<import('./types').RenderColorBinding,{mode:'valueMap'}>, field=resolveSelectableFields(config,sourcePath).find(f=>f.key===mapping.field);
@@ -442,7 +483,7 @@ function validateRenderColorBinding(binding: unknown, config: ConfigPackageV3, s
     return;
   }
   if (value.mode === 'fixed') {
-    if (!value.color?.trim()) issue(issues, 'error', 'render-color-fixed-required', path, '直接颜色模式必须选择颜色。');
+    if (!validCssColor(value.color)) issue(issues, 'error', 'render-color-fixed-required', path, '直接颜色必须为有效的十六进制、RGB/HSL、命名色或 transparent。');
     return;
   }
   if (value.mode === 'field') {
@@ -473,6 +514,11 @@ function allowedMetrics(geometry: GeometryKind): Set<string> {
   return geometry === 'Point' ? new Set(['partCount', 'field']) : geometry === 'LineString' ? new Set(['length', 'partCount', 'field']) : new Set(['area', 'partCount', 'field']);
 }
 
+function numericMetricField(config: ConfigPackageV3, path: ClassificationPath, key?: string): boolean {
+  const field = resolveEffectiveFields(config,path).find(field=>field.key===key);
+  return Boolean(field && field.cardinality==='single' && (field.type==='number' || field.type==='enum' && field.optionValueType==='number'));
+}
+
 function validateRuleLabel(
   rule: ZoomPriorityRule,
   rulePath: string,
@@ -493,10 +539,16 @@ function validateRuleLabel(
     if (!['area', 'length', 'partCount', 'field'].includes(metric.kind)) issue(issues, 'error', 'label-metric-kind-invalid', rulePath, '碰撞指标类型无效。');
     for (const key of ['multiplier', 'divisor', 'min', 'max'] as const) if (metric[key] !== undefined && (!Number.isFinite(metric[key]) || key === 'divisor' && metric[key] === 0)) issue(issues, 'error', 'label-metric-value-invalid', rulePath, '碰撞指标参数必须为有限数字，除数不可为零。');
     if (metric.min !== undefined && metric.max !== undefined && metric.min > metric.max) issue(issues, 'error', 'label-metric-range-invalid', rulePath, '碰撞指标下限不能大于上限。');
-    if (metric.kind === 'field' && !resolveEffectiveFields(config, sourcePath).some(field => field.key === metric.field)) issue(issues, 'error', 'label-metric-field-invalid', rulePath, '碰撞指标字段不存在。');
+    if (metric.kind === 'field' && !numericMetricField(config, sourcePath, metric.field)) issue(issues, 'error', 'label-metric-field-invalid', rulePath, '碰撞指标需要存在的单值数值字段或数值枚举字段。');
   }
   const fields = new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key));
-  if (label.source && !sourceExists(label.source, fields)) issue(issues, 'error', 'render-label-source-invalid', rulePath, 'Label 来源必须是当前分类的有效字段、tags.xxx 或 extensions.xxx。', { field: label.source });
+  if (label.sourceMode === 'combined') {
+    if (config.contractRevision < 10) issue(issues, 'error', 'label-template-revision', rulePath, '组合 Label 来源需要 r10 契约。');
+    try { for (const token of parseLabelTemplate(label.template ?? '')) if (token.kind === 'field' && !sourceExists(token.value, fields)) issue(issues, 'error', 'label-template-field', rulePath, `组合来源字段不存在：${token.value}`); }
+    catch (error) { issue(issues, 'error', 'label-template-invalid', rulePath, (error as Error).message); }
+  }
+  if (label.sourceMode !== 'combined' && label.source && !sourceExists(label.source, fields)) issue(issues, 'error', 'render-label-source-invalid', rulePath, 'Label 来源必须是当前分类的有效字段、tags.xxx 或 extensions.xxx。', { field: label.source });
+  if(config.contractRevision>=10){const referenced=label.sourceMode==='combined'?(()=>{try{return parseLabelTemplate(label.template??'').filter(token=>token.kind==='field').map(token=>token.value);}catch{return [];}})():label.source?[label.source]:[];for(const path of referenced){const field=resolveEffectiveFields(config,sourcePath).find(field=>field.key===path);if(field&&(field.type==='json'||field.cardinality!=='single'))issue(issues,'error','label-complex-source-format',rulePath,'Label 来源需要标量字段；数组/对象必须先注册明确的显示格式。',{field:path});}}
   for (const fallback of label.fallbackSources ?? []) if (!sourceExists(fallback, fields)) issue(issues, 'error', 'render-label-fallback-source-invalid', rulePath, 'Label 回退来源必须是当前分类的有效字段、tags.xxx 或 extensions.xxx。', { field: fallback });
   if (label.valueFormat && !['plain', 'floorLabel'].includes(label.valueFormat)) issue(issues, 'error', 'render-label-value-format-invalid', rulePath, 'Label 值格式无效。');
   for (const [source, format] of Object.entries(label.fallbackValueFormats ?? {})) {
@@ -607,7 +659,8 @@ function validateRuleExtensions(rule: ZoomPriorityRule, geometry: GeometryKind, 
     }
     if (visibility.mode === 'activeContextMember') {
       const spec = visibility.activeContextMember;
-      if (spec?.bindingId && !(config.contextBindings ?? []).some((binding) => binding.enabled && binding.id === spec.bindingId)) issue(issues, 'error', 'visibility-context-binding-invalid', rulePath, '楼层/单元可见性规则引用了不存在的上下文绑定。');
+      if (spec?.bindingId && !(config.contractRevision>=10?spec.bindingId===STRUCTURE_CONTEXT_ID:(config.contextBindings ?? []).some((binding) => binding.enabled && binding.id === spec.bindingId))) issue(issues, 'error', 'visibility-context-binding-invalid', rulePath, '楼层/单元可见性规则引用了不存在的上下文绑定。');
+      if(config.contractRevision>=10){const role=resolveNodeFieldSettings(config,sourcePath).value.structure;if(!role?.enabled||role.role!=='member')issue(issues,'error','visibility-structure-role-invalid',rulePath,'附属可见性需要该分类启用附属身份与引用字段。');}
     }
   }
 }
@@ -664,7 +717,7 @@ function validateProfile(profile: GeometryProfile, geometry: GeometryKind, path:
     const metric = rule.priority?.metric;
     if (metric && !allowedMetrics(geometry).has(metric.kind)) issue(issues, 'error', 'dynamic-priority-metric-geometry-invalid', rulePath, `${metric.kind} 不适用于 ${geometry}。`);
     if (metric && (!Number.isFinite(metric.multiplier) || (metric.divisor !== undefined && (!Number.isFinite(metric.divisor) || metric.divisor === 0)) || (metric.min !== undefined && metric.max !== undefined && metric.min > metric.max))) issue(issues, 'error', 'dynamic-priority-invalid', rulePath, '动态优先级的倍率、除数或上下界无效。');
-    if (metric?.kind === 'field' && !metric.field?.trim()) issue(issues, 'error', 'dynamic-priority-field-required', rulePath, '字段型动态优先级必须指定字段。');
+    if (metric?.kind === 'field' && !numericMetricField(config,sourcePath,metric.field)) issue(issues, 'error', 'dynamic-priority-field-required', rulePath, '字段型动态优先级需要存在的单值数值字段或数值枚举字段。');
     validateRuleExtensions({ ...rule, extensions: resolveRenderExtensions(config, geometry, rule.extensions) }, geometry, rulePath, config, sourcePath, issues);
     const overrideIds = new Set<string>();
     for (const [overrideIndex, override] of (rule.conditionalOverrides ?? []).entries()) {
@@ -711,8 +764,22 @@ function sourceExists(source: string, fields: Set<string>): boolean {
 
 function validateCard(node: CategoryNode, config: ConfigPackageV3, issues: ConfigValidationIssue[]): void {
   const path = `nodes/${node.nodeId}/card`;
+  const checkItemIds = (card: CardConfiguration | undefined, scope: string) => {
+    if (card?.mode !== 'fields') return;
+    const ids = new Map<string,string>();
+    for (const item of card.items) {
+      if (!item.id?.trim() || ids.has(item.id)) issue(issues,'error','card-item-id-duplicate',`${path}/${scope}/${item.id}`,`信息卡条目 ID ${item.id || '（空）'} 重复或为空：${ids.get(item.id) ?? ''} / ${item.source}。请为条目使用独立 ID。`);
+      ids.set(item.id,item.source);
+    }
+  };
+  checkItemIds(node.card,'local');
+  if(config.contractRevision>=10&&node.card?.mode==='fields'){
+    const origins=new Set<string>(),ancestors=resolveCategoryNodes(config,node.path).filter(parent=>parent.nodeId!==node.nodeId);
+    for(const item of node.card.items)if(item.inheritFrom){const key=`${item.inheritFrom.nodeId}/${item.inheritFrom.itemId}`;if(origins.has(key)||!ancestors.some(parent=>parent.nodeId===item.inheritFrom!.nodeId))issue(issues,'error','card-inheritance-origin-invalid',`${path}/${item.id}`,'硬继承条目来源必须是同分支祖先且不能重复。');origins.add(key);}
+  }
   if(config.contractRevision>=9&&node.card?.mode==='fields'&&node.card.items.some(item=>item.labelMode||item.valueMode))issue(issues,'error','live-card-source-forbidden',path,'r9 信息卡不保留跟随/覆写状态，请先迁移。');
   const card = resolveCardConfiguration(config, node.path);
+  checkItemIds(card,'effective');
   if (!card) {
     // A blank r5 package may intentionally contain only rendering rules.
     // Treat that as a warning so authors can test native rendering first;
@@ -748,6 +815,10 @@ function validateCard(node: CategoryNode, config: ConfigPackageV3, issues: Confi
     if (item.renderer === 'lineChips' && !item.options?.lineChipSource) issue(issues, 'error', 'card-line-chips-source-required', itemPath, '关联线路胶囊必须选择平台、车站或车站建筑来源。');
     if (item.renderer !== 'relationLink') continue;
     const relation = item.relation;
+    if(config.contractRevision>=10&&relation?.targetRole==='main'){
+      if(relation.targetClassification||relation.targetMatchField!=='ID'||!isSafeWorkflowTarget(relation.targetDisplayField??'Name'))issue(issues,'error','relation-role-target-invalid',itemPath,'通用主结构关系按 ID 匹配，不限制 Class；目标显示字段必须为安全路径。');
+      continue;
+    }
     if (!relation?.targetClassification || !isContinuousPath(relation.targetClassification) || !hasCategoryNode(config, relation.targetClassification)) {
       issue(issues, 'error', 'relation-target-classification-invalid', itemPath, '关系卡必须选择存在且连续的目标分类。');
       continue;
@@ -765,11 +836,13 @@ function controlsFor(workflow: WorkflowDefinition): WorkflowControl[] {
 
 function validateSearch(control: Pick<WorkflowControl, 'kind' | 'search'>, config: ConfigPackageV3, path: string, issues: ConfigValidationIssue[]): void {
   const search = normalizeSearchProfile(control.search);
-  if (!search || !isContinuousPath(search.target) || !hasCategoryNode(config, search.target)) {
+  if (!search || (!search.targetRole&&(!isContinuousPath(search.target) || !hasCategoryNode(config, search.target)))) {
     issue(issues, 'error', 'workflow-search-target-invalid', path, '搜索控件必须选择存在且连续的目标分类范围。');
     return;
   }
-  const selectable = new Set(resolveSelectableFields(config, search.target).map((field) => field.key));
+  const targets=search.targetRole==='main'?config.nodes.filter(node=>{const role=resolveNodeFieldSettings(config,node.path).value.structure;return role?.enabled&&role.role==='main';}):[];
+  if(search.targetRole&&(config.contractRevision<10||!targets.length))issue(issues,'error','workflow-search-role-invalid',path,'通用搜索需要 r10 且至少有一个启用的主结构分类。');
+  const selectable = new Set(search.targetRole?targets.flatMap(node=>resolveSelectableFields(config,node.path).map(field=>field.key)).filter(key=>targets.every(node=>resolveSelectableFields(config,node.path).some(field=>field.key===key))):resolveSelectableFields(config, search.target).map((field) => field.key));
   if (!search.queryFields?.length) issue(issues, 'error', 'workflow-search-fields-required', path, '搜索控件至少需要选择一个可匹配字段。');
   for (const field of search.queryFields ?? []) if (!selectable.has(field)) issue(issues, 'error', 'workflow-search-field-invalid', path, `搜索字段 ${field} 不在目标分类的有效字段集中。`, { field });
   if (!search.returnField || !selectable.has(search.returnField)) issue(issues, 'error', 'workflow-search-return-field-invalid', path, '搜索控件必须选择一个有效的单一返回字段。', { field: search.returnField });
@@ -808,10 +881,12 @@ export function validateWorkflowOutput(output: WorkflowOutput, _outputIndex: num
     if (control && field && (control.fieldSource||config.contractRevision>=8)) {
       const leaf=control.kind==='group'?control.group?.itemFields[0]:control;
       const returned=leaf&&(leaf.kind==='featureSearch'||leaf.kind==='coarseSearch')&&leaf.search?resolveSelectableFields(config,leaf.search.target).find(field=>field.key===leaf.search!.returnField):undefined;
-      const actualType=control.kind==='group'&&control.group?.storage==='object'?'json':leaf?.kind==='number'?'number':leaf?.kind==='toggle'?'boolean':leaf?.kind==='select'?leaf.optionValueType??'string':returned?returned.type==='enum'?returned.optionValueType??'string':returned.type==='reference'?'string':returned.type:leaf?.kind==='json'?'json':'string';
+      const actualType=control.kind==='group'&&control.group?.storage==='object'?'json':leaf?.kind==='select'?leaf.optionValueType??'string':leaf?.kind==='json'?'json':leaf?.valueNormalization==='trim'||leaf?.valueNormalization==='abbr'?'string':leaf?.kind==='number'||leaf?.valueNormalization==='number'?'number':leaf?.kind==='toggle'?'boolean':returned?returned.type==='enum'?returned.optionValueType??'string':returned.type==='reference'?'string':returned.type:'string';
       const actualMultiple=control.kind==='group'||returned?.cardinality==='multiple';
       const expectedType=field.type==='enum'?field.optionValueType??'string':field.type==='reference'?'string':field.type;
-      if (field.type!=='json' && ((field.cardinality==='multiple')!==Boolean(actualMultiple)||actualType!==expectedType))issue(issues,'error','field-import-target-conflict',assignmentPath,'输入控件与输出目标的保存值类型或值数量不兼容。');
+      const dynamicJson=!(control.kind==='group'&&control.group?.storage!=='scalar')&&(leaf?.kind==='json'||returned?.type==='json'&&!returned.coordinateFormat);
+      const unknownMultiplicity=dynamicJson&&control.kind!=='group'&&returned?.cardinality!=='multiple';
+      if (field.type!=='json' && (!unknownMultiplicity&&(field.cardinality==='multiple')!==Boolean(actualMultiple)||!dynamicJson&&actualType!==expectedType))issue(issues,'error','field-import-target-conflict',assignmentPath,'输入控件与输出目标的保存值类型或值数量不兼容。');
       if(field.type==='enum'&&(control.kind==='group'?control.group?.itemFields[0]?.options:control.options)?.some(option=>!field.options?.some(target=>target.value===option.value)))issue(issues,'error','field-import-target-conflict',assignmentPath,'工作流选项包含输出目标字段不允许的保存值。');
     }
     assignmentIds.add(assignment.id);
@@ -929,10 +1004,10 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
   for (const step of workflow.steps) for (const point of step.drawing?.auxiliaryPoints ?? []) validateWorkflowValueCondition(point.when, allTokens, `${base}/steps/${step.id}/drawing/${point.id}`, issues);
   const validateOptions = (control: Pick<WorkflowControl, 'kind' | 'options'>, path: string) => {
     if (control.kind !== 'select') return;
-    const options = 'optionSource' in control ? resolveWorkflowSelectOptions(config, control as WorkflowControl) : control.options ?? [];
+    const options = resolveWorkflowSelectOptions(config,control as WorkflowControl);
     const values = options.map((option) => option.value);
     const normalized = values.map(value=>('optionValueType' in control&&control.optionValueType==='number')?String(Number(value)):value);
-    const typed=control as Pick<WorkflowControl,'optionValueType'>;
+    const typed=effectiveOptionsOwner(config,control as WorkflowControl);
     if(typed.optionValueType==='number'&&values.some(value=>!Number.isFinite(Number(value)))||typed.optionValueType==='boolean'&&values.some(value=>!['true','false'].includes(value)))issue(issues,'error','workflow-option-value-type-invalid',path,'下拉选项保存值与数字/布尔类型不符。');
     if (!values.length || values.some((value) => !value.trim()) || new Set(normalized).size !== values.length) issue(issues, 'error', 'workflow-select-options-invalid', path, '下拉选项必须具有非空且唯一的保存值。');
   };
@@ -981,14 +1056,24 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
     if (targetSupportsClassificationPicker(config, output.classification) !== Boolean(managed.length)) issue(issues, 'error', 'workflow-classification-picker-stale', `${base}/outputs/${output.id}`, '工作流输出分类的子分类状态已变化；请打开工作流以刷新系统 Classification 控件。');
     validateWorkflowOutput(output, outputIndex, workflow, config, slots, issues);
   }
+  // r6/r7 factory capture overrides are an explicitly recognised old drawing
+  // representation. Analyse its lossless r8 view, without editing the source.
+  issues.push(...validateWorkflowWrites(config.contractRevision<8?migrateWorkflowDrawings(workflow):workflow, path => resolveSelectableFields(config,path)));
 }
 
 /** Standalone workflow workbench validation. It deliberately validates only
  * the drafted workflow while still resolving fields/classes from the current
  * package, so save/import has a real read -> validate -> save lifecycle. */
 export function validateWorkflowDefinition(workflow: WorkflowDefinition, config: ConfigPackageV3): ConfigValidationReport {
+  workflowValidationRuns++;
   const issues: ConfigValidationIssue[] = [];
+  const structure = validateNativeStructure({...config,workflows:[workflow]});
+  if (structure.length) return {schemaVersion:'cairnmap.config-validation-report.v3',valid:false,createdAt:new Date().toISOString(),issues:structure.map(item=>({severity:'error',code:'native-contract-structure-invalid',...item}))};
   validateWorkflow(workflow, config, issues);
+  const scoped={...config,nodes:[],workflows:[workflow]};
+  issues.push(...validatePrefillCopies(scoped,(_config,path)=>resolveEffectiveFields(config,path)));
+  issues.push(...validateLookupTables({...config,workflows:[workflow]},false));
+  for(const error of standardTagTableErrors(config))issue(issues,'error','standard-tag-table-invalid',error.path,error.message);
   return {
     schemaVersion: 'cairnmap.config-validation-report.v3',
     valid: !issues.some((item) => item.severity === 'error'),
@@ -1002,12 +1087,15 @@ function conditionMatches(record: MountedFeatureRecord, conditions: Condition[] 
   if (!conditions?.length) return true;
   return conditions.every((condition) => {
     if (condition.kind === 'always' || condition.kind === 'zoomRange' || condition.kind === 'bboxArea') return true;
-    const value = String(record[condition.field] ?? '').trim();
+    const raw = readRecordPath(record,condition.field);
+    const value = String(raw ?? '').trim();
     if (condition.kind === 'fieldEquals') return value === condition.value;
     if (condition.kind === 'fieldIn') return condition.values.includes(value);
-    return condition.present ? value.length > 0 : value.length === 0;
+    return condition.present ? !empty(raw) : empty(raw);
   });
 }
+
+function empty(value: unknown): boolean { return value == null || typeof value === 'string' && !value.trim() || Array.isArray(value) && !value.length; }
 
 function recordId(record: MountedFeatureRecord, index: number): string { return String(record.ID ?? `${String(record.World ?? 'unknown-world')}/${String(record.Class ?? 'unknown-class')}/${index}`); }
 function recordName(record: MountedFeatureRecord): string { return String(record.Name ?? record.ID ?? '未命名要素'); }
@@ -1018,7 +1106,7 @@ function aggregateMountedIssues(records: MountedFeatureRecord[], config: ConfigP
   records.forEach((record, index) => {
     const path: ClassificationPath = { class: String(record.Class ?? ''), ...(record.Kind ? { kind: String(record.Kind) } : {}), ...((record.Skind ?? record.SKind) ? { skind: String(record.Skind ?? record.SKind) } : {}), ...((record.Skind2 ?? record.SKind2) ? { skind2: String(record.Skind2 ?? record.SKind2) } : {}) };
     for (const field of resolveEffectiveFields(config, path).filter((item) => item.required && item.validateExistingData && conditionMatches(record, item.requiredWhen))) {
-      if (record[field.key] !== null && record[field.key] !== undefined && record[field.key] !== '') continue;
+      if (!empty(readRecordPath(record,field.key))) continue;
       const key = `mounted-data-required-field-missing|${field.key}|${classificationPathKey(path)}`;
       const prior = grouped.get(key) ?? { severity: 'error' as const, code: 'mounted-data-required-field-missing', path: `mounted/${classificationPathKey(path)}/${field.key}`, field: field.key, expected: 'required', message: `缺少必填字段 ${field.key}（${classificationPathKey(path)}）。`, affectedFeatures: [], count: 0 };
       prior.affectedFeatures?.push({ id: recordId(record, index), name: recordName(record) });
@@ -1034,6 +1122,7 @@ function aggregateMountedIssues(records: MountedFeatureRecord[], config: ConfigP
 }
 
 function validateInteractionShape(visual: import('./types').InteractionVisual, path: string, issues: ConfigValidationIssue[]): void {
+  if (!validCssColor(visual.strokeColor) || visual.fillColor!==undefined&&!validCssColor(visual.fillColor) || visual.outline&&!validCssColor(visual.outline.color)) issue(issues,'error','interaction-color-invalid',path,'交互描边、填充和外描边必须使用有效 CSS 颜色。');
   if (typeof visual.enabled !== 'boolean' || !visual.strokeColor?.trim() || !Number.isFinite(visual.strokeWidth) || visual.strokeWidth < 0 || !Number.isFinite(visual.strokeOpacity) || visual.strokeOpacity < 0 || visual.strokeOpacity > 1 || visual.fillOpacity !== undefined && (!Number.isFinite(visual.fillOpacity) || visual.fillOpacity < 0 || visual.fillOpacity > 1)) issue(issues, 'error', 'interaction-visual-invalid', path, '交互颜色、线宽和透明度无效。');
   if (visual.symbol && (!['circle','pin'].includes(visual.symbol.kind) || visual.symbol.radius !== undefined && (!Number.isFinite(visual.symbol.radius) || visual.symbol.radius <= 0) || visual.symbol.size?.some(value => !Number.isFinite(value) || value <= 0))) issue(issues, 'error', 'interaction-symbol-invalid', path, '交互符号类型、半径和尺寸无效。');
   if (visual.outline && (!visual.outline.color?.trim() || !Number.isFinite(visual.outline.width) || visual.outline.width < 0 || !Number.isFinite(visual.outline.opacity) || visual.outline.opacity < 0 || visual.outline.opacity > 1)) issue(issues, 'error', 'interaction-outline-invalid', path, '外描边参数无效。');
@@ -1139,9 +1228,18 @@ function validateContextBindings(config: ConfigPackageV3, issues: ConfigValidati
 }
 
 export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: MountedFeatureRecord[] = []): ConfigValidationReport {
+  packageValidationRuns++;
   const issues: ConfigValidationIssue[] = [];
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: false, createdAt: new Date().toISOString(), issues: structure.map(item => ({ severity: 'error', code: 'native-contract-structure-invalid', ...item })) };
+  if(config.contractRevision>=11)for(const button of config.application?.buttons.items??[]){const rows=button.criteria.paths;if(!rows)issue(issues,'error','button-path-migration-required',`application/buttons/${button.id}`,'r11 按钮需要完整分类路径。');else for(const [index,row] of rows.entries()){if(!hasCategoryNode(config,row))issue(issues,'error','button-path-invalid',`application/buttons/${button.id}/${index}`,'按钮显示内容不是有效分类路径。');if(rows.some((other,at)=>at!==index&&Object.entries(other).every(([key,value])=>!value||row[key as keyof ClassificationPath]===value)))issue(issues,'warning','button-path-redundant',`application/buttons/${button.id}/${index}`,'该范围已被另一条上级或重复范围包含，可删除冗余行。');}}
+  if(config.contractRevision<11&&config.application&&isWorldGroups(config.application.sources))issue(issues,'error','resource-groups-revision','application/sources','World resource groups require contract r11.');
+  if(config.contractRevision>=10&&!config.application)issue(issues,'error','application-required','application','r10 完整应用包必须包含总体规则。');
+  if (config.contractRevision >= 10 && config.application) for (const row of validateApplication(config.application, new Set(config.nodes.map(node=>node.path.class)))) issue(issues,'error','application-invalid','application/'+row.path,row.message);
+  issues.push(...validateLookupTables(config));
+  for(const error of standardTagTableErrors(config))issue(issues,'error','standard-tag-table-invalid',error.path,error.message);
+  issues.push(...validatePrefillCopies(config,resolveEffectiveFields));
+  issues.push(...validateNodeFieldSettings(config,resolveEffectiveFields));
   if (config.contractRevision>=8 && (config.registries.optionSets || config.nodes.some(node=>node.fields.some(field=>field.optionSource)) || config.workflows.some(workflow=>controlsFor(workflow).some(control=>control.optionSource)))) issue(issues,'error','legacy-option-source-forbidden','registries','r8 使用字段内对照；旧全局选项来源必须先迁移。');
   if (config.schemaVersion !== 'cairnmap.config-package.v3') issue(issues, 'error', 'schema-version-invalid', 'manifest', '配置包不是 cairnmap.config-package.v3。');
   if (!isNativeConfigRevision(config.contractRevision)) issue(issues, 'error', 'contract-revision-invalid', 'manifest', '配置包必须使用 V3.2 原生契约 revision 5/6。');
@@ -1161,7 +1259,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
     const base = `nodes/${node.nodeId}`;
     if(config.contractRevision>=9)for(const field of node.fields)if(field.defaultValue!==undefined||field.placeholder!==undefined)issue(issues,'error','field-input-setting-forbidden',base,'输入默认值和提示属于控件，不属于字段定义。');
     const parentScope = parentClassificationPath(node.path);
-    const inheritedFields = parentScope ? resolveEffectiveFields(config, parentScope) : [];
+    const inheritedFields = config.contractRevision>=10?resolveIncomingFields(config,node.path):parentScope ? resolveEffectiveFields(config, parentScope) : [];
     for (const field of node.fields) {
       if (inheritedFields.some(inherited => inherited.key === (field.overrideOf ?? field.key) && inherited.inheritance === 'sealed')) issue(issues, 'error', 'field-sealed-override', base, `字段 ${field.key} 已锁定继承，不能覆盖。`);
       if (field.optionSource && !config.registries.optionSets?.some(set => set.id === field.optionSource?.registryKey)) issue(issues, 'error', 'field-option-source-invalid', base, `字段 ${field.key} 的共享选项来源不存在。`);
@@ -1179,7 +1277,13 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
     const parent = parentClassificationPath(node.path);
     if (parent && !hasCategoryNode(config, parent)) issue(issues, 'error', 'category-parent-missing', base, '子分类节点必须具有连续的父分类节点。');
     const keys = new Set<string>();
-    node.fields.forEach((field, index) => validateField(field, `${base}/fields/${index}`, keys, issues));
+    node.fields.forEach((field, index) => validateField(effectiveOptionsOwner(config,field), `${base}/fields/${index}`, keys, issues));
+    const identities = new Map<string,string>();
+    for (const field of resolveEffectiveFields(config,node.path)) {
+      const prior = identities.get(field.fieldId);
+      if (prior !== undefined && prior !== field.key) issue(issues,'error','field-id-duplicate',`${base}/fields/${field.fieldId}`,`有效分类 ${pathKey} 的 fieldId ${field.fieldId} 同时属于 ${prior} 和 ${field.key}。请修复身份及其引用后再保存。`);
+      identities.set(field.fieldId,field.key);
+    }
     for (const geometry of GEOMETRIES) {
       const profile = node.geometryProfiles[geometry];
       if (config.contractRevision >= 7 && profile?.enabled && resolveCategoryNodes(config, node.path).some(ancestor => ancestor.nodeId !== node.nodeId && ancestor.geometryType && ancestor.geometryType !== geometry)) issue(issues, 'error', 'geometry-type-inheritance-invalid', `${base}/geometry/${geometry}`, '本级几何与祖先已指定的类型不一致。');
@@ -1200,7 +1304,17 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
     }
     validateCard(node, config, issues);
   }
-  for (const node of config.nodes) for (const childId of node.children) if (!nodeIds.has(childId)) issue(issues, 'error', 'category-child-missing', `nodes/${node.nodeId}/children`, `子分类节点 ${childId} 不存在。`);
+  for (const node of config.nodes) {
+    const expected = config.nodes.filter(child=>classificationPathKey(parentClassificationPath(child.path) ?? {class:''})===classificationPathKey(node.path)).map(child=>child.nodeId);
+    const seen = new Set<string>();
+    for (const childId of node.children) {
+      if (!nodeIds.has(childId)) issue(issues,'error','category-child-missing',`nodes/${node.nodeId}/children`,`子分类节点 ${childId} 不存在。`);
+      else if (!expected.includes(childId)) issue(issues,'error','category-child-parent-conflict',`nodes/${node.nodeId}/children`,`子分类 ${childId} 的 path 不属于该直接父级，请依据连续 path 修复 children。`);
+      if (seen.has(childId)) issue(issues,'error','category-child-duplicate',`nodes/${node.nodeId}/children`,`子分类 ${childId} 重复。`);
+      seen.add(childId);
+    }
+    for (const id of expected) if (!seen.has(id)) issue(issues,'error','category-child-omitted',`nodes/${node.nodeId}/children`,`children 遗漏 path 定义的直接子分类 ${id}。`);
+  }
   const workflowIds = new Set<string>();
   for (const workflow of config.workflows) {
     if (workflowIds.has(workflow.id)) issue(issues, 'error', 'workflow-id-duplicate', `workflows/${workflow.id}`, '工作流 ID 重复。');
@@ -1217,6 +1331,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   if (!config.parity) issue(issues, 'warning', 'v1-parity-report-pending', 'parity', 'V1 语义迁移尚未执行；当前仅可作为 V3 原生试验包。');
   else for (const entry of config.parity.entries.filter((item) => item.status === 'unsupported')) issue(issues, 'warning', 'v1-parity-unsupported-pending', `parity/${entry.kind}/${entry.id}`, `V1 配置 ${entry.id} 尚未迁移：${entry.details ?? '未说明原因'}。`);
   const mounted = aggregateMountedIssues(mountedRecords, config);
+  mounted.push(...validateMountedStructureRoles(config,mountedRecords));
   issues.push(...mounted);
   const configuration = issues.filter((item) => !item.code.startsWith('mounted-') && !item.code.startsWith('v1-parity')).length;
   const parity = issues.filter((item) => item.code.startsWith('v1-parity')).length;

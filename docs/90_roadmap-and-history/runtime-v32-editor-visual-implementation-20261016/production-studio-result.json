@@ -1,0 +1,20 @@
+{
+  "sourceCommit": "b44f33d",
+  "sourceTree": "accfe1ce766f4ef0551780080656e4403e25084f",
+  "page": {
+    "url": "http://127.0.0.1:5197/?workspace=config-studio&configMode=v3&tab=features",
+    "title": "配置文件工作台 · V3.2 原生渲染",
+    "tabs": [
+      "总体规则",
+      "要素设计",
+      "工作流设计"
+    ],
+    "inputHeight": 36,
+    "editorClass": "config-editor cm-editor-design fixed inset-0 z-[3000] flex h-screen flex-col overflow-hidden bg-slate-100 text-slate-800",
+    "document": [
+      1440,
+      1440
+    ]
+  },
+  "runtimeErrors": []
+}

@@ -1,0 +1,55 @@
+{
+  "viewport": 600,
+  "map": {
+    "tag": "DIV",
+    "cls": "absolute inset-0 h-full min-h-[300px] w-full leaflet-container leaflet-touch leaflet-fade-anim",
+    "x": 26,
+    "y": 320,
+    "w": 548,
+    "h": 310,
+    "minHeight": "300px",
+    "overflow": "hidden"
+  },
+  "parents": [
+    {
+      "tag": "DIV",
+      "cls": "relative h-full min-h-[300px] w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 bg-slate-950",
+      "x": 25,
+      "y": 319,
+      "w": 550,
+      "h": 312,
+      "minHeight": "300px",
+      "overflow": "hidden"
+    },
+    {
+      "tag": "DIV",
+      "cls": "h-full min-h-[300px] min-w-0 flex-1 overflow-hidden",
+      "x": 25,
+      "y": 319,
+      "w": 550,
+      "h": 312,
+      "minHeight": "300px",
+      "overflow": "hidden"
+    },
+    {
+      "tag": "SECTION",
+      "cls": "flex h-full min-h-[40vh] min-w-0 flex-col overflow-hidden rounded-xl border bg-white p-3 xl:min-h-0",
+      "x": 12,
+      "y": 244,
+      "w": 576,
+      "h": 400,
+      "minHeight": "400px",
+      "overflow": "hidden"
+    }
+  ],
+  "category": {
+    "tag": "SECTION",
+    "cls": "mt-3 space-y-3 rounded border border-blue-300 bg-blue-50 p-3",
+    "x": 42,
+    "y": 593,
+    "w": 501,
+    "h": 688,
+    "minHeight": "0px",
+    "overflow": "visible"
+  }
+}

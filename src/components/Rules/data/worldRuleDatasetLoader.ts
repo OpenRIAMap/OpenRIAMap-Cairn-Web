@@ -1,131 +1,23 @@
-import { DATA_TOOL_SCHEMA } from '@/components/Common/buildDataToolSchema';
+import {runtimeDatasetView} from '@/configRuntime/runtimeDataView';
 import type { ProgressCallback } from '@/lib/fetchWithMirror';
-import { resolveWorldDirName } from './sourceResolver';
 import { getRuleDataSourceSnapshot, type RuleDataSourceSnapshot } from './formalDataSourceRuntime';
 import {
   abortActiveFormalDataRequests,
   loadFormalWorldFeatures,
   resolveFormalWorldRelease,
+  assertFormalReleaseCurrent,
+  withStableFormalRelease,
+  type FormalReleaseSet,
 } from './formalReleaseReader';
 import { isRuleWorldCacheValid, readRuleWorldCache, writeRuleWorldCache, type RuleCacheScope } from './worldRuleCache';
 import type { RuleWorldDataset } from './sourceTypes';
 
-const SPECIAL_CLASS_SET = new Set(DATA_TOOL_SCHEMA.specialClasses);
-const activeLegacyRequests = new Set<AbortController>();
-
-function cacheScope(source: RuleDataSourceSnapshot, releaseId: string, worldId: string): RuleCacheScope {
-  return {
-    sourceId: source.sourceId,
-    transportId: source.transportId,
-    releaseId: String(releaseId),
-    worldId: String(worldId),
-    readerSchemaVersion: source.readerSchemaVersion,
-  };
+function cacheScope(source: RuleDataSourceSnapshot, releaseId: string, worldId: string): RuleCacheScope { return {sourceId:source.sourceId,transportId:source.transportId,releaseId,worldId,readerSchemaVersion:source.readerSchemaVersion}; }
+/** A view normalizes World for the app; cache/warehouse records stay untouched. */
+export function applicationWorldDataset(dataset:RuleWorldDataset,source:RuleDataSourceSnapshot,worldId:string):RuleWorldDataset {
+  if(!source.resourceGroupId)return runtimeDatasetView(dataset);
+  return runtimeDatasetView({...dataset,worldId,resourceGroupId:source.resourceGroupId,remoteWorldId:source.remoteWorldId,features:source.remoteWorldId&&source.remoteWorldId!==worldId?dataset.features.map(feature=>({...feature,World:worldId})):dataset.features});
 }
-
-function legacyDataRoot(source: RuleDataSourceSnapshot): string {
-  return `${source.rootUrl.replace(/\/+$/, '')}/Data_Merge`;
-}
-
-function legacyCategoryPath(worldId: string, className: string, kind?: string): string {
-  const worldDir = resolveWorldDirName(worldId);
-  const normalizedClassName = String(className ?? '').trim();
-  const normalizedKind = String(kind ?? '').trim();
-  return SPECIAL_CLASS_SET.has(normalizedClassName) && normalizedKind
-    ? `${worldDir}/${normalizedClassName}/${normalizedKind}`
-    : `${worldDir}/${normalizedClassName}`;
-}
-
-async function fetchLegacyJson<T>(source: RuleDataSourceSnapshot, relativePath: string, stage: string, onProgress?: ProgressCallback): Promise<T> {
-  const controller = new AbortController();
-  activeLegacyRequests.add(controller);
-  onProgress?.({ stage, status: 'loading' });
-  try {
-    const response = await fetch(`${legacyDataRoot(source)}/${String(relativePath ?? '').replace(/^\/+/, '')}`, {
-      signal: controller.signal,
-      cache: 'no-store',
-    });
-    if (!response.ok) throw new Error(`legacy-data HTTP ${response.status}: ${relativePath}`);
-    const data = await response.json() as T;
-    onProgress?.({ stage, status: 'success' });
-    return data;
-  } finally {
-    activeLegacyRequests.delete(controller);
-  }
-}
-
-async function fetchLegacyMergeVersion(worldId: string, source: RuleDataSourceSnapshot, onProgress?: ProgressCallback): Promise<number | string> {
-  const worldDir = resolveWorldDirName(worldId);
-  const data = await fetchLegacyJson<any>(source, `${worldDir}/INDEX.json`, 'world-version', onProgress);
-  return data?.version ?? '0';
-}
-
-async function loadLegacyWorldDataset(
-  worldId: string,
-  source: RuleDataSourceSnapshot,
-  onProgress?: ProgressCallback,
-): Promise<RuleWorldDataset> {
-  const mergeVersion = await fetchLegacyMergeVersion(worldId, source, onProgress);
-  const scope = cacheScope(source, String(mergeVersion), worldId);
-  onProgress?.({ stage: 'world-cache-check', status: 'loading' });
-  if (isRuleWorldCacheValid(scope)) {
-    onProgress?.({ stage: 'world-cache-check', status: 'success' });
-    const cached = readRuleWorldCache(scope);
-    if (cached) return cached;
-  } else {
-    onProgress?.({ stage: 'world-cache-check', status: 'success', message: 'Cache requires refresh' });
-  }
-
-  onProgress?.({ stage: 'world-index-scan', status: 'loading' });
-  const targets: Array<{ className: string; kind?: string }> = [];
-  for (const className of DATA_TOOL_SCHEMA.featureClasses) {
-    if (SPECIAL_CLASS_SET.has(className)) {
-      const kinds = DATA_TOOL_SCHEMA.workflowKinds[className] ?? [];
-      for (const kind of kinds) targets.push({ className, kind });
-    } else {
-      targets.push({ className });
-    }
-  }
-  onProgress?.({ stage: 'world-index-scan', status: 'success', message: `Categories: ${targets.length}` });
-
-  onProgress?.({ stage: 'world-chunk-load', status: 'loading' });
-  const all: Record<string, unknown>[] = [];
-  let loadedChunkCount = 0;
-  for (const target of targets) {
-    try {
-      const categoryPath = legacyCategoryPath(worldId, target.className, target.kind);
-      const idx = await fetchLegacyJson<any>(source, `${categoryPath}/INDEX.json`, `merge-${target.className}-index`, onProgress);
-      const files = Array.isArray(idx?.chunks) ? idx.chunks.map((chunk: any) => chunk?.file).filter(Boolean) : [];
-      for (const file of files) {
-        const arr = await fetchLegacyJson<any[]>(source, `${categoryPath}/${String(file)}`, `chunk-${file}`, onProgress);
-        if (!Array.isArray(arr)) throw new Error(`legacy-data chunk must be an array: ${file}`);
-        for (const item of arr) if (item && typeof item === 'object') all.push(item as Record<string, unknown>);
-        loadedChunkCount += 1;
-        onProgress?.({ stage: 'world-chunk-load', status: 'loading', message: `Chunks: ${loadedChunkCount}` });
-      }
-    } catch {
-      // A legacy category can be absent for a world. This does not switch the selected source.
-    }
-  }
-  onProgress?.({ stage: 'world-chunk-load', status: 'success', message: `Features: ${all.length}` });
-
-  onProgress?.({ stage: 'world-cache-write', status: 'loading' });
-  const dataset: RuleWorldDataset = {
-    worldId,
-    mergeVersion,
-    releaseId: String(mergeVersion),
-    sourceId: source.sourceId,
-    transportId: source.transportId,
-    readerSchemaVersion: source.readerSchemaVersion,
-    loadedAt: Date.now(),
-    features: all,
-  };
-  writeRuleWorldCache(scope, dataset);
-  onProgress?.({ stage: 'world-cache-write', status: 'success' });
-  onProgress?.({ stage: 'world-ready', status: 'success' });
-  return dataset;
-}
-
 export type RuleWorldVersion = {
   formalVersion: string | null;
   releaseId: string;
@@ -133,39 +25,40 @@ export type RuleWorldVersion = {
 
 export async function fetchWorldMergeVersion(
   worldId: string,
-  onProgress?: ProgressCallback,
-  source: RuleDataSourceSnapshot = getRuleDataSourceSnapshot(),
+  _onProgress?: ProgressCallback,
+  source: RuleDataSourceSnapshot = getRuleDataSourceSnapshot(worldId),
+  releaseSet?: FormalReleaseSet,
 ): Promise<RuleWorldVersion> {
   if (source.readerKind === 'formal-release-v2') {
-    const release = await resolveFormalWorldRelease({ source, worldId });
+    let initialSet=releaseSet;
+    const release = await withStableFormalRelease(async()=>{const selectedSet=initialSet;initialSet=undefined;const value=await resolveFormalWorldRelease({source,worldId,releaseSet:selectedSet});await assertFormalReleaseCurrent({source,release:value});return value;});
     return { formalVersion: release.formalVersion === null ? null : String(release.formalVersion), releaseId: release.releaseId };
   }
-  const version = await fetchLegacyMergeVersion(worldId, source, onProgress);
-  return { formalVersion: String(version), releaseId: String(version) };
+  throw Error('已退役数据格式不能恢复；请选择现役正式数据源。');
 }
 
-export function abortActiveRuleDatasetRequests(): void {
-  abortActiveFormalDataRequests();
-  for (const controller of activeLegacyRequests) controller.abort();
-  activeLegacyRequests.clear();
+export function abortActiveRuleDatasetRequests(worldIds?:readonly string[]): void {
+  abortActiveFormalDataRequests(worldIds);
+
 }
 
 export async function loadWorldRuleDataset(
   worldId: string,
   onProgress?: ProgressCallback,
-  source: RuleDataSourceSnapshot = getRuleDataSourceSnapshot(),
+  source: RuleDataSourceSnapshot = getRuleDataSourceSnapshot(worldId),
 ): Promise<RuleWorldDataset> {
   if (source.readerKind !== 'formal-release-v2') {
-    return loadLegacyWorldDataset(worldId, source, onProgress);
+    throw Error('已退役数据格式不能加载；请选择现役正式数据源。');
   }
 
+  return withStableFormalRelease(async()=>{
   const release = await resolveFormalWorldRelease({ source, worldId });
-  const scope = cacheScope(source, release.releaseId, release.worldId);
+  const scope = cacheScope(source, release.releaseId, worldId);
   onProgress?.({ stage: 'world-cache-check', status: 'loading' });
   if (isRuleWorldCacheValid(scope)) {
     onProgress?.({ stage: 'world-cache-check', status: 'success' });
     const cached = readRuleWorldCache(scope);
-    if (cached) return cached;
+    if (cached && cached.features.length===release.worldManifest.featureCount) {await assertFormalReleaseCurrent({source,release});return applicationWorldDataset(cached,source,worldId);}
   } else {
     onProgress?.({ stage: 'world-cache-check', status: 'success', message: 'Cache requires refresh' });
   }
@@ -173,7 +66,7 @@ export async function loadWorldRuleDataset(
   const features = await loadFormalWorldFeatures({ source, release, onProgress });
   onProgress?.({ stage: 'world-cache-write', status: 'loading' });
   const dataset: RuleWorldDataset = {
-    worldId: release.worldId,
+    worldId,
     mergeVersion: release.releaseId,
     releaseId: release.releaseId,
     formalVersion: release.formalVersion ?? undefined,
@@ -186,5 +79,6 @@ export async function loadWorldRuleDataset(
   writeRuleWorldCache(scope, dataset);
   onProgress?.({ stage: 'world-cache-write', status: 'success' });
   onProgress?.({ stage: 'world-ready', status: 'success' });
-  return dataset;
+  return applicationWorldDataset(dataset,source,worldId);
+  });
 }

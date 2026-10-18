@@ -1,0 +1,144 @@
+{
+  "approvedBlueprint": "RuntimeV32_PostC_Revision_Requirements_2026-10-15.md v1.1",
+  "contractRevision": 11,
+  "packageRevision": 7,
+  "automatedGates": 56,
+  "verifyPassed": true,
+  "buildPassed": true,
+  "browserReports": [
+    "postc-buttons.json",
+    "postc-default-acceptance.json",
+    "postc-dictionaries.json",
+    "postc-help-inventory.json",
+    "postc-help.json",
+    "postc-native-workflow-matrix.json",
+    "postc-production-performance.json",
+    "postc-resource-groups.json",
+    "postc-resource-http.json",
+    "postc-table-workspace.json",
+    "postc-upgrade.json",
+    "postc-workflow-tags.json",
+    "postc-zip-import-acceptance.json",
+    "subject-drawing-session.json",
+    "subject-interaction-states.json",
+    "subject-label-positions.json",
+    "subject-module-entry-result.json",
+    "subject-multipart-edit-acceptance.json",
+    "subject-multipart-labels-result.json",
+    "subject-rail-edit-acceptance.json",
+    "subject-rle-capsules.json",
+    "subject-trp-edit-acceptance.json"
+  ],
+  "browserRuntimeErrors": 0,
+  "frozenR10Sha256": "e42b6047c8459ffd00bbe196cdc8194f220dfc65b2e0ce5963fde4e42b9ef292",
+  "evidence": [
+    {
+      "file": "postc-buttons.json",
+      "sha256": "d3a66adf314e2f24dd4e7c1e9dc80acf1f1533eeca6e014f3a6ed0f8a7fed7bf"
+    },
+    {
+      "file": "postc-buttons.png",
+      "sha256": "1ab4d49ea60ee03d58f9889599c7f859f98701ffee0e6fd26ab6145d90843e52"
+    },
+    {
+      "file": "postc-default-acceptance.json",
+      "sha256": "d19916cba08a79a1e9050cc239a82add6808a0f7adf22c3ee76209ef12312c2f"
+    },
+    {
+      "file": "postc-dictionaries.json",
+      "sha256": "7f4c7e5cee3cced7381a772203b18208a923e6ac2644c4b4a109d9ae03163353"
+    },
+    {
+      "file": "postc-dictionaries.png",
+      "sha256": "79dea90cf7c148fd8291ed85e8b38bca775fbba2b82a5c9a1bf83d87b0eba0a6"
+    },
+    {
+      "file": "postc-help-inventory.json",
+      "sha256": "ca01bf57ab26a5f42b747b511cb80945c661ee0a25ae8d4ae59eac249e71d30e"
+    },
+    {
+      "file": "postc-help-mobile.png",
+      "sha256": "67db22bc6fc34df090ff78b349678e33a28164e7a8e78755c0d5b33b7c0d9020"
+    },
+    {
+      "file": "postc-help.json",
+      "sha256": "9a0a52d8facf3885ddc886dc4a324921416d4169793b53f3e4fd144dfa73c545"
+    },
+    {
+      "file": "postc-native-workflow-matrix.json",
+      "sha256": "803ee9a2db942fe7b9bbb2e408c160395cde49afde048867d5ae79e68a5d2484"
+    },
+    {
+      "file": "postc-production-performance.json",
+      "sha256": "972713b5cfeccd592df19eec6a7366d445eb22c899ffbc0d3bb591e035fb5a7d"
+    },
+    {
+      "file": "postc-resource-groups.json",
+      "sha256": "38943a66482d479bacb5fb16e58276e136063f15c12ae73d6a10b07238fc9a67"
+    },
+    {
+      "file": "postc-resource-http.json",
+      "sha256": "40d33ae9bca354033a8da9b6528682919394e063f7186fa076c62f5a7c46415e"
+    },
+    {
+      "file": "postc-resource-http.png",
+      "sha256": "31ae058e914faea302f29e37218fc6534e8bc40fc125b1ed23a00958b4165d08"
+    },
+    {
+      "file": "postc-table-workspace.json",
+      "sha256": "c42eed667489eb87d114d6e7a42f51a7ab4659290da5b14804e5f379ace756cd"
+    },
+    {
+      "file": "postc-upgrade.json",
+      "sha256": "73f16f230f54207f7313ad9794465252810d6a94f48def8b8f078d58b6048652"
+    },
+    {
+      "file": "postc-workflow-tags.json",
+      "sha256": "80f8628580000d034a4ed91f6d522a52f0b6b988fe042c42946357b02ac06995"
+    },
+    {
+      "file": "postc-zip-import-acceptance.json",
+      "sha256": "6d9fb8bf69b7dfd1f60c828205238d1c8fb113e15b526e5c86c21c4959f8c3ac"
+    },
+    {
+      "file": "published-button-migration.json",
+      "sha256": "586ee1b55a728fc67389327352cc157267532617c51fa4331f33b9db3220586c"
+    },
+    {
+      "file": "subject-drawing-session.json",
+      "sha256": "b30df226e5f0c0eee9af6af7f703de215451f1192d997e97cf497cb9d67bfe33"
+    },
+    {
+      "file": "subject-interaction-states.json",
+      "sha256": "155573787feaebf0471ea244b335cfa08732a8735a8f079f614581c7e0bd2d06"
+    },
+    {
+      "file": "subject-label-positions.json",
+      "sha256": "01579143622ff677313c30c66cfcb1c695ff482b675574317e90a2d9c90be04d"
+    },
+    {
+      "file": "subject-module-entry-result.json",
+      "sha256": "e39588fd022c34dfcfd8ca0de5eecb71c437ffea62e9d0ea60f5db0d23d3bd34"
+    },
+    {
+      "file": "subject-multipart-edit-acceptance.json",
+      "sha256": "954c0d02918db515b7ef9f3ba54e37ce12932e4c7a6871585cfdc436c25d3cc7"
+    },
+    {
+      "file": "subject-multipart-labels-result.json",
+      "sha256": "3153b5386531dea98693d7217713dd84fde7e64d4d0b75cd5ebe370e7760fc88"
+    },
+    {
+      "file": "subject-rail-edit-acceptance.json",
+      "sha256": "b32791d982a3103111943374ed5e1585219a19908409943b56ea8307a644f7f9"
+    },
+    {
+      "file": "subject-rle-capsules.json",
+      "sha256": "5a064b4f8219f37345c3b497a521322d0fd6a1ab003ce8e621e04a3063935906"
+    },
+    {
+      "file": "subject-trp-edit-acceptance.json",
+      "sha256": "39117a9a57bbd6fa7d4a6782257fb059b8d5e8c3042c0fb540da875510d9e261"
+    }
+  ]
+}

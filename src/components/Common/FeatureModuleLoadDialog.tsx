@@ -2,27 +2,28 @@ import { useEffect } from 'react';
 import { Download, Loader2, PackageOpen, XCircle } from 'lucide-react';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
-import { useFeatureModuleStore } from '@/store/featureModuleStore';
+import { useFeatureModuleStore, type FeatureModuleKey } from '@/store/featureModuleStore';
 
-export default function FeatureModuleLoadDialog() {
+export default function FeatureModuleLoadDialog({onCancel}:{onCancel?:(moduleKey:FeatureModuleKey)=>void}={}) {
   const dialog = useFeatureModuleStore((state) => state.dialog);
   const confirmDialogAndLoad = useFeatureModuleStore((state) => state.confirmDialogAndLoad);
   const dismissDialog = useFeatureModuleStore((state) => state.dismissDialog);
+  const cancel=()=>{if(dialog.loading)return;dismissDialog();if(dialog.moduleKey)onCancel?.(dialog.moduleKey);};
 
   useEffect(() => {
     if (!dialog.isOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !dialog.loading) dismissDialog();
+      if (event.key === 'Escape' && !dialog.loading) cancel();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [dialog.isOpen, dialog.loading, dismissDialog]);
+  }, [dialog.isOpen, dialog.loading, dialog.moduleKey, dismissDialog, onCancel]);
 
   if (!dialog.isOpen || !dialog.moduleKey) return null;
 
   return (
     <div className="fixed inset-0 z-[12000] flex items-center justify-center bg-gray-950/45 px-4 py-6 backdrop-blur-[1px]">
-      <div className="absolute inset-0" onClick={() => !dialog.loading && dismissDialog()} />
+      <div className="absolute inset-0" onClick={cancel} />
       <AppCard role="dialog" aria-modal="true" aria-labelledby="feature-module-dialog-title" className="relative max-h-full w-full max-w-md overflow-y-auto rounded-3xl border border-white/70 bg-white p-6 shadow-[0_24px_64px_rgba(15,23,42,0.22)]">
         <div className="flex items-start gap-4">
           <div className="mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
@@ -46,7 +47,7 @@ export default function FeatureModuleLoadDialog() {
         <div className="mt-6 flex items-center justify-end gap-3">
           <AppButton
             className="h-11 min-w-[92px] border border-slate-200 bg-white px-4 text-sm text-slate-700 hover:bg-slate-50"
-            onClick={dismissDialog}
+            onClick={cancel}
             disabled={dialog.loading}
           >
             取消

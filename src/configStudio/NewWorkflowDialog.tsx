@@ -1,0 +1,15 @@
+import {HelpControl} from './SettingHelp';
+import {useState} from 'react';
+import {ConfigDialog} from './ConfigDialog';
+import {SettingField} from './SettingField';
+import type {ConfigPackageV3,ConfigValidationReport,WorkflowDefinition} from './types';
+import {cloneWorkflowTemplate} from './workflowTemplate';
+export function NewWorkflowDialog({config,onClose,onCreate}:{config:ConfigPackageV3;onClose:()=>void;onCreate:(workflow:WorkflowDefinition,report?:ConfigValidationReport)=>void}){
+  const [mode,setMode]=useState<'blank'|'template'>('blank'),[query,setQuery]=useState(''),[source,setSource]=useState(''),[id,setId]=useState(`workflow-${Date.now().toString(36)}`),[zh,setZh]=useState(''),[en,setEn]=useState(''),[error,setError]=useState('');
+  const templates=config.workflows.filter(flow=>`${flow.id} ${flow.label.zh} ${flow.label.en} ${flow.mode} ${flow.target?.class??flow.outputs[0]?.classification.class??''}`.toLowerCase().includes(query.toLowerCase()));
+  return <ConfigDialog open title="新建工作流" onClose={onClose}><SettingField title="初始化方式" help="空白从最小标准流程开始；模板复制完整设置及已有引用，之后独立编辑。编辑用途和分类路由冲突会报告并阻止保存，不修改原工作流。"><select aria-label="工作流初始化方式" value={mode} onChange={event=>setMode(event.target.value as typeof mode)}><option value="blank">空白工作流</option><option value="template">使用已有工作流模板</option></select></SettingField>
+    {mode==='template'?<><SettingField title="搜索工作流模板" help="按名称、ID、模式或主分类搜索已保存的工作流。仅复制当前模板快照，不建立后续同步。"><input aria-label="搜索工作流模板" value={query} onChange={event=>setQuery(event.target.value)}/></SettingField><HelpControl context="NewWorkflowDialog"><select aria-label="工作流模板" size={6} className="w-full min-w-0" value={source} onChange={event=>setSource(event.target.value)}>{templates.map(flow=><option key={flow.id} value={flow.id}>{flow.label.zh||flow.label.en}（{flow.id}）· {flow.mode} · {flow.target?.class??flow.outputs[0]?.classification.class}</option>)}</select></HelpControl></>:null}
+    <div className="cm-flex-grid gap-2">{[['新工作流 ID',id,setId],['名称 zh',zh,setZh],['名称 en',en,setEn]].map(([title,value,set])=><SettingField key={String(title)} title={String(title)} help={title==='新工作流 ID'?'填写新的唯一 ID，不得与已有工作流重复。':'填写新工作流的显示名称；zh/en 至少一项，英文不会从中文生成。'}><input aria-label={String(title)} value={String(value)} onChange={event=>(set as typeof setId)(event.target.value)}/></SettingField>)}</div>
+    <button type="button" className="rounded border bg-violet-600 px-3 py-1 text-white" onClick={()=>{try{if(mode==='template'){const next=cloneWorkflowTemplate(config,source,id,{zh,en});onCreate(next.workflow,next.report);}else {if(!/^[A-Za-z][A-Za-z0-9_-]{1,100}$/.test(id.trim())||config.workflows.some(flow=>flow.id===id.trim()))throw Error('ID 无效或已存在。');if(!(zh.trim()||en.trim()))throw Error('请填写名称。');onCreate({id:id.trim(),label:{zh:zh.trim(),en:en.trim()},mode:'composed',target:{class:''},steps:[],outputs:[{id:'output-1',classification:{class:''},assignments:[],geometry:{selected:'Point'}}]});}}catch(reason){setError(String(reason));}}}>创建工作流草稿</button>{error?<p role="alert" className="text-rose-700">{error}</p>:null}
+  </ConfigDialog>;
+}

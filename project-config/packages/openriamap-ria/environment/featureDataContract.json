@@ -4,9 +4,9 @@
   "description": "FeatureData Split/Merge/Index repository contract for the Cairn distributed framework. DATA_FEATURE_REPO_CONTRACT_1 is contract-only and does not replace the current dataSources/sourceLinkModes runtime chain.",
   "runtimeStatus": "contract-only",
   "storageProfileRefs": {
-    "featureData": "featureData.github.currentOpenRIAMapData",
-    "media": "media.github.currentOpenRIAMapDataPicture",
-    "mediaIndex": "mediaIndex.github.plannedOpenRIAMapData",
+    "featureData": "featureData.formal.current",
+    "media": "media.formal.current",
+    "mediaIndex": "mediaIndex.formal.current",
     "relayPool": "relayPool.github.plannedCairnMapRelayPool"
   },
   "roots": {

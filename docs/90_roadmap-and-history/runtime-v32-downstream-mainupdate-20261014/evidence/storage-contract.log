@@ -1,0 +1,5 @@
+CairnMap StorageProfile Validation
+  Config: project-config/packages/openriamap-ria/environment/storageProfiles.json
+  Schema: project-config/schemas/environment/cairnmap.storage-profiles.v1.schema.json
+
+Final result: PASS

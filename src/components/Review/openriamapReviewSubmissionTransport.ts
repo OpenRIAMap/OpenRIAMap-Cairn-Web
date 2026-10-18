@@ -1,3 +1,4 @@
+import { assertReviewWorldContext, reviewEndpoint } from '@/core/project/applicationRuntime';
 import type {
   ReviewRevisionUploadGrant,
   ReviewRevisionUploadRequest,
@@ -8,7 +9,8 @@ import type {
 type BrokerResponse = { response: Response; body: unknown };
 
 async function broker(operation: 'revision-upload-request' | 'revision-upload-complete', request: ReviewRevisionUploadRequest): Promise<BrokerResponse> {
-  const response = await fetch('/api/review-control', {
+  assertReviewWorldContext(request,true);
+  const response = await fetch(reviewEndpoint('control'), {
     method: 'POST',
     credentials: 'same-origin',
     cache: 'no-store',
@@ -21,7 +23,8 @@ async function broker(operation: 'revision-upload-request' | 'revision-upload-co
 }
 
 async function uploadProgress(request: ReviewRevisionUploadRequest): Promise<BrokerResponse> {
-  const response = await fetch('/api/review-control', {
+  assertReviewWorldContext(request,true);
+  const response = await fetch(reviewEndpoint('control'), {
     method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ operation: 'revision-upload-progress', submissionId: request.submissionId, revisionId: request.revisionId }),
   });

@@ -1,0 +1,38 @@
+{
+  "checks": [
+    {
+      "mode": "main",
+      "hostClass": "BUD",
+      "zeroLevelValid": true,
+      "desktopRealButton": true,
+      "mobilePublicSelectionEvent": true,
+      "filteredIndependentMemberLabels": true
+    },
+    {
+      "mode": "main",
+      "hostClass": "STB",
+      "zeroLevelValid": true,
+      "desktopRealButton": true,
+      "mobilePublicSelectionEvent": true,
+      "filteredIndependentMemberLabels": true
+    },
+    {
+      "mode": "preview",
+      "hostClass": "BUD",
+      "zeroLevelValid": true,
+      "desktopRealButton": true,
+      "mobilePublicSelectionEvent": true,
+      "filteredIndependentMemberLabels": true
+    },
+    {
+      "mode": "preview",
+      "hostClass": "STB",
+      "zeroLevelValid": true,
+      "desktopRealButton": true,
+      "mobilePublicSelectionEvent": true,
+      "filteredIndependentMemberLabels": true
+    }
+  ],
+  "runtimeErrors": [],
+  "scope": "four real shared layer/validator hosts; mobile public selection event, separate actual App mobile panel entry tested elsewhere"
+}

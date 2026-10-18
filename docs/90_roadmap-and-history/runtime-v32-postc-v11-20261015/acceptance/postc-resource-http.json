@@ -1,0 +1,28 @@
+{
+  "datasets": [
+    {
+      "world": "zth",
+      "remoteWorld": "world",
+      "name": "SERVER A",
+      "id": "same-id",
+      "release": "a-release-1"
+    },
+    {
+      "world": "eden",
+      "remoteWorld": "world",
+      "name": "SERVER B",
+      "id": "same-id",
+      "release": "b-release-1"
+    }
+  ],
+  "tiles": [
+    "A original loaded from http://127.0.0.1:5196/a-tiles/world/flat/0_0/zz_0_0.jpg",
+    "A sketch loaded from http://127.0.0.1:5196/a-tiles/world/flat/0_0/zz_0_0.jpg",
+    "A watercolor loaded from http://127.0.0.1:5196/a-tiles/world/flat/0_0/zz_0_0.jpg",
+    "B original loaded from http://127.0.0.1:5196/b-tiles/world/flat/0_0/zz_0_0.jpg",
+    "B sketch loaded from http://127.0.0.1:5196/b-tiles/world/flat/0_0/zz_0_0.jpg",
+    "B watercolor loaded from http://127.0.0.1:5196/b-tiles/world/flat/0_0/zz_0_0.jpg"
+  ],
+  "cancellation": true,
+  "tileOnlyPreservesDataGeneration": true
+}

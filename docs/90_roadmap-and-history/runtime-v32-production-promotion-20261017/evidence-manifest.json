@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "cairnmap.production-promotion-evidence.v1",
+  "createdAt": "2026-10-17T09:29:53.341Z",
+  "webBaseline": "5b3e9c2",
+  "pipelineBaseline": "7fe4ec5df6cdf66cd7df5c3f489ca05e3f3ba4ba",
+  "seed": {
+    "releaseId": "v3-r11-r7-seed",
+    "packageId": "cairnmap-config-v32-semantic",
+    "projectId": "openriamap-ria",
+    "revision": 7,
+    "contractRevision": 11,
+    "configSha256": "982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e",
+    "manifestSha256": "8818876914ba81dcc8318c0da4ef8977fd5729821e750666efb425871ded6fad",
+    "configUrl": "/configuration/releases/982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e/config.json"
+  },
+  "kernel": "fc2012d32e72d80f13ee9e37627142c85da74b20a53dc66fc692d9df119bc2e8",
+  "onlineDeploymentPerformed": false,
+  "files": [
+    {
+      "path": "Deployment.md",
+      "byteLength": 8768,
+      "sha256": "1e0a6f97942d198f101c95aa5d666887977c333fb54224b518506fdbb26315cf"
+    },
+    {
+      "path": "Report.md",
+      "byteLength": 9492,
+      "sha256": "94cea10f51f16144617b1060474e17c54ceb6e909d604979ed8b99457350e3f6"
+    },
+    {
+      "path": "browser-multipart.json",
+      "byteLength": 423,
+      "sha256": "03b4379fb5dbccfc59aa3fda834cfaf460fa1e8cd81381464b183fd2b2d51aa8"
+    },
+    {
+      "path": "browser-multipart.log",
+      "byteLength": 315,
+      "sha256": "c2f2016f4fc70eae04fb6995f7244559a28970138fd1f4cde6deace40eb2ba24"
+    },
+    {
+      "path": "browser-promotion.json",
+      "byteLength": 911,
+      "sha256": "be6e50745531f2a899d0679520512a1d4f4bd8d1fcaf824d4ed86f9b70773331"
+    },
+    {
+      "path": "browser-promotion.log",
+      "byteLength": 707,
+      "sha256": "c97b1bcbe9170906dac26a5c12de2cbd775ecfe83096f32d76bb940e2f39dfbc"
+    },
+    {
+      "path": "data-audit-summary.json",
+      "byteLength": 2325,
+      "sha256": "5307fa6f6608f81512b17d3f775313827db780d81147ad6aba84faf64707558d"
+    },
+    {
+      "path": "formal-main-final.png",
+      "byteLength": 55164,
+      "sha256": "08d643109642b868d820aac284fb47337eaa6e07f77a3738d7da4f45f5139ea7"
+    },
+    {
+      "path": "legacy-v1-final.png",
+      "byteLength": 59989,
+      "sha256": "657290e6e2bb145d1a23a2cb822f03a2d5b83975c89eb4f58b3d06857336fd7d"
+    },
+    {
+      "path": "native-workflow-single-part-hole.png",
+      "byteLength": 127308,
+      "sha256": "8f690af985e3d284462cf6b5c92ecfe55f7447711236fa37951f5c610bba148c"
+    },
+    {
+      "path": "pipeline-tests.log",
+      "byteLength": 23888,
+      "sha256": "46c363fd22200fa5e5696ba6ec699815ab388dd764fa1fdaad6a453bce221c55"
+    },
+    {
+      "path": "production-core.log",
+      "byteLength": 1445,
+      "sha256": "490a77b4745a521c701a7dac4e626bef784fea878879f9d02e34a11924a6634f"
+    },
+    {
+      "path": "scf-build.log",
+      "byteLength": 221,
+      "sha256": "21ae3d419ab5df4400d779f0c33560538a8102d6caba427a06dbb7382eddefb6"
+    },
+    {
+      "path": "scf-package-manifest.json",
+      "byteLength": 1811,
+      "sha256": "a82129cbb438515f2cd608471e72deb76575ee752a339134f7140a488715eda6"
+    },
+    {
+      "path": "single-part-hole-controls.png",
+      "byteLength": 127504,
+      "sha256": "b6467bbc1833de465744da112f82757891f71712ff108296d1f363a226ec98db"
+    },
+    {
+      "path": "single-part-polygon-with-hole.json",
+      "byteLength": 819,
+      "sha256": "46a06dc133bebb69b180b777eb14af0f1df421d97df97ff1a4bf51d883047188"
+    },
+    {
+      "path": "strict-incoming-audit.json",
+      "byteLength": 12790,
+      "sha256": "4b89fd22c5af9e106a87481ee98c59a8315c0d25a1d5a70a322765919051a785"
+    },
+    {
+      "path": "studio-export-mobile-390.png",
+      "byteLength": 91649,
+      "sha256": "7f65828bd11d93fcd1efea15e0fa735c4bc42edf50bb0c8e7f08fd38d43cfa84"
+    },
+    {
+      "path": "studio-global-export-gate.png",
+      "byteLength": 171099,
+      "sha256": "71c8d19fbd29068449f9c59a465f32db1230df32ca2a85f517abd8459bc2f183"
+    },
+    {
+      "path": "web-final-ui-build.log",
+      "byteLength": 2719,
+      "sha256": "b63cfb9a4977c0427dc4e310a7f6ef17959cbfd234eee883f355c2f0765ed05d"
+    },
+    {
+      "path": "web-full-build.log",
+      "byteLength": 30190,
+      "sha256": "d8c74d1a2009da3a1cb60ff7cf40831205444c717bae8a8f4e5d247b33e41744"
+    }
+  ]
+}

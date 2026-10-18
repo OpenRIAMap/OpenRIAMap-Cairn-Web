@@ -1,0 +1,382 @@
+[
+  {
+    "path": "project-config/presets/building/classes/BUD.json",
+    "bytes": 7499,
+    "sha256": "52957e8936d04e6776db1ef92dba58fdc3a2e01723a2afa75ae3dbefc9b4b10b"
+  },
+  {
+    "path": "project-config/presets/building/classes/FLR.json",
+    "bytes": 8010,
+    "sha256": "372e74d9cb82080cfcd686bc173685e296191bdcf56b9ff4172d45ce8be9bed5"
+  },
+  {
+    "path": "project-config/presets/building/preset.json",
+    "bytes": 513,
+    "sha256": "f900740b1b458c4fd417accd8a08b4564b9874370009ce0b83892558dd67c788"
+  },
+  {
+    "path": "project-config/presets/building/workflows/building-workflow.json",
+    "bytes": 684,
+    "sha256": "37754f46f61e364ed37230647117fdbe85334adcb7997df596e0a60f8fe07e03"
+  },
+  {
+    "path": "project-config/presets/building/workflows/floor-workflow.json",
+    "bytes": 690,
+    "sha256": "0d389e0bd6f9fc2b6de2ded5ea609a5325107277ffaf72d149ac164aea78880b"
+  },
+  {
+    "path": "project-config/presets/core-structures/classes/ISG.json",
+    "bytes": 16269,
+    "sha256": "fb5c21de0ad23fe4ac699fdf0ac0d1dde7326e58444d2a0074c2aa7a02b75367"
+  },
+  {
+    "path": "project-config/presets/core-structures/classes/ISL.json",
+    "bytes": 11197,
+    "sha256": "9ec32b839bdec8fbf00fa4375cc4fe923c28fef7942726a1dd9cb49172d75300"
+  },
+  {
+    "path": "project-config/presets/core-structures/classes/ISP.json",
+    "bytes": 10820,
+    "sha256": "faaf8f2b423b31c236954d45697c356c59d25444516b6290f00a937ed21d5298"
+  },
+  {
+    "path": "project-config/presets/core-structures/preset.json",
+    "bytes": 638,
+    "sha256": "e57ebb3fc105744177e83fc242d82b20fc1741499df9332679e8a5289cc79913"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/card/cardEnhancements.json",
+    "bytes": 1746,
+    "sha256": "21da302f92a8670a03698f439c0abb080791878e0bb5edfd2ae757d11121ff69"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/card/cardLayouts.json",
+    "bytes": 6417,
+    "sha256": "cbae1e97155ddb554eacd1ce5831541542f47b2210eeb5492d382303e73519b6"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/card/cardRuntimeContracts.json",
+    "bytes": 2587,
+    "sha256": "6a3155efcaa69c20ae01deae1538004652f75a94dcfdde0f21ddacd3b309ae2c"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/common/iconRegistry.json",
+    "bytes": 1061,
+    "sha256": "04a2d10ba12e5c58b68c06a144ad6e8ee5a30195ac5f9c4220848d6f3b1e21ce"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/common/renderFormatFinalContracts.json",
+    "bytes": 9486,
+    "sha256": "845655da615d244c5114d27938918bb2724610e6b7cb10ffb895fceb3418cd15"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/display/displayAlgorithms.json",
+    "bytes": 3422,
+    "sha256": "d2a93926d489da00c070e535d1400b6c8c640ba37f923182021fb645996bd66a"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/display/displayProfiles.json",
+    "bytes": 2347,
+    "sha256": "7e93375c98a71cfabbec7f0fb881fc06b42916109838164cf7e820f7f9d6b67e"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/display/displayRuntimeContracts.json",
+    "bytes": 6681,
+    "sha256": "525cfba67b9c2f5ac07a3c89d4bda762a22743af4d0409154771fad9af6ed600"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/display/labelStyles.json",
+    "bytes": 3020,
+    "sha256": "09e597c2c1f702f2a1132d8ebd69040ef2708143a01f6ee7bdef40f730c64796"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/display/specialDisplayLogic.json",
+    "bytes": 10222,
+    "sha256": "2239f2e984076751d266f7cacce122816608b94fcb579545648dd57137bb4e7a"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/format/formatRuntimeContracts.json",
+    "bytes": 4730,
+    "sha256": "d0bca0176c7afc144ac4cde1836ba9be33290b0ca36b37f6aeaa69ba280a11ef"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/format/formatSpecialFormatters.json",
+    "bytes": 2425,
+    "sha256": "0a43bb7a603145d21cbd6eb1a9ca6c14f55c166b0fb36e99bccfc6e5ed92230c"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/format/schemaRuntimeContracts.json",
+    "bytes": 3969,
+    "sha256": "1d3e5452de12eaf1929ecc12dbe8de6c53dae72d68158f90982a7cd2f145b8f3"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/relation/relationActions.json",
+    "bytes": 2067,
+    "sha256": "a761201611081f448427261820d2d4dee421141ff28d1100292d299a801b2ab8"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/relation/relationBindings.json",
+    "bytes": 8385,
+    "sha256": "223d714f8563c7e0c7f6601817ad158d78810a317ea8d0309fc441b10cd3bb98"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/relation/relationViewProfiles.json",
+    "bytes": 1923,
+    "sha256": "7be172c4e8f53055223f745f82a9f77eec6a0e4ac5275d670cf6b134b7289155"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/workflow/fieldControls.json",
+    "bytes": 2975,
+    "sha256": "f1e37a461ad91fb59f63cebe4c7fbb071dd9d1bef1cf201bdd00b092ac7c3df0"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/workflow/workflowBlocks.json",
+    "bytes": 2469,
+    "sha256": "db5c9f4b1b7a7d7e83845b6a31fb480cbf99ce1b99e1d25a659104311739bc9d"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/workflow/workflowComponents.json",
+    "bytes": 8562,
+    "sha256": "43e6f98caeeea86f372bfa132295934636a6614aceda000edb0c6764094e560c"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/workflow/workflowFinalContracts.json",
+    "bytes": 5028,
+    "sha256": "6a31394f8b0016d293ae9420cb4f829112c36a1b59ee7c7a7ff11ec79826a0e8"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/workflow/workflowLegacyExecutors.json",
+    "bytes": 5165,
+    "sha256": "6a6deea11bae39e6a18d831c6ed095060430b91060b78f026a588c010f91d3b8"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/workflow/workflowParityProfiles.json",
+    "bytes": 8861,
+    "sha256": "f1be4e73151bb4f0d2b4591f4b0510fe880b7637cc7b24bf45e9965d5233eaa7"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/workflow/workflowRuntimeContracts.json",
+    "bytes": 4710,
+    "sha256": "aaa1018c9c87a2c688a128ec2e5c1bf8be0db3e80bf3a14f744a27648af96af7"
+  },
+  {
+    "path": "project-config/presets/core-structures/shared/workflow/workflowTemplates.json",
+    "bytes": 2320,
+    "sha256": "b59c3fa054434f77ddcf3b0e417e85bbeba91cf3446834551067fa97734156b3"
+  },
+  {
+    "path": "project-config/presets/core-structures/workflows/generic-line-workflow.json",
+    "bytes": 709,
+    "sha256": "ebebdb155074366a47454f49b3a176fec8e96daff486ccfbf1a5b1f1e33fb870"
+  },
+  {
+    "path": "project-config/presets/core-structures/workflows/generic-point-workflow.json",
+    "bytes": 705,
+    "sha256": "3cd05b7492662401ab273cdebcc6d763b4a6d737532cc4ae4d4e8756cfbedff6"
+  },
+  {
+    "path": "project-config/presets/core-structures/workflows/generic-polygon-workflow.json",
+    "bytes": 718,
+    "sha256": "c5ec0dfe8d9a1fd3eb88fc1ca58a6eeee36575ecfa04ea5a8a4c254e9c170662"
+  },
+  {
+    "path": "project-config/presets/rail/classes/PFB.json",
+    "bytes": 5459,
+    "sha256": "245ee29ec08b2a1325ffd21623aaa270d860c27d082189127ef07a7556a48cb5"
+  },
+  {
+    "path": "project-config/presets/rail/classes/PLF.json",
+    "bytes": 9257,
+    "sha256": "f6a18bc1d951c7990503442d92fc677ca0da226ef17b1e97c7731737556f3ab7"
+  },
+  {
+    "path": "project-config/presets/rail/classes/RLE.json",
+    "bytes": 6625,
+    "sha256": "4444034f136cca6ca6d403e18beec28b6877fd6562f51ad82ec5ca6b94eab497"
+  },
+  {
+    "path": "project-config/presets/rail/classes/SBP.json",
+    "bytes": 6427,
+    "sha256": "a083b5ba2ccb48fa1799da64f58a41d591152b6e92aab57ac76ceb3f0ba939d0"
+  },
+  {
+    "path": "project-config/presets/rail/classes/STA.json",
+    "bytes": 5611,
+    "sha256": "6675ceb04046112ac8dc9b74dcc6b8167979d6171c977d29f8934af6a2ce5bd1"
+  },
+  {
+    "path": "project-config/presets/rail/classes/STB.json",
+    "bytes": 6813,
+    "sha256": "287179e1ae755b2a5a4c4000c744d26e9cf897f45e1f458a88be9188d3b51276"
+  },
+  {
+    "path": "project-config/presets/rail/classes/STF.json",
+    "bytes": 6514,
+    "sha256": "98f7709054e11e87a4fcc4a2a75fd7ae6abdee8de0d157298137fb073502290f"
+  },
+  {
+    "path": "project-config/presets/rail/preset.json",
+    "bytes": 769,
+    "sha256": "febcce107d1acf0199f638a1d96ca1c986236fa9cb50b42187c07b5f0aebebe2"
+  },
+  {
+    "path": "project-config/presets/rail/workflows/rail-line-workflow.json",
+    "bytes": 685,
+    "sha256": "bc451fad0f68cab88ca8bde48c88250407ca71afb39fa0488bf819a4297b7ef6"
+  },
+  {
+    "path": "project-config/presets/rail/workflows/rail-platform-boundary-workflow.json",
+    "bytes": 717,
+    "sha256": "1f62fec4c997febfac99fef162b7870ccad411c2841456bf492ea9a6e32e1361"
+  },
+  {
+    "path": "project-config/presets/rail/workflows/rail-platform-workflow.json",
+    "bytes": 689,
+    "sha256": "1add92cf3680a92beb4c927b2479ac9ee77047011f6567ba22338f124ed58ce7"
+  },
+  {
+    "path": "project-config/presets/rail/workflows/rail-station-building-floor-workflow.json",
+    "bytes": 733,
+    "sha256": "dd9dd3b56bd2976d8b1241f469103711891d7e14da9fe447cc85d25cdf3711a4"
+  },
+  {
+    "path": "project-config/presets/rail/workflows/rail-station-building-point-workflow.json",
+    "bytes": 726,
+    "sha256": "e1885b23a57e2d2995eac8103d8ffacb4064671a5bb174557a6523cc08c64077"
+  },
+  {
+    "path": "project-config/presets/rail/workflows/rail-station-building-workflow.json",
+    "bytes": 715,
+    "sha256": "ec130e4b52cf2d7e9d06fb7f23a2faebb35cf607b7bd554fa43309edf24cf9cf"
+  },
+  {
+    "path": "project-config/presets/rail/workflows/rail-station-workflow.json",
+    "bytes": 687,
+    "sha256": "f0db7a662985e51ddc5027c9a714632daece3c3b679f1f240032fc8ee494db02"
+  },
+  {
+    "path": "project-config/presets/road/classes/ROD.json",
+    "bytes": 13509,
+    "sha256": "16d883d077371470bb52da7e067598dafab564e8d3adf6f080929d8b161742f4"
+  },
+  {
+    "path": "project-config/presets/road/preset.json",
+    "bytes": 462,
+    "sha256": "311bd1a0fcefc4bcde192d6a1e58353200cd179b52ffabbaf188b62e2283416b"
+  },
+  {
+    "path": "project-config/presets/road/workflows/road-workflow.json",
+    "bytes": 672,
+    "sha256": "a5366acc63c3634b53e378167746d4d6de115b56f2a9243c3f75451a6cd7b930"
+  },
+  {
+    "path": "project-config/presets/teleport/classes/TPP.json",
+    "bytes": 7650,
+    "sha256": "29da6b7527276ad8e0c7a8d0ee21f4b3d0cf7ccd21525b84545743ac0de91f8c"
+  },
+  {
+    "path": "project-config/presets/teleport/preset.json",
+    "bytes": 470,
+    "sha256": "5ab8755d83a0abda1e7bb705ba906dacb2db7916a8c368445d2a1df47f329996"
+  },
+  {
+    "path": "project-config/presets/teleport/workflows/teleport-workflow.json",
+    "bytes": 694,
+    "sha256": "c6626d64f54b55d3c3cd23170a890b10b9b549a036e80dd91036fdbdadab4fb6"
+  },
+  {
+    "path": "project-config/presets/trade/classes/TRP.json",
+    "bytes": 10679,
+    "sha256": "2f3cce25979c10082facc1f8b77beec0efac07b37a41496e3dcb845e8e401344"
+  },
+  {
+    "path": "project-config/presets/trade/preset.json",
+    "bytes": 464,
+    "sha256": "5e1725cb56350df0915220c6fb5b3a06cda89d2509b13e5ce602dcd02034bdf4"
+  },
+  {
+    "path": "project-config/presets/trade/workflows/trade-point-workflow.json",
+    "bytes": 691,
+    "sha256": "c3ee821090071617ac8810629172af9f6924a984af04f12ec8ead0c3e43a0504"
+  },
+  {
+    "path": "project-config/presets/warp/classes/WRP.json",
+    "bytes": 6548,
+    "sha256": "4b5df4863a23ba89fb6899cfee6c132429079933bc8563da5dcb819598ede36d"
+  },
+  {
+    "path": "project-config/presets/warp/preset.json",
+    "bytes": 454,
+    "sha256": "800b5cc4d7799da4322de619e9a5d05a7a894c3ddc8b49806aa223c2f6e14bbc"
+  },
+  {
+    "path": "project-config/presets/warp/workflows/warp-workflow.json",
+    "bytes": 680,
+    "sha256": "94e9778307572a1372106249c03d7578891aeb7655d9451d02c1a3261bd8df26"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/environment/dataSources.json",
+    "bytes": 983,
+    "sha256": "16f251e94cc959eb5f1fe8101a37d6d949d80bf704d5fdc87e75b9cd2082a4ef"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/environment/featureDataContract.json",
+    "bytes": 2878,
+    "sha256": "45e53e396d14c974cc0ae1e995f82be590c542fb29cb140d8f93b6c265c848bd"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/environment/mediaIndexContract.json",
+    "bytes": 3727,
+    "sha256": "0d6064069beecb7f1b23b64eebe566f7f61f44cc4b41c07ab9b7501d42b9a99e"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/environment/relayPackageProtocol.json",
+    "bytes": 3123,
+    "sha256": "bbd291612a377b38fc028b487b57790737555748bc7c256848647304a02a117d"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/environment/relayReviewWorkflow.json",
+    "bytes": 1656,
+    "sha256": "9233ca41b0c5552b932291242c9a58031f4873bf5343dd2e5e62fd346837aab7"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/environment/reviewAutomationBinding.json",
+    "bytes": 3968,
+    "sha256": "2ad6457ebd10650056bbc57bb1ceb589da29548e4ace74b0bf23eb61bb007451"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/environment/ruleButtons.json",
+    "bytes": 4503,
+    "sha256": "f05cb65058f00876ee454c32b7cfcaa3e6f4f18ee244f804ab031561ab6357c9"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/environment/searchProfiles.json",
+    "bytes": 1112,
+    "sha256": "1ad709c9721386c0e5952ec08fa9a4f92410d3bf664094e766634e118adf72fd"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/environment/sourceLinkModes.json",
+    "bytes": 515,
+    "sha256": "65628f43ed6f13949767ac79928a712a670dd7f5de43793736531d0386aa151c"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/environment/storageProfiles.json",
+    "bytes": 4784,
+    "sha256": "66d4536ae8ee8a47fa0df2cbd3e33067ed4c00549ce3b97e7816deca60592e38"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/environment/worlds.json",
+    "bytes": 797,
+    "sha256": "b1fe8da0cebcffcac8080268ff5f885291a3b763b08dd49b42bfc725bedec0ef"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/package.json",
+    "bytes": 722,
+    "sha256": "54df8e7785473c57f0ae61b5c973d5737017452c66e5e4de2d3cded8f136c7ec"
+  },
+  {
+    "path": "project-config/packages/openriamap-ria/project.json",
+    "bytes": 512,
+    "sha256": "4c72eb184d281aa99a0119243d04cc29ad2e86ca0b8512e2b236e1b9641945d6"
+  }
+]

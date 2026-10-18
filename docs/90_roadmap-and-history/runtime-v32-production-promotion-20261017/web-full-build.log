@@ -1,0 +1,453 @@
+
+> cairnmap-web@0.1.0 prebuild
+> npm run verify:config-v32 && npm run test:release-repair && npm run test:production-runtime
+
+
+> cairnmap-web@0.1.0 verify:config-v32
+> npm run test:native-contract-schema && npm run test:v1-render-baseline && npm run test:config-studio-v3 && npm run test:v3-semantic-parity && npm run test:workflow-output-editor && npm run test:v1-workflow-output-parity && npm run test:label-placement && npm run test:map-zoom && npm run test:multipart-labels && npm run test:localization && npm run test:package-roundtrip && npm run test:external-workflow-output-parity && npm run test:native-contract && npm run test:workflow-practical && npm run test:native-workflow-commit && npm run test:display-parity && npm run test:density-stability && npm run test:card-parity && npm run test:workflow-capture && npm run test:config-activation && npm run test:workflow-field-controls && npm run test:compiled-runtime && npm run test:render-r7 && npm run test:render-templates && npm run test:category-templates && npm run test:field-reuse-r8 && npm run test:workflow-calculator && npm run test:workflow-drawing-r8 && npm run test:workflow-forms-r8 && npm run test:unified-r8 && npm run test:r9-migration-prefill && npm run test:r9-category-initialization && npm run test:r9-category-artifact && npm run test:r9-render-formula-color && npm run test:r9-workflow-editing && npm run test:r9-rail-editing && npm run test:r9-trp-external-editing && npm run test:r9-final-package && npm run test:sync01-native-import && npm run test:workflow-drawing-session && npm run test:lookup-tables && npm run test:hard-inheritance-prefill && npm run test:structure-roles && npm run test:config-search && npm run test:label-template && npm run test:application-settings && npm run test:category-transactions-r10 && npm run test:r10-final-package && npm run test:lookup-table-transactions && npm run test:world-resource-groups && npm run test:tile-image-request && npm run test:r11-dictionaries && npm run test:r11-buttons && npm run test:r11-workflow-tags && npm run test:setting-help && npm run test:r11-final-package && npm run test:label-zoom-lifecycle
+
+
+> cairnmap-web@0.1.0 test:native-contract-schema
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/generate-native-contract-schema.ts --check
+
+native-contract-schema: 178 typed structures verified
+
+> cairnmap-web@0.1.0 test:v1-render-baseline
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-v1-render-baseline.ts
+
+V1 render baseline OK (19 probes).
+
+> cairnmap-web@0.1.0 test:config-studio-v3
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-config-studio-v3.ts
+
+config-studio-v32: native contract, editor defaults and renderer boundary: OK
+config-studio-v32: semantic V1 migration, cards and composed workflows: OK
+
+> cairnmap-web@0.1.0 test:v3-semantic-parity
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-v3-semantic-parity.ts
+
+v3-semantic-parity: 95 nodes, 20 workflows, V1 display/card/workflow mapping: OK
+
+> cairnmap-web@0.1.0 test:workflow-output-editor
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-workflow-output-editor.ts
+
+workflow-output-editor: safe expressions, targets, World and draft transitions: OK
+
+> cairnmap-web@0.1.0 test:v1-workflow-output-parity
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-v1-workflow-output-parity.ts
+
+v1-workflow-output-parity: 34 complete records, 3 controlled external bindings: OK
+
+> cairnmap-web@0.1.0 test:label-placement
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-label-placement.ts
+
+label-placement: nine positions, signed X/Y, CSS/bbox origin and legacy baseline: OK
+
+> cairnmap-web@0.1.0 test:map-zoom
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-map-zoom.ts
+
+map-zoom: shared logical/map/tile limits, including Zoom 0–2: OK
+
+> cairnmap-web@0.1.0 test:multipart-labels
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-multipart-labels.ts
+
+multipart-labels: independent component geometries/ids/caches and shared feature identity: OK
+
+> cairnmap-web@0.1.0 test:localization
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-localization.ts
+
+localization: imported Chinese residue cleared, real English and empty values preserved: OK
+
+> cairnmap-web@0.1.0 test:package-roundtrip
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-package-roundtrip.ts
+
+package-roundtrip: real ZIP/JSON roundtrip with optional undefined values and tamper rejection: OK
+
+> cairnmap-web@0.1.0 test:external-workflow-output-parity
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-external-workflow-output-parity.ts
+
+external-workflow-output-parity: 7 frozen original V1 final records across railway/station/TRP: OK
+
+> cairnmap-web@0.1.0 test:native-contract
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-native-contract.ts
+
+native-contract: r6 labelOnly and non-mutating r5 upgrade, unknown revision rejection: OK
+native-contract: r5 replace metrics and conditional B/C semantics retained: OK
+
+> cairnmap-web@0.1.0 test:workflow-practical
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-workflow-practical.ts
+
+workflow-practical: final-ID graph, protected classification, actor/group constraints, drawing options and world scopes: OK
+
+> cairnmap-web@0.1.0 test:native-workflow-commit
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-native-workflow-commit.ts
+
+native-workflow-commit: 34 actual final records preserved, world/geometry rejected before writes: OK
+
+> cairnmap-web@0.1.0 test:display-parity
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-display-parity.ts
+
+display-parity: 24 direct V1/V3 opacity, labelOnly, priority and obstacle-policy cases: OK
+display-parity: polygon candidate weights, source disabled density and missing-icon circle preserved: OK
+
+> cairnmap-web@0.1.0 test:density-stability
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-density-stability.ts
+
+density-stability: budgets, selected/required opt-out and real cache invalidation: OK
+
+> cairnmap-web@0.1.0 test:card-parity
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-card-parity.ts
+
+card-parity: 101 frozen schema/catalog cases (TRP explicit exception): OK
+
+> cairnmap-web@0.1.0 test:workflow-capture
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-workflow-capture.ts
+
+workflow-capture: optional Y, source/target isolation, conditional Warp path, preserved drawing controls and final self-ID: OK
+
+> cairnmap-web@0.1.0 test:config-activation
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-config-activation.ts
+
+config-activation: strict schema, activation/archive rejection, global consumers, option sources, field inheritance and placement lifecycle: OK
+
+> cairnmap-web@0.1.0 test:workflow-field-controls
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-workflow-field-controls.ts
+
+workflow-field-controls: field input/type/default/options/reference/scenes, scalar arrays, real bindings and slots beyond Z: OK
+
+> cairnmap-web@0.1.0 test:compiled-runtime
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-compiled-runtime.ts
+
+compiled-runtime: independent inheritance/extensions/Zoom/context equality, immutable same-revision activation, bounded paths, hot bindings, linear relation indexing and data/store/context invalidation: OK
+
+> cairnmap-web@0.1.0 test:render-r7
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-render-r7.ts
+
+render-r7: 5130 r6/r7 native results equal, cumulative combinations, AND/NOT, classification/unknown paths, immutable activation and migration isolation: OK
+
+> cairnmap-web@0.1.0 test:render-templates
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-render-templates.ts
+
+render-templates: r7 factory, full independent copy, target conditions, internal Zoom values, single-level range and compile rejection: OK
+
+> cairnmap-web@0.1.0 test:category-templates
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-category-templates.ts
+
+category-templates: parent propagation, capability filtering, sibling rank, full condition/order snapshots, isolated identities and source immutability: OK
+
+> cairnmap-web@0.1.0 test:field-reuse-r8
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-field-reuse-r8.ts
+
+field-reuse-r8: lossless options, metadata boundary, PFB LineID, follow/override, type and target conflicts, numeric enum output and actual card mapping: OK
+
+> cairnmap-web@0.1.0 test:workflow-calculator
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-workflow-calculator.ts
+
+workflow-calculator: safe functions, nested composition, unchanged + semantics, false/zero, coordinate formats, unknown calls and dependencies: OK
+
+> cairnmap-web@0.1.0 test:workflow-drawing-r8
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-workflow-drawing-r8.ts
+
+workflow-drawing-r8: TPP legacy final record equality, Warp skip and residual removal, typed point formats, zero/default heights, multipart/hole capture and condition dependencies: OK
+
+> cairnmap-web@0.1.0 test:workflow-forms-r8
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-workflow-forms-r8.ts
+
+workflow-forms-r8: 17 default forms, stable slots and moved fixed modules, typed values, complex roundtrip, duplicate conflicts and output scoping: OK
+
+> cairnmap-web@0.1.0 test:unified-r8
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-unified-r8.ts
+
+unified-r8: 5130 r6/r8 native render results, 34 complete records, conditional numeric imports, dictionary arrays, source conflicts, finite calculations and actual ZIP roundtrip: OK
+
+> cairnmap-web@0.1.0 test:r9-migration-prefill
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r9-migration-prefill.ts
+
+r9-migration-prefill: 5130 unchanged render rules, 34 full V1 records, 98 independent V1 cards; one-shot values, conflicts, blank display and ZIP roundtrip: OK
+
+> cairnmap-web@0.1.0 test:r9-category-initialization
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r9-category-initialization.ts
+
+r9-category-initialization: Class/Kind, parent constraints, legal blank, full inheritance, exact skip, semantic difference rename and dependency rewrite/rejection: OK
+
+> cairnmap-web@0.1.0 test:r9-category-artifact
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r9-category-artifact.ts
+
+r9-category-artifact: two export formats/scopes, ancestors, fixed conflict repair, exact Class replacement, external preservation, stale guards and tamper rejection: OK
+
+> cairnmap-web@0.1.0 test:r9-render-formula-color
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r9-render-formula-color.ts
+
+r9-render-formula-color: exact-one truth table, precedence, grouped NOT, parser budgets/cycles/unknowns, 64 legacy matches, typed 0/false and shared geometry/Label/interaction resolution: OK
+
+> cairnmap-web@0.1.0 test:r9-workflow-editing
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r9-workflow-editing.ts
+
+r9-workflow-editing: 16 actual conversions / 32 V1 records, ID-only dependency removal, controlled reversible backfill, original data/metadata patch, world/ID/reference guards, routes and capture visibility: OK
+
+> cairnmap-web@0.1.0 test:r9-rail-editing
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r9-rail-editing.ts
+
+r9-rail-editing: seven V1 editor scenes, control order/values/groups, seven complete frozen V1 actual edited records, false/zero, hidden wiki/brief preservation, capture exclusion and ZIP roundtrip: OK
+
+> cairnmap-web@0.1.0 test:r9-trp-external-editing
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r9-trp-external-editing.ts
+
+r9-trp-external-editing: registered purpose/version, no onsite standard conversion, three frozen V1 Trade/editor records (explicit finite numeric-string normalization), alias migration, type/height/classification/ID, creation and unknown metadata preservation, guards and ZIP roundtrip: OK
+
+> cairnmap-web@0.1.0 test:r9-final-package
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r9-final-package.ts
+
+r9-final-package: final immutable source and default SHA, 95/28/20/24 coverage, 5130 unchanged render results, 34 complete V1 creation records, 23 native conversion probes, 8 dedicated routes, signed ZIP/default roundtrip and explicit blank-render guard: OK
+
+> cairnmap-web@0.1.0 test:sync01-native-import
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-sync01-native-import.ts
+
+sync01-native-import: five actual published incompatibilities, lossless attributes/geometry; untrusted/new/modified/cross-world records remain blocked: OK
+
+> cairnmap-web@0.1.0 test:workflow-drawing-session
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-workflow-drawing-session.ts
+
+drawing-session: TPP backtrack, cloned step identity, information-page edits, active-task isolation, condition invalidation, world pause/resume, explicit discard/manual-start and exit: OK
+
+> cairnmap-web@0.1.0 test:lookup-tables
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-lookup-tables.ts
+
+lookup-tables: V1 speeds/four return points, explicit binding/copy, scalar types, missing/conflicting references, category dependencies and package roundtrip passed
+
+> cairnmap-web@0.1.0 test:hard-inheritance-prefill
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-hard-inheritance-prefill.ts
+
+hard-inheritance-prefill: 79 preserved layouts, parent identity/definitions/maps, bypass blocking, independent snapshots, version confirmations/clear, compiled cache and category creation/import passed
+
+> cairnmap-web@0.1.0 test:structure-roles
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-structure-roles.ts
+
+structure-roles: arbitrary main/member classes, FLR→BUD/STB, reverse legacy references, world isolation, duplicate/ambiguous blocking, zero selectors, shared floor/click context, hard module inheritance and strict new output passed
+
+> cairnmap-web@0.1.0 test:config-search
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-config-search.ts
+
+config-search: shared compiled index, searchable policy/extra fields, cross-world references, hidden-record lookup, zero, bilingual guards, all-main workflow/card targets, segment grouping and temporary data invalidation passed
+
+> cairnmap-web@0.1.0 test:label-template
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-label-template.ts
+
+label-template: safe syntax/escaping/budgets, empty/object fallback, 0/false, immutable compilation, unknown fields and 27 actual RLE Zoom/direction plans passed; frozen V1 fixture unchanged
+
+> cairnmap-web@0.1.0 test:application-settings
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-application-settings.ts
+
+application-settings: six typed modules, actual adapters/Zoom/world source routing, shared button policy, isolated save/conflicts/impact, rejected active draft, retired source/cache blocking, disabled auth/workflow/public endpoints produce zero requests, full application ZIP roundtrip passed
+
+> cairnmap-web@0.1.0 test:category-transactions-r10
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-category-transactions-r10.ts
+
+category-transactions-r10: stable parent card origins, hard module conflict/explicit repair, new child classification refresh and scoped Class replacement without unrelated workflow edits passed
+
+> cairnmap-web@0.1.0 test:r10-final-package
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r10-final-package.ts
+
+r10-final-package: 5130 actual render plans (6 approved RLE additions and 8 SVG-only capsule repairs), 34 complete V1 records, English empty labels, new default/delivery SHA/ZIP/dependencies, frozen r9 retained passed
+
+> cairnmap-web@0.1.0 test:lookup-table-transactions
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-lookup-table-transactions.ts
+
+lookup-table-transactions: clean reversal, independent table save, concurrent unrelated edits, table conflicts and atomic reference rename passed
+
+> cairnmap-web@0.1.0 test:world-resource-groups
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-world-resource-groups.ts
+
+world-resource-groups: default parity, canonical projection, two servers/same remote world, scoped source selection/cache identity, missing group/proxy guards and lossless differential migration passed
+
+> cairnmap-web@0.1.0 test:tile-image-request
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-tile-image-request.ts
+
+tile-image-request: 0/1/3 bounded retries, single terminal callback, success cleanup, unload cancellation and stale callbacks passed
+
+> cairnmap-web@0.1.0 test:r11-dictionaries
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r11-dictionaries.ts
+
+r11-dictionaries: live field/table reuse, independent copies/unbinds, typed 0/group output, languages, invalid targets/defaults and transitive artifact/ZIP roundtrip passed
+
+> cairnmap-web@0.1.0 test:r11-buttons
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r11-buttons.ts
+
+r11-buttons: all category paths match legacy, exact OR rows, no cross combinations, required valid Class, redundancy, shared palette/icon registry and actual forward/reverse filters passed
+
+> cairnmap-web@0.1.0 test:r11-workflow-tags
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r11-workflow-tags.ts
+
+r11-workflow-tags: 28 full independent templates including external/edit modes, route conflict reports, 3 protected tables, V1/V3 tag migration, typed zero/false, metadata/lookup updates, transitive dependencies and 23 edit conversions passed
+
+> cairnmap-web@0.1.0 test:setting-help
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-setting-help.ts
+
+setting help: 0 control/label sites pending
+setting-help: 396 static sites, dynamic field/event/direction semantics and new-control coverage passed
+
+> cairnmap-web@0.1.0 test:r11-final-package
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-r11-final-package.ts
+
+r11-final-package: SHA/default and frozen r10, 5130 unchanged render plans, 34 complete V1 records, 23 actual edit conversions, 28 workflow/16 Class-tree roundtrips, English fallback and complete ZIP dependencies passed
+
+> cairnmap-web@0.1.0 test:label-zoom-lifecycle
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-label-zoom-lifecycle.ts
+
+label-zoom-lifecycle: 5985 V1/V3 label eligibility probes across all 95 classifications; only approved RLE Zoom2–4 additions differ; 479 cases require label removal while zooming out
+
+> cairnmap-web@0.1.0 test:release-repair
+> npm run test:release-validation && npm run test:release-template-identities && npm run test:release-archive && npm run test:release-gate
+
+
+> cairnmap-web@0.1.0 test:release-validation
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-validation.ts
+
+release-validation: bounded conditions, expression types, cross-entry writes, IDs, CSS colours, nested required, old-context guidance, 16 upgraded trees and 95 single-node imports passed
+
+> cairnmap-web@0.1.0 test:release-template-identities
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-template-identities.ts
+
+release-template-identities: new field/card identities and self references remap atomically; source and unrelated references preserved; invalid source conflicts remain blocked
+
+> cairnmap-web@0.1.0 test:release-archive
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-archive.ts
+
+release-archive: 21 malformed/budget/cancellation cases rejected; all declared raw bytes verified, four historical JSON/ZIP contracts readable
+
+> cairnmap-web@0.1.0 test:release-gate
+> tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-release-gate.ts
+
+WF01 EXPECTED 删除仍被组装引用的根字段
+WF02 EXPECTED 数值目标改为布尔类型
+WF03 EXPECTED 单值目标改为多值
+WF04 EXPECTED 数值控件改为布尔控件
+WF05 EXPECTED 引用不存在的槽位
+WF06 EXPECTED 非法表达式
+WF07 EXPECTED 原型污染目标路径
+WF08 EXPECTED 覆盖系统分类
+WF09 EXPECTED 重复槽位
+WF10 EXPECTED 引用不存在的输出分类
+WF11 EXPECTED 输入默认值不合法
+WF12 EXPECTED 重复组字段名重复
+WF13 EXPECTED 启用条件引用不存在的槽位
+WF14 EXPECTED 绘制页使用未来页面的条件槽位
+WF15 EXPECTED 搜索返回不存在的字段
+WF16 EXPECTED 绘制返回格式与线类型不符
+WF17 EXPECTED 额外绘制不声明返回槽位
+WF18 EXPECTED 同一目标有两条无条件组装
+WF19 EXPECTED 常量文字写入数值字段
+WF20 EXPECTED 复合表达式返回文本写入数值字段
+WF21 EXPECTED number 控件默认值为可规范化的数值字符串
+WF22 EXPECTED 直接槽位选项超出目标枚举
+WF23 EXPECTED 已删除的 tags 字段仍被 assignment 引用（动态路径）
+WF24 EXPECTED 专供编辑工作流错误开放给便捷测绘
+FD01 EXPECTED 字段 key 重复
+FD02 EXPECTED 字段显示名称全空
+FD03 EXPECTED 不存在的引用分类
+FD04 EXPECTED 子级覆盖强制固定继承字段
+FD05 EXPECTED 字段 ID 重复但 key 不同
+FD06 EXPECTED 非法嵌套路径
+TB01 EXPECTED 删除被字段引用的公共表
+TB02 EXPECTED 被引用表为空
+TB03 EXPECTED 表格中保存值重复
+TB04 EXPECTED 表格修改值类型与绑定方不一致
+TB05 EXPECTED 对照行无任何语言显示名
+TB06 EXPECTED 速度功能值非法
+TB07 EXPECTED 信息卡绑定不存在的字段定义
+TB08 EXPECTED 工作流绑定不存在的字段对照
+TB09 EXPECTED 绑定来源和本地对照同时保存
+RD01 EXPECTED 完整命中条件重复
+RD02 EXPECTED Zoom 范围反向
+RD03 EXPECTED 字段组合错误使用分类字段
+RD04 EXPECTED 字段条件引用不存在的根字段
+RD05 EXPECTED 布尔条件值和字段类型不一致
+RD06 EXPECTED 公式引用不存在的 C9
+RD07 EXPECTED 可证明的矛盾条件
+RD08 EXPECTED 后规则无条件完全遮蔽前规则
+RD09 EXPECTED 不同范围部分交叠且样式相反
+RD10 EXPECTED Label 来源引用不存在的根字段
+RD11 EXPECTED Label 组合模板引用不存在字段
+RD12 EXPECTED 固定颜色无效
+RD13 EXPECTED 几何动态优先级引用不存在字段
+RD14 EXPECTED 几何/Label 透明度超界
+CD01 EXPECTED 显示不存在的根字段
+CD02 EXPECTED 引用不存在的专用显示组件
+CD03 EXPECTED 卡片条目 ID 重复
+CD04 EXPECTED 字段继承来源来自平级分类
+CT01 EXPECTED 父节点缺失
+CT02 EXPECTED 分类路径重复
+CT03 EXPECTED children 记录不存在的节点
+CT04 EXPECTED children 指向不匹配父路径的其他 Class
+CT05 EXPECTED 父级 children 遗漏真实子分类
+CT06 EXPECTED 几何类型与已启用样式矛盾
+AP01 EXPECTED 世界数字编号重复
+AP02 EXPECTED 世界绑定不存在的来源组
+AP03 EXPECTED 图层按钮分类路径不存在
+AP04 EXPECTED 按钮联动循环
+AP05 EXPECTED 无效模块互斥目标
+AP06 EXPECTED 启用审核却缺少会话接口
+AP07 EXPECTED 未知原生属性
+AP08 EXPECTED 未知契约版本
+compatibility r8-r4.config.json {"file":"r8-r4.config.json","originalContract":8,"importedContract":8,"readValid":true,"migratedContract":11,"migratedValid":true,"sourceUnchanged":true,"zipBytes":232457,"roundtripEqual":true,"workflowArtifacts":20,"categoryTrees":0,"rawTreeConflicts":[],"rawTreeExportRequiresUpgrade":true,"migratedCategoryTrees":16}
+compatibility r9-r5.config.json {"file":"r9-r5.config.json","originalContract":9,"importedContract":9,"readValid":true,"migratedContract":11,"migratedValid":true,"sourceUnchanged":true,"zipBytes":234612,"roundtripEqual":true,"workflowArtifacts":28,"categoryTrees":0,"rawTreeConflicts":[],"error":"Error: 旧 r9 分类文件未携带完整 contextBindings 与新版结构身份/搜索模块所需迁移上下文，不能可靠转换；直接覆盖还可能丢失当前主结构设置。请先在配置工作台导入原旧版完整配置包，升级后重新导出该单分类或 Class 树，再导入本包。原文件及当前配置未修改。"}
+compatibility r10-r6.config.json {"file":"r10-r6.config.json","originalContract":10,"importedContract":10,"readValid":true,"migratedContract":11,"migratedValid":true,"sourceUnchanged":true,"zipBytes":234623,"roundtripEqual":true,"workflowArtifacts":28,"categoryTrees":16,"rawTreeConflicts":[],"migratedCategoryTrees":16}
+compatibility r11-r7.config.json {"file":"r11-r7.config.json","originalContract":11,"importedContract":11,"readValid":true,"migratedContract":11,"migratedValid":true,"sourceUnchanged":true,"zipBytes":234614,"roundtripEqual":true,"workflowArtifacts":28,"categoryTrees":16,"rawTreeConflicts":[],"migratedCategoryTrees":16}
+scale {"nodes":95,"workflows":28,"bytes":1621980,"validateMs":164.79849999998987,"valid":true,"compileMs":28.443599999998696,"stats":{"epoch":5,"nodes":95,"classes":16,"cachedPaths":95,"hits":570},"exportZipMs":497.4655000000057,"zipBytes":234617,"readZipMs":73.02990000000864,"roundtripNodes":95}
+scale {"nodes":195,"workflows":28,"bytes":4055460,"validateMs":373.46699999998964,"valid":true,"compileMs":67.1826000000001,"stats":{"epoch":6,"nodes":195,"classes":116,"cachedPaths":195,"hits":1170},"exportZipMs":1158.4526999999944,"zipBytes":642892,"readZipMs":202.62140000000363,"roundtripNodes":195}
+scale {"nodes":495,"workflows":28,"bytes":11356560,"validateMs":1395.8271999999997,"valid":true,"compileMs":190.48569999999017,"stats":{"epoch":7,"nodes":495,"classes":416,"cachedPaths":495,"hits":2970},"exportZipMs":3476.6468000000023,"zipBytes":1868303,"readZipMs":563.4435999999987,"roundtripNodes":495}
+AUDIT COMPLETE {"scenarios":71,"gaps":[],"output":"G:\\RIAWebGIS\\NewPRES\\CairnMap_Codex\\wt\\ria-config-runtime-v32-subject-20261014\\migration-runs\\release-repair-20261017\\repaired-audit"}
+RELEASE GATE PASS: 71/71 expectations, 67 errors blocked at all four boundaries, all historical full packages and 495-node scale retained
+
+> cairnmap-web@0.1.0 test:production-runtime
+> node scripts/config-tools/build-server-validation.mjs --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-production-runtime.ts && node scripts/config-tools/test-configuration-publication-api.mjs && tsx --tsconfig tsconfig.app.json scripts/config-tools/prepare-production-seed.ts --check
+
+Verified pure Node r11 validator: 135 inputs, 828085 bytes; no React/Leaflet/Zustand.
+production-runtime: pinned bytes/identity, no foreign URLs, raw-preserving historical views, unknown paths, restored future paths, per-output single parts and Polygon holes passed
+configuration-publication-api: separate signed fresh session, expiration/purpose/snapshot binding, actor stripping, controlled operations, size/path guards and independent environment gate passed
+configuration authority and OAuth: signed private-COS proxy, fail-closed authority, nonce/browser state, fresh scoped cookie, independent review gate passed
+Registered r11/r7 seed verified: original JSON unchanged; archive 248639 bytes; manifest 8818876914ba81dcc8318c0da4ef8977fd5729821e750666efb425871ded6fad
+
+> cairnmap-web@0.1.0 build
+> tsc -b && vite build && node scripts/config-tools/install-legacy-v1.mjs
+
+vite v6.4.3 building for production...
+transforming...
+✓ 2240 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                     0.78 kB │ gzip:   0.45 kB
+dist/.vite/manifest.json                            9.49 kB │ gzip:   1.21 kB
+dist/assets/r11-r7.config-Dp-4R417.json         3,538.28 kB │ gzip: 244.72 kB
+dist/assets/vendor-main-Dgihpmma.css               15.04 kB │ gzip:   6.38 kB
+dist/assets/index-DWuSKun1.css                     75.50 kB │ gzip:  13.23 kB
+dist/assets/MappingWorkspace-q_avNXPs.js            0.32 kB │ gzip:   0.26 kB
+dist/assets/ReviewWorkspace-Dvewf4zD.js             0.42 kB │ gzip:   0.28 kB
+dist/assets/measuringEntry-CMDKSkps.js              0.84 kB │ gzip:   0.45 kB
+dist/assets/reviewEntry-Dp82PiUY.js                 0.94 kB │ gzip:   0.45 kB
+dist/assets/ButtonIconGallery-C1Ya8Mho.js           1.26 kB │ gzip:   0.70 kB
+dist/assets/legacyEntry-Bl2H-EuE.js                 1.71 kB │ gzip:   0.66 kB
+dist/assets/LineDetailCard-hDquYPW_.js              1.96 kB │ gzip:   0.95 kB
+dist/assets/LandmarkLayer-ubzcAaV5.js               2.97 kB │ gzip:   1.52 kB
+dist/assets/PointDetailCard-CkS2CEpp.js             3.63 kB │ gzip:   1.26 kB
+dist/assets/toriiTeleport-B6jUPKMo.js               4.26 kB │ gzip:   1.18 kB
+dist/assets/RailwayLayer-0z0Q6v8w.js                4.31 kB │ gzip:   1.95 kB
+dist/assets/relayPackageParser-DT7mpV_X.js          7.04 kB │ gzip:   2.67 kB
+dist/assets/pathfinding-oPFCDzyg.js                 7.37 kB │ gzip:   2.56 kB
+dist/assets/ReviewModule-CuuDIf6a.js                8.43 kB │ gzip:   3.52 kB
+dist/assets/LinesPage-BIx7cJGl.js                  12.96 kB │ gzip:   4.52 kB
+dist/assets/Mtools-DDkvqu7c.js                     19.65 kB │ gzip:   5.60 kB
+dist/assets/ReviewStatusBoardPanel-RhXNTU9B.js     35.05 kB │ gzip:  10.88 kB
+dist/assets/vendor-jszip-DANaQK9z.js               97.55 kB │ gzip:  30.33 kB
+dist/assets/V3WorkflowRunner-Bzqd60T5.js          112.89 kB │ gzip:  41.53 kB
+dist/assets/vendor-main-BQAZ2T_6.js               348.09 kB │ gzip: 102.47 kB
+dist/assets/configurationEntry-Bwr42SKx.js        471.94 kB │ gzip: 137.11 kB
+dist/assets/MeasuringModule-D7S2S9ZB.js           520.54 kB │ gzip: 108.83 kB
+dist/assets/index-BG_DRCkU.js                   1,263.77 kB │ gzip: 345.44 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 7.25s
+Installed verified frozen V1 runtime: 113 files; current dependencies cannot change its code or CSS.

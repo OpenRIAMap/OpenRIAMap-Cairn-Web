@@ -1,0 +1,96 @@
+{
+  "productCommit": "955030ffaaad562bbddf9e2c9642def8f9e804ac",
+  "textNormalization": "UTF-8 LF; trailing log whitespace removed",
+  "files": [
+    {
+      "file": "audit-card-config.log",
+      "bytes": 198,
+      "sha256": "6879e7aba8be347c9d31bd230608b16898477d8df539c8c575384d12878bf694"
+    },
+    {
+      "file": "audit-class-config.log",
+      "bytes": 1504,
+      "sha256": "ccd345c381914bc38e0c6f5e05b72fd080a7ed1b004ca58720ddc20718262afc"
+    },
+    {
+      "file": "audit-display-config.log",
+      "bytes": 3184,
+      "sha256": "a07e7bd38113b0e9e8ec2d3dd2e9dc33abb8177586c57f0afc021410225fb3a3"
+    },
+    {
+      "file": "audit-package-assembly.log",
+      "bytes": 213,
+      "sha256": "21274e067e1064f36a55d4ba321eccdadee62322eab13958dd3817dfd831f2de"
+    },
+    {
+      "file": "audit-summary.json",
+      "bytes": 5376,
+      "sha256": "7a6dcc8011d1f5e7363b39cd24f09837012ddcbf3c98755f9c0040db10a88187"
+    },
+    {
+      "file": "audit-workflow-config.log",
+      "bytes": 276,
+      "sha256": "e489a010999e43382b64fc087d3203bb77f53c4f1f36edd6abd04cb3525d5930"
+    },
+    {
+      "file": "browser-preflight-and-history.json",
+      "bytes": 716,
+      "sha256": "c80ee52552832e3dac02d59fc393ab278b53b55ecf7f4306fbee75a9b62d3827"
+    },
+    {
+      "file": "build-and-57-checks.log",
+      "bytes": 20950,
+      "sha256": "c780f1607f54372e1e144d695dee4914d7ad81a13fe21a6d1e2384f1d4756b46"
+    },
+    {
+      "file": "mutation-audit.log",
+      "bytes": 5932,
+      "sha256": "8f08a95b948bdcebfb86f6545126990b1ef84ae2638f50672bdf121dfa9fbb0e"
+    },
+    {
+      "file": "mutation-scenarios.json",
+      "bytes": 141065,
+      "sha256": "d65628a17a8b36b763954f719fed873e288063b232fa97b4ec03cf86d0aa0daf"
+    },
+    {
+      "file": "scenario-matrix.md",
+      "bytes": 7749,
+      "sha256": "7573f318516cfd86f83b03f055ebd7663eafd88f7084b75fee517fc6a5b1f2ed"
+    },
+    {
+      "file": "v1-coverage.log",
+      "bytes": 941,
+      "sha256": "e6405e9587396bffea89ab6cae5393b67cce2b1e5b812f1a86e3397f29a79e19"
+    },
+    {
+      "file": "v1-delivered-coverage.json",
+      "bytes": 26030,
+      "sha256": "c9a0b1c9e189a9c3fd1e0d5706b7ad71107004a852abc5867c4a893678ee2d36"
+    },
+    {
+      "file": "v1-source-inventory.json",
+      "bytes": 14356,
+      "sha256": "e11e8714ba6073e57f087e989e3dabda15c3ae8817aa87617ce1205a0e1bb797"
+    },
+    {
+      "file": "v1-validator-results.json",
+      "bytes": 382,
+      "sha256": "85b2ba07f417ca1c26ff8cb5c614167dff0b84b77988d2f8b3541aaf5d64edd2"
+    },
+    {
+      "file": "validate-project-config.log",
+      "bytes": 388,
+      "sha256": "75f0303f82c29278580462c84149f9f4eeda4e885a6c97fcb1f454b68f6139c6"
+    },
+    {
+      "file": "workflow-literal-type-gap.png",
+      "bytes": 73696,
+      "sha256": "9a19f8f181bf4758caff9f8289e8717b5a5ecba6dd57df03faf2b7561f2d0b35"
+    },
+    {
+      "file": "workflow-missing-target-blocked.png",
+      "bytes": 76766,
+      "sha256": "97348f562ceb0d398a2d2b846eca973517df94ab534203368b7b36436921b468"
+    }
+  ]
+}

@@ -1,0 +1,261 @@
+/* Configuration authoring surfaces only. Embedded workflow forms keep their UI. */
+.config-editor.cm-editor-design {
+  --cm-border: #cbd5e1;
+  --cm-line: #e2e8f0;
+  --cm-surface: #f8fafc;
+  --cm-gap: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.config-editor.cm-editor-design :is(section, article, fieldset, header, label, details, .cm-help-control) { min-width: 0; }
+.config-editor.cm-editor-design :is(h2, h3):not(:where(.cm-runtime-surface *)) { font-size: 16px; font-weight: 600; line-height: 1.5; }
+.config-editor.cm-editor-design :is(h4, h5):not(:where(.cm-runtime-surface *)) { font-size: 14px; font-weight: 600; line-height: 1.5; }
+.config-editor.cm-editor-design .cm-runtime-surface { font-size: 16px; line-height: 1.5; }
+.config-editor.cm-editor-design .cm-panel {
+  margin-block: 20px;
+  padding: 16px;
+  border: 1px solid var(--cm-border);
+  border-radius: 10px;
+  background: var(--cm-surface);
+}
+.config-editor.cm-editor-design .cm-panel-heading, .config-editor.cm-editor-design .cm-item-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--cm-line);
+}
+.config-editor.cm-editor-design .cm-item {
+  margin-block: 12px;
+  padding: 12px;
+  border: 1px solid var(--cm-border);
+  border-left-width: 3px;
+  border-radius: 8px;
+  background: #fff;
+}
+.config-editor.cm-editor-design .cm-item-heading { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.config-editor.cm-editor-design .cm-item-heading small, .config-editor.cm-editor-design .cm-item-meta {
+  font-size: 12px;
+  font-weight: 400;
+  color: #475569;
+  overflow-wrap: anywhere;
+}
+.config-editor.cm-editor-design .cm-subsection {
+  grid-column: 1 / -1;
+  margin-block: 12px;
+  padding: 12px;
+  border: 1px solid var(--cm-line);
+  border-radius: 6px;
+  background: #f8fafc;
+}
+.config-editor.cm-editor-design .cm-subsection > :is(h4, h5, header) { margin-bottom: 10px; }
+.config-editor.cm-editor-design .cm-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-block: 10px;
+}
+.config-editor.cm-editor-design :is(.cm-action-bar, .cm-panel-heading, .cm-item-heading, .cm-item, .cm-subsection) > button { min-height: 36px; }
+.config-editor.cm-editor-design .cm-value-options > button { min-height: 32px; }
+.config-editor.cm-editor-design .cm-flex-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.config-editor.cm-editor-design :is([data-field-layout], .cm-help-control) {
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: start;
+  align-items: start;
+  gap: 6px;
+  margin-left: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  width: 100%;
+  max-width: 100%;
+  font-weight: 400;
+}
+.config-editor.cm-editor-design .cm-help-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+  overflow-wrap: anywhere;
+}
+.config-editor.cm-editor-design .cm-help-heading > .cm-help-trigger { margin: 0; align-self: center; flex: none; }
+.config-editor.cm-editor-design [data-setting-field] > span:first-child { display: flex; align-items: center; gap: 6px; min-height: 20px; }
+.config-editor.cm-editor-design [data-setting-field] > span:first-child > .cm-help-trigger { margin: 0; }
+.config-editor.cm-editor-design [data-field-layout="switch"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  width: auto;
+  align-self: start;
+  min-height: 24px;
+  padding-top: 0;
+}
+.config-editor.cm-editor-design [data-field-layout="switch"] > .cm-help-heading { min-height: 24px; }
+.config-editor.cm-editor-design .cm-flex-grid > [data-field-layout="switch"] { grid-column: 1 / -1; }
+.config-editor.cm-editor-design .cm-flex-grid > [data-setting-field][data-field-layout="switch"] { grid-column: auto; }
+.config-editor.cm-editor-design [data-field-layout="compound"] > .cm-help-heading { min-height: 20px; }
+.config-editor.cm-editor-design :is([data-field-layout], .cm-help-control) > :is(input, textarea, select) { margin: 0; max-width: 100%; }
+.config-editor.cm-editor-design :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]), textarea, select):not(:where(.cm-runtime-surface *)) {
+  min-width: 0;
+  min-height: 36px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.config-editor.cm-editor-design :is(input[type="checkbox"], input[type="radio"]):not(:where(.cm-runtime-surface *)) {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin: 0;
+  accent-color: #7c3aed;
+}
+.config-editor.cm-editor-design .cm-help-control > :is(input, select, textarea) { width: 100%; flex: initial; }
+.config-editor.cm-editor-design .cm-help-control { display: grid; }
+.config-editor.cm-editor-design .cm-help-checkbox { display: flex; align-items: center; }
+.config-editor.cm-editor-design .cm-flags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; grid-column: 1 / -1; }
+.config-editor.cm-editor-design .cm-label-source, .config-editor.cm-editor-design .cm-full-row { grid-column: 1 / -1; width: 100%; }
+.config-editor.cm-editor-design .cm-label-source { border-left: 0; }
+.config-editor.cm-editor-design .cm-label-source > [data-field-layout] + [data-field-layout] { margin-top: 12px; }
+.config-editor.cm-editor-design .cm-field-identity { padding: 0 0 12px; border-bottom: 1px solid var(--cm-line); }
+.config-editor.cm-editor-design .cm-field-actions { margin-block: 8px 12px; }
+.config-editor.cm-editor-design .cm-rule-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+.config-editor.cm-editor-design .cm-rule-range > label { flex: 1 1 9rem; }
+.config-editor.cm-editor-design .cm-rule-range > .cm-zoom-join { align-self: end; padding: 0 0 8px; }
+.config-editor.cm-editor-design .cm-rule-range > button { align-self: end; }
+.config-editor.cm-editor-design .cm-rule-range > section { grid-column: 1 / -1; }
+.config-editor.cm-editor-design .cm-condition-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--cm-border);
+  border-radius: 6px;
+  background: #fff;
+}
+.config-editor.cm-editor-design .cm-condition-row > .cm-help-control { flex: 1 1 10rem; }
+.config-editor.cm-editor-design .cm-condition-row > b { align-self: end; display: flex; align-items: center; min-height: 36px; }
+.config-editor.cm-editor-design .cm-condition-row > button { min-height: 36px; }
+.config-editor.cm-editor-design details:not(:where(.cm-runtime-surface *)) > summary {
+  padding-block: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.config-editor.cm-editor-design .cm-render-rule > summary { padding: 10px 0; border-bottom: 1px solid var(--cm-line); }
+.config-editor.cm-editor-design .cm-workflow-control-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--cm-line);
+}
+.config-editor.cm-editor-design .cm-workflow-control-head > .cm-help-control { flex: 1 1 10rem; }
+.config-editor.cm-editor-design .cm-workflow-control-head > .cm-help-control:has(textarea) { flex: 3 1 18rem; }
+.config-editor.cm-editor-design .cm-workflow-control-head > :is(span, button) { align-self: center; flex: none; }
+.config-editor.cm-editor-design :is(.cm-workflow-control-head, .cm-workflow-page-head) textarea { min-height: 36px; }
+.config-editor.cm-editor-design .cm-workflow-page-head { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.config-editor.cm-editor-design .cm-workflow-page-head > .cm-help-control { flex: 1 1 18rem; }
+.config-editor.cm-editor-design .cm-workflow-toolbar { align-items: end; }
+.config-editor.cm-editor-design .cm-workflow-toolbar > h2 { flex: 1 0 100%; }
+.config-editor.cm-editor-design .cm-workflow-toolbar > .cm-help-control { flex: 1 1 18rem; max-width: 24rem; }
+.config-editor.cm-editor-design .cm-workflow-toolbar > button { min-height: 36px; }
+.config-editor.cm-editor-design .cm-output-definition { border-left-color: #34d399; }
+.config-editor.cm-editor-design .cm-auxiliary-definition { border-left-color: #60a5fa; }
+.config-editor.cm-editor-design .cm-aligned-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+.config-editor.cm-editor-design .cm-aligned-fields > label:is([data-field-layout="field"], [data-field-layout="compound"]) {
+  flex: 1 1 14rem;
+  grid-template-rows: minmax(20px, 1fr) auto;
+  align-self: stretch;
+  align-content: stretch;
+}
+.config-editor.cm-editor-design .cm-workflow-settings { margin-block: 12px; }
+.config-editor.cm-editor-design .cm-workflow-settings > .cm-flags { padding-bottom: 8px; border-bottom: 1px solid var(--cm-line); }
+.config-editor.cm-editor-design .cm-workflow-settings > fieldset { grid-column: 1 / -1; }
+.config-editor.cm-editor-design .cm-option-row { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)) auto; gap: 8px; align-items: end; }
+.config-editor.cm-editor-design .cm-option-row.cm-functional-row { grid-template-columns: auto repeat(4, minmax(0, 1fr)) auto; }
+.config-editor.cm-editor-design .cm-option-row > div { grid-column: 1 / -1; }
+.config-editor.cm-editor-design .cm-option-row > span { align-self: center; }
+.config-editor.cm-editor-design .cm-option-row > .cm-help-control { min-width: 0; }
+.config-editor.cm-editor-design .cm-option-row > button { min-height: 32px; align-self: end; }
+.config-editor.cm-editor-design .cm-option-row :is(input, select) { min-height: 32px; }
+.config-editor.cm-editor-design [data-table-options] { grid-column: 1 / -1; }
+.config-editor.cm-editor-design .cm-reference-status { padding-block: 10px; border-top: 1px solid var(--cm-line); overflow-wrap: anywhere; }
+.config-editor.cm-editor-design .cm-search-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: 8px 12px; }
+.config-editor.cm-editor-design .cm-card-item > .cm-flex-grid > button { min-height: 36px; }
+.config-editor.cm-editor-design .cm-value-options > p { margin-bottom: 10px; font-size: 13px; font-weight: 600; }
+.config-editor.cm-editor-design .cm-value-options .cm-option-row { margin-top: 10px; }
+.config-editor.cm-editor-design .cm-expression-editor > .cm-help-control { margin-top: 12px; width: 100%; }
+.config-editor.cm-editor-design .cm-expression-editor :is(code, output, p), .config-editor.cm-editor-design .cm-item code { overflow-wrap: anywhere; }
+/* Override the legacy config-editor compound input selector, scoped here only. */
+.config-editor.cm-editor-design .cm-expression-editor textarea { min-height: 112px !important; }
+.config-editor.cm-editor-design .cm-design-preview { border: 2px dashed var(--cm-border); }
+.config-editor.cm-editor-design .cm-workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  flex: 1;
+  gap: 12px;
+  overflow: hidden;
+  padding: 12px;
+}
+.config-editor.cm-editor-design .cm-workspace-grid:has(> .cm-validator-pane) { grid-template-rows: minmax(240px, .8fr) minmax(180px, 1fr); overflow-y: auto; }
+.config-editor.cm-editor-design .cm-validator-pane { min-height: 0; height: 100%; }
+.config-editor.cm-editor-design .cm-preview-frame { min-height: 0; flex: 1; overflow: hidden; }
+.config-editor.cm-editor-design .cm-preview-frame > div, .config-editor.cm-editor-design .cm-preview-frame .leaflet-container { min-height: 0; }
+.config-editor.cm-editor-design .cm-authoring-pane { container: authoring / inline-size; }
+.config-editor.cm-editor-design .cm-field-identity { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.config-editor.cm-editor-design .cm-field-definition > .cm-flex-grid { padding-block: 4px 12px; }
+.config-editor.cm-editor-design .cm-field-group { background: #f1f5f9; }
+.config-editor.cm-editor-design .cm-field-group .cm-item { margin-block: 12px; }
+.config-editor.cm-editor-design .cm-dialog-heading { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--cm-line); background: white; }
+.config-editor.cm-editor-design fieldset > legend { padding-inline: 6px; font-size: 13px; font-weight: 600; }
+.config-editor.cm-editor-design .cm-drawing-settings > .cm-flex-grid > p { margin: 0; align-self: center; font-size: 13px; }
+.config-editor.cm-editor-design .cm-condition-settings > .cm-help-control { margin-block: 12px; }
+.config-editor.cm-editor-design .cm-condition-settings .cm-condition-settings { padding-inline: 8px; border-inline: 0; border-radius: 0; }
+.config-editor.cm-editor-design .cm-report { overflow-wrap: anywhere; }
+@media (min-width: 1280px) {
+  .config-editor.cm-editor-design .cm-workspace-grid:has(> .cm-validator-pane) { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); overflow: hidden; }
+}
+@container authoring (max-width: 520px) {
+  .config-editor.cm-editor-design .cm-panel { padding: 10px; }
+  .config-editor.cm-editor-design .cm-item { padding: 10px; }
+  .config-editor.cm-editor-design .cm-subsection { padding: 8px; }
+  .config-editor.cm-editor-design .cm-panel .cm-panel { padding-inline: 0; border-inline: 0; }
+  .config-editor.cm-editor-design .cm-workflow-control .cm-subsection { padding-inline: 0; border: 0; border-top: 1px solid var(--cm-line); border-radius: 0; background: transparent; }
+  .config-editor.cm-editor-design .cm-option-row, .config-editor.cm-editor-design .cm-option-row.cm-functional-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .config-editor.cm-editor-design .cm-option-row > label { grid-column: 2; }
+  .config-editor.cm-editor-design .cm-option-row > span { grid-row: 1; }
+  .config-editor.cm-editor-design .cm-option-row > button { grid-column: 3; grid-row: 1; }
+}
+@container authoring (min-width: 760px) {
+  .config-editor.cm-editor-design .cm-field-identity { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@container authoring (max-width: 380px) {
+  .config-editor.cm-editor-design .cm-field-identity { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .config-editor.cm-editor-design .cm-panel { padding: 10px; }
+  .config-editor.cm-editor-design .cm-item { padding: 10px; }
+  .config-editor.cm-editor-design .cm-subsection { padding: 8px; }
+}

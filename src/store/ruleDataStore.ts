@@ -1,3 +1,5 @@
+import {subscribeRuntimeConfiguration,runtimeDatasetView} from '@/configRuntime/runtimeDataView';
+import { getApplicationSettings, subscribeApplication } from '@/core/project/applicationRuntime';
 import { create } from 'zustand';
 import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
 import {
@@ -13,7 +15,7 @@ import {
   getRuleDataSourceSnapshot,
   type RuleDataSourceSnapshot,
 } from '@/components/Rules/data/formalDataSourceRuntime';
-import { clearAllRuleWorldCaches } from '@/components/Rules/data/worldRuleCache';
+import { removeRuleWorldCache } from '@/components/Rules/data/worldRuleCache';
 import { loadMapSettings } from '@/lib/cookies';
 import type { RuleWorldDataset } from '@/components/Rules/data/sourceTypes';
 import type { LoadingProgress } from '@/lib/fetchWithMirror';
@@ -51,11 +53,14 @@ function currentWorldId(): string {
 }
 
 function isCurrentSource(source: RuleDataSourceSnapshot): boolean {
-  const active = getRuleDataSourceSnapshot();
+  try {
+  const active = getRuleDataSourceSnapshot(source.worldId);
   return active.sourceId === source.sourceId
     && active.transportId === source.transportId
     && active.rootUrl === source.rootUrl
     && active.generation === source.generation;
+
+  } catch { return false; }
 }
 
 function toDataSourceFailure(error: unknown, source: RuleDataSourceSnapshot, worldId: string): DataSourceSelectionFailure {
@@ -75,12 +80,12 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
   loadingWorld: null,
   pending: {},
   pendingGeneration: {},
-  dataSource: getRuleDataSourceSnapshot(),
+  dataSource: getRuleDataSourceSnapshot(currentWorldId()),
   dataSourceApplying: false,
   dataSourceFailure: null,
   ensureWorldLoaded: async (worldId: string) => {
     worldId = normalizeRuleSourceWorldId(worldId);
-    const source = getRuleDataSourceSnapshot();
+    const source = getRuleDataSourceSnapshot(worldId);
     const pending = get().pending[worldId];
     if (pending && get().pendingGeneration[worldId] === source.generation) return pending;
 
@@ -131,7 +136,6 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
     const ids = Array.from(new Set((worldIds ?? []).map((id) => String(id ?? '').trim()).filter(Boolean).map(normalizeRuleSourceWorldId)));
     if (ids.length === 0) return;
 
-    const source = getRuleDataSourceSnapshot();
     const currentWorld = currentWorldId();
     const activeWorldId = ids.includes(currentWorld) ? currentWorld : null;
     const orderedIds = activeWorldId ? [activeWorldId, ...ids.filter((id) => id !== activeWorldId)] : ids;
@@ -145,6 +149,7 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
     }
 
     for (const worldId of orderedIds) {
+      const source=getRuleDataSourceSnapshot(worldId);
       const onProgress = worldId === activeWorldId
         ? (progress: LoadingProgress) => {
             const state = useLoadingStore.getState();
@@ -191,29 +196,29 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
   },
   applyDataSource: async (sourceId, context) => {
     set({ dataSourceApplying: true, dataSourceFailure: null });
-    const controller = getRuleDataSourceSelectionController();
+    const controller = getRuleDataSourceSelectionController(currentWorldId());
+    const affected=sourceGroupWorlds(currentWorldId());
     try {
       await controller.apply(sourceId, context, {
-        abortStaleLoads: () => abortActiveRuleDatasetRequests(),
-        clearSourceDependentCache: () => clearAllRuleWorldCaches(),
+        abortStaleLoads: () => abortActiveRuleDatasetRequests(affected),
+        clearSourceDependentCache: () => { for(const world of affected)removeRuleWorldCache(world); },
         clearInMemoryDatasets: () => {
-          const source = getRuleDataSourceSnapshot();
+          const source = getRuleDataSourceSnapshot(currentWorldId());
           set({
-            datasets: {},
-            pending: {},
-            pendingGeneration: {},
+            ...dropWorldState(get(),affected),
             loadingWorld: null,
             dataSource: source,
             dataSourceFailure: null,
           });
         },
         reloadCurrentWorld: async () => {
-          await get().ensureWorldLoaded(currentWorldId());
+          if(affected.includes(currentWorldId()))await get().ensureWorldLoaded(currentWorldId());
         },
       });
-      set({ dataSource: getRuleDataSourceSnapshot(), dataSourceApplying: false, dataSourceFailure: null });
+      set({ dataSource: getRuleDataSourceSnapshot(currentWorldId()), dataSourceApplying: false, dataSourceFailure: null });
+      appliedSources=sourceFingerprints();
     } catch (error) {
-      const source = getRuleDataSourceSnapshot();
+      const source = getRuleDataSourceSnapshot(currentWorldId());
       set({
         dataSource: source,
         dataSourceApplying: false,
@@ -225,21 +230,21 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
   applyDataSourceTransport: async () => {
     set({ dataSourceApplying: true, dataSourceFailure: null });
     try {
-      abortActiveRuleDatasetRequests();
-      clearAllRuleWorldCaches();
-      const source = getRuleDataSourceSnapshot();
+      const affected=sourceGroupWorlds(currentWorldId());
+      abortActiveRuleDatasetRequests(affected);
+      for(const world of affected)removeRuleWorldCache(world);
+      const source = getRuleDataSourceSnapshot(currentWorldId());
       set({
-        datasets: {},
-        pending: {},
-        pendingGeneration: {},
+        ...dropWorldState(get(),affected),
         loadingWorld: null,
         dataSource: source,
         dataSourceFailure: null,
       });
       await get().ensureWorldLoaded(currentWorldId());
-      set({ dataSource: getRuleDataSourceSnapshot(), dataSourceApplying: false, dataSourceFailure: null });
+      set({ dataSource: getRuleDataSourceSnapshot(currentWorldId()), dataSourceApplying: false, dataSourceFailure: null });
+      appliedSources=sourceFingerprints();
     } catch (error) {
-      const source = getRuleDataSourceSnapshot();
+      const source = getRuleDataSourceSnapshot(currentWorldId());
       set({
         dataSource: source,
         dataSourceApplying: false,
@@ -250,3 +255,11 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
   },
   clearDataSourceFailure: () => set({ dataSourceFailure: null }),
 }));
+
+function sourceGroupWorlds(worldId:string):string[]{const id=getRuleDataSourceSnapshot(worldId).resourceGroupId;return getApplicationSettings().worlds.filter(world=>getRuleDataSourceSnapshot(world.id).resourceGroupId===id).map(world=>world.id);}
+function dropWorldState(state:RuleDataState,ids:readonly string[]){return {datasets:Object.fromEntries(Object.entries(state.datasets).filter(([world])=>!ids.includes(world))),pending:Object.fromEntries(Object.entries(state.pending).filter(([world])=>!ids.includes(world))),pendingGeneration:Object.fromEntries(Object.entries(state.pendingGeneration).filter(([world])=>!ids.includes(world)))};}
+function sourceFingerprints():Map<string,string>{return new Map(getApplicationSettings().worlds.map(world=>{const source=getRuleDataSourceSnapshot(world.id);return [world.id,JSON.stringify([source.sourceId,source.transportId,source.generation])];}));}
+let appliedSources=sourceFingerprints();
+subscribeApplication(()=>{const next=sourceFingerprints(),affected=[...new Set([...appliedSources.keys(),...next.keys()])].filter(world=>next.get(world)!==appliedSources.get(world));appliedSources=next;if(!affected.length)return;abortActiveRuleDatasetRequests(affected);for(const world of affected)removeRuleWorldCache(world);const state=useRuleDataStore.getState();useRuleDataStore.setState({...dropWorldState(state,affected),...(state.loadingWorld&&affected.includes(state.loadingWorld)?{loadingWorld:null}:{}),dataSource:getRuleDataSourceSnapshot(currentWorldId()),dataSourceFailure:null});});
+
+subscribeRuntimeConfiguration(()=>{useRuleDataStore.setState(state=>({datasets:Object.fromEntries(Object.entries(state.datasets).map(([key,dataset])=>[key,runtimeDatasetView(dataset)]))}));});

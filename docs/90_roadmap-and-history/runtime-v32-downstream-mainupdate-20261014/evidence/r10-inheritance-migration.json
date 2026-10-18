@@ -1,0 +1,329 @@
+{
+  "report": {
+    "from": 9,
+    "to": 10,
+    "changes": [
+      {
+        "path": "lookupTables",
+        "message": "加入所属枢纽区/四返回点与出行方式表；未替换导航消费者。"
+      },
+      {
+        "path": "contextBindings/bud-floor-context",
+        "message": "迁移为自身角色与引用字段；解除对端 Class 限制，保留显示策略及主向下兼容引用。"
+      },
+      {
+        "path": "contextBindings/station-building-floor-context",
+        "message": "迁移为自身角色与引用字段；解除对端 Class 限制，保留显示策略及主向下兼容引用。"
+      },
+      {
+        "path": "nodes/class-bud-nom/card",
+        "message": "保留 14 项本地布局/显示器；链接 14 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-bud-spe/card",
+        "message": "保留 14 项本地布局/显示器；链接 14 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-flr-nom/card",
+        "message": "保留 16 项本地布局/显示器；链接 16 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-flr-spe/card",
+        "message": "保留 16 项本地布局/显示器；链接 16 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf/card",
+        "message": "保留 4 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-adm/card",
+        "message": "保留 4 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isl-ngf/card",
+        "message": "保留 4 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isl-adm/card",
+        "message": "保留 4 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isp-ngf/card",
+        "message": "保留 4 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isp-adm/card",
+        "message": "保留 4 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-rod-nom/card",
+        "message": "保留 21 项本地布局/显示器；链接 21 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-rod-tuk/card",
+        "message": "保留 21 项本地布局/显示器；链接 21 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-rod-pri/card",
+        "message": "保留 21 项本地布局/显示器；链接 21 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-rod-sec/card",
+        "message": "保留 21 项本地布局/显示器；链接 21 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-rod-sed/card",
+        "message": "保留 21 项本地布局/显示器；链接 21 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-rod-res/card",
+        "message": "保留 21 项本地布局/显示器；链接 21 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-rod-svs/card",
+        "message": "保留 21 项本地布局/显示器；链接 21 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-rod-idr/card",
+        "message": "保留 21 项本地布局/显示器；链接 21 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-rod-spe/card",
+        "message": "保留 21 项本地布局/显示器；链接 21 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-tpp-nom/card",
+        "message": "保留 16 项本地布局/显示器；链接 16 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-tpp-spe/card",
+        "message": "保留 16 项本地布局/显示器；链接 16 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-wrp-nom/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-wrp-spe/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-bud-nom-nom/card",
+        "message": "保留 14 项本地布局/显示器；链接 14 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-bud-spe-spe/card",
+        "message": "保留 14 项本地布局/显示器；链接 14 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-flr-nom-nom/card",
+        "message": "保留 16 项本地布局/显示器；链接 16 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-flr-spe-spe/card",
+        "message": "保留 16 项本地布局/显示器；链接 16 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-lad/card",
+        "message": "保留 9 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-lis/card",
+        "message": "保留 11 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-wtb/card",
+        "message": "保留 11 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-adm-dbz/card",
+        "message": "保留 13 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-adm-plz/card",
+        "message": "保留 14 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isl-ngf-wtr/card",
+        "message": "保留 9 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isl-ngf-bod/card",
+        "message": "保留 11 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isl-adm-dbl/card",
+        "message": "保留 13 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isl-adm-pll/card",
+        "message": "保留 13 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isp-ngf-scp/card",
+        "message": "保留 13 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isp-adm-dbp/card",
+        "message": "保留 13 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isp-adm-plp/card",
+        "message": "保留 13 项本地布局/显示器；链接 4 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-tpp-nom-nom/card",
+        "message": "保留 16 项本地布局/显示器；链接 16 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-tpp-spe-spe/card",
+        "message": "保留 16 项本地布局/显示器；链接 16 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-wrp-nom-nom/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-wrp-spe-spe/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-lad-con/card",
+        "message": "保留 9 项本地布局/显示器；链接 9 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-lad-isd/card",
+        "message": "保留 9 项本地布局/显示器；链接 9 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-lad-sbc/card",
+        "message": "保留 9 项本地布局/显示器；链接 9 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-lad-rgc/card",
+        "message": "保留 9 项本地布局/显示器；链接 9 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-lad-pen/card",
+        "message": "保留 9 项本地布局/显示器；链接 9 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-lad-ist/card",
+        "message": "保留 9 项本地布局/显示器；链接 9 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-lis-mtn/card",
+        "message": "保留 11 项本地布局/显示器；链接 11 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-lis-bsn/card",
+        "message": "保留 11 项本地布局/显示器；链接 11 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-lis-pln/card",
+        "message": "保留 11 项本地布局/显示器；链接 11 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-wtb-sea/card",
+        "message": "保留 11 项本地布局/显示器；链接 11 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-wtb-lke/card",
+        "message": "保留 11 项本地布局/显示器；链接 11 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-wtb-str/card",
+        "message": "保留 11 项本地布局/显示器；链接 11 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-ngf-wtb-est/card",
+        "message": "保留 11 项本地布局/显示器；链接 11 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-adm-dbz-l1/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-adm-dbz-l2/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-adm-dbz-l3/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-adm-plz-l1/card",
+        "message": "保留 14 项本地布局/显示器；链接 14 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-adm-plz-l2/card",
+        "message": "保留 14 项本地布局/显示器；链接 14 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-adm-plz-l3/card",
+        "message": "保留 14 项本地布局/显示器；链接 14 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-adm-plz-up/card",
+        "message": "保留 14 项本地布局/显示器；链接 14 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isg-adm-plz-uc/card",
+        "message": "保留 14 项本地布局/显示器；链接 14 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isl-ngf-wtr-rvr/card",
+        "message": "保留 9 项本地布局/显示器；链接 9 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isl-ngf-wtr-can/card",
+        "message": "保留 9 项本地布局/显示器；链接 9 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isl-ngf-bod-bdy/card",
+        "message": "保留 11 项本地布局/显示器；链接 11 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isl-ngf-bod-stc/card",
+        "message": "保留 11 项本地布局/显示器；链接 11 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isl-adm-dbl-lbd/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isl-adm-pll-cbd/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isp-ngf-scp-spp/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isp-adm-dbp-lip/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isp-adm-plp-plp/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isp-adm-plp-cop/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "nodes/class-isp-adm-dbp-shr/card",
+        "message": "保留 13 项本地布局/显示器；链接 13 个稳定继承项，旧布局未列出的父项保持隐藏。"
+      },
+      {
+        "path": "RLE/LineString/zoom2-4",
+        "message": "用户批准的 V1 偏离：direction=3 显示 bureau+line 11px 线路色代码胶囊；0–1、5–7、8 保持原意。"
+      },
+      {
+        "path": "RLE/LineString/pill",
+        "message": "修复 SVG-only 限制误隐藏背景胶囊；既有正式名称与代码胶囊采用支持背景的标签回退，不修改 ROD。"
+      }
+    ]
+  },
+  "cardChanges": []
+}

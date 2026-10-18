@@ -1,0 +1,366 @@
+{
+  "checks": [
+    {
+      "mode": "main",
+      "direction": "3",
+      "zoom": 0,
+      "text": [
+        "正式名称"
+      ]
+    },
+    {
+      "mode": "main",
+      "direction": "3",
+      "zoom": 1,
+      "text": [
+        "正式名称"
+      ]
+    },
+    {
+      "mode": "main",
+      "direction": "3",
+      "zoom": 2,
+      "text": [
+        "T1"
+      ]
+    },
+    {
+      "mode": "main",
+      "direction": "3",
+      "zoom": 3,
+      "text": [
+        "T1"
+      ]
+    },
+    {
+      "mode": "main",
+      "direction": "3",
+      "zoom": 4,
+      "text": [
+        "T1"
+      ]
+    },
+    {
+      "mode": "main",
+      "direction": "3",
+      "zoom": 5,
+      "text": [
+        "正式名称"
+      ]
+    },
+    {
+      "mode": "main",
+      "direction": "3",
+      "zoom": 6,
+      "text": [
+        "正式名称"
+      ]
+    },
+    {
+      "mode": "main",
+      "direction": "3",
+      "zoom": 7,
+      "text": [
+        "正式名称"
+      ]
+    },
+    {
+      "mode": "main",
+      "direction": "3",
+      "zoom": 8,
+      "text": [
+        "正式名称"
+      ]
+    },
+    {
+      "mode": "main",
+      "direction": "0",
+      "zoom": 0,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "0",
+      "zoom": 1,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "0",
+      "zoom": 2,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "0",
+      "zoom": 3,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "0",
+      "zoom": 4,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "0",
+      "zoom": 5,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "0",
+      "zoom": 6,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "0",
+      "zoom": 7,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "0",
+      "zoom": 8,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "1",
+      "zoom": 0,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "1",
+      "zoom": 1,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "1",
+      "zoom": 2,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "1",
+      "zoom": 3,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "1",
+      "zoom": 4,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "1",
+      "zoom": 5,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "1",
+      "zoom": 6,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "1",
+      "zoom": 7,
+      "text": []
+    },
+    {
+      "mode": "main",
+      "direction": "1",
+      "zoom": 8,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "3",
+      "zoom": 0,
+      "text": [
+        "正式名称"
+      ]
+    },
+    {
+      "mode": "preview",
+      "direction": "3",
+      "zoom": 1,
+      "text": [
+        "正式名称"
+      ]
+    },
+    {
+      "mode": "preview",
+      "direction": "3",
+      "zoom": 2,
+      "text": [
+        "T1"
+      ]
+    },
+    {
+      "mode": "preview",
+      "direction": "3",
+      "zoom": 3,
+      "text": [
+        "T1"
+      ]
+    },
+    {
+      "mode": "preview",
+      "direction": "3",
+      "zoom": 4,
+      "text": [
+        "T1"
+      ]
+    },
+    {
+      "mode": "preview",
+      "direction": "3",
+      "zoom": 5,
+      "text": [
+        "正式名称"
+      ]
+    },
+    {
+      "mode": "preview",
+      "direction": "3",
+      "zoom": 6,
+      "text": [
+        "正式名称"
+      ]
+    },
+    {
+      "mode": "preview",
+      "direction": "3",
+      "zoom": 7,
+      "text": [
+        "正式名称"
+      ]
+    },
+    {
+      "mode": "preview",
+      "direction": "3",
+      "zoom": 8,
+      "text": [
+        "正式名称"
+      ]
+    },
+    {
+      "mode": "preview",
+      "direction": "0",
+      "zoom": 0,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "0",
+      "zoom": 1,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "0",
+      "zoom": 2,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "0",
+      "zoom": 3,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "0",
+      "zoom": 4,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "0",
+      "zoom": 5,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "0",
+      "zoom": 6,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "0",
+      "zoom": 7,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "0",
+      "zoom": 8,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "1",
+      "zoom": 0,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "1",
+      "zoom": 1,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "1",
+      "zoom": 2,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "1",
+      "zoom": 3,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "1",
+      "zoom": 4,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "1",
+      "zoom": 5,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "1",
+      "zoom": 6,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "1",
+      "zoom": 7,
+      "text": []
+    },
+    {
+      "mode": "preview",
+      "direction": "1",
+      "zoom": 8,
+      "text": []
+    }
+  ],
+  "runtimeErrors": [],
+  "scope": "54 real main/validator combinations; code only 2–4 direction3, legacy full-name capsules remain 5–8; SVG-only bug fixed without ROD changes"
+}

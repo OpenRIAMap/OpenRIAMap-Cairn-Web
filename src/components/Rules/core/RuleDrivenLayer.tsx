@@ -1,3 +1,6 @@
+import {resolveNodeFieldSettings} from '@/configStudio/nodeFieldSettings';
+import {recordWorld,recordPath} from '@/configStudio/structureRoleIndex';
+import {normalizeRuleSourceWorldId} from '@/components/Rules/data/ruleDataSources';
 import { isNativeConfigRevision } from '../../../configStudio/contract';
 import { featureLabelParts, componentLabelId, filterFeatureGeometryParts } from '@/components/Rules/rendering/multipartLabels';
 import { iconBoundsAtAnchor, type LabelPlacement } from '@/components/Rules/rendering/labelPlacement';
@@ -2536,6 +2539,7 @@ export default function RuleDrivenLayer(props: Props) {
       return String(value ?? "").trim() === key;
     };
 
+    if(configRuntime&&configRuntime.contractRevision>=10){const matches=candidates.filter(record=>recordWorld(record)===normalizeRuleSourceWorldId(worldId)&&matchRecord(record)&&(!linkTarget?.structureRole||resolveNodeFieldSettings(configRuntime,recordPath(record)).value.structure?.role===linkTarget.structureRole));return matches.length===1?matches[0]:undefined;}
     const constrained = candidates.find(matchRecord);
     if (constrained) return constrained;
 
@@ -3561,6 +3565,12 @@ export default function RuleDrivenLayer(props: Props) {
           typeof rawLabelPlan === "function"
             ? rawLabelPlan(r, context, store)
             : rawLabelPlan;
+        // A disabled label may still carry declutter settings. Bundle updates
+        // leave those labels to this phase, so a visible geometry must not keep
+        // the previous rule's marker/click layer after the label is switched off.
+        if (!labelPlan?.enabled && nativeBundle && (nativeBundle.label || nativeBundle.partLabels?.size)) {
+          clearBundleLabel(nativeBundle, root, true);
+        }
         if (nativeBundle?.nativeSymbol?.visibility === 'withLabel' && (!labelPlan?.enabled || !resolveLabelTextForAudit(r, labelPlan, context, store))) {
           root.removeLayer(nativeBundle.main);
           if (nativeBundle.hitProxy) root.removeLayer(nativeBundle.hitProxy);
@@ -3787,13 +3797,16 @@ export default function RuleDrivenLayer(props: Props) {
       for (const bundle of cacheRef.current.values()) {
         for (const [id, child] of bundle.partLabels ?? []) if (!requestedParts.has(id)) { clearBundleLabel(child, root); bundle.partLabels!.delete(id); }
       }
+      // Reconcile even when the last label disappears. Otherwise a later
+      // re-entry can reuse placement from an interval with no active requests.
+      const retained = new Set(declutterLabelRequests.map(req => req.id));
+      for (const id of nativePlacementRef.current.keys()) if (!retained.has(id)) nativePlacementRef.current.delete(id);
+      livePlacementRef.current = declutterLabelRequests.some(req => req.runtimeStability?.enabled && req.runtimeStability.freezeDuringPan === false);
       if (declutterLabelRequests.length) {
         const frozen: PlacedLabel[] = [];
         const reservedLabels: Array<{ request: LabelRequest; rect: { x: number; y: number; w: number; h: number } }> = [];
         const fresh: LabelRequest[] = [];
         const signatures = new Map<string,string>();
-        const retained = new Set(declutterLabelRequests.map(req => req.id));
-        for (const id of nativePlacementRef.current.keys()) if (!retained.has(id)) nativePlacementRef.current.delete(id);
         for (const req of declutterLabelRequests) {
           const signature = JSON.stringify([stabilitySignature, req.worldId, req.displayMode, req.geometrySignature, req.text, req.font, req.placement, req.offsetX, req.offsetY, req.withDot, req.candidateOffsetsPx, req.symbolBounds, req.collisionBoundsAdjustment, req.declutter, req.displayAnchor, req.runtimeStability]);
           signatures.set(req.id, signature);
@@ -3825,7 +3838,6 @@ export default function RuleDrivenLayer(props: Props) {
           const p = placedById.get(req.id);
           if (p) nativePlacementRef.current.set(req.id, { signature: signatures.get(req.id)!, placed: p, anchor: req.anchorLatLng, center: map.getCenter(), zoom: map.getZoom() });
         }
-        livePlacementRef.current = declutterLabelRequests.some(req => req.runtimeStability?.enabled && req.runtimeStability.freezeDuringPan === false);
 
         for (const req of declutterLabelRequests) {
           const row = lineAuditRows.get(req.featureUid ?? "");

@@ -313,7 +313,7 @@ function mediaIdForPicture(entry) {
   return `IMG_${raw}`;
 }
 
-export function buildMediaIndexPlan(pictureEntries, storageProfile = 'media.github.currentOpenRIAMapDataPicture') {
+export function buildMediaIndexPlan(pictureEntries, storageProfile = 'media.formal.current') {
   const assets = [];
   const bindings = [];
   for (const entry of pictureEntries) {
@@ -423,6 +423,7 @@ export async function buildComparison(args, mode = 'compare') {
     generatedAt,
     mode,
     projectId: args.projectId,
+    configuration: {identity:configContext.configurationIdentity,rulesVersion:configContext.rulesVersion},
     inputs: {
       relayInput: args.relayInputPath ? rel(args.relayInputPath) : rel(args.relayRoot),
       relayInputType: relayInput?.inputType ?? 'directory',

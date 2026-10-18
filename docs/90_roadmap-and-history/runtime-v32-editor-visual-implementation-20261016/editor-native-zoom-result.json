@@ -1,0 +1,143 @@
+{
+  "method": "Edge settingsPrivate.setDefaultZoom; device metrics cleared; native 1440x1000 browser window",
+  "measurements": [
+    {
+      "innerWidth": 1406,
+      "innerHeight": 903,
+      "outerWidth": 1440,
+      "outerHeight": 1000,
+      "devicePixelRatio": 1,
+      "document": [
+        1406,
+        1406
+      ],
+      "pane": [
+        668,
+        668
+      ],
+      "phase": "feature",
+      "nativeZoom": 1
+    },
+    {
+      "innerWidth": 1125,
+      "innerHeight": 722,
+      "outerWidth": 1440,
+      "outerHeight": 1000,
+      "devicePixelRatio": 1.25,
+      "document": [
+        1125,
+        1125
+      ],
+      "pane": [
+        1087,
+        1087
+      ],
+      "phase": "feature",
+      "nativeZoom": 1.25
+    },
+    {
+      "innerWidth": 937,
+      "innerHeight": 602,
+      "outerWidth": 1440,
+      "outerHeight": 1000,
+      "devicePixelRatio": 1.5,
+      "document": [
+        937,
+        937
+      ],
+      "pane": [
+        892,
+        892
+      ],
+      "phase": "feature",
+      "nativeZoom": 1.5
+    },
+    {
+      "innerWidth": 703,
+      "innerHeight": 451,
+      "outerWidth": 1440,
+      "outerHeight": 1000,
+      "devicePixelRatio": 2,
+      "document": [
+        703,
+        703
+      ],
+      "pane": [
+        662,
+        662
+      ],
+      "phase": "feature",
+      "nativeZoom": 2
+    },
+    {
+      "innerWidth": 1406,
+      "innerHeight": 903,
+      "outerWidth": 1440,
+      "outerHeight": 1000,
+      "devicePixelRatio": 1,
+      "document": [
+        1406,
+        1406
+      ],
+      "pane": [
+        1365,
+        1365
+      ],
+      "phase": "workflow",
+      "nativeZoom": 1
+    },
+    {
+      "innerWidth": 1125,
+      "innerHeight": 722,
+      "outerWidth": 1440,
+      "outerHeight": 1000,
+      "devicePixelRatio": 1.25,
+      "document": [
+        1125,
+        1125
+      ],
+      "pane": [
+        1087,
+        1087
+      ],
+      "phase": "workflow",
+      "nativeZoom": 1.25
+    },
+    {
+      "innerWidth": 937,
+      "innerHeight": 602,
+      "outerWidth": 1440,
+      "outerHeight": 1000,
+      "devicePixelRatio": 1.5,
+      "document": [
+        937,
+        937
+      ],
+      "pane": [
+        902,
+        902
+      ],
+      "phase": "workflow",
+      "nativeZoom": 1.5
+    },
+    {
+      "innerWidth": 703,
+      "innerHeight": 451,
+      "outerWidth": 1440,
+      "outerHeight": 1000,
+      "devicePixelRatio": 2,
+      "document": [
+        703,
+        703
+      ],
+      "pane": [
+        670,
+        670
+      ],
+      "phase": "workflow",
+      "nativeZoom": 2
+    }
+  ],
+  "activeConfigSha256": "350e5ab2e644d000b0452634d4d5eeb88c1bfcec31491185040ec4b202570369",
+  "runtimeErrors": []
+}

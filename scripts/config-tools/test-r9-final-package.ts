@@ -13,7 +13,7 @@ import {stableConfigText} from '../../src/configStudio/defaultConfigProvider';
 import {initializeCategory} from '../../src/configStudio/categoryInitialization';
 const out='docs/90_roadmap-and-history/runtime-v32-final-execution-20261012';
 const sha=(value:string|Uint8Array)=>createHash('sha256').update(value).digest('hex');
-const manifest=JSON.parse(fs.readFileSync('src/configStudio/defaults/manifest.json','utf8'));
+const manifest=JSON.parse(fs.readFileSync('src/configStudio/defaults/manifest-r9-r5.json','utf8'));
 const bytes=fs.readFileSync('src/configStudio/defaults/r9-r5.config.json'),config=JSON.parse(bytes.toString('utf8'));
 assert.equal(sha(bytes),manifest.sha256);assert.equal(config.revision,5);assert.equal(config.contractRevision,9);
 const {parity:_,...content}=config;assert.equal(sha(stableConfigText(content)),manifest.semanticFingerprint);

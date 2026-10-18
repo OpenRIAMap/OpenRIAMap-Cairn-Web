@@ -1,0 +1,42 @@
+CairnMap Display Config Audit
+Assembly source: presets + openriamap-ria project
+Classes source: project-config/presets/*/classes
+
+Summary
+  Classes checked: 16
+  Display rules found: 16
+  Special logic keys registered: 24
+  Relation bindings registered: 14
+  Display runtime contracts registered: 16
+  Errors: 0
+  Warnings: 0
+  Info: 0
+  Overlay whitelist: BUD, FLR, ISG, ISL, ISP, PFB, PLF, RLE, ROD, SBP, STA, STB, STF, TPP, TRP, WRP
+  Runtime profile mappings: buildingStructure->buildingStructure, geometryOnlyFallback->geometryOnlyFallback, indoorUnit->indoorUnit, largeGeoSurface->largeGeoSurface, networkLine->networkLine, poiPoint->poiPoint, stationStructure->stationStructure, transportNode->transportNode
+  Runtime configPrimary classes: BUD, FLR, ISG, ISL, ISP, PFB, PLF, RLE, ROD, SBP, STA, STB, STF, TPP, TRP, WRP
+  Runtime legacyAlgorithmFallback classes: -
+
+Overlay Groups
+  point: ISP, PLF, SBP, STA, TPP, TRP, WRP
+  line: ISL, RLE, ROD
+  surface: BUD, FLR, ISG, PFB, STB, STF
+
+Per-Class Summary
+  BUD: group=surface mode=configPrimary rules=1 primary=BUD-building-structure profiles=buildingStructure labelStyles=structure-label(id)
+  FLR: group=surface mode=configPrimary rules=1 primary=FLR-indoor-unit profiles=indoorUnit labelStyles=bubble-dark-label-13(id)
+  ISG: group=surface mode=configPrimary rules=1 primary=ISG-generic-surface profiles=largeGeoSurface labelStyles=gm-outline(id)
+  ISL: group=line mode=configPrimary rules=1 primary=ISL-generic-line profiles=networkLine labelStyles=gm-outline(id)
+  ISP: group=point mode=configPrimary rules=1 primary=ISP-generic-point profiles=poiPoint labelStyles=bubble-dark-label-14(id)
+  PFB: group=surface mode=configPrimary rules=1 primary=PFB-platform-outline profiles=geometryOnlyFallback labelStyles=gm-outline(id)
+  PLF: group=point mode=configPrimary rules=1 primary=PLF-platform-node profiles=transportNode labelStyles=bubble-dark-label-14(id)
+  RLE: group=line mode=configPrimary rules=1 primary=RLE-rail-network-line profiles=networkLine labelStyles=rle-line-dynamic(id)
+  ROD: group=line mode=configPrimary rules=1 primary=ROD-road-network-line profiles=networkLine labelStyles=gm-bw-dynamic(id)
+  SBP: group=point mode=configPrimary rules=1 primary=SBP-station-building-point profiles=poiPoint labelStyles=bubble-dark-label-14(id)
+  STA: group=point mode=configPrimary rules=1 primary=STA-station-node profiles=transportNode labelStyles=bubble-dark-label-14(id)
+  STB: group=surface mode=configPrimary rules=1 primary=STB-station-structure profiles=stationStructure labelStyles=structure-label(id)
+  STF: group=surface mode=configPrimary rules=1 primary=STF-station-floor profiles=indoorUnit labelStyles=bubble-dark-label-13(id)
+  TPP: group=point mode=configPrimary rules=1 primary=TPP-teleport-point profiles=poiPoint labelStyles=bubble-dark-label-14(id)
+  TRP: group=point mode=configPrimary rules=1 primary=TRP-trade-point profiles=poiPoint labelStyles=bubble-dark-label-14(id)
+  WRP: group=point mode=configPrimary rules=1 primary=WRP-warp-point profiles=poiPoint labelStyles=bubble-dark-label-14(id)
+
+Result: PASS

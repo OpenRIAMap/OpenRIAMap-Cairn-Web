@@ -1,9 +1,10 @@
+import { getApplicationSettings } from '@/core/project/applicationRuntime';
 /**
  * 搜索组件
  * 支持搜索站点、地标和线路
  */
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { HelpCircle, Search as SearchIcon } from 'lucide-react';
 import type { ParsedStation, ParsedLine, Player } from '@/types';
 import type { ParsedLandmark } from '@/components/Legacy/data/landmarkParser';
@@ -11,6 +12,10 @@ import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
 import { pickIdFieldValue } from '@/components/Rules/rendering/renderRules';
+import type { ConfigPackageV3 } from '@/configStudio/types';
+import {categorySearchIndex,categorySearchSubtitle,findCategorySearchEntries} from './configSearch';
+import {ConfigSearchExtension} from './ConfigSearchExtension';
+import {getRuleSearchPoolVersion,subscribeRuleSearchPool} from '@/components/Rules/search/ruleSearchRegistry';
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { loadRailNewIndex, passLineBooleanFilters, type RailNewIndex } from '@/components/Navigation/railNewIndex';
 import {
@@ -33,9 +38,12 @@ export interface SearchResult {
 
   // rule 专用
   ruleRecord?: FeatureRecord;
+  configExtension?:boolean;
 }
 
 interface SearchBarProps {
+  disabled?:boolean;
+  configRuntime?:ConfigPackageV3;
   stations: ParsedStation[];
   landmarks: ParsedLandmark[];
   lines: ParsedLine[];
@@ -122,10 +130,15 @@ function getRuleCenterCoord(r: FeatureRecord): { x: number; y: number; z: number
   };
 }
 
-export function SearchBar({ stations, landmarks, lines, players = [], worldId, onSelect, onLineSelect, mobile = false, variant, onAboutClick }: SearchBarProps) {
+export function SearchBar({ disabled=false, configRuntime, stations, landmarks, lines, players = [], worldId, onSelect, onLineSelect, mobile = false, variant, onAboutClick }: SearchBarProps) {
+  const poolVersion=useSyncExternalStore(listener=>subscribeRuleSearchPool(worldId,listener),()=>getRuleSearchPoolVersion(worldId));
+  const nativeSearch=Boolean(configRuntime&&configRuntime.contractRevision>=10);
   const [query, setQuery] = useState('');
+  const [deferredQuery,setDeferredQuery]=useState('');
+  useEffect(()=>{const timer=setTimeout(()=>setDeferredQuery(query),getApplicationSettings().preferences.search.debounceMs);return()=>clearTimeout(timer);},[query]);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  useEffect(()=>{const close=(event:Event)=>{if((event as CustomEvent).detail?.id==='search')setIsOpen(false);};window.addEventListener('cairn:close-module',close);return()=>window.removeEventListener('cairn:close-module',close);},[]);
   const [railIndex, setRailIndex] = useState<RailNewIndex | null>(null);
   const [dropdownWidth, setDropdownWidth] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -143,10 +156,10 @@ export function SearchBar({ stations, landmarks, lines, players = [], worldId, o
       .catch(() => {
         if (!cancelled) setRailIndex(null);
       });
-    return () => {
+  return () => {
       cancelled = true;
     };
-  }, [worldId]);
+  }, [worldId,poolVersion]);
 
   // 用于楼层类（FLR/STF）的“所属建筑/车站建筑”名映射。
   // - 尽量复用 SearchPool（无需额外 fetch）
@@ -169,7 +182,7 @@ export function SearchBar({ stations, landmarks, lines, players = [], worldId, o
       if (!m.has(id)) m.set(id, name);
     }
     return m;
-  }, [worldId]);
+  }, [worldId,poolVersion]);
 
   const getLineTokensForRule = (r: FeatureRecord | undefined | null): LineToken[] => {
     if (!r || !railIndex) return [];
@@ -294,12 +307,12 @@ export function SearchBar({ stations, landmarks, lines, players = [], worldId, o
 
   // 搜索逻辑
   useEffect(() => {
-    if (query.length < 1) {
+    if (deferredQuery.length < 1) {
       setResults([]);
       return;
     }
 
-    const searchQuery = normalizeQuery(query);
+    const searchQuery = normalizeQuery(deferredQuery);
     const matchedResults: SearchResult[] = [];
 
     // 搜索线路（优先显示）
@@ -404,7 +417,8 @@ export function SearchBar({ stations, landmarks, lines, players = [], worldId, o
     // - 这里只做模糊检索（name/id）；点击后由 MapContainer 负责聚焦/缩放 & 发事件给 RuleDrivenLayer 打开信息卡。
     const rulePool = getRuleSearchPool(worldId);
     const buildingNameIndex = rulePool.length ? buildBuildingNameIndex(rulePool) : null;
-    if (rulePool.length) {
+    if(nativeSearch&&configRuntime){const index=categorySearchIndex(configRuntime,rulePool);for(const entry of findCategorySearchEntries(configRuntime,rulePool,worldId,searchQuery)){const r=entry.record;matchedResults.push({type:'rule',name:getRuleDisplayName(r).name,coord:getRuleCenterCoord(r),extra:categorySearchSubtitle(configRuntime,index,entry,getApplicationSettings().preferences.language),ruleRecord:r,configExtension:entry.search.extension.mode!=='none'});}}
+    if (rulePool.length&&!nativeSearch) {
       for (const r of rulePool) {
         const fi: any = r?.featureInfo ?? {};
         const cls = String(r?.meta?.Class ?? fi?.Class ?? '').trim();
@@ -440,8 +454,8 @@ export function SearchBar({ stations, landmarks, lines, players = [], worldId, o
       .filter((it) => it.x.type === 'rule');
 
     ruleWithOrder.sort((a, b) => {
-      const pa = a.x.ruleRecord ? getRulePriorityIndex(a.x.ruleRecord) : Number.POSITIVE_INFINITY;
-      const pb = b.x.ruleRecord ? getRulePriorityIndex(b.x.ruleRecord) : Number.POSITIVE_INFINITY;
+      const pa = a.x.ruleRecord ? nativeSearch&&configRuntime?categorySearchIndex(configRuntime,rulePool).byRecord.get(a.x.ruleRecord)?.priority??100:getRulePriorityIndex(a.x.ruleRecord) : Number.POSITIVE_INFINITY;
+      const pb = b.x.ruleRecord ? nativeSearch&&configRuntime?categorySearchIndex(configRuntime,rulePool).byRecord.get(b.x.ruleRecord)?.priority??100:getRulePriorityIndex(b.x.ruleRecord) : Number.POSITIVE_INFINITY;
       if (pa !== pb) return pa - pb;
       return a.i - b.i; // 稳定排序
     });
@@ -449,8 +463,8 @@ export function SearchBar({ stations, landmarks, lines, players = [], worldId, o
     const finalResults = [...nonRule, ...ruleWithOrder.map((it) => it.x)];
 
     // 限制结果数量
-    setResults(finalResults.slice(0, 35));
-  }, [query, stations, landmarks, lines, players, worldId]);
+    setResults(finalResults.slice(0, getApplicationSettings().preferences.search.homepageLimit));
+  }, [deferredQuery, stations, landmarks, lines, players, worldId,poolVersion,configRuntime]);
 
   // 点击外部关闭
   useEffect(() => {
@@ -516,6 +530,7 @@ export function SearchBar({ stations, landmarks, lines, players = [], worldId, o
     setIsOpen(false);
   };
 
+  if(disabled)return null;
   return (
     <div ref={containerRef} className={`relative ${isMobileVariant ? 'flex items-stretch gap-2' : ''}`}>
       <AppCard className={`${shellClassName} ${isMobileVariant && onAboutClick ? 'flex-1 min-w-0' : ''}`}>
@@ -568,10 +583,10 @@ export function SearchBar({ stations, landmarks, lines, players = [], worldId, o
 	                    <div className="text-sm font-medium text-gray-800 whitespace-nowrap">
 	                      {result.name}
 	                    </div>
-	                    {result.extra && (
+	                    {(result.extra||result.configExtension) && (
 	                      <div className="text-xs text-gray-500 flex items-center gap-2 whitespace-nowrap">
                     <span className="shrink-0">{(() => {
-                      if (result.type !== 'rule') return result.extra;
+                      if (result.type !== 'rule'||nativeSearch) return result.extra;
                       const r = result.ruleRecord;
                       const fi: any = r?.featureInfo ?? {};
                       const cls = String(r?.meta?.Class ?? fi?.Class ?? '').trim();
@@ -590,8 +605,9 @@ export function SearchBar({ stations, landmarks, lines, players = [], worldId, o
                       return result.extra;
                     })()}</span>
 
+                    {nativeSearch&&configRuntime&&result.ruleRecord?<ConfigSearchExtension config={configRuntime} record={result.ruleRecord} railIndex={railIndex}/>:null}
                     {/* 包含线路：PLF/PFB/STA/STB */}
-                    {result.type === 'rule' && (() => {
+                    {result.type === 'rule' && !nativeSearch && (() => {
                       const r = result.ruleRecord;
                       const fi: any = r?.featureInfo ?? {};
                       const cls = String(r?.meta?.Class ?? fi?.Class ?? '').trim();
@@ -615,7 +631,7 @@ export function SearchBar({ stations, landmarks, lines, players = [], worldId, o
                     })()}
 
                     {/* RLE：颜色条（与信息卡一致） */}
-                    {result.type === 'rule' && (() => {
+                    {result.type === 'rule' && !nativeSearch && (() => {
                       const r = result.ruleRecord;
                       const fi: any = r?.featureInfo ?? {};
                       const cls = String(r?.meta?.Class ?? fi?.Class ?? '').trim();

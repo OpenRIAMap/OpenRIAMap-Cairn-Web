@@ -1,0 +1,72 @@
+{
+  "checks": [
+    "10 actual editor scenes have complete, semantic per-control explanations; runtime form preview is explicitly outside setting controls",
+    "readonly help opens by hover/focus/Enter and closes by Escape without changing any form value",
+    "tooltip remains inside all five viewport sizes at 100/125/150 percent equivalent layout zoom",
+    "touch opens readonly help without toggling a setting or creating a draft change",
+    "disabled fieldset explanations remain keyboard accessible"
+  ],
+  "scenes": [
+    {
+      "scene": "general-all",
+      "controls": 525,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "feature-BUD",
+      "controls": 1316,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "feature-ROD",
+      "controls": 1715,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "feature-ISG",
+      "controls": 994,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "feature-RLE",
+      "controls": 2842,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "feature-ISP",
+      "controls": 952,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "workflow-v3-rod_road",
+      "controls": 482,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "workflow-v3-tpp_teleport",
+      "controls": 263,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "workflow-v3-isg_ngf_wtb",
+      "controls": 126,
+      "missing": [],
+      "fallbacks": []
+    },
+    {
+      "scene": "workflow-external-railway-integrated",
+      "controls": 6,
+      "missing": [],
+      "fallbacks": []
+    }
+  ],
+  "runtime_errors": []
+}

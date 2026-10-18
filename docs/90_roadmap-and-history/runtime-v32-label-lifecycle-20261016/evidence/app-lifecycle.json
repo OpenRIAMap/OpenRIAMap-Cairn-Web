@@ -1,0 +1,662 @@
+{
+  "url": "http://127.0.0.1:5197",
+  "host": {
+    "world": "zth",
+    "records": 495,
+    "contract": 11,
+    "packageRevision": 7,
+    "measurement": false
+  },
+  "initialCodes": 1,
+  "checks": [
+    {
+      "zoom": 1,
+      "rails": [
+        {
+          "id": "ZRH1_A",
+          "displayed": false,
+          "expected": false,
+          "text": "海华1号线"
+        },
+        {
+          "id": "ZRH1_A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH1_A_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH7_A_01",
+          "displayed": false,
+          "expected": false,
+          "text": "海华7号线"
+        },
+        {
+          "id": "ZRH7_A_01_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH7_A_01_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01B",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁7号线南海段"
+        },
+        {
+          "id": "ZRT7_01B_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01B_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01C",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁7号线田北段"
+        },
+        {
+          "id": "ZRT7_01C_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01C_D",
+          "displayed": false,
+          "expected": false
+        }
+      ]
+    },
+    {
+      "zoom": 0,
+      "rails": [
+        {
+          "id": "ZRH1_A",
+          "displayed": false,
+          "expected": false,
+          "text": "海华1号线"
+        },
+        {
+          "id": "ZRH1_A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH1_A_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH7_A_01",
+          "displayed": false,
+          "expected": false,
+          "text": "海华7号线"
+        },
+        {
+          "id": "ZRH7_A_01_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH7_A_01_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT13_01B",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁13号线大陆段"
+        },
+        {
+          "id": "ZRT13_01B_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT13_01B_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01B",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁1号线白霖段"
+        },
+        {
+          "id": "ZRT1_01B_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01B_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01C",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁1号线北延段"
+        },
+        {
+          "id": "ZRT1_01C_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01C_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01A",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁1号线山内段"
+        },
+        {
+          "id": "ZRT1_01A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01A_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01D",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁1号线湾东段"
+        },
+        {
+          "id": "ZRT1_01D_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01D_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT4_01B",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁4号线北庭段"
+        },
+        {
+          "id": "ZRT4_01B_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT4_01B_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT4_01C",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁4号线岭澜段"
+        },
+        {
+          "id": "ZRT4_01C_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT4_01C_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT4_01A",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁4号线中央段"
+        },
+        {
+          "id": "ZRT4_01A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT4_01A_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01B",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁7号线南海段"
+        },
+        {
+          "id": "ZRT7_01B_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01B_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01A",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁7号线溯北段"
+        },
+        {
+          "id": "ZRT7_01A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01A_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01C",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁7号线田北段"
+        },
+        {
+          "id": "ZRT7_01C_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01C_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRTL1_01A",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRTL1_01B",
+          "displayed": false,
+          "expected": false
+        }
+      ]
+    },
+    {
+      "zoom": 4,
+      "rails": [
+        {
+          "id": "ZRH1_A",
+          "displayed": true,
+          "expected": true,
+          "text": "H1"
+        },
+        {
+          "id": "ZRH1_A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH1_A_D",
+          "displayed": false,
+          "expected": false
+        }
+      ]
+    },
+    {
+      "zoom": 0,
+      "rails": [
+        {
+          "id": "ZRH1_A",
+          "displayed": false,
+          "expected": false,
+          "text": "海华1号线"
+        },
+        {
+          "id": "ZRH1_A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH1_A_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH7_A_01",
+          "displayed": false,
+          "expected": false,
+          "text": "海华7号线"
+        },
+        {
+          "id": "ZRH7_A_01_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH7_A_01_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT13_01B",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁13号线大陆段"
+        },
+        {
+          "id": "ZRT13_01B_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT13_01B_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01B",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁1号线白霖段"
+        },
+        {
+          "id": "ZRT1_01B_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01B_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01C",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁1号线北延段"
+        },
+        {
+          "id": "ZRT1_01C_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01C_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01A",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁1号线山内段"
+        },
+        {
+          "id": "ZRT1_01A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01A_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01D",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁1号线湾东段"
+        },
+        {
+          "id": "ZRT1_01D_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT1_01D_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT4_01B",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁4号线北庭段"
+        },
+        {
+          "id": "ZRT4_01B_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT4_01B_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT4_01C",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁4号线岭澜段"
+        },
+        {
+          "id": "ZRT4_01C_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT4_01C_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT4_01A",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁4号线中央段"
+        },
+        {
+          "id": "ZRT4_01A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT4_01A_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01B",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁7号线南海段"
+        },
+        {
+          "id": "ZRT7_01B_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01B_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01A",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁7号线溯北段"
+        },
+        {
+          "id": "ZRT7_01A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01A_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01C",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁7号线田北段"
+        },
+        {
+          "id": "ZRT7_01C_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01C_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRTL1_01A",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRTL1_01B",
+          "displayed": false,
+          "expected": false
+        }
+      ]
+    },
+    {
+      "zoom": 4,
+      "rails": [
+        {
+          "id": "ZRH1_A",
+          "displayed": true,
+          "expected": true,
+          "text": "H1"
+        },
+        {
+          "id": "ZRH1_A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH1_A_D",
+          "displayed": false,
+          "expected": false
+        }
+      ]
+    },
+    {
+      "zoom": 1,
+      "rails": [
+        {
+          "id": "ZRH1_A",
+          "displayed": false,
+          "expected": false,
+          "text": "海华1号线"
+        },
+        {
+          "id": "ZRH1_A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH1_A_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH7_A_01",
+          "displayed": false,
+          "expected": false,
+          "text": "海华7号线"
+        },
+        {
+          "id": "ZRH7_A_01_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH7_A_01_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01B",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁7号线南海段"
+        },
+        {
+          "id": "ZRT7_01B_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01B_D",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01C",
+          "displayed": false,
+          "expected": false,
+          "text": "溯铁7号线田北段"
+        },
+        {
+          "id": "ZRT7_01C_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRT7_01C_D",
+          "displayed": false,
+          "expected": false
+        }
+      ]
+    },
+    {
+      "zoom": 4,
+      "rails": [
+        {
+          "id": "ZRH1_A",
+          "displayed": true,
+          "expected": true,
+          "text": "H1"
+        },
+        {
+          "id": "ZRH1_A_U",
+          "displayed": false,
+          "expected": false
+        },
+        {
+          "id": "ZRH1_A_D",
+          "displayed": false,
+          "expected": false
+        }
+      ]
+    }
+  ],
+  "runtimeErrors": [],
+  "transport": "unchanged frozen downstream responses; not a production backend availability check"
+}

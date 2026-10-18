@@ -1,0 +1,26 @@
+[
+  {
+    "task": "validate:project-config",
+    "exitCode": 0
+  },
+  {
+    "task": "audit:class-config",
+    "exitCode": 0
+  },
+  {
+    "task": "audit:display-config",
+    "exitCode": 0
+  },
+  {
+    "task": "audit:card-config",
+    "exitCode": 0
+  },
+  {
+    "task": "audit:workflow-config",
+    "exitCode": 0
+  },
+  {
+    "task": "audit:package-assembly",
+    "exitCode": 0
+  }
+]

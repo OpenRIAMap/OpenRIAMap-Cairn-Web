@@ -1,7 +1,7 @@
 import type { ConfigPackageV3, WorkflowDefinition } from './types';
-import type { V3WorkflowRunResult } from './V3WorkflowRunner';
+import type { V3WorkflowRunResult } from './workflowKernel';
 import { activeOutputIds } from './workflowDrawing';
-import { normalizeV3WorldId, validateV3WorkflowRecords } from './V3WorkflowRunner';
+import { normalizeV3WorldId, validateV3WorkflowRecords } from './workflowKernel';
 import { readMultipartGeometry, validateMultipartGeometry } from '../core/geometry/multipartGeometry';
 
 /** Prepare the complete batch before the map mutates any layer. */

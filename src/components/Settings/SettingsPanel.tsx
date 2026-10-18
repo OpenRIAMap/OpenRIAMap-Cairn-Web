@@ -1,9 +1,13 @@
+import { retiredSourceNotice } from '@/components/Rules/data/formalDataSourceRuntime';
+import {getFormalConfiguration,subscribeFormalConfiguration} from '@/configRuntime/formalConfiguration';
+import {getRuntimeDataDiagnostics} from '@/configRuntime/runtimeDataView';
 /**
  * 设置面板组件
  * 显示 Rules 世界版本、缓存状态、PWA 状态等信息
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { getApplicationSettings, subscribeApplication } from '@/core/project/applicationRuntime';
 import { X, RefreshCw, Trash2, Database, Smartphone, CheckCircle, AlertCircle, Loader2, Download, SlidersHorizontal } from 'lucide-react';
 
 // PWA 安装事件类型
@@ -14,18 +18,19 @@ interface BeforeInstallPromptEvent extends Event {
 import { useLoadingStore } from '@/store/loadingStore';
 import { useRuleDataStore } from '@/store/ruleDataStore';
 import { downloadDataToolSchema } from '@/components/Common/exportDataToolSchema';
-import { fetchWorldMergeVersion, type RuleWorldVersion } from '@/components/Rules/data/worldRuleDatasetLoader';
+import { type RuleWorldVersion } from '@/components/Rules/data/worldRuleDatasetLoader';
+import {dataToolSchemaWarnings} from '@/components/Common/buildDataToolSchema';
+import { compareFormalSourceVersions, formalSourcePresentation, readWorldPublicationStatuses, type SourceComparison, type WorldPublicationStatus } from '@/components/Rules/data/formalSourceStatus';
 import {
   calculateRuleCacheSize,
-  clearAllRuleWorldCaches,
-  getRuleWorldFeatureCount,
+  removeRuleWorldCachesForSource,
   readRuleWorldCache,
   readRuleWorldMeta,
 } from '@/components/Rules/data/worldRuleCache';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import DataSourceSelectionSection from './DataSourceSelectionSection';
-import { getRuleDataSourceSelectionController, getRuleDataSourceSelectionPolicy, isFormalGithubTransportSource } from '@/components/Rules/data/formalDataSourceRuntime';
+import { getRuleDataSourceSnapshot, getRuleDataSourceSelectionController, getRuleDataSourceSelectionPolicy, isFormalGithubTransportSource } from '@/components/Rules/data/formalDataSourceRuntime';
 import ReviewAuthSettingsSection from '@/components/Settings/ReviewAuthSettingsSection';
 import type { ReviewAuthPort } from '@/components/Review/auth';
 import {
@@ -56,15 +61,9 @@ type RuleWorldRow = {
   cachedAt: number | null;
   featureCount: number | null;
   isLoaded: boolean;
+  publicationState?:WorldPublicationStatus['state'];
+  errorMessage?:string;
 };
-
-const RULE_WORLDS: Array<{ id: string; name: string }> = [
-  { id: 'zth', name: '零洲' },
-  { id: 'eden', name: '伊甸' },
-  { id: 'naraku', name: '奈落洲' },
-  { id: 'houtu', name: '后土洲' },
-  { id: 'laputa', name: '拉普塔' },
-];
 
 /** Keep the compact card readable while the title retains both immutable IDs. */
 function compactFormalVersion(value: string | null): string {
@@ -74,6 +73,11 @@ function compactFormalVersion(value: string | null): string {
 }
 
 export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, reviewAuth, reviewAuthTitle, reviewAuthLoginLabel }: SettingsPanelProps) {
+  const formalConfiguration=useSyncExternalStore(subscribeFormalConfiguration,getFormalConfiguration);
+  const formal=formalConfiguration?.identity;
+  const compatibility=Object.values(getRuntimeDataDiagnostics()).flatMap(value=>value.unknown);
+  const application = useSyncExternalStore(subscribeApplication, getApplicationSettings);
+  const RULE_WORLDS = application.worlds.map(world => ({id:world.id,name:world.label.zh||world.label.en||world.id,enabled:world.enabled}));
   const { isLoading, activeRuleWorldId } = useLoadingStore();
   const datasets = useRuleDataStore((s) => s.datasets);
   const refreshWorlds = useRuleDataStore((s) => s.refreshWorlds);
@@ -87,6 +91,10 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   const [isSyncingRules, setIsSyncingRules] = useState(false);
   const [ruleCacheSize, setRuleCacheSize] = useState(0);
   const [ruleWorldRows, setRuleWorldRows] = useState<RuleWorldRow[]>([]);
+  const worldSyncEpoch=useRef(0),comparisonEpoch=useRef(0);
+  const [sourceComparison,setSourceComparison]=useState<SourceComparison|null>(null);
+  const [comparisonBusy,setComparisonBusy]=useState(false);
+  const [schemaMessage,setSchemaMessage]=useState('');
   const [pwaStatus, setPwaStatus] = useState<{
     isInstalled: boolean;
     canInstall: boolean;
@@ -98,12 +106,14 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   });
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalling, setIsInstalling] = useState(false);
-  const sourceLinkModeDefs = getSourceLinkModeDefs();
-  const [sourceLinkModeDraft, setSourceLinkModeDraft] = useState(() => getCurrentSourceLinkModeId());
-  const [sourceLinkModeApplied, setSourceLinkModeApplied] = useState(() => getCurrentSourceLinkModeId());
+  const sourceLinkModeDefs = getSourceLinkModeDefs(dataSource.worldId);
+  const [sourceLinkModeDraft, setSourceLinkModeDraft] = useState(() => getCurrentSourceLinkModeId(dataSource.worldId));
+  const [sourceLinkModeApplied, setSourceLinkModeApplied] = useState(() => getCurrentSourceLinkModeId(dataSource.worldId));
   const [sourceLinkModeStatus, setSourceLinkModeStatus] = useState<string>('');
-  const dataSourceController = getRuleDataSourceSelectionController();
-  const dataSourcePolicy = getRuleDataSourceSelectionPolicy();
+  const dataSourceController = getRuleDataSourceSelectionController(dataSource.worldId);
+  const dataSourcePolicy = getRuleDataSourceSelectionPolicy(dataSource.worldId);
+  const sourceScope=JSON.stringify([dataSource.worldId,dataSource.resourceGroupId,dataSource.sourceId,dataSource.transportId,dataSource.generation]);
+  const sourceDetails=formalSourcePresentation(dataSource);
   const [dataSourceDraft, setDataSourceDraft] = useState(() => dataSource.sourceId);
   const [dataSourceStatus, setDataSourceStatus] = useState<{ tone: 'success' | 'error' | 'info'; text: string } | null>(null);
 
@@ -111,14 +121,22 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   const rulesRefreshBlocked = anyRefreshBusy || (isLoading && !!activeRuleWorldId);
 
   useEffect(() => {
-    const current = getCurrentSourceLinkModeId();
+    const current = getCurrentSourceLinkModeId(dataSource.worldId);
     setSourceLinkModeDraft(current);
     setSourceLinkModeApplied(current);
-  }, []);
+  }, [sourceScope]);
 
   useEffect(() => {
     setDataSourceDraft(dataSource.sourceId);
-  }, [dataSource.sourceId]);
+  }, [sourceScope]);
+
+  useEffect(()=>{setSourceComparison(null);setComparisonBusy(false);setSourceLinkModeStatus('');setDataSourceStatus(null);void syncRuleWorldRows();return()=>{worldSyncEpoch.current++;comparisonEpoch.current++;};},[sourceScope,application]);
+
+  const handleCompareSources=async()=>{
+    const epoch=++comparisonEpoch.current;setComparisonBusy(true);
+    try{const result=await compareFormalSourceVersions(dataSource.worldId);if(epoch===comparisonEpoch.current)setSourceComparison(result);}
+    finally{if(epoch===comparisonEpoch.current)setComparisonBusy(false);}
+  };
 
   useEffect(() => {
     if (!sourceLinkModeStatus) return;
@@ -127,11 +145,11 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   }, [sourceLinkModeStatus]);
 
   const handleApplySourceLinkMode = async () => {
-    if (!isFormalGithubTransportSource(dataSource.sourceId)) {
+    if (!isFormalGithubTransportSource(dataSource.sourceId,dataSource.worldId)) {
       setSourceLinkModeStatus('请先应用 GitHub 镜像作为运行数据读取来源。');
       return;
     }
-    const next = setCurrentSourceLinkMode(sourceLinkModeDraft);
+    const next = setCurrentSourceLinkMode(sourceLinkModeDraft,dataSource.worldId);
     const nextId = next.id;
     const changed = nextId !== sourceLinkModeApplied;
     setSourceLinkModeDraft(nextId);
@@ -160,9 +178,11 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
 
 
   const buildRuleWorldRow = (worldId: string, remote: RuleWorldVersion, remoteOk: boolean): RuleWorldRow => {
-    const meta = readRuleWorldMeta(worldId);
-    const loadedDataset = datasets[worldId];
-    const cachedDataset = readRuleWorldCache(worldId);
+    const source=getRuleDataSourceSnapshot(worldId);
+    const candidate=datasets[worldId],latestMeta=readRuleWorldMeta(worldId,source);
+    const meta=latestMeta?.sourceId===source.sourceId&&latestMeta.transportId===source.transportId?latestMeta:null;
+    const loadedDataset=candidate?.sourceId===source.sourceId&&candidate.transportId===source.transportId?candidate:undefined;
+    const cachedDataset = meta?readRuleWorldCache(meta):null;
     const localDataset = loadedDataset ?? cachedDataset;
     const loadedFeatureCount = Array.isArray(loadedDataset?.features) ? loadedDataset.features.length : null;
     return {
@@ -174,34 +194,26 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
       localVersion: localDataset?.formalVersion === undefined || localDataset.formalVersion === null ? null : String(localDataset.formalVersion),
       localReleaseId: localDataset?.releaseId ?? meta?.releaseId ?? null,
       cachedAt: meta?.cachedAt ?? null,
-      featureCount: loadedFeatureCount ?? getRuleWorldFeatureCount(worldId),
+      featureCount: loadedFeatureCount ?? cachedDataset?.features.length ?? null,
       isLoaded: !!loadedDataset,
     };
   };
 
   const syncRuleWorldRows = async (): Promise<RuleWorldRow[]> => {
+    const epoch=++worldSyncEpoch.current;
     setIsSyncingRules(true);
     try {
-      const rows = await Promise.all(
-        RULE_WORLDS.map(async (world) => {
-          try {
-            const remoteVersion = await fetchWorldMergeVersion(world.id);
-            return buildRuleWorldRow(world.id, remoteVersion, true);
-          } catch {
-            return buildRuleWorldRow(world.id, { formalVersion: '读取失败', releaseId: '' }, false);
-          }
-        })
-      );
-      setRuleWorldRows(rows);
-      setRuleCacheSize(calculateRuleCacheSize());
+      const statuses=await readWorldPublicationStatuses(RULE_WORLDS);
+      const rows=statuses.map(status=>({...buildRuleWorldRow(status.worldId,status.version,status.state==='published'),publicationState:status.state,errorMessage:status.message}));
+      if(epoch===worldSyncEpoch.current){setRuleWorldRows(rows);setRuleCacheSize(calculateRuleCacheSize());}
       return rows;
     } finally {
-      setIsSyncingRules(false);
+      if(epoch===worldSyncEpoch.current)setIsSyncingRules(false);
     }
   };
 
   const syncRuleWorldRowsFromLocal = () => {
-    setRuleWorldRows((prev) => prev.map((row) => buildRuleWorldRow(row.worldId, { formalVersion: row.remoteVersion, releaseId: row.remoteReleaseId ?? '' }, row.remoteOk)));
+    setRuleWorldRows((prev) => prev.map((row) => ({...row,...buildRuleWorldRow(row.worldId, { formalVersion: row.remoteVersion, releaseId: row.remoteReleaseId ?? '' }, row.remoteOk)})));
     setRuleCacheSize(calculateRuleCacheSize());
   };
 
@@ -250,8 +262,6 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
       setDeferredPrompt(null);
     });
 
-    syncRuleWorldRows();
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
@@ -283,6 +293,8 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   };
 
   const getRuleRowStatus = (row: RuleWorldRow): { text: string; className: string; icon: 'ok' | 'warn' | 'none' } => {
+    if(row.publicationState==='unpublished')return {text:'尚未发布',className:'text-gray-600',icon:'none'};
+    if(row.publicationState==='disabled')return {text:'未启用',className:'text-gray-600',icon:'none'};
     if (!row.remoteOk) return { text: '远端读取失败', className: 'text-orange-600', icon: 'warn' };
     if (!row.localReleaseId) return { text: row.isLoaded ? '仅内存已加载' : '未缓存', className: 'text-gray-600', icon: 'none' };
     if (row.localReleaseId === row.remoteReleaseId) return { text: '已缓存', className: 'text-green-600', icon: 'ok' };
@@ -303,7 +315,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
       const outOfDateWorldIds = remoteRows
         .filter((row) => row.remoteOk && row.remoteReleaseId !== row.localReleaseId)
         .map((row) => row.worldId);
-      const targetWorldIds = Array.from(new Set([...cachedWorldIds, ...loadedWorldIds, ...outOfDateWorldIds]));
+      const targetWorldIds = Array.from(new Set([...cachedWorldIds, ...loadedWorldIds, ...outOfDateWorldIds])).filter(id=>remoteRows.some(row=>row.worldId===id&&row.remoteOk));
 
       for (const [index, worldId] of targetWorldIds.entries()) {
         const worldName = RULE_WORLDS.find((world) => world.id === worldId)?.name ?? worldId;
@@ -322,13 +334,13 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   // 清除当前主数据缓存（Rules）
   const handleClearRuleCache = async () => {
     if (!confirm('确定要清除当前世界数据缓存吗？已加载到内存的数据会在后续按需重新缓存。')) return;
-    clearAllRuleWorldCaches();
+    if(dataSource.worldId)removeRuleWorldCachesForSource(dataSource.worldId,dataSource);
     await syncRuleWorldRows();
   };
 
   // 导出 Data Tool Schema
   const handleExportDataSchema = () => {
-    downloadDataToolSchema();
+    try{downloadDataToolSchema();setSchemaMessage('已从当前正式V3配置导出兼容Schema。');}catch(error){setSchemaMessage(error instanceof Error?error.message:String(error));}
   };
 
   // 安装 PWA
@@ -374,6 +386,13 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
             loginLabel={reviewAuthLoginLabel}
           />
         ) : null}
+        {formal?<div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900 space-y-1 break-words [overflow-wrap:anywhere]">
+          <p className="font-semibold">正式配置身份</p>
+          <p>{formal.packageId} · 契约r{formal.contractRevision} / 修订r{formal.revision}</p>
+          <p>{formal.releaseId}</p>
+          <details><summary>配置摘要</summary><p>{formal.configSha256}</p></details>
+          <p>本地工作台草稿与试运行版本独立保存，不作为主地图正式配置。</p>
+        </div>:null}
         {/* 世界数据版本 */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -428,6 +447,8 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
                           <span className="text-gray-700">{row.featureCount ?? '—'}{row.isLoaded ? '（已加载）' : ''}</span>
                         </div>
                       </div>
+                      {row.errorMessage?<p className="text-xs text-orange-700 break-words [overflow-wrap:anywhere]">{row.errorMessage}</p>:null}
+                      {row.remoteReleaseId||row.localReleaseId?<details className="text-[11px] text-gray-500 break-words [overflow-wrap:anywhere]"><summary>数据发布身份</summary><p>远端：{row.remoteReleaseId||'—'}</p><p>本地：{row.localReleaseId||'—'}</p></details>:null}
                     </div>
                   );
                 })}
@@ -441,7 +462,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
             draftSourceId={dataSourceDraft}
             appliedSourceId={dataSource.sourceId}
             isApplying={dataSourceApplying}
-            status={dataSourceStatus}
+            status={dataSourceStatus??(retiredSourceNotice(dataSource.worldId)?{tone:'info',text:retiredSourceNotice(dataSource.worldId)}:null)}
             onDraftSourceIdChange={setDataSourceDraft}
             onApply={() => { void handleApplyDataSource(); }}
             title="运行数据读取来源"
@@ -450,9 +471,9 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
             defaultSuffix="（默认）"
             hint="切换后会清除仅依赖当前运行数据源的缓存，并重新读取当前世界；读取失败不会自动改用其他来源。"
             renderSupplemental={(context) => {
-              const isGithubCandidate = isFormalGithubTransportSource(context.draftSource?.id);
+              const isGithubCandidate = isFormalGithubTransportSource(context.draftSource?.id,dataSource.worldId);
               const isGithubApplied = context.appliedSource?.id === context.draftSource?.id
-                && isFormalGithubTransportSource(context.appliedSource?.id);
+                && isFormalGithubTransportSource(context.appliedSource?.id,dataSource.worldId);
               if (!isGithubCandidate) return null;
               return (
                 <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-3 space-y-2">
@@ -491,6 +512,16 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
               );
             }}
           />
+
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 space-y-2 break-words [overflow-wrap:anywhere]">
+            <p className="font-semibold text-gray-800">实际运行来源</p>
+            <p>{dataSource.label} · 来源组 {dataSource.resourceGroupId??'默认'} · 世界 {dataSource.worldId??'—'}{dataSource.remoteWorldId&&dataSource.remoteWorldId!==dataSource.worldId?` → ${dataSource.remoteWorldId}`:''}</p>
+            <p>{sourceDetails.layout}</p>
+            <p>数据根地址：{dataSource.rootUrl}</p>
+            <details><summary>实际发布入口与传输身份</summary><p>{sourceDetails.releaseSetUrl}</p><p>{sourceDetails.worldPointerUrl}</p><p>{dataSource.transportId}</p></details>
+            <AppButton disabled={comparisonBusy} onClick={()=>void handleCompareSources()} className="rounded border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-700 disabled:opacity-50">{comparisonBusy?'正在比较…':'比较权威来源与镜像'}</AppButton>
+            {sourceComparison?<p role="status" className={sourceComparison.state==='same'?'text-green-700':sourceComparison.state==='different'?'text-orange-700':'text-gray-600'}>{sourceComparison.text}</p>:null}
+          </div>
 
           <div className="flex gap-2">
             <AppButton
@@ -587,7 +618,8 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
             </div>
             <div className="bg-blue-50 rounded-lg p-3 space-y-2 text-sm text-blue-900">
               <p>本地可视化编辑分类、字段、渲染规则、交互基线与通用包含关系。</p>
-              <p className="text-xs">当前为 V3.2 原生渲染阶段；V1 信息卡和工作流的语义迁移将在下一阶段进行。保存前执行完整校验；仅下载本地 Config Package，不直接更新线上配置。</p>
+              <p className="text-xs">主地图使用正式发布配置。工作台保存本地编辑版本，实验室用于试运行；正式发布需通过全局核验和维护者身份确认。</p>
+              {compatibility.length?<details className="text-xs"><summary>{compatibility.length} 条历史记录的分类未包含在当前配置中</summary><p>这些记录暂不进入显示、搜索和引用池，原始数据保留。补充合法分类并发布后可重新读取。</p>{compatibility.map((item,index)=><p className="break-all" key={index}>{item.id} · {Object.values(item.path).join('/')}</p>)}</details>:null}
             </div>
             <AppButton
               onClick={onOpenConfigStudio}
@@ -603,6 +635,9 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
               <SlidersHorizontal className="w-4 h-4" />
               <span>打开配置运行实验室</span>
             </AppButton> : null}
+            <AppButton onClick={() => window.location.assign('/legacy-v1/')} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm rounded-lg">
+              <SlidersHorizontal className="w-4 h-4" /><span>旧渲染规则入口</span>
+            </AppButton>
           </div>
         ) : null}
 
@@ -614,8 +649,9 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
           </div>
 
           <div className="bg-gray-50 rounded-lg p-3 space-y-2 text-sm text-gray-600">
-            <p>导出当前 Web 注册体系对应的 data_tool_schema.json。</p>
+            <p>从当前正式V3配置导出1.1.0兼容格式的 data_tool_schema.json。</p>
             <p>可提供给 OpenRIAMap-Data 的 Tool 进行 sync-web-schema 使用。</p>
+            {formalConfiguration?dataToolSchemaWarnings(formalConfiguration.config).map(text=><p key={text} className="text-xs text-amber-800">{text}</p>):null}
           </div>
 
           <AppButton
@@ -625,12 +661,13 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
             <Download className="w-4 h-4" />
             <span>导出 Data Schema</span>
           </AppButton>
+          {schemaMessage?<p role="status" className="text-xs text-blue-800 break-words">{schemaMessage}</p>:null}
         </div>
 
         {/* 关于 */}
         <div className="text-xs text-gray-400 text-center pt-2">
-          <p>当前默认主数据源为 Rules 仓库数据</p>
-          <p>兼容旧数据源入口仍可手动刷新</p>
+          <p>主地图使用正式配置及当前正式数据发布。</p>
+          <p>旧渲染规则通过独立的 V1 兼容分包进入。</p>
         </div>
       </div>
     </AppCard>

@@ -1,3 +1,4 @@
+import { assertReviewWorldContext, reviewEndpoint } from '@/core/project/applicationRuntime';
 import {
   createIdleReviewReleaseGate,
   ReviewOperationError,
@@ -46,7 +47,8 @@ function operationError(payload: unknown, status: number): ReviewOperationError 
 }
 
 async function requestControl<T>(fetcher: ReviewWorkflowFetch, body: Record<string, unknown>): Promise<T> {
-  const response = await fetcher('/api/review-control', {
+  assertReviewWorldContext(body);
+  const response = await fetcher(reviewEndpoint('control'), {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'content-type': 'application/json' },

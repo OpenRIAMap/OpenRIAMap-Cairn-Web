@@ -1,0 +1,5 @@
+CairnMap FeatureData Contract Validation
+  Contract: project-config/packages/openriamap-ria/environment/featureDataContract.json
+  Sample: docs/30_data-contracts/examples/feature-data-sample/Data_Spilt
+
+Final result: PASS

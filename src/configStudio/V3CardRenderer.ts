@@ -1,7 +1,7 @@
-import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
+import { normalizeRuleSourceWorldId } from '../core/project/worldIdentity';
 import { isNativeConfigRevision } from './contract';
 import type { CardItem, ClassificationPath, ConfigPackageV3 } from './types';
-import { resolveCardConfiguration, resolveEffectiveFields } from './runtime';
+import { resolveCardConfiguration, resolveEffectiveFields, optionLabel } from './runtime';
 import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
 import type { CardRow, InfoSections } from '@/components/Rules/cardrules/fieldRules';
 import type { RailNewIndex } from '@/components/Navigation/railNewIndex';
@@ -57,13 +57,16 @@ function text(value: unknown): string {
 }
 
 function labelFor(item: CardItem, config?: ConfigPackageV3, record?: FeatureRecord): string {
-  if (item.labelMode === 'field' && config && record) return resolveEffectiveFields(config,classificationFor(record)).find(field=>field.key===item.source)?.labels.zh ?? item.source;
-  return item.label?.zh?.trim() || item.source;
+  const language=config?.application?.preferences.language??'zh';
+  if (item.labelMode === 'field' && config && record) return resolveEffectiveFields(config,classificationFor(record)).find(field=>field.key===item.source)?.labels[language] ?? (language==='en'?'':item.source);
+  if(language==='en')return item.label?.en||(config&&config.contractRevision>=11?item.source:'');
+  return item.label?.zh?.trim() || item.label?.en?.trim() || item.source;
 }
 
 function relationTarget(item: CardItem) {
   const target = item.relation?.targetClassification;
   return {
+    ...(item.relation?.targetRole?{structureRole:item.relation.targetRole}:{}),
     classCode: target?.class,
     kind: target?.kind,
     skind: target?.skind,
@@ -91,6 +94,7 @@ function lineChipsRow(item: CardItem, record: FeatureRecord, config:ConfigPackag
 
 function rowFor(item: CardItem, record: FeatureRecord, config: ConfigPackageV3, railIndex?: RailNewIndex | null): CardRow | undefined {
   if (!item.visible) return undefined;
+  const language=config.application?.preferences.language??'zh';
   const defined = config.contractRevision<9?resolveEffectiveFields(config,classificationFor(record)).find(field=>field.key===item.source):undefined;
   if(item.valueMode==='field'&&item.options?.format===undefined&&defined?.format)item={...item,options:{...item.options,format:defined.format}};
   if (item.renderer === 'lineChips') return lineChipsRow(item, record, config, railIndex);
@@ -131,22 +135,23 @@ function rowFor(item: CardItem, record: FeatureRecord, config: ConfigPackageV3, 
     return rawText ? { label, value: item.options?.mediaSource === 'external-url' ? makeExternalLink(rawText, rawText) : rawText } : undefined;
   }
   if (item.options?.format === 'externalLink') return rawText ? { label, value: makeExternalLink(rawText, item.options.linkText === 'raw' ? rawText : undefined) } : undefined;
-  if (item.options?.format === 'boolean') return { label, value: raw === true || rawText.toLowerCase() === 'true' ? '是' : raw === false || rawText.toLowerCase() === 'false' ? '否' : rawText || '未知' };
+  if (item.options?.format === 'boolean') return { label, value: raw === true || rawText.toLowerCase() === 'true' ? language==='en'?'Yes':'是' : raw === false || rawText.toLowerCase() === 'false' ? language==='en'?'No':'否' : rawText || (language==='en'?'Unknown':'未知') };
   if (item.options?.format === 'classification') {
     const path = classificationFor(record);
     const nodes = config.nodes.filter(node => node.path.class === path.class && (!node.path.kind || node.path.kind === path.kind) && (!node.path.skind || node.path.skind === path.skind) && (!node.path.skind2 || node.path.skind2 === path.skind2)).sort((a,b) => Object.keys(b.path).length - Object.keys(a.path).length);
     const node = nodes[0];
     const level = path.skind2 ? 'skind2' : path.skind ? 'skind' : path.kind ? 'kind' : 'class';
-    return { label, value: node?.classificationLabels?.[level]?.zh || [path.kind,path.skind,path.skind2].filter(Boolean).join('/') || path.class };
+    return { label, value: language==='en'?(node?.classificationLabels?.[level]?.en??''):(node?.classificationLabels?.[level]?.zh||[path.kind,path.skind,path.skind2].filter(Boolean).join('/')||path.class) };
   }
   const mappedOptions = item.valueMode === 'field' ? defined?.options : item.valueOptions;
-  const shown = mappedOptions?.find(option=>option.value===rawText)?.label.zh;
-  if(item.renderer==='text'&&Array.isArray(raw)&&mappedOptions?.length){const values=raw.map(value=>mappedOptions.find(option=>option.value===text(value))?.label.zh??value);return {label,value:values};}
+  const mappedOption=mappedOptions?.find(option=>option.value===rawText);
+  const shown=mappedOption?optionLabel(mappedOption,language):undefined;
+  if(item.renderer==='text'&&Array.isArray(raw)&&mappedOptions?.length){const values=raw.map(value=>((option)=>option?optionLabel(option,language):value)(mappedOptions.find(option=>option.value===text(value))));return {label,value:values};}
   if (shown !== undefined && item.renderer === 'text') return {label,value:shown};
   if (item.options?.format === 'enum') {
     if (config.contractRevision>=9 || item.valueMode === 'override') return {label,value:shown ?? rawText};
     const field = resolveEffectiveFields(config, classificationFor(record)).find(field => field.key === item.source);
-    return { label, value: field?.options?.find(option => String(option.value) === rawText)?.label.zh || rawText };
+    return { label, value: field?.options?.find(option => String(option.value) === rawText)?.label[language] ?? rawText };
   }
   if (item.options?.format === 'world') return { label, value: normalizeRuleSourceWorldId(rawText) };
   if (item.options?.format === 'date') {

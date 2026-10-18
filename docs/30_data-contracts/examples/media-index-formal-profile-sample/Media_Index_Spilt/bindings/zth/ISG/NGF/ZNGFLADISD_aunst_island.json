@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "cairnmap.media-binding.v1",
+  "featureRef": {
+    "projectId": "openriamap-ria",
+    "worldId": "zth",
+    "classCode": "ISG",
+    "kindPath": ["NGF"],
+    "featureId": "ZNGFLADISD_aunst_island"
+  },
+  "media": [
+    {
+      "mediaId": "IMG_SAMPLE_AUNST_ISLAND_001",
+      "role": "cover",
+      "order": 1,
+      "caption": "金岛示例图片",
+      "visible": true
+    }
+  ],
+  "updatedAt": "2026-05-17T10:18:08.525Z",
+  "metadata": {
+    "sampleSource": "RelayPackage_Aunst-639_zth_202605171818.zip"
+  }
+}

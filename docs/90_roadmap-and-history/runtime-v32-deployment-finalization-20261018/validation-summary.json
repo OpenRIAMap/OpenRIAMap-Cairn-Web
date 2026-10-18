@@ -1,0 +1,155 @@
+{
+  "schemaVersion": "cairn.finalization-validation.v1",
+  "createdAt": "2026-10-18T03:35:37.380Z",
+  "stageA": "passed",
+  "cloudDeploymentPerformed": false,
+  "prPushed": false,
+  "configurationActivated": false,
+  "web": {
+    "runtime": "Node24.19.0",
+    "fullBuildAndPrebuild": true,
+    "v1FrozenFileCount": 113,
+    "sourceReaderMediaStatusRegression": true,
+    "browser": 6,
+    "runtimeErrors": 0,
+    "sourceIdentitySha256": "b1092158b91179fbb52678d8ac893a20021b326976afcebd18274db00fd11975"
+  },
+  "pipeline": {
+    "runtime": "Node20.19.0",
+    "tests": 180,
+    "passed": 180,
+    "failed": 0,
+    "deploymentValidation": true,
+    "scfValidation": true,
+    "zipBuild": true,
+    "sourceIdentitySha256": "8a0bf1ffa44917314043c094244a968a103f31ab5c95c9d5f5e44515647fe987"
+  },
+  "artifacts": [
+    {
+      "name": "cairn-pipeline-dispatcher",
+      "sha256": "78e45d7f8bf39336623e96efb4b0ba3d1da8c76cd2f9b280a993c43ab573b80b",
+      "byteLength": 2213121,
+      "verifiedFiles": 980,
+      "rootHandlerImport": true,
+      "implementationImport": true
+    },
+    {
+      "name": "cairn-pipeline-worker",
+      "sha256": "eb8158dd17e5f4acfc016ec6a24e3deafb632a58e0ff0344264a5cba6fb92fa3",
+      "byteLength": 2213111,
+      "verifiedFiles": 980,
+      "rootHandlerImport": true,
+      "implementationImport": true
+    },
+    {
+      "name": "cairn-github-mirror-worker",
+      "sha256": "678e4f19b6f4f962555989a4768f5bd07f44435ad7dc422241c6eb7b1bdf0a4d",
+      "byteLength": 2213110,
+      "verifiedFiles": 980,
+      "rootHandlerImport": true,
+      "implementationImport": true
+    },
+    {
+      "name": "cairn-review-archive-worker",
+      "sha256": "0659afbc1529a1519d6019fc915e89e80528d0128a507359cc08fb941fc46fe8",
+      "byteLength": 2213114,
+      "verifiedFiles": 980,
+      "rootHandlerImport": true,
+      "implementationImport": true
+    }
+  ],
+  "frozenSeed": {
+    "identity": {
+      "releaseId": "v3-r11-r7-seed",
+      "packageId": "cairnmap-config-v32-semantic",
+      "projectId": "openriamap-ria",
+      "revision": 7,
+      "contractRevision": 11,
+      "configSha256": "982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e",
+      "manifestSha256": "8818876914ba81dcc8318c0da4ef8977fd5729821e750666efb425871ded6fad",
+      "configUrl": "/configuration/releases/982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e/config.json"
+    },
+    "archiveSha256": "73f1eecb895e80e2ee188e47f8d030202dab8447862faaf9b50a77642eed5a9e",
+    "byteLength": 248639
+  },
+  "liveReadOnly": {
+    "readOnly": true,
+    "checkedAt": "2026-10-18T03:09:26.272Z",
+    "reports": [
+      {
+        "id": "cos",
+        "rootUrl": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com",
+        "layout": "cos-release-v2",
+        "releaseId": "review-57588fe47f9dac63bfb9",
+        "formalVersion": 20,
+        "featureCount": 478,
+        "contentSha256": "7c7ad87f19678df5a4ffc34639b15d099d574d1809084d1257bbf958cd2fcfd5",
+        "strictValidation": true,
+        "mediaProbe": {
+          "id": "ZNGFLADISD_GLLD",
+          "assetCount": 4
+        }
+      },
+      {
+        "id": "githubRaw",
+        "rootUrl": "https://raw.githubusercontent.com/OpenRIAMap/OpenRIAMap-Cairn-Data/main",
+        "layout": "github-stable-v1",
+        "releaseId": "review-57588fe47f9dac63bfb9",
+        "formalVersion": 20,
+        "featureCount": 478,
+        "contentSha256": "7c7ad87f19678df5a4ffc34639b15d099d574d1809084d1257bbf958cd2fcfd5",
+        "strictValidation": true,
+        "mediaProbe": {
+          "id": "ZNGFLADISD_GLLD",
+          "assetCount": 4
+        }
+      },
+      {
+        "id": "cdn",
+        "rootUrl": "https://data.ozk639.top/OpenRIAMap/OpenRIAMap-Cairn-Data/main",
+        "layout": "github-stable-v1",
+        "releaseId": "review-57588fe47f9dac63bfb9",
+        "formalVersion": 20,
+        "featureCount": 478,
+        "contentSha256": "7c7ad87f19678df5a4ffc34639b15d099d574d1809084d1257bbf958cd2fcfd5",
+        "strictValidation": true,
+        "mediaProbe": {
+          "id": "ZNGFLADISD_GLLD",
+          "assetCount": 4
+        }
+      }
+    ]
+  },
+  "followup": {
+    "result": {
+      "readOnly": true,
+      "checkedAt": "2026-10-18T03:27:41.196Z",
+      "reports": [
+        {
+          "id": "cos",
+          "rootUrl": "https://openriamap-cairn-data-1433163128.cos.ap-shanghai.myqcloud.com",
+          "layout": "cos-release-v2",
+          "releaseId": "review-57588fe47f9dac63bfb9",
+          "formalVersion": 20,
+          "featureCount": 478,
+          "contentSha256": "7c7ad87f19678df5a4ffc34639b15d099d574d1809084d1257bbf958cd2fcfd5",
+          "strictValidation": true,
+          "mediaProbe": {
+            "id": "ZNGFLADISD_GLLD",
+            "assetCount": 4
+          }
+        }
+      ]
+    },
+    "recheckNetworkFailure": "GitHub Raw fetch failed on two supplemental attempts; the initial complete three-source run passed. No fallback was used."
+  },
+  "deferred": [
+    "Cloud CAM application and role/trigger bindings",
+    "SCF numeric version deployment",
+    "PR merge and actual Web deployment",
+    "Real OAuth and Team checks",
+    "Signed COS upload",
+    "Configuration bootstrap and coordinated activation",
+    "Cloud review/publication/retry/concurrency acceptance"
+  ]
+}

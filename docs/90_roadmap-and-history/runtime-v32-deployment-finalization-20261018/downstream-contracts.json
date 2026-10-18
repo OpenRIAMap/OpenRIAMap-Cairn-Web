@@ -1,0 +1,108 @@
+{
+  "checkedAt": "2026-10-18T10:31:35.352Z",
+  "runtime": "v24.19.0",
+  "total": 25,
+  "passed": 25,
+  "results": [
+    {
+      "command": "test:workspace-transition-coordinator",
+      "passed": true
+    },
+    {
+      "command": "test:feature-module-contract",
+      "passed": true
+    },
+    {
+      "command": "test:data-source-selection",
+      "passed": true
+    },
+    {
+      "command": "test:formal-release-reader",
+      "passed": true
+    },
+    {
+      "command": "test:formal-media-reader",
+      "passed": true
+    },
+    {
+      "command": "test:player-polling-policy",
+      "passed": true
+    },
+    {
+      "command": "validate:formal-data-source-runtime",
+      "passed": true
+    },
+    {
+      "command": "test:review-package-contract",
+      "passed": true
+    },
+    {
+      "command": "test:review-package-profile-auth",
+      "passed": true
+    },
+    {
+      "command": "test:review-auth-routes",
+      "passed": true
+    },
+    {
+      "command": "test:review-status-board",
+      "passed": true
+    },
+    {
+      "command": "test:review-workspace-contracts",
+      "passed": true
+    },
+    {
+      "command": "test:review-control-binding",
+      "passed": true
+    },
+    {
+      "command": "test:review-automation-gate",
+      "passed": true
+    },
+    {
+      "command": "test:review-relay-transfer-port",
+      "passed": true
+    },
+    {
+      "command": "test:review-control-port",
+      "passed": true
+    },
+    {
+      "command": "test:review-workflow-broker-actor",
+      "passed": true
+    },
+    {
+      "command": "validate:team-review-authorization",
+      "passed": true
+    },
+    {
+      "command": "validate:storage-profiles",
+      "passed": true
+    },
+    {
+      "command": "validate:feature-data-contract",
+      "passed": true
+    },
+    {
+      "command": "validate:media-index-contract",
+      "passed": true
+    },
+    {
+      "command": "test:multipart-geometry",
+      "passed": true
+    },
+    {
+      "command": "validate:project-config",
+      "passed": true
+    },
+    {
+      "command": "validate:native-relay-accept-guards",
+      "passed": true
+    },
+    {
+      "command": "validate:native-relay-config-resolver",
+      "passed": true
+    }
+  ]
+}

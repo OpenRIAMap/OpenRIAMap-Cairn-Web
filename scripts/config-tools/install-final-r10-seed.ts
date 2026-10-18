@@ -1,0 +1,20 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {migrateConfigToR10} from '../../src/configStudio/r10Migration';
+import {validateConfigPackage} from '../../src/configStudio/runtime';
+import {buildConfigPackageArchive,readConfigPackage} from '../../src/configStudio/package';
+import {stableConfigText} from '../../src/configStudio/defaultConfigProvider';
+const base='src/configStudio/defaults',out='docs/90_roadmap-and-history/runtime-v32-downstream-mainupdate-20261014';
+const sha=(value:string|Uint8Array)=>createHash('sha256').update(value).digest('hex');
+const oldBytes=fs.readFileSync(base+'/r9-r5.config.json');assert.equal(sha(oldBytes),'999d4afee9e1bfe9daf86639d95e2dae721d6c887cef3771fb1afa0d79df816e');
+if(!fs.existsSync(base+'/manifest-r9-r5.json')){const prior=JSON.parse(fs.readFileSync(base+'/manifest.json','utf8'));assert.equal(prior.contractRevision,9);fs.copyFileSync(base+'/manifest.json',base+'/manifest-r9-r5.json');}
+const old=JSON.parse(fs.readFileSync(base+'/manifest-r9-r5.json','utf8')),migration=migrateConfigToR10(JSON.parse(oldBytes.toString('utf8'))),config=migration.config;
+config.revision=6;config.displayName={zh:'V3.2：下游完整配置工作台 r6',en:'V3.2 downstream configurable application r6'};
+const report=validateConfigPackage(config);assert(report.valid,JSON.stringify(report.issues.filter(issue=>issue.severity==='error')));assert.equal(config.nodes.length,95);assert.equal(config.workflows.length,28);
+const bytes=JSON.stringify(config,null,2)+'\n',{parity:_parity,...content}=config,semanticFingerprint=sha(stableConfigText(content));
+fs.mkdirSync(out,{recursive:true});fs.writeFileSync(base+'/r10-r6.config.json',bytes);fs.writeFileSync(out+'/OpenRIAMap_V32_Downstream_MainUpdate_r6.config.json',bytes);
+const manifest={packageId:config.packageId,seedFile:'r10-r6.config.json',revision:6,contractRevision:10,sha256:sha(bytes),semanticFingerprint,legacyDefaultFingerprints:[...new Set([...old.legacyDefaultFingerprints,old.semanticFingerprint])]};fs.writeFileSync(base+'/manifest.json',JSON.stringify(manifest,null,2)+'\n');
+const zip=await buildConfigPackageArchive(config,report),zipBytes=new Uint8Array(await zip.arrayBuffer()),roundtrip=await readConfigPackage(zip);assert.deepEqual(roundtrip,JSON.parse(bytes));const name='OpenRIAMap_V32_Downstream_MainUpdate_r6.zip';fs.writeFileSync(out+'/'+name,zipBytes);
+fs.writeFileSync(out+'/delivery-manifest.json',JSON.stringify({...manifest,jsonSha256:sha(bytes),zipSha256:sha(zipBytes),sourceR9Sha256:sha(oldBytes),nodes:95,workflows:28,tables:config.lookupTables!.length,applicationModules:6,stage:'C; no D template sync or V3 promotion; navigation table consumers unchanged',approvedV1Deviation:'RLE direction=3 logical Zoom2–4 11px bureau+line color capsule',migration:migration.report},null,2)+'\n');
+fs.writeFileSync(out+'/validation-report.json',JSON.stringify(report,null,2)+'\n');console.log(`Installed r10/r6 default: ${manifest.sha256}; ZIP ${sha(zipBytes)}; frozen r9/r5 untouched; full application roundtrip passed.`);

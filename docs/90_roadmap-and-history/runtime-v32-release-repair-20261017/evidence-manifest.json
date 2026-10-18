@@ -1,0 +1,220 @@
+{
+  "codeCommit": "b34c1e77b93905e6b55ae8f6b8cc1470a6e6cff4",
+  "textNormalization": "UTF-8 LF; trailing log whitespace removed",
+  "sourceHashBasis": "git blob bytes at codeCommit",
+  "files": [
+    {
+      "file": "audit-summary.json",
+      "bytes": 5503,
+      "sha256": "bb4afa764cb2ffbe8eec6b0ab6d1ecf2c4a3e96da48411583cc66607fb39f61f"
+    },
+    {
+      "file": "browser-import-history-ui.json",
+      "bytes": 653,
+      "sha256": "bca827d0b4224d1ff686533f1818b0bb734075dd20995bf3e317001e9cc4f8f9"
+    },
+    {
+      "file": "browser-repair-results.json",
+      "bytes": 2064,
+      "sha256": "9c62943d10e548f7109122c6347627d244f8fe648da21f2de761e2e8666feb10"
+    },
+    {
+      "file": "build-and-release-checks.log",
+      "bytes": 28323,
+      "sha256": "cdc031b681e41ede49aa7d823231e2c3d9749612322d4bbe40b6ec73b69c39d0"
+    },
+    {
+      "file": "card-config.log",
+      "bytes": 118,
+      "sha256": "140435fd62357a514698db0dfc366800a6e99ac5e01489f3455c36951b513485"
+    },
+    {
+      "file": "class-config.log",
+      "bytes": 1422,
+      "sha256": "d5b013898c6835d326733d4116b32031a4a0632781b135495981aae002b8f37e"
+    },
+    {
+      "file": "display-config.log",
+      "bytes": 3098,
+      "sha256": "d6a58626a36776a16d5747583e764cd118c6aaa71ef26f08657d6de1bc2f6b28"
+    },
+    {
+      "file": "final-production-build.log",
+      "bytes": 2177,
+      "sha256": "489af9a75c633bd5a6b62292747c8fa04e450243a3fcb137b4c80bd1cd616782"
+    },
+    {
+      "file": "final-release-gate.log",
+      "bytes": 6235,
+      "sha256": "673cd42a1aa6613d9004ede074fe4ededce24e3f63db1fb9d0ba6cd98a821a5d"
+    },
+    {
+      "file": "initial-baseline.json",
+      "bytes": 1539,
+      "sha256": "beb19024cab034c48d0507ebd9de119bc252aa706131a5a8ed19a5eb2ab2c40f"
+    },
+    {
+      "file": "mutation-scenarios.json",
+      "bytes": 164152,
+      "sha256": "63fb384c425f3d491dae8ff99ba410eb056630e97dbf6d4b4b9d766c3a01c48f"
+    },
+    {
+      "file": "no-git-audit-summary.json",
+      "bytes": 5508,
+      "sha256": "4f5120a3078675c67ca800366a87b6ec7534e71e231dc4f1b1d4fbfbad10cc77"
+    },
+    {
+      "file": "no-git-release-gate.log",
+      "bytes": 6112,
+      "sha256": "20c23249c7bcc812fa29d280c26cc40747660fa725e6e2a282ab1ac60526e87b"
+    },
+    {
+      "file": "package-assembly.log",
+      "bytes": 123,
+      "sha256": "60006a03f50b23fd3db7be15cd9e70fa488c680082f83c93419a35e8e462ab0b"
+    },
+    {
+      "file": "postc-native-workflow-matrix.json",
+      "bytes": 37620,
+      "sha256": "e83475e5d60a78405d511c129723871ba71e6259e3d4aa0293904729837d0622"
+    },
+    {
+      "file": "production-app-acceptance.json",
+      "bytes": 3189,
+      "sha256": "70aceda8b157740c7958c4bb3630eb224fcc7b91b864d448bd4ca7ef30e98b62"
+    },
+    {
+      "file": "r11-r7.initial.cairn-config-v3.zip",
+      "bytes": 62221,
+      "sha256": "64bfa05fd7ff1fcb957fdf9806f4d1f7272c7a841a62d6ee1c2801e81881d2f7"
+    },
+    {
+      "file": "release-app-acceptance.json",
+      "bytes": 3190,
+      "sha256": "4d3b548d3425b1f426baa7e19f1adfd453fc53d12316a79baa6c2ea95e4384a0"
+    },
+    {
+      "file": "subject-actual-workflow-mounted.png",
+      "bytes": 101317,
+      "sha256": "8d8a3a0f7b6894fc25a27a0a05dc1827c72ddf592743e18245c818077563c71c"
+    },
+    {
+      "file": "subject-drawing-session.json",
+      "bytes": 707,
+      "sha256": "b0670ad2c60a8a423352dd31e530eb686c74355d7f9f4b60e7246a024d53f229"
+    },
+    {
+      "file": "subject-integrated-v3-desktop.png",
+      "bytes": 105063,
+      "sha256": "3dc7c14bfce81612286f67c65c5f9414de4a7a3e0dbfcdc9118901286e865778"
+    },
+    {
+      "file": "subject-rail-edit-acceptance.json",
+      "bytes": 9477,
+      "sha256": "78b8956c5ab284ee80e7f32cf1945d25c78f95be90bf725577733260fd1ca3da"
+    },
+    {
+      "file": "subject-search-acceptance.json",
+      "bytes": 370,
+      "sha256": "75b821c0eb46ab98f718142fd80373d9f8d22a8d48f589c31e8338f5c32e7012"
+    },
+    {
+      "file": "subject-trp-edit-acceptance.json",
+      "bytes": 5894,
+      "sha256": "26db022cbfd6abdfba5be00ab954f6d7f869f262605671d17ee15d049a7eb849"
+    },
+    {
+      "file": "subject-v3-mobile.png",
+      "bytes": 39487,
+      "sha256": "104523d23828365f2e82d6f7a7fb6087eeade6134801f54b6827221419d3d556"
+    },
+    {
+      "file": "v1-delivered-coverage.json",
+      "bytes": 26030,
+      "sha256": "c9a0b1c9e189a9c3fd1e0d5706b7ad71107004a852abc5867c4a893678ee2d36"
+    },
+    {
+      "file": "v1-source-inventory.json",
+      "bytes": 14356,
+      "sha256": "e11e8714ba6073e57f087e989e3dabda15c3ae8817aa87617ce1205a0e1bb797"
+    },
+    {
+      "file": "validate-project-config.log",
+      "bytes": 388,
+      "sha256": "75f0303f82c29278580462c84149f9f4eeda4e885a6c97fcb1f454b68f6139c6"
+    },
+    {
+      "file": "verification-summary.json",
+      "bytes": 1072,
+      "sha256": "763db679dadd9e244612e5b868da4f530a7d332191d8d6ecbf5e3ecd2f081b75"
+    },
+    {
+      "file": "workflow-config.log",
+      "bytes": 188,
+      "sha256": "b778e6ffa4472b1c1b4cf1e80a73bfc5c5df66a766276df988ebb29eaa3b3132"
+    },
+    {
+      "file": "workflow-expression-blocked.png",
+      "bytes": 82537,
+      "sha256": "164d5cfa144d412d2f89d905b7928a89d93832e71a14f380b33e20b5a377e3b9"
+    }
+  ],
+  "sources": [
+    {
+      "file": "package.json",
+      "sha256": "1efb915bbb0cd40d60f140e3f5e95d4dd490f11eb0b10da9d8234ec9ba4d21b9"
+    },
+    {
+      "file": "src/configStudio/ConfigLab.tsx",
+      "sha256": "a7f6e4e6953125ae5728697c6f1d907436eeecc783190ec5ea42cb3848a3bd21"
+    },
+    {
+      "file": "src/configStudio/ConfigStudio.tsx",
+      "sha256": "c14e39e8acf75a1cab30c61d2be4a005a885b0d6fddbe7063ef586c29028c5f6"
+    },
+    {
+      "file": "src/configStudio/archivePolicy.ts",
+      "sha256": "552b3da2bb87ac3d4ab32411793f88f8a93f1a966e870b1466fa903a3bb1657b"
+    },
+    {
+      "file": "src/configStudio/categoryArtifact.ts",
+      "sha256": "7b4249d1077a7971386e0847378f967ae59585d78cccbe2ee7188febdce8299a"
+    },
+    {
+      "file": "src/configStudio/categoryInitialization.ts",
+      "sha256": "b7e1fa8c3512b253dd19d246946dc11c54965800bf8de755846f74aaf7ff03e3"
+    },
+    {
+      "file": "src/configStudio/configActivation.ts",
+      "sha256": "15fc1ccc6749f257c3f50240fa95f67528f8d14c70ced0532780955ebf57ac83"
+    },
+    {
+      "file": "src/configStudio/configLabStorage.ts",
+      "sha256": "a8f124dfc1d43664bb5a8b4f56bd35ab0120331ce11ba081cdde56972bea9c6a"
+    },
+    {
+      "file": "src/configStudio/cssColor.ts",
+      "sha256": "754576bf8d77d7ca3b178e47d43cdbf5a2a2a9461c6eb823fbe63bcedf8bf707"
+    },
+    {
+      "file": "src/configStudio/lookupTables.ts",
+      "sha256": "d160a73f786e6a92bd635b693d31435f554431d6450bc0fd54460b367f93723c"
+    },
+    {
+      "file": "src/configStudio/package.ts",
+      "sha256": "c883d29c59744e9cc9a94dfa513f9653596d9fc703b6675d26bcd6a097fc91a4"
+    },
+    {
+      "file": "src/configStudio/runtime.ts",
+      "sha256": "8b4c0938f2f595322d5ceeb388bd7395d8d38ea5847b2168a230f1e45d5e437e"
+    },
+    {
+      "file": "src/configStudio/workflowPreflight.ts",
+      "sha256": "34997ea4fab5658aaf87623a137d963f556b57b48954262d8e100910190a7a18"
+    },
+    {
+      "file": "vite.config.ts",
+      "sha256": "778e04906ea6b087acf98dae1287ceacf003d30a914ff6f0f59817ff671c94a6"
+    }
+  ]
+}

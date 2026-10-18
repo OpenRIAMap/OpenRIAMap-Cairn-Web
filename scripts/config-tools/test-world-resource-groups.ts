@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import { defaultApplicationSettings } from '../../src/core/project/applicationDefaults';
+import { applyApplicationSettings, applicationWorld, assertReviewWorldContext, reviewEndpoint } from '../../src/core/project/applicationRuntime';
+import { fetchPlayersDetailed } from '../../src/lib/playerApi';
+import { applicationWorldDataset } from '../../src/components/Rules/data/worldRuleDatasetLoader';
+import { DYNMAP_FLAT_PRESET, expandWorldTemplate, isWorldGroups, migrateApplicationResources, validateResourceGroups } from '../../src/core/project/applicationResources';
+import { validateApplication } from '../../src/core/project/applicationValidation';
+import { getRuleDataSourceSnapshot, getRuleDataSourceSelectionController } from '../../src/components/Rules/data/formalDataSourceRuntime';
+
+const values=new Map<string,string>(),storage={getItem:(key:string)=>values.get(key)??null,setItem:(key:string,value:string)=>values.set(key,value),removeItem:(key:string)=>values.delete(key)};
+Object.defineProperty(globalThis,'localStorage',{value:storage,configurable:true});
+Object.defineProperty(globalThis,'window',{value:{localStorage:storage,dispatchEvent(){}},configurable:true});
+const original=defaultApplicationSettings(),grouped=migrateApplicationResources(original);
+assert(isWorldGroups(grouped.sources));assert.equal(grouped.sources.groups.length,1);
+assert.equal(validateApplication(grouped).length,0,JSON.stringify(validateApplication(grouped)));
+for(const world of grouped.worlds){assert.equal(world.tiles,undefined);assert.equal(world.projection,undefined);assert.equal(world.dataSourceId,undefined);}
+applyApplicationSettings(grouped);
+for(const world of original.worlds){assert.deepEqual(applicationWorld(world.id).tiles,world.tiles);assert.deepEqual(applicationWorld(world.id).projection,DYNMAP_FLAT_PRESET);}
+const second=structuredClone(grouped.sources.groups[0]);second.id='server-b';second.label={zh:'B',en:''};
+second.sources.storageKey+=':server-b';second.sources.linkModes.storageKey+=':server-b';second.sources.linkModes.legacyStorageKeys=[];
+second.sources.items[0].rootUrl='https://b.invalid/data';second.sources.items[0].mediaRootUrl='https://b.invalid/media';
+second.tiles.baseUrlTemplate='https://b.invalid/map/{world}/tiles/';second.tiles.filteredAccess='direct';delete second.tiles.proxyId;
+grouped.sources.groups.push(second);grouped.sources.bindings.eden=second.id;
+grouped.worlds.find(world=>world.id==='zth')!.remoteWorldId='world';grouped.worlds.find(world=>world.id==='eden')!.remoteWorldId='world';
+assert.equal(validateApplication(grouped).length,0,JSON.stringify(validateApplication(grouped)));
+applyApplicationSettings(grouped);
+const a=getRuleDataSourceSnapshot('zth'),b=getRuleDataSourceSnapshot('eden');
+assert.equal(a.remoteWorldId,b.remoteWorldId);assert.notEqual(a.worldId,b.worldId);assert.notEqual(a.rootUrl,b.rootUrl);assert.notEqual(a.transportId,b.transportId);
+assert.equal(applicationWorld('eden').tiles.baseUrl,'https://b.invalid/map/world/tiles/');
+assert.equal(applicationWorld('eden').tiles.filteredBaseUrl,applicationWorld('eden').tiles.baseUrl);
+const raw={worldId:'eden',loadedAt:0,mergeVersion:'1',features:[{ID:'same',World:0,Name:'B'}]},view=applicationWorldDataset(raw,b,'eden');assert.equal(view.features[0].World,'eden');assert.equal(raw.features[0].World,0);assert.equal(view.features[0].ID,'same');
+assert.throws(()=>reviewEndpoint('control','eden'),/审核/);assert.throws(()=>assertReviewWorldContext({manifest:{worldIds:['eden']}}),/审核/);assert.throws(()=>assertReviewWorldContext({},true),/归属/);
+let externalRequests=0;const originalFetch=globalThis.fetch;globalThis.fetch=async()=>{externalRequests++;throw Error('Unexpected external request');};
+assert.equal((await fetchPlayersDetailed('eden')).source,null);assert.equal(externalRequests,0);globalThis.fetch=originalFetch;
+const controller=getRuleDataSourceSelectionController('eden'),alternative=controller.getSources().find(source=>source.id!==b.sourceId&&source.enabled&&source.selectable)!;
+assert(alternative);await controller.apply(alternative.id,'settings',{abortStaleLoads(){},clearSourceDependentCache(){},clearInMemoryDatasets(){},async reloadCurrentWorld(){}});
+assert.equal(getRuleDataSourceSnapshot('zth').sourceId,a.sourceId);assert.equal(getRuleDataSourceSnapshot('zth').generation,a.generation);assert.equal(getRuleDataSourceSnapshot('eden').sourceId,alternative.id);
+const broken=structuredClone(grouped);assert(isWorldGroups(broken.sources));broken.sources.groups.pop();assert(validateResourceGroups(broken).some(issue=>issue.path.includes('bindings')));
+const wrongProxy=structuredClone(grouped);assert(isWorldGroups(wrongProxy.sources));wrongProxy.sources.groups[1].tiles.filteredAccess='registered-proxy';wrongProxy.sources.groups[1].tiles.proxyId='ria-satellite';assert(validateResourceGroups(wrongProxy).some(issue=>issue.message.includes('代理')));
+assert.throws(()=>expandWorldTemplate('/{other}/','world'));assert.throws(()=>expandWorldTemplate('/{world}/','../world'));
+const legacyDifferent=defaultApplicationSettings();legacyDifferent.worlds[1].tiles!.baseUrl='https://b.invalid/{world}/';legacyDifferent.worlds[1].tiles!.filteredBaseUrl=legacyDifferent.worlds[1].tiles!.baseUrl;
+const migrated=migrateApplicationResources(legacyDifferent);assert(isWorldGroups(migrated.sources));assert.equal(migrated.sources.groups.length,2,'different tile settings are never collapsed');
+applyApplicationSettings(original);
+console.log('world-resource-groups: default parity, canonical projection, two servers/same remote world, scoped source selection/cache identity, missing group/proxy guards and lossless differential migration passed');

@@ -1,3 +1,7 @@
+import {readRawNativePackage} from './nativeArchive';
+import { DYNMAP_FLAT_PRESET, isWorldGroups } from '../core/project/applicationResources';
+import {CONFIG_IMPORT_LIMITS,type ConfigImportOptions} from './archivePolicy';
+import { validateNativeStructure } from './nativeContractValidation';
 import { validateConfigPackage } from './runtime';
 import { isNativeConfigRevision } from './contract';
 import { normalizeImportedLocalization, normalizeImportedText } from './localization';
@@ -23,7 +27,7 @@ import { createV32EngineDefaults } from './v32Defaults';
 
 type PackageManifestV3 = {
   schemaVersion: 'cairnmap.config-package-manifest.v3';
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
   packageId: string;
   projectId: string;
   revision: number;
@@ -57,14 +61,17 @@ export async function buildConfigPackageArchive(config: ConfigPackageV3, report:
     entries: [],
   };
   const files = [
-    { path: 'config.json', body: stableStringify(config) },
+    { path: 'config.json', body: JSON.stringify(JSON.parse(stableStringify(config)),null,2)+'\n' },
     { path: 'reports/validation-report.json', body: stableStringify(report) },
     { path: 'reports/v1-parity-report.json', body: stableStringify(parity) },
   ];
+  if(config.application)files.push({path:'reports/application-dependencies.json',body:stableStringify({schemaVersion:'cairnmap.application-dependencies.v1',projectionIds:[...new Set(config.application.worlds.map(world=>(world.projectionOverride??world.projection??DYNMAP_FLAT_PRESET).id))],readers:(isWorldGroups(config.application.sources)?config.application.sources.groups.flatMap(group=>group.sources.items):config.application.sources.items).map(source=>({sourceId:source.id,readerKind:source.readerKind,schemaVersion:source.readerSchemaVersion,transport:source.transport})),reviewProtocol:config.application.review.protocol,authProvider:config.application.review.provider,serverEnvironmentReferences:Object.values(config.application.review.serverReferences),externalWorkflowKeys:config.workflows.filter(workflow=>workflow.mode==='external').map(workflow=>workflow.external?.componentKey),labelTemplate:'cairnmap.label-template.v1',lookupTables:(config.lookupTables??[]).map(table=>({id:table.id,functionKind:table.functionKind}))})});
   const manifestFiles = await Promise.all(files.map(async (file) => {
     const bytes = textEncoder.encode(file.body);
+    if(bytes.byteLength>CONFIG_IMPORT_LIMITS.fileBytes)throw Error(`导出文件 ${file.path} 为 ${bytes.byteLength} 字节，超过可重新导入的单文件预算 ${CONFIG_IMPORT_LIMITS.fileBytes}；请调整集中策略或离线检查。`);
     return { path: file.path, sha256: await sha256(bytes), byteLength: bytes.byteLength };
   }));
+  if(manifestFiles.reduce((total,file)=>total+file.byteLength,0)>CONFIG_IMPORT_LIMITS.totalBytes)throw Error('导出内容超过可重新导入的累计解压预算，请调整集中策略或离线检查。');
   const manifest: PackageManifestV3 = {
     schemaVersion: 'cairnmap.config-package-manifest.v3',
     contractRevision: config.contractRevision,
@@ -78,7 +85,9 @@ export async function buildConfigPackageArchive(config: ConfigPackageV3, report:
   const zip = new JSZip();
   for (const file of files) zip.file(file.path, file.body);
   zip.file('manifest.json', stableStringify(manifest));
-  return zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 9 } });
+  const blob=await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 9 } });
+  if(blob.size>CONFIG_IMPORT_LIMITS.compressedBytes)throw Error(`导出 ZIP 为 ${blob.size} 字节，超过可重新导入的压缩包预算 ${CONFIG_IMPORT_LIMITS.compressedBytes}。请调整集中策略或离线检查。`);
+  return blob;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -544,29 +553,14 @@ export function migrateV5Package(value: ConfigPackageV3): ConfigPackageV3 {
 
 function asConfig(value: unknown): ConfigPackageV3 {
   assertV3(value);
+  if(isNativeConfigRevision(value.contractRevision)){const shape=validateNativeStructure(value);if(shape.length)throw Error(shape.map(item=>`${item.path}：${item.message}`).join('\n'));}
   if (isNativeConfigRevision(value.contractRevision)) return migrateV5Package(value as ConfigPackageV3);
   if (value.contractRevision === 4) return migrateV5Package(migrateV4Package(value));
   if (value.contractRevision === 3) return migrateV5Package(migrateV4Package(migrateV31Package(value)));
-  throw new Error('该配置包属于无法读取的旧 V3 契约。请先使用兼容版本导出后再导入。');
+  throw new Error(`不支持此 V3 配置契约 revision ${value.contractRevision ?? '未声明'}。请使用支持该版本的工具检查或升级读取器，不能按当前契约启用。`);
 }
 
-export async function readConfigPackage(file: File): Promise<ConfigPackageV3> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const isZip = bytes[0] === 0x50 && bytes[1] === 0x4b;
-  if (!isZip) return asConfig(JSON.parse(new TextDecoder().decode(bytes)) as unknown);
-  const zip = await JSZip.loadAsync(bytes);
-  const manifestRaw = await zip.file('manifest.json')?.async('string');
-  const configRaw = await zip.file('config.json')?.async('string');
-  if (!manifestRaw || !configRaw) throw new Error('配置包缺少 manifest.json 或 config.json。');
-  const manifest = JSON.parse(manifestRaw) as Record<string, unknown>;
-  const config = asConfig(JSON.parse(configRaw) as unknown);
-  if (manifest.schemaVersion === 'cairnmap.config-package-manifest.v3') {
-    const v3 = manifest as unknown as PackageManifestV3;
-    const configEntry = v3.files.find((item) => item.path === 'config.json');
-    if (!configEntry || await sha256(textEncoder.encode(configRaw)) !== configEntry.sha256) throw new Error('配置包 config.json 哈希校验失败。');
-  }
-  return config;
-}
+export async function readConfigPackage(file:File,options:ConfigImportOptions={}):Promise<ConfigPackageV3>{return asConfig(await readRawNativePackage(file,options));}
 
 export function downloadConfigPackage(blob: Blob, config: ConfigPackageV3): void {
   const url = URL.createObjectURL(blob);

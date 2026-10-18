@@ -1,3 +1,4 @@
+import { subscribeApplication } from '@/core/project/applicationRuntime';
 import type React from 'react';
 import type { CairnMapRuleButtonBehavior, CairnMapRuleButtonCriteria } from '../../../core/project/environmentTypes';
 import { getOpenRIAMapRuleButtonsConfig } from '../../../core/project/openriamapRiaEnvironment';
@@ -13,6 +14,7 @@ import { resolveRuleButtonIcon } from './ruleButtonIconRegistry';
  */
 
 export type RuleButtonCriteria = {
+  paths?:CairnMapRuleButtonCriteria['paths'];
   /** featureInfo.Class（优先读取 record.meta.className） */
   Class?: string[];
   /**
@@ -29,7 +31,7 @@ export type RuleButtonCriteria = {
   SKind2?: string[];
 };
 
-export type RuleButtonTone = 'blue' | 'green' | 'cyan' | 'purple' | 'gray' | 'orange' | 'slate';
+export type RuleButtonTone = import('../../../core/project/buttonVisualCatalog').ButtonTone;
 
 export type RuleButtonDef = {
   id: string;
@@ -63,6 +65,7 @@ function asStringArray(values: string[] | undefined): string[] | undefined {
 
 function toLegacyCriteria(criteria: CairnMapRuleButtonCriteria | undefined): RuleButtonCriteria {
   return {
+    paths:criteria?.paths,
     Class: asStringArray(criteria?.classCode),
     Kind: asStringArray(criteria?.kind),
     SKind: asStringArray(criteria?.skind),
@@ -70,12 +73,12 @@ function toLegacyCriteria(criteria: CairnMapRuleButtonCriteria | undefined): Rul
   };
 }
 
-const ruleButtonsConfig = getOpenRIAMapRuleButtonsConfig();
+let ruleButtonsConfig = getOpenRIAMapRuleButtonsConfig();
 
 /**
  * 预设按钮：与当前“铁路/地标/玩家”相同的按钮风格与尺寸（ToolIconButton）。
  */
-export const RULE_BUTTON_DEFS: RuleButtonDef[] = ruleButtonsConfig.items.map((item) => {
+export let RULE_BUTTON_DEFS: RuleButtonDef[] = ruleButtonsConfig.items.map((item) => {
   const behavior = item.behavior ?? {};
   return {
     id: item.id,
@@ -90,17 +93,17 @@ export const RULE_BUTTON_DEFS: RuleButtonDef[] = ruleButtonsConfig.items.map((it
 });
 
 /** 全局开关策略。 */
-export const RULE_BUTTON_POLICY = {
+export let RULE_BUTTON_POLICY = {
   /** 同时开启的最大按钮数（<=0 视为不限制） */
   maxActive: Number(ruleButtonsConfig.policy?.maxActive ?? 0),
 };
 
 /** localStorage 新 key。 */
-export const RULE_BUTTON_STATE_STORAGE_KEY =
+export let RULE_BUTTON_STATE_STORAGE_KEY =
   String(ruleButtonsConfig.storageKey ?? '').trim() || 'cairnmap_rule_button_state_v1';
 
 /** localStorage 旧 key，用于从 OpenRIAMap/RIA 迁移到 CairnMap。 */
-export const RULE_BUTTON_STATE_LEGACY_STORAGE_KEYS: string[] = Array.isArray(ruleButtonsConfig.legacyStorageKeys)
+export let RULE_BUTTON_STATE_LEGACY_STORAGE_KEYS: string[] = Array.isArray(ruleButtonsConfig.legacyStorageKeys)
   ? ruleButtonsConfig.legacyStorageKeys.map((key) => String(key ?? '').trim()).filter(Boolean)
   : [];
 
@@ -117,17 +120,26 @@ function uniqueKnownIds(ids: string[] | undefined): string[] {
   return out;
 }
 
-const inferredDefaultEnabledIds = RULE_BUTTON_DEFS
+let inferredDefaultEnabledIds = RULE_BUTTON_DEFS
   .filter((def) => def.defaultEnabled !== false)
   .map((def) => def.id);
 
 /** 每个世界的默认开启状态。 */
-export const DEFAULT_ACTIVE_RULE_BUTTONS_BY_WORLD: Record<string, string[] | undefined> = Object.fromEntries(
+export let DEFAULT_ACTIVE_RULE_BUTTONS_BY_WORLD: Record<string, string[] | undefined> = Object.fromEntries(
   Object.entries(ruleButtonsConfig.defaults?.byWorld ?? {}).map(([worldId, ids]) => [worldId, uniqueKnownIds(ids)]),
 );
 
 /** fallback 默认开启状态；优先使用 JSON defaults.fallback。 */
-export const DEFAULT_ACTIVE_RULE_BUTTONS_FALLBACK: string[] =
+export let DEFAULT_ACTIVE_RULE_BUTTONS_FALLBACK: string[] =
   uniqueKnownIds(ruleButtonsConfig.defaults?.fallback).length > 0
     ? uniqueKnownIds(ruleButtonsConfig.defaults?.fallback)
     : uniqueKnownIds(inferredDefaultEnabledIds);
+
+subscribeApplication(()=>{
+  ruleButtonsConfig=getOpenRIAMapRuleButtonsConfig();
+  RULE_BUTTON_DEFS=ruleButtonsConfig.items.map(item=>({id:item.id,label:item.label,tone:item.tone,icon:resolveRuleButtonIcon(item.iconKey),criteria:toLegacyCriteria(item.criteria),exclusiveWith:asStringArray(item.behavior?.exclusiveWith),behavior:item.behavior,defaultEnabled:item.defaultEnabled}));
+  RULE_BUTTON_POLICY={maxActive:Number(ruleButtonsConfig.policy?.maxActive??0)};
+  RULE_BUTTON_STATE_STORAGE_KEY=ruleButtonsConfig.storageKey??'cairnmap_rule_button_state_v1';RULE_BUTTON_STATE_LEGACY_STORAGE_KEYS=ruleButtonsConfig.legacyStorageKeys??[];
+  DEFAULT_ACTIVE_RULE_BUTTONS_BY_WORLD=Object.fromEntries(Object.entries(ruleButtonsConfig.defaults?.byWorld??{}).map(([id,ids])=>[id,uniqueKnownIds(ids)]));
+  DEFAULT_ACTIVE_RULE_BUTTONS_FALLBACK=ruleButtonsConfig.defaults?.fallback!==undefined?uniqueKnownIds(ruleButtonsConfig.defaults.fallback):uniqueKnownIds(ruleButtonsConfig.items.filter(item=>item.defaultEnabled!==false).map(item=>item.id));
+});

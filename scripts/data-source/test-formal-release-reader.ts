@@ -35,30 +35,34 @@ const objects: Record<string, unknown> = {
     releaseId: 'release-1',
     formalVersion: 1,
     worldManifestKey: 'releases/release-1/manifests/worlds/zth.json',
+    worldManifestSha256: 'a'.repeat(64),
   },
   'releases/release-1/manifests/worlds/zth.json': {
     schemaVersion: 'openriamap.world-release-manifest.v2',
     worldId: 'zth',
     releaseId: 'release-1',
     chunkCatalogKeys: ['releases/release-1/manifests/worlds/zth-chunk-catalog-001.json'],
+    featureCount:2, chunkCount:2,
   },
   'releases/release-1/manifests/worlds/zth-chunk-catalog-001.json': {
     schemaVersion: 'openriamap.world-chunk-catalog.v2',
     worldId: 'zth',
     releaseId: 'release-1',
     chunks: [
-      { key: 'releases/release-1/data-merge/zth/zth-chunk-001.json' },
-      { key: 'releases/release-1/data-merge/zth/zth-chunk-002.json' },
+      { key: 'releases/release-1/data-merge/zth/zth-chunk-001.json',sha256:'b'.repeat(64),byteLength:100,featureCount:1 },
+      { key: 'releases/release-1/data-merge/zth/zth-chunk-002.json',sha256:'c'.repeat(64),byteLength:100,featureCount:1 },
     ],
   },
   'releases/release-1/data-merge/zth/zth-chunk-001.json': {
     schemaVersion: 'openriamap.world-merge-chunk.v2',
     worldId: 'zth',
+    featureCount:1,
     features: [{ featureId: 'a', record: { ID: 'a', Class: 'STN' } }],
   },
   'releases/release-1/data-merge/zth/zth-chunk-002.json': {
     schemaVersion: 'openriamap.world-merge-chunk.v2',
     worldId: 'zth',
+    featureCount:1,
     features: [{ featureId: 'b', record: { ID: 'b', Class: 'RMP' } }],
   },
 };

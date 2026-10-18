@@ -1,0 +1,30 @@
+CairnMap Project Config Validation
+
+--- parse-json ---
+PASS
+
+--- schema-version ---
+PASS
+
+--- assembly ---
+PASS
+
+--- packages ---
+PASS
+
+--- class-config ---
+PASS
+
+--- workflow-config ---
+PASS
+
+--- card-references ---
+PASS
+
+--- environment ---
+PASS
+
+--- legacy-guards ---
+PASS
+
+Final result: PASS

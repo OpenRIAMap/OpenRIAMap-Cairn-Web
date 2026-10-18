@@ -1,0 +1,30 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {migrateConfigToR11} from '../../src/configStudio/r11Migration';
+import {cloneWorkflowTemplate} from '../../src/configStudio/workflowTemplate';
+import {categoryStableText} from '../../src/configStudio/categoryArtifact';
+import {createStandardTagTable,standardTagFields,standardTagTableErrors,tagRecordErrors} from '../../src/configStudio/standardTagFields';
+import {validateConfigPackage} from '../../src/configStudio/runtime';
+import {renameLookupTable} from '../../src/configStudio/lookupTables';
+import {assembleAnnotations} from '../../src/configStudio/workflowAnnotations';
+import {buildWorkflowArtifact,prepareWorkflowArtifactImport} from '../../src/configStudio/workflowArtifact';
+import {testWorkflowEditConversion} from '../../src/configStudio/workflowEditCommit';
+import type {ConfigPackageV3} from '../../src/configStudio/types';
+const old=JSON.parse(fs.readFileSync('src/configStudio/defaults/r10-r6.config.json','utf8')) as ConfigPackageV3,config=migrateConfigToR11(old).config;
+assert.deepEqual(config.lookupTables!.map(t=>t.id),['teleport-hubs','road-travel-modes','standard-tag-fields']);
+const tags=config.lookupTables![2];assert(!tags.rows.some(r=>r.value==='__other__'));assert.equal(tags.rows.find(r=>r.value==='level')!.functionValue&&typeof tags.rows.find(r=>r.value==='level')!.functionValue,'object');
+assert.equal(standardTagTableErrors(config).length,0);assert(validateConfigPackage(config).valid);
+for(const table of config.lookupTables!){assert.throws(()=>renameLookupTable(config,table.id,'renamed-standard'),/标准/);const missing=structuredClone(config);missing.lookupTables=missing.lookupTables!.filter(t=>t.id!==table.id);assert(!validateConfigPackage(missing).valid);}
+const before=categoryStableText(config);let templates=0;
+for(const source of config.workflows){const result=cloneWorkflowTemplate(config,source.id,`copy-${templates++}`,{zh:'副本',en:''});const expected={...source,id:result.workflow.id,label:result.workflow.label};assert(categoryStableText(result.workflow)===categoryStableText(expected),'full template content preserved');result.workflow.label.zh='changed';assert.equal(categoryStableText(config),before);if(source.editor?.enabled)assert(result.report.issues.some(i=>i.code==='workflow-editor-route-duplicate'));}
+assert.equal(templates,28);assert.throws(()=>cloneWorkflowTemplate(config,config.workflows[0].id,config.workflows[1].id,{zh:'copy',en:''}),/已存在/);assert.throws(()=>cloneWorkflowTemplate(config,config.workflows[0].id,'new-copy',{zh:'',en:''}),/名称/);
+const conflict=structuredClone(old);conflict.nodes.find(n=>n.path.class==='BUD'&&!n.path.kind)!.fields.push({fieldId:'bad-level',key:'tags.level',scope:'tags',type:'string',input:'text',cardinality:'single',labels:{zh:'wrong',en:''},description:{zh:'',en:''}});assert.throws(()=>createStandardTagTable(conflict),/定义冲突/);
+tags.rows.push({value:'TravelMode',label:{zh:'出行方式标签',en:''},functionValue:{kind:'tagField',type:'select',valueTableId:'road-travel-modes'}},{value:'Verified',label:{zh:'确认',en:''},functionValue:{kind:'tagField',type:'bool'}});
+assert.equal(standardTagTableErrors(config).length,0);const path={class:'BUD'};assert.equal(standardTagFields(config,path).find(f=>f.key==='tags.TravelMode')!.options![0].value,'WALK');
+config.lookupTables![1].rows[0].label.zh='步行已更新';assert.equal(standardTagFields(config,path).find(f=>f.key==='tags.TravelMode')!.options![0].label.zh,'步行已更新');
+const annotations=assembleAnnotations({tags:[{key:'level',type:'number',value:'0'},{key:'Verified',type:'bool',value:false},{key:'TravelMode',type:'text',value:'WALK'},{key:'custom',type:'text',value:'keep'}]});assert.equal(annotations.tags.level,0);assert.equal(annotations.tags.Verified,false);assert.equal(tagRecordErrors(config,path,annotations).length,0);assert(tagRecordErrors(config,path,{tags:{level:'0',Verified:0}}).length===2);
+const flow=config.workflows.find(w=>w.mode==='composed'&&w.steps.some(s=>s.controls?.some(c=>c.kind==='tagsExtensions')))!;const artifact=buildWorkflowArtifact(config,flow);assert(artifact.lookupTables!.some(t=>t.id==='standard-tag-fields'));assert(artifact.lookupTables!.some(t=>t.id==='road-travel-modes'));assert(prepareWorkflowArtifactImport(config,artifact).workflow.id===flow.id);
+const invalid=structuredClone(config);invalid.lookupTables![2].rows.push({value:'__other__',label:{zh:'其他',en:''},functionValue:{kind:'tagField',type:'text'}});assert(standardTagTableErrors(invalid).length);
+const circular=structuredClone(config);circular.lookupTables![2].rows.find(row=>row.value==='TravelMode')!.functionValue={kind:'tagField',type:'select',valueTableId:'standard-tag-fields'};assert(standardTagTableErrors(circular).some(i=>i.message.includes('循环')));
+let editable=0;for(const workflow of config.workflows.filter(w=>w.mode==='composed'&&w.editor?.enabled)){assert(testWorkflowEditConversion(config,workflow).plan.controls.length);editable++;}assert(editable>0);
+console.log(`r11-workflow-tags: ${templates} full independent templates including external/edit modes, route conflict reports, 3 protected tables, V1/V3 tag migration, typed zero/false, metadata/lookup updates, transitive dependencies and ${editable} edit conversions passed`);

@@ -1,0 +1,14 @@
+
+> cairnmap-web@0.1.0 audit:workflow-config
+> node ./scripts/audit-workflow-config.mjs
+
+CairnMap Workflow Config Audit
+Summary
+  Workflows checked: 16
+  Components registered: 28
+  Legacy executors registered: 17
+  Block definitions: 6
+  Errors: 0
+  Warnings: 0
+
+Result: PASS

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "cairnmap.config-validation-report.v3",
+  "valid": true,
+  "createdAt": "2026-10-14T14:55:50.527Z",
+  "issues": [],
+  "summary": {
+    "configuration": 0,
+    "parity": 0,
+    "mountedData": 0,
+    "affectedFeatures": 0
+  }
+}

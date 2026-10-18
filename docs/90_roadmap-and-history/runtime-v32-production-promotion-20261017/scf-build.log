@@ -1,0 +1,6 @@
+
+> build:scf-zips
+> powershell -ExecutionPolicy Bypass -File ./scripts/build-scf-zips.ps1
+
+SCF package: PASS
+Built 4 SCF ZIP packages in G:\RIAWebGIS\NewPRES\CairnMap_Codex\wt\pipeline-config-production-20261017\dist\scf

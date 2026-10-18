@@ -8,13 +8,13 @@ export default function DataSourceRecoveryHost() {
   const isApplying = useRuleDataStore((state) => state.dataSourceApplying);
   const applyDataSource = useRuleDataStore((state) => state.applyDataSource);
   const clearFailure = useRuleDataStore((state) => state.clearDataSourceFailure);
-  const controller = getRuleDataSourceSelectionController();
+  const controller = getRuleDataSourceSelectionController(source.worldId);
 
   return (
     <DataSourceRecoveryDialog
       open={!!failure}
       sources={controller.getSources()}
-      policy={getRuleDataSourceSelectionPolicy()}
+      policy={getRuleDataSourceSelectionPolicy(source.worldId)}
       appliedSourceId={source.sourceId}
       failure={failure}
       isApplying={isApplying}

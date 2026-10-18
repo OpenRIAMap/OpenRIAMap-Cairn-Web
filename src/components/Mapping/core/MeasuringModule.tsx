@@ -1,3 +1,5 @@
+import {categoryAllowsParts,recordCategory} from '@/configStudio/multipartPolicy';
+import {getOpenRIAMapClassConfigs} from '@/core/project/openriamapRiaClasses';
 import {ExternalFeatureEditHost} from '../Workflow/ExternalFeatureEditHost';
 import {createTrpExternalEditSession,prepareTrpExternalEdit,type TrpExternalEditSession} from '@/configStudio/trpExternalEditing';
 import {prepareDownstreamNativeImport} from '../Workflow/downstreamNativeImport';
@@ -12,7 +14,7 @@ import { validateConfigPackage } from '@/configStudio/runtime';
 import { getClassConfigByCode } from '@/core/project/classMetadata';
 import type { ConfigPackageV3, WorkflowDefinition } from '@/configStudio/types';
 import type { V3WorkflowRunResult } from '@/configStudio/V3WorkflowRunner';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type ChangeEvent, type RefObject } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type ChangeEvent, type RefObject, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -347,7 +349,14 @@ useEffect(() => { if (configRuntime && !workflowRunning && !configRuntime.workfl
 
 // 当前临时点集合（临时绘制的坐标）
 // 说明：y 为可选（仅在部分 JSON 子类型需要输出 [x,y,z] 时使用；地图渲染仍使用固定 y=64）
-const [tempPoints, setTempPoints] = useState<Array<{ x: number; z: number; y?: number }>>([]);
+const [tempPoints, setTempPointState] = useState<Array<{ x: number; z: number; y?: number }>>([]);
+const tempPointsRef=useRef(tempPoints);
+const drawingListeners=useRef(new Set<()=>void>());
+const setTempPoints=useCallback((value:typeof tempPoints|((previous:typeof tempPoints)=>typeof tempPoints))=>{
+  const next=typeof value==='function'?value(tempPointsRef.current):value;
+  tempPointsRef.current=next;setTempPointState(next);
+},[]);
+useEffect(()=>{for(const listener of drawingListeners.current)listener();},[tempPoints]);
 
 // 对外广播测绘激活态（用于禁用导航“图上选点”等交互）
 useEffect(() => {
@@ -395,6 +404,7 @@ type EditorCoord = { x: number; z: number; y?: number };
  */
 const multipartDraftRef = useRef<MultipartGeometry | null>(null);
 const [multipartEnabled, setMultipartEnabled] = useState(false);
+const [multipartPanelOpen,setMultipartPanelOpen]=useState(true);
 // Leaflet listeners do not participate in React's render cycle. Keep the
 // mode decision in a synchronously updated ref so a click immediately after a
 // UI toggle can never be interpreted as the old single-part editor.
@@ -536,8 +546,16 @@ const renderSelectedMultipartCoords = (geometry: MultipartGeometry | null, color
   return selected;
 };
 
+const partsPermission = () => {
+  if (!configRuntime) return true;
+  const definition=getOpenRIAMapClassConfigs().find(item=>item.sourceFeatureKey===subType);
+  const record={Class:definition?.classCode,...(nativeEdit?.original??externalEdit?.session.original??{}),...featureInfo};
+  return drawModeRef.current !== 'none' && categoryAllowsParts(configRuntime,recordCategory(record),geometryKindForDrawMode(drawModeRef.current));
+};
+const partsLocked = () => multipartStructureLocked || !partsPermission();
+
 const selectMultipartPart = (nextIndex: number, persistCurrent = true) => {
-  if (multipartStructureLocked) return;
+  if (partsLocked()) return;
   const geometry = multipartDraftRef.current;
   if (!geometry) return;
   if (persistCurrent) persistActiveEditorCoords(tempPoints);
@@ -557,7 +575,7 @@ const selectMultipartPart = (nextIndex: number, persistCurrent = true) => {
 };
 
 const addMultipartPart = () => {
-  if (multipartStructureLocked) return;
+  if (partsLocked()) return;
   const geometry = multipartDraftRef.current;
   if (!geometry) return;
   persistActiveEditorCoords(tempPoints);
@@ -571,7 +589,7 @@ const addMultipartPart = () => {
 };
 
 const removeMultipartPart = () => {
-  if (multipartStructureLocked) return;
+  if (partsLocked()) return;
   const geometry = multipartDraftRef.current;
   if (!geometry || geometry.parts.length <= 1) return;
   persistActiveEditorCoords(tempPoints);
@@ -657,16 +675,8 @@ const renderMultipartEditor = () => (
           } ${showMultipartPartLabels ? 'opacity-60 cursor-not-allowed' : ''}`}
           disabled={showMultipartPartLabels}
           onClick={() => {
-            if (multipartEnabled) {
-              const partCount = multipartDraftRef.current?.parts.length ?? 1;
-              if (partCount > 1) {
-                alert('当前要素包含多个部件；请先删除至仅剩 1 个部件，才能关闭多部件要素模式。');
-                return;
-              }
-              multipartEnabledRef.current = false;
-              setMultipartEnabled(false);
-              return;
-            }
+            if (multipartEnabled) { setMultipartPanelOpen(value=>!value); return; }
+            setMultipartPanelOpen(true);
             multipartDraftRef.current = multipartGeometryFromSinglePath(
               geometryKindForDrawMode(drawMode as DrawMode),
               tempPoints,
@@ -678,7 +688,7 @@ const renderMultipartEditor = () => (
           }}
           title="启用后，绘制、控制点、手工输入与数组编辑只作用于当前选定部件"
         >
-          多部件要素
+          多部件和内洞设置
         </AppButton>
         {multipartEnabled && (
           <AppButton
@@ -694,7 +704,7 @@ const renderMultipartEditor = () => (
         )}
       </div>
 
-      {multipartEnabled && multipartDraftRef.current && (
+      {multipartEnabled && multipartPanelOpen && multipartDraftRef.current && (
         <>
           {showMultipartPartLabels && <div className="mt-2 text-xs text-blue-700">部件编号显示中：已锁定部件、内洞与所有编辑工具；关闭此模式后才可继续编辑。</div>}
           {multipartInputError && <div className="mt-2 text-xs text-rose-700">{multipartInputError}</div>}
@@ -704,18 +714,18 @@ const renderMultipartEditor = () => (
               className="min-w-0 flex-1 rounded border p-1 text-sm"
               value={activeMultipartPart}
               onChange={(event) => selectMultipartPart(Number(event.target.value))}
-              disabled={multipartStructureLocked}
+              disabled={partsLocked()}
             >
               {multipartDraftRef.current.parts.map((_, index) => (
                 <option key={index} value={index}>部件 {index + 1}</option>
               ))}
             </select>
-            <AppButton type="button" className="px-3 py-1 rounded border bg-white disabled:opacity-40" onClick={addMultipartPart} disabled={multipartStructureLocked} title="添加部件">+</AppButton>
+            <AppButton type="button" className="px-3 py-1 rounded border bg-white disabled:opacity-40" onClick={addMultipartPart} disabled={partsLocked()} title="添加部件">+</AppButton>
             <AppButton
               type="button"
               className="px-3 py-1 rounded border bg-white disabled:opacity-40"
               onClick={removeMultipartPart}
-              disabled={multipartStructureLocked || multipartDraftRef.current.parts.length <= 1}
+              disabled={partsLocked() || multipartDraftRef.current.parts.length <= 1}
               title="删除当前部件"
             >
               −
@@ -2420,6 +2430,7 @@ const finishLayer = () => {
     });
   }
 
+  if(configRuntime&&finalGeometry.parts.length>1&&!categoryAllowsParts(configRuntime,recordCategory(finalFeatureInfo),finalGeometry.type)){alert('此分类仅允许一个部件，无法保存多部件要素。完整草稿已保留，请先处理部件数量。');return;}
   finalFeatureInfo = withCanonicalMultipartGeometry(finalFeatureInfo, finalGeometry);
 
   const newLayerId = editingLayerId ?? nextLayerId.current++;
@@ -4905,7 +4916,8 @@ const workflowBridge: WorkflowBridge = {
 
   setDrawColor: (hex: string) => setDrawColor(hex),
 
-  getTempPoints: () => tempPoints,
+  getTempPoints: () => tempPointsRef.current,
+  subscribeDrawingChanges: listener => {drawingListeners.current.add(listener);return()=>{drawingListeners.current.delete(listener);};},
   setTempPoints: (pts: WorldPoint[]) => {
     const next = (pts ?? []) as any;
     // Workflow data is always a flat single-component draft.  It must not

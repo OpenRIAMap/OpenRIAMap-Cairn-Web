@@ -1,11 +1,14 @@
+import {resolveWorkflowFields} from './fieldReuse';
 import type {ConfigPackageV3,WorkflowDefinition} from './types';
+import {assertStructureTargets} from './structureCommit';
 import {compileWorkflowEditPlan,hydrateWorkflowEdit,buildWorkflowEditRecord,workflowEditSlots,recordClassification,assertEditIdentity,type WorkflowEditDraft} from './workflowEditing';
-import {evaluateV3WorkflowOutputs,validateV3WorkflowInputs,validateV3WorkflowRecords} from './V3WorkflowRunner';
+import {evaluateV3WorkflowOutputs,validateV3WorkflowInputs,validateV3WorkflowRecords} from './workflowKernel';
 import {coerceWorkflowValues} from './workflowValues';
 import {featureTypeFromGeometryType,validateMultipartGeometry,withCanonicalMultipartGeometry,type MultipartGeometry} from '../core/geometry/multipartGeometry';
 import {hasDescendants,pathMatchesScope,resolveGeometryProfile} from './runtime';
 import {captureDrawingSnapshot,drawingKey} from './workflowDrawing';
 export function prepareNativeWorkflowEdit(config:ConfigPackageV3,workflow:WorkflowDefinition,original:Record<string,unknown>,draft:WorkflowEditDraft,geometry:MultipartGeometry,world:string,editor:string,others:Record<string,unknown>[],now=new Date()):Record<string,unknown> {
+ workflow=resolveWorkflowFields(config,workflow);
  const plan=compileWorkflowEditPlan(workflow,config),type=workflow.outputs[0].geometry.selected;
  if(type!==geometry.type)throw Error('编辑几何类型与工作流不一致。');const geometryError=validateMultipartGeometry(geometry);if(geometryError)throw Error(geometryError);
  const projected={...workflow,steps:[{id:'edit',kind:'form' as const,label:{zh:'编辑',en:''},controls:plan.controls}],actor:{required:false}};
@@ -13,11 +16,13 @@ export function prepareNativeWorkflowEdit(config:ConfigPackageV3,workflow:Workfl
  let record=buildWorkflowEditRecord(plan,original,draft,{geometry});assertEditIdentity(record,original,world,others);
  record=withCanonicalMultipartGeometry({...record,Type:featureTypeFromGeometryType(geometry.type)},geometry);
  const issues=validateV3WorkflowRecords(config,workflow,[{outputId:workflow.outputs[0].id,classification:draft.classification,geometry:type,record}]);if(issues.length)throw Error(issues.map(i=>i.message).join('\n'));
+ assertStructureTargets(config,[record],others);
  if(!editor.trim())throw Error('编辑人不能为空。');record.ModifityBy=editor.trim();record.ModifityTime=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
  return record;
 }
 /** Conversion performs actual original-record hydration and a lossless patch. */
 export function testWorkflowEditConversion(config:ConfigPackageV3,workflow:WorkflowDefinition,records:Record<string,unknown>[]=[]) {
+ workflow=resolveWorkflowFields(config,workflow);
  const plan=compileWorkflowEditPlan(workflow,config),output=workflow.outputs[0],matching=records.filter(r=>pathMatchesScope(recordClassification(r),plan.scope));
  const path=config.nodes.find(n=>pathMatchesScope(n.path,plan.scope)&&!hasDescendants(config,n.path)&&resolveGeometryProfile(config,n.path,output.geometry.selected)?.enabled)?.path;if(!path)throw Error('编辑范围没有最终可用分类。');
  const slots:Record<string,unknown>={ID:'EDIT_SAMPLE',actor:'editing-test'};

@@ -92,3 +92,35 @@ docs/90_roadmap-and-history/runtime-v32-sync01-execution-20261014/*.txt text eol
 # Active adaptation blueprint and PR review evidence carry byte digests.
 docs/90_roadmap-and-history/RuntimeV32_Incremental_Revision_Blueprint_2026-10-13.md text eol=lf
 docs/90_roadmap-and-history/runtime-v32-downstream-pr-review-20261014/*.json text eol=lf
+
+# C-stage application delivery resources have reproducible byte digests.
+docs/90_roadmap-and-history/runtime-v32-downstream-mainupdate-20261014/*.json text eol=lf
+docs/90_roadmap-and-history/runtime-v32-downstream-mainupdate-20261014/evidence/*.json text eol=lf
+docs/90_roadmap-and-history/runtime-v32-downstream-mainupdate-20261014/evidence/*.log text eol=lf
+
+# Release audit evidence uses byte digests that must survive checkout.
+docs/90_roadmap-and-history/runtime-v32-release-audit-20261016/*.json text eol=lf
+docs/90_roadmap-and-history/runtime-v32-release-audit-20261016/*.log text eol=lf
+docs/90_roadmap-and-history/runtime-v32-release-audit-20261016/*.md text eol=lf
+docs/90_roadmap-and-history/runtime-v32-release-repair-20261017/*.json text eol=lf
+docs/90_roadmap-and-history/runtime-v32-release-repair-20261017/*.log text eol=lf
+docs/90_roadmap-and-history/runtime-v32-release-repair-20261017/*.md text eol=lf
+
+# JSON handbook source copies and manifest digests use stable LF bytes.
+docs/20_config-reference/runtime-v32-json-handbook-r11-r7-20261017/* text eol=lf
+scripts/config-tools/json-handbook/* text eol=lf
+
+# Configuration release digests describe committed bytes.
+/public/configuration/**/*.json text eol=lf
+/public/configuration/current.json text eol=lf
+/legacy-v1/*.json text eol=lf
+/legacy-v1/*.ts text eol=lf
+/legacy-v1/*.tsx text eol=lf
+/legacy-v1/*.mjs text eol=lf
+/legacy-v1/*.zip -text
+/legacy-v1/filter.ts -text
+/legacy-v1/manifest.json -text
+/vendor/configuration-r11/* text eol=lf
+docs/90_roadmap-and-history/runtime-v32-production-promotion-20261017/*.md text eol=lf
+docs/90_roadmap-and-history/runtime-v32-production-promotion-20261017/*.json text eol=lf
+docs/90_roadmap-and-history/runtime-v32-production-promotion-20261017/*.log text eol=lf

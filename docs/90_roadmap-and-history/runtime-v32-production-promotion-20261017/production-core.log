@@ -1,0 +1,11 @@
+
+> cairnmap-web@0.1.0 test:production-runtime
+> node scripts/config-tools/build-server-validation.mjs --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-production-runtime.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-production-mirror.ts && node scripts/config-tools/test-configuration-publication-api.mjs && tsx --tsconfig tsconfig.app.json scripts/config-tools/prepare-production-seed.ts --check
+
+Verified pure Node r11 validator: 135 inputs, 828085 bytes; no React/Leaflet/Zustand.
+production-runtime: pinned bytes/identity, no foreign URLs, raw-preserving historical views, unknown paths, restored future paths, per-output single parts and Polygon holes passed
+production-mirror: later r8 current passes independently of immutable r7 seed; raw hashes, archive equality, revision identity, controlled URLs and CLI advancement verified
+configuration-publication-api: separate signed fresh session, expiration/purpose/snapshot binding, actor stripping, controlled operations, size/path guards and independent environment gate passed
+configuration authority and OAuth: signed private-COS proxy, fail-closed authority, nonce/browser state, fresh scoped cookie, independent review gate passed
+Registered r11/r7 seed verified: original JSON unchanged; archive 248639 bytes; manifest 8818876914ba81dcc8318c0da4ef8977fd5729821e750666efb425871ded6fad
+Published mirror verified independently: r7, v3-r11-r7-seed.

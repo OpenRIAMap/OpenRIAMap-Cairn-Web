@@ -14,6 +14,18 @@ export type FieldValueType = 'string' | 'number' | 'boolean' | 'enum' | 'json' |
 /** A select always carries the human-facing label separately from its value.
  * V1 uses this for many railway and road fields (for example 上行 -> 1). */
 export type SelectOption = { value: string; label: LocalizedText };
+/** The same dictionary body is used inline and by public lookup tables. */
+export type OptionTable = { valueType: 'string' | 'number' | 'boolean'; rows: SelectOption[] };
+export type FieldDefinitionRef = { nodeId: string; fieldId: string };
+export type TagFieldMetadata = {kind:'tagField';type:'text'|'number'|'bool'|'select';format?:'plain'|'externalLink'|'date';valueTable?:OptionTable;valueTableId?:string};
+/** Explicit table binding is live; prefill copies effective rows without it. */
+export type LookupTable = {
+  id: string;
+  label: LocalizedText;
+  valueType: 'string' | 'number' | 'boolean';
+  functionKind: 'none' | 'speed' | 'teleportHub' | 'tagField';
+  rows: Array<SelectOption & { functionValue?: TagFieldMetadata | number | { world: string; range: number; returnPoints: Array<{ id: string; label: LocalizedText; x: number; y: number; z: number }> } }>;
+};
 /** `tags` and `extensions` are optional field groups, never synthetic root
  * fields named "tags" or "extensions". `key` remains the full data path so
  * every consumer can use one unambiguous identifier. */
@@ -44,6 +56,8 @@ export type FieldDefinition = {
   labels: LocalizedText;
   description: LocalizedText;
   options?: SelectOption[];
+  optionsTableId?: string;
+  optionTable?: OptionTable;
   /** Options are serialized text keys; this controls the actual stored scalar. */
   optionValueType?: 'string' | 'number' | 'boolean';
   format?: 'plain' | 'externalLink' | 'boolean' | 'json' | 'date';
@@ -58,6 +72,12 @@ export type FieldDefinition = {
   /** Set when this node intentionally replaces an inherited declaration. */
   overrideOf?: string;
   inheritance?: InheritanceMode;
+};
+/** Validation evidence only. Never used to resolve a runtime value or source. */
+export type PrefillAudit = {
+  source: { path: ClassificationPath; fieldId: string; key: string };
+  fingerprint: string;
+  confirmedFingerprint?: string;
 };
 
 export type LabelRole = 'ignore' | 'soft' | 'optional' | 'important' | 'required';
@@ -145,6 +165,9 @@ export type RenderLabelStyle = {
   underline?: boolean;
   /** The source is kept configurable for exact V1 migration. */
   source?: string;
+  sourceMode?: 'single' | 'combined';
+  /** Label syntax: quoted field paths and adjacent literal text; never an expression. */
+  template?: string;
   /** Ordered alternatives used when the primary V1 source is empty. */
   fallbackSources?: string[];
   /**
@@ -538,6 +561,17 @@ export type ContextBinding = {
   enabled: boolean;
   profile: 'default' | 'keep-host-context' | 'show-active-member-only';
 };
+/** r10 roles do not constrain the classification of the opposite endpoint. */
+export type StructureRole = { enabled:boolean;role:'main'|'member';memberField?:string;hostField?:string;selectorField?:string;visibility?:'activeLevel'|'allMembers' };
+export type CategorySearch = {
+  enabled:boolean;
+  inheritance?:'sealed'|'overridable';
+  queryFields:string[];
+  priority?:number;
+  subtitle:{mode:'classification'|'classificationField'|'field';classificationLabel?:LocalizedText;fallbackClassificationLabel?:LocalizedText;field?:string;valueMode?:'value'|'meaning'|'reference';referenceDisplayField?:string;valueOptions?:SelectOption[];prefillAudit?:PrefillAudit};
+  extension:{mode:'none'|'nameColorCapsule'|'lineChips';nameField?:string;displayName?:boolean;colorField?:string;fallbackColor?:string;lineChipSource?:'platform'|'station'|'stationBuilding'};
+};
+export type NodeFieldSettings={structure?:StructureRole;search?:CategorySearch};
 
 export type InteractionState = 'hover' | 'selected' | 'searchResult' | 'editing' | 'deletionMarked';
 export type InteractionVisual = {
@@ -592,6 +626,7 @@ export type ConfigEngineSettings = {
 export type CardRenderer = 'text' | 'tag' | 'colorCapsule' | 'nameColorCapsule' | 'relationLink' | 'lineChips' | 'media';
 export type CardSection = 'main' | 'other';
 export type CardRelation = {
+  targetRole?:'main';
   targetClassification?: ClassificationPath;
   targetMatchField?: string;
   targetDisplayField?: string;
@@ -603,6 +638,13 @@ export type CardRelation = {
 };
 export type CardItem = {
   id: string;
+  fieldBinding?: FieldDefinitionRef;
+  optionsFieldRef?: FieldDefinitionRef;
+  optionsTableId?: string;
+  optionTable?: OptionTable;
+  optionValueType?: OptionTable['valueType'];
+  inheritFrom?: { nodeId: string; itemId: string };
+  prefillAudit?: PrefillAudit;
   source: string;
   fallbackSources?: string[];
   afterRemaining?: boolean;
@@ -653,6 +695,7 @@ export type CategoryNode = {
   /** Compatibility metadata for V3.0 imports; runtime uses inheritDown first. */
   policies?: { fields: InheritanceMode; display: InheritanceMode; card: InheritanceMode; workflow?: InheritanceMode };
   fields: FieldDefinition[];
+  fieldSettings?:NodeFieldSettings;
   /** Once selected, descendants may only resolve this geometry kind. */
   geometryType?: GeometryKind;
   geometryProfiles: Partial<Record<GeometryKind, GeometryProfile>>;
@@ -670,6 +713,7 @@ export type CategoryNode = {
 
 export type SearchProfile = {
   target: ClassificationPath;
+  targetRole?:'main';
   /** One reusable feature-search model replaces the old duplicate coarse
    * search control. The old fields remain import-only compatibility data. */
   queryFields?: string[];
@@ -698,6 +742,9 @@ export type WorkflowControlKind = ComposedWorkflowControlKind | 'notice' | 'json
  * keep their individual fields, options and required state editable.
  */
 export type WorkflowGroupField = {
+  optionTable?: OptionTable;
+  optionsFieldRef?: FieldDefinitionRef;
+  prefillAudit?: PrefillAudit;
   /** Local target hint copied once by prefill; no source identity is retained. */
   prefillField?: string;
   key: string;
@@ -705,6 +752,7 @@ export type WorkflowGroupField = {
   kind: Exclude<ComposedWorkflowControlKind, 'classificationPicker' | 'group' | 'tagsExtensions'>;
   required?: boolean;
   options?: SelectOption[];
+  optionsTableId?: string;
   placeholder?: string;
   defaultValue?: unknown;
   rows?: number;
@@ -731,6 +779,9 @@ export type WorkflowRepeatGroup = {
   addLabel?: LocalizedText;
 };
 export type WorkflowControl = {
+  optionTable?: OptionTable;
+  optionsFieldRef?: FieldDefinitionRef;
+  prefillAudit?: PrefillAudit;
   prefillField?: string;
   id: string;
   slot?: string;
@@ -743,6 +794,7 @@ export type WorkflowControl = {
   optionValueType?: FieldDefinition['optionValueType'];
   requiredWhen?: WorkflowValueCondition[];
   options?: SelectOption[];
+  optionsTableId?: string;
   optionSource?: { registryKey: string };
   placeholder?: string;
   defaultValue?: unknown;
@@ -845,7 +897,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */
@@ -855,6 +907,8 @@ export type ConfigPackageV3 = {
   /** Required for V3.2-native packages (contractRevision 5). */
   engine?: ConfigEngineSettings;
   registries: ConfigRegistries;
+  lookupTables?: LookupTable[];
+  application?: import('../core/project/applicationTypes').ApplicationSettings;
   nodes: CategoryNode[];
   /** Required for V3.2-native packages; legacy node.containment is import-only. */
   contextBindings?: ContextBinding[];

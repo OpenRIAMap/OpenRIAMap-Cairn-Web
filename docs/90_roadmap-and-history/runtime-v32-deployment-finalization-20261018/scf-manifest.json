@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "cairn.finalization-scf-delivery.v1",
+  "checkedAt": "2026-10-18T03:35:26.922Z",
+  "verificationRuntime": "v20.19.0",
+  "targetRuntime": "Nodejs20.19",
+  "region": "ap-shanghai",
+  "functions": [
+    {
+      "name": "cairn-pipeline-dispatcher",
+      "handler": "scf-dispatcher.handler",
+      "role": "CairnReviewDispatcherRole",
+      "memoryMb": 256,
+      "timeoutSeconds": 30,
+      "zip": "dist/scf/cairn-pipeline-dispatcher.zip",
+      "file": "cairn-pipeline-dispatcher.zip",
+      "sha256": "78e45d7f8bf39336623e96efb4b0ba3d1da8c76cd2f9b280a993c43ab573b80b",
+      "byteLength": 2213121,
+      "verifiedFiles": 980,
+      "rootHandlerImport": true,
+      "implementationImport": true
+    },
+    {
+      "name": "cairn-pipeline-worker",
+      "handler": "scf-worker.handler",
+      "role": "CairnReviewWorkerRole",
+      "memoryMb": 1024,
+      "timeoutSeconds": 600,
+      "zip": "dist/scf/cairn-pipeline-worker.zip",
+      "file": "cairn-pipeline-worker.zip",
+      "sha256": "eb8158dd17e5f4acfc016ec6a24e3deafb632a58e0ff0344264a5cba6fb92fa3",
+      "byteLength": 2213111,
+      "verifiedFiles": 980,
+      "rootHandlerImport": true,
+      "implementationImport": true
+    },
+    {
+      "name": "cairn-github-mirror-worker",
+      "handler": "scf-mirror.handler",
+      "role": "CairnReviewMirrorRole",
+      "memoryMb": 512,
+      "timeoutSeconds": 300,
+      "zip": "dist/scf/cairn-github-mirror-worker.zip",
+      "file": "cairn-github-mirror-worker.zip",
+      "sha256": "678e4f19b6f4f962555989a4768f5bd07f44435ad7dc422241c6eb7b1bdf0a4d",
+      "byteLength": 2213110,
+      "verifiedFiles": 980,
+      "rootHandlerImport": true,
+      "implementationImport": true
+    },
+    {
+      "name": "cairn-review-archive-worker",
+      "handler": "scf-archive.handler",
+      "role": "CairnReviewArchiveRole",
+      "memoryMb": 1024,
+      "timeoutSeconds": 600,
+      "zip": "dist/scf/cairn-review-archive-worker.zip",
+      "file": "cairn-review-archive-worker.zip",
+      "sha256": "0659afbc1529a1519d6019fc915e89e80528d0128a507359cc08fb941fc46fe8",
+      "byteLength": 2213114,
+      "verifiedFiles": 980,
+      "rootHandlerImport": true,
+      "implementationImport": true
+    }
+  ],
+  "pipelineSource": "8a0bf1ffa44917314043c094244a968a103f31ab5c95c9d5f5e44515647fe987",
+  "seed": {
+    "identity": {
+      "releaseId": "v3-r11-r7-seed",
+      "packageId": "cairnmap-config-v32-semantic",
+      "projectId": "openriamap-ria",
+      "revision": 7,
+      "contractRevision": 11,
+      "configSha256": "982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e",
+      "manifestSha256": "8818876914ba81dcc8318c0da4ef8977fd5729821e750666efb425871ded6fad",
+      "configUrl": "/configuration/releases/982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e/config.json"
+    },
+    "archiveSha256": "73f1eecb895e80e2ee188e47f8d030202dab8447862faaf9b50a77642eed5a9e",
+    "byteLength": 248639
+  }
+}

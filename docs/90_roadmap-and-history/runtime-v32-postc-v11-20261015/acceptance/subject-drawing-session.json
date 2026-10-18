@@ -1,0 +1,36 @@
+{
+  "checks": [
+    "target -> main -> information keeps main drawing; information-page undo/new point survives re-entry; target coordinates and height remain isolated"
+  ],
+  "record": {
+    "World": "zth",
+    "Class": "TPP",
+    "Kind": "NOM",
+    "SKind": "NOM",
+    "ID": "ZTPPNOMNOM_AB-1",
+    "Name": "sample",
+    "hub": "sample",
+    "extensions": {
+      "link": {
+        "wiki": "sample"
+      }
+    },
+    "TGTcoordinate": {
+      "x": 80,
+      "y": 21,
+      "z": 45
+    },
+    "TGTelevation": 21,
+    "CreateBy": "drawing-session-test",
+    "CreateTime": "20261016",
+    "Type": "Points",
+    "CoordP": [
+      [
+        55,
+        -64,
+        66
+      ]
+    ]
+  },
+  "runtimeErrors": []
+}
