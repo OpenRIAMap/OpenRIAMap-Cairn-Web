@@ -54,3 +54,5 @@ try{
 }finally{
   globalThis.fetch=oldFetch;for(const key of Object.keys(process.env))if(!(key in oldEnv))delete process.env[key];Object.assign(process.env,oldEnv);
 }
+
+await import('./test-configuration-publication-transport.mjs');
