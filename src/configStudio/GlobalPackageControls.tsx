@@ -9,11 +9,14 @@ import { persistActiveConfig, readDurableActiveConfig, stableConfigText } from '
 import { CONFIGURATION_RULES_VERSION, readFormalIdentity, sha256Bytes, type ConfigurationIdentity } from '../configRuntime/formalConfiguration';
 
 type Gate = { snapshot: string; records: string; base: string; rules: string };
-type ServerResult = { jobId?:string; state?:string; revision?:number; configSha256?:string; report?:{valid:boolean;issues:Array<{severity:string;message:string}>}; identity?:ConfigurationIdentity; upload?:{url:string;headers?:Record<string,string>}; receipt?:string; error?:string; actor?:string; summary?:string[]; manifestSha256?:string; archiveSha256?:string };
+type ServerResult = { jobId?:string; state?:string; revision?:number; configSha256?:string; report?:{valid:boolean;issues:Array<{severity:string;message:string}>}; identity?:ConfigurationIdentity; upload?:{url:string;headers?:Record<string,string>}; receipt?:string; error?:string; message?:string; diagnosticId?:string; actor?:string; summary?:string[]; manifestSha256?:string; archiveSha256?:string };
 async function command(operation: string, body: Record<string, unknown> = {}): Promise<ServerResult> {
   const response = await fetch('/api/config-publication', { method:'POST', credentials:'same-origin', headers:{'content-type':'application/json'}, body:JSON.stringify({operation,...body}) });
   const result = await response.json() as ServerResult;
-  if (!response.ok || result.error&&!result.jobId) throw Error(result.error ?? `发布请求失败（${response.status}）。`);
+  if (!response.ok || result.error&&!result.jobId) {
+    const message=result.message ?? result.error ?? `发布请求失败（${response.status}）。`;
+    throw Error(message+(result.diagnosticId?` 诊断编号：${result.diagnosticId}`:''));
+  }
   return result;
 }
 

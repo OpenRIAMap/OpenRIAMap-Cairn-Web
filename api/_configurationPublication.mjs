@@ -1,5 +1,6 @@
 import { verify } from './_reviewAuth.mjs';
 import { signDispatcherRequest } from './review-relay-transfer.mjs';
+import { ConfigurationPublicationForwardError } from './_configurationPublicationFailure.mjs';
 
 export const publicationEnabled = (env=process.env) => env.CAIRN_CONFIGURATION_PUBLICATION_ENABLED === 'true';
 export function publicationSession(req, env=process.env) {
@@ -24,6 +25,10 @@ export function normalizePublicationCommand(input, session) {
 export async function forwardPublication(input,session,env=process.env,fetcher=fetch){
   if(!env.CAIRN_CONTROL_API_BASE||!env.CAIRN_BROKER_TO_DISPATCHER_SECRET)throw Error('configuration-publisher-not-configured');
   const body=normalizePublicationCommand(input,session),signed=signDispatcherRequest(body,env.CAIRN_BROKER_TO_DISPATCHER_SECRET);
-  const response=await fetcher(`${env.CAIRN_CONTROL_API_BASE.replace(/\/$/,'')}/v1/review-intents`,{method:'POST',headers:{'content-type':'application/json','x-cairn-timestamp':signed.timestamp,'x-cairn-signature':signed.signature},body:JSON.stringify(body),signal:AbortSignal.timeout(25000)});
-  return {status:response.status,payload:await response.json()};
+  let response;
+  try {
+    response=await fetcher(`${env.CAIRN_CONTROL_API_BASE.replace(/\/$/,'')}/v1/review-intents`,{method:'POST',headers:{'content-type':'application/json','x-cairn-timestamp':signed.timestamp,'x-cairn-signature':signed.signature},body:JSON.stringify(body),signal:AbortSignal.timeout(25000)});
+  } catch (error) { throw new ConfigurationPublicationForwardError(error, 'request'); }
+  try { return {status:response.status,payload:await response.json()}; }
+  catch (error) { throw new ConfigurationPublicationForwardError(error, 'response', response.status); }
 }
