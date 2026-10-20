@@ -1,0 +1,15 @@
+{
+  "checks": [
+    "unsaved engine screen gates immediately update the real validator; discard restores drawing without changing the active configuration",
+    "engine-only validate/save is independent with and without a selected category; unrelated modules remain byte-equivalent",
+    "a migration candidate allows all three design tabs while retaining the original active configuration",
+    "lookup-table save stages only its own table changes into the same candidate and preserves the staged engine/classification edits",
+    "engine, classification and general module saves update one durable candidate; unfinished region drafts block leaving, reverted engine edits clear, and refresh restores the selected tab",
+    "only final full candidate validation/save applies all staged modules once and restores the ordinary publication gate",
+    "an imported workflow/general multi-error candidate is repaired across tabs, including unsaved workflow reload recovery; partial fixes cannot activate, while the fully repaired package saves",
+    "390px candidate controls remain visible and the document has no horizontal overflow",
+    "even valid imports require final package confirmation; discard and reload preserve the exact previous active package",
+    "final candidate save rejects a concurrently changed active baseline and retains the candidate for review"
+  ],
+  "runtimeErrors": []
+}
