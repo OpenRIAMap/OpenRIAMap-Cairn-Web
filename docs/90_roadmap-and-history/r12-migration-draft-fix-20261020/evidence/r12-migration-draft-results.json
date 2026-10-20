@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "r11 migration opens a visible package toolbar before the engine editor; saved baseline and publication gate remain intact",
+    "whole-package review can switch categories; reload restores the draft scope and selected category",
+    "390px layout keeps all package controls visible without document horizontal overflow",
+    "validate then save respects cancelled confirmation; successful save clears durable draft, survives reload and unlocks global validation",
+    "ordinary category edits retain the original selection lock and category transaction controls",
+    "legacy stranded migration recovers with usable controls; discard survives reload and preserves the exact saved r11 configuration",
+    "invalid whole-package import exposes review/discard but validation still blocks save and leaves the active configuration untouched"
+  ],
+  "runtimeErrors": []
+}
