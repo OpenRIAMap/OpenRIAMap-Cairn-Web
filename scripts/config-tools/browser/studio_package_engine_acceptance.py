@@ -78,6 +78,16 @@ try:
     assert first['nodes'] == initial['nodes'] and first['application'] == initial['application'] and first['lookupTables'] == initial['lookupTables']
     assert first['engine']['contextView']['activationRadiusPx'] == initial['engine']['contextView']['activationRadiusPx'] + 1
     pick('select[aria-label="编辑分类 Class"]', 'ROD')
+    pick('select[aria-label="编辑分类 Kind"]', 'NOM')
+    b.wait("document.querySelectorAll('.leaflet-ria-overlay-pane path').length>0")
+    fill('线最小屏幕长度 px', 1000000, engine)
+    b.wait("document.querySelectorAll('.leaflet-ria-overlay-pane path').length===0")
+    assert_same_active(first)
+    click('放弃引擎草稿', engine)
+    b.wait("document.querySelectorAll('.leaflet-ria-overlay-pane path').length>0")
+    wait_session('!v')
+    pick('select[aria-label="编辑分类 Kind"]', '')
+    checks.append('unsaved engine screen gates immediately update the real validator; discard restores drawing without changing the active configuration')
     fill('激活半径 px', first['engine']['contextView']['activationRadiusPx'] + 1, engine)
     assert b.evaluate(bar + '===null')
     assert b.evaluate("[...document.querySelectorAll('button')].some(e=>e.textContent==='读取分类')")

@@ -1,5 +1,6 @@
 {
   "checks": [
+    "unsaved engine screen gates immediately update the real validator; discard restores drawing without changing the active configuration",
     "engine-only validate/save is independent with and without a selected category; unrelated modules remain byte-equivalent",
     "a migration candidate allows all three design tabs while retaining the original active configuration",
     "lookup-table save stages only its own table changes into the same candidate and preserves the staged engine/classification edits",
