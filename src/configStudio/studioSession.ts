@@ -1,8 +1,18 @@
 export type StudioTab = 'general' | 'features' | 'workflows';
 import type { ConfigPackageV3 } from './types';
+import type { EngineDraft } from './engineTransaction';
+import type { WorkflowEditingSession } from './WorkflowWorkbench';
 export type ClassTreeSession={classCode:string;baseline:ConfigPackageV3;staged:ConfigPackageV3;changes:string[]};
+export type PackageCandidate = { baseline: ConfigPackageV3; config: ConfigPackageV3; source: 'migration' | 'import' | 'recovery' };
 export type FeatureDraftScope = 'package' | 'category';
-export type StudioEditingSession={draft:ConfigPackageV3|null;draftScope?:FeatureDraftScope;tree:ClassTreeSession|null;selectedId:string;editing:boolean;baseline:ConfigPackageV3;generalDrafts?:import('./GeneralRulesEditor').GeneralDrafts;lookupDraft?:import('./lookupTableTransaction').LookupTableDraft|null};
+export type StudioEditingSession={draft:ConfigPackageV3|null;draftScope?:FeatureDraftScope;tree:ClassTreeSession|null;selectedId:string;editing:boolean;baseline:ConfigPackageV3;generalDrafts?:import('./GeneralRulesEditor').GeneralDrafts;lookupDraft?:import('./lookupTableTransaction').LookupTableDraft|null;engineDraft?:EngineDraft|null;packageCandidate?:PackageCandidate|null;activeTab?:StudioTab;workflowSession?:WorkflowEditingSession|null};
+
+export function recoverPackageCandidate(session?: StudioEditingSession): PackageCandidate | null {
+  if (session?.packageCandidate) return session.packageCandidate;
+  return session?.draft && !session.tree && featureDraftScope(session) === 'package'
+    ? { baseline: session.baseline, config: session.draft, source: 'recovery' }
+    : null;
+}
 
 /** Recover migration/import drafts created before their scope was persisted. */
 export function featureDraftScope(session?: StudioEditingSession): FeatureDraftScope {

@@ -51,7 +51,7 @@ try:
 
     select_class('ROD')
     select_class('SBP')
-    b.wait("(async()=>{const s=await import('/src/configStudio/configLabStorage.ts');const d=await s.readStudioEditingSession();return d?.draftScope==='package'&&d?.selectedId==='class-sbp';})()")
+    b.wait("(async()=>{const s=await import('/src/configStudio/configLabStorage.ts');const d=await s.readStudioEditingSession();return !!d?.packageCandidate&&d?.selectedId==='class-sbp';})()")
     b.navigate('?workspace=config-studio')
     b.wait(toolbar + '!==null')
     assert b.evaluate("document.querySelector('select[aria-label=\"编辑分类 Class\"]').value") == 'SBP'

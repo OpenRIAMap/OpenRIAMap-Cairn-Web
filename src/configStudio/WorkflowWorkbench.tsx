@@ -9,6 +9,7 @@ import { validateConfigPackage, validateWorkflowDefinition, resolveEffectiveFiel
 import { canonicalizeWorkflow, V3WorkflowEditor } from './V3WorkflowEditor';
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+export type WorkflowEditingSession = { selectedId: string; draft: WorkflowDefinition; tables: LookupTable[] };
 
 export interface WorkflowWorkbenchProps {
   config: ConfigPackageV3;
@@ -16,6 +17,9 @@ export interface WorkflowWorkbenchProps {
   onChange: (config: ConfigPackageV3) => boolean | void | Promise<boolean | void>;
   onDraftStateChange?: (active: boolean) => void;
   records?: MountedFeatureRecord[];
+  isolated?: boolean;
+  initialSession?: WorkflowEditingSession | null;
+  onSessionChange?: (session: WorkflowEditingSession | null) => void;
 }
 
 function downloadArtifact(artifact: WorkflowArtifact): void {
@@ -28,17 +32,18 @@ function downloadArtifact(artifact: WorkflowArtifact): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-export function WorkflowWorkbench({ config, onChange, onDraftStateChange, records = [] }: WorkflowWorkbenchProps) {
-  const [selectedId, setSelectedId] = useState(config.workflows[0]?.id ?? '');
-  const [draftTables,setDraftTables]=useState<LookupTable[]>([]);
+export function WorkflowWorkbench({ config, onChange, onDraftStateChange, records = [], isolated = false, initialSession, onSessionChange }: WorkflowWorkbenchProps) {
+  const [selectedId, setSelectedId] = useState(initialSession?.selectedId ?? config.workflows[0]?.id ?? '');
+  const [draftTables,setDraftTables]=useState<LookupTable[]>(initialSession?.tables ?? []);
   const draftConfig=useMemo(()=>draftTables.length?{...config,lookupTables:[...config.lookupTables??[],...draftTables]}:config,[config,draftTables]);
   const [creating,setCreating]=useState(false);
-  const [draft, setDraft] = useState<WorkflowDefinition | null>(null);
+  const [draft, setDraft] = useState<WorkflowDefinition | null>(initialSession?.draft ?? null);
   const [report, setReport] = useState<ConfigValidationReport | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const selected = useMemo(() => config.workflows.find((workflow) => workflow.id === selectedId), [config.workflows, selectedId]);
 
-  useEffect(() => { onDraftStateChange?.(draft !== null); }, [draft, onDraftStateChange]);
+  useEffect(() => { onDraftStateChange?.(draft !== null || creating); }, [draft, creating, onDraftStateChange]);
+  useEffect(() => { onSessionChange?.(draft ? { selectedId, draft, tables: draftTables } : null); }, [selectedId, draft, draftTables, onSessionChange]);
 
   useEffect(() => {
     if (selectedId && config.workflows.some((workflow) => workflow.id === selectedId)) return;
@@ -77,7 +82,8 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
     };
     const packageReport = validateConfigPackage(nextPackage, records);
     setReport(packageReport);
-    if (!packageReport.valid || await onChange(nextPackage) === false) return;
+    if ((!isolated && !packageReport.valid) || await onChange(nextPackage) === false) return;
+    setReport(isolated ? nextReport : packageReport);
     setSelectedId(next.id);
     setDraft(null);setDraftTables([]);
   };
@@ -124,7 +130,7 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
       <button type="button" className="rounded border px-2 py-1 text-sm disabled:opacity-40" disabled={!draft} onClick={() => { if (confirmDiscardDraft('放弃编辑')) clearDraft(); }}>放弃草稿</button>
       <button type="button" className="inline-flex items-center gap-1 rounded border px-2 py-1 text-sm" onClick={() => fileRef.current?.click()}><FileUp className="h-4 w-4" />导入</button>
     </div>
-    <p className="mt-2 text-sm text-slate-500">先选择后读取，或新建/导入为独立草稿；核验通过后才能保存到当前配置包。保存或放弃草稿后，才能切回要素设计。</p>
+    <p className="mt-2 text-sm text-slate-500">先选择后读取，或新建/导入为独立草稿；核验通过后才能保存到当前配置包。保存或放弃草稿后，才能切换设计标签。{isolated ? ' 当前为整包候选，工作流保存只暂存到候选；其他模块的问题仍须在顶部整包核验时处理。' : ''}</p>
     {report ? <section className={`mt-3 rounded border p-3 text-sm ${report.valid ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}`}>
       <strong>{report.valid ? '工作流核验通过' : `发现 ${report.issues.length} 项问题`}</strong>
       {report.issues.length ? <ul className="mt-2 list-disc pl-5 text-xs">{report.issues.map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.code}：{issue.message}{issue.code==='prefill-copy-outdated'&&draft?<button type="button" className="ml-2 rounded border px-2 py-1" onClick={()=>{const next=confirmPrefillCopies({...draftConfig,workflows:[draft]},resolveEffectiveFields,[issue.path]);setDraft(next.workflows[0]);setReport(null);}}>确认保留本次副本</button>:null}</li>)}</ul> : null}

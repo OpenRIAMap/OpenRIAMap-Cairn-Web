@@ -5,7 +5,7 @@ import { applyApplicationSettings, checkApplicationTransition } from '../core/pr
 import manifest from './defaults/manifest.json';
 import type { ConfigPackageV3 } from './types';
 import type { StudioEditingSession } from './studioSession';
-import { readStudioEditingSession } from './configLabStorage';
+import { readStudioEditingSession, saveStudioEditingSession } from './configLabStorage';
 import { prepareConfigForActivation } from './configActivation';
 import { highestConfigLabRevision, readRawConfigLatest, saveConfigLabPackage, archiveConfigRecovery, listConfigRecoveries, readConfigRecovery, readActiveConfigChoice, saveActiveConfigChoice, type ConfigRecovery } from './configLabStorage';
 
@@ -36,6 +36,7 @@ export function loadDefaultConfig(): Promise<ConfigPackageV3> {
 }
 export function getActiveConfigSnapshot(): ConfigPackageV3 {if(!state.active)throw Error('活动配置尚未加载。');return state.active;}
 export function getStudioSessionSnapshot():StudioEditingSession|undefined{return state.editingSession;}
+export async function persistStudioEditingSession(session:StudioEditingSession|null):Promise<void>{await saveStudioEditingSession(session);state.editingSession=session??undefined;}
 
 export function loadActiveConfig(): Promise<ConfigPackageV3> {
   return state.activePromise??=(async()=>{

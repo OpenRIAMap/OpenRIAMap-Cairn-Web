@@ -14,7 +14,7 @@ import {ColorBindingEditor} from './ColorBindingEditor';
 import { CategoryFileControls } from './CategoryFileControls';
 import { ConfigDialog } from './ConfigDialog';
 import { prepareCategoryImport, prepareClassTreeCommit, readCategoryArtifact, type CategoryImportResult, type CategoryArtifact } from './categoryArtifact';
-import { saveStudioEditingSession } from './configLabStorage';
+import { persistStudioEditingSession as saveStudioEditingSession, stableConfigText } from './defaultConfigProvider';
 import type { ClassTreeSession, StudioEditingSession } from './studioSession';
 import { migrateConfigToR10 } from './r10Migration';
 import { r12PointStyle, migrateConfigToR12 } from './r12Migration';
@@ -39,7 +39,6 @@ import { InteractionShapeSettings, RuleInteractionSettings } from './Interaction
 import { CollisionMetricEditor } from './CollisionMetricEditor';
 import { LabelPlacementSettings } from './LabelPlacementSettings';
 import { NativeSymbolSettings } from './NativeSymbolSettings';
-import { prepareConfigForActivation } from './configActivation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, FileUp, Maximize2, Minimize2, Plus, Save, SlidersHorizontal, X } from 'lucide-react';
 import { readConfigPackage } from './package';
@@ -49,7 +48,11 @@ import { RenderRuleExtensionsEditor } from './RenderRuleExtensionsEditor';
 import { createV32EngineDefaults, defaultRenderRule } from './v32Defaults';
 import { V3CardEditor } from './V3CardEditor';
 import { WorkflowWorkbench } from './WorkflowWorkbench';
-import { canSwitchStudioTab, featureDraftScope, type FeatureDraftScope, type StudioTab } from './studioSession';
+import { canSwitchStudioTab, recoverPackageCandidate, type PackageCandidate, type FeatureDraftScope, type StudioTab } from './studioSession';
+import { EngineSettingsWorkspace } from './EngineSettingsWorkspace';
+import { prepareEngineCommit, type EngineDraft } from './engineTransaction';
+import { validateStudioModule } from './studioModuleValidation';
+import type { WorkflowEditingSession } from './WorkflowWorkbench';
 import type {
   CategoryNode,
   ClassificationPath,
@@ -447,7 +450,7 @@ function EngineEditor({ engine, config, onChange }: { engine: ConfigEngineSettin
   const updateState = (state: InteractionState, patch: Partial<typeof baseline[InteractionState]>) => onChange({ ...engine, interactionBaselines: { ...engine.interactionBaselines, [geometry]: { ...baseline, [state]: { ...baseline[state], ...patch } } } });
   const contextView = engine.contextView ?? { minZoom: 6, activationRadiusPx: 70, retainRadiusPx: 120 };
   return <details className="cm-panel">
-    <summary className="cursor-pointer font-medium">V3.2 全局引擎默认值</summary>
+    <summary className="cursor-pointer font-medium">引擎参数</summary>
     <div className="mt-1 flex flex-wrap items-center gap-2"><p className="mr-auto text-xs text-slate-600">World 永远由当前地图世界赋值。导航/编辑态不是渲染规则选择项；交互状态、点击容差、屏幕阈值，以及通用主结构/单元视角入口统一在此处定义。</p></div>
     <div className="mt-2 cm-flex-grid gap-2">
       <HelpLabel context="ConfigStudio" className="text-xs">World 系统字段<input disabled className="mt-1 w-full rounded border bg-slate-100 px-2 py-1" value="World（活动世界自动赋值）" /></HelpLabel>
@@ -553,16 +556,25 @@ function Report({ config: _config, records, report, onConfirm }: { config: Confi
 export function ConfigStudio({ onClose, mountedRecords, initialTab }: { onClose: () => void; mountedRecords?: MountedFeatureRecord[]; initialTab?: StudioTab }) {
   const [activeTab, setActiveTab] = useState<StudioTab>(() => {
     const session=getStudioSessionSnapshot();
-    if(session?.lookupDraft||session?.draft||session?.tree||session?.editing)return 'features';
+    if (session?.workflowSession) return 'workflows';
+    if (recoverPackageCandidate(session) && session?.activeTab) return session.activeTab;
+    if(session?.lookupDraft||session?.engineDraft||session?.draft||session?.tree||session?.editing)return 'features';
     if(Object.keys(session?.generalDrafts??{}).length)return 'general';
     return initialTab ?? (new URLSearchParams(window.location.search).get('tab') === 'workflows' ? 'workflows' : new URLSearchParams(window.location.search).get('tab') === 'general' ? 'general' : 'features');
   });
-  const [workflowHasDraft, setWorkflowHasDraft] = useState(false);
+  const [workflowHasDraft, setWorkflowHasDraft] = useState(Boolean(getStudioSessionSnapshot()?.workflowSession));
   const [savedConfig, setSavedConfig] = useState<ConfigPackageV3>(() => {
     const stored = readLocalConfig();
     return stored;
   });
   const [restoredSession]=useState(getStudioSessionSnapshot);
+  const [restoredCandidate] = useState(() => recoverPackageCandidate(restoredSession));
+  const [packageCandidate, setPackageCandidate] = useState<PackageCandidate | null>(restoredCandidate);
+  const [packageReport, setPackageReport] = useState<ReturnType<typeof validateConfigPackage> | null>(null);
+  const [packageBusy, setPackageBusy] = useState(false);
+  const [engineDraft, setEngineDraft] = useState<EngineDraft | null>(restoredSession?.engineDraft ?? null);
+  const [workflowSession, setWorkflowSession] = useState<WorkflowEditingSession | null>(restoredSession?.workflowSession ?? null);
+  const engineHasDraft = engineDraft !== null;
   const [lookupDraft,setLookupDraft]=useState<LookupTableDraft|null>(restoredSession?.lookupDraft??null);
   const lookupHasDraft=lookupDraft!==null;
   const [applicationImpact,setApplicationImpact]=useState<string[]>([]);
@@ -573,11 +585,11 @@ export function ConfigStudio({ onClose, mountedRecords, initialTab }: { onClose:
   const [treeSession,setTreeSession]=useState<ClassTreeSession|null>(restoredSession?.tree??null);
   const [treeReport,setTreeReport]=useState<ReturnType<typeof validateConfigPackage>|null>(null);
   const [importConflict,setImportConflict]=useState<{artifact:CategoryArtifact;result:CategoryImportResult}|null>(null);
-  const [draftConfig, setDraftConfig] = useState<ConfigPackageV3 | null>(restoredSession?.draft??null);
-  const [draftScope, setDraftScope] = useState<FeatureDraftScope>(() => featureDraftScope(restoredSession));
+  const [draftConfig, setDraftConfig] = useState<ConfigPackageV3 | null>(restoredCandidate ? null : restoredSession?.draft??null);
+  const [draftScope, setDraftScope] = useState<FeatureDraftScope>('category');
   const [selectedId, setSelectedId] = useState(restoredSession?.selectedId??'');
   const [categoryHasDraft,setCategoryHasDraft]=useState(false);
-  const [editing, setEditing] = useState(restoredSession?.editing??false);
+  const [editing, setEditing] = useState(restoredCandidate ? false : restoredSession?.editing??false);
   const [editorExpanded, setEditorExpanded] = useState(true);
   const [message, setMessage] = useState(() => { try { return sessionStorage.getItem('cairnmap-config-studio-recovery-issue') ?? '已加载本地编辑版本。正式发布需通过全局核验和维护者身份确认。'; } catch { return '已加载本地编辑版本。'; } });
   const [report, setReport] = useState<ReturnType<typeof validateConfigPackage> | null>(null);
@@ -589,22 +601,36 @@ export function ConfigStudio({ onClose, mountedRecords, initialTab }: { onClose:
   const [importBusy,setImportBusy]=useState(false);
   useEffect(()=>()=>importController.current?.abort(),[]);
   const records = useMemo(() => mountedRecords ?? readMountedRecords(), [mountedRecords]);
-  const config = draftConfig ?? treeSession?.staged ?? savedConfig;
-  const packageDraft = Boolean(draftConfig && editing && !treeSession && draftScope === 'package');
+  const workingConfig = packageCandidate?.config ?? savedConfig;
+  const config = draftConfig ?? treeSession?.staged ?? workingConfig;
+  const packageDraft = packageCandidate !== null;
+  const featureHasDraft = Boolean(draftConfig || editing || categoryHasDraft || treeSession);
+  const hasRegionDraft = Boolean(featureHasDraft || lookupHasDraft || engineHasDraft || generalHasDraft || workflowHasDraft || workflowSession);
+  useEffect(()=>{if(hasRegionDraft)setPackageReport(null);},[hasRegionDraft]);
+  useEffect(()=>setPackageReport(null),[packageCandidate?.config,records]);
   const editingSnapshot=useRef<StudioEditingSession|null>(null);
-  editingSnapshot.current=lookupHasDraft||generalHasDraft||editing||draftConfig||treeSession?{draft:draftConfig,draftScope,tree:treeSession,selectedId,editing,baseline:savedConfig,generalDrafts,lookupDraft}:null;
-  useEffect(()=>{const timer=setTimeout(()=>void saveStudioEditingSession(editingSnapshot.current).catch(error=>setMessage(String(error))),300);const flush=()=>{void saveStudioEditingSession(editingSnapshot.current);};window.addEventListener('beforeunload',flush);return()=>{clearTimeout(timer);window.removeEventListener('beforeunload',flush);};},[draftConfig,draftScope,treeSession,selectedId,editing,generalDrafts,lookupDraft]);
+  editingSnapshot.current=hasRegionDraft||packageCandidate?{draft:draftConfig,draftScope,tree:treeSession,selectedId,editing,baseline:savedConfig,generalDrafts,lookupDraft,engineDraft,packageCandidate,activeTab,workflowSession}:null;
+  useEffect(()=>{const timer=setTimeout(()=>void saveStudioEditingSession(editingSnapshot.current).catch(error=>setMessage(String(error))),300);return()=>clearTimeout(timer);},[draftConfig,draftScope,treeSession,selectedId,editing,generalDrafts,lookupDraft,engineDraft,packageCandidate,activeTab,workflowSession]);
+  useEffect(()=>{const flush=()=>{void saveStudioEditingSession(editingSnapshot.current);};window.addEventListener('beforeunload',flush);return()=>{window.removeEventListener('beforeunload',flush);flush();};},[]);
+  const stageCandidate = (next: ConfigPackageV3, area: string) => {
+    if (!packageCandidate) throw Error('整包候选已结束，请重新读取。');
+    setPackageCandidate({ ...packageCandidate, config: next });setPackageReport(null);setReport(null);
+    setMessage(area+'已暂存到整包候选；本地活动配置未改变，仍需顶部整包核验并保存。');
+  };
+  const beginCandidate = (next: ConfigPackageV3, source: PackageCandidate['source']) => {
+    setPackageCandidate({baseline:savedConfig,config:next,source});setPackageReport(null);setDraftConfig(null);setEditing(false);setActiveTab('features');setReport(null);
+  };
   const selected = config.nodes.find((node) => node.nodeId === selectedId);
   const setConfig = (next: ConfigPackageV3 | ((current: ConfigPackageV3) => ConfigPackageV3)) => {
-    const current = draftConfig ?? clone(treeSession?.staged??savedConfig);
+    const current = draftConfig ?? clone(treeSession?.staged??workingConfig);
     const resolved = typeof next === 'function' ? (next as (value: ConfigPackageV3) => ConfigPackageV3)(current) : next;
-    if (!draftConfig) setDraftScope(selected ? 'category' : 'package');
+    if (!draftConfig) setDraftScope('category');
     setDraftConfig(declareNewIconCapability(current,resolved));
     setEditing(true);
     setReport(null);setTreeReport(null);
   };
   const switchTab = (next: StudioTab) => {
-    if (!canSwitchStudioTab(activeTab, next, { feature: lookupHasDraft || draftConfig !== null || editing || categoryHasDraft || treeSession!==null, workflow: workflowHasDraft, general:generalHasDraft })) {
+    if (!canSwitchStudioTab(activeTab, next, { feature: lookupHasDraft || engineHasDraft || featureHasDraft, workflow: workflowHasDraft || Boolean(workflowSession), general:generalHasDraft })) {
       setMessage('请先保存或放弃当前草稿，再切换设计标签。');
       return;
     }
@@ -615,63 +641,107 @@ export function ConfigStudio({ onClose, mountedRecords, initialTab }: { onClose:
     window.history.replaceState(null, '', target);
   };
   const saveWorkflowPackage = async (next: ConfigPackageV3): Promise<boolean> => {
-    const nextReport = validateConfigPackage(next, records);
+    const changed = next.workflows.filter(w => stableConfigText(workingConfig.workflows.find(before => before.id === w.id)) !== stableConfigText(w));
+    const nextReport = validateStudioModule(next, records, packageCandidate ? changed.map(w => 'workflows/'+w.id) : undefined);
     setReport(nextReport);
-    if (!nextReport.valid) { setMessage('工作流保存被配置包核验阻断。'); return false; }
-    try {setSavedConfig(await persistActiveConfig(next,true)); setMessage('工作流已持久保存到当前活动配置。');return true;}catch(error){setMessage(String(error));return false;}
+    if (!nextReport.valid) { setMessage('工作流保存被核验阻断。'); return false; }
+    if (packageCandidate) { stageCandidate(next,'工作流'); return true; }
+    try {setSavedConfig(await persistActiveConfig(next,true));setMessage('工作流已持久保存到当前活动配置。');return true;}catch(error){setMessage(String(error));return false;}
   };
-
   const saveLookupTables = async (draft: LookupTableDraft): Promise<void> => {
-    const durable=await readDurableActiveConfig(),candidate=prepareLookupTableCommit(durable.config,draft);
-    const result=validateConfigPackage(candidate,records);
-    if(!result.valid)throw Error(result.issues.filter(issue=>issue.severity==='error').map(issue=>`${issue.path}：${issue.message}`).join('\n'));
-    setSavedConfig(await persistActiveConfig(candidate,true,durable));
-    setMessage('对照表已独立保存并应用，其他区域内容保持。');
+    const durable = packageCandidate ? undefined : await readDurableActiveConfig();
+    const next=prepareLookupTableCommit(durable?.config ?? workingConfig,draft);
+    const result=validateStudioModule(next,records,packageCandidate?['lookupTables']:undefined);
+    if(!result.valid)throw Error(result.issues.filter(issue=>issue.severity==='error').map(issue=>issue.path+'：'+issue.message).join('\n'));
+    if(packageCandidate){stageCandidate(next,'对照表');return;}
+    setSavedConfig(await persistActiveConfig(next,true,durable));setMessage('对照表已独立保存并应用，其他区域内容保持。');
   };
-
+  const saveEngine = async (draft: EngineDraft): Promise<void> => {
+    const durable = packageCandidate ? undefined : await readDurableActiveConfig();
+    const next=prepareEngineCommit(durable?.config ?? workingConfig,draft);
+    const result=validateStudioModule(next,records,packageCandidate?['engine']:undefined);
+    if(!result.valid)throw Error(result.issues.filter(issue=>issue.severity==='error').map(issue=>issue.path+'：'+issue.message).join('\n'));
+    if(packageCandidate){stageCandidate(next,'全局引擎');return;}
+    setSavedConfig(await persistActiveConfig(next,true,durable));setMessage('全局引擎已独立保存并应用，其他区域内容保持。');
+  };
   const saveGeneral=async(section:ApplicationSection,value:ApplicationSettings[ApplicationSection],baseline:string,relatedSources?:RelatedSourceDraft):Promise<boolean>=>{
     try{
-      const durable=await readDurableActiveConfig(),base=durable.config.contractRevision<10?migrateConfigToR10(durable.config).config:durable.config;
+      const durable = packageCandidate ? undefined : await readDurableActiveConfig();
+      const current=durable?.config ?? workingConfig,base=current.contractRevision<10?migrateConfigToR10(current).config:current;
       if(!base.application)throw Error('缺少总体规则。');
       let nextApplication=mergeApplicationSection(base.application,section,value,baseline);
       if(relatedSources)nextApplication=mergeApplicationSection(nextApplication,'sources',relatedSources.value,relatedSources.baseline);
-      const candidate={...base,application:nextApplication},result=validateConfigPackage(candidate,records);setReport(result);if(!result.valid){setMessage('总体规则保存被整包核验阻断。');return false;}
+      const next={...base,application:nextApplication},result=validateStudioModule(next,records,packageCandidate?['application/'+section,...(relatedSources?['application/sources']:[])]:undefined);setReport(result);if(!result.valid){setMessage('总体规则保存被核验阻断。');return false;}
       const impact=applicationIdentityImpact(base.application,nextApplication);
       if(impact.length&&!await new Promise<boolean>(resolve=>{impactDecision.current=resolve;setApplicationImpact(impact);}))return false;
-      setSavedConfig(await persistActiveConfig(candidate,true,durable));setMessage('总体规则模块已保存并应用。');return true;
+      if(packageCandidate){stageCandidate(next,'总体规则模块');return true;}
+      setSavedConfig(await persistActiveConfig(next,true,durable));setMessage('总体规则模块已保存并应用。');return true;
     }catch(error){setMessage(String(error));return false;}
+  };
+  const validatePackageCandidate = () => {
+    if(!packageCandidate||hasRegionDraft)return;
+    const next=validateConfigPackage(packageCandidate.config,records);setPackageReport(next);setReport(null);
+    setMessage(next.valid?'整包候选核验通过，可以保存到本地。':'整包候选仍有阻断问题，请到相应设计标签修正并暂存。');
+  };
+  const savePackageCandidate = async () => {
+    if(!packageCandidate||hasRegionDraft||packageBusy)return;
+    const next=validateConfigPackage(packageCandidate.config,records);setPackageReport(next);if(!next.valid)return;
+    if(!window.confirm('将核验通过的整包候选保存为本地活动配置。确定继续吗？'))return;
+    setPackageBusy(true);setMessage('正在核验并保存整包候选…');
+    try{
+      const durable=await readDurableActiveConfig();
+      if(stableConfigText(durable.config)!==stableConfigText(packageCandidate.baseline))throw Error('本地活动配置已被其他编辑更新，整包候选已保留，请先比较基线。');
+      setSavedConfig(await persistActiveConfig(packageCandidate.config,true,durable));
+      await saveStudioEditingSession(null);setPackageCandidate(null);setPackageReport(null);setSelectedId('');setReport(null);setMessage('整包候选已保存为本地活动配置；正式发布仍需全局核验。');
+    }catch(error){setMessage(String(error));}finally{setPackageBusy(false);}
+  };
+  const discardPackageCandidate = async () => {
+    if(hasRegionDraft||packageBusy)return;
+    await saveStudioEditingSession(null);setPackageCandidate(null);setPackageReport(null);setSelectedId('');setReport(null);setMessage('已放弃整包候选，原本地活动配置保持。');
   };
   const readSelected = () => {
     if (!selected) { setMessage('请先新建或选择一个分类。'); return; }
-    if (config.contractRevision < 12) {try{const migration=migrateConfigToR12(config);setDraftConfig(migration.config);setDraftScope('package');setEditing(true);setReport(null);setMessage(`已建立 r12 迁移草稿，记录 ${migration.changes.length} 项迁移；核验保存后生效。`);}catch(error){setMessage(String(error));}return;}
-    if (!draftConfig) { setDraftConfig(clone(treeSession?.staged??savedConfig)); setDraftScope('category'); }
+    if (config.contractRevision < 12 && !treeSession) {try{const migration=migrateConfigToR12(workingConfig);beginCandidate(migration.config,'migration');setMessage('已建立整包迁移候选，请在各设计标签检查后统一核验保存。');}catch(error){setMessage(String(error));}return;}
+    if (!draftConfig) { setDraftConfig(clone(treeSession?.staged??workingConfig)); setDraftScope('category'); }
     setEditing(true); setReport(null); setMessage(`已读取 ${nodeLabel(selected)} 到本地草稿。`);
   };
   const validate = () => {
-    const next = validateConfigPackage(config, records);
+    const next = validateStudioModule(config, records, packageCandidate ? ['nodes/'+selectedId] : undefined);
     setReport(next); setMessage(next.valid ? '核验通过：当前草稿可保存。' : `核验发现 ${next.issues.filter((item) => item.severity === 'error').length} 项阻断问题。`);
   };
   const save = async () => {
-    const next = validateConfigPackage(config, records);
+    const next = validateStudioModule(config, records, packageCandidate ? ['nodes/'+selectedId] : undefined);
     setReport(next);
-    if(treeSession){const localErrors=next.issues.filter(issue=>issue.severity==='error'&&(issue.path.startsWith('nodes/'+selectedId)||issue.code==='native-contract-structure-invalid'));if(localErrors.length){setMessage('当前节点未通过核验，不能保存到暂存树。');return;}const nextTree={...treeSession,staged:config};await saveStudioEditingSession({draft:null,tree:nextTree,selectedId,editing:false,baseline:savedConfig});setTreeSession(nextTree);setDraftConfig(null);setEditing(false);setTreeReport(null);setMessage('已保存节点到暂存 Class 树；总配置尚未改变。');return;}
+    if(treeSession){const localErrors=next.issues.filter(issue=>issue.severity==='error'&&(issue.path.startsWith('nodes/'+selectedId)||issue.code==='native-contract-structure-invalid'));if(localErrors.length){setMessage('当前节点未通过核验，不能保存到暂存树。');return;}const nextTree={...treeSession,staged:config};await saveStudioEditingSession({...editingSnapshot.current!,draft:null,tree:nextTree,selectedId,editing:false,baseline:savedConfig});setTreeSession(nextTree);setDraftConfig(null);setEditing(false);setTreeReport(null);setMessage('已保存节点到暂存 Class 树；总配置尚未改变。');return;}
     if (!next.valid) { setMessage('保存被阻断；请先处理问题组。'); return; }
+    if(packageCandidate){stageCandidate(config,'分类');setDraftConfig(null);setEditing(false);return;}
     if (!window.confirm('将当前 V3.2 草稿保存到浏览器本地配置。确定继续吗？')) return;
     try {setSavedConfig(await persistActiveConfig(config,true));await saveStudioEditingSession(null);setDraftConfig(null);setDraftScope('category');setEditing(false);setMessage('已保存本地活动配置，刷新后继续使用。');}catch(error){setMessage(String(error));}
   };
-  const discard = async () => {await saveStudioEditingSession(treeSession?{draft:null,tree:treeSession,selectedId,editing:false,baseline:savedConfig}:null);setDraftConfig(null);setDraftScope('category');setEditing(false);setReport(null);setMessage('已放弃未保存草稿。');};
+  const discard = async () => {await saveStudioEditingSession(packageCandidate||treeSession?{...editingSnapshot.current!,draft:null,tree:treeSession,selectedId,editing:false,baseline:savedConfig}:null);setDraftConfig(null);setDraftScope('category');setEditing(false);setReport(null);setMessage('已放弃未保存草稿。');};
   const applyCategoryImport=(result:CategoryImportResult)=>{
     if(treeSession&&result.classCode!==treeSession.classCode){setMessage('当前 Class 树模式不允许导入其他 Class。');return;}
     if(result.kind==='classTree'){
-      const baseline=treeSession?.baseline??(savedConfig.contractRevision<9?migrateConfigToR9(savedConfig):savedConfig);
+      const baseline=treeSession?.baseline??(workingConfig.contractRevision<9?migrateConfigToR9(workingConfig):workingConfig);
       setTreeSession({classCode:result.classCode,baseline,staged:result.config,changes:result.changes});setDraftConfig(null);setEditing(false);setTreeReport(result.report);
     }else{setDraftConfig(result.config);setDraftScope('category');setEditing(true);}
     setSelectedId(result.selectedId);setEditorExpanded(false);setReport(result.report);setImportConflict(null);setMessage(result.kind==='classTree'?'已进入 Class 树导入暂存模式；核验保存后才注入总配置。':'已读取单分类导入草稿，请核验保存。');
   };
   const importCategoryFile=async(file:File)=>{try{const artifact=await readCategoryArtifact(file);if(treeSession&&artifact.payload.classCode!==treeSession.classCode)throw Error('当前 Class 树模式不允许导入其他 Class。');const result=prepareCategoryImport(config,artifact);if(result.conflicts.length)setImportConflict({artifact,result});else applyCategoryImport(result);}catch(error){setMessage(String(error));}};
-  const validateTree=async()=>{if(!treeSession)return;try{const durable=await readDurableActiveConfig();const candidate=prepareClassTreeCommit(durable.config,treeSession.baseline,treeSession.staged,treeSession.classCode);const result=validateConfigPackage(candidate,records);setTreeReport(result);setReport(result);setMessage(result.valid?'Class 树总控核验通过，可以替换保存。':'Class 树仍有阻断问题。');}catch(error){setTreeReport(null);setMessage(String(error));}};
-  const saveTree=async()=>{if(!treeSession||editing||categoryHasDraft)return;try{const durable=await readDurableActiveConfig();const candidate=prepareClassTreeCommit(durable.config,treeSession.baseline,treeSession.staged,treeSession.classCode),result=validateConfigPackage(candidate,records);setTreeReport(result);if(!result.valid)return;setSavedConfig(await persistActiveConfig(candidate,true,durable));setTreeSession(null);setDraftConfig(null);setSelectedId('');setEditing(false);setReport(null);await saveStudioEditingSession(null);setMessage('Class 分类树已整体替换保存到总配置。');}catch(error){setMessage(String(error));}};
-  const discardTree=async()=>{await saveStudioEditingSession(null);setTreeSession(null);setDraftConfig(null);setSelectedId('');setEditing(false);setReport(null);setTreeReport(null);void saveStudioEditingSession(null);setMessage('已放弃整次 Class 树导入，原总配置保持。');};
+  const treePaths = () => treeSession ? [...treeSession.staged.nodes.filter(n=>n.path.class===treeSession.classCode).map(n=>'nodes/'+n.nodeId),'resources'] : [];
+  const validateTree=async()=>{
+    if(!treeSession)return;
+    try{const live=packageCandidate?workingConfig:(await readDurableActiveConfig()).config,next=prepareClassTreeCommit(live,treeSession.baseline,treeSession.staged,treeSession.classCode),result=validateStudioModule(next,records,packageCandidate?treePaths():undefined);setTreeReport(result);setReport(result);setMessage(result.valid?'Class 树核验通过，可以保存。':'Class 树仍有阻断问题。');}catch(error){setTreeReport(null);setMessage(String(error));}
+  };
+  const saveTree=async()=>{
+    if(!treeSession||editing||categoryHasDraft)return;
+    try{const durable=packageCandidate?undefined:await readDurableActiveConfig(),next=prepareClassTreeCommit(durable?.config??workingConfig,treeSession.baseline,treeSession.staged,treeSession.classCode),result=validateStudioModule(next,records,packageCandidate?treePaths():undefined);setTreeReport(result);if(!result.valid)return;
+      if(packageCandidate)stageCandidate(next,'Class 分类树');else setSavedConfig(await persistActiveConfig(next,true,durable));
+      setTreeSession(null);setDraftConfig(null);setSelectedId('');setEditing(false);setReport(null);await saveStudioEditingSession(packageCandidate?{...editingSnapshot.current!,packageCandidate:{...packageCandidate,config:next},tree:null,draft:null,editing:false,selectedId:''}:null);
+      if(!packageCandidate)setMessage('Class 分类树已整体替换保存到总配置。');
+    }catch(error){setMessage(String(error));}
+  };
+  const discardTree=async()=>{await saveStudioEditingSession(packageCandidate?{...editingSnapshot.current!,tree:null,draft:null,editing:false,selectedId:''}:null);setTreeSession(null);setDraftConfig(null);setSelectedId('');setEditing(false);setReport(null);setTreeReport(null);setMessage('已放弃整次 Class 树导入。');};
   const importPackage = async (file?: File) => {
     if(treeSession){setMessage('请先保存或放弃 Class 树总控，再导入总包。');return;}
     if (!file) return;
@@ -680,12 +750,11 @@ export function ConfigStudio({ onClose, mountedRecords, initialTab }: { onClose:
     try {
       const next = await readConfigPackage(file,{signal:controller.signal,onProgress:setMessage});
       controller.signal.throwIfAborted();
-      if (!window.confirm('导入将替换当前本地 V3.2 配置。确定继续吗？')) return;
+      if (!window.confirm('导入将建立整包候选，检查并保存前不会替换本地活动配置。确定继续吗？')) return;
       const importedReport = validateConfigPackage(next, records);
       if (importedReport.issues.some(issue => issue.code === 'native-contract-structure-invalid')) { setReport(importedReport); setMessage('导入结构无效；已保存版本保持原样。请按问题路径修正文件后重新导入。'); return; }
-      if (!importedReport.valid) { setDraftConfig(next); setDraftScope('package'); setSelectedId(''); setEditing(true); setReport(importedReport); setMessage('已载入隔离草案；修正阻断问题前不能保存或启用。'); return; }
-      controller.signal.throwIfAborted();setImporting(false);
-      const saved=await persistActiveConfig(prepareConfigForActivation(next));setSavedConfig(saved); setDraftConfig(null); setSelectedId(''); setEditing(false); setReport(importedReport); setMessage(`已导入 ${saved.packageId} r${saved.revision}。${saved.revision!==next.revision?'原修订版已有不同历史内容，已使用新修订版并保留历史。':''}`);
+      controller.signal.throwIfAborted();beginCandidate(next,'import');setSelectedId('');setEditorExpanded(true);setReport(importedReport);
+      setMessage(importedReport.valid?'已导入整包候选，请检查各设计标签，再从顶部核验保存。':'已导入隔离候选，请切换到对应设计标签修正问题并暂存，最后从顶部整包核验保存。');
     } catch (error) { setMessage(controller.signal.aborted?'已取消本次导入，当前配置保持原样。':error instanceof Error ? error.message : '配置包读取失败。'); }
     finally {importController.current=undefined;setImporting(false);setImportBusy(false);if(uploadRef.current)uploadRef.current.value='';}
   };
@@ -697,20 +766,20 @@ export function ConfigStudio({ onClose, mountedRecords, initialTab }: { onClose:
   const activeScenario = compatibleScenarios.some((item) => item.id === scenario) ? scenario : compatibleScenarios[0]?.id;
   const updateSelected = (updater: (node: CategoryNode) => CategoryNode) => selected && setConfig((current) => updateNode(current, selected.nodeId, updater));
 
-  return <RuntimePreviewProvider config={config} node={selected} scenario={activeScenario} onShow={() => setEditorExpanded(false)} resetKey={`${editing}:${activeTab}`}><main className="config-editor cm-editor-design fixed inset-0 z-[3000] flex h-screen flex-col overflow-hidden bg-slate-100 text-slate-800"><header className="cm-studio-header flex shrink-0 flex-wrap items-center gap-3 border-b bg-white px-5 py-3"><SlidersHorizontal className="h-5 w-5 text-violet-600" /><div className="cm-studio-title min-w-0 flex-1"><h1 className="font-bold">配置文件工作台 · V3.2 原生渲染</h1><p className="text-xs text-slate-500">{savedConfig.packageId} · 配置 r{savedConfig.revision} · 契约 r{savedConfig.contractRevision} · World 自动归一化、原生渲染、信息卡和标准工作流均以可编辑 V3 配置承接。</p></div>{savedConfig.contractRevision<12?<button type="button" className="rounded border px-3 py-1.5 text-sm" disabled={lookupHasDraft||Boolean(draftConfig)||generalHasDraft||workflowHasDraft||categoryHasDraft||Boolean(treeSession)} onClick={()=>{try{const next=migrateConfigToR12(savedConfig);setDraftConfig(next.config);setDraftScope('package');setActiveTab('features');setSelectedId('');setEditorExpanded(true);setEditing(true);setReport(null);setMessage('已建立 r12 升级草稿；请核验保存，或放弃以继续使用原版本。');}catch(error){setMessage(String(error));}}}>迁移到 r12 草稿</button>:null}<button type="button" className="rounded border px-3 py-1.5 text-sm" disabled={lookupHasDraft || Boolean(draftConfig) || generalHasDraft || workflowHasDraft || categoryHasDraft || Boolean(treeSession)} onClick={()=>void restoreApplicationDefault().then(()=>location.reload()).catch(error=>setMessage(String(error)))}>恢复应用默认配置</button><button type="button" className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-sm" disabled={importBusy||lookupHasDraft||Boolean(draftConfig)||Boolean(treeSession)||editing||categoryHasDraft||workflowHasDraft||generalHasDraft} onClick={() => uploadRef.current?.click()}><FileUp className="h-4 w-4" />导入本地配置</button><GlobalPackageControls config={savedConfig} records={records} hasDraft={importBusy||lookupHasDraft||Boolean(draftConfig)||Boolean(treeSession)||editing||categoryHasDraft||workflowHasDraft||generalHasDraft} onSaved={setSavedConfig} onMessage={setMessage}/>{activeTab==='features'?<button type="button" className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-sm" disabled={!selected||activeTab!=='features'} onClick={() => setEditorExpanded((value) => !value)}>{editorExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}{editorExpanded ? '显示验证器' : '编辑器全屏'}</button>:null}<button type="button" className="rounded p-2 hover:bg-slate-100" onClick={() => { if (lookupHasDraft || draftConfig || generalHasDraft || workflowHasDraft || categoryHasDraft) { setMessage('请先保存或放弃当前草稿，再关闭工作台。'); return; } onClose(); }} aria-label="关闭"><X className="h-5 w-5" /></button><>{importing?<button type="button" className="rounded border px-3 py-1.5 text-sm" onClick={()=>importController.current?.abort()}>取消导入</button>:null}</><input ref={uploadRef} className="hidden" type="file" accept=".zip,.json,application/zip,application/json" onChange={(event) => void importPackage(event.target.files?.[0])} /></header>
+  return <RuntimePreviewProvider config={config} node={selected} scenario={activeScenario} onShow={() => setEditorExpanded(false)} resetKey={`${editing}:${activeTab}`}><main {...(packageBusy?{inert:''}:{})} aria-busy={packageBusy} className="config-editor cm-editor-design fixed inset-0 z-[3000] flex h-screen flex-col overflow-hidden bg-slate-100 text-slate-800"><header className="cm-studio-header flex shrink-0 flex-wrap items-center gap-3 border-b bg-white px-5 py-3"><SlidersHorizontal className="h-5 w-5 text-violet-600" /><div className="cm-studio-title min-w-0 flex-1"><h1 className="font-bold">配置文件工作台 · V3.2 原生渲染</h1><p className="text-xs text-slate-500">{savedConfig.packageId} · 配置 r{savedConfig.revision} · 契约 r{savedConfig.contractRevision} · World 自动归一化、原生渲染、信息卡和标准工作流均以可编辑 V3 配置承接。</p></div>{savedConfig.contractRevision<12?<button type="button" className="rounded border px-3 py-1.5 text-sm" disabled={hasRegionDraft||packageDraft||packageBusy} onClick={()=>{try{const next=migrateConfigToR12(savedConfig);beginCandidate(next.config,'migration');setSelectedId('');setEditorExpanded(true);setMessage('已建立整包迁移候选；可在三个设计标签检查、暂存修改，最后从顶部核验保存。');}catch(error){setMessage(String(error));}}}>迁移到 r12 草稿</button>:null}<button type="button" className="rounded border px-3 py-1.5 text-sm" disabled={hasRegionDraft||packageDraft||packageBusy} onClick={()=>void restoreApplicationDefault().then(()=>location.reload()).catch(error=>setMessage(String(error)))}>恢复应用默认配置</button><button type="button" className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-sm" disabled={importBusy||hasRegionDraft||packageDraft||packageBusy} onClick={() => uploadRef.current?.click()}><FileUp className="h-4 w-4" />导入本地配置</button><GlobalPackageControls config={savedConfig} records={records} hasDraft={importBusy||hasRegionDraft||packageDraft||packageBusy} onSaved={setSavedConfig} onMessage={setMessage}/>{activeTab==='features'?<button type="button" className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-sm" disabled={!selected||activeTab!=='features'} onClick={() => setEditorExpanded((value) => !value)}>{editorExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}{editorExpanded ? '显示验证器' : '编辑器全屏'}</button>:null}<button type="button" className="rounded p-2 hover:bg-slate-100" onClick={() => { if (hasRegionDraft || packageDraft || packageBusy) { setMessage('请先保存或放弃当前草稿，再关闭工作台。'); return; } onClose(); }} aria-label="关闭"><X className="h-5 w-5" /></button><>{importing?<button type="button" className="rounded border px-3 py-1.5 text-sm" onClick={()=>importController.current?.abort()}>取消导入</button>:null}</><input ref={uploadRef} className="hidden" type="file" accept=".zip,.json,application/zip,application/json" onChange={(event) => void importPackage(event.target.files?.[0])} /></header>
     <nav className="cm-studio-tabs flex shrink-0 flex-wrap gap-2 border-b bg-white px-5 py-2" aria-label="设计工作区"><button type="button" role="tab" aria-selected={activeTab==='general'} className={`rounded border border-transparent px-4 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600 ${activeTab==='general'?'bg-violet-600 text-white':'border-slate-200 bg-slate-100 hover:bg-slate-200'}`} onClick={()=>switchTab('general')}>总体规则</button><button type="button" role="tab" aria-selected={activeTab === 'features'} className={`rounded border border-transparent px-4 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600 ${activeTab === 'features' ? 'bg-violet-600 text-white' : 'border-slate-200 bg-slate-100 hover:bg-slate-200'}`} onClick={() => switchTab('features')}>要素设计</button><button type="button" role="tab" aria-selected={activeTab === 'workflows'} className={`rounded border border-transparent px-4 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600 ${activeTab === 'workflows' ? 'bg-violet-600 text-white' : 'border-slate-200 bg-slate-100 hover:bg-slate-200'}`} onClick={() => switchTab('workflows')}>工作流设计</button><span role="status" className="min-w-0 self-center text-xs text-slate-600">{message}</span></nav>
-    {packageDraft ? <section aria-label="整包草稿操作" className="flex shrink-0 flex-wrap items-center gap-3 border-b border-violet-200 bg-violet-50 px-5 py-3">
-      <div className="min-w-0 flex-1 basis-64"><strong className="text-sm">整包草稿 · 契约 r{savedConfig.contractRevision}{config.contractRevision !== savedConfig.contractRevision ? ` → r${config.contractRevision}` : ''}</strong><p className="text-xs text-slate-600">可切换分类检查。核验通过后保存到本机；正式发布仍需顶部全局核验与维护者确认。</p></div>
-      <button type="button" className="rounded border bg-white px-3 py-1.5 text-sm" onClick={validate}>核验整包草稿</button>
-      <button type="button" className="inline-flex items-center gap-1 rounded bg-emerald-600 px-3 py-1.5 text-sm text-white disabled:bg-slate-300" disabled={!report?.valid} onClick={() => void save()}><Save className="h-4 w-4" />保存整包草稿</button>
-      <button type="button" className="rounded border bg-white px-3 py-1.5 text-sm" onClick={() => void discard()}>放弃整包草稿</button>
+    {packageCandidate ? <section aria-label="整包草稿操作" className="flex shrink-0 flex-wrap items-center gap-3 border-b border-violet-200 bg-violet-50 px-5 py-3">
+      <div className="min-w-0 flex-1 basis-64"><strong className="text-sm">整包候选 · 契约 r{packageCandidate.baseline.contractRevision}{packageCandidate.config.contractRevision !== packageCandidate.baseline.contractRevision ? ` → r${packageCandidate.config.contractRevision}` : ''}</strong><p className="text-xs text-slate-600">三个设计标签共用候选，各区域保存仅暂存。{hasRegionDraft?'请先保存或放弃当前区域草稿，再切换标签或提交整包。':'检查完成后在此整包核验并保存到本机；正式发布仍需全局核验。'}</p></div>
+      <button type="button" className="rounded border bg-white px-3 py-1.5 text-sm" disabled={hasRegionDraft||packageBusy} onClick={validatePackageCandidate}>核验整包草稿</button>
+      <button type="button" className="inline-flex items-center gap-1 rounded bg-emerald-600 px-3 py-1.5 text-sm text-white disabled:bg-slate-300" disabled={hasRegionDraft||packageBusy||!packageReport?.valid} onClick={() => void savePackageCandidate()}><Save className="h-4 w-4" />保存整包草稿</button>
+      <button type="button" className="rounded border bg-white px-3 py-1.5 text-sm" disabled={hasRegionDraft||packageBusy} onClick={() => void discardPackageCandidate()}>放弃整包草稿</button>
     </section> : null}
-    {activeTab==='general'?<div className="min-h-0 flex-1 overflow-hidden p-3"><GeneralRulesEditor config={savedConfig} drafts={generalDrafts} onDraftsChange={setGeneralDrafts} onSave={saveGeneral} onValidate={()=>{const result=validateConfigPackage(savedConfig,records);setReport(result);setMessage(result.valid?'活动整包核验通过。':'活动整包存在错误，请检查报告。');}}/></div>:activeTab === 'workflows' ? <div className="min-h-0 flex-1 overflow-hidden p-3"><WorkflowWorkbench config={savedConfig} records={records} onChange={saveWorkflowPackage} onDraftStateChange={setWorkflowHasDraft} /></div> : <div className="cm-workspace-grid">{selected && !editorExpanded ? <section className="cm-validator-pane flex min-w-0 flex-col overflow-hidden rounded-xl border bg-white p-3"><div className="mb-2 flex shrink-0 flex-wrap items-start justify-between gap-2"><strong>显示规则验证器</strong><PreviewNameSelector />{activeScenario ? <HelpLabel context="ConfigStudio" className="grid min-w-0 flex-1 basis-40 gap-1 text-xs">样例状态<select className="w-full max-w-full rounded border px-2 py-1" value={activeScenario} onChange={(event) => setScenario(event.target.value)}>{compatibleScenarios.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></HelpLabel> : null}</div>{selected && activeScenario ? <div className="cm-preview-frame min-w-0"><ConnectedConfigRuntimePreview config={config} node={selected} scenario={activeScenario} onRuntimeError={(error) => setMessage(`验证器错误：${error.message}`)} /></div> : <div className="flex h-full min-h-[300px] items-center justify-center rounded border border-dashed p-6 text-sm text-slate-500">先新建分类、选择几何类型并启用首条渲染规则。验证器会调用与主地图相同的 V3.2 RuleDrivenLayer；中心固定，允许滚轮缩放。</div>}</section> : null}
-      <section className={`cm-authoring-pane min-h-0 overflow-y-auto rounded-xl border bg-white p-4 ${editorExpanded ? 'col-span-full' : ''}`}><div className="mb-3 rounded border bg-slate-50 p-2 text-xs text-slate-700">{message}</div><LookupTablesWorkspace config={savedConfig} draft={lookupDraft} onDraftChange={setLookupDraft} onSave={saveLookupTables} disabled={editing||categoryHasDraft||Boolean(treeSession)} records={records}/><fieldset disabled={lookupHasDraft}><fieldset disabled={Boolean(treeSession)}><EngineEditor config={config} engine={config.engine ?? createV32EngineDefaults()} onChange={(engine) => setConfig({ ...config, engine })} /></fieldset><div className={treeSession?'rounded-lg border-2 border-violet-300 p-3':''} aria-label={treeSession?'Class 树隔离编辑容器':'分类管理容器'}>{treeSession?<section aria-label="Class 树导入总控" className="cm-panel mt-4 space-y-2 border-2 border-violet-400 bg-violet-50"><h2 className="font-semibold">Class 树导入总控 · {treeSession.classCode}</h2><p className="text-xs">内部保存只更新暂存树；总控保存替换总包中的整个同 Class 树。</p><div className="flex flex-wrap gap-2"><button type="button" disabled={editing||categoryHasDraft} className="rounded border bg-white px-3 py-1" onClick={validateTree}>核验整棵 Class 树</button><button type="button" disabled={editing||categoryHasDraft||!treeReport?.valid} className="rounded bg-violet-600 px-3 py-1 text-white disabled:bg-slate-300" onClick={()=>void saveTree()}>保存 Class 树到总配置</button><button type="button" className="rounded border bg-white px-3 py-1" onClick={discardTree}>放弃导入 Class 树</button></div><details><summary>注入差异</summary>{treeSession.changes.map((item,index)=><p key={index} className="text-xs">{item}</p>)}</details></section>:null}
-        <section className="cm-panel"><h2 className="mb-3 font-semibold">要素分类定义及管理区</h2><CategoryPathPicker config={config} value={selected?.path??{class:''}} disabled={(editing&&!packageDraft)||categoryHasDraft} lockedClass={treeSession?.classCode} label="编辑分类" onChange={path=>{const node=config.nodes.find(item=>classificationPathKey(item.path)===classificationPathKey(path));setSelectedId(node?.nodeId??'');setEditorExpanded(!node);}}/><fieldset disabled={editing}><CategoryCreationPanel config={config} parent={selected} lockedClass={treeSession?.classCode} onDraftStateChange={setCategoryHasDraft} onCreate={(next,node)=>{setConfig(next);setDraftScope('category');setSelectedId(node.nodeId);setEditorExpanded(false);setCategoryHasDraft(false);setMessage('新分类草稿已完成完整核验，请继续编辑或保存。');}}/></fieldset><CategoryFileControls config={treeSession?.staged??savedConfig} selectedId={selectedId} editing={editing||categoryHasDraft} onImport={file=>void importCategoryFile(file)}/></section>
+    {activeTab==='general'?<div className="min-h-0 flex-1 overflow-hidden p-3"><GeneralRulesEditor config={workingConfig} isolated={packageDraft} drafts={generalDrafts} onDraftsChange={setGeneralDrafts} onSave={saveGeneral} onValidate={()=>{if(packageCandidate){if(hasRegionDraft){setMessage('请先保存或放弃当前区域草稿。');return;}validatePackageCandidate();return;}const result=validateConfigPackage(savedConfig,records);setReport(result);setMessage(result.valid?'活动整包核验通过。':'活动整包存在错误，请检查报告。');}}/></div>:activeTab === 'workflows' ? <div className="min-h-0 flex-1 overflow-hidden p-3"><WorkflowWorkbench config={workingConfig} isolated={packageDraft} initialSession={workflowSession} onSessionChange={setWorkflowSession} records={records} onChange={saveWorkflowPackage} onDraftStateChange={setWorkflowHasDraft} /></div> : <div className="cm-workspace-grid">{selected && !editorExpanded ? <section className="cm-validator-pane flex min-w-0 flex-col overflow-hidden rounded-xl border bg-white p-3"><div className="mb-2 flex shrink-0 flex-wrap items-start justify-between gap-2"><strong>显示规则验证器</strong><PreviewNameSelector />{activeScenario ? <HelpLabel context="ConfigStudio" className="grid min-w-0 flex-1 basis-40 gap-1 text-xs">样例状态<select className="w-full max-w-full rounded border px-2 py-1" value={activeScenario} onChange={(event) => setScenario(event.target.value)}>{compatibleScenarios.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></HelpLabel> : null}</div>{selected && activeScenario ? <div className="cm-preview-frame min-w-0"><ConnectedConfigRuntimePreview config={config} node={selected} scenario={activeScenario} onRuntimeError={(error) => setMessage(`验证器错误：${error.message}`)} /></div> : <div className="flex h-full min-h-[300px] items-center justify-center rounded border border-dashed p-6 text-sm text-slate-500">先新建分类、选择几何类型并启用首条渲染规则。验证器会调用与主地图相同的 V3.2 RuleDrivenLayer；中心固定，允许滚轮缩放。</div>}</section> : null}
+      <section className={`cm-authoring-pane min-h-0 overflow-y-auto rounded-xl border bg-white p-4 ${editorExpanded ? 'col-span-full' : ''}`}><div className="mb-3 rounded border bg-slate-50 p-2 text-xs text-slate-700">{message}</div><LookupTablesWorkspace config={workingConfig} isolated={packageDraft} draft={lookupDraft} onDraftChange={setLookupDraft} onSave={saveLookupTables} disabled={featureHasDraft||engineHasDraft} records={records}/><EngineSettingsWorkspace config={workingConfig} draft={engineDraft} onDraftChange={setEngineDraft} onSave={saveEngine} disabled={featureHasDraft||lookupHasDraft} isolated={packageDraft} records={records}>{(engine,onChange)=><EngineEditor config={{...workingConfig,engine:engine??createV32EngineDefaults()}} engine={engine??createV32EngineDefaults()} onChange={onChange}/>}</EngineSettingsWorkspace><fieldset disabled={lookupHasDraft||engineHasDraft}><div className={treeSession?'rounded-lg border-2 border-violet-300 p-3':''} aria-label={treeSession?'Class 树隔离编辑容器':'分类管理容器'}>{treeSession?<section aria-label="Class 树导入总控" className="cm-panel mt-4 space-y-2 border-2 border-violet-400 bg-violet-50"><h2 className="font-semibold">Class 树导入总控 · {treeSession.classCode}</h2><p className="text-xs">内部保存只更新暂存树；总控保存替换总包中的整个同 Class 树。</p><div className="flex flex-wrap gap-2"><button type="button" disabled={editing||categoryHasDraft} className="rounded border bg-white px-3 py-1" onClick={validateTree}>核验整棵 Class 树</button><button type="button" disabled={editing||categoryHasDraft||!treeReport?.valid} className="rounded bg-violet-600 px-3 py-1 text-white disabled:bg-slate-300" onClick={()=>void saveTree()}>保存 Class 树到总配置</button><button type="button" className="rounded border bg-white px-3 py-1" onClick={discardTree}>放弃导入 Class 树</button></div><details><summary>注入差异</summary>{treeSession.changes.map((item,index)=><p key={index} className="text-xs">{item}</p>)}</details></section>:null}
+        <section className="cm-panel"><h2 className="mb-3 font-semibold">要素分类定义及管理区</h2><CategoryPathPicker config={config} value={selected?.path??{class:''}} disabled={editing||categoryHasDraft} lockedClass={treeSession?.classCode} label="编辑分类" onChange={path=>{const node=config.nodes.find(item=>classificationPathKey(item.path)===classificationPathKey(path));setSelectedId(node?.nodeId??'');setEditorExpanded(!node);}}/><fieldset disabled={editing}><CategoryCreationPanel config={config} parent={selected} lockedClass={treeSession?.classCode} onDraftStateChange={setCategoryHasDraft} onCreate={(next,node)=>{setConfig(next);setDraftScope('category');setSelectedId(node.nodeId);setEditorExpanded(false);setCategoryHasDraft(false);setMessage('新分类草稿已完成完整核验，请继续编辑或保存。');}}/></fieldset><CategoryFileControls config={treeSession?.staged??workingConfig} selectedId={selectedId} editing={editing||categoryHasDraft} onImport={file=>void importCategoryFile(file)}/></section>
         {!selected ? <section className="mt-4 rounded border border-dashed p-4"><p>请选择一级 Class 或点击新增分类，再逐级选择需要编辑的分类。显示规则验证器默认关闭。</p><div className="mt-2 flex gap-2"><button type="button" disabled={!editing} onClick={validate}>核验全局草稿</button><button type="button" disabled={!editing||!report?.valid} onClick={save}>保存</button><button type="button" disabled={!editing} onClick={discard}>放弃草稿</button></div></section> : <div className="mt-4 space-y-4"><section className="rounded-lg border bg-slate-50 p-3"><div className="flex flex-wrap items-end gap-2"><button type="button" className="rounded border px-3 py-1.5 text-sm" onClick={readSelected}>{editing ? '已读取草稿' : '读取分类'}</button><button type="button" disabled={!editing} className="rounded border px-3 py-1.5 text-sm disabled:text-slate-300" onClick={validate}>核验</button><button type="button" disabled={!editing || (treeSession?Boolean(report?.issues.some(issue=>issue.severity==='error'&&issue.path.startsWith('nodes/'+selectedId)))||!report:!report?.valid)} className="inline-flex items-center gap-1 rounded bg-emerald-600 px-3 py-1.5 text-sm text-white disabled:bg-emerald-200" onClick={save}><Save className="h-4 w-4" />保存</button><button type="button" disabled={!editing} className="rounded border px-3 py-1.5 text-sm disabled:text-slate-300" onClick={discard}>放弃草稿</button></div><div className="mt-3 cm-flex-grid gap-2"><span className="rounded border bg-white px-2 py-1 text-sm">Class：{selected.path.class}</span><span className="rounded border bg-white px-2 py-1 text-sm">Kind：{selected.path.kind || '—'}</span><span className="rounded border bg-white px-2 py-1 text-sm">Skind：{selected.path.skind || '—'}</span><span className="rounded border bg-white px-2 py-1 text-sm">Skind2：{selected.path.skind2 || '—'}</span></div><div className="mt-3 flex flex-wrap items-center gap-4 rounded border bg-white p-2 text-sm"><strong>该层设置是否向下继承</strong>{(['fields', 'display', 'card'] as const).map((key) => <HelpLabel context="ConfigStudio" key={key}><input disabled={!editing} type="checkbox" checked={selected.inheritDown?.[key] ?? true} onChange={(event) => updateSelected((node) => ({ ...node, inheritDown: { ...(node.inheritDown ?? { fields: true, display: true, card: true }), [key]: event.target.checked } }))} /> {key === 'fields' ? '字段' : key === 'display' ? '显示与交互（软继承）' : '信息卡'}</HelpLabel>)}</div></section>
           {editing ? <><FieldEditor config={config} node={selected} onChange={(node) => setConfig((current) => updateNode(current, node.nodeId, () => node))} /><section className="cm-panel"><h3 className="cm-panel-heading mb-2 font-semibold">显示、交互与层级</h3><p className="mb-2 text-xs text-slate-500">分类只能选择一种几何类型。父级未指定时，本级可以首次定义；若继承了父级，类型保持一致。</p><HelpLabel context="ConfigStudio" className="block max-w-sm text-sm">几何类型<select className="ml-2 rounded border px-2 py-1" value={geometry ?? ''} onChange={(event) => { const next = event.target.value as GeometryKind; updateSelected((node) => ({ ...node, geometryType: next || undefined, geometryProfiles: next ? { [next]: node.geometryProfiles[next] ?? editableGeometryProfile(next, config.contractRevision) } : {} })); }}><option value="">暂不指定</option>{geometries.map((item) => <option key={item} value={item}>{geometryLabel[item]}</option>)}</select></HelpLabel>{geometry && profile ? <div className="mt-2"><GeometryEditor config={config} path={selected.path} geometry={geometry} profile={profile} onChange={(next) => updateSelected((node) => ({ ...node, geometryType: geometry, geometryProfiles: { ...node.geometryProfiles, [geometry]: next } }))} /></div> : <p className="mt-2 rounded border border-dashed p-3 text-sm text-slate-500">暂不定义几何，允许先编辑父/子分类结构；总包核验时最终分类必须解析到明确几何类型。</p>}</section>{config.contractRevision>=10?<NodeFieldSettingsEditor config={config} node={selected} onChange={node=>setConfig(current=>updateNode(current,node.nodeId,()=>node))}/>:<fieldset disabled={Boolean(treeSession)}><ContextBindingsEditor config={config} selected={selected} onChange={setConfig} /></fieldset>}<V3CardEditor config={config} node={selected} onChange={(node) => setConfig((current) => updateNode(current, node.nodeId, () => node))} /></> : <p className="rounded border border-dashed p-5 text-sm text-slate-500">点击“读取分类”后才开启字段、渲染规则、信息卡、工作流与上下文绑定编辑。</p>}</div>}</div></fieldset></section></div>}
-    <ConfigDialog open={applicationImpact.length>0} title="总体规则标识变更影响" onClose={()=>finishImpact(false)}>{applicationImpact.map((message,index)=><p className="text-sm" key={index}>{message}</p>)}<button type="button" className="rounded border px-3 py-1" onClick={()=>finishImpact(false)}>取消保存</button><button type="button" className="ml-2 rounded bg-violet-600 px-3 py-1 text-white" aria-label="Confirm application changes" onClick={()=>finishImpact(true)}>确认影响并继续核验保存</button></ConfigDialog><ConfigDialog open={Boolean(importConflict)} title="分类导入冲突" onClose={()=>setImportConflict(null)}>{importConflict?<><p className="text-sm">继续将按上游固定继承修正导入字段，并重映射冲突内部 ID；不修改父级。</p>{importConflict.result.conflicts.map((item,index)=><p key={index} className="text-xs text-rose-700">{item}</p>)}<button type="button" className="rounded bg-violet-600 px-3 py-1 text-white" onClick={()=>{try{applyCategoryImport(prepareCategoryImport(config,importConflict.artifact,true));}catch(error){setMessage(String(error));}}}>按上游约束修正后继续</button><button type="button" className="ml-2 rounded border px-3 py-1" onClick={()=>setImportConflict(null)}>取消导入</button></>:null}</ConfigDialog><Report config={config} records={records} report={report} onConfirm={paths=>setConfig(confirmPrefillCopies(config,resolveEffectiveFields,paths))} /></main></RuntimePreviewProvider>;
+    <ConfigDialog open={applicationImpact.length>0} title="总体规则标识变更影响" onClose={()=>finishImpact(false)}>{applicationImpact.map((message,index)=><p className="text-sm" key={index}>{message}</p>)}<button type="button" className="rounded border px-3 py-1" onClick={()=>finishImpact(false)}>取消保存</button><button type="button" className="ml-2 rounded bg-violet-600 px-3 py-1 text-white" aria-label="Confirm application changes" onClick={()=>finishImpact(true)}>确认影响并继续核验保存</button></ConfigDialog><ConfigDialog open={Boolean(importConflict)} title="分类导入冲突" onClose={()=>setImportConflict(null)}>{importConflict?<><p className="text-sm">继续将按上游固定继承修正导入字段，并重映射冲突内部 ID；不修改父级。</p>{importConflict.result.conflicts.map((item,index)=><p key={index} className="text-xs text-rose-700">{item}</p>)}<button type="button" className="rounded bg-violet-600 px-3 py-1 text-white" onClick={()=>{try{applyCategoryImport(prepareCategoryImport(config,importConflict.artifact,true));}catch(error){setMessage(String(error));}}}>按上游约束修正后继续</button><button type="button" className="ml-2 rounded border px-3 py-1" onClick={()=>setImportConflict(null)}>取消导入</button></>:null}</ConfigDialog><Report config={config} records={records} report={packageReport??report} onConfirm={paths=>{const next=confirmPrefillCopies(config,resolveEffectiveFields,paths);if(packageCandidate&&!draftConfig)stageCandidate(next,'预填副本确认');else setConfig(next);}} /></main></RuntimePreviewProvider>;
 }
 
 export default ConfigStudio;
