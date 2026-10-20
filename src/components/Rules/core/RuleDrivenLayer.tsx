@@ -5,7 +5,7 @@ import {recordWorld,recordPath} from '@/configStudio/structureRoleIndex';
 import {normalizeRuleSourceWorldId} from '@/components/Rules/data/ruleDataSources';
 import { isNativeConfigRevision } from '../../../configStudio/contract';
 import { featureLabelParts, componentLabelId, filterFeatureGeometryParts } from '@/components/Rules/rendering/multipartLabels';
-import { iconBoundsAtAnchor, type LabelPlacement } from '@/components/Rules/rendering/labelPlacement';
+import { iconBoundsAtAnchor, unionScreenRects, type LabelPlacement } from '@/components/Rules/rendering/labelPlacement';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { subscribeSymbolAssets, symbolAssetEpoch } from '../rendering/symbolAssets';
 
@@ -3410,7 +3410,7 @@ export default function RuleDrivenLayer(props: Props) {
             typeof sym?.point === "function"
               ? sym.point(r, context, store)
               : sym?.point;
-          if ((pointPlan as any)?.visibility === 'withLabel') continue;
+          if ((pointPlan as any)?.visibility === 'withLabel' || (pointPlan as any)?.assetStatus === 'pending') continue;
           const symbolOffset = (pointPlan as any)?.screenOffsetPx;
           if (symbolOffset) { pt.x += Number(symbolOffset.x ?? 0); pt.y += Number(symbolOffset.y ?? 0); }
 
@@ -3700,7 +3700,15 @@ export default function RuleDrivenLayer(props: Props) {
             req.worldId = worldId;
             req.displayMode = context.inFloorView ? 'floor' : 'normal';
             req.geometrySignature = configRuntime ? JSON.stringify(sourceRecord.multipartGeometry ?? sourceRecord.coords3 ?? sourceRecord.p3) : undefined;
-            if (!req.symbolDensityBlocked && nativeBundle?.nativeSymbol?.visibility === 'withLabel') req.symbolBounds = { radius: Number((nativeSymbolPlan as any)?.radius ?? 0) + Number((nativeSymbolPlan as any)?.style?.weight ?? 0) / 2, offsetX: nativeBundle.nativeSymbol.screenOffsetPx?.x ?? 0, offsetY: nativeBundle.nativeSymbol.screenOffsetPx?.y ?? 0 };
+            if (!req.symbolDensityBlocked && nativeBundle?.nativeSymbol?.visibility === 'withLabel' && (nativeSymbolPlan as any)?.assetStatus !== 'pending') {
+              const offset=nativeBundle.nativeSymbol.screenOffsetPx??{x:0,y:0},plan=nativeSymbolPlan as any;
+              req.symbolBounds={radius:Number(plan?.radius??0)+Number(plan?.style?.weight??0)/2,offsetX:offset.x,offsetY:offset.y};
+              if(plan?.kind==='icon'||plan?.assetStatus){
+                const reference=map.latLngToContainerPoint(req.anchorLatLng),parts=req.partIndex===undefined?(symbolAnchors.length?symbolAnchors:[req.anchorLatLng]):[symbolAnchors[req.partIndex]??req.anchorLatLng];
+                const boxes=parts.map(part=>{const p=map.latLngToContainerPoint(part),origin={x:p.x-reference.x+offset.x,y:p.y-reference.y+offset.y};return plan.kind==='icon'?iconBoundsAtAnchor(origin,plan.iconSize??[24,24],plan.iconAnchor??[12,12]):{x:origin.x-req.symbolBounds!.radius,y:origin.y-req.symbolBounds!.radius,w:2*req.symbolBounds!.radius,h:2*req.symbolBounds!.radius};});
+                req.symbolBounds={...req.symbolBounds,box:unionScreenRects(boxes),anchorPx:nativeBundle.nativeSymbol.followLabelAnchor?undefined:reference};
+              }
+            }
             if (auditRow) {
               auditRow.expectedLabel = true;
               auditRow.labelText = req.text;

@@ -1,0 +1,7 @@
+{
+  "checks": [
+    "same URL 24px→240px updates actual withLabel rectangle; overlapping image/Label combinations reduce from2 to1",
+    "restoring per-image width restores2 visible combinations without stale occupancy or duplicate image"
+  ],
+  "runtimeErrors": []
+}

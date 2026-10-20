@@ -6,6 +6,7 @@
     "待整合要求-启动免SCF与业务入口一致性检查-20261019.md": "b47e88e81c95b82356a731bfb63771ab48a465124db5c970e221d3439138d1ea"
   },
   "formalAndV1PathsUnchanged": true,
-  "sharedKernelSha256": "1a3629a7b4f127cab7af55fb372a73b0a4edcdd5b0b0db0af7b0d834ef314a34",
-  "sharedKernelByteIdentical": true
+  "sharedKernelSha256": "784ab1d703d548e0ecff3dfc2bfd0d99965c828407157052d8b1585f85839199",
+  "sharedKernelByteIdentical": true,
+  "reproducibleDependencyPaths": true
 }

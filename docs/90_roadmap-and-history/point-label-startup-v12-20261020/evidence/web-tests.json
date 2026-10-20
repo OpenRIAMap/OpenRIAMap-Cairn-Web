@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-20T06:47:50.144Z",
+  "generatedAt": "2026-10-20T07:24:06.904Z",
   "rows": [
     {
       "name": "test-application-settings.ts",
@@ -72,13 +72,6 @@
       "output": "configuration-publication-transport: 30 offline checks passed (timeouts, network errors, response parsing, redaction, correlation, validation guards, upstream passthrough, and no automatic retries)\n"
     },
     {
-      "name": "test-density-stability.ts",
-      "passed": true,
-      "durationMs": 290,
-      "exitCode": 0,
-      "output": "density-stability: budgets, selected/required opt-out and real cache invalidation: OK\n"
-    },
-    {
       "name": "test-external-workflow-output-parity.ts",
       "passed": true,
       "durationMs": 927,
@@ -133,13 +126,6 @@
       "durationMs": 277,
       "exitCode": 0,
       "output": "map-zoom: shared logical/map/tile limits, including Zoom 0–2: OK\n"
-    },
-    {
-      "name": "test-multipart-labels.ts",
-      "passed": true,
-      "durationMs": 298,
-      "exitCode": 0,
-      "output": "multipart-labels: independent component geometries/ids/caches and shared feature identity: OK\n"
     },
     {
       "name": "test-native-contract.ts",
@@ -464,20 +450,6 @@
       "output": "world-resource-groups: default parity, canonical projection, two servers/same remote world, scoped source selection/cache identity, missing group/proxy guards and lossless differential migration passed\n"
     },
     {
-      "name": "test-display-parity.ts",
-      "passed": true,
-      "durationMs": 890,
-      "exitCode": 0,
-      "output": "display-parity: 24 direct V1/V3 opacity, labelOnly, priority and obstacle-policy cases: OK\ndisplay-parity: polygon candidate weights, source disabled density and missing-icon circle preserved: OK\n"
-    },
-    {
-      "name": "test-label-placement.ts",
-      "passed": true,
-      "durationMs": 263,
-      "exitCode": 0,
-      "output": "label-placement: nine positions, signed X/Y, CSS/bbox origin and legacy baseline: OK\n"
-    },
-    {
       "name": "test-label-zoom-lifecycle.ts",
       "passed": true,
       "durationMs": 1475,
@@ -499,11 +471,39 @@
       "output": "r12 contracts: 10 invalid-setting parity cases; JSON/ZIP category resource merge/conflicts/Class commit, package roundtrip, historical r8-r11 imports and migration idempotence passed.\n"
     },
     {
+      "name": "test-display-parity.ts",
+      "passed": true,
+      "durationMs": 929,
+      "exitCode": 0,
+      "output": "display-parity: 24 direct V1/V3 opacity, labelOnly, priority and obstacle-policy cases: OK\ndisplay-parity: polygon candidate weights, source disabled density and missing-icon circle preserved: OK\n"
+    },
+    {
       "name": "test-r12-preview.ts",
       "passed": true,
-      "durationMs": 1288,
+      "durationMs": 1332,
       "exitCode": 0,
       "output": "r12 preview/symbol: target selection, Name, typed zero/false, safe paths, no residue, real coverage, static reachability, migration and placement passed.\n"
+    },
+    {
+      "name": "test-density-stability.ts",
+      "passed": true,
+      "durationMs": 260,
+      "exitCode": 0,
+      "output": "density-stability: budgets, selected/required opt-out and real cache invalidation: OK\n"
+    },
+    {
+      "name": "test-label-placement.ts",
+      "passed": true,
+      "durationMs": 267,
+      "exitCode": 0,
+      "output": "label-placement: nine positions, signed X/Y, CSS/bbox origin and legacy baseline: OK\n"
+    },
+    {
+      "name": "test-multipart-labels.ts",
+      "passed": true,
+      "durationMs": 254,
+      "exitCode": 0,
+      "output": "multipart-labels: independent component geometries/ids/caches and shared feature identity: OK\n"
     }
   ]
 }

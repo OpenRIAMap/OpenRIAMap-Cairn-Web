@@ -28,6 +28,7 @@ try:
     wait("document.querySelectorAll('button[aria-pressed=true]').length>0")
     checks.append('condition preview generates boolean false; real matching rule remains enabled')
     select('点状显示','icon')
+    wait("document.querySelector('[aria-label=\"当前图标摘要\"]')?.innerText.includes('公交')&&!!document.querySelector('img[alt=\"当前图标缩略预览\"]')")
     assert js("window.r12Harness.config.nodes.find(n=>n.nodeId==='class-sbp').geometryProfiles.Point.zoomPriority.rules[1].style.pointSymbol.kind")== 'icon'
     js("[...document.querySelectorAll('button')].find(b=>b.textContent.startsWith('Icon 选择与配置')).click();true")
     wait("!!document.querySelector('[role=dialog] img[alt=\"组合图标实际 CSS 像素预览\"]')")

@@ -1,6 +1,6 @@
 import { usesScriptAwareGlyphs } from './label/lineScriptMetrics';
 import { customPillMetrics } from '../../../configStudio/customPill';
-import { placeLabel, labelCandidateShift } from './labelPlacement';
+import { placeLabel, labelCandidateShift, mergeLabelSymbolBounds, type SymbolCollisionBounds } from './labelPlacement';
 import * as L from "leaflet";
 import {
   LabelDensityLimiter,
@@ -287,7 +287,7 @@ export type LabelRequest = {
   offsetX?: number;
   screenOffsets?: boolean;
   /** A true point may participate in its label's combined collision box. */
-  symbolBounds?: { radius: number; offsetX: number; offsetY: number };
+  symbolBounds?: SymbolCollisionBounds;
   candidatePlacement?: 'relativeToPlacement' | 'aroundAnchor';
   candidateOffsetsPx?: Array<{ name: string; x: number; y: number }>;
   anchorOffsetPx?: { x: number; y: number };
@@ -947,14 +947,7 @@ function rectForCandidate(
     Number(baseReq.offsetX ?? 0),
     baseReq.screenOffsets,
   );
-  if (baseReq.symbolBounds) {
-    const symbol = baseReq.symbolBounds;
-    const left = Math.min(rect.x, anchor.x + symbol.offsetX - symbol.radius);
-    const top = Math.min(rect.y, anchor.y + symbol.offsetY - symbol.radius);
-    const right = Math.max(rect.x + rect.w, anchor.x + symbol.offsetX + symbol.radius);
-    const bottom = Math.max(rect.y + rect.h, anchor.y + symbol.offsetY + symbol.radius);
-    rect = { x: left, y: top, w: right - left, h: bottom - top };
-  }
+  if (baseReq.symbolBounds) rect=mergeLabelSymbolBounds(rect,anchor,baseReq.symbolBounds);
   const adjustment = baseReq.collisionBoundsAdjustment;
   rect = adjustedCollisionRect(rect, adjustment);
   return { rect, dx, dy };
