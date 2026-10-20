@@ -25,3 +25,17 @@ export function labelCandidateShift(candidate: 'C' | 'N' | 'S' | 'E' | 'W' | 'NE
 export function iconBoundsAtAnchor(anchor: { x: number; y: number }, size: [number, number], iconAnchor: [number, number], padding = 0): { x: number; y: number; w: number; h: number } {
   return { x: anchor.x - iconAnchor[0] - padding, y: anchor.y - iconAnchor[1] - padding, w: size[0] + padding * 2, h: size[1] + padding * 2 };
 }
+
+export type SymbolCollisionBounds = { radius:number;offsetX:number;offsetY:number;box?:{x:number;y:number;w:number;h:number};anchorPx?:{x:number;y:number} };
+/** Exact image rectangle; a geometry-anchored symbol stays fixed as Label candidates move. */
+export function mergeLabelSymbolBounds(label:{x:number;y:number;w:number;h:number},anchor:{x:number;y:number},symbol:SymbolCollisionBounds) {
+  const origin=symbol.anchorPx??anchor,box=symbol.box??{x:symbol.offsetX-symbol.radius,y:symbol.offsetY-symbol.radius,w:symbol.radius*2,h:symbol.radius*2};
+  const x=Math.min(label.x,origin.x+box.x),y=Math.min(label.y,origin.y+box.y);
+  return {x,y,w:Math.max(label.x+label.w,origin.x+box.x+box.w)-x,h:Math.max(label.y+label.h,origin.y+box.y+box.h)-y};
+}
+
+export function unionScreenRects(rects:Array<{x:number;y:number;w:number;h:number}>) {
+  let x=Infinity,y=Infinity,right=-Infinity,bottom=-Infinity;
+  for(const rect of rects){x=Math.min(x,rect.x);y=Math.min(y,rect.y);right=Math.max(right,rect.x+rect.w);bottom=Math.max(bottom,rect.y+rect.h);}
+  return {x,y,w:right-x,h:bottom-y};
+}

@@ -27,7 +27,7 @@ import { createV32EngineDefaults } from './v32Defaults';
 
 type PackageManifestV3 = {
   schemaVersion: 'cairnmap.config-package-manifest.v3';
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+  contractRevision: ConfigPackageV3['contractRevision'];
   packageId: string;
   projectId: string;
   revision: number;

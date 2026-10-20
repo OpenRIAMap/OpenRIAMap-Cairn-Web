@@ -1,0 +1,18 @@
+import JSZip from 'jszip';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createHash } from 'node:crypto';
+import { migrateConfigToR12 } from '../../src/configStudio/r12Migration';
+import { validateConfigPackage } from '../../src/configStudio/runtime';
+import { buildConfigPackageArchive } from '../../src/configStudio/package';
+const out=process.argv[2];if(!out)throw Error('Provide an explicit candidate output directory. This command never changes the formal pointer.');
+const identity=JSON.parse(fs.readFileSync('public/configuration/current.json','utf8'));
+const raw=fs.readFileSync('public'+identity.configUrl);if(createHash('sha256').update(raw).digest('hex')!==identity.configSha256)throw Error('Registered baseline digest mismatch');
+const migration=migrateConfigToR12(JSON.parse(raw.toString('utf8'))),report=validateConfigPackage(migration.config);
+if(migration.unresolved.length||!report.valid)throw Error(JSON.stringify({unresolved:migration.unresolved,errors:report.issues.filter(i=>i.severity==='error')}));
+fs.mkdirSync(out,{recursive:true});
+const bytes=Buffer.from(await(await buildConfigPackageArchive(migration.config,report)).arrayBuffer());
+const text=await(await JSZip.loadAsync(bytes)).file('config.json')!.async('string');
+fs.writeFileSync(path.join(out,'candidate-r12.from-r9.json'),text);fs.writeFileSync(path.join(out,'candidate-r12.from-r9.zip'),bytes);
+fs.writeFileSync(path.join(out,'migration.json'),JSON.stringify({generatedAt:new Date().toISOString(),baseline:identity,candidate:{contractRevision:12,proposedRevision:migration.config.revision,jsonSha256:createHash('sha256').update(text).digest('hex'),zipSha256:createHash('sha256').update(bytes).digest('hex'),byteLength:bytes.length},unresolved:migration.unresolved,changes:migration.changes,validation:report,publicationPerformed:false},null,2)+'\n');
+console.log(`Review candidate: contract r12, proposed r${migration.config.revision}; ${migration.changes.length} migration records, ${bytes.length} ZIP bytes, no publication.`);

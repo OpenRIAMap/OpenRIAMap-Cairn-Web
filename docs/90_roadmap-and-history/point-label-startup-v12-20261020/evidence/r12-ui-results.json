@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "condition preview generates boolean false; real matching rule remains enabled",
+    "two-page Pinhead search/composition uses actual 32 CSS pixels; Escape cancels isolated draft",
+    "typed icon mapping row preview injects Name only in temporary business fixture; off restores it",
+    "fixed external image decoded and displayed with its own dimensions/local offset",
+    "source modes and per-image presentation drafts survive switching without leaking inactive branches",
+    "custom capsule has nine settings, true zero padding/radius, independent 2px stroke and five-mode colour row preview",
+    "English/space/digit order preserved on SVG path; CJK upright; curved spacing uses existing threshold; actual-width vs fixed-length gates differ correctly"
+  ],
+  "runtimeErrors": [],
+  "remoteBusinessWritesPerformed": false
+}

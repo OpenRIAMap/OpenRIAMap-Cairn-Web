@@ -1,3 +1,4 @@
+import { requireBusinessConfiguration } from '../../configRuntime/businessConfiguration';
 import { assertReviewWorldContext, reviewEndpoint } from '@/core/project/applicationRuntime';
 import type {
   ReviewRevisionUploadGrant,
@@ -123,6 +124,7 @@ async function waitForVerification(request: ReviewRevisionUploadRequest): Promis
  */
 export const openriamapReviewSubmissionTransport: ReviewSubmissionTransport = {
   async requestRevisionUpload(request): Promise<ReviewRevisionUploadGrant> {
+    await requireBusinessConfiguration();
     const { response, body } = await broker('revision-upload-request', request);
     if (!response.ok) throw new Error(errorMessage(body, `review-upload-request-failed:${response.status}`));
     return normalizeGrant(body);

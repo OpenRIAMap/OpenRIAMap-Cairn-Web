@@ -1,0 +1,47 @@
+{
+  "version": "r12-20261020",
+  "status": "review-candidate-not-published",
+  "contractRevision": 12,
+  "proposedRevision": 10,
+  "sourceSha256": "555369d1609c6e4f01dceeb898616458c9b9295c121ef5fd6d0d1474f216282b",
+  "structures": 200,
+  "properties": 1121,
+  "exampleObjects": 9,
+  "files": [
+    {
+      "name": "README.md",
+      "sha256": "9b2e39599d6440dd27a361c90e94b67a812f2fb7baa6907bb34af71ba2a0af88",
+      "bytes": 6789
+    },
+    {
+      "name": "FIELD_REFERENCE.md",
+      "sha256": "82c2c947e84967458279ef85fe22445264d5f3969b7f26f132bdb9a3531392c1",
+      "bytes": 256160
+    },
+    {
+      "name": "EXAMPLES.md",
+      "sha256": "36be88c7d5cd74a52a611752924d1bf036e6f45eeebf18f30a623ed794893a2f",
+      "bytes": 9006
+    },
+    {
+      "name": "examples.json",
+      "sha256": "0603a0cb7d197374e5f084526faf097c2fc938ff6ad8c9056c7d61b6e139b290",
+      "bytes": 9334
+    },
+    {
+      "name": "INSTANCE_INDEX.md",
+      "sha256": "3c09de17b0a1adbf9dc514c461d0b60b9e0d0b622856d62ea74b4b6750d37b2a",
+      "bytes": 33680
+    },
+    {
+      "name": "current-full.config.json",
+      "sha256": "555369d1609c6e4f01dceeb898616458c9b9295c121ef5fd6d0d1474f216282b",
+      "bytes": 3553029
+    },
+    {
+      "name": "schema.json",
+      "sha256": "3e23c0f2f5fac35b544c7c4a8879bbe499d30d73ef43591cd605f38aa746eacc",
+      "bytes": 192708
+    }
+  ]
+}

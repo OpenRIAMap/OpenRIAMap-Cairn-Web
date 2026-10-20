@@ -1,0 +1,375 @@
+{
+  "scope": "local Vite production preview, isolated Chrome, static deployed identity (see rows); configured Leaflet map and world buttons observed; data download is a separate later phase",
+  "rows": [
+    {
+      "navigationToConfiguredMapMs": 508.89999985694885,
+      "configurationBlockingMs": 375.5,
+      "formalReadyMs": 483.19999980926514,
+      "verifiedReceiptReused": false,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 128,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "cold"
+    },
+    {
+      "navigationToConfiguredMapMs": 172.5,
+      "configurationBlockingMs": 85.79999995231628,
+      "formalReadyMs": 142.20000004768372,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 76,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-1"
+    },
+    {
+      "navigationToConfiguredMapMs": 119.09999990463257,
+      "configurationBlockingMs": 62.200000047683716,
+      "formalReadyMs": 88,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 204,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-2"
+    },
+    {
+      "navigationToConfiguredMapMs": 116.90000009536743,
+      "configurationBlockingMs": 61.799999952316284,
+      "formalReadyMs": 84.5,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 176,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-3"
+    },
+    {
+      "navigationToConfiguredMapMs": 142.39999985694885,
+      "configurationBlockingMs": 83.20000004768372,
+      "formalReadyMs": 111.29999995231628,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 40,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-4"
+    },
+    {
+      "navigationToConfiguredMapMs": 112.5,
+      "configurationBlockingMs": 58.89999985694885,
+      "formalReadyMs": 82.39999985694885,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 144,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-5"
+    },
+    {
+      "navigationToConfiguredMapMs": 127.09999990463257,
+      "configurationBlockingMs": 71.90000009536743,
+      "formalReadyMs": 94.79999995231628,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 208,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-6"
+    },
+    {
+      "navigationToConfiguredMapMs": 122.59999990463257,
+      "configurationBlockingMs": 63.299999952316284,
+      "formalReadyMs": 90.89999985694885,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 200,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-7"
+    },
+    {
+      "navigationToConfiguredMapMs": 124.59999990463257,
+      "configurationBlockingMs": 72.5,
+      "formalReadyMs": 95.29999995231628,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 172,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-8"
+    },
+    {
+      "navigationToConfiguredMapMs": 120.90000009536743,
+      "configurationBlockingMs": 63,
+      "formalReadyMs": 86.90000009536743,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 212,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-9"
+    },
+    {
+      "navigationToConfiguredMapMs": 120.29999995231628,
+      "configurationBlockingMs": 63.799999952316284,
+      "formalReadyMs": 87.29999995231628,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 196,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-10"
+    },
+    {
+      "navigationToConfiguredMapMs": 122.69999980926514,
+      "configurationBlockingMs": 68.5,
+      "formalReadyMs": 92.19999980926514,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 156,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-11"
+    },
+    {
+      "navigationToConfiguredMapMs": 147.90000009536743,
+      "configurationBlockingMs": 80.10000014305115,
+      "formalReadyMs": 112.60000014305115,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 232,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-12"
+    },
+    {
+      "navigationToConfiguredMapMs": 104.5,
+      "configurationBlockingMs": 53.299999952316284,
+      "formalReadyMs": 76.40000009536743,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 212,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-13"
+    },
+    {
+      "navigationToConfiguredMapMs": 111.90000009536743,
+      "configurationBlockingMs": 58.799999952316284,
+      "formalReadyMs": 84.60000014305115,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 256,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-14"
+    },
+    {
+      "navigationToConfiguredMapMs": 122.5,
+      "configurationBlockingMs": 68.29999995231628,
+      "formalReadyMs": 92.29999995231628,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 196,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-15"
+    },
+    {
+      "navigationToConfiguredMapMs": 114.5,
+      "configurationBlockingMs": 60.19999980926514,
+      "formalReadyMs": 86.59999990463257,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 192,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-16"
+    },
+    {
+      "navigationToConfiguredMapMs": 132.39999985694885,
+      "configurationBlockingMs": 72.5,
+      "formalReadyMs": 97.29999995231628,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 172,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-17"
+    },
+    {
+      "navigationToConfiguredMapMs": 122.79999995231628,
+      "configurationBlockingMs": 67.59999990463257,
+      "formalReadyMs": 91.69999980926514,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 200,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-18"
+    },
+    {
+      "navigationToConfiguredMapMs": 109.40000009536743,
+      "configurationBlockingMs": 55.39999985694885,
+      "formalReadyMs": 80.29999995231628,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 140,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-19"
+    },
+    {
+      "navigationToConfiguredMapMs": 110.40000009536743,
+      "configurationBlockingMs": 59.299999952316284,
+      "formalReadyMs": 81,
+      "verifiedReceiptReused": true,
+      "identity": {
+        "configSha256": "b3337a61cf4851d8c5c182c6a88d57ac19d3cd1dbbbee5aefd46c5c2e7620cd0",
+        "revision": 9,
+        "contractRevision": 11
+      },
+      "configurationRequests": [],
+      "configDownloads": [],
+      "fcp": 168,
+      "mapCount": 1,
+      "oldVerificationOverlay": false,
+      "visit": "warm-20"
+    }
+  ],
+  "configurationBlockingMs": {
+    "p50": 63.799999952316284,
+    "p95": 83.20000004768372,
+    "max": 85.79999995231628
+  },
+  "navigationToConfiguredMapMs": {
+    "p50": 122.5,
+    "p95": 147.90000009536743,
+    "max": 172.5
+  },
+  "runtimeErrors": [],
+  "scfConfigurationRequests": 0,
+  "indexesPersisted": false
+}

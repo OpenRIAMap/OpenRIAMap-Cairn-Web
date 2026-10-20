@@ -188,7 +188,7 @@ export function previewScenarioCompatible(config: ConfigPackageV3, node: Categor
   return Boolean(profile?.enabled && (!definition.multipart || profile.allowMultipleParts));
 }
 
-export function ConfigRuntimePreview({ config, node, scenario, onRuntimeError, onMapReady, fixture }: { config: ConfigPackageV3; node: CategoryNode; scenario: PreviewScenario; onRuntimeError?: (error: Error) => void; onMapReady?: (map: L.Map) => void; fixture?:{features:unknown[]} }) {
+export function ConfigRuntimePreview({ config, node, scenario, onRuntimeError, onMapReady, fixture, zoomRequest, onZoomChange }: { config: ConfigPackageV3; node: CategoryNode; scenario: PreviewScenario; onRuntimeError?: (error: Error) => void; onMapReady?: (map: L.Map) => void; fixture?:{features:unknown[]}; zoomRequest?: {value:number;token:number}; onZoomChange?:(zoom:number)=>void }) {
   const activeConfig = useMemo(() => validateConfigPackage(config).valid ? compileConfigRuntime(config, true) : undefined, [config]);
   const [map, setMap] = useState<L.Map | null>(null);
   const [tileError, setTileError] = useState('');
@@ -200,6 +200,8 @@ export function ConfigRuntimePreview({ config, node, scenario, onRuntimeError, o
   const projection = useMemo(() => new DynmapProjection(getWorldConfig('zth')), []);
   const [zoom, setZoom] = useState(scenarioDefinition.zoom);
   useEffect(() => setZoom(scenarioDefinition.zoom), [scenarioDefinition.zoom]);
+  useEffect(() => { if (zoomRequest) setZoom(zoomRequest.value); }, [zoomRequest?.token]);
+  useEffect(() => { onZoomChange?.(zoom); }, [zoom, onZoomChange]);
   const leafletZoom = toLeafletZoom(zoom);
   useLayoutEffect(() => {
     if (!map) return;

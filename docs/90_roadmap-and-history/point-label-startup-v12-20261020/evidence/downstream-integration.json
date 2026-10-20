@@ -1,0 +1,154 @@
+{
+  "rows": [
+    {
+      "target": "test:workspace-transition-coordinator",
+      "passed": true,
+      "durationMs": 449,
+      "output": "\n> cairnmap-web@0.1.0 test:workspace-transition-coordinator\n> tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-workspace-transition-coordinator.ts\n\nWorkspace transition coordinator test: PASS\n✔ all six directed authoring transitions are gated before target activation (0.9097ms)\n✔ cancelling a source confirmation preserves the original workspace (0.1293ms)\n✔ failed target admission ends at runtime and stale source events are ignored (0.128ms)\n✔ a second click cannot race an active transition (0.1043ms)\n✔ re-clicking an active entry is a local toggle and never starts a transition (0.1347ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 9.2167\n"
+    },
+    {
+      "target": "test:feature-module-contract",
+      "passed": true,
+      "durationMs": 518,
+      "output": "\n> cairnmap-web@0.1.0 test:feature-module-contract\n> tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-feature-module-contract.ts\n\nFeature module contract test: PASS\n✔ review bundle declares the mapping base bundle as its only prerequisite (0.9068ms)\n✔ a pre-review persisted marker migrates without changing existing mapping or legacy choices (0.2088ms)\n✔ invalid persistence fails closed (0.0971ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 8.8985\n"
+    },
+    {
+      "target": "test:data-source-selection",
+      "passed": true,
+      "durationMs": 478,
+      "output": "\n> cairnmap-web@0.1.0 test:data-source-selection\n> tsx ./scripts/data-source/test-data-source-selection.ts\n\nData source selection contract test: PASS\n"
+    },
+    {
+      "target": "test:formal-release-reader",
+      "passed": true,
+      "durationMs": 431,
+      "output": "\n> cairnmap-web@0.1.0 test:formal-release-reader\n> tsx ./scripts/data-source/test-formal-release-reader.ts\n\nFormal release reader test: PASS\n"
+    },
+    {
+      "target": "test:formal-media-reader",
+      "passed": true,
+      "durationMs": 446,
+      "output": "\n> cairnmap-web@0.1.0 test:formal-media-reader\n> tsx ./scripts/data-source/test-formal-media-reader.ts\n\nFormal media reader test: PASS\n"
+    },
+    {
+      "target": "test:player-polling-policy",
+      "passed": true,
+      "durationMs": 451,
+      "output": "\n> cairnmap-web@0.1.0 test:player-polling-policy\n> tsx ./scripts/player/test-player-polling-policy.ts\n\nPlayer polling policy test: PASS\n"
+    },
+    {
+      "target": "validate:formal-data-source-runtime",
+      "passed": true,
+      "durationMs": 210,
+      "output": "\n> cairnmap-web@0.1.0 validate:formal-data-source-runtime\n> node ./scripts/data-source/validate-formal-data-source-runtime.mjs\n\nFormal data source runtime: PASS\n"
+    },
+    {
+      "target": "test:review-package-contract",
+      "passed": true,
+      "durationMs": 944,
+      "output": "\n> cairnmap-web@0.1.0 test:review-package-contract\n> tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-review-package-contract.ts\n\nReview package contract test: PASS\n"
+    },
+    {
+      "target": "test:review-package-profile-auth",
+      "passed": true,
+      "durationMs": 1069,
+      "output": "\n> cairnmap-web@0.1.0 test:review-package-profile-auth\n> tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-review-package-profile-auth.ts\n\nReview package profile and auth seam test: PASS\n"
+    },
+    {
+      "target": "test:review-auth-routes",
+      "passed": true,
+      "durationMs": 248,
+      "output": "\n> cairnmap-web@0.1.0 test:review-auth-routes\n> node ./scripts/review/test-review-auth-routes.mjs\n\nReview auth routes: PASS\n"
+    },
+    {
+      "target": "test:review-status-board",
+      "passed": true,
+      "durationMs": 460,
+      "output": "\n> cairnmap-web@0.1.0 test:review-status-board\n> tsx ./scripts/review/test-review-status-board.ts\n\n✔ status decisions do not silently follow a newer revision (0.6394ms)\n✔ release plan preserves status-save time order and ignores pending items (6.9167ms)\n✔ only a non-expired active release-gate lease blocks a retry (0.1413ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 14.1205\n"
+    },
+    {
+      "target": "test:review-workspace-contracts",
+      "passed": true,
+      "durationMs": 449,
+      "output": "\n> cairnmap-web@0.1.0 test:review-workspace-contracts\n> tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-review-workspace-contracts.ts\n\nReview workspace contract test: PASS\n"
+    },
+    {
+      "target": "test:review-control-binding",
+      "passed": true,
+      "durationMs": 459,
+      "output": "\n> cairnmap-web@0.1.0 test:review-control-binding\n> tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-review-control-binding.ts\n\nReview control binding test: PASS\nReview submission control binding test: PASS\n"
+    },
+    {
+      "target": "test:review-automation-gate",
+      "passed": true,
+      "durationMs": 209,
+      "output": "\n> cairnmap-web@0.1.0 test:review-automation-gate\n> node ./scripts/review/test-review-automation-gate.mjs\n\nReview automation gate: PASS\n"
+    },
+    {
+      "target": "test:review-relay-transfer-port",
+      "passed": true,
+      "durationMs": 213,
+      "output": "\n> cairnmap-web@0.1.0 test:review-relay-transfer-port\n> node ./scripts/review/test-review-relay-transfer-port.mjs\n\nReview Relay transfer broker port: PASS\n"
+    },
+    {
+      "target": "test:review-control-port",
+      "passed": true,
+      "durationMs": 209,
+      "output": "\n> cairnmap-web@0.1.0 test:review-control-port\n> node ./scripts/review/test-review-control-port.mjs\n\nReview submission control broker port: PASS\n"
+    },
+    {
+      "target": "test:review-workflow-broker-actor",
+      "passed": true,
+      "durationMs": 220,
+      "output": "\n> cairnmap-web@0.1.0 test:review-workflow-broker-actor\n> node ./scripts/review/test-review-workflow-broker-actor.mjs\n\nReview workflow Broker actor override: PASS\n"
+    },
+    {
+      "target": "validate:team-review-authorization",
+      "passed": true,
+      "durationMs": 204,
+      "output": "\n> cairnmap-web@0.1.0 validate:team-review-authorization\n> node ./scripts/review/validate-team-review-authorization.mjs\n\nTeam review authorization: PASS\n"
+    },
+    {
+      "target": "validate:storage-profiles",
+      "passed": true,
+      "durationMs": 212,
+      "output": "\n> cairnmap-web@0.1.0 validate:storage-profiles\n> node ./scripts/validate-storage-profiles.mjs\n\nCairnMap StorageProfile Validation\n  Config: project-config/packages/openriamap-ria/environment/storageProfiles.json\n  Schema: project-config/schemas/environment/cairnmap.storage-profiles.v1.schema.json\n\nFinal result: PASS\n"
+    },
+    {
+      "target": "validate:feature-data-contract",
+      "passed": true,
+      "durationMs": 227,
+      "output": "\n> cairnmap-web@0.1.0 validate:feature-data-contract\n> node ./scripts/feature-data/validate-feature-data-contract.mjs\n\nCairnMap FeatureData Contract Validation\n  Contract: project-config/packages/openriamap-ria/environment/featureDataContract.json\n  Sample: docs/30_data-contracts/examples/feature-data-sample/Data_Spilt\n\nFinal result: PASS\n"
+    },
+    {
+      "target": "validate:media-index-contract",
+      "passed": true,
+      "durationMs": 208,
+      "output": "\n> cairnmap-web@0.1.0 validate:media-index-contract\n> node ./scripts/media-index/validate-media-index-contract.mjs\n\nCairnMap MediaIndex Contract Validation\n  Contract: project-config/packages/openriamap-ria/environment/mediaIndexContract.json\n  Assets: 1\n  Bindings: 1\n\nFinal result: PASS\n"
+    },
+    {
+      "target": "test:multipart-geometry",
+      "passed": true,
+      "durationMs": 425,
+      "output": "\n> cairnmap-web@0.1.0 test:multipart-geometry\n> tsx --tsconfig ./tsconfig.app.json ./scripts/geometry/test-multipart-geometry.ts\n\nmultipart geometry contract: ok\n"
+    },
+    {
+      "target": "validate:project-config",
+      "passed": true,
+      "durationMs": 240,
+      "output": "\n> cairnmap-web@0.1.0 validate:project-config\n> node ./scripts/validate-project-config.mjs\n\nCairnMap Project Config Validation\n\n--- parse-json ---\nPASS\n\n--- schema-version ---\nPASS\n\n--- assembly ---\nPASS\n\n--- packages ---\nPASS\n\n--- class-config ---\nPASS\n\n--- workflow-config ---\nPASS\n\n--- card-references ---\nPASS\n\n--- environment ---\nPASS\n\n--- legacy-guards ---\nPASS\n\nFinal result: PASS\n"
+    },
+    {
+      "target": "validate:native-relay-accept-guards",
+      "passed": true,
+      "durationMs": 232,
+      "output": "\n> cairnmap-web@0.1.0 validate:native-relay-accept-guards\n> node ./scripts/actions/native-relay-action-guards.mjs --check-defaults\n\nCairnMap Native Relay Accept Guards\n  RelayPackage: docs/30_data-contracts/examples/native-relay-package-sample\n  Data root: .cairnmap-actions/native-relay-accept/data-root-preview\n  Target branch: accept/native-relay/local-run\n  Mode write/commit/push: false/false/false\n\nFinal result: PASS\n"
+    },
+    {
+      "target": "validate:native-relay-config-resolver",
+      "passed": true,
+      "durationMs": 723,
+      "output": "\n> cairnmap-web@0.1.0 validate:native-relay-config-resolver\n> node ./scripts/relay/validate-native-relay-config-resolver.mjs\n\nCairnMap Native Relay Config Resolver Validation\n  Directory input: docs/30_data-contracts/examples/native-relay-package-sample\n  Zip input: .cairnmap-tmp/native-relay-config-resolver/wrapped-native-relay-sample.zip\n  Zip package root: .cairnmap-tmp/relay-input/wrapped-native-relay-sample-455CE07D3FCA\n  Features resolved: 39\n  Pictures resolved: 1\n\nFinal result: PASS\n"
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "checks": [
+    "60 actual ROD labels; CJK limit2 does not truncate continuous English; actual SVG paths rendered with declared candidate/label/glyph budgets",
+    "12 real pan/recompute passes keep >=50 visible glyph-path labels; candidate positions refresh without stale SVG coordinates",
+    "zoom7 then6 rebuilds current path placements and resumes full display",
+    "explicit global label budget1 is enforced even in strict chainage branch; denied SVG labels are hidden rather than HTML fallback"
+  ],
+  "features": 60,
+  "settledSvgNodes": 60,
+  "initialSvgNodes": 60,
+  "initialDisplayed": 60,
+  "samples": [
+    {
+      "ms": 74.75,
+      "displayed": 60,
+      "svg": 60
+    },
+    {
+      "ms": 73.15,
+      "displayed": 60,
+      "svg": 60
+    },
+    {
+      "ms": 79.61,
+      "displayed": 60,
+      "svg": 60
+    },
+    {
+      "ms": 85.69,
+      "displayed": 60,
+      "svg": 60
+    },
+    {
+      "ms": 73.98,
+      "displayed": 60,
+      "svg": 60
+    },
+    {
+      "ms": 92.52,
+      "displayed": 60,
+      "svg": 60
+    },
+    {
+      "ms": 74.52,
+      "displayed": 60,
+      "svg": 60
+    },
+    {
+      "ms": 80.21,
+      "displayed": 60,
+      "svg": 60
+    },
+    {
+      "ms": 81.66,
+      "displayed": 60,
+      "svg": 60
+    },
+    {
+      "ms": 85.48,
+      "displayed": 60,
+      "svg": 60
+    },
+    {
+      "ms": 82.43,
+      "displayed": 60,
+      "svg": 60
+    },
+    {
+      "ms": 90.92,
+      "displayed": 60,
+      "svg": 60
+    }
+  ],
+  "roundTripCdpP50Ms": 81.66,
+  "roundTripCdpP95Ms": 92.52,
+  "runtimeErrors": []
+}

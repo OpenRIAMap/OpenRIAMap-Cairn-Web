@@ -1,3 +1,4 @@
+import { usesScriptAwareGlyphs } from './lineScriptMetrics';
 import * as L from "leaflet";
 import type { DisplayAnchorConfig } from "@/components/Rules/rendering/display/displayTypes";
 import type { Rect } from "./labelLineViewportGate";
@@ -261,7 +262,11 @@ export function buildLineTextRepositionCandidates(options: {
       ),
     ),
   );
-  const pathHalf = Math.max(labelSpan * 0.72, 36);
+  // The script-aware SVG gate requires padding at both ends. The old slice
+  // could be shorter than even a short Latin word plus that padding.
+  const pathHalf = usesScriptAwareGlyphs(options.anchor)
+    ? Math.max(labelSpan / 2 + Math.max(0,finiteNumber(options.anchor?.textPathPaddingPx,28)) + 1,36,options.anchor?.lineTextPathLengthMode==='actualText'?0:finiteNumber(options.anchor?.textPathMinLengthPx,110)/2)
+    : Math.max(labelSpan * 0.72, 36);
   const out: LineTextRepositionCandidate[] = [];
   const seen = new Set<string>();
 

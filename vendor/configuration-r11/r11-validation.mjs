@@ -10732,6 +10732,465 @@ function validCssColor(input) {
   return numeric(hue) && channels.slice(1).every((part) => part.endsWith("%") && numeric(part.slice(0, -1)));
 }
 
+// src/configStudio/customPill.ts
+function customPillErrors(size, value) {
+  if (!value) return [{ key: "pill", message: "\u81EA\u5B9A\u4E49\u80F6\u56CA\u9700\u8981\u5B8C\u6574\u7684\u80F6\u56CA\u8BBE\u7F6E\u3002" }];
+  const errors = [];
+  if (!Number.isFinite(size) || size < 6 || size > 72) errors.push({ key: "size", message: "\u80F6\u56CA\u5B57\u53F7\u5FC5\u987B\u4ECB\u4E8E 6\u201372px\u3002" });
+  for (const key2 of ["lineHeightRatio", "paddingYRatio", "paddingXRatio", "radiusRatio"]) {
+    const number2 = value[key2];
+    if (!Number.isFinite(number2) || number2 > 10 || number2 < 0 || key2 === "lineHeightRatio" && number2 === 0)
+      errors.push({ key: key2, message: `${key2} \u5FC5\u987B\u662F${key2 === "lineHeightRatio" ? "\u5927\u4E8E 0" : "\u975E\u8D1F"}\u4E14\u4E0D\u8D85\u8FC7 10 \u7684\u6709\u9650\u6570\u5B57\u3002` });
+  }
+  if (!Number.isFinite(value.strokeWidth) || value.strokeWidth < 0 || value.strokeWidth > 72)
+    errors.push({ key: "strokeWidth", message: "\u80F6\u56CA\u63CF\u8FB9\u5BBD\u5EA6\u5FC5\u987B\u4ECB\u4E8E 0\u201372px\u3002" });
+  return errors;
+}
+
+// src/configStudio/pinhead-capabilities.generated.json
+var pinhead_capabilities_generated_default = { library: "pinhead", version: "25", manifestSha256: "c77abb1e97bbb5cf3976d79757e45baecbb922c3ab80fa5ad5b48bca1d0f61fe", ids: ["a", "a_frame_sidewall_tent", "a_frame_sidewall_tents", "a_frame_signboard", "a_frame_tent", "a_frame_tents", "activity_panel", "adit_profile", "adit_profile_with_rocks", "aerial_cargo_lift", "aerial_cargo_lift_with_crates", "aerial_drag_lift", "aerial_gondola", "aerial_j_bar_lift", "aerial_platter_lift", "aerial_t_bar_lift", "aerial_tram", "aerialway_pole", "africa", "africa_and_madagascar", "ahimsa_hand_outline", "airboat_on_water", "airport_terminal", "airport_terminal_with_plane_takeoff", "alabama", "alabama_with_capital_star", "alaska", "american_football", "ampersand", "analog_tv_with_rabbitears", "analog_watch", "anchor", "angel_moroni", "angelfish", "angelfish_under_water", "angry_face", "angry_face_in_circle", "angry_face_in_circle_outline", "anguished_face", "anguished_face_in_circle", "anguished_face_in_circle_outline", "anguished_face_with_spots", "anguished_face_with_spots_in_circle", "anguished_face_with_spots_in_circle_outline", "anime_eye_and_eyebrow", "ankh", "antenna_array", "antibody", "antler", "anus", "anvil", "anvil_and_mallet", "apple", "apple_core", "arch", "archery_arrow", "archery_bow", "archery_bow_and_archery_arrow", "arizona", "arizona_with_capital_star", "arkansas", "arkansas_with_capital_star", "arm", "army_tent", "arrow_bottom_left", "arrow_bottom_right", "arrow_bottom_right_to_eight_point_asterisk", "arrow_down", "arrow_down_from_banknote_in_slot", "arrow_down_from_book_with_bookmark_in_slot", "arrow_down_from_envelope_in_slot", "arrow_down_from_payment_card_in_slot", "arrow_down_from_rectangle_outline", "arrow_down_from_ticket_in_slot", "arrow_down_from_up_bracket", "arrow_down_to_down_bracket", "arrow_down_to_rectangle_outline", "arrow_left", "arrow_left_from_rectangle_tall_outline", "arrow_left_from_right_bracket", "arrow_left_to_left_bracket", "arrow_left_to_rectangle_tall_outline", "arrow_right", "arrow_right_from_left_bracket", "arrow_right_from_rectangle_tall_outline", "arrow_right_to_rectangle_tall_outline", "arrow_right_to_right_bracket", "arrow_top_left", "arrow_top_right", "arrow_top_right_from_square_outline", "arrow_up", "arrow_up_from_down_bracket", "arrow_up_from_rectangle_outline", "arrow_up_to_banknote_in_slot", "arrow_up_to_book_with_bookmark_in_slot", "arrow_up_to_envelope_in_slot", "arrow_up_to_payment_card_in_slot", "arrow_up_to_rectangle_outline", "arrow_up_to_ticket_in_slot", "arrow_up_to_up_bracket", "arrows_left_right", "arrows_left_right_above_water", "arrows_left_right_above_waters", "arrows_recirculating", "arrows_up_down_in_left_right_brackets", "art_text", "art_text_above_swash_line", "astrologers_hat", "at_sign", "atm_text", "atv", "axe", "axe_and_chipped_log", "axe_and_firewood_pile", "axial_reflecting_dish_with_monopod_antenna_and_beams", "axial_reflecting_dish_with_tripod_antenna", "b", "baby", "baby_crawling", "baby_in_swaddle", "bacteria", "badge_shield", "badge_shield_with_fire", "badge_shield_with_star", "badminton_racket_and_shuttlecock", "bag", "bag_of_trash", "bag_of_trash_with_stink", "bag_with_greek_cross", "bagel", "bagel_seeded", "baguette", "baht", "balance_scales", "balloon", "banana", "banana_and_apple", "banana_hand", "banknote", "banknote_in_hand", "banknote_in_slot", "barbecue_grill_wheeled_with_steam", "barbecue_grill_with_steam", "barbed_hook", "barbell", "barn", "barn_and_silo", "barrel_with_bunghole", "barricade", "baseball_bat_and_baseball", "basket_swing", "basketball_in_basketball_net", "bathroom_scale", "beach_umbrella_in_ground", "bear", "bear_spray_can", "bear_spray_can_with_spray", "bear_spray_can_with_spray_and_arrow_right_above_arrow_left", "bear_spray_can_with_spray_and_baht", "bear_spray_can_with_spray_and_dollar", "bear_spray_can_with_spray_and_euro", "bear_spray_can_with_spray_and_peso", "bear_spray_can_with_spray_and_pound", "bear_spray_can_with_spray_and_recycling_symbol", "bear_spray_can_with_spray_and_ruble", "bear_spray_can_with_spray_and_rupee", "bear_spray_can_with_spray_and_shekel", "bear_spray_can_with_spray_and_yen_yuan", "beaver_in_water", "bed", "bee", "bee_skep", "beer_bottle_and_drink_bottle", "beer_bottles_row", "beer_mug_with_foam", "belgium", "belgium_with_capital_star", "bell", "bell_in_tall_gable_roofed_building", "bench", "bench_with_armrests", "bench_with_armrests_and_backrest", "bench_with_armrests_and_backrest_with_plaque", "bench_with_backrest", "bench_with_backrest_in_rectangular_shelter", "bench_with_backrest_with_plaque", "bench_with_plaque", "bench_with_plaque_and_armrests", "bicycle", "bicycle_and_arrow_right_above_arrow_left", "bicycle_and_baht", "bicycle_and_dollar", "bicycle_and_euro", "bicycle_and_key", "bicycle_and_locked_lock_with_keyhole", "bicycle_and_peso", "bicycle_and_pound", "bicycle_and_ruble", "bicycle_and_rupee", "bicycle_and_shekel", "bicycle_and_tag", "bicycle_and_taxi_checkerboard", "bicycle_and_wrench", "bicycle_and_yen_yuan", "bicycle_barrier", "bicycle_in_garage", "bicycle_in_locker", "bicycle_in_parking_structure", "bicycle_in_rectangle_outline", "bicycle_on_parking_line", "bicycle_under_list_beside_checkmark", "bicycle_under_shower_spray", "bicycle_with_staple_stand", "bifold_map_with_dotted_line_to_x", "bifold_pamphlet", "big_top_tent_with_pennant", "billboard", "binoculars", "biohazard_symbol", "bird", "bird_flying", "bishops_miter_with_latin_cross_beside_crozier_head", "bison", "bladder", "bleachers", "blood_cells", "boat_on_trailer", "boat_on_trailer_on_ramp_on_water", "bohr_atomic_model", "bollard", "bollard_row", "bolt", "bone", "book", "book_with_arrows_recirculating", "book_with_balance_scales", "book_with_bookmark", "book_with_bookmark_in_slot", "book_with_dna", "book_with_info_i", "book_with_molar_tooth", "book_with_music_notes_eighth", "book_with_pawprint", "book_with_pencil_and_apple", "book_with_raised_cover", "book_with_rocketship", "book_with_square_academic_cap", "bookmark", "bookmark_outline", "boombox", "border_officer_with_open_suitcase", "border_officer_with_stop_arm_with_passport", "bowling_ball", "bowling_pin", "bowling_pin_and_bowling_ball", "bowling_pins", "box_truck", "boxes_on_pallet", "boxing_glove_up", "brick_trowel", "bridge", "bridge_tied_arch", "briefcase", "briefcase_with_bolt", "briefcase_with_greek_cross", "briefcase_with_heavy_six_point_asterisk", "briefcase_with_info_i", "briefcase_with_shield", "broadleaved_tree", "broadleaved_tree_in_water", "bucket", "budded_latin_cross", "buffer_stop", "bulbed_star", "bull", "bulldozer", "bullet_train", "bullet_train_on_railway_track", "bulletin_board", "bunker", "bunker_silo", "buoy_on_water", "burger", "burger_and_drink_cup_with_straw", "bus", "bus_with_destination_display", "bus_with_destination_display_and_pantograph", "bus_with_destination_display_within_guideway", "bus_with_pantograph", "bus_within_guideway", "bust_on_plinth", "butterfly", "butterfly_with_stars_and_dots", "button", "c", "cabin", "cabin_with_chimney", "cable", "cairn", "calculator", "calendar", "calendar_with_wheelie_bin", "california", "california_with_capital_star", "calm_face", "calm_face_in_circle", "calm_face_in_circle_outline", "camera", "camper_trailer", "camper_trailer_with_waste_dump", "campfire", "campfire_in_arch", "campsite", "campsite_above_water", "campsite_above_waters", "campsite_and_droplet", "campsite_and_wifi", "campsite_beside_campsite_above_campsite_beside_campsite", "campsite_beside_conifer_tree", "campsite_beside_conifer_tree_above_water", "campsite_beside_oval_broadleaved_tree", "campsite_beside_oval_broadleaved_tree_above_water", "campsite_on_pier_in_water", "campsite_on_platform", "campsite_under_list_beside_checkmark", "campsite_under_paragraph", "campsite_with_baht", "campsite_with_canoe", "campsite_with_dollar", "campsite_with_euro", "campsite_with_peso", "campsite_with_pound", "campsite_with_ruble", "campsite_with_rupee", "campsite_with_shekel", "campsite_with_yen_yuan", "campsites", "can", "candle_with_flame", "candlepin_with_ball", "candlepins", "canister_vacuum_cleaner", "cannon", "canoe", "canoe_and_arrow_right_above_arrow_left", "canoe_and_key", "canoe_and_locked_lock_with_keyhole", "canoe_and_tag", "canoe_and_taxi_checkerboard", "canoe_on_pickup_truck", "canoe_on_ramp_on_water", "canoe_on_sedan", "canoe_on_station_wagon", "canoe_on_trailer_on_ramp_on_water", "canoe_on_water", "canoe_under_list_beside_checkmark", "cape_landform", "car", "car_and_arrow_right_above_arrow_left", "car_and_key", "car_and_locked_lock_with_keyhole", "car_and_tag", "car_and_wrench", "car_battery", "car_beside_car", "car_beside_car_above_car_beside_car", "car_beside_person_sleeping_in_bed", "car_between_roller_brushes", "car_in_gable_roofed_building", "car_in_parking_structure", "car_on_parking_line", "car_under_height_restrictor", "car_under_list_beside_checkmark", "car_under_shower_spray", "car_under_toll_gantry", "car_wheel_with_tire", "car_with_baht", "car_with_checkmark", "car_with_dollar", "car_with_emphasis_marks", "car_with_euro", "car_with_peso", "car_with_pound", "car_with_ruble", "car_with_rupee", "car_with_shekel", "car_with_taxi_checkerboard", "car_with_yen_yuan", "cargobike", "cargobike_and_arrow_right_above_arrow_left", "cargobike_and_baht", "cargobike_and_dollar", "cargobike_and_euro", "cargobike_and_key", "cargobike_and_locked_lock_with_keyhole", "cargobike_and_peso", "cargobike_and_pound", "cargobike_and_ruble", "cargobike_and_rupee", "cargobike_and_shekel", "cargobike_and_tag", "cargobike_and_taxi_checkerboard", "cargobike_and_wrench", "cargobike_and_yen_yuan", "cargobike_in_parking_structure", "cargobike_on_parking_line", "cargobike_under_list_beside_checkmark", "carousel", "carpet", "cars_on_barge_on_water", "cartoon_bomb_with_lit_fuse", "cartoon_cannon_with_lit_fuse", "cast_iron_key_with_heart_shaped_handle", "castle", "castle_gate_with_battlements", "castle_gate_with_battlements_and_spires", "castle_keep", "castle_tower_with_battlement_and_spire_and_pennon", "castle_with_battlements", "castle_with_battlements_and_spires", "castle_with_battlements_and_turret", "castle_with_spires", "cat_sitting", "cattle_grid", "cave", "cc_text", "cell_nuclei", "celtic_cross", "chainsaw", "champagne_bottle_and_champagne_glass", "chapel", "charging_station", "charging_station_with_bolt", "checkmark", "cheese_wedge", "chefs_knife", "chess_knight", "chest_of_drawers", "chevron_up_tall", "chevron_up_tall_outline", "chicane_arrow", "chimney_with_smoke", "chip_bag", "chip_bag_with_chip", "chocolate_drop", "chopsticks", "chopsticks_crossed", "cigarette", "cigarette_with_smoke_curl", "cindercone_volcano_erupting", "circle", "circle_a", "circle_outline", "circle_outline_with_dot", "circle_outline_with_dot_outline", "circle_outline_with_star", "circle_outline_with_top_left_quarter_and_bottom_right_quarter", "circle_with_dot", "circle_with_dot_outline", "circle_with_fallout_shelter_symbol", "circular_labyrinth", "city_buildings", "city_gate", "clapperboard", "classical_building", "classical_building_with_clock", "classical_building_with_dome_and_flag", "classical_building_with_flag", "classical_statue", "cleaver", "cliff_with_rocks", "climbing_wall", "clock_face", "cloth", "clothes_hanger", "clothes_hanger_holding_cloth", "club", "club_chair", "cocktail", "cocktail_with_straw", "coconut_palm_tree", "coconut_palm_tree_on_hill_in_water", "coffee_bean", "coffee_mug_with_steam", "coffin", "coffin_with_latin_cross", "colorado", "colorado_with_capital_star", "column_shrine", "comb", "comb_and_dog_wearing_collar", "comedy_mask", "comedy_mask_and_tragedy_mask", "commercial_building", "compact_box_truck", "compact_box_truck_with_box_peak", "compact_box_truck_with_greek_cross", "compact_box_truck_with_heavy_six_point_asterisk", "compass", "compass_rose", "compass_rose_in_circle_outline", "condom", "condom_and_mars", "condom_and_venus", "confetti_ball", "confucian_bell", "confused_face", "confused_face_in_circle", "confused_face_in_circle_outline", "conifer_tree", "conifer_tree_and_bench_on_ground", "conifer_tree_and_flower_and_mountain_snowcapped", "conifer_tree_and_oval_broadleaved_tree", "conifer_tree_beside_conifer_tree", "conifer_tree_with_antenna_array", "conifer_tree_with_star_and_ornaments", "connecticut", "connecticut_with_capital_star", "contiguous_united_states", "contiguous_united_states_with_capital_star", "conveyor_with_chevrons_right", "cooling_tower", "cooling_tower_with_radiation_symbol", "coral", "coral_and_angelfish", "corn_cob", "cot_campsite", "cot_campsite_with_eyes", "couch", "coughing_face", "coughing_face_in_circle", "coughing_face_in_circle_outline", "coughing_face_with_phlegm", "coughing_face_with_phlegm_in_circle", "coughing_face_with_phlegm_in_circle_outline", "coughing_face_with_spittle", "coughing_face_with_spittle_in_circle", "coughing_face_with_spittle_in_circle_outline", "crab", "crane", "crates_under_roof", "crescent", "croissant", "crosshair", "crosswalk_markings_dashes", "crosswalk_markings_dots", "crosswalk_markings_ladder", "crosswalk_markings_ladder_paired", "crosswalk_markings_ladder_skewed", "crosswalk_markings_lines", "crosswalk_markings_lines_paired", "crosswalk_markings_surface", "crosswalk_markings_zebra", "crosswalk_markings_zebra_double", "crosswalk_markings_zebra_paired", "crowd_of_people", "crown", "crystal_ball_on_sphere_stand", "cube", "cup_and_saucer", "cup_and_saucer_and_pawprint", "cup_and_saucer_and_wifi", "cupcake_with_cherry", "curtains", "cylinder", "d", "dagger", "daisy", "dam", "deer_head", "deer_head_with_antlers", "deer_with_antlers", "delaware", "delaware_with_capital_star", "delicate_arch", "desk_lamp", "detergent_bottle", "dharma_wheel", "dharma_wheel_on_square", "diamond", "diamond_outline", "diamond_tall", "diamond_tall_outline", "diaper", "dice", "die_face_with_five_pips", "die_face_with_four_pips", "die_face_with_one_pip", "die_face_with_six_pips", "die_face_with_three_pips", "die_face_with_two_pips", "diesel_train", "diesel_train_on_railway_track", "digital_totem", "digital_totem_with_apps", "digital_totem_with_info_i", "digital_totem_with_wifi", "disc_golf_basket", "district_of_columbia", "district_of_columbia_with_capital_star", "dna", "dog", "dog_sitting", "dog_sitting_and_exclamation_point", "dog_sitting_wearing_collar", "dog_sitting_wearing_collar_and_exclamation_point", "dog_sitting_wearing_collar_and_heart", "dog_sitting_wearing_collar_and_whistle", "dog_sitting_wearing_collar_on_leash", "dog_sitting_wearing_harness", "dog_sitting_wearing_harness_and_whistle", "dog_sitting_wearing_harness_on_leash", "dog_wearing_collar", "dog_wearing_collar_in_shelter", "dog_wearing_collar_on_leash", "dog_wearing_harness", "dog_wearing_harness_on_leash", "dollar", "dollar_swap_to_euro", "dome_with_crescent_moon_and_star_and_planet", "dome_with_flag", "domed_tower", "donut", "dot", "dot_outline", "dot_with_rays_right", "dot_with_rays_up", "double_diamond_tall", "double_mars", "double_venus", "dove", "dove_and_laurel", "dress", "drink_bottle_and_drink_cup_with_straw", "drink_bottle_and_milk_carton_and_can", "drink_can", "drink_can_and_drink_bottle", "drink_cup_with_straw", "drink_cup_with_straw_and_boba", "droplet", "droplet_from_pipes", "droplet_with_greek_cross", "duck", "duck_in_water", "dumbbell", "dumping_ash_in_bin", "dvd_case", "e", "e_wide", "e_wide_in_parking_structure", "e_wide_on_parking_line", "e_wide_under_roof", "e_wide_with_arrow_bottom_right", "e_wide_with_arrow_right", "e_wide_with_bicycle", "e_wide_with_parking_meter", "ear", "ear_atop_slash", "ear_atop_slash_with_t", "ear_with_hearing_aid", "egg", "eight", "electrical_circuit_and_bolt", "electrical_current_transformer_and_bolt", "electrical_curved_circuit_breaker_and_bolt", "electrical_isolator_and_bolt", "electrical_lightning_arrestor_and_bolt", "electrical_square_circuit_breaker_and_bolt", "electrical_switch_and_bolt", "electrical_transformer_and_bolt", "elephant", "elevator_rider", "elevator_three_riders", "eleven", "entrance_station", "envelope", "envelope_in_slot", "enzyme", "escalator", "ethernet_port", "ethernet_port_in_square", "euro", "exclamation_point", "exclamation_point_above_water", "exclamation_point_beside_exclamation_point", "exclamation_point_beside_question_mark", "eye", "eye_outline", "eyebrow", "eyebrow_and_eyelashes", "eyeglasses", "eyelashes", "f", "f22_raptor_fighter_jet", "face_mask", "face_with_tongue_out", "face_with_tongue_out_in_circle", "face_with_tongue_out_in_circle_outline", "fallout_shelter_symbol", "family_restroom_symbol", "fancy_mirror_with_reflection_and_stars", "faravahar", "female_groin", "female_reproductive_system", "fence", "ferris_wheel", "ferryboat", "fetus", "fetus_in_circle", "fetus_in_circle_outline", "field_hockey_stick", "field_hockey_stick_with_ball", "fighter_jet_plane", "file_box", "file_box_and_tag", "fillet_knife", "film", "film_and_optical_disc", "film_movie_projector", "fingernail_polished", "fire", "fire_extinguisher", "fish", "fish_head", "fish_head_beside_barbed_hook_on_line", "fish_head_beside_barbed_hook_on_line_under_ice", "fish_head_beside_barbed_hook_on_line_under_water", "fish_head_beside_barbed_hook_under_paragraph", "fish_jumping_up_cascade", "fish_under_barbed_hook", "fish_under_fillet_knife", "fish_under_list_beside_checkmark", "fish_under_paragraph", "fish_under_water", "fishes", "five", "five_above_water", "five_minus", "five_minus_above_water", "five_plus", "five_plus_above_water", "flag", "flag_above_railway_track", "flag_checkered", "flagpole_with_flag", "flagstick_with_flag", "flagstick_with_flag_in_hole", "flagstick_with_pennant", "flagstick_with_pennant_in_hole", "flagstick_with_pennant_on_square", "flaming_chalice", "flaming_chalice_on_square", "flash_camera", "flat_coin", "flat_head_thumb_tack", "flatbed_truck", "flintlock_pistol", "floor_lamp", "florida", "flower_bouquet", "flush_curb", "flush_curb_under_shoe", "flush_curb_with_arrow_right", "flush_curb_with_question_mark", "flying_saucer", "foot", "fork", "fork_and_knife", "fork_and_sausage", "fork_and_spoon", "fork_crossing_knife", "fort", "fortress", "fountain", "fountain_from_fountain_basin", "fountain_from_water", "four", "four_above_water", "four_legged_octopus", "four_legged_octopus_with_cartoon_eyes", "four_legged_squid", "four_legged_squid_with_cartoon_eyes", "four_minus", "four_minus_above_water", "four_plus", "four_plus_above_water", "four_square_court", "four_square_court_with_ball", "freight_car", "frog_with_cartoon_eyes_and_open_mouth", "frowning_face_with_head_bandage", "frowning_face_with_head_bandage_in_circle", "frowning_face_with_head_bandage_in_circle_outline", "g", "gable_roofed_building", "gable_roofed_shelter", "gable_roofed_shelter_with_fireplace_and_chimney", "gable_roofed_shelter_with_spoon_and_knife", "gallbladder", "game_controller_with_wire", "garage", "garage_and_key", "garage_and_wrench", "gas_flame", "gasoline_pump", "gasoline_pump_with_d", "gasoline_pump_with_e", "gate", "gate_tall", "gavel_with_sound_block", "gazebo", "genie_lamp_with_stardust", "georgia_us", "georgia_us_with_capital_star", "geyser", "geyser_from_ground", "giftwrapped_box", "giftwrapped_box_and_tag", "giraffe", "globe", "globe_gasoline_pump", "globe_gasoline_pump_with_d", "globe_gasoline_pump_with_e", "goggles", "golf_cart", "golf_green", "gown", "grapes", "grass", "grass_in_water", "graticule_globe", "gravestone", "grecian_vase", "greek_cross", "greenhouse", "guidepost", "gull", "gull_and_exclamation_point", "gumdrop_head_and_shoulders", "guyed_mast", "guyed_mast_with_antenna_array", "h", "hair_dryer", "hairy_caterpillar", "hairy_caterpillar_and_exclamation_point", "hammer", "hammer_and_inverted_shoe", "hammer_and_nail", "hand", "hand_dropping_circles", "hand_dropping_circles_into_container", "hand_grenade", "hand_holding_heart", "hand_holding_service_tray", "hand_reaching_down", "hand_reaching_down_toward_rough_surface", "hand_with_eye", "handled_bowl_with_steam", "hands_sign_language_interpretation", "handshake", "handwheel", "hangar", "hanging_rail_transit_vehicle_with_destination_display", "hanging_sign_with_house", "happy_face", "happy_face_in_circle", "happy_face_in_circle_outline", "happy_face_with_face_mask", "happy_face_with_face_mask_in_circle", "happy_face_with_face_mask_in_circle_outline", "hard_candy_in_wrapper", "hash", "hawaii", "hazmat_suit", "head_and_shoulders", "headphones_with_info_i", "heart", "heart_organ", "heart_outine_with_top_left_quarter", "heart_outline", "heart_outline_with_left_half", "heart_outline_with_left_half_and_bottom_right_quarter", "heart_shaped_carriage", "heart_with_bolt", "heart_with_crack", "heart_with_ecg_line", "heart_with_greek_cross", "heavy_six_point_asterisk", "hedge", "height_restrictor", "helicopter", "honeycomb", "hook", "horizontal_storage_tank_on_supports", "horn_cleat", "horse_head_wearing_bridle", "horse_in_shelter", "horseshoe", "horseshoe_with_stake", "hospital_h", "hot_dog", "hot_dog_with_mustard", "house_and_industrial_building_and_lowrise_building", "house_and_trees_on_hill_in_water", "house_with_chimney", "house_with_flag", "house_with_flag_and_info_i", "houseboat_on_water", "human_head", "hunting_stand", "hydrant", "i", "ice_cream_on_cone", "ice_skate", "ice_text", "ice_text_above_icicles", "ichthys", "icicles", "id_card", "idaho", "idaho_with_capital_star", "illinois", "illinois_with_capital_star", "inclined_information_panel", "indiana", "indiana_with_capital_star", "industrial_building", "info_i", "inline_skate", "international_wheelchair_symbol", "intestine", "iowa", "iowa_with_capital_star", "isosceles_trapezoid_tall_down", "isosceles_trapezoid_tall_up", "j", "jack_o_lantern", "jai_alai_cesta_and_ball", "jail_door", "japanese_teacup_with_steam", "jar", "jeep", "jet_plane_front", "jewel", "joint", "jp_castle", "jp_cemetery", "jp_college", "jp_ferry", "jp_fire_station", "jp_hospital", "jp_hot_spring", "jp_landmark", "jp_lighthouse", "jp_monument", "jp_police", "jp_post", "jug_and_apple", "junk_car", "k", "kansas", "kansas_with_capital_star", "kayak_beside_kayak_paddle", "kayak_paddle_crossing_kayak", "kentucky", "kentucky_with_capital_star", "key", "key_and_arrow_right_above_arrow_left", "key_with_house_keychain", "keyhole", "keystone", "khanda", "khanda_on_square", "kidneys", "kids_train", "kids_train_on_railway_track", "kids_train_with_tires", "kitchen_sink", "knife", "l", "ladder", "lantern", "lantern_lamppost", "laptop", "latin_cross", "latin_cross_on_square", "latrine", "lattice_power_tower", "lattice_tower_with_ball_tip_antenna_on_ground_with_beams", "lattice_tower_with_lookout_deck", "lattice_tower_with_observation_deck_on_ground", "laughing_face", "laughing_face_in_circle", "laughing_face_in_circle_outline", "leaf", "leafless_tree", "left_bracket_and_cube", "leg", "leg_with_varicose_veins", "letter_box_us", "life_jacket", "life_ring", "lift_gate", "lift_gate_lowered", "lightbulb", "lighthouse", "lion", "lips", "lips_and_lipstick", "lipstick", "liver", "liver_with_bile_duct", "loaf_of_bread", "loaf_of_bread_with_steam", "loaf_of_pan_bread", "loaf_of_pan_bread_with_steam", "locked_lock", "locked_lock_with_keyhole", "lockers_terminal", "lotus_flower", "louisiana", "louisiana_with_capital_star", "lounger", "low_mounted_beam", "low_shrub", "lowered_curb", "lowered_curb_under_shoe", "lowered_curb_with_arrow_bottom_right", "lowered_curb_with_question_mark", "lowrise_apartment_building_on_ground", "lowrise_building", "lowrise_building_and_tree_on_ground", "lu_zi_symbol", "lucha_libre_mask", "lungs", "lungs_with_right_side_spots", "m", "madagascar", "madagascar_with_capital_star", "madison_cross", "magic_wand_and_sparkles", "magnifying_glass", "magnifying_glass_for_search_ui", "maine", "maine_with_capital_star", "male_genitalia", "male_genitalia_with_testicles", "male_genitalia_with_urethra", "male_groin", "manhole_cover", "manhole_cover_with_bolt", "manhole_cover_with_cable", "manhole_cover_with_droplet", "manhole_cover_with_gas_flame", "manhole_cover_with_hydrant", "manhole_cover_with_sewage_pipe_cross_section", "manicured_grass", "manor", "manufactured_home", "map_outline", "map_outline_with_info_i", "map_outline_with_swap_arrows", "map_pin", "map_pin_outline", "map_pin_outline_with_dot", "map_pin_with_dot", "maple_leaf", "marae", "market_stall", "mars", "martini_glass_and_wine_bottle", "maryland", "massachusetts", "massachusetts_with_capital_star", "maze", "meat", "medal_ribbon", "medal_ribbon_with_anchor", "medal_ribbon_with_star", "megalith", "megaphone", "memorial_stone", "memorial_stone_with_inscription", "memorial_stone_with_latin_cross", "mens_restroom_symbol", "mesoamerican_pyramid", "michigan", "michigan_lower_peninsula", "michigan_upper_peninsula", "michigan_with_capital_star", "microphone", "microscope", "milestone", "military_police_officer", "military_police_officer_with_stop_arm", "milk_carton_and_apple", "milk_carton_and_apple_and_baht", "milk_carton_and_apple_and_dollar", "milk_carton_and_apple_and_euro", "milk_carton_and_apple_and_peso", "milk_carton_and_apple_and_pound", "milk_carton_and_apple_and_ruble", "milk_carton_and_apple_and_rupee", "milk_carton_and_apple_and_shekel", "milk_carton_and_apple_and_yen_yuan", "milk_carton_and_cheese", "milk_churn", "mineshaft_cage", "mineshaft_profile", "minnesota", "minnesota_with_capital_star", "mississippi", "mississippi_with_capital_star", "missouri", "missouri_with_capital_star", "mobile_phone_with_keypad_and_antenna", "mobile_phone_with_keypad_and_antenna_and_bolt", "mobile_phone_with_keypad_and_antenna_and_wifi", "mobile_phone_with_keypad_and_antenna_beside_mobile_phone_with_touchscreen_and_antenna", "mobile_phone_with_touchscreen_and_antenna", "mobile_phone_with_touchscreen_and_antenna_and_bolt", "mobile_phone_with_touchscreen_and_antenna_and_wifi", "molar_tooth", "monopod_antenna_with_beams", "monorail_transit_vehicle_with_destination_display", "montana", "montana_with_capital_star", "mortar_and_pestle_with_greek_cross", "mosquito", "motor_scooter", "motorboat", "motorboat_and_arrow_right_above_arrow_left", "motorboat_and_baht", "motorboat_and_dollar", "motorboat_and_euro", "motorboat_and_key", "motorboat_and_locked_lock_with_keyhole", "motorboat_and_peso", "motorboat_and_pound", "motorboat_and_ruble", "motorboat_and_rupee", "motorboat_and_shekel", "motorboat_and_tag", "motorboat_and_taxi_checkerboard", "motorboat_and_wrench", "motorboat_and_yen_yuan", "motorboat_in_parking_structure", "motorboat_on_parking_line", "motorboat_on_ramp", "motorboat_on_water", "motorboat_under_list_beside_checkmark", "motorcycle", "motorcycle_and_arrow_right_above_arrow_left", "motorcycle_and_baht", "motorcycle_and_dollar", "motorcycle_and_euro", "motorcycle_and_key", "motorcycle_and_locked_lock_with_keyhole", "motorcycle_and_peso", "motorcycle_and_pound", "motorcycle_and_ruble", "motorcycle_and_rupee", "motorcycle_and_shekel", "motorcycle_and_tag", "motorcycle_and_taxi_checkerboard", "motorcycle_and_wrench", "motorcycle_and_yen_yuan", "motorcycle_in_parking_structure", "motorcycle_on_parking_line", "motorcycle_under_list_beside_checkmark", "mountain", "mountain_with_greek_cross", "mountain_with_heavy_six_point_asterisk", "mountains_and_lake", "mounted_scope", "mounted_slotted_dispenser", "mounted_slotted_dispenser_with_dog_wearing_collar", "mounted_slotted_dispenser_with_poo_pile", "music_note_with_optical_disc", "music_notes_eighth", "music_notes_sixteenth", "n", "nauseous_face", "nauseous_face_in_circle", "nauseous_face_in_circle_outline", "navigation_arrow_top_right", "navigation_arrow_up", "nebraska", "nebraska_with_capital_star", "needle", "needle_and_spool_of_thread", "nervous_face", "nervous_face_in_circle", "nervous_face_in_circle_outline", "netherlands", "netherlands_with_capital_star", "neutral_face", "neutral_face_in_circle", "neutral_face_in_circle_outline", "nevada", "nevada_with_capital_star", "new_hampshire", "new_hampshire_with_capital_star", "new_jersey", "new_jersey_with_capital_star", "new_mexico", "new_mexico_with_capital_star", "new_york", "new_york_with_capital_star", "newspaper", "newspaper_box_with_newspaper", "nine", "nine_one_one", "nine_point_star", "nine_point_star_outline", "no_entry", "noodle_bowl_and_chopsticks_with_noodles", "noodle_bowl_with_steam", "nordic_cross", "north_carolina", "north_carolina_with_capital_star", "north_dakota", "north_dakota_with_capital_star", "nose_outline", "o", "oak_leaf", "obelisk", "obelisk_on_plinth", "observatory_dome", "oc_text", "octagon", "octagon_outline", "office_building_with_flag", "officer", "officer_with_stop_arm", "ohio", "ohio_with_capital_star", "oklahoma", "oklahoma_with_capital_star", "om", "om_on_square", "one", "one_above_water", "one_minus", "one_minus_above_water", "one_plus", "one_plus_above_water", "open_book", "open_book_under_roof", "open_chest_with_treasure_and_sparkles", "open_envelope_right", "open_envelope_right_with_baht", "open_envelope_right_with_dollar", "open_envelope_right_with_euro", "open_envelope_right_with_peso", "open_envelope_right_with_pound", "open_envelope_right_with_ruble", "open_envelope_right_with_rupee", "open_envelope_right_with_shekel", "open_envelope_right_with_yen_yuan", "open_scissors", "open_scissors_crossing_handled_comb", "ordnance_survey_benchmark", "oregon", "oregon_with_capital_star", "oval_broadleaved_tree", "oval_broadleaved_tree_beside_oval_broadleaved_tree", "overweight_person", "p", "p_wide", "p_wide_in_parking_structure", "p_wide_on_parking_line", "p_wide_under_roof", "p_wide_with_arrow_bottom_right", "p_wide_with_arrow_right", "p_wide_with_bicycle", "p_wide_with_parking_meter", "paifang", "paint_roller", "paintbrush", "palace", "palette", "palette_with_music_note", "palm_tree", "pancreas", "papal_cross", "paper_and_pencil", "paperclip", "parachute", "parallelogram_tall_left", "parallelogram_tall_right", "parking_line", "parking_stall_markings", "parking_stall_markings_with_e_wide", "parking_stall_markings_with_p_wide", "parking_stall_markings_with_person_in_wheelchair", "parking_structure", "parrot", "party_popper", "passport_with_belgium", "passport_with_bundesadler", "passport_with_graticule_globe", "passport_with_netherlands", "patriarchal_cross", "pawprint", "pawprint_and_whistle", "pawprint_with_greek_cross", "pawprints_and_heart", "payment_card", "payment_card_in_slot", "peace_sign", "pen_nib", "pencil_and_apple", "pencil_bottom_left_to_square_outline", "pennsylvania", "pennsylvania_with_capital_star", "pentagram_in_circle_outline", "people_above_car", "people_and_person_pointing", "people_in_car", "people_sitting_in_theater", "people_sitting_on_seesaw", "people_sleeping_in_bunkbeds", "people_sleeping_in_opposing_bunkbeds", "people_wearing_traditional_festive_latin_clothes", "perfume_bottle_with_spray", "person_aiming_archery_bow", "person_aiming_rifle", "person_balancing", "person_balancing_on_low_mounted_beam", "person_baseball_batting", "person_behind_barred_window", "person_behind_desk", "person_bicycle_racing", "person_boarding", "person_boarding_aerial_gondola", "person_boarding_bullet_train_on_railway_track", "person_boarding_bus_with_destination_display", "person_boarding_bus_with_destination_display_and_pantograph", "person_boarding_car", "person_boarding_diesel_train_on_railway_track", "person_boarding_ferryboat", "person_boarding_hanging_rail_transit_vehicle_with_destination_display", "person_boarding_kids_train_on_railway_track", "person_boarding_monorail_transit_vehicle_with_destination_display", "person_boarding_school_bus", "person_boarding_steam_train_on_railway_track", "person_boarding_taxi", "person_boarding_tram_with_destination_display_and_pantograph_on_tram_track", "person_boarding_transit_vehicle_on_railway_track", "person_boarding_transit_vehicle_with_destination_display", "person_boarding_transit_vehicle_with_destination_display_and_pantograph_on_tram_track", "person_boarding_transit_vehicle_with_destination_display_on_railway_track", "person_boarding_transit_vehicle_with_destination_display_on_railway_track_under_ground", "person_boat_racing_in_waves", "person_carrying_canoe", "person_carrying_ski", "person_carrying_ski_and_ski_poles", "person_carrying_skis", "person_carrying_skis_and_ski_poles", "person_climbing", "person_climbing_on_climbing_frame", "person_climbing_with_climbing_rope", "person_cricket_batting_at_cricket_ball", "person_cross_country_skiing", "person_dancing_with_person_wearing_dress", "person_dancing_with_sparkles", "person_diving_into_water", "person_driving_motorboat_on_water", "person_driving_motorboat_on_water_under_paragraph", "person_dropping_trash_into_wheelie_bin", "person_falling_on_rough_surface", "person_fishing_from_pier_above_water", "person_hanging_from_horizontal_bar", "person_holding_barbell", "person_holding_branches", "person_holding_cane", "person_holding_chestfeeding_baby", "person_holding_open_book", "person_holding_open_book_profile", "person_holding_shopping_bags_walking", "person_ice_skating", "person_in_water", "person_in_water_wearing_swim_briefs_holding_bucket", "person_in_water_with_steam", "person_in_wheelchair", "person_inline_skating", "person_jockeying_racehorse", "person_jumping_in_puddle_with_splashes", "person_jumping_on_bouncy_cushion", "person_jumping_on_trampoline", "person_kneeling_and_praying", "person_leaping_over_hurdle", "person_lounging_on_lounger", "person_lying_on_front_in_sun_on_surface", "person_massaging_person_lying_on_front", "person_on_escalator", "person_on_ground_dragging_raft_to_water", "person_on_inclined_swing", "person_on_swing", "person_paddling_canoe_on_water", "person_piloting_hang_glider", "person_playing_soccer", "person_playing_tennis", "person_reaching_into_bins", "person_reaching_up", "person_riding_bicycle", "person_riding_bicycle_down_uneven_slope", "person_riding_bicycle_on_crosswalk", "person_riding_bicycle_up_uneven_slope", "person_riding_dog_sled", "person_riding_horse", "person_riding_in_stroller", "person_riding_jetski_on_water", "person_riding_pedal_boat_on_water", "person_riding_skateboard", "person_riding_snowmobile", "person_riding_surfboard", "person_riding_tube_on_water", "person_rowing_rowboat_on_water", "person_running", "person_running_after_person", "person_shoveling_dirt", "person_showering_with_soap_under_shower_spray", "person_shushing", "person_sitting_in_seat", "person_sitting_in_steam_sauna", "person_sitting_on_bench", "person_sitting_on_bench_with_armrests", "person_sitting_on_bench_with_armrests_and_backrest", "person_sitting_on_bench_with_backrest", "person_sitting_on_lifeguard_stand_above_water", "person_ski_jumping", "person_skiing_downhill", "person_sledding_downhill", "person_sleeping", "person_sleeping_in_bed", "person_sleeping_in_bed_above_car", "person_sleeping_in_bed_between_floor_and_ceiling", "person_sleeping_in_shelter", "person_sliding_down_cliff", "person_sliding_down_cliff_into_water", "person_slipping_down_cliff", "person_slipping_down_cliff_into_water", "person_slipping_down_ramp", "person_slipping_down_steps", "person_snowboarding_downhill", "person_snowshoeing", "person_speaking_to_amphitheater", "person_spiking_volleyball", "person_squatting", "person_squatting_and_person_reaching_up", "person_standing", "person_swimming_in_water", "person_swimming_in_waters", "person_swinging_golf_club", "person_swinging_golf_club_beside_flagstick_with_pennant", "person_swinging_golf_club_beside_windmill", "person_tow_skiing_on_water", "person_using_mounted_binoculars", "person_using_terminal_kiosk", "person_using_terminal_kiosk_with_baht", "person_using_terminal_kiosk_with_dollar", "person_using_terminal_kiosk_with_euro", "person_using_terminal_kiosk_with_peso", "person_using_terminal_kiosk_with_pound", "person_using_terminal_kiosk_with_ruble", "person_using_terminal_kiosk_with_rupee", "person_using_terminal_kiosk_with_shekel", "person_using_terminal_kiosk_with_yen_yuan", "person_vomiting", "person_walking", "person_walking_and_person_riding_bicycle", "person_walking_and_person_riding_bicycle_on_crosswalk", "person_walking_between_walls", "person_walking_bicycle", "person_walking_holding_railing", "person_walking_in_water", "person_walking_in_waters", "person_walking_on_crosswalk", "person_walking_under_icy_eave", "person_walking_with_hiking_pole", "person_walking_with_white_cane", "person_wearing_backpack_and_headlamp_crouching", "person_wearing_backpack_scrambling_up_cliff", "person_wearing_backpack_walking_with_hiking_pole", "person_wearing_backpack_walking_with_hiking_pole_in_gable_roofed_shelter", "person_wearing_cheese_wedge_hat", "person_wearing_cowboy_hat_holding_coiled_rope", "person_wearing_dress_holding_cane", "person_wearing_helmet_padding_raft_on_water", "person_wearing_helmet_paddling_kayak_on_water", "person_wearing_helmet_riding_atv", "person_wearing_martial_arts_belt_front_kicking", "person_wearing_racing_helmet_driving_go_kart", "person_wearing_racing_helmet_driving_racecar", "person_wearing_scuba_gear_diving", "person_wearing_scuba_gear_diving_under_water", "person_wearing_seatbelt", "person_wearing_skis_riding_chairlift", "person_wearing_waiters_attire_holding_tray_with_wine_glass", "person_wind_surfing_on_water", "person_with_droplets", "person_with_open_arms", "person_with_ponytail_riding_zip_line", "peso", "petrine_cross", "phone_bars", "phone_bars_no_signal", "phone_bars_no_signal_with_x", "phone_bars_weak_signal", "phone_bars_weaker_signal", "phone_bars_weakest_signal", "phone_bottom_right", "phone_down", "phone_down_above_eight_one_one", "phone_down_above_five_one_one", "phone_down_above_four_one_one", "phone_down_above_keyboard", "phone_down_above_nine_eight_eight", "phone_down_above_nine_nine_nine", "phone_down_above_nine_one_one", "phone_down_above_one_one_one", "phone_down_above_one_one_two", "phone_down_above_one_two_three", "phone_down_above_seven_one_one", "phone_down_above_six_one_one", "phone_down_above_sos_text", "phone_down_above_three_one_one", "phone_down_above_two_one_one", "phone_right", "phone_right_with_beams_from_receiver", "phone_right_with_exclamation_point", "phone_top_right", "phone_top_right_with_greek_cross", "phone_top_right_with_plus", "piano_keys", "pick_hammer", "pick_hammer_with_rocks", "picket_fence", "pickleball_paddle_with_ball", "pickup_truck", "pickup_truck_and_tag", "pickup_truck_with_crates", "pickup_truck_with_raised_hood", "pickup_truck_with_slidein_camper", "pickup_truck_with_truck_cap", "picnic_table", "picnic_table_in_shelter", "pier_mounted_in_water", "pier_on_water", "pill", "pill_bottle_with_greek_cross", "pin", "pin_pad_with_baht", "pin_pad_with_dollar", "pin_pad_with_euro", "pin_pad_with_peso", "pin_pad_with_pound", "pin_pad_with_ruble", "pin_pad_with_rupee", "pin_pad_with_shekel", "pin_pad_with_yen_yuan", "pint_glass", "pipe", "pixel_anchor", "pixel_ape_face", "pixel_ape_face_with_eye_patch", "pixel_apple", "pixel_arrows_left_right_above_water", "pixel_baht", "pixel_bell", "pixel_bicycle", "pixel_bowling_ball", "pixel_broadleaved_tree", "pixel_burger_on_bun", "pixel_burger_on_bun_with_seeds", "pixel_burger_with_cheese_on_bun", "pixel_burger_with_cheese_on_bun_with_seeds", "pixel_bus", "pixel_car", "pixel_circle", "pixel_circle_outline", "pixel_circle_with_dot", "pixel_circle_with_star", "pixel_classical_building", "pixel_classical_building_with_dome_and_flag", "pixel_classical_building_with_flag", "pixel_conifer_tree", "pixel_dollar", "pixel_dome_with_flag", "pixel_droplet", "pixel_droplet_with_shine", "pixel_envelope", "pixel_euro", "pixel_exclamation_point", "pixel_fork_and_knife", "pixel_gasoline_pump", "pixel_ghost", "pixel_head_and_shoulders", "pixel_house_with_chimney", "pixel_house_with_flag", "pixel_invader", "pixel_map_pin", "pixel_map_pin_with_dot", "pixel_megalith", "pixel_peso", "pixel_plane", "pixel_pound", "pixel_question_mark", "pixel_ruble", "pixel_rupee", "pixel_shekel", "pixel_skull", "pixel_star", "pixel_taxi", "pixel_three_inch_floppy_disk", "pixel_transit_vehicle_on_railway_track", "pixel_water", "pixel_waters", "pixel_yen_yuan", "pizza_slice", "place_of_worship_building", "plane_right", "plane_takeoff_above_ground", "plane_taxiing", "plane_top_right", "plane_up", "planes", "planes_bidirectional", "plant", "plant_in_raised_planter", "plaque", "play_shelter", "play_structure_with_slide", "plug", "plug_with_bolt", "plus", "plus_squat", "pointy_rock", "pole_with_antenna_array", "pole_with_floodlights", "police_officer", "police_officer_with_stop_arm", "poo_pile", "portable_fence", "portable_radio", "post_box", "postage_stamp", "poster_box", "pot", "potted_flower", "poultry_drumstick", "pound", "pregnant_person", "pretzel_with_salt", "profile_of_person_in_hat", "profile_of_person_in_hat_in_frame", "propane_tank", "propane_tank_with_gas_flame", "propane_tank_with_recycling_symbol", "propeller_plane", "prostate", "pumpjack", "pumpkin", "pumpkin_shaped_carriage", "pumpkin_under_stardust", "purse", "puzzle_piece", "q", "quadcopter_drone", "quaker_star", "quaker_star_on_square", "quay", "question_mark", "question_mark_above_water", "r", "racetrack_eight_with_dashes", "racetrack_oval", "racetrack_oval_with_dashes", "racquet", "radiation_symbol", "ragged_flag_with_skull", "rail_profile", "railway_cable_track", "railway_track", "railway_track_askew", "railway_track_crossing_dashed_line", "railway_track_crossing_railway_track", "railway_track_crossing_solid_line", "railway_track_crossing_striped_line", "railway_track_mini", "railway_track_narrow_gauge", "railway_track_partial", "raised_curb", "raised_curb_under_shoe", "raised_curb_with_arrow_down", "raised_curb_with_question_mark", "ranger_hat", "rattlesnake", "rays_outward", "rectangle", "rectangle_outline", "rectangle_tall", "rectangle_tall_outline", "recycling_symbol", "rememberance_ribbon", "respirator", "rhode_island", "rhode_island_with_capital_star", "rigging", "ring_linked_to_ring_with_jewel", "ring_with_jewel", "rocket_firework", "rocketship", "rocking_horse", "rolled_curb", "rolled_curb_under_shoe", "rolled_curb_with_arrow_bottom_right", "rolled_curb_with_question_mark", "rolled_paper_in_bottle", "rolled_paper_in_bottle_in_water", "roller_brushes", "roller_coaster", "roman_numeral_i", "roman_numeral_i_above_water", "roman_numeral_ii", "roman_numeral_ii_above_water", "roman_numeral_iii", "roman_numeral_iii_above_water", "roman_numeral_iv", "roman_numeral_iv_above_water", "roman_numeral_ix", "roman_numeral_v", "roman_numeral_v_above_water", "roman_numeral_vi", "roman_numeral_vi_above_water", "roman_numeral_vii", "roman_numeral_viii", "roman_numeral_x", "roman_numeral_xi", "roman_numeral_xii", "roman_numeral_xx", "roofed_information_board", "room", "rooster_fighting", "rope_fence", "round_bottomed_flask", "round_rock", "round_rock_with_inscription", "round_structure_with_flag", "row_houses", "rss", "ruble", "rumble_strip", "rupee", "russian_cross", "russian_orthodox_cross", "s", "sad_face", "sad_face_in_circle", "sad_face_in_circle_outline", "sad_face_with_tear", "sad_face_with_tear_in_circle", "sad_face_with_tear_in_circle_outline", "saddle_shape", "saguaro", "sail", "sailboat", "sailboat_on_water", "sailing_ship", "sailing_ship_in_water", "saint_georges_cross", "sandbox", "sandbox_with_sand_trowel", "sausage", "sauvastika", "sauvastika_with_dots", "sayana_press", "scaffold", "school_bus", "scissors_and_comb", "screw_beside_nail", "sculpture", "sea_lion", "sea_star", "seaplane_takeoff", "seaplane_takeoff_above_water", "sedan", "sedan_and_tag", "sedan_with_raised_hood", "semi_trailer", "semi_trailer_with_bolt", "seven", "sewage_pipe_cross_section", "shaker_pint_glass", "shark_dorsal_fin_in_water", "shark_dorsal_fin_in_waters", "shed", "shekel", "shelter", "shield", "ships_wheel", "shipwreck_in_water", "shoe", "shoe_under_shower_spray", "shooting_stars", "shopping_bag", "shopping_bag_and_tag", "shopping_bag_with_ampersand", "shopping_bag_with_anime_eye_and_eyebrow", "shopping_bag_with_arrows_recirculating", "shopping_bag_with_baht", "shopping_bag_with_dollar", "shopping_bag_with_euro", "shopping_bag_with_heart", "shopping_bag_with_pawprint", "shopping_bag_with_peso", "shopping_bag_with_pound", "shopping_bag_with_ruble", "shopping_bag_with_rupee", "shopping_bag_with_shekel", "shopping_bag_with_tag", "shopping_bag_with_yen_yuan", "shopping_basket", "shopping_cart", "shore", "showerhead_with_spray", "shrub", "shuffleboard_court_with_pucks", "sign", "sign_beside_bench_with_backrest", "sign_beside_car", "sign_beside_person_walking", "sign_beside_taxi", "signboard", "silo", "sitting_tank_toilet", "sitting_tank_toilet_with_droplet", "six", "six_above_water", "six_minus", "six_minus_above_water", "six_plus", "six_plus_above_water", "skateboard", "skull", "skull_above_crossed_bones", "skull_above_crossed_cutlasses", "skull_above_water", "skull_rock", "skull_rock_outline", "skull_with_x_oblique", "skyscraper_on_ground", "slice_of_pan_bread", "slice_of_pan_bread_outline", "slide", "slot", "slot_machine", "smiling_face", "smiling_face_in_circle", "smiling_face_in_circle_outline", "smiling_face_with_eyeglasses", "smiling_face_with_eyeglasses_in_circle", "smiling_face_with_eyeglasses_in_circle_outline", "smoke_curl", "snorkel_and_diving_mask", "snowcapped_mountain", "snowcapped_mountain_range", "snowcapped_mountain_saddle", "snowcapped_mountain_valley", "snowflake", "snowflake_above_icicles", "snowmobile", "sobbing_face", "sobbing_face_in_circle", "sobbing_face_in_circle_outline", "soccer_ball", "sos_text", "south_carolina", "south_carolina_with_capital_star", "south_dakota", "south_dakota_with_capital_star", "spade", "speaker", "speech_bubble", "speech_bubbles", "speed_bump", "speed_dip", "speed_dip_double", "speed_hump", "speed_table", "sperm", "spherical_virus", "spherical_virus_with_exclamation_point", "spice_bottle", "spike_strip", "spiky_fish", "spiky_fish_under_list_beside_checkmark", "spiky_fish_under_paragraph", "spiky_fish_under_water", "spiky_fish_with_x", "spinal_vertebrae", "spiral_labyrinth", "spleen", "spooky_ghost", "spoon", "spoon_and_chefs_knife_and_pot", "spoon_and_chopsticks", "spoon_and_fork", "spring_rider", "spyglass", "square", "square_academic_cap", "square_dot", "square_outline", "square_with_dot", "square_with_square_dot", "squat_rock", "squeeze_stile", "stagecoach", "star", "star_and_crescent", "star_and_crescent_on_square", "star_of_david", "star_of_david_filled", "star_of_david_filled_outline", "star_of_david_on_square", "star_of_david_with_dot", "star_outline", "star_wand_with_stardust", "station_wagon", "station_wagon_and_tag", "station_wagon_with_raised_hood", "statue", "steam_train", "steam_train_on_railway_track", "steam_train_with_tires", "steel_square_and_drafting_compass", "step_ladder", "step_ladder_doubled_sided", "stethoscope", "stomach", "stone_arrowhead_down", "stone_arrowhead_right", "stone_arrowhead_top_right", "stone_arrowhead_up", "stone_wall", "storage_drum", "storage_fermenter", "storage_tank", "street_lamp_arm", "striped_zone", "stroller", "sub_sandwich", "sub_sandwich_with_steam", "sugar_cubes", "sugarcane_stalk_with_leaves", "sugarcane_stalk_with_top_leaves", "sugarcane_stalks_with_top_leaves", "suitcase", "suitcase_and_arrow_right_above_arrow_left", "suitcase_and_key", "suitcase_and_locked_lock_with_keyhole", "suitcase_in_rectangle_outline_and_key", "suitcase_under_list_beside_checkmark", "suitcase_xray", "sun", "surprised_face", "surprised_face_in_circle", "surprised_face_in_circle_outline", "surprised_face_with_x_eyes", "surprised_face_with_x_eyes_in_circle", "surprised_face_with_x_eyes_in_circle_outline", "survey_triangulation_disk", "sushi", "swastika", "swastika_with_dots", "swim_bra_and_swim_briefs", "swing", "swinging_doors", "syringe", "syrup_jug", "syrup_jug_and_droplet", "syrup_jug_with_maple_leaf", "syrup_jug_with_maple_leaf_and_droplet", "syrup_jug_with_sugarcane_stalk_with_leaves", "syrup_jug_with_sugarcane_stalk_with_leaves_and_droplet", "t", "table_soccer_players_with_ball", "table_tennis_paddle", "table_with_chairs", "table_with_umbrella", "table_with_umbrella_and_chairs", "tabletop_microphone", "tabletop_microphone_in_gable_roofed_building", "taco", "tag", "tag_with_baht", "tag_with_dollar", "tag_with_euro", "tag_with_peso", "tag_with_pound", "tag_with_ruble", "tag_with_rupee", "tag_with_shekel", "tag_with_yen_yuan", "tags", "target", "target_with_archery_arrow_at_bullseye", "tattoo_machine", "taxi", "taxi_and_arrow_right_above_arrow_left", "taxi_and_taxi_checkerboard", "taxi_checkerboard", "tea_bag", "teapot", "telegraph_key", "telescope", "telescope_with_sparkles", "temaki", "ten", "tennessee", "tennessee_with_capital_star", "terminal_screen_with_dollar_prompt", "terminal_screen_with_greater_than_prompt", "terminal_screen_with_hash_prompt", "terminal_screen_with_percent_prompt", "texas", "texas_with_capital_star", "thatched_roof_hut", "three", "three_above_water", "three_books_stacked", "three_dot_horizontal_line", "three_dot_horizontal_line_in_rectangle", "three_dot_vertical_line", "three_dot_vertical_line_in_rectangle", "three_inch_floppy_disk", "three_minus", "three_minus_above_water", "three_plus", "three_plus_above_water", "thumbs_up_hand_with_sleeve", "thyroid", "ticket", "ticket_in_slot", "tiling", "tipi_campsite", "tipi_campsite_and_droplet", "tipi_campsite_with_baht", "tipi_campsite_with_dollar", "tipi_campsite_with_euro", "tipi_campsite_with_peso", "tipi_campsite_with_pound", "tipi_campsite_with_ruble", "tipi_campsite_with_rupee", "tipi_campsite_with_shekel", "tipi_campsite_with_yen_yuan", "tipi_campsites", "tire", "tire_course", "tired_face", "tired_face_in_circle", "tired_face_in_circle_outline", "tired_face_with_oral_thermometer_and_brow_sweat", "tired_face_with_oral_thermometer_and_brow_sweat_in_circle", "tired_face_with_oral_thermometer_and_brow_sweat_in_circle_outline", "tired_face_with_sweat", "tired_face_with_sweat_in_circle", "tired_face_with_sweat_in_circle_outline", "tired_face_with_z", "tired_face_with_z_in_circle", "tired_face_with_z_in_circle_outline", "tissue", "to_go_cup_with_cup_sleeve", "toilet_paper_roll", "toll_booth", "toll_gantry", "toolbox", "toothbrush", "torii", "torii_on_square", "tornado", "tornado_beside_shelter", "tour_van", "tourboat_on_water", "tow_truck", "tower_with_observation_deck", "town_buildings", "traditional_storage_jars", "traffic_cone", "traffic_cone_and_exclamation_point", "tram_on_tram_track", "tram_profile", "tram_track_crossing_dashed_line", "tram_track_crossing_solid_line", "tram_track_crossing_striped_line", "tram_with_destination_display_and_pantograph_on_tram_track", "tram_with_destination_display_on_tram_track", "tram_with_pantograph_on_tram_track", "transit_vehicle", "transit_vehicle_on_railway_track", "transit_vehicle_on_railway_track_between_roller_brushes", "transit_vehicle_on_railway_track_in_tunnel", "transit_vehicle_with_destination_display", "transit_vehicle_with_destination_display_and_pantograph_on_tram_track", "transit_vehicle_with_destination_display_on_railway_track", "transit_vehicle_with_destination_display_on_railway_track_in_tunnel", "transit_vehicle_with_pantograph_on_railway_track", "trapezoidal_rock", "trash_can", "trash_truck", "treasure_map", "treasure_map_x", "tree_and_bench_with_backrest", "tree_on_hill_in_water", "tree_row", "tree_stump", "trench", "triangle_down", "triangle_down_outline", "triangle_down_squat", "triangle_up", "triangle_up_outline", "triangle_up_with_exclamation_point", "triangle_up_with_skull", "triangles_left_right", "triangles_left_right_in_rectangle", "triangles_left_right_in_rectangle_outline", "triangles_up_down", "triangles_up_down_in_rectangle", "triangles_up_down_in_rectangle_outline", "tricorne_hat_with_skull", "trifold_brochure", "trophy", "trophy_with_star", "truck", "trumpet", "tshirt", "tshirt_on_clothes_hanger_and_folded_linens", "tube", "tube_and_toothbrush", "tulip", "tumor", "tunnel", "tunnel_entrance", "turnstile", "turntable", "turtle_shell_top", "turtle_top", "twelve", "two", "two_above_water", "two_button_computer_mouse_with_scroll_wheel", "two_dot_horizontal_line_in_rectangle", "two_dot_vertical_line_in_rectangle", "two_minus", "two_minus_above_water", "two_plus", "two_plus_above_water", "typha_and_duck_in_water", "typha_in_water", "u", "underweight_person", "unicorn_head", "unicorn_rearing", "utah", "utah_with_capital_star", "utility_device", "utility_device_with_bolt", "utility_device_with_cable", "utility_device_with_droplet", "utility_device_with_gas_flame", "utility_device_with_sewage_pipe_cross_section", "utility_meter", "utility_meter_with_bolt", "utility_meter_with_cable", "utility_meter_with_droplet", "utility_meter_with_gas_flame", "utility_pole", "utility_pole_with_bolt", "utility_shutoff", "utility_shutoff_with_bolt", "utility_shutoff_with_cable", "utility_valve", "utility_valve_with_droplet", "utility_valve_with_gas_flame", "utv", "v", "vacuum_cleaner", "vacuum_station", "vase", "veiled_hennin_with_star", "vending_machine", "vending_machine_with_baguette", "vending_machine_with_cigarette_with_smoke_curl", "vending_machine_with_drink_can", "vending_machine_with_drink_cup_with_steam", "vending_machine_with_egg", "vending_machine_with_greek_cross", "vending_machine_with_heart", "vending_machine_with_ice_cream_on_cone", "vending_machine_with_postage_stamp", "vending_machine_with_shelves", "vending_machine_with_ticket", "vending_machine_with_venus", "venus", "venus_mars", "venus_with_mars", "vermont", "vermont_with_capital_star", "vertical_rotisserie", "vertical_slot", "video_camera_symbol", "village_buildings", "vinyl_record", "virginia", "virginia_with_capital_star", "vneck_tshirt", "vneck_tshirt_and_tag", "volleyball", "vomiting_face", "vomiting_face_in_circle", "vomiting_face_in_circle_outline", "w", "wall_hanging_with_mountains_and_sun", "wall_tent", "wall_tents", "wallmounted_surveillance_camera", "washing_machine", "washington", "washington_with_capital_star", "water", "water_bottle", "water_glass", "water_pipe_return_bend_with_handle", "water_pipe_return_bend_with_motor_and_handle", "water_standpipe_with_handle", "water_standpipe_with_handle_and_drinking_glass", "water_standpipe_with_handle_and_droplet", "water_standpipe_with_motor_and_handle", "water_standpipe_with_motor_and_handle_and_drinking_glass", "water_standpipe_with_motor_and_handle_and_droplet", "water_standpipe_with_pump_handle", "water_standpipe_with_pump_handle_and_drinking_glass", "water_standpipe_with_pump_handle_and_droplet", "water_tap", "water_tap_with_drinking_glass", "water_tap_with_droplet", "water_tap_with_handle", "water_tap_with_handle_and_drinking_glass", "water_tap_with_handle_and_droplet", "water_tower", "waterfall", "waterfall_into_water", "waterfall_with_froth", "waterfowl", "watering_can", "watermill_on_water", "waters", "wc_text", "webcam", "west_virginia", "west_virginia_with_capital_star", "whale_tail", "whale_tail_in_water", "wheelchair", "wheelie_bin", "wheelie_bin_and_apple_core", "wheelie_bin_and_bag_of_trash", "wheelie_bin_and_drink_bottle_and_can", "wheelie_bin_and_leaf", "whistle", "wifi", "wifi_no_signal", "wifi_no_signal_with_x", "wifi_weak_signal", "wifi_weakest_signal", "wind_turbine", "winding_way", "winding_way_narrow", "winding_way_wide", "windmill", "window", "windpump", "windsock", "wine_bottle", "wine_bottle_and_wine_glass", "wine_glass", "winged_horse_rearing", "wisconsin", "wisconsin_with_capital_star", "wizards_hat_with_star", "wolf_head", "wolf_head_and_exclamation_point", "womens_and_mens_restroom_symbol", "womens_and_mens_separate_restrooms_symbol", "womens_restroom_symbol", "woozy_face", "woozy_face_in_circle", "woozy_face_in_circle_outline", "wrench", "wrench_and_hammer", "wyoming", "wyoming_with_capital_star", "x", "x_above_water", "x_cross", "x_oblique", "y", "y_junction", "yen_yuan", "yin_yang", "yin_yang_on_square", "z", "zero", "zero_above_water"] };
+
+// src/configStudio/renderScalar.ts
+function scalarType(field) {
+  return field.type === "enum" ? field.optionValueType ?? "string" : field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : "string";
+}
+function scalarValueErrors(field, value) {
+  if (field.cardinality !== "single" || field.type === "json") return [`${field.key} \u9700\u8981\u660E\u786E\u7684\u5355\u503C\u6807\u91CF\uFF0C\u4E0D\u80FD\u6BD4\u8F83\u5BF9\u8C61/\u6570\u7EC4\u3002`];
+  if (typeof value !== scalarType(field) || typeof value === "number" && !Number.isFinite(value)) return [`${field.key} \u7684\u6BD4\u8F83\u503C\u7C7B\u578B\u4E0D\u5339\u914D\u3002`];
+  if (field.type === "enum" && !field.options?.some((option) => option.value === String(value))) return [`${field.key} \u7684\u503C\u4E0D\u5728\u5DF2\u5B9A\u4E49\u5B57\u5178\u4E2D\u3002`];
+  return [];
+}
+var validMappedColor = (color) => typeof color === "string" && /^#[a-f\d]{6}$/i.test(color);
+
+// src/configStudio/pointSymbol.ts
+var ICON_LIBRARY = { library: "pinhead", version: pinhead_capabilities_generated_default.version, manifestSha256: pinhead_capabilities_generated_default.manifestSha256 };
+var iconIds = new Set(pinhead_capabilities_generated_default.ids);
+var supportedIconId = (id) => iconIds.has(id);
+function acceptableImageUrl(value) {
+  if (typeof value !== "string" || !value.trim() || value.length > 8192) return false;
+  try {
+    const url = new URL(value, "https://cairn.invalid");
+    return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+function placementAnchor(value, width, height) {
+  const positions = { center: [width / 2, height / 2], topCenter: [width / 2, 0], bottomCenter: [width / 2, height], leftCenter: [0, height / 2], rightCenter: [width, height / 2], topLeft: [0, 0], topRight: [width, 0], bottomLeft: [0, height], bottomRight: [width, height] };
+  const anchor = value.anchor.mode === "custom" ? [value.anchor.x, value.anchor.y] : positions[value.anchor.mode];
+  return [anchor[0] - value.offsetPx.x, anchor[1] - value.offsetPx.y];
+}
+function pointSymbolProblems(value, fields, config) {
+  const issues = [], fail = (path2, message) => issues.push({ path: path2, message });
+  const finite = (n) => typeof n === "number" && Number.isFinite(n);
+  const range = (n, min, max) => finite(n) && n >= min && n <= max;
+  const field = (key2, at) => {
+    const definition = fields.find((f) => f.key === key2);
+    if (!definition || definition.cardinality !== "single" || definition.type === "json") fail(at, "\u6765\u6E90\u9700\u8981\u5B58\u5728\u7684\u5355\u503C\u6807\u91CF\u5B57\u6BB5\u3002");
+    return definition;
+  };
+  const placement = (p, at) => {
+    if (!p || !p.anchor || !p.offsetPx) {
+      fail(at, "\u7F3A\u5C11\u5B8C\u6574\u951A\u70B9\u53CA\u5C40\u90E8\u504F\u79FB\u3002");
+      return;
+    }
+    if (!["center", "topCenter", "bottomCenter", "leftCenter", "rightCenter", "topLeft", "topRight", "bottomLeft", "bottomRight", "custom"].includes(p.anchor.mode)) fail(at, "\u951A\u70B9\u6A21\u5F0F\u65E0\u6548\u3002");
+    if (p.anchor.mode === "custom" && (!finite(p.anchor.x) || !finite(p.anchor.y)) || !finite(p.offsetPx.x) || !finite(p.offsetPx.y)) fail(at, "\u951A\u70B9\u53CA\u5C40\u90E8\u504F\u79FB\u5FC5\u987B\u662F\u6709\u9650\u6570\u5B57\u3002");
+    if (p.anchor.mode !== "custom" && (p.anchor.x !== void 0 || p.anchor.y !== void 0)) fail(at, "\u9884\u8BBE\u951A\u70B9\u4E0D\u80FD\u540C\u65F6\u4FDD\u5B58\u53E6\u4E00\u5957\u81EA\u5B9A\u4E49\u5750\u6807\u3002");
+    if ([p.anchor.x ?? 0, p.anchor.y ?? 0, p.offsetPx.x, p.offsetPx.y].every(finite) && !placementAnchor(p, 2048, 2048).every(finite)) fail(at, "\u7EC4\u5408\u951A\u70B9\u4E0E\u504F\u79FB\u8BA1\u7B97\u8D85\u51FA\u6709\u9650\u6570\u503C\u8303\u56F4\u3002");
+  };
+  const base = (p, at) => {
+    if (!p) {
+      fail(at, "\u7F3A\u5C11\u5B8C\u6574\u57FA\u7840\u70B9\u6837\u5F0F\u3002");
+      return;
+    }
+    if (!range(p.size, 0, 512) || !range(p.weight, 0, 72)) fail(at, "\u57FA\u7840\u70B9\u5927\u5C0F\uFF0F\u63CF\u8FB9\u5BBD\u5EA6\u8D85\u51FA\u8303\u56F4\u3002");
+    if (!["circle", "square", "triangle", "regular4", "regular5", "regular6"].includes(p.pointShape)) fail(at, "\u56DE\u9000\u4EC5\u5141\u8BB8\u57FA\u7840\u70B9\u5F62\u72B6\u3002");
+    if (!range(p.strokeOpacity, 0, 1) || !range(p.fillOpacity, 0, 1)) fail(at, "\u57FA\u7840\u70B9\u900F\u660E\u5EA6\u5FC5\u987B\u4ECB\u4E8E 0\u20131\u3002");
+  };
+  const item = (p, at) => {
+    if (p.library !== "pinhead" || !supportedIconId(p.id)) fail(at, "\u56FE\u6807\u4E0D\u5728\u56FA\u5B9A Pinhead \u6E05\u5355\u4E2D\u3002");
+    if (!config.resources?.iconLibraries.some((r) => r.library === "pinhead" && r.version === ICON_LIBRARY.version && r.manifestSha256 === ICON_LIBRARY.manifestSha256)) fail(at, "\u914D\u7F6E\u672A\u58F0\u660E\u53D7\u652F\u6301\u7684 Pinhead \u7248\u672C\u53CA\u8D44\u6E90\u6458\u8981\u3002");
+    if (!range(p.sizePx, 1, 512) || !range(p.foregroundOpacity, 0, 1)) fail(at, "\u56FE\u6807\u5927\u5C0F\u6216\u900F\u660E\u5EA6\u65E0\u6548\u3002");
+    const plate = p.plate;
+    if (plate) {
+      if (!range(plate.paddingPx, 0, 512) || !range(plate.strokeWidthPx, 0, 72) || 2 * (plate.paddingPx + plate.strokeWidthPx) >= p.sizePx) fail(at + "/plate", "\u5E95\u677F\u5185\u8FB9\u8DDD\u53CA\u63CF\u8FB9\u4E0D\u80FD\u5360\u6EE1\u56FE\u6848\u533A\u57DF\u3002");
+      if (!range(plate.fillOpacity, 0, 1) || !range(plate.strokeOpacity, 0, 1) || plate.radiusPx !== void 0 && !range(plate.radiusPx, 0, 512)) fail(at + "/plate", "\u5E95\u677F\u900F\u660E\u5EA6\u6216\u5706\u89D2\u65E0\u6548\u3002");
+    }
+    placement(p.placement, at + "/placement");
+  };
+  const rows = (key2, entries, at, inspect) => {
+    const definition = field(key2, at + "/field"), seen = /* @__PURE__ */ new Set();
+    if (!entries.length) fail(at, "\u81F3\u5C11\u9700\u8981\u4E00\u6761\u6709\u6548\u6620\u5C04\u3002");
+    entries.forEach((entry, i) => {
+      const row2 = `${at}/entries/${i}`;
+      if (seen.has(entry.value)) fail(row2, "\u6620\u5C04\u4FDD\u5B58\u503C\u91CD\u590D\u3002");
+      seen.add(entry.value);
+      if (definition) for (const message of scalarValueErrors(definition, entry.value)) fail(row2, message);
+      inspect(entry, row2);
+    });
+  };
+  if (value.kind === "shape") base(value.shape, "shape");
+  else if (value.kind === "icon") {
+    base(value.fallback, "fallback");
+    if (value.icon.mode === "single") item(value.icon.item, "icon/item");
+    else rows(value.icon.field, value.icon.entries, "icon", (row2, at) => item(row2.item, at + "/item"));
+  } else if (value.kind === "externalImage") {
+    base(value.fallback, "fallback");
+    const source = value.image;
+    const presentation = (p, at) => {
+      if (!range(p.sizePx.width, 1, 2048) || !range(p.sizePx.height, 1, 2048)) fail(at, "\u56FE\u7247\u5BBD\u9AD8\u987B\u4ECB\u4E8E 1\u20132048px\u3002");
+      placement(p.placement, at + "/placement");
+    };
+    if (source.mode === "valueMap") rows(source.field, source.entries, "image", (row2, at) => {
+      if (!acceptableImageUrl(row2.url)) fail(at + "/url", "\u56FE\u7247\u94FE\u63A5\u5FC5\u987B\u662F\u6709\u6548 HTTP(S) \u6216\u7AD9\u5185\u5730\u5740\u3002");
+      presentation(row2.presentation, at + "/presentation");
+    });
+    else {
+      presentation(source.presentation, "image/presentation");
+      if (source.mode === "fixed" && !acceptableImageUrl(source.url)) fail("image/url", "\u56FE\u7247\u94FE\u63A5\u5FC5\u987B\u662F\u6709\u6548 HTTP(S) \u6216\u7AD9\u5185\u5730\u5740\u3002");
+      if (source.mode === "fieldUrl") field(source.field, "image/field");
+      if (source.mode === "externalFieldUrl") {
+        const id = field(source.targetIdField, "image/targetIdField");
+        if (id && !["string", "reference", "enum"].includes(id.type)) fail("image/targetIdField", "\u5916\u90E8\u76EE\u6807 ID \u9700\u8981\u5355\u503C\u6587\u672C\uFF0F\u5F15\u7528\u5B57\u6BB5\u3002");
+        if (!source.targetUrlField || !source.targetUrlField.split(".").every((part) => /^[A-Za-z_][A-Za-z0-9_-]*$/.test(part) && !["constructor", "prototype", "__proto__"].includes(part))) fail("image/targetUrlField", "\u624B\u586B\u76EE\u6807\u5B57\u6BB5\u8DEF\u5F84\u65E0\u6548\u3002");
+      }
+    }
+  }
+  return issues;
+}
+function pointSymbolBindings(value) {
+  if (!value) return [];
+  const result = [];
+  const base = (p, at) => {
+    result.push({ path: at + "/stroke", value: p.stroke }, { path: at + "/fill", value: p.fill });
+  };
+  if (value.kind === "shape") base(value.shape, "shape");
+  else {
+    base(value.fallback, "fallback");
+    if (value.kind === "icon") {
+      const item = (p, at) => {
+        result.push({ path: at + "/foreground", value: p.foreground });
+        if (p.plate) result.push({ path: at + "/plate/fill", value: p.plate.fill }, { path: at + "/plate/stroke", value: p.plate.stroke });
+      };
+      if (value.icon.mode === "single") item(value.icon.item, "icon/item");
+      else value.icon.entries.forEach((row2, i) => item(row2.item, `icon/entries/${i}/item`));
+    }
+  }
+  return result;
+}
+
+// src/configStudio/renderBooleanFormula.ts
+var cache = /* @__PURE__ */ new WeakMap();
+function parse(text, known) {
+  if (text.length > 16384) throw Error("\u6761\u4EF6\u516C\u5F0F\u8D85\u8FC7 16 KiB\u3002");
+  const tokens = [];
+  const re = /\s*([A-Z][A-Z0-9_]*|[()])/igy;
+  let offset = 0;
+  while (offset < text.length) {
+    if (!text.slice(offset).trim()) break;
+    re.lastIndex = offset;
+    const token = re.exec(text);
+    if (!token) throw Error(`\u6761\u4EF6\u516C\u5F0F\u5728\u7B2C ${offset + 1} \u4E2A\u5B57\u7B26\u65E0\u6548\u3002`);
+    tokens.push(token[1].toUpperCase());
+    offset = re.lastIndex;
+  }
+  let index = 0;
+  const unary = (depth) => {
+    if (depth > 32) throw Error("\u6761\u4EF6\u516C\u5F0F\u8D85\u8FC7 32 \u5C42\u3002");
+    const token = tokens[index++];
+    if (token === "NOT") return { kind: "not", child: unary(depth + 1) };
+    if (token === "(") {
+      const result2 = or(depth + 1);
+      if (tokens[index++] !== ")") throw Error("\u6761\u4EF6\u516C\u5F0F\u62EC\u53F7\u4E0D\u914D\u5BF9\u3002");
+      return result2;
+    }
+    if (!token || !known.has(token)) throw Error(`\u672A\u77E5\u6761\u4EF6/\u7EC4 ${token ?? "\uFF08\u7A7A\uFF09"}\u3002`);
+    return { kind: "term", id: token };
+  };
+  const balanced = (items, kind) => {
+    if (items.length === 1) return items[0];
+    const mid = Math.floor(items.length / 2);
+    return { kind, left: balanced(items.slice(0, mid), kind), right: balanced(items.slice(mid), kind) };
+  };
+  const and = (depth) => {
+    const items = [unary(depth)];
+    while (tokens[index] === "AND") {
+      index++;
+      items.push(unary(depth));
+    }
+    return balanced(items, "and");
+  };
+  const or = (depth) => {
+    const items = [and(depth)];
+    while (tokens[index] === "OR") {
+      index++;
+      items.push(and(depth));
+    }
+    return balanced(items, "or");
+  };
+  const result = or(0);
+  if (index !== tokens.length) throw Error(`\u591A\u4F59\u7684\u6761\u4EF6\u7B26\u53F7 ${tokens[index]}\u3002`);
+  return result;
+}
+function compileRenderFormula(formula) {
+  if (Object.isFrozen(formula) && cache.has(formula)) return cache.get(formula);
+  if (!formula.terms.length || formula.terms.length > 256) throw Error("\u6761\u4EF6\u516C\u5F0F\u9700\u8981 1\u2013256 \u4E2A\u539F\u5B50\u6761\u4EF6\u3002");
+  if ((formula.groups?.length ?? 0) > 256 || formula.expression.length + (formula.groups ?? []).reduce((sum2, g) => sum2 + g.expression.length, 0) > 16384) throw Error("\u6761\u4EF6\u53CA\u547D\u540D\u7EC4\u516C\u5F0F\u603B\u957F\u5EA6\u8D85\u8FC7 16 KiB\uFF0C\u6216\u547D\u540D\u7EC4\u8D85\u8FC7 256 \u9879\u3002");
+  if (formula.terms.some((t) => !/^C\d+$/.test(t.id)) || formula.groups?.some((g) => !/^G\d+$/.test(g.id))) throw Error("\u6761\u4EF6\u4F7F\u7528 C \u7F16\u53F7\uFF0C\u547D\u540D\u7EC4\u4F7F\u7528 G \u7F16\u53F7\u3002");
+  const ids = [...formula.terms.map((t) => t.id), ...(formula.groups ?? []).map((g) => g.id)];
+  if (ids.some((id) => !/^C\d+$|^G\d+$/.test(id)) || new Set(ids).size !== ids.length) throw Error("\u6761\u4EF6/\u7EC4\u7F16\u53F7\u65E0\u6548\u6216\u91CD\u590D\u3002");
+  const known = new Set(ids), termIds = new Set(formula.terms.map((t) => t.id)), groups = new Map(formula.groups?.map((g) => [g.id, g.expression])), compiledGroups = /* @__PURE__ */ new Map();
+  const resolve = (ast2, stack, depth) => {
+    if (depth > 32) throw Error("\u7EC4\u5408\u516C\u5F0F\u8D85\u8FC7 32 \u5C42\u3002");
+    if (ast2.kind === "term") {
+      if (termIds.has(ast2.id)) return ast2;
+      if (stack.has(ast2.id)) throw Error(`\u6761\u4EF6\u7EC4\u5FAA\u73AF\u5F15\u7528 ${ast2.id}\u3002`);
+      if (compiledGroups.has(ast2.id)) return compiledGroups.get(ast2.id);
+      const next = new Set(stack);
+      next.add(ast2.id);
+      const result = resolve(parse(groups.get(ast2.id), known), next, depth + 1);
+      compiledGroups.set(ast2.id, result);
+      return result;
+    }
+    return ast2.kind === "not" ? { ...ast2, child: resolve(ast2.child, stack, depth + 1) } : { ...ast2, left: resolve(ast2.left, stack, depth + 1), right: resolve(ast2.right, stack, depth + 1) };
+  };
+  for (const [id, text] of groups) if (!compiledGroups.has(id)) compiledGroups.set(id, resolve(parse(text, known), /* @__PURE__ */ new Set([id]), 0));
+  const ast = resolve(parse(formula.expression, known), /* @__PURE__ */ new Set(), 0);
+  if (Object.isFrozen(formula)) cache.set(formula, ast);
+  return ast;
+}
+function evaluate(ast, read, memo = /* @__PURE__ */ new Map()) {
+  if (memo.has(ast)) return memo.get(ast);
+  const result = ast.kind === "term" ? read(ast.id) : ast.kind === "not" ? !evaluate(ast.child, read, memo) : ast.kind === "and" ? evaluate(ast.left, read, memo) && evaluate(ast.right, read, memo) : evaluate(ast.left, read, memo) || evaluate(ast.right, read, memo);
+  memo.set(ast, result);
+  return result;
+}
+function matchesAtomicCondition(condition, read) {
+  const raw = read(condition.field);
+  if (condition.kind !== "fieldCompare") {
+    const value = String(raw ?? "").trim();
+    return condition.kind === "fieldEquals" ? value === condition.value : condition.kind === "fieldIn" ? condition.values.includes(value) : condition.present ? value.length > 0 : value.length === 0;
+  }
+  const empty3 = raw == null || typeof raw === "string" && !raw.trim() || Array.isArray(raw) && !raw.length;
+  if (condition.operator === "present" || condition.operator === "empty") return condition.operator === "empty" ? empty3 : !empty3;
+  if (condition.operator === "in" || condition.operator === "notIn") {
+    const hit = condition.values?.some((value) => value === raw) ?? false;
+    return condition.operator === "in" ? hit : !hit;
+  }
+  if (condition.operator === "eq" || condition.operator === "ne") return condition.operator === "eq" ? raw === condition.value : raw !== condition.value;
+  if (typeof raw !== "number" || !Number.isFinite(raw) || typeof condition.value !== "number" || !Number.isFinite(condition.value)) return false;
+  return condition.operator === "gt" ? raw > condition.value : condition.operator === "ge" ? raw >= condition.value : condition.operator === "lt" ? raw < condition.value : raw <= condition.value;
+}
+function formulaContradiction(formula) {
+  const ast = compileRenderFormula(formula);
+  const facts = [], terms = new Map(formula.terms.map((t) => [t.id, t.condition]));
+  const conjunction = (node, positive = true) => node.kind === "term" ? (facts.push({ condition: terms.get(node.id), positive }), true) : node.kind === "not" ? conjunction(node.child, !positive) : node.kind === "and" && positive ? conjunction(node.left) && conjunction(node.right) : node.kind === "or" && !positive ? conjunction(node.left, false) && conjunction(node.right, false) : false;
+  if (conjunction(ast)) for (const field of new Set(facts.map((f) => f.condition.field))) {
+    const constraints = facts.filter((f) => f.condition.field === field), literals = constraints.flatMap(({ condition: c }) => c.kind === "fieldEquals" ? [c.value] : c.kind === "fieldIn" ? c.values : c.kind === "fieldCompare" ? c.values ?? (c.value !== void 0 ? [c.value] : []) : []);
+    if (literals.length > 256) continue;
+    const numbers = [...new Set(literals.flatMap((v) => typeof v === "number" ? [v] : typeof v === "string" && v.trim() && Number.isFinite(Number(v)) ? [Number(v)] : []))].sort((a, b) => a - b);
+    const candidates = [void 0, null, "", 0, false, true, [], [null], [""], {}, ...literals.map((value) => [value]), ...literals, ...numbers, ...numbers.flatMap((v, i) => [v - Math.max(1, Math.abs(v) * 0.1), v + Math.max(1, Math.abs(v) * 0.1), ...i ? [numbers[i - 1] / 2 + v / 2] : []])];
+    let other = "__other__";
+    while (literals.includes(other)) other += "_";
+    candidates.push(other);
+    if (!candidates.some((value) => constraints.every(({ condition, positive }) => matchesAtomicCondition(condition, () => value) === positive))) return true;
+  }
+  if (formula.terms.length > 10) return false;
+  for (let mask = 0; mask < 2 ** formula.terms.length; mask++) if (evaluate(ast, (id) => Boolean(mask & 1 << formula.terms.findIndex((t) => t.id === id)))) return false;
+  return true;
+}
+
+// src/configStudio/conditionWitness.ts
+var MAX_BRANCHES = 128;
+var MAX_TERMS = 4096;
+var numericBits = new DataView(new ArrayBuffer(8));
+function nextNumber(value, direction) {
+  if (!Number.isFinite(value)) return value;
+  if (value === 0) return direction * Number.MIN_VALUE;
+  numericBits.setFloat64(0, value);
+  const bits = numericBits.getBigUint64(0);
+  numericBits.setBigUint64(0, value > 0 === direction > 0 ? bits + 1n : bits - 1n);
+  return numericBits.getFloat64(0);
+}
+function product(left, right) {
+  const values2 = [];
+  let complete = left.complete && right.complete;
+  for (const a of left.values) for (const b of right.values) {
+    if (values2.length >= MAX_BRANCHES || a.length + b.length > MAX_TERMS) {
+      complete = false;
+      continue;
+    }
+    values2.push([...a, ...b]);
+  }
+  return { values: values2, complete };
+}
+function sum(left, right) {
+  const all = [...left.values, ...right.values];
+  return { values: all.slice(0, MAX_BRANCHES), complete: left.complete && right.complete && all.length <= MAX_BRANCHES };
+}
+function branches(group, positive = true) {
+  if (!("op" in group)) return { values: [[{ condition: group, positive }]], complete: true };
+  if (group.formula) {
+    const terms = new Map(group.formula.terms.map((t) => [t.id, t.condition]));
+    const visit = (ast, polarity) => {
+      if (ast.kind === "term") return { values: [[{ condition: terms.get(ast.id), positive: polarity }]], complete: true };
+      if (ast.kind === "not") return visit(ast.child, !polarity);
+      return ast.kind === "and" === polarity ? product(visit(ast.left, polarity), visit(ast.right, polarity)) : sum(visit(ast.left, polarity), visit(ast.right, polarity));
+    };
+    return visit(compileRenderFormula(group.formula), positive);
+  }
+  if (!group.items.length || group.op === "not" && group.items.length !== 1) throw Error("\u6761\u4EF6\u7EC4\u4E0D\u5B8C\u6574\u3002");
+  if (group.op === "not") return branches(group.items[0], !positive);
+  const isAnd = group.op === "all" === positive;
+  return group.items.map((item) => branches(item, positive)).reduce(isAnd ? product : sum);
+}
+function readPath(value, key2) {
+  return key2.split(".").reduce((node, part) => node && typeof node === "object" && !["__proto__", "prototype", "constructor"].includes(part) ? node[part] : void 0, value);
+}
+function literalsFor(condition) {
+  return condition.kind === "fieldEquals" ? [condition.value] : condition.kind === "fieldIn" ? condition.values : condition.kind === "fieldCompare" ? condition.values ?? (condition.value !== void 0 ? [condition.value] : []) : [];
+}
+function candidateDomain(field, facts, seed, respectRequired) {
+  const literals = facts.flatMap((f) => literalsFor(f.condition));
+  const values2 = [];
+  if (seed !== void 0) values2.push(seed);
+  const required = respectRequired && field?.required;
+  if (!required) values2.push(void 0);
+  let complete = true;
+  if (field?.cardinality === "multiple" || field?.type === "json" || field?.type === "reference") {
+    if (field.type === "reference") values2.push(...literals.filter((value) => typeof value === "string"));
+    complete = false;
+  } else if (field?.type === "enum") {
+    const type = scalarType(field);
+    const options = (field.options ?? []).map((o) => type === "number" ? Number(o.value) : type === "boolean" ? o.value === "true" : o.value);
+    if (type === "number") options.sort((a, b) => Number(a) - Number(b));
+    if (type === "boolean") options.sort((a, b) => Number(a) - Number(b));
+    values2.push(...options);
+  } else {
+    const type = field ? scalarType(field) : void 0;
+    if (!type || type === "boolean") values2.push(false, true);
+    if (!type || type === "number") {
+      let lower, strict = false;
+      for (const fact of facts) {
+        const c = fact.condition;
+        if (c.kind !== "fieldCompare" || typeof c.value !== "number") continue;
+        const bound = fact.positive ? c.operator : { lt: "ge", le: "gt", gt: "le", ge: "lt" }[c.operator];
+        if (bound !== "gt" && bound !== "ge") continue;
+        if (lower === void 0 || c.value > lower) {
+          lower = c.value;
+          strict = bound === "gt";
+        } else if (c.value === lower && bound === "gt") strict = true;
+      }
+      if (lower !== void 0) values2.push(strict ? nextNumber(lower, 1) : lower);
+      values2.push(0);
+      const numbers = literals.flatMap((value) => typeof value === "number" ? [value] : typeof value === "string" && value.trim() && Number.isFinite(Number(value)) ? [Number(value)] : []);
+      for (const number2 of numbers) values2.push(number2, nextNumber(number2, 1), nextNumber(number2, -1));
+    }
+    if (!type || type === "string") {
+      if (!required) values2.push("");
+      values2.push(...literals.filter((value) => typeof value === "string"), ...literals.filter((value) => typeof value !== "string").map(String));
+      let other = "a";
+      while (literals.includes(other)) other += "a";
+      values2.push(other);
+    }
+    if (!field) complete = false;
+  }
+  return { values: [...new Set(values2)].filter((value) => {
+    if (typeof value === "number" && !Number.isFinite(value)) return false;
+    if (required && (value === void 0 || value === null || typeof value === "string" && !value.trim())) return false;
+    if (value !== void 0 && field && field.type !== "json" && field.cardinality === "single") {
+      if (typeof value !== scalarType(field)) return false;
+      if (field.type === "enum" && !field.options?.some((option) => option.value === String(value))) return false;
+    }
+    return true;
+  }), complete };
+}
+function solveConditionWitness(groups, fields, pins = [], options = {}) {
+  let all = { values: [[]], complete: true };
+  try {
+    for (const { group, negate } of groups) all = product(all, branches(group, !negate));
+  } catch (error) {
+    return { status: "unknown", reason: String(error) };
+  }
+  const facts = pins.map((pin) => ({ condition: { kind: "fieldCompare", field: pin.field, operator: "eq", value: pin.value }, positive: true }));
+  all = product(all, { values: [facts], complete: true });
+  const seed = options.seed ?? {}, definitions = new Map(fields.map((f) => [f.key, f]));
+  let best, unknown = !all.complete;
+  for (const branch of all.values) {
+    const byField = /* @__PURE__ */ new Map();
+    for (const literal of branch) {
+      const field = literal.condition.field;
+      byField.set(field, [...byField.get(field) ?? [], literal]);
+    }
+    const keys = [...byField.keys()];
+    if (keys.some((key2) => !/^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/.test(key2) || key2.split(".").some((part) => ["__proto__", "prototype", "constructor"].includes(part)))) return { status: "unknown", reason: "\u6761\u4EF6\u5B57\u6BB5\u8DEF\u5F84\u65E0\u6548\u6216\u4E0D\u5B89\u5168\u3002" };
+    if (keys.some((key2, i) => keys.some((other, j) => i !== j && other.startsWith(key2 + ".")))) {
+      unknown = true;
+      continue;
+    }
+    const values2 = /* @__PURE__ */ Object.create(null);
+    let valid = true, changes = 0;
+    for (const [key2, conditions] of byField) {
+      const original = readPath(seed, key2), domain = candidateDomain(definitions.get(key2), conditions, original, options.respectRequired !== false);
+      const match = domain.values.findIndex((value) => conditions.every((literal) => matchesAtomicCondition(literal.condition, () => value) === literal.positive));
+      if (match < 0) {
+        valid = false;
+        if (!domain.complete) unknown = true;
+        break;
+      }
+      values2[key2] = domain.values[match];
+      if (!Object.is(values2[key2], original)) changes++;
+    }
+    if (valid && (!best || changes < best.changes)) best = { status: "satisfiable", values: values2, changes, minimal: all.complete };
+  }
+  return best ?? (unknown ? { status: "unknown", reason: "\u5F53\u524D\u503C\u57DF\uFF0F\u5206\u652F\u9884\u7B97\u5185\u672A\u80FD\u5B89\u5168\u6784\u9020\uFF1B\u672A\u8BC1\u660E\u77DB\u76FE\u3002" } : { status: "unsatisfiable", reason: "\u5B57\u6BB5\u7684\u5B9E\u9645\u53D6\u503C\u57DF\u53CA\u5168\u90E8\u6761\u4EF6\u6CA1\u6709\u5171\u540C\u89E3\u3002" });
+}
+
+// src/configStudio/localMappingConstraints.ts
+function unreachableLocalMappingRows(rule, fields, parents = []) {
+  return localMappingConstraints(rule).filter((row2) => solveConditionWitness(rule.when?.fields ? [{ group: rule.when.fields }] : [], fields, [...parents, ...row2.pins]).status === "unsatisfiable");
+}
+function localMappingConstraints(rule) {
+  const rows = [];
+  const colors = (color, path2, parents = []) => {
+    if (color?.mode === "valueMap") color.entries.forEach((row2, i) => rows.push({ path: `${path2}/entries/${i}`, pins: [...parents, { field: color.field, value: row2.value }] }));
+  };
+  const icon = (item, path2, parents) => {
+    colors(item.foreground, path2 + "/foreground", parents);
+    colors(item.plate?.fill, path2 + "/plate/fill", parents);
+    colors(item.plate?.stroke, path2 + "/plate/stroke", parents);
+  };
+  const symbol = rule.style?.pointSymbol;
+  if (symbol) {
+    const base = symbol.kind === "shape" ? symbol.shape : symbol.fallback;
+    colors(base.stroke, "style/pointSymbol/" + (symbol.kind === "shape" ? "shape" : "fallback") + "/stroke");
+    colors(base.fill, "style/pointSymbol/" + (symbol.kind === "shape" ? "shape" : "fallback") + "/fill");
+    if (symbol.kind === "icon") {
+      if (symbol.icon.mode === "single") icon(symbol.icon.item, "style/pointSymbol/icon/item", []);
+      else {
+        const source = symbol.icon;
+        source.entries.forEach((row2, i) => {
+          const pins = [{ field: source.field, value: row2.value }], path2 = `style/pointSymbol/icon/entries/${i}`;
+          rows.push({ path: path2, pins });
+          icon(row2.item, path2 + "/item", pins);
+        });
+      }
+    } else if (symbol.kind === "externalImage" && symbol.image.mode === "valueMap") {
+      const source = symbol.image;
+      source.entries.forEach((row2, i) => rows.push({ path: `style/pointSymbol/image/entries/${i}`, pins: [{ field: source.field, value: row2.value }] }));
+    }
+  } else {
+    colors(rule.style?.stroke, "style/stroke");
+    colors(rule.style?.fill, "style/fill");
+  }
+  colors(rule.label?.style?.color, "label/style/color");
+  const pill = rule.label?.style?.pill;
+  if (pill) for (const key2 of ["textColor", "backgroundColor", "strokeColor"]) colors(pill[key2], "label/style/pill/" + key2);
+  for (const [state, value] of Object.entries(rule.extensions?.interaction ?? {})) if (value?.enabled) colors(value.strokeColorBinding, `extensions/interaction/${state}/strokeColorBinding`);
+  return rows;
+}
+
 // src/core/project/buttonVisualCatalog.ts
 var BUTTON_ICONS = [
   ["train", "\u94C1\u8DEF"],
@@ -11200,9 +11659,9 @@ function storedOptionValue(value, kind) {
 }
 
 // src/configStudio/nodeFieldSettings.ts
-var cache = /* @__PURE__ */ new WeakMap();
+var cache2 = /* @__PURE__ */ new WeakMap();
 function resolveNodeFieldSettings(config, path2) {
-  const key2 = classificationPathKey(path2), cached = cache.get(config)?.get(key2);
+  const key2 = classificationPathKey(path2), cached = cache2.get(config)?.get(key2);
   if (cached) return cached;
   const value = {}, owners = {}, fixed = /* @__PURE__ */ new Set();
   let propagate = true;
@@ -11225,10 +11684,10 @@ function resolveNodeFieldSettings(config, path2) {
     Object.freeze(value);
     Object.freeze(owners);
     Object.freeze(result);
-    let entries = cache.get(config);
+    let entries = cache2.get(config);
     if (!entries) {
       entries = /* @__PURE__ */ new Map();
-      cache.set(config, entries);
+      cache2.set(config, entries);
     }
     entries.set(key2, result);
   }
@@ -12341,142 +12800,9 @@ function testWorkflowEditConversion(config, workflow, records = []) {
   return { plan, report: [`\u4E09\u9875/\u5355\u8F93\u51FA/\u65E0\u989D\u5916\u7ED8\u5236/\u65E0\u542F\u7528\u6761\u4EF6\u901A\u8FC7`, `\u4FDD\u7559 ${plan.controls.length} \u4E2A\u6A21\u5757\uFF0C\u79FB\u9664 ${plan.removed.length} \u4E2A\u4EC5\u7528\u4E8E ID \u7684\u6A21\u5757`, `\u6837\u672C\u4E0E ${matching.length} \u6761\u73B0\u6709\u8BB0\u5F55\u5B9E\u9645\u56DE\u586B\u53CA\u65E0\u4FEE\u6539\u8F93\u51FA\u4E00\u81F4`] };
 }
 
-// src/configStudio/renderBooleanFormula.ts
-var cache2 = /* @__PURE__ */ new WeakMap();
-function parse(text, known) {
-  if (text.length > 16384) throw Error("\u6761\u4EF6\u516C\u5F0F\u8D85\u8FC7 16 KiB\u3002");
-  const tokens = [];
-  const re = /\s*([A-Z][A-Z0-9_]*|[()])/igy;
-  let offset = 0;
-  while (offset < text.length) {
-    if (!text.slice(offset).trim()) break;
-    re.lastIndex = offset;
-    const token = re.exec(text);
-    if (!token) throw Error(`\u6761\u4EF6\u516C\u5F0F\u5728\u7B2C ${offset + 1} \u4E2A\u5B57\u7B26\u65E0\u6548\u3002`);
-    tokens.push(token[1].toUpperCase());
-    offset = re.lastIndex;
-  }
-  let index = 0;
-  const unary = (depth) => {
-    if (depth > 32) throw Error("\u6761\u4EF6\u516C\u5F0F\u8D85\u8FC7 32 \u5C42\u3002");
-    const token = tokens[index++];
-    if (token === "NOT") return { kind: "not", child: unary(depth + 1) };
-    if (token === "(") {
-      const result2 = or(depth + 1);
-      if (tokens[index++] !== ")") throw Error("\u6761\u4EF6\u516C\u5F0F\u62EC\u53F7\u4E0D\u914D\u5BF9\u3002");
-      return result2;
-    }
-    if (!token || !known.has(token)) throw Error(`\u672A\u77E5\u6761\u4EF6/\u7EC4 ${token ?? "\uFF08\u7A7A\uFF09"}\u3002`);
-    return { kind: "term", id: token };
-  };
-  const balanced = (items, kind) => {
-    if (items.length === 1) return items[0];
-    const mid = Math.floor(items.length / 2);
-    return { kind, left: balanced(items.slice(0, mid), kind), right: balanced(items.slice(mid), kind) };
-  };
-  const and = (depth) => {
-    const items = [unary(depth)];
-    while (tokens[index] === "AND") {
-      index++;
-      items.push(unary(depth));
-    }
-    return balanced(items, "and");
-  };
-  const or = (depth) => {
-    const items = [and(depth)];
-    while (tokens[index] === "OR") {
-      index++;
-      items.push(and(depth));
-    }
-    return balanced(items, "or");
-  };
-  const result = or(0);
-  if (index !== tokens.length) throw Error(`\u591A\u4F59\u7684\u6761\u4EF6\u7B26\u53F7 ${tokens[index]}\u3002`);
-  return result;
-}
-function compileRenderFormula(formula) {
-  if (Object.isFrozen(formula) && cache2.has(formula)) return cache2.get(formula);
-  if (!formula.terms.length || formula.terms.length > 256) throw Error("\u6761\u4EF6\u516C\u5F0F\u9700\u8981 1\u2013256 \u4E2A\u539F\u5B50\u6761\u4EF6\u3002");
-  if ((formula.groups?.length ?? 0) > 256 || formula.expression.length + (formula.groups ?? []).reduce((sum, g) => sum + g.expression.length, 0) > 16384) throw Error("\u6761\u4EF6\u53CA\u547D\u540D\u7EC4\u516C\u5F0F\u603B\u957F\u5EA6\u8D85\u8FC7 16 KiB\uFF0C\u6216\u547D\u540D\u7EC4\u8D85\u8FC7 256 \u9879\u3002");
-  if (formula.terms.some((t) => !/^C\d+$/.test(t.id)) || formula.groups?.some((g) => !/^G\d+$/.test(g.id))) throw Error("\u6761\u4EF6\u4F7F\u7528 C \u7F16\u53F7\uFF0C\u547D\u540D\u7EC4\u4F7F\u7528 G \u7F16\u53F7\u3002");
-  const ids = [...formula.terms.map((t) => t.id), ...(formula.groups ?? []).map((g) => g.id)];
-  if (ids.some((id) => !/^C\d+$|^G\d+$/.test(id)) || new Set(ids).size !== ids.length) throw Error("\u6761\u4EF6/\u7EC4\u7F16\u53F7\u65E0\u6548\u6216\u91CD\u590D\u3002");
-  const known = new Set(ids), termIds = new Set(formula.terms.map((t) => t.id)), groups = new Map(formula.groups?.map((g) => [g.id, g.expression])), compiledGroups = /* @__PURE__ */ new Map();
-  const resolve = (ast2, stack, depth) => {
-    if (depth > 32) throw Error("\u7EC4\u5408\u516C\u5F0F\u8D85\u8FC7 32 \u5C42\u3002");
-    if (ast2.kind === "term") {
-      if (termIds.has(ast2.id)) return ast2;
-      if (stack.has(ast2.id)) throw Error(`\u6761\u4EF6\u7EC4\u5FAA\u73AF\u5F15\u7528 ${ast2.id}\u3002`);
-      if (compiledGroups.has(ast2.id)) return compiledGroups.get(ast2.id);
-      const next = new Set(stack);
-      next.add(ast2.id);
-      const result = resolve(parse(groups.get(ast2.id), known), next, depth + 1);
-      compiledGroups.set(ast2.id, result);
-      return result;
-    }
-    return ast2.kind === "not" ? { ...ast2, child: resolve(ast2.child, stack, depth + 1) } : { ...ast2, left: resolve(ast2.left, stack, depth + 1), right: resolve(ast2.right, stack, depth + 1) };
-  };
-  for (const [id, text] of groups) if (!compiledGroups.has(id)) compiledGroups.set(id, resolve(parse(text, known), /* @__PURE__ */ new Set([id]), 0));
-  const ast = resolve(parse(formula.expression, known), /* @__PURE__ */ new Set(), 0);
-  if (Object.isFrozen(formula)) cache2.set(formula, ast);
-  return ast;
-}
-function evaluate(ast, read, memo = /* @__PURE__ */ new Map()) {
-  if (memo.has(ast)) return memo.get(ast);
-  const result = ast.kind === "term" ? read(ast.id) : ast.kind === "not" ? !evaluate(ast.child, read, memo) : ast.kind === "and" ? evaluate(ast.left, read, memo) && evaluate(ast.right, read, memo) : evaluate(ast.left, read, memo) || evaluate(ast.right, read, memo);
-  memo.set(ast, result);
-  return result;
-}
-function matchesAtomicCondition(condition, read) {
-  const raw = read(condition.field);
-  if (condition.kind !== "fieldCompare") {
-    const value = String(raw ?? "").trim();
-    return condition.kind === "fieldEquals" ? value === condition.value : condition.kind === "fieldIn" ? condition.values.includes(value) : condition.present ? value.length > 0 : value.length === 0;
-  }
-  const empty3 = raw == null || typeof raw === "string" && !raw.trim() || Array.isArray(raw) && !raw.length;
-  if (condition.operator === "present" || condition.operator === "empty") return condition.operator === "empty" ? empty3 : !empty3;
-  if (condition.operator === "in" || condition.operator === "notIn") {
-    const hit = condition.values?.some((value) => value === raw) ?? false;
-    return condition.operator === "in" ? hit : !hit;
-  }
-  if (condition.operator === "eq" || condition.operator === "ne") return condition.operator === "eq" ? raw === condition.value : raw !== condition.value;
-  if (typeof raw !== "number" || !Number.isFinite(raw) || typeof condition.value !== "number" || !Number.isFinite(condition.value)) return false;
-  return condition.operator === "gt" ? raw > condition.value : condition.operator === "ge" ? raw >= condition.value : condition.operator === "lt" ? raw < condition.value : raw <= condition.value;
-}
-function formulaContradiction(formula) {
-  const ast = compileRenderFormula(formula);
-  const facts = [], terms = new Map(formula.terms.map((t) => [t.id, t.condition]));
-  const conjunction = (node, positive = true) => node.kind === "term" ? (facts.push({ condition: terms.get(node.id), positive }), true) : node.kind === "not" ? conjunction(node.child, !positive) : node.kind === "and" && positive ? conjunction(node.left) && conjunction(node.right) : node.kind === "or" && !positive ? conjunction(node.left, false) && conjunction(node.right, false) : false;
-  if (conjunction(ast)) for (const field of new Set(facts.map((f) => f.condition.field))) {
-    const constraints = facts.filter((f) => f.condition.field === field), literals = constraints.flatMap(({ condition: c }) => c.kind === "fieldEquals" ? [c.value] : c.kind === "fieldIn" ? c.values : c.kind === "fieldCompare" ? c.values ?? (c.value !== void 0 ? [c.value] : []) : []);
-    if (literals.length > 256) continue;
-    const numbers = [...new Set(literals.flatMap((v) => typeof v === "number" ? [v] : typeof v === "string" && v.trim() && Number.isFinite(Number(v)) ? [Number(v)] : []))].sort((a, b) => a - b);
-    const candidates = [void 0, null, "", 0, false, true, [], [null], [""], {}, ...literals.map((value) => [value]), ...literals, ...numbers, ...numbers.flatMap((v, i) => [v - Math.max(1, Math.abs(v) * 0.1), v + Math.max(1, Math.abs(v) * 0.1), ...i ? [numbers[i - 1] / 2 + v / 2] : []])];
-    let other = "__other__";
-    while (literals.includes(other)) other += "_";
-    candidates.push(other);
-    if (!candidates.some((value) => constraints.every(({ condition, positive }) => matchesAtomicCondition(condition, () => value) === positive))) return true;
-  }
-  if (formula.terms.length > 10) return false;
-  for (let mask = 0; mask < 2 ** formula.terms.length; mask++) if (evaluate(ast, (id) => Boolean(mask & 1 << formula.terms.findIndex((t) => t.id === id)))) return false;
-  return true;
-}
-
-// src/configStudio/renderScalar.ts
-function scalarType(field) {
-  return field.type === "enum" ? field.optionValueType ?? "string" : field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : "string";
-}
-function scalarValueErrors(field, value) {
-  if (field.cardinality !== "single" || field.type === "json") return [`${field.key} \u9700\u8981\u660E\u786E\u7684\u5355\u503C\u6807\u91CF\uFF0C\u4E0D\u80FD\u6BD4\u8F83\u5BF9\u8C61/\u6570\u7EC4\u3002`];
-  if (typeof value !== scalarType(field) || typeof value === "number" && !Number.isFinite(value)) return [`${field.key} \u7684\u6BD4\u8F83\u503C\u7C7B\u578B\u4E0D\u5339\u914D\u3002`];
-  if (field.type === "enum" && !field.options?.some((option) => option.value === String(value))) return [`${field.key} \u7684\u503C\u4E0D\u5728\u5DF2\u5B9A\u4E49\u5B57\u5178\u4E2D\u3002`];
-  return [];
-}
-var validMappedColor = (color) => typeof color === "string" && /^#[a-f\d]{6}$/i.test(color);
-
 // src/configStudio/contract.ts
 function isNativeConfigRevision(value) {
-  return value === 5 || value === 6 || value === 7 || value === 8 || value === 9 || value === 10 || value === 11;
+  return value === 5 || value === 6 || value === 7 || value === 8 || value === 9 || value === 10 || value === 11 || value === 12;
 }
 
 // src/configStudio/cardInheritance.ts
@@ -12661,7 +12987,7 @@ function isClassificationConditionField(key2, fields = []) {
   const field = fields.find((field2) => field2.key === key2);
   return Boolean(field?.sourceRuntimeField && classificationNames.has(field.sourceRuntimeField.replace(/^(tags|Tags)\./, "").toLowerCase()));
 }
-function validateRenderFields(group, fields, selectable) {
+function validateRenderFields(group, fields, selectable, contractRevision = 11) {
   if (!group) return [];
   const issues = [];
   let leaves = 0;
@@ -12674,7 +13000,7 @@ function validateRenderFields(group, fields, selectable) {
       if (node.formula) {
         try {
           compileRenderFormula(node.formula);
-          if (formulaContradiction(node.formula)) issues.push("\u6761\u4EF6\u516C\u5F0F\u5B58\u5728\u53EF\u8BC1\u660E\u7684\u77DB\u76FE\uFF0C\u65E0\u6CD5\u547D\u4E2D\u3002");
+          if (contractRevision < 12 && formulaContradiction(node.formula)) issues.push("\u6761\u4EF6\u516C\u5F0F\u5B58\u5728\u53EF\u8BC1\u660E\u7684\u77DB\u76FE\uFF0C\u65E0\u6CD5\u547D\u4E2D\u3002");
         } catch (error) {
           issues.push(String(error instanceof Error ? error.message : error));
         }
@@ -12709,7 +13035,9 @@ function validateRenderFields(group, fields, selectable) {
   };
   visit(group, 0);
   if (leaves > (group.formula ? 256 : 64)) issues.push(`\u5B57\u6BB5\u6761\u4EF6\u6700\u591A ${group.formula ? 256 : 64} \u9879\u3002`);
-  if (provenFieldContradiction(group)) issues.push("\u5B57\u6BB5\u6761\u4EF6\u5B58\u5728\u53EF\u8BC1\u660E\u7684\u77DB\u76FE\uFF0C\u65E0\u6CD5\u547D\u4E2D\u3002");
+  if (contractRevision >= 12) {
+    if (!issues.length && solveConditionWitness([{ group }], fields).status === "unsatisfiable") issues.push("\u5B57\u6BB5\u6761\u4EF6\u5728\u5B9E\u9645\u53D6\u503C\u57DF\u4E2D\u5B58\u5728\u53EF\u8BC1\u660E\u7684\u77DB\u76FE\uFF0C\u65E0\u6CD5\u547D\u4E2D\u3002");
+  } else if (provenFieldContradiction(group)) issues.push("\u5B57\u6BB5\u6761\u4EF6\u5B58\u5728\u53EF\u8BC1\u660E\u7684\u77DB\u76FE\uFF0C\u65E0\u6CD5\u547D\u4E2D\u3002");
   return issues;
 }
 function provenFieldContradiction(group) {
@@ -13571,6 +13899,19 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "alwaysRotated"
+            },
+            {
+              const: "scriptAware"
+            }
+          ]
+        },
+        textPathLengthMode: {
+          anyOf: [
+            {
+              const: "fixed"
+            },
+            {
+              const: "actualText"
             }
           ]
         },
@@ -17038,6 +17379,39 @@ var native_contract_schema_generated_default = {
     t86: {
       type: "object",
       properties: {
+        library: {
+          const: "pinhead"
+        },
+        version: {
+          type: "string"
+        },
+        manifestSha256: {
+          type: "string"
+        }
+      },
+      required: [
+        "library",
+        "version",
+        "manifestSha256"
+      ]
+    },
+    t85: {
+      type: "object",
+      properties: {
+        iconLibraries: {
+          type: "array",
+          items: {
+            ref: "t86"
+          }
+        }
+      },
+      required: [
+        "iconLibraries"
+      ]
+    },
+    t88: {
+      type: "object",
+      properties: {
         class: {
           anyOf: [
             {
@@ -17069,7 +17443,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t87: {
+    t89: {
       type: "object",
       properties: {
         fields: {
@@ -17088,7 +17462,7 @@ var native_contract_schema_generated_default = {
         "card"
       ]
     },
-    t88: {
+    t90: {
       type: "object",
       properties: {
         fields: {
@@ -17134,7 +17508,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t89: {
+    t91: {
       type: "object",
       properties: {
         fields: {
@@ -17196,7 +17570,7 @@ var native_contract_schema_generated_default = {
         "card"
       ]
     },
-    t91: {
+    t93: {
       type: "object",
       properties: {
         kind: {
@@ -17207,7 +17581,7 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t92: {
+    t94: {
       type: "object",
       properties: {
         kind: {
@@ -17232,7 +17606,7 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t93: {
+    t95: {
       type: "object",
       properties: {
         kind: {
@@ -17268,7 +17642,7 @@ var native_contract_schema_generated_default = {
         "scope"
       ]
     },
-    t94: {
+    t96: {
       type: "object",
       properties: {
         kind: {
@@ -17287,7 +17661,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t95: {
+    t97: {
       type: "object",
       properties: {
         kind: {
@@ -17309,7 +17683,7 @@ var native_contract_schema_generated_default = {
         "values"
       ]
     },
-    t96: {
+    t98: {
       type: "object",
       properties: {
         kind: {
@@ -17328,7 +17702,7 @@ var native_contract_schema_generated_default = {
         "present"
       ]
     },
-    t97: {
+    t99: {
       type: "object",
       properties: {
         registryKey: {
@@ -17346,7 +17720,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t98: {
+    t100: {
       type: "object",
       properties: {
         workflow: {
@@ -17392,7 +17766,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t99: {
+    t101: {
       type: "object",
       properties: {
         classCode: {
@@ -17414,7 +17788,7 @@ var native_contract_schema_generated_default = {
         "matchField"
       ]
     },
-    t90: {
+    t92: {
       type: "object",
       properties: {
         fieldId: {
@@ -17517,12 +17891,6 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t91"
-                  },
-                  {
-                    ref: "t92"
-                  },
-                  {
                     ref: "t93"
                   },
                   {
@@ -17533,6 +17901,12 @@ var native_contract_schema_generated_default = {
                   },
                   {
                     ref: "t96"
+                  },
+                  {
+                    ref: "t97"
+                  },
+                  {
+                    ref: "t98"
                   }
                 ]
               }
@@ -17620,7 +17994,7 @@ var native_contract_schema_generated_default = {
         optionSource: {
           anyOf: [
             {
-              ref: "t97"
+              ref: "t99"
             }
           ]
         },
@@ -17652,14 +18026,14 @@ var native_contract_schema_generated_default = {
         scenes: {
           anyOf: [
             {
-              ref: "t98"
+              ref: "t100"
             }
           ]
         },
         reference: {
           anyOf: [
             {
-              ref: "t99"
+              ref: "t101"
             }
           ]
         },
@@ -17694,7 +18068,7 @@ var native_contract_schema_generated_default = {
         "description"
       ]
     },
-    t101: {
+    t103: {
       type: "object",
       properties: {
         enabled: {
@@ -17747,7 +18121,7 @@ var native_contract_schema_generated_default = {
         "role"
       ]
     },
-    t105: {
+    t107: {
       type: "object",
       properties: {
         path: {
@@ -17766,11 +18140,11 @@ var native_contract_schema_generated_default = {
         "key"
       ]
     },
-    t104: {
+    t106: {
       type: "object",
       properties: {
         source: {
-          ref: "t105"
+          ref: "t107"
         },
         fingerprint: {
           type: "string"
@@ -17788,7 +18162,7 @@ var native_contract_schema_generated_default = {
         "fingerprint"
       ]
     },
-    t103: {
+    t105: {
       type: "object",
       properties: {
         mode: {
@@ -17858,7 +18232,7 @@ var native_contract_schema_generated_default = {
         prefillAudit: {
           anyOf: [
             {
-              ref: "t104"
+              ref: "t106"
             }
           ]
         }
@@ -17867,7 +18241,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t106: {
+    t108: {
       type: "object",
       properties: {
         mode: {
@@ -17932,7 +18306,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t102: {
+    t104: {
       type: "object",
       properties: {
         enabled: {
@@ -17962,10 +18336,10 @@ var native_contract_schema_generated_default = {
           ]
         },
         subtitle: {
-          ref: "t103"
+          ref: "t105"
         },
         extension: {
-          ref: "t106"
+          ref: "t108"
         }
       },
       required: [
@@ -17975,27 +18349,27 @@ var native_contract_schema_generated_default = {
         "extension"
       ]
     },
-    t100: {
+    t102: {
       type: "object",
       properties: {
         structure: {
           anyOf: [
             {
-              ref: "t101"
+              ref: "t103"
             }
           ]
         },
         search: {
           anyOf: [
             {
-              ref: "t102"
+              ref: "t104"
             }
           ]
         }
       },
       required: []
     },
-    t109: {
+    t111: {
       type: "object",
       properties: {
         weight: {
@@ -18029,7 +18403,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t110: {
+    t112: {
       type: "object",
       properties: {
         zLevel: {
@@ -18054,7 +18428,7 @@ var native_contract_schema_generated_default = {
         "zLevel"
       ]
     },
-    t113: {
+    t115: {
       type: "object",
       properties: {
         kind: {
@@ -18127,7 +18501,7 @@ var native_contract_schema_generated_default = {
         "rounding"
       ]
     },
-    t112: {
+    t114: {
       type: "object",
       properties: {
         role: {
@@ -18172,7 +18546,7 @@ var native_contract_schema_generated_default = {
         metric: {
           anyOf: [
             {
-              ref: "t113"
+              ref: "t115"
             }
           ]
         },
@@ -18190,7 +18564,7 @@ var native_contract_schema_generated_default = {
         "hideWhenColliding"
       ]
     },
-    t111: {
+    t113: {
       type: "object",
       properties: {
         visible: {
@@ -18211,12 +18585,6 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t91"
-              },
-              {
-                ref: "t92"
-              },
-              {
                 ref: "t93"
               },
               {
@@ -18227,12 +18595,18 @@ var native_contract_schema_generated_default = {
               },
               {
                 ref: "t96"
+              },
+              {
+                ref: "t97"
+              },
+              {
+                ref: "t98"
               }
             ]
           }
         },
         collision: {
-          ref: "t112"
+          ref: "t114"
         }
       },
       required: [
@@ -18242,7 +18616,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t117: {
+    t119: {
       type: "object",
       properties: {
         min: {
@@ -18257,7 +18631,7 @@ var native_contract_schema_generated_default = {
         "max"
       ]
     },
-    t119: {
+    t121: {
       type: "object",
       properties: {
         kind: {
@@ -18346,7 +18720,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t121: {
+    t123: {
       type: "object",
       properties: {
         id: {
@@ -18368,16 +18742,16 @@ var native_contract_schema_generated_default = {
         condition: {
           anyOf: [
             {
-              ref: "t94"
-            },
-            {
-              ref: "t95"
-            },
-            {
               ref: "t96"
             },
             {
-              ref: "t119"
+              ref: "t97"
+            },
+            {
+              ref: "t98"
+            },
+            {
+              ref: "t121"
             }
           ]
         }
@@ -18388,7 +18762,7 @@ var native_contract_schema_generated_default = {
         "condition"
       ]
     },
-    t122: {
+    t124: {
       type: "object",
       properties: {
         id: {
@@ -18403,7 +18777,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t120: {
+    t122: {
       type: "object",
       properties: {
         expression: {
@@ -18422,7 +18796,7 @@ var native_contract_schema_generated_default = {
         terms: {
           type: "array",
           items: {
-            ref: "t121"
+            ref: "t123"
           }
         },
         groups: {
@@ -18430,7 +18804,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t122"
+                ref: "t124"
               }
             }
           ]
@@ -18441,7 +18815,7 @@ var native_contract_schema_generated_default = {
         "terms"
       ]
     },
-    t118: {
+    t120: {
       type: "object",
       properties: {
         op: {
@@ -18462,19 +18836,19 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t94"
-              },
-              {
-                ref: "t95"
-              },
-              {
                 ref: "t96"
               },
               {
-                ref: "t118"
+                ref: "t97"
               },
               {
-                ref: "t119"
+                ref: "t98"
+              },
+              {
+                ref: "t120"
+              },
+              {
+                ref: "t121"
               }
             ]
           }
@@ -18482,7 +18856,7 @@ var native_contract_schema_generated_default = {
         formula: {
           anyOf: [
             {
-              ref: "t120"
+              ref: "t122"
             }
           ]
         }
@@ -18492,16 +18866,16 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t116: {
+    t118: {
       type: "object",
       properties: {
         zoom: {
-          ref: "t117"
+          ref: "t119"
         },
         fields: {
           anyOf: [
             {
-              ref: "t118"
+              ref: "t120"
             }
           ]
         }
@@ -18510,7 +18884,7 @@ var native_contract_schema_generated_default = {
         "zoom"
       ]
     },
-    t124: {
+    t126: {
       type: "object",
       properties: {
         x: {
@@ -18525,7 +18899,631 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t125: {
+    t128: {
+      type: "object",
+      properties: {
+        pointShape: {
+          anyOf: [
+            {
+              const: "circle"
+            },
+            {
+              const: "square"
+            },
+            {
+              const: "triangle"
+            },
+            {
+              const: "regular4"
+            },
+            {
+              const: "regular5"
+            },
+            {
+              const: "regular6"
+            }
+          ]
+        },
+        size: {
+          type: "number"
+        },
+        weight: {
+          type: "number"
+        },
+        lineCap: {
+          anyOf: [
+            {
+              const: "round"
+            },
+            {
+              const: "square"
+            },
+            {
+              const: "butt"
+            }
+          ]
+        },
+        lineJoin: {
+          anyOf: [
+            {
+              const: "round"
+            },
+            {
+              const: "miter"
+            },
+            {
+              const: "bevel"
+            }
+          ]
+        },
+        stroke: {
+          anyOf: [
+            {
+              ref: "t11"
+            },
+            {
+              ref: "t13"
+            },
+            {
+              ref: "t14"
+            },
+            {
+              ref: "t15"
+            },
+            {
+              ref: "t17"
+            }
+          ]
+        },
+        fill: {
+          anyOf: [
+            {
+              ref: "t11"
+            },
+            {
+              ref: "t13"
+            },
+            {
+              ref: "t14"
+            },
+            {
+              ref: "t15"
+            },
+            {
+              ref: "t17"
+            }
+          ]
+        },
+        strokeOpacity: {
+          type: "number"
+        },
+        fillOpacity: {
+          type: "number"
+        }
+      },
+      required: [
+        "pointShape",
+        "size",
+        "weight",
+        "lineCap",
+        "lineJoin",
+        "stroke",
+        "fill",
+        "strokeOpacity",
+        "fillOpacity"
+      ]
+    },
+    t127: {
+      type: "object",
+      properties: {
+        kind: {
+          const: "shape"
+        },
+        shape: {
+          ref: "t128"
+        }
+      },
+      required: [
+        "kind",
+        "shape"
+      ]
+    },
+    t132: {
+      type: "object",
+      properties: {
+        shape: {
+          anyOf: [
+            {
+              const: "circle"
+            },
+            {
+              const: "pin"
+            },
+            {
+              const: "square"
+            },
+            {
+              const: "roundedRect"
+            }
+          ]
+        },
+        paddingPx: {
+          type: "number"
+        },
+        radiusPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        fill: {
+          anyOf: [
+            {
+              ref: "t11"
+            },
+            {
+              ref: "t13"
+            },
+            {
+              ref: "t14"
+            },
+            {
+              ref: "t15"
+            },
+            {
+              ref: "t17"
+            }
+          ]
+        },
+        stroke: {
+          anyOf: [
+            {
+              ref: "t11"
+            },
+            {
+              ref: "t13"
+            },
+            {
+              ref: "t14"
+            },
+            {
+              ref: "t15"
+            },
+            {
+              ref: "t17"
+            }
+          ]
+        },
+        strokeWidthPx: {
+          type: "number"
+        },
+        fillOpacity: {
+          type: "number"
+        },
+        strokeOpacity: {
+          type: "number"
+        }
+      },
+      required: [
+        "shape",
+        "paddingPx",
+        "fill",
+        "stroke",
+        "strokeWidthPx",
+        "fillOpacity",
+        "strokeOpacity"
+      ]
+    },
+    t134: {
+      type: "object",
+      properties: {
+        mode: {
+          anyOf: [
+            {
+              const: "custom"
+            },
+            {
+              const: "center"
+            },
+            {
+              const: "topCenter"
+            },
+            {
+              const: "bottomCenter"
+            },
+            {
+              const: "leftCenter"
+            },
+            {
+              const: "rightCenter"
+            },
+            {
+              const: "topLeft"
+            },
+            {
+              const: "topRight"
+            },
+            {
+              const: "bottomLeft"
+            },
+            {
+              const: "bottomRight"
+            }
+          ]
+        },
+        x: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        y: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        }
+      },
+      required: [
+        "mode"
+      ]
+    },
+    t135: {
+      type: "object",
+      properties: {
+        x: {
+          type: "number"
+        },
+        y: {
+          type: "number"
+        }
+      },
+      required: [
+        "x",
+        "y"
+      ]
+    },
+    t133: {
+      type: "object",
+      properties: {
+        anchor: {
+          ref: "t134"
+        },
+        offsetPx: {
+          ref: "t135"
+        }
+      },
+      required: [
+        "anchor",
+        "offsetPx"
+      ]
+    },
+    t131: {
+      type: "object",
+      properties: {
+        library: {
+          const: "pinhead"
+        },
+        id: {
+          type: "string"
+        },
+        sizePx: {
+          type: "number"
+        },
+        foreground: {
+          anyOf: [
+            {
+              ref: "t11"
+            },
+            {
+              ref: "t13"
+            },
+            {
+              ref: "t14"
+            },
+            {
+              ref: "t15"
+            },
+            {
+              ref: "t17"
+            }
+          ]
+        },
+        foregroundOpacity: {
+          type: "number"
+        },
+        plate: {
+          anyOf: [
+            {
+              ref: "t132"
+            }
+          ]
+        },
+        placement: {
+          ref: "t133"
+        }
+      },
+      required: [
+        "library",
+        "id",
+        "sizePx",
+        "foreground",
+        "foregroundOpacity",
+        "placement"
+      ]
+    },
+    t130: {
+      type: "object",
+      properties: {
+        mode: {
+          const: "single"
+        },
+        item: {
+          ref: "t131"
+        }
+      },
+      required: [
+        "mode",
+        "item"
+      ]
+    },
+    t137: {
+      type: "object",
+      properties: {
+        value: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "number"
+            },
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        item: {
+          ref: "t131"
+        }
+      },
+      required: [
+        "value",
+        "item"
+      ]
+    },
+    t136: {
+      type: "object",
+      properties: {
+        mode: {
+          const: "valueMap"
+        },
+        field: {
+          type: "string"
+        },
+        entries: {
+          type: "array",
+          items: {
+            ref: "t137"
+          }
+        }
+      },
+      required: [
+        "mode",
+        "field",
+        "entries"
+      ]
+    },
+    t129: {
+      type: "object",
+      properties: {
+        kind: {
+          const: "icon"
+        },
+        icon: {
+          anyOf: [
+            {
+              ref: "t130"
+            },
+            {
+              ref: "t136"
+            }
+          ]
+        },
+        fallback: {
+          ref: "t128"
+        }
+      },
+      required: [
+        "kind",
+        "icon",
+        "fallback"
+      ]
+    },
+    t141: {
+      type: "object",
+      properties: {
+        width: {
+          type: "number"
+        },
+        height: {
+          type: "number"
+        }
+      },
+      required: [
+        "width",
+        "height"
+      ]
+    },
+    t140: {
+      type: "object",
+      properties: {
+        sizePx: {
+          ref: "t141"
+        },
+        placement: {
+          ref: "t133"
+        }
+      },
+      required: [
+        "sizePx",
+        "placement"
+      ]
+    },
+    t139: {
+      type: "object",
+      properties: {
+        mode: {
+          const: "fixed"
+        },
+        url: {
+          type: "string"
+        },
+        presentation: {
+          ref: "t140"
+        }
+      },
+      required: [
+        "mode",
+        "url",
+        "presentation"
+      ]
+    },
+    t142: {
+      type: "object",
+      properties: {
+        mode: {
+          const: "fieldUrl"
+        },
+        field: {
+          type: "string"
+        },
+        presentation: {
+          ref: "t140"
+        }
+      },
+      required: [
+        "mode",
+        "field",
+        "presentation"
+      ]
+    },
+    t143: {
+      type: "object",
+      properties: {
+        mode: {
+          const: "externalFieldUrl"
+        },
+        targetIdField: {
+          type: "string"
+        },
+        targetUrlField: {
+          type: "string"
+        },
+        presentation: {
+          ref: "t140"
+        }
+      },
+      required: [
+        "mode",
+        "targetIdField",
+        "targetUrlField",
+        "presentation"
+      ]
+    },
+    t145: {
+      type: "object",
+      properties: {
+        value: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "number"
+            },
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        url: {
+          type: "string"
+        },
+        presentation: {
+          ref: "t140"
+        }
+      },
+      required: [
+        "value",
+        "url",
+        "presentation"
+      ]
+    },
+    t144: {
+      type: "object",
+      properties: {
+        mode: {
+          const: "valueMap"
+        },
+        field: {
+          type: "string"
+        },
+        entries: {
+          type: "array",
+          items: {
+            ref: "t145"
+          }
+        }
+      },
+      required: [
+        "mode",
+        "field",
+        "entries"
+      ]
+    },
+    t138: {
+      type: "object",
+      properties: {
+        kind: {
+          const: "externalImage"
+        },
+        image: {
+          anyOf: [
+            {
+              ref: "t139"
+            },
+            {
+              ref: "t142"
+            },
+            {
+              ref: "t143"
+            },
+            {
+              ref: "t144"
+            }
+          ]
+        },
+        fallback: {
+          ref: "t128"
+        }
+      },
+      required: [
+        "kind",
+        "image",
+        "fallback"
+      ]
+    },
+    t146: {
       type: "object",
       properties: {
         source: {
@@ -18571,13 +19569,13 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t123: {
+    t125: {
       type: "object",
       properties: {
         symbolOffsetPx: {
           anyOf: [
             {
-              ref: "t124"
+              ref: "t126"
             }
           ]
         },
@@ -18623,10 +19621,23 @@ var native_contract_schema_generated_default = {
             }
           ]
         },
+        pointSymbol: {
+          anyOf: [
+            {
+              ref: "t127"
+            },
+            {
+              ref: "t129"
+            },
+            {
+              ref: "t138"
+            }
+          ]
+        },
         icon: {
           anyOf: [
             {
-              ref: "t125"
+              ref: "t146"
             }
           ]
         },
@@ -18683,7 +19694,11 @@ var native_contract_schema_generated_default = {
           ]
         },
         strokeOpacity: {
-          type: "number"
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
         },
         fillOpacity: {
           anyOf: [
@@ -18735,12 +19750,9 @@ var native_contract_schema_generated_default = {
           ]
         }
       },
-      required: [
-        "stroke",
-        "strokeOpacity"
-      ]
+      required: []
     },
-    t128: {
+    t149: {
       type: "object",
       properties: {
         italic: {
@@ -18776,7 +19788,94 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t127: {
+    t150: {
+      type: "object",
+      properties: {
+        lineHeightRatio: {
+          type: "number"
+        },
+        paddingYRatio: {
+          type: "number"
+        },
+        paddingXRatio: {
+          type: "number"
+        },
+        radiusRatio: {
+          type: "number"
+        },
+        textColor: {
+          anyOf: [
+            {
+              ref: "t11"
+            },
+            {
+              ref: "t13"
+            },
+            {
+              ref: "t14"
+            },
+            {
+              ref: "t15"
+            },
+            {
+              ref: "t17"
+            }
+          ]
+        },
+        backgroundColor: {
+          anyOf: [
+            {
+              ref: "t11"
+            },
+            {
+              ref: "t13"
+            },
+            {
+              ref: "t14"
+            },
+            {
+              ref: "t15"
+            },
+            {
+              ref: "t17"
+            }
+          ]
+        },
+        strokeColor: {
+          anyOf: [
+            {
+              ref: "t11"
+            },
+            {
+              ref: "t13"
+            },
+            {
+              ref: "t14"
+            },
+            {
+              ref: "t15"
+            },
+            {
+              ref: "t17"
+            }
+          ]
+        },
+        strokeWidth: {
+          type: "number"
+        }
+      },
+      required: [
+        "lineHeightRatio",
+        "paddingYRatio",
+        "paddingXRatio",
+        "radiusRatio",
+        "textColor",
+        "backgroundColor",
+        "strokeColor",
+        "strokeWidth"
+      ]
+    },
+    t148: {
       type: "object",
       properties: {
         family: {
@@ -18801,6 +19900,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "rle-pill-color"
+            },
+            {
+              const: "custom_pill_1"
             }
           ]
         },
@@ -18810,7 +19912,7 @@ var native_contract_schema_generated_default = {
         modifiers: {
           anyOf: [
             {
-              ref: "t128"
+              ref: "t149"
             }
           ]
         },
@@ -18832,6 +19934,13 @@ var native_contract_schema_generated_default = {
               ref: "t17"
             }
           ]
+        },
+        pill: {
+          anyOf: [
+            {
+              ref: "t150"
+            }
+          ]
         }
       },
       required: [
@@ -18839,7 +19948,7 @@ var native_contract_schema_generated_default = {
         "size"
       ]
     },
-    t129: {
+    t151: {
       type: "object",
       properties: {},
       required: [],
@@ -18854,7 +19963,7 @@ var native_contract_schema_generated_default = {
         ]
       }
     },
-    t126: {
+    t147: {
       type: "object",
       properties: {
         visible: {
@@ -18863,7 +19972,7 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t127"
+              ref: "t148"
             }
           ]
         },
@@ -18954,7 +20063,7 @@ var native_contract_schema_generated_default = {
         fallbackValueFormats: {
           anyOf: [
             {
-              ref: "t129"
+              ref: "t151"
             }
           ]
         },
@@ -19033,7 +20142,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         collision: {
-          ref: "t112"
+          ref: "t114"
         }
       },
       required: [
@@ -19041,7 +20150,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t131: {
+    t153: {
       type: "object",
       properties: {
         point: {
@@ -19097,18 +20206,18 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t130: {
+    t152: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t131"
+          ref: "t153"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t133: {
+    t155: {
       type: "object",
       properties: {
         mode: {
@@ -19131,7 +20240,7 @@ var native_contract_schema_generated_default = {
         metric: {
           anyOf: [
             {
-              ref: "t113"
+              ref: "t115"
             }
           ]
         }
@@ -19140,7 +20249,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t132: {
+    t154: {
       type: "object",
       properties: {
         id: {
@@ -19150,12 +20259,6 @@ var native_contract_schema_generated_default = {
           type: "array",
           items: {
             anyOf: [
-              {
-                ref: "t91"
-              },
-              {
-                ref: "t92"
-              },
               {
                 ref: "t93"
               },
@@ -19167,6 +20270,12 @@ var native_contract_schema_generated_default = {
               },
               {
                 ref: "t96"
+              },
+              {
+                ref: "t97"
+              },
+              {
+                ref: "t98"
               }
             ]
           }
@@ -19190,28 +20299,28 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t123"
+              ref: "t125"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t126"
+              ref: "t147"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t110"
+              ref: "t112"
             }
           ]
         },
         priority: {
           anyOf: [
             {
-              ref: "t133"
+              ref: "t155"
             }
           ]
         },
@@ -19228,13 +20337,13 @@ var native_contract_schema_generated_default = {
         "when"
       ]
     },
-    t135: {
+    t157: {
       type: "object",
       properties: {},
       required: [],
       additionalProperties: {}
     },
-    t136: {
+    t158: {
       type: "object",
       properties: {
         preserveFallback: {
@@ -19257,55 +20366,55 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t134: {
+    t156: {
       type: "object",
       properties: {
         predicates: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         },
         visibility: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         },
         geometry: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         },
         symbol: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         },
         collision: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         },
         selection: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         },
@@ -19322,14 +20431,14 @@ var native_contract_schema_generated_default = {
         legacyRuntime: {
           anyOf: [
             {
-              ref: "t136"
+              ref: "t158"
             }
           ]
         }
       },
       required: []
     },
-    t115: {
+    t117: {
       type: "object",
       properties: {
         id: {
@@ -19338,7 +20447,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t116"
+              ref: "t118"
             }
           ]
         },
@@ -19375,28 +20484,28 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t123"
+              ref: "t125"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t126"
+              ref: "t147"
             }
           ]
         },
         interaction: {
           anyOf: [
             {
-              ref: "t130"
+              ref: "t152"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t110"
+              ref: "t112"
             }
           ]
         },
@@ -19412,7 +20521,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t132"
+                ref: "t154"
               }
             }
           ]
@@ -19420,7 +20529,7 @@ var native_contract_schema_generated_default = {
         advanced: {
           anyOf: [
             {
-              ref: "t134"
+              ref: "t156"
             }
           ]
         },
@@ -19460,7 +20569,7 @@ var native_contract_schema_generated_default = {
         priority: {
           anyOf: [
             {
-              ref: "t133"
+              ref: "t155"
             }
           ]
         }
@@ -19469,13 +20578,13 @@ var native_contract_schema_generated_default = {
         "id"
       ]
     },
-    t114: {
+    t116: {
       type: "object",
       properties: {
         rules: {
           type: "array",
           items: {
-            ref: "t115"
+            ref: "t117"
           }
         }
       },
@@ -19483,18 +20592,18 @@ var native_contract_schema_generated_default = {
         "rules"
       ]
     },
-    t137: {
+    t159: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t131"
+          ref: "t153"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t138: {
+    t160: {
       type: "object",
       properties: {
         ruleIds: {
@@ -19522,7 +20631,7 @@ var native_contract_schema_generated_default = {
         "specialLogicKeys"
       ]
     },
-    t108: {
+    t110: {
       type: "object",
       properties: {
         renderState: {
@@ -19561,38 +20670,38 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t109"
+              ref: "t111"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t110"
+              ref: "t112"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t111"
+              ref: "t113"
             }
           ]
         },
         zoomPriority: {
-          ref: "t114"
+          ref: "t116"
         },
         interaction: {
           anyOf: [
             {
-              ref: "t137"
+              ref: "t159"
             }
           ]
         },
         legacyDisplay: {
           anyOf: [
             {
-              ref: "t138"
+              ref: "t160"
             }
           ]
         }
@@ -19603,34 +20712,34 @@ var native_contract_schema_generated_default = {
         "zoomPriority"
       ]
     },
-    t107: {
+    t109: {
       type: "object",
       properties: {
         Point: {
           anyOf: [
             {
-              ref: "t108"
+              ref: "t110"
             }
           ]
         },
         LineString: {
           anyOf: [
             {
-              ref: "t108"
+              ref: "t110"
             }
           ]
         },
         Polygon: {
           anyOf: [
             {
-              ref: "t108"
+              ref: "t110"
             }
           ]
         }
       },
       required: []
     },
-    t139: {
+    t161: {
       type: "object",
       properties: {
         enabled: {
@@ -19665,7 +20774,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t142: {
+    t164: {
       type: "object",
       properties: {
         nodeId: {
@@ -19680,7 +20789,7 @@ var native_contract_schema_generated_default = {
         "fieldId"
       ]
     },
-    t143: {
+    t165: {
       type: "object",
       properties: {
         nodeId: {
@@ -19695,7 +20804,7 @@ var native_contract_schema_generated_default = {
         "itemId"
       ]
     },
-    t144: {
+    t166: {
       type: "object",
       properties: {
         colorSource: {
@@ -19790,7 +20899,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t145: {
+    t167: {
       type: "object",
       properties: {
         targetRole: {
@@ -19861,7 +20970,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t141: {
+    t163: {
       type: "object",
       properties: {
         id: {
@@ -19870,14 +20979,14 @@ var native_contract_schema_generated_default = {
         fieldBinding: {
           anyOf: [
             {
-              ref: "t142"
+              ref: "t164"
             }
           ]
         },
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t142"
+              ref: "t164"
             }
           ]
         },
@@ -19911,14 +21020,14 @@ var native_contract_schema_generated_default = {
         inheritFrom: {
           anyOf: [
             {
-              ref: "t143"
+              ref: "t165"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t104"
+              ref: "t106"
             }
           ]
         },
@@ -20033,14 +21142,14 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t144"
+              ref: "t166"
             }
           ]
         },
         relation: {
           anyOf: [
             {
-              ref: "t145"
+              ref: "t167"
             }
           ]
         }
@@ -20052,7 +21161,7 @@ var native_contract_schema_generated_default = {
         "renderer"
       ]
     },
-    t146: {
+    t168: {
       type: "object",
       properties: {
         enabled: {
@@ -20122,7 +21231,7 @@ var native_contract_schema_generated_default = {
         "includeSystem"
       ]
     },
-    t140: {
+    t162: {
       type: "object",
       properties: {
         mode: {
@@ -20131,13 +21240,13 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t141"
+            ref: "t163"
           }
         },
         remaining: {
           anyOf: [
             {
-              ref: "t146"
+              ref: "t168"
             }
           ]
         }
@@ -20147,7 +21256,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t147: {
+    t169: {
       type: "object",
       properties: {
         mode: {
@@ -20159,7 +21268,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         }
@@ -20169,7 +21278,7 @@ var native_contract_schema_generated_default = {
         "layoutId"
       ]
     },
-    t148: {
+    t170: {
       type: "object",
       properties: {
         mode: {
@@ -20181,7 +21290,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         }
@@ -20191,7 +21300,7 @@ var native_contract_schema_generated_default = {
         "componentKey"
       ]
     },
-    t149: {
+    t171: {
       type: "object",
       properties: {
         classCode: {
@@ -20220,7 +21329,7 @@ var native_contract_schema_generated_default = {
         source: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         }
@@ -20230,7 +21339,7 @@ var native_contract_schema_generated_default = {
         "displayRuleIds"
       ]
     },
-    t85: {
+    t87: {
       type: "object",
       properties: {
         nodeId: {
@@ -20242,7 +21351,7 @@ var native_contract_schema_generated_default = {
         classificationLabels: {
           anyOf: [
             {
-              ref: "t86"
+              ref: "t88"
             }
           ]
         },
@@ -20255,34 +21364,34 @@ var native_contract_schema_generated_default = {
         inheritDown: {
           anyOf: [
             {
-              ref: "t87"
+              ref: "t89"
             }
           ]
         },
         receiveFromParent: {
           anyOf: [
             {
-              ref: "t88"
+              ref: "t90"
             }
           ]
         },
         policies: {
           anyOf: [
             {
-              ref: "t89"
+              ref: "t91"
             }
           ]
         },
         fields: {
           type: "array",
           items: {
-            ref: "t90"
+            ref: "t92"
           }
         },
         fieldSettings: {
           anyOf: [
             {
-              ref: "t100"
+              ref: "t102"
             }
           ]
         },
@@ -20300,32 +21409,32 @@ var native_contract_schema_generated_default = {
           ]
         },
         geometryProfiles: {
-          ref: "t107"
+          ref: "t109"
         },
         containment: {
           anyOf: [
             {
-              ref: "t139"
+              ref: "t161"
             }
           ]
         },
         card: {
           anyOf: [
             {
-              ref: "t140"
+              ref: "t162"
             },
             {
-              ref: "t147"
+              ref: "t169"
             },
             {
-              ref: "t148"
+              ref: "t170"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t149"
+              ref: "t171"
             }
           ]
         }
@@ -20338,7 +21447,7 @@ var native_contract_schema_generated_default = {
         "geometryProfiles"
       ]
     },
-    t151: {
+    t173: {
       type: "object",
       properties: {
         classification: {
@@ -20353,7 +21462,7 @@ var native_contract_schema_generated_default = {
         "referenceField"
       ]
     },
-    t150: {
+    t172: {
       type: "object",
       properties: {
         id: {
@@ -20363,10 +21472,10 @@ var native_contract_schema_generated_default = {
           ref: "t1"
         },
         host: {
-          ref: "t151"
+          ref: "t173"
         },
         member: {
-          ref: "t151"
+          ref: "t173"
         },
         memberSelectorField: {
           anyOf: [
@@ -20401,7 +21510,7 @@ var native_contract_schema_generated_default = {
         "profile"
       ]
     },
-    t154: {
+    t176: {
       type: "object",
       properties: {
         slot: {
@@ -20416,7 +21525,7 @@ var native_contract_schema_generated_default = {
         "target"
       ]
     },
-    t153: {
+    t175: {
       type: "object",
       properties: {
         enabled: {
@@ -20444,7 +21553,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t154"
+                ref: "t176"
               }
             }
           ]
@@ -20454,7 +21563,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t155: {
+    t177: {
       type: "object",
       properties: {
         required: {
@@ -20465,7 +21574,7 @@ var native_contract_schema_generated_default = {
         "required"
       ]
     },
-    t159: {
+    t181: {
       type: "object",
       properties: {
         placeholder: {
@@ -20478,7 +21587,7 @@ var native_contract_schema_generated_default = {
         reference: {
           anyOf: [
             {
-              ref: "t99"
+              ref: "t101"
             }
           ]
         },
@@ -20580,12 +21689,6 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t91"
-                  },
-                  {
-                    ref: "t92"
-                  },
-                  {
                     ref: "t93"
                   },
                   {
@@ -20596,6 +21699,12 @@ var native_contract_schema_generated_default = {
                   },
                   {
                     ref: "t96"
+                  },
+                  {
+                    ref: "t97"
+                  },
+                  {
+                    ref: "t98"
                   }
                 ]
               }
@@ -20633,7 +21742,7 @@ var native_contract_schema_generated_default = {
         "input"
       ]
     },
-    t158: {
+    t180: {
       type: "object",
       properties: {
         nodeId: {
@@ -20643,7 +21752,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         snapshot: {
-          ref: "t159"
+          ref: "t181"
         },
         overrides: {
           type: "array",
@@ -20659,7 +21768,7 @@ var native_contract_schema_generated_default = {
         "overrides"
       ]
     },
-    t160: {
+    t182: {
       type: "object",
       properties: {
         token: {
@@ -20725,7 +21834,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t160"
+                ref: "t182"
               }
             }
           ]
@@ -20735,7 +21844,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t160"
+                ref: "t182"
               }
             }
           ]
@@ -20746,7 +21855,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t161: {
+    t183: {
       type: "object",
       properties: {
         registryKey: {
@@ -20757,7 +21866,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t163: {
+    t185: {
       type: "object",
       properties: {
         matcher: {
@@ -20796,7 +21905,7 @@ var native_contract_schema_generated_default = {
         "maxResults"
       ]
     },
-    t162: {
+    t184: {
       type: "object",
       properties: {
         target: {
@@ -20923,7 +22032,7 @@ var native_contract_schema_generated_default = {
         coarse: {
           anyOf: [
             {
-              ref: "t163"
+              ref: "t185"
             }
           ]
         }
@@ -20933,7 +22042,7 @@ var native_contract_schema_generated_default = {
         "cacheScope"
       ]
     },
-    t165: {
+    t187: {
       type: "object",
       properties: {
         optionTable: {
@@ -20946,14 +22055,14 @@ var native_contract_schema_generated_default = {
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t142"
+              ref: "t164"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t104"
+              ref: "t106"
             }
           ]
         },
@@ -21043,7 +22152,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t162"
+              ref: "t184"
             }
           ]
         },
@@ -21082,7 +22191,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t158"
+              ref: "t180"
             }
           ]
         },
@@ -21091,7 +22200,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t160"
+                ref: "t182"
               }
             }
           ]
@@ -21119,13 +22228,13 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t164: {
+    t186: {
       type: "object",
       properties: {
         itemFields: {
           type: "array",
           items: {
-            ref: "t165"
+            ref: "t187"
           }
         },
         storage: {
@@ -21167,7 +22276,7 @@ var native_contract_schema_generated_default = {
         "itemFields"
       ]
     },
-    t166: {
+    t188: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -21182,7 +22291,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t157: {
+    t179: {
       type: "object",
       properties: {
         optionTable: {
@@ -21195,14 +22304,14 @@ var native_contract_schema_generated_default = {
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t142"
+              ref: "t164"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t104"
+              ref: "t106"
             }
           ]
         },
@@ -21304,7 +22413,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t158"
+              ref: "t180"
             }
           ]
         },
@@ -21345,7 +22454,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t160"
+                ref: "t182"
               }
             }
           ]
@@ -21370,7 +22479,7 @@ var native_contract_schema_generated_default = {
         optionSource: {
           anyOf: [
             {
-              ref: "t161"
+              ref: "t183"
             }
           ]
         },
@@ -21392,7 +22501,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t162"
+              ref: "t184"
             }
           ]
         },
@@ -21423,7 +22532,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t160"
+              ref: "t182"
             }
           ]
         },
@@ -21440,14 +22549,14 @@ var native_contract_schema_generated_default = {
         group: {
           anyOf: [
             {
-              ref: "t164"
+              ref: "t186"
             }
           ]
         },
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t166"
+              ref: "t188"
             }
           ]
         },
@@ -21461,7 +22570,7 @@ var native_contract_schema_generated_default = {
         legacyBlock: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         }
@@ -21473,7 +22582,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t167: {
+    t189: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -21488,7 +22597,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t169: {
+    t191: {
       type: "object",
       properties: {
         id: {
@@ -21513,7 +22622,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t160"
+              ref: "t182"
             }
           ]
         }
@@ -21524,7 +22633,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t170: {
+    t192: {
       type: "object",
       properties: {
         outputId: {
@@ -21550,7 +22659,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t168: {
+    t190: {
       type: "object",
       properties: {
         enabledFromThisPage: {
@@ -21602,7 +22711,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t169"
+                ref: "t191"
               }
             }
           ]
@@ -21652,7 +22761,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t170"
+                ref: "t192"
               }
             }
           ]
@@ -21660,7 +22769,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t156: {
+    t178: {
       type: "object",
       properties: {
         id: {
@@ -21700,7 +22809,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t157"
+                ref: "t179"
               }
             }
           ]
@@ -21745,7 +22854,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t160"
+              ref: "t182"
             }
           ]
         },
@@ -21759,21 +22868,21 @@ var native_contract_schema_generated_default = {
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t167"
+              ref: "t189"
             }
           ]
         },
         drawing: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t190"
             }
           ]
         },
         legacyPage: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         }
@@ -21784,7 +22893,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t172: {
+    t194: {
       type: "object",
       properties: {
         id: {
@@ -21799,7 +22908,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t160"
+              ref: "t182"
             }
           ]
         }
@@ -21810,7 +22919,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t173: {
+    t195: {
       type: "object",
       properties: {
         selected: {
@@ -21851,7 +22960,7 @@ var native_contract_schema_generated_default = {
         "selected"
       ]
     },
-    t171: {
+    t193: {
       type: "object",
       properties: {
         id: {
@@ -21863,18 +22972,18 @@ var native_contract_schema_generated_default = {
         assignments: {
           type: "array",
           items: {
-            ref: "t172"
+            ref: "t194"
           }
         },
         when: {
           anyOf: [
             {
-              ref: "t160"
+              ref: "t182"
             }
           ]
         },
         geometry: {
-          ref: "t173"
+          ref: "t195"
         }
       },
       required: [
@@ -21884,7 +22993,7 @@ var native_contract_schema_generated_default = {
         "geometry"
       ]
     },
-    t174: {
+    t196: {
       type: "object",
       properties: {
         componentKey: {
@@ -21936,7 +23045,7 @@ var native_contract_schema_generated_default = {
         "reason"
       ]
     },
-    t175: {
+    t197: {
       type: "object",
       properties: {
         runtimeMode: {
@@ -21956,21 +23065,21 @@ var native_contract_schema_generated_default = {
         output: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         },
         source: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t157"
             }
           ]
         }
       },
       required: []
     },
-    t152: {
+    t174: {
       type: "object",
       properties: {
         id: {
@@ -22002,14 +23111,14 @@ var native_contract_schema_generated_default = {
         editor: {
           anyOf: [
             {
-              ref: "t153"
+              ref: "t175"
             }
           ]
         },
         actor: {
           anyOf: [
             {
-              ref: "t155"
+              ref: "t177"
             }
           ]
         },
@@ -22023,13 +23132,13 @@ var native_contract_schema_generated_default = {
         steps: {
           type: "array",
           items: {
-            ref: "t156"
+            ref: "t178"
           }
         },
         outputs: {
           type: "array",
           items: {
-            ref: "t171"
+            ref: "t193"
           }
         },
         assignments: {
@@ -22037,7 +23146,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t172"
+                ref: "t194"
               }
             }
           ]
@@ -22045,14 +23154,14 @@ var native_contract_schema_generated_default = {
         external: {
           anyOf: [
             {
-              ref: "t174"
+              ref: "t196"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t175"
+              ref: "t197"
             }
           ]
         }
@@ -22065,7 +23174,7 @@ var native_contract_schema_generated_default = {
         "outputs"
       ]
     },
-    t177: {
+    t199: {
       type: "object",
       properties: {
         kind: {
@@ -22122,7 +23231,7 @@ var native_contract_schema_generated_default = {
         "status"
       ]
     },
-    t176: {
+    t198: {
       type: "object",
       properties: {
         schemaVersion: {
@@ -22138,7 +23247,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t177"
+            ref: "t199"
           }
         },
         generatedAt: {
@@ -22185,6 +23294,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: 11
+            },
+            {
+              const: 12
             }
           ]
         },
@@ -22234,10 +23346,17 @@ var native_contract_schema_generated_default = {
             }
           ]
         },
+        resources: {
+          anyOf: [
+            {
+              ref: "t85"
+            }
+          ]
+        },
         nodes: {
           type: "array",
           items: {
-            ref: "t85"
+            ref: "t87"
           }
         },
         contextBindings: {
@@ -22245,7 +23364,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t150"
+                ref: "t172"
               }
             }
           ]
@@ -22253,13 +23372,13 @@ var native_contract_schema_generated_default = {
         workflows: {
           type: "array",
           items: {
-            ref: "t152"
+            ref: "t174"
           }
         },
         parity: {
           anyOf: [
             {
-              ref: "t176"
+              ref: "t198"
             }
           ]
         }
@@ -22739,6 +23858,13 @@ function validateRuleLabel(rule, rulePath, config, sourcePath, issues) {
   const supportsModifiers = /* @__PURE__ */ new Set(["gm-bw", "gm-outline", "gm-wtb", "structure-label"]);
   if ((visual.modifiers?.italic || visual.modifiers?.underline) && !supportsModifiers.has(visual.family)) issue(issues, "error", "label-style-modifier-invalid", rulePath, "\u659C\u4F53\u548C\u4E0B\u5212\u7EBF\u4EC5\u9002\u7528\u4E8E\u65E0\u80CC\u666F\u5BB9\u5668\u7684\u6587\u5B57\u6837\u5F0F\u3002");
   const needsColor = visual.family === "rle-line-color" || visual.family === "rle-pill-color";
+  if (visual.family === "custom_pill_1") {
+    if (config.contractRevision < 12) issue(issues, "error", "custom-pill-revision", rulePath, "\u81EA\u5B9A\u4E49\u80F6\u56CA1\u9700\u8981 r12 \u5951\u7EA6\u3002");
+    for (const error of customPillErrors(visual.size, visual.pill)) issue(issues, "error", "custom-pill-invalid", `${rulePath}/label/style/pill/${error.key}`, error.message);
+    if (visual.color || Object.values(visual.modifiers ?? {}).some(Boolean)) issue(issues, "error", "custom-pill-conflicting-style", rulePath, "\u81EA\u5B9A\u4E49\u80F6\u56CA\u4E0D\u80FD\u6DF7\u7528\u65E7\u989C\u8272\u6216\u5B57\u4F53\u4FEE\u9970\u3002");
+    if (visual.pill) for (const key2 of ["textColor", "backgroundColor", "strokeColor"])
+      validateRenderColorBinding(visual.pill[key2], config, sourcePath, `${rulePath}/label/style/pill/${key2}`, issues);
+  } else if (visual.pill) issue(issues, "error", "custom-pill-inactive", rulePath, "\u5F53\u524D Label \u6837\u5F0F\u4E0D\u80FD\u643A\u5E26\u672A\u542F\u7528\u7684\u80F6\u56CA\u8BBE\u7F6E\u3002");
   if (needsColor) validateRenderColorBinding(visual.color, config, sourcePath, `${rulePath}/label/style/color`, issues);
   if (!needsColor && visual.color) issue(issues, "warning", "label-style-color-ignored", rulePath, "\u5F53\u524D\u6837\u5F0F\u65CF\u4F7F\u7528\u56FA\u5B9A\u7684 V1 \u8C03\u8272\u677F\uFF0C\u989C\u8272\u7ED1\u5B9A\u4E0D\u4F1A\u751F\u6548\u3002");
 }
@@ -22799,6 +23925,17 @@ function validateRuleExtensions(rule, geometry, rulePath, config, sourcePath, is
     }
   }
   const line = extensions.lineLabel;
+  if (line && (line.orientationPolicy === "scriptAware" || line.textPathLengthMode !== void 0) && config.contractRevision < 12) issue(issues, "error", "line-script-revision", rulePath, "\u4E2D\u82F1\u5206\u6D41\u548C\u5B9E\u9645\u6587\u5B57\u8DEF\u5F84\u957F\u5EA6\u9700\u8981\u5951\u7EA6 r12\u3002");
+  if (line && config.contractRevision >= 12) {
+    for (const [key2, value] of Object.entries(line)) if (typeof value === "number" && (!Number.isFinite(value) || value < 0)) issue(issues, "error", "line-setting-number-invalid", rulePath + "/lineLabel/" + key2, "\u8D34\u7EBF\u6570\u503C\u5FC5\u987B\u662F\u6709\u9650\u975E\u8D1F\u6570\u3002");
+    for (const key2 of ["maxTurnAngleDeg", "textPathMaxAngleDeltaDeg", "textPathVerticalAngleThresholdDeg", "cjkGlyphUprightAngleThresholdDeg", "cjkGlyphMaxAngleDeltaDeg"]) if (line[key2] !== void 0 && line[key2] > 180) issue(issues, "error", "line-angle-invalid", rulePath + "/lineLabel/" + key2, "\u5C40\u90E8\u89D2\u5EA6\u5FC5\u987B\u4ECB\u4E8E 0\u2013180\xB0\u3002");
+    for (const key2 of ["textPathVerticalLengthRatio", "cjkGlyphMinAdvanceScale", "textPathMaxHalfLengthRatio"]) if (line[key2] !== void 0 && (line[key2] < 0 || line[key2] > 1)) issue(issues, "error", "line-ratio-invalid", rulePath + "/lineLabel/" + key2, "\u6BD4\u4F8B\u5FC5\u987B\u4ECB\u4E8E 0\u20131\u3002");
+    for (const key2 of ["cjkGlyphMaxCount", "advancedTextMaxLabels", "advancedTextMaxCandidatesPerPass", "candidateMax", "anchorSamples"]) if (line[key2] !== void 0 && (!Number.isInteger(line[key2]) || line[key2] < 1)) issue(issues, "error", "line-count-invalid", rulePath + "/lineLabel/" + key2, "\u9884\u7B97\u548C\u6570\u91CF\u5FC5\u987B\u4E3A\u6B63\u6574\u6570\u3002");
+    if (line.orientationPolicy === "scriptAware" && (line.cjkGlyphPathMode === "off" || line.advancedTextEnabled === false)) issue(issues, "error", "line-script-disabled", rulePath, "\u4E2D\u82F1\u5206\u6D41\u9700\u8981\u542F\u7528\u5171\u4EAB\u5B57\u5F62\u8DEF\u5F84\uFF0C\u4E0D\u80FD\u540C\u65F6\u5173\u95ED\u3002");
+    if (line.orientationPolicy === "scriptAware" && line.repositionMode === "chainageSearch" && line.repositionStrictSvg !== false && (line.cjkGlyphFallbackMode === "simpleLineLabel" || line.cjkGlyphFallbackMode === "rotatedLabel" || line.textPathFallback === "rotatedLabel" || line.repositionFailure === "simpleLineLabel" || line.simpleFallbackEnabled === true)) issue(issues, "error", "line-svg-fallback-conflict", rulePath, "\u4E25\u683C SVG \u91CD\u5B9A\u4F4D\u4E0D\u80FD\u540C\u65F6\u58F0\u660E HTML\uFF0F\u7B80\u5355\u6587\u5B57\u56DE\u9000\uFF1B\u8BF7\u9009\u62E9\u9690\u85CF\u6216\u660E\u786E\u7684 SVG \u8DEF\u5F84\u56DE\u9000\u3002");
+    const background = ["custom_pill_1", "bubble-dark", "rle-pill-color"].includes(rule.label?.style?.family ?? "");
+    if (background && (line.textMode === "textPath" || line.advancedTextEnabled !== false && (line.textMode === "auto" || line.orientationPolicy === "scriptAware" || line.profile === "strict-on-line"))) issue(issues, "error", "label-background-svg-capability", rulePath, "\u80F6\u56CA\uFF0F\u6C14\u6CE1\u9700\u8981\u80CC\u666F\u5BB9\u5668\uFF1B\u5F53\u524D\u7EAF\u6587\u5B57\u8D34\u7EBF SVG \u4E0D\u652F\u6301\u8BE5\u6837\u5F0F\uFF0C\u8BF7\u9009\u62E9\u666E\u901A\u6807\u7B7E\u6A21\u5F0F\u3002");
+  }
   const lineExtensionConfigured = Boolean(line && Object.entries(line).some(([key2, value]) => key2 === "profile" ? value !== "inherit" : value !== void 0));
   if (lineExtensionConfigured && geometry !== "LineString") issue(issues, "error", "line-label-extension-geometry-invalid", rulePath, "\u7EBF Label \u6269\u5C55\u53EA\u80FD\u7528\u4E8E\u7EBF\u8981\u7D20\u3002");
   if (line && line.maxTurnAngleDeg !== void 0 && (!Number.isFinite(line.maxTurnAngleDeg) || line.maxTurnAngleDeg < 0 || line.maxTurnAngleDeg > 180)) issue(issues, "error", "line-label-turn-angle-invalid", rulePath, "\u7EBF Label \u8F6C\u89D2\u9608\u503C\u5FC5\u987B\u4ECB\u4E8E 0 \u5230 180 \u5EA6\u3002");
@@ -22856,7 +23993,7 @@ function validateProfile(profile, geometry, path2, config, sourcePath, issues) {
     if (config.contractRevision >= 7) {
       if (!rule.when || !Number.isInteger(min) || !Number.isInteger(max) || min < 0 || max > 8 || min > max) issue(issues, "error", "render-match-zoom-required", rulePath, "r7 \u5FC5\u987B\u586B\u5199 0\u20138 \u7684\u95ED\u533A\u95F4\u6574\u6570 Zoom\uFF0C\u5141\u8BB8\u5355\u7EA7\u533A\u95F4\u3002");
       if (rule.minZoom !== void 0 || rule.maxZoom !== void 0 || rule.minExclusive !== void 0 || rule.maxExclusive !== void 0 || rule.conditionalOverrides !== void 0) issue(issues, "error", "render-legacy-match-forbidden", rulePath, "r7 \u53EA\u4F7F\u7528 when.zoom \u548C\u975E\u5206\u7C7B\u5B57\u6BB5\u7EC4\u5408\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u5339\u914D\u6216\u5206\u652F\u3002");
-      for (const message of validateRenderFields(rule.when?.fields, resolveSelectableFields(config, sourcePath), resolveSelectableFields(config, sourcePath).map((field) => field.key))) issue(issues, "error", "render-field-condition-invalid", `${rulePath}/when/fields`, message);
+      for (const message of validateRenderFields(rule.when?.fields, resolveSelectableFields(config, sourcePath), resolveSelectableFields(config, sourcePath).map((field) => field.key), config.contractRevision)) issue(issues, "error", "render-field-condition-invalid", `${rulePath}/when/fields`, message);
     } else if (rule.when) issue(issues, "error", "render-match-revision-invalid", rulePath, "\u7EC4\u5408\u89C4\u5219\u9700\u8981\u539F\u751F r7\uFF1B\u65E7\u5305\u8BF7\u5148\u65E0\u635F\u8FC1\u79FB\u3002");
     if (!rule.representation) issue(issues, "error", "render-representation-required", rulePath, "\u6E32\u67D3\u89C4\u5219\u5FC5\u987B\u9009\u62E9\u663E\u793A\u79CD\u7C7B\u3002");
     else if (!["hidden", "geometry", "point", "labelOnly"].includes(rule.representation)) issue(issues, "error", "render-representation-invalid", rulePath, "\u672A\u77E5\u663E\u793A\u79CD\u7C7B\u3002");
@@ -22869,10 +24006,11 @@ function validateProfile(profile, geometry, path2, config, sourcePath, issues) {
     if (style?.symbolOffsetPx && (!Number.isFinite(style.symbolOffsetPx.x) || !Number.isFinite(style.symbolOffsetPx.y))) issue(issues, "error", "render-symbol-offset-invalid", rulePath, "\u7B26\u53F7\u504F\u79FB\u5FC5\u987B\u4E3A\u6709\u9650\u50CF\u7D20\u503C\u3002");
     if (style?.symbolAnchor && !["geometry", "label"].includes(style.symbolAnchor) || style?.symbolVisibility && !["independent", "withLabel"].includes(style.symbolVisibility)) issue(issues, "error", "render-symbol-policy-invalid", rulePath, "\u7B26\u53F7\u951A\u70B9\u6216\u53EF\u89C1\u6027\u7B56\u7565\u65E0\u6548\u3002");
     if (rule.representation !== "hidden" && !style) issue(issues, "error", "render-style-required", rulePath, "\u975E\u9690\u85CF\u6E32\u67D3\u89C4\u5219\u5FC5\u987B\u5B9A\u4E49\u663E\u793A\u6548\u679C\u3002");
-    if (style) {
+    if (config.contractRevision >= 12 && rule.representation !== "hidden" && (geometry === "Point" || rule.representation === "point") && !style?.pointSymbol) issue(issues, "error", "point-symbol-required", rulePath, "r12 \u70B9\u72B6\u663E\u793A\u5FC5\u987B\u4F7F\u7528\u5355\u4E00 pointSymbol\uFF1B\u65E7 hide \u56FE\u7247\u9700\u8981\u660E\u786E\u786E\u8BA4\u56DE\u9000\u3002");
+    if (style && !style.pointSymbol) {
       if (style.size !== void 0 && (!Number.isFinite(style.size) || style.size <= 0)) issue(issues, "error", "render-size-invalid", rulePath, "\u70B9\u7B26\u53F7\u5927\u5C0F\u5FC5\u987B\u4E3A\u6B63\u6570\u3002");
       if (style.weight !== void 0 && (!Number.isFinite(style.weight) || style.weight < 0)) issue(issues, "error", "render-stroke-width-invalid", rulePath, "\u63CF\u8FB9\u7C97\u7EC6\u5FC5\u987B\u4E3A\u975E\u8D1F\u6570\u3002");
-      if (!Number.isFinite(style.strokeOpacity) || style.strokeOpacity < 0 || style.strokeOpacity > 1) issue(issues, "error", "render-stroke-opacity-invalid", rulePath, "\u63CF\u8FB9\u900F\u660E\u5EA6\u5FC5\u987B\u5728 0 \u5230 1 \u4E4B\u95F4\u3002");
+      if (!Number.isFinite(style.strokeOpacity) || (style.strokeOpacity ?? -1) < 0 || (style.strokeOpacity ?? -1) > 1) issue(issues, "error", "render-stroke-opacity-invalid", rulePath, "\u63CF\u8FB9\u900F\u660E\u5EA6\u5FC5\u987B\u5728 0 \u5230 1 \u4E4B\u95F4\u3002");
       if (style.fillOpacity !== void 0 && (!Number.isFinite(style.fillOpacity) || style.fillOpacity < 0 || style.fillOpacity > 1)) issue(issues, "error", "render-fill-opacity-invalid", rulePath, "\u586B\u8272\u900F\u660E\u5EA6\u5FC5\u987B\u5728 0 \u5230 1 \u4E4B\u95F4\u3002");
       validateRenderColorBinding(style.stroke, config, sourcePath, `${rulePath}/style/stroke`, issues);
       if (style.fill) validateRenderColorBinding(style.fill, config, sourcePath, `${rulePath}/style/fill`, issues);
@@ -22885,7 +24023,19 @@ function validateProfile(profile, geometry, path2, config, sourcePath, issues) {
         if (!Array.isArray(style.icon.anchor) || style.icon.anchor.length !== 2 || style.icon.anchor.some((value) => !Number.isFinite(value))) issue(issues, "error", "render-icon-anchor-invalid", rulePath, "\u56FE\u6807\u951A\u70B9\u5FC5\u987B\u662F\u4E24\u4E2A\u6709\u9650\u6570\u5B57\u3002");
       }
     }
+    if (style?.pointSymbol) {
+      if (config.contractRevision < 12) issue(issues, "error", "point-symbol-revision", rulePath, "\u65B0\u70B9\u7B26\u53F7\u6765\u6E90\u9700\u8981 r12 \u5951\u7EA6\u3002");
+      if (geometry !== "Point" && rule.representation !== "point") issue(issues, "error", "point-symbol-geometry", rulePath, "\u70B9\u7B26\u53F7\u4EC5\u7528\u4E8E\u70B9\u6216\u660E\u786E\u7684\u70B9\u72B6\u8868\u793A\u3002");
+      for (const key2 of ["icon", "pointShape", "size", "weight", "stroke", "fill", "strokeOpacity", "fillOpacity", "lineCap", "lineJoin"])
+        if (style[key2] !== void 0) issue(issues, "error", "point-symbol-conflicting-style", `${rulePath}/style/${key2}`, "\u70B9\u7B26\u53F7\u4E0D\u80FD\u540C\u65F6\u4FDD\u7559\u65E7\u5916\u89C2\u6765\u6E90\u3002");
+      for (const row2 of pointSymbolProblems(style.pointSymbol, resolveSelectableFields(config, sourcePath), config))
+        issue(issues, "error", "point-symbol-invalid", `${rulePath}/style/pointSymbol/${row2.path}`, row2.message);
+      for (const row2 of pointSymbolBindings(style.pointSymbol)) validateRenderColorBinding(row2.value, config, sourcePath, `${rulePath}/style/pointSymbol/${row2.path}`, issues);
+    }
     validateRuleLabel(rule, rulePath, config, sourcePath, issues);
+    if (config.contractRevision >= 12) for (const row2 of unreachableLocalMappingRows(rule, resolveSelectableFields(config, sourcePath))) {
+      issue(issues, "error", "render-mapping-unreachable", `${rulePath}/${row2.path}`, "\u672C\u5730\u6620\u5C04\u884C\u4E0E\u5B8C\u6574\u5B57\u6BB5\u6761\u4EF6\uFF0F\u5916\u5C42\u6620\u5C04\u503C\u5B58\u5728\u53EF\u8BC1\u660E\u7684\u51B2\u7A81\u3002");
+    }
     const metric = rule.priority?.metric;
     if (metric && !allowedMetrics(geometry).has(metric.kind)) issue(issues, "error", "dynamic-priority-metric-geometry-invalid", rulePath, `${metric.kind} \u4E0D\u9002\u7528\u4E8E ${geometry}\u3002`);
     if (metric && (!Number.isFinite(metric.multiplier) || metric.divisor !== void 0 && (!Number.isFinite(metric.divisor) || metric.divisor === 0) || metric.min !== void 0 && metric.max !== void 0 && metric.min > metric.max)) issue(issues, "error", "dynamic-priority-invalid", rulePath, "\u52A8\u6001\u4F18\u5148\u7EA7\u7684\u500D\u7387\u3001\u9664\u6570\u6216\u4E0A\u4E0B\u754C\u65E0\u6548\u3002");
@@ -22901,8 +24051,14 @@ function validateProfile(profile, geometry, path2, config, sourcePath, issues) {
         validateCondition(condition, `${overridePath}/when/${conditionIndex}`, issues);
         if ((condition.kind === "fieldEquals" || condition.kind === "fieldIn" || condition.kind === "fieldPresent") && !sourceExists(condition.field, new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key)))) issue(issues, "error", "render-conditional-override-field-invalid", `${overridePath}/when/${conditionIndex}`, "\u5B57\u6BB5\u6761\u4EF6\u5FC5\u987B\u4F7F\u7528\u5F53\u524D\u5206\u7C7B\u7684\u6709\u6548\u5B57\u6BB5\u3002", { field: condition.field });
       }
-      if (override.style) {
-        if (!Number.isFinite(override.style.strokeOpacity) || override.style.strokeOpacity < 0 || override.style.strokeOpacity > 1) issue(issues, "error", "render-conditional-style-opacity-invalid", overridePath, "\u6761\u4EF6\u8986\u76D6\u7684\u63CF\u8FB9\u900F\u660E\u5EA6\u5FC5\u987B\u5728 0 \u5230 1 \u4E4B\u95F4\u3002");
+      if (override.style?.pointSymbol) {
+        if (config.contractRevision < 12) issue(issues, "error", "point-symbol-revision", overridePath, "\u70B9\u7B26\u53F7\u9700\u8981\u5951\u7EA6 r12\u3002");
+        for (const row2 of pointSymbolProblems(override.style.pointSymbol, resolveSelectableFields(config, sourcePath), config)) issue(issues, "error", "point-symbol-invalid", overridePath + "/style/pointSymbol/" + row2.path, row2.message);
+        for (const row2 of pointSymbolBindings(override.style.pointSymbol)) validateRenderColorBinding(row2.value, config, sourcePath, overridePath + "/style/pointSymbol/" + row2.path, issues);
+        for (const key2 of ["icon", "pointShape", "size", "weight", "stroke", "fill", "strokeOpacity", "fillOpacity", "lineCap", "lineJoin"]) if (override.style[key2] !== void 0) issue(issues, "error", "point-symbol-conflicting-style", overridePath + "/style/" + key2, "\u6761\u4EF6\u8986\u76D6\u4E0D\u53EF\u540C\u65F6\u4FDD\u5B58\u65E7\u70B9\u5916\u89C2\u3002");
+      }
+      if (override.style && !override.style.pointSymbol) {
+        if (!Number.isFinite(override.style.strokeOpacity) || (override.style.strokeOpacity ?? -1) < 0 || (override.style.strokeOpacity ?? -1) > 1) issue(issues, "error", "render-conditional-style-opacity-invalid", overridePath, "\u6761\u4EF6\u8986\u76D6\u7684\u63CF\u8FB9\u900F\u660E\u5EA6\u5FC5\u987B\u5728 0 \u5230 1 \u4E4B\u95F4\u3002");
         validateRenderColorBinding(override.style.stroke, config, sourcePath, `${overridePath}/style/stroke`, issues);
         if (override.style.fill) validateRenderColorBinding(override.style.fill, config, sourcePath, `${overridePath}/style/fill`, issues);
       }
@@ -23383,6 +24539,15 @@ function validateConfigPackage(config, mountedRecords = []) {
   const issues = [];
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: "cairnmap.config-validation-report.v3", valid: false, createdAt: (/* @__PURE__ */ new Date()).toISOString(), issues: structure.map((item) => ({ severity: "error", code: "native-contract-structure-invalid", ...item })) };
+  if (config.resources) {
+    if (config.contractRevision < 12) issue(issues, "error", "icon-resources-revision", "resources", "\u56FE\u6807\u8D44\u6E90\u80FD\u529B\u9700\u8981\u5951\u7EA6 r12\u3002");
+    const seen = /* @__PURE__ */ new Set();
+    for (const item of config.resources.iconLibraries) {
+      if (seen.has(item.library)) issue(issues, "error", "icon-resource-duplicate", "resources", "\u540C\u4E00\u56FE\u5E93\u53EA\u80FD\u58F0\u660E\u4E00\u6B21\u3002");
+      seen.add(item.library);
+      if (item.library !== ICON_LIBRARY.library || item.version !== ICON_LIBRARY.version || item.manifestSha256 !== ICON_LIBRARY.manifestSha256) issue(issues, "error", "icon-resource-unsupported", "resources", "\u56FE\u5E93\u7248\u672C\u6216\u8D44\u6E90\u6458\u8981\u4E0D\u5728\u5F53\u524D\u652F\u6301\u7684\u56FA\u5B9A\u6E05\u5355\u4E2D\u3002");
+    }
+  }
   if (config.contractRevision >= 11) for (const button of config.application?.buttons.items ?? []) {
     const rows = button.criteria.paths;
     if (!rows) issue(issues, "error", "button-path-migration-required", `application/buttons/${button.id}`, "r11 \u6309\u94AE\u9700\u8981\u5B8C\u6574\u5206\u7C7B\u8DEF\u5F84\u3002");
@@ -23513,11 +24678,11 @@ function recordCategory(record) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-r11-production-1";
+var rulesVersion = "cairnmap-r12-production-1";
 var validateConfiguration = validateConfigPackage;
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));
-  if (config.contractRevision !== 11) throw Error("Publication requires native contract r11; historical imports remain editable.");
+  if (![11, 12].includes(config.contractRevision)) throw Error("Publication requires native contract r11 or r12; historical imports remain editable.");
   const report = validateConfigPackage(config);
   if (!report.valid) throw Object.assign(Error("configuration-semantic-validation-failed"), { report });
   const zip = await import_jszip2.default.loadAsync(bytes), configBody = await zip.file("config.json").async("uint8array"), manifestBody = await zip.file("manifest.json").async("uint8array");

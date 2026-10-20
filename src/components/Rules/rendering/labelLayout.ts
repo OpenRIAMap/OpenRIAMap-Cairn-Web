@@ -1,4 +1,6 @@
-import { placeLabel, labelCandidateShift } from './labelPlacement';
+import { usesScriptAwareGlyphs } from './label/lineScriptMetrics';
+import { customPillMetrics } from '../../../configStudio/customPill';
+import { placeLabel, labelCandidateShift, mergeLabelSymbolBounds, type SymbolCollisionBounds } from './labelPlacement';
 import * as L from "leaflet";
 import {
   LabelDensityLimiter,
@@ -212,6 +214,7 @@ export type LabelDeclutterConfig = {
 };
 
 export type LabelRequest = {
+  customPill?: { size: number; settings: import('../../../configStudio/types').CustomPillSettings };
   /** 唯一 id（建议：`${uid}#label`） */
   id: string;
   /** 对应 Feature uid（便于回写到 bundle.label） */
@@ -231,6 +234,8 @@ export type LabelRequest = {
   acceptsAnchor?: (screenPoint: L.Point) => boolean;
   collisionBoundsAdjustment?: { x?: number; y?: number; width?: number; height?: number };
 
+  /** Explicit strict-SVG budget failure is hidden rather than silently painted as HTML. */
+  advancedTextSuppressed?: boolean;
   /** label 文本 */
   text: string;
 
@@ -282,7 +287,7 @@ export type LabelRequest = {
   offsetX?: number;
   screenOffsets?: boolean;
   /** A true point may participate in its label's combined collision box. */
-  symbolBounds?: { radius: number; offsetX: number; offsetY: number };
+  symbolBounds?: SymbolCollisionBounds;
   candidatePlacement?: 'relativeToPlacement' | 'aroundAnchor';
   candidateOffsetsPx?: Array<{ name: string; x: number; y: number }>;
   anchorOffsetPx?: { x: number; y: number };
@@ -518,8 +523,8 @@ type Measured = { w: number; h: number };
 const _measureCache = new Map<string, Measured>();
 
 function getFontSizePx(font: string): number {
-  const m = font.match(/(\d+)\s*px/i);
-  return m ? Math.max(8, Number(m[1])) : 12;
+  const m = font.match(/(\d+(?:\.\d+)?)\s*px/i);
+  return m ? Math.max(6, Number(m[1])) : 12;
 }
 
 function measureText(
@@ -527,11 +532,30 @@ function measureText(
   font: string,
   withDot: boolean,
   dotAnchorMode?: "inline" | "anchorRight",
+  pill?: LabelRequest['customPill'],
 ): Measured {
-  const key = `${font}|${withDot ? 1 : 0}|${dotAnchorMode ?? "inline"}|${text}`;
+  const key = `${font}|${withDot ? 1 : 0}|${dotAnchorMode ?? "inline"}|${text}|${pill ? JSON.stringify([pill.size,pill.settings.lineHeightRatio,pill.settings.paddingXRatio,pill.settings.paddingYRatio,pill.settings.radiusRatio,pill.settings.strokeWidth]) : ''}`;
   const hit = _measureCache.get(key);
   if (hit) return hit;
 
+  if (pill) {
+    const lines = text.split('\n');
+    let width = Math.max(...lines.map(line => Array.from(line).length * pill.size * .7)), inkHeight = pill.size;
+    if (typeof document !== 'undefined') {
+      const canvas = (measureText as any).__pillCanvas ?? ((measureText as any).__pillCanvas = document.createElement('canvas'));
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.font = font;
+        const metrics = lines.map(line => context.measureText(line));
+        width = Math.max(0, ...metrics.map((metric: TextMetrics) => Math.max(metric.width, (metric.actualBoundingBoxLeft || 0) + (metric.actualBoundingBoxRight || 0))));
+        inkHeight = Math.max(pill.size, ...metrics.map((metric: TextMetrics) => (metric.actualBoundingBoxAscent || 0) + (metric.actualBoundingBoxDescent || 0)));
+      }
+    }
+    const box = customPillMetrics(pill.size, pill.settings, width, lines.length);
+    const measured = { w: Math.ceil(box.width), h: Math.ceil(Math.max(box.height, inkHeight + Math.max(0,lines.length-1)*box.lineHeight + 2*(box.paddingY+box.strokeWidth))) };
+    if (_measureCache.size >= 5000) _measureCache.delete(_measureCache.keys().next().value!);
+    _measureCache.set(key, measured); return measured;
+  }
   // SSR/构建环境兜底：用近似估计，避免 document 未定义导致 build 报错
   if (typeof document === "undefined") {
     const fontSize = getFontSizePx(font);
@@ -923,14 +947,7 @@ function rectForCandidate(
     Number(baseReq.offsetX ?? 0),
     baseReq.screenOffsets,
   );
-  if (baseReq.symbolBounds) {
-    const symbol = baseReq.symbolBounds;
-    const left = Math.min(rect.x, anchor.x + symbol.offsetX - symbol.radius);
-    const top = Math.min(rect.y, anchor.y + symbol.offsetY - symbol.radius);
-    const right = Math.max(rect.x + rect.w, anchor.x + symbol.offsetX + symbol.radius);
-    const bottom = Math.max(rect.y + rect.h, anchor.y + symbol.offsetY + symbol.radius);
-    rect = { x: left, y: top, w: right - left, h: bottom - top };
-  }
+  if (baseReq.symbolBounds) rect=mergeLabelSymbolBounds(rect,anchor,baseReq.symbolBounds);
   const adjustment = baseReq.collisionBoundsAdjustment;
   rect = adjustedCollisionRect(rect, adjustment);
   return { rect, dx, dy };
@@ -1135,12 +1152,14 @@ export function layoutLabelsOnMap(
       : undefined;
 
   const items: LayoutItem[] = [];
+  const policyBlocked:PlacedLabel[]=[];
 
   for (const req of requests) {
+    if(req.advancedTextSuppressed){policyBlocked.push({id:req.id,hidden:true,text:req.text,dx:0,dy:0,priority:0,hiddenReason:'hiddenByPolicy',textPathBudgetStatus:req.textPathBudgetStatus,textPathFallbackReason:req.textPathFallbackReason});continue;}
     const decl = req.declutter ?? {};
     const font =
       req.font ?? "12px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-    const measured = measureText(req.text, font, !!req.withDot, req.dotAnchorMode);
+    const measured = measureText(req.text, font, !!req.withDot, req.dotAnchorMode, req.customPill);
 
     const anchorPx = map.latLngToContainerPoint(req.anchorLatLng);
     const candidates = normalizeCandidates(req, measured, {
@@ -1223,7 +1242,7 @@ export function layoutLabelsOnMap(
     return a.req.text.length - b.req.text.length;
   });
 
-  const placed: PlacedLabel[] = [];
+  const placed: PlacedLabel[] = [...policyBlocked];
   const index = new GridIndex(params.gridCellPx);
 
   // 新增：把点图标等“硬占用区”提前写入索引，label 将自动避开
@@ -1268,7 +1287,7 @@ export function layoutLabelsOnMap(
       return null;
     const anchor = req.displayAnchor ?? null;
     if (
-      isMostlyCjkText(text) &&
+      (isMostlyCjkText(text) || usesScriptAwareGlyphs(anchor)) &&
       ((anchor as any)?.cjkGlyphPathMode ?? "auto") !== "off" &&
       ((req as any).glyphPathBudgetStatus ??
         (req as any).textPathBudgetStatus) === "allowed"
@@ -1278,6 +1297,7 @@ export function layoutLabelsOnMap(
         text,
         pathLatLngs: pathCandidate.pathLatLngs,
         anchor,
+        fontSizePx: usesScriptAwareGlyphs(anchor) ? getFontSizePx(req.font ?? '14px system-ui') : undefined,
         metricsOnly: true,
       });
       if (glyphResult.metrics) {
@@ -1615,7 +1635,7 @@ export function layoutLabelsOnMap(
         anchor,
         labelText: text,
         map,
-        estimatedLabelSpanPx: Math.max(measured.w, 28),
+        estimatedLabelSpanPx: Math.max(measured.w + (usesScriptAwareGlyphs(anchor) ? Math.max(0,Array.from(text).length-1)*Math.max(Number(anchor.textPathLetterSpacingPx??.5),Number(anchor.textPathCurvedLetterSpacingPx??1.8),Number(anchor.cjkGlyphSpacingPx??2)+getFontSizePx(baseReq.font??'14px system-ui')*.05) : 0), 28),
         attemptsPerDirection,
         enableViewportTempFallback,
         viewportRectPx: lineViewportRect(),
@@ -1888,7 +1908,7 @@ export function layoutLabelsOnMap(
     const font =
       baseReq.font ??
       "12px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-    const measured = measureText(text, font, !!baseReq.withDot, baseReq.dotAnchorMode);
+    const measured = measureText(text, font, !!baseReq.withDot, baseReq.dotAnchorMode, baseReq.customPill);
     const polygonAuditEnabled = isPolygonAuditRequest(baseReq);
     const polygonLayoutCandidates: PolygonLayoutCandidateAudit[] = [];
 
@@ -2202,7 +2222,7 @@ export function layoutLabelsOnMap(
     const font =
       baseReq.font ??
       "12px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-    const measured = measureText(text, font, !!baseReq.withDot, baseReq.dotAnchorMode);
+    const measured = measureText(text, font, !!baseReq.withDot, baseReq.dotAnchorMode, baseReq.customPill);
     const candidates = normalizeCandidates({ ...baseReq, text }, measured, {
       ...params,
       viewportPaddingPx: item.viewportPaddingPx,

@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import { loadFormalConfiguration } from '../../src/configRuntime/formalConfiguration';
 import {
   parseReviewPackageBlob,
   REVIEW_PACKAGE_LAYOUT,
@@ -39,9 +41,14 @@ if (!strict.valid || !parsed.paths.includes('Review.json') || !parsed.paths.incl
 if (parsed.reviewMarker?.status !== 'pending' || parsed.reviewMarker?.submissionMode !== 'review-submission-v2') throw new Error('RIA review marker is not pending-only');
 
 const originalFetch = globalThis.fetch;
+const originalLocation=Object.getOwnPropertyDescriptor(globalThis,'location'),formalIdentity=JSON.parse(fs.readFileSync('public/configuration/current.json','utf8'));
+Object.defineProperty(globalThis,'location',{value:new URL('https://cmap.ria9.top/'),configurable:true});
 const calls: Array<{ input: string; init?: RequestInit }> = [];
 globalThis.fetch = (async (input: URL | RequestInfo, init?: RequestInit) => {
   calls.push({ input: String(input), init });
+  if(String(input)==='/configuration/current.json')return new Response(JSON.stringify(formalIdentity));
+  if(String(input)===formalIdentity.configUrl)return new Response(fs.readFileSync('public'+formalIdentity.configUrl));
+  if(String(input)==='/api/configuration?purpose=business')return new Response(JSON.stringify(formalIdentity),{headers:{'x-cairn-configuration-authority':'scf'}});
   if (String(input) === '/api/review-control') {
     const body = JSON.parse(String(init?.body));
     if (body.operation === 'revision-upload-request') {
@@ -63,6 +70,7 @@ globalThis.fetch = (async (input: URL | RequestInfo, init?: RequestInit) => {
   return new Response(null, { status: 200 });
 }) as typeof fetch;
 try {
+  await loadFormalConfiguration();
   const request = {
     submissionId: 'submission-test', revisionId: 'submission-test-r1', requestId: 'request-test', correlationId: 'correlation-test', idempotencyKey: 'submission-test:revision:upload',
     byteLength: 22, sha256: 'a'.repeat(64), contentMd5: 'XUFAKrxLKna5cZ2REBfFkg==', packageName: 'test.zip', expectedStateVersion: 0,
@@ -75,11 +83,13 @@ try {
     },
   };
   const grant = await openriamapReviewSubmissionTransport.requestRevisionUpload(request);
+  if(calls.filter(call=>call.input==='/api/configuration?purpose=business').length!==1)throw Error('SCF/Web business identity must be checked before issuing the upload grant');
   await openriamapReviewSubmissionTransport.uploadRevision(grant, new Blob(['test']));
   const completed = await openriamapReviewSubmissionTransport.completeRevisionUpload(request);
   if (!completed.accepted || calls.filter((call) => call.input === '/api/review-control').length !== 2 || !calls.some((call) => call.input === 'https://example.invalid/upload')) throw new Error('RIA transport mapping failed');
 } finally {
   globalThis.fetch = originalFetch;
+  if(originalLocation)Object.defineProperty(globalThis,'location',originalLocation);else delete (globalThis as {location?:unknown}).location;
 }
 
 console.log('Review package profile and auth seam test: PASS');

@@ -1,6 +1,7 @@
 import { labelPlacementTransform, labelScreenOffset, type LabelPlacement } from './labelPlacement';
 export type { LabelPlacement } from './labelPlacement';
 import * as L from 'leaflet';
+import { customPillMetrics, type ResolvedCustomPill } from '../../../configStudio/customPill';
 
 /**
  * Label 视觉样式集中管理（便于维护与扩展）。
@@ -29,7 +30,8 @@ export type LabelStyleKey =
   | `gm-bw-${number}`
   | `gm-wtb-${number}`
   | `rle-line-${number}`
-  | `rle-pill-${number}`;
+  | `rle-pill-${number}`
+  | 'custom_pill_1';
 
 /**
  * 允许 styleKey 传入对象以承载“动态颜色/旋转”等运行时样式。
@@ -47,6 +49,8 @@ export type LabelStyleKeyInput =
       /** Only honoured by text-only GM/structure families. */
       italic?: boolean;
       underline?: boolean;
+      fontSize?: number;
+      customPill?: ResolvedCustomPill;
     };
 
 
@@ -60,6 +64,16 @@ export type LabelRenderOptions = {
   /** 是否允许交互（用于“点击 label”模式） */
   interactive?: boolean;
 };
+
+export function labelStyleSignature(value: LabelStyleKeyInput): string {
+  if (typeof value === 'string') return value;
+  if (value.key === 'custom_pill_1' && value.customPill) {
+    const p = value.customPill, s = p.settings;
+    return JSON.stringify([value.key, value.fontSize, s.lineHeightRatio, s.paddingXRatio, s.paddingYRatio, s.radiusRatio, s.strokeWidth,
+      p.textColor, p.backgroundColor, p.strokeColor, value.rotateDeg, value.writingMode]);
+  }
+  return JSON.stringify(value);
+}
 
 function escapeHtml(s: string): string {
   return String(s ?? '').replace(/[<>&"]/g, (m) => {
@@ -284,6 +298,17 @@ export function renderLabelHtml(styleKey: LabelStyleKeyInput, text: string, opts
   }
 
   // ===================== RLE：沿线文字 / 线路“药丸牌” =====================
+  if (styleKeyStr === 'custom_pill_1' && keyObj?.customPill) {
+    const pill = keyObj.customPill as ResolvedCustomPill;
+    const size = Number(keyObj.fontSize);
+    const box = customPillMetrics(size, pill.settings, 0);
+    return `<div style="${originStyle}transform:${transform};margin-top:${extraMarginTop}px;margin-left:${extraMarginLeft}px;
+      white-space:${labelWhiteSpace};pointer-events:${pe};cursor:${cursor};display:inline-flex;align-items:center;
+      background:${pill.backgroundColor};color:${pill.textColor};padding:${box.paddingY}px ${box.paddingX}px;
+      border:${box.strokeWidth}px solid ${pill.strokeColor};border-radius:${box.requestedRadius}px;
+      font-family:inherit;font-weight:700;font-size:${size}px;line-height:${box.lineHeight}px;
+      font-style:normal;text-decoration:none;text-shadow:none;">${safe}</div>`;
+  }
   // rle-line-xx：文字沿线（可旋转），文字颜色=线路色，白色粗描边
   // rle-pill-xx：屏幕朝向的圆角矩形牌子（背景=线路色，白字）
 
