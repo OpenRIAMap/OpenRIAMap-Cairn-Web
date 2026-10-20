@@ -1,0 +1,472 @@
+# r12 新能力可读范例
+
+这些是完整子对象，不能单独导入为整包。图标/图片片段放到规则 style.pointSymbol；胶囊放到 label.style；贴线扩展放到 extensions.lineLabel。示范字段 imageOwnerID 等必须先在目标分类定义，不能直接粘贴到缺少该字段的分类。完整候选保持正式 r9 数据来源和业务规则，不强行启用示范图标。
+
+## 单个图标
+
+```json
+{
+  "kind": "icon",
+  "icon": {
+    "mode": "single",
+    "item": {
+      "library": "pinhead",
+      "id": "airport",
+      "sizePx": 24,
+      "foreground": {
+        "mode": "fixed",
+        "color": "#334155"
+      },
+      "foregroundOpacity": 1,
+      "plate": {
+        "shape": "circle",
+        "paddingPx": 4,
+        "fill": {
+          "mode": "fixed",
+          "color": "#ffffff"
+        },
+        "stroke": {
+          "mode": "fixed",
+          "color": "#334155"
+        },
+        "strokeWidthPx": 1,
+        "fillOpacity": 1,
+        "strokeOpacity": 1
+      },
+      "placement": {
+        "anchor": {
+          "mode": "center"
+        },
+        "offsetPx": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    }
+  },
+  "fallback": {
+    "pointShape": "circle",
+    "size": 5,
+    "weight": 1,
+    "lineCap": "round",
+    "lineJoin": "round",
+    "stroke": {
+      "mode": "fixed",
+      "color": "#334155"
+    },
+    "fill": {
+      "mode": "fixed",
+      "color": "#2563eb"
+    },
+    "strokeOpacity": 1,
+    "fillOpacity": 1
+  }
+}
+```
+
+## 图标字段分类映射
+
+```json
+{
+  "kind": "icon",
+  "icon": {
+    "mode": "valueMap",
+    "field": "Name",
+    "entries": [
+      {
+        "value": "Airport",
+        "item": {
+          "library": "pinhead",
+          "id": "airport",
+          "sizePx": 24,
+          "foreground": {
+            "mode": "fixed",
+            "color": "#334155"
+          },
+          "foregroundOpacity": 1,
+          "plate": {
+            "shape": "circle",
+            "paddingPx": 4,
+            "fill": {
+              "mode": "fixed",
+              "color": "#ffffff"
+            },
+            "stroke": {
+              "mode": "fixed",
+              "color": "#334155"
+            },
+            "strokeWidthPx": 1,
+            "fillOpacity": 1,
+            "strokeOpacity": 1
+          },
+          "placement": {
+            "anchor": {
+              "mode": "center"
+            },
+            "offsetPx": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        }
+      },
+      {
+        "value": "Bus",
+        "item": {
+          "library": "pinhead",
+          "id": "bus",
+          "sizePx": 24,
+          "foreground": {
+            "mode": "fixed",
+            "color": "#334155"
+          },
+          "foregroundOpacity": 1,
+          "plate": {
+            "shape": "circle",
+            "paddingPx": 4,
+            "fill": {
+              "mode": "fixed",
+              "color": "#ffffff"
+            },
+            "stroke": {
+              "mode": "fixed",
+              "color": "#334155"
+            },
+            "strokeWidthPx": 1,
+            "fillOpacity": 1,
+            "strokeOpacity": 1
+          },
+          "placement": {
+            "anchor": {
+              "mode": "bottomCenter"
+            },
+            "offsetPx": {
+              "x": 2,
+              "y": -3
+            }
+          }
+        }
+      }
+    ]
+  },
+  "fallback": {
+    "pointShape": "circle",
+    "size": 5,
+    "weight": 1,
+    "lineCap": "round",
+    "lineJoin": "round",
+    "stroke": {
+      "mode": "fixed",
+      "color": "#334155"
+    },
+    "fill": {
+      "mode": "fixed",
+      "color": "#2563eb"
+    },
+    "strokeOpacity": 1,
+    "fillOpacity": 1
+  }
+}
+```
+
+## 图片固定链接
+
+```json
+{
+  "kind": "externalImage",
+  "image": {
+    "mode": "fixed",
+    "url": "/icons/pinhead/v25/airport.svg",
+    "presentation": {
+      "sizePx": {
+        "width": 32,
+        "height": 32
+      },
+      "placement": {
+        "anchor": {
+          "mode": "center"
+        },
+        "offsetPx": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    }
+  },
+  "fallback": {
+    "pointShape": "circle",
+    "size": 5,
+    "weight": 1,
+    "lineCap": "round",
+    "lineJoin": "round",
+    "stroke": {
+      "mode": "fixed",
+      "color": "#334155"
+    },
+    "fill": {
+      "mode": "fixed",
+      "color": "#2563eb"
+    },
+    "strokeOpacity": 1,
+    "fillOpacity": 1
+  }
+}
+```
+
+## 图片字段值URL
+
+```json
+{
+  "kind": "externalImage",
+  "image": {
+    "mode": "fieldUrl",
+    "field": "extensions.icon.url",
+    "presentation": {
+      "sizePx": {
+        "width": 32,
+        "height": 32
+      },
+      "placement": {
+        "anchor": {
+          "mode": "center"
+        },
+        "offsetPx": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    }
+  },
+  "fallback": {
+    "pointShape": "circle",
+    "size": 5,
+    "weight": 1,
+    "lineCap": "round",
+    "lineJoin": "round",
+    "stroke": {
+      "mode": "fixed",
+      "color": "#334155"
+    },
+    "fill": {
+      "mode": "fixed",
+      "color": "#2563eb"
+    },
+    "strokeOpacity": 1,
+    "fillOpacity": 1
+  }
+}
+```
+
+## 图片字段分类映射
+
+```json
+{
+  "kind": "externalImage",
+  "image": {
+    "mode": "valueMap",
+    "field": "Name",
+    "entries": [
+      {
+        "value": "Airport",
+        "url": "/icons/pinhead/v25/airport.svg",
+        "presentation": {
+          "sizePx": {
+            "width": 32,
+            "height": 32
+          },
+          "placement": {
+            "anchor": {
+              "mode": "center"
+            },
+            "offsetPx": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        }
+      },
+      {
+        "value": "Bus",
+        "url": "/icons/pinhead/v25/bus.svg",
+        "presentation": {
+          "sizePx": {
+            "width": 40,
+            "height": 28
+          },
+          "placement": {
+            "anchor": {
+              "mode": "custom",
+              "x": 20,
+              "y": 14
+            },
+            "offsetPx": {
+              "x": 3,
+              "y": -2
+            }
+          }
+        }
+      }
+    ]
+  },
+  "fallback": {
+    "pointShape": "circle",
+    "size": 5,
+    "weight": 1,
+    "lineCap": "round",
+    "lineJoin": "round",
+    "stroke": {
+      "mode": "fixed",
+      "color": "#334155"
+    },
+    "fill": {
+      "mode": "fixed",
+      "color": "#2563eb"
+    },
+    "strokeOpacity": 1,
+    "fillOpacity": 1
+  }
+}
+```
+
+## 图片外部ID绑定URL
+
+```json
+{
+  "kind": "externalImage",
+  "image": {
+    "mode": "externalFieldUrl",
+    "targetIdField": "imageOwnerID",
+    "targetUrlField": "extensions.icon.url",
+    "presentation": {
+      "sizePx": {
+        "width": 32,
+        "height": 32
+      },
+      "placement": {
+        "anchor": {
+          "mode": "center"
+        },
+        "offsetPx": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    }
+  },
+  "fallback": {
+    "pointShape": "circle",
+    "size": 5,
+    "weight": 1,
+    "lineCap": "round",
+    "lineJoin": "round",
+    "stroke": {
+      "mode": "fixed",
+      "color": "#334155"
+    },
+    "fill": {
+      "mode": "fixed",
+      "color": "#2563eb"
+    },
+    "strokeOpacity": 1,
+    "fillOpacity": 1
+  }
+}
+```
+
+## 五种取色模式
+
+```json
+[
+  {
+    "mode": "fixed",
+    "color": "#ffffff"
+  },
+  {
+    "mode": "field",
+    "field": "color",
+    "fallbackColor": "#334155"
+  },
+  {
+    "mode": "valueMap",
+    "field": "direction",
+    "entries": [
+      {
+        "value": 0,
+        "color": "#2563eb"
+      },
+      {
+        "value": 1,
+        "color": "#dc2626"
+      }
+    ],
+    "fallbackColor": "#64748b"
+  },
+  {
+    "mode": "external",
+    "target": {
+      "class": "RLE"
+    },
+    "targetIdField": "lineID",
+    "targetColorField": "color",
+    "fallbackColor": "#64748b"
+  },
+  {
+    "mode": "relatedLine",
+    "strategy": "platformFirstLine",
+    "fallbackColor": "#64748b"
+  }
+]
+```
+
+## 自定义胶囊1
+
+```json
+{
+  "family": "custom_pill_1",
+  "size": 13,
+  "pill": {
+    "lineHeightRatio": 1,
+    "paddingYRatio": 0.2,
+    "paddingXRatio": 0.5,
+    "radiusRatio": 0.6,
+    "textColor": {
+      "mode": "fixed",
+      "color": "#ffffff"
+    },
+    "backgroundColor": {
+      "mode": "fixed",
+      "color": "#2563eb"
+    },
+    "strokeColor": {
+      "mode": "fixed",
+      "color": "#334155"
+    },
+    "strokeWidth": 1
+  }
+}
+```
+
+## 贴线英文扩展
+
+```json
+{
+  "profile": "strict-on-line",
+  "mode": "strictOnLine",
+  "orientationPolicy": "scriptAware",
+  "textPathLengthMode": "actualText",
+  "textPathLetterSpacingPx": 0.5,
+  "textPathCurvedLetterSpacingPx": 1.8,
+  "textPathCurvedSpacingMinBendDeg": 30,
+  "textPathPaddingPx": 28,
+  "textPathPreferReadableDirection": true,
+  "cjkGlyphPathMode": "auto",
+  "cjkGlyphMaxCount": 16,
+  "repositionMode": "chainageSearch",
+  "repositionAttemptsPerDirection": 3,
+  "repositionStrictSvg": true,
+  "repositionFailure": "hide",
+  "cjkGlyphFallbackMode": "hide",
+  "textPathFallback": "hide",
+  "simpleFallbackEnabled": false
+}
+```

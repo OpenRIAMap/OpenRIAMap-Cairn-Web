@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "changed validator receipt performs full verification; only raw bytes/identity/receipt/time persisted",
+    "corrupt raw bytes fail hash check and recover from controlled Web resource",
+    "denied formal cache reads/writes do not block a verified Web configuration",
+    "offline Web static metadata uses verified cache with a visible warning",
+    "no valid cache and offline Web cannot activate unknown config; explicit retry error shown"
+  ],
+  "runtimeErrors": [],
+  "businessWritesPerformed": false
+}

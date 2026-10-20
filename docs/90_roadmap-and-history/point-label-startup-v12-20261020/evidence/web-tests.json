@@ -1,0 +1,509 @@
+{
+  "generatedAt": "2026-10-20T06:47:50.144Z",
+  "rows": [
+    {
+      "name": "test-application-settings.ts",
+      "passed": true,
+      "durationMs": 1979,
+      "exitCode": 0,
+      "output": "application-settings: six typed modules, actual adapters/Zoom/world source routing, shared button policy, isolated save/conflicts/impact, rejected active draft, retired source/cache blocking, disabled auth/workflow/public endpoints produce zero requests, full application ZIP roundtrip passed\n"
+    },
+    {
+      "name": "test-card-parity.ts",
+      "passed": true,
+      "durationMs": 889,
+      "exitCode": 0,
+      "output": "card-parity: 101 frozen schema/catalog cases (TRP explicit exception): OK\n"
+    },
+    {
+      "name": "test-category-templates.ts",
+      "passed": true,
+      "durationMs": 1251,
+      "exitCode": 0,
+      "output": "category-templates: parent propagation, capability filtering, sibling rank, full condition/order snapshots, isolated identities and source immutability: OK\n"
+    },
+    {
+      "name": "test-category-transactions-r10.ts",
+      "passed": true,
+      "durationMs": 3234,
+      "exitCode": 0,
+      "output": "category-transactions-r10: stable parent card origins, hard module conflict/explicit repair, new child classification refresh and scoped Class replacement without unrelated workflow edits passed\n"
+    },
+    {
+      "name": "test-compiled-runtime.ts",
+      "passed": true,
+      "durationMs": 1766,
+      "exitCode": 0,
+      "output": "compiled-runtime: independent inheritance/extensions/Zoom/context equality, immutable same-revision activation, bounded paths, hot bindings, linear relation indexing and data/store/context invalidation: OK\n"
+    },
+    {
+      "name": "test-config-activation.ts",
+      "passed": true,
+      "durationMs": 1983,
+      "exitCode": 0,
+      "output": "config-activation: strict schema, activation/archive rejection, global consumers, option sources, field inheritance and placement lifecycle: OK\n"
+    },
+    {
+      "name": "test-config-search.ts",
+      "passed": true,
+      "durationMs": 1250,
+      "exitCode": 0,
+      "output": "config-search: shared compiled index, searchable policy/extra fields, cross-world references, hidden-record lookup, zero, bilingual guards, all-main workflow/card targets, segment grouping and temporary data invalidation passed\n"
+    },
+    {
+      "name": "test-config-studio-v3.ts",
+      "passed": true,
+      "durationMs": 974,
+      "exitCode": 0,
+      "output": "config-studio-v32: native contract, editor defaults and renderer boundary: OK\nconfig-studio-v32: semantic V1 migration, cards and composed workflows: OK\n"
+    },
+    {
+      "name": "test-configuration-publication-api.mjs",
+      "passed": true,
+      "durationMs": 202,
+      "exitCode": 0,
+      "output": "configuration-publication-api: separate signed fresh session, expiration/purpose/snapshot binding, actor stripping, controlled operations, size/path guards and independent environment gate passed\nconfiguration authority and OAuth: signed private-COS proxy, fail-closed authority, nonce/browser state, fresh scoped cookie, independent review gate passed\nconfiguration-publication-transport: 30 offline checks passed (timeouts, network errors, response parsing, redaction, correlation, validation guards, upstream passthrough, and no automatic retries)\n"
+    },
+    {
+      "name": "test-configuration-publication-transport.mjs",
+      "passed": true,
+      "durationMs": 70,
+      "exitCode": 0,
+      "output": "configuration-publication-transport: 30 offline checks passed (timeouts, network errors, response parsing, redaction, correlation, validation guards, upstream passthrough, and no automatic retries)\n"
+    },
+    {
+      "name": "test-density-stability.ts",
+      "passed": true,
+      "durationMs": 290,
+      "exitCode": 0,
+      "output": "density-stability: budgets, selected/required opt-out and real cache invalidation: OK\n"
+    },
+    {
+      "name": "test-external-workflow-output-parity.ts",
+      "passed": true,
+      "durationMs": 927,
+      "exitCode": 0,
+      "output": "external-workflow-output-parity: 7 frozen original V1 final records across railway/station/TRP: OK\n"
+    },
+    {
+      "name": "test-field-reuse-r8.ts",
+      "passed": true,
+      "durationMs": 1280,
+      "exitCode": 0,
+      "output": "field-reuse-r8: lossless options, metadata boundary, PFB LineID, follow/override, type and target conflicts, numeric enum output and actual card mapping: OK\n"
+    },
+    {
+      "name": "test-hard-inheritance-prefill.ts",
+      "passed": true,
+      "durationMs": 2306,
+      "exitCode": 0,
+      "output": "hard-inheritance-prefill: 79 preserved layouts, parent identity/definitions/maps, bypass blocking, independent snapshots, version confirmations/clear, compiled cache and category creation/import passed\n"
+    },
+    {
+      "name": "test-label-template.ts",
+      "passed": true,
+      "durationMs": 1407,
+      "exitCode": 0,
+      "output": "label-template: safe syntax/escaping/budgets, empty/object fallback, 0/false, immutable compilation, unknown fields and 27 actual RLE Zoom/direction plans passed; frozen V1 fixture unchanged\n"
+    },
+    {
+      "name": "test-localization.ts",
+      "passed": true,
+      "durationMs": 817,
+      "exitCode": 0,
+      "output": "localization: imported Chinese residue cleared, real English and empty values preserved: OK\n"
+    },
+    {
+      "name": "test-lookup-table-transactions.ts",
+      "passed": true,
+      "durationMs": 1120,
+      "exitCode": 0,
+      "output": "lookup-table-transactions: clean reversal, independent table save, concurrent unrelated edits, table conflicts and atomic reference rename passed\n"
+    },
+    {
+      "name": "test-lookup-tables.ts",
+      "passed": true,
+      "durationMs": 2870,
+      "exitCode": 0,
+      "output": "lookup-tables: V1 speeds/four return points, explicit binding/copy, scalar types, missing/conflicting references, category dependencies and package roundtrip passed\n"
+    },
+    {
+      "name": "test-map-zoom.ts",
+      "passed": true,
+      "durationMs": 277,
+      "exitCode": 0,
+      "output": "map-zoom: shared logical/map/tile limits, including Zoom 0–2: OK\n"
+    },
+    {
+      "name": "test-multipart-labels.ts",
+      "passed": true,
+      "durationMs": 298,
+      "exitCode": 0,
+      "output": "multipart-labels: independent component geometries/ids/caches and shared feature identity: OK\n"
+    },
+    {
+      "name": "test-native-contract.ts",
+      "passed": true,
+      "durationMs": 888,
+      "exitCode": 0,
+      "output": "native-contract: r6 labelOnly and non-mutating r5 upgrade, unknown revision rejection: OK\nnative-contract: r5 replace metrics and conditional B/C semantics retained: OK\n"
+    },
+    {
+      "name": "test-native-workflow-commit.ts",
+      "passed": true,
+      "durationMs": 811,
+      "exitCode": 0,
+      "output": "native-workflow-commit: 34 actual final records preserved, world/geometry rejected before writes: OK\n"
+    },
+    {
+      "name": "test-package-roundtrip.ts",
+      "passed": true,
+      "durationMs": 1703,
+      "exitCode": 0,
+      "output": "package-roundtrip: real ZIP/JSON roundtrip with optional undefined values and tamper rejection: OK\n"
+    },
+    {
+      "name": "test-production-mirror.ts",
+      "passed": true,
+      "durationMs": 2319,
+      "exitCode": 0,
+      "output": "production-mirror: later r8 current passes independently of immutable r7 seed; raw hashes, archive equality, revision identity, controlled URLs and CLI advancement verified\n"
+    },
+    {
+      "name": "test-r10-final-package.ts",
+      "passed": true,
+      "durationMs": 2886,
+      "exitCode": 0,
+      "output": "r10-final-package: 5130 actual render plans (6 approved RLE additions and 8 SVG-only capsule repairs), 34 complete V1 records, English empty labels, new default/delivery SHA/ZIP/dependencies, frozen r9 retained passed\n"
+    },
+    {
+      "name": "test-r11-buttons.ts",
+      "passed": true,
+      "durationMs": 3185,
+      "exitCode": 0,
+      "output": "r11-buttons: all category paths match legacy, exact OR rows, no cross combinations, required valid Class, redundancy, shared palette/icon registry and actual forward/reverse filters passed\n"
+    },
+    {
+      "name": "test-r11-dictionaries.ts",
+      "passed": true,
+      "durationMs": 3422,
+      "exitCode": 0,
+      "output": "r11-dictionaries: live field/table reuse, independent copies/unbinds, typed 0/group output, languages, invalid targets/defaults and transitive artifact/ZIP roundtrip passed\n"
+    },
+    {
+      "name": "test-r11-final-package.ts",
+      "passed": true,
+      "durationMs": 9358,
+      "exitCode": 0,
+      "output": "r11-final-package: SHA/default and frozen r10, 5130 unchanged render plans, 34 complete V1 records, 23 actual edit conversions, 28 workflow/16 Class-tree roundtrips, English fallback and complete ZIP dependencies passed\n"
+    },
+    {
+      "name": "test-r11-workflow-tags.ts",
+      "passed": true,
+      "durationMs": 7406,
+      "exitCode": 0,
+      "output": "r11-workflow-tags: 28 full independent templates including external/edit modes, route conflict reports, 3 protected tables, V1/V3 tag migration, typed zero/false, metadata/lookup updates, transitive dependencies and 23 edit conversions passed\n"
+    },
+    {
+      "name": "test-r12-assets.ts",
+      "passed": true,
+      "durationMs": 1228,
+      "exitCode": 0,
+      "output": "r12 assets: pending/success/failure, retry, queue/concurrency budgets, trusted SVG, world partition and ambiguous-ID fallback passed.\n"
+    },
+    {
+      "name": "test-r12-business.ts",
+      "passed": true,
+      "durationMs": 509,
+      "exitCode": 0,
+      "output": "r12 business boundary: complete identity comparison, explicit SCF authority, no pass cache, no captured-package revision gate, fail-closed remote operations passed.\n"
+    },
+    {
+      "name": "test-r12-pill.ts",
+      "passed": true,
+      "durationMs": 1342,
+      "exitCode": 0,
+      "output": "r12 pill: geometry, zero values, decimals, border, independent bindings, bounds and r11 compatibility passed.\n"
+    },
+    {
+      "name": "test-r12-verification.ts",
+      "passed": true,
+      "durationMs": 1343,
+      "exitCode": 0,
+      "output": "r12 verification: receipts, content integrity, capability changes and production static identity passed.\n"
+    },
+    {
+      "name": "test-r12-witness.ts",
+      "passed": true,
+      "durationMs": 290,
+      "exitCode": 0,
+      "output": "r12 witness: exact scalar partitions, IEEE boundaries, boolean/legacy values, OR/NOT, pins, safe paths and bounded unknown passed.\n"
+    },
+    {
+      "name": "test-r9-category-artifact.ts",
+      "passed": true,
+      "durationMs": 3710,
+      "exitCode": 0,
+      "output": "r9-category-artifact: two export formats/scopes, ancestors, fixed conflict repair, exact Class replacement, external preservation, stale guards and tamper rejection: OK\n"
+    },
+    {
+      "name": "test-r9-category-initialization.ts",
+      "passed": true,
+      "durationMs": 2425,
+      "exitCode": 0,
+      "output": "r9-category-initialization: Class/Kind, parent constraints, legal blank, full inheritance, exact skip, semantic difference rename and dependency rewrite/rejection: OK\n"
+    },
+    {
+      "name": "test-r9-final-package.ts",
+      "passed": true,
+      "durationMs": 2372,
+      "exitCode": 0,
+      "output": "r9-final-package: final immutable source and default SHA, 95/28/20/24 coverage, 5130 unchanged render results, 34 complete V1 creation records, 23 native conversion probes, 8 dedicated routes, signed ZIP/default roundtrip and explicit blank-render guard: OK\n"
+    },
+    {
+      "name": "test-r9-migration-prefill.ts",
+      "passed": true,
+      "durationMs": 2884,
+      "exitCode": 0,
+      "output": "r9-migration-prefill: 5130 unchanged render rules, 34 full V1 records, 98 independent V1 cards; one-shot values, conflicts, blank display and ZIP roundtrip: OK\n"
+    },
+    {
+      "name": "test-r9-rail-editing.ts",
+      "passed": true,
+      "durationMs": 1952,
+      "exitCode": 0,
+      "output": "r9-rail-editing: seven V1 editor scenes, control order/values/groups, seven complete frozen V1 actual edited records, false/zero, hidden wiki/brief preservation, capture exclusion and ZIP roundtrip: OK\n"
+    },
+    {
+      "name": "test-r9-render-formula-color.ts",
+      "passed": true,
+      "durationMs": 2160,
+      "exitCode": 0,
+      "output": "r9-render-formula-color: exact-one truth table, precedence, grouped NOT, parser budgets/cycles/unknowns, 64 legacy matches, typed 0/false and shared geometry/Label/interaction resolution: OK\n"
+    },
+    {
+      "name": "test-r9-trp-external-editing.ts",
+      "passed": true,
+      "durationMs": 2649,
+      "exitCode": 0,
+      "output": "r9-trp-external-editing: registered purpose/version, no onsite standard conversion, three frozen V1 Trade/editor records (explicit finite numeric-string normalization), alias migration, type/height/classification/ID, creation and unknown metadata preservation, guards and ZIP roundtrip: OK\n"
+    },
+    {
+      "name": "test-r9-workflow-editing.ts",
+      "passed": true,
+      "durationMs": 1498,
+      "exitCode": 0,
+      "output": "r9-workflow-editing: 16 actual conversions / 32 V1 records, ID-only dependency removal, controlled reversible backfill, original data/metadata patch, world/ID/reference guards, routes and capture visibility: OK\n"
+    },
+    {
+      "name": "test-release-archive.ts",
+      "passed": true,
+      "durationMs": 5039,
+      "exitCode": 0,
+      "output": "release-archive: 21 malformed/budget/cancellation cases rejected; all declared raw bytes verified, four historical JSON/ZIP contracts readable\n"
+    },
+    {
+      "name": "test-release-gate.ts",
+      "passed": true,
+      "durationMs": 85047,
+      "exitCode": 0,
+      "output": "WF01 EXPECTED 删除仍被组装引用的根字段\nWF02 EXPECTED 数值目标改为布尔类型\nWF03 EXPECTED 单值目标改为多值\nWF04 EXPECTED 数值控件改为布尔控件\nWF05 EXPECTED 引用不存在的槽位\nWF06 EXPECTED 非法表达式\nWF07 EXPECTED 原型污染目标路径\nWF08 EXPECTED 覆盖系统分类\nWF09 EXPECTED 重复槽位\nWF10 EXPECTED 引用不存在的输出分类\nWF11 EXPECTED 输入默认值不合法\nWF12 EXPECTED 重复组字段名重复\nWF13 EXPECTED 启用条件引用不存在的槽位\nWF14 EXPECTED 绘制页使用未来页面的条件槽位\nWF15 EXPECTED 搜索返回不存在的字段\nWF16 EXPECTED 绘制返回格式与线类型不符\nWF17 EXPECTED 额外绘制不声明返回槽位\nWF18 EXPECTED 同一目标有两条无条件组装\nWF19 EXPECTED 常量文字写入数值字段\nWF20 EXPECTED 复合表达式返回文本写入数值字段\nWF21 EXPECTED number 控件默认值为可规范化的数值字符串\nWF22 EXPECTED 直接槽位选项超出目标枚举\nWF23 EXPECTED 已删除的 tags 字段仍被 assignment 引用（动态路径）\nWF24 EXPECTED 专供编辑工作流错误开放给便捷测绘\nFD01 EXPECTED 字段 key 重复\nFD02 EXPECTED 字段显示名称全空\nFD03 EXPECTED 不存在的引用分类\nFD04 EXPECTED 子级覆盖强制固定继承字段\nFD05 EXPECTED 字段 ID 重复但 key 不同\nFD06 EXPECTED 非法嵌套路径\nTB01 EXPECTED 删除被字段引用的公共表\nTB02 EXPECTED 被引用表为空\nTB03 EXPECTED 表格中保存值重复\nTB04 EXPECTED 表格修改值类型与绑定方不一致\nTB05 EXPECTED 对照行无任何语言显示名\nTB06 EXPECTED 速度功能值非法\nTB07 EXPECTED 信息卡绑定不存在的字段定义\nTB08 EXPECTED 工作流绑定不存在的字段对照\nTB09 EXPECTED 绑定来源和本地对照同时保存\nRD01 EXPECTED 完整命中条件重复\nRD02 EXPECTED Zoom 范围反向\nRD03 EXPECTED 字段组合错误使用分类字段\nRD04 EXPECTED 字段条件引用不存在的根字段\nRD05 EXPECTED 布尔条件值和字段类型不一致\nRD06 EXPECTED 公式引用不存在的 C9\nRD07 EXPECTED 可证明的矛盾条件\nRD08 EXPECTED 后规则无条件完全遮蔽前规则\nRD09 EXPECTED 不同范围部分交叠且样式相反\nRD10 EXPECTED Label 来源引用不存在的根字段\nRD11 EXPECTED Label 组合模板引用不存在字段\nRD12 EXPECTED 固定颜色无效\nRD13 EXPECTED 几何动态优先级引用不存在字段\nRD14 EXPECTED 几何/Label 透明度超界\nCD01 EXPECTED 显示不存在的根字段\nCD02 EXPECTED 引用不存在的专用显示组件\nCD03 EXPECTED 卡片条目 ID 重复\nCD04 EXPECTED 字段继承来源来自平级分类\nCT01 EXPECTED 父节点缺失\nCT02 EXPECTED 分类路径重复\nCT03 EXPECTED children 记录不存在的节点\nCT04 EXPECTED children 指向不匹配父路径的其他 Class\nCT05 EXPECTED 父级 children 遗漏真实子分类\nCT06 EXPECTED 几何类型与已启用样式矛盾\nAP01 EXPECTED 世界数字编号重复\nAP02 EXPECTED 世界绑定不存在的来源组\nAP03 EXPECTED 图层按钮分类路径不存在\nAP04 EXPECTED 按钮联动循环\nAP05 EXPECTED 无效模块互斥目标\nAP06 EXPECTED 启用审核却缺少会话接口\nAP07 EXPECTED 未知原生属性\nAP08 EXPECTED 未知契约版本\ncompatibility r8-r4.config.json {\"file\":\"r8-r4.config.json\",\"originalContract\":8,\"importedContract\":8,\"readValid\":true,\"migratedContract\":11,\"migratedValid\":true,\"sourceUnchanged\":true,\"zipBytes\":232458,\"roundtripEqual\":true,\"workflowArtifacts\":20,\"categoryTrees\":0,\"rawTreeConflicts\":[],\"rawTreeExportRequiresUpgrade\":true,\"migratedCategoryTrees\":16}\ncompatibility r9-r5.config.json {\"file\":\"r9-r5.config.json\",\"originalContract\":9,\"importedContract\":9,\"readValid\":true,\"migratedContract\":11,\"migratedValid\":true,\"sourceUnchanged\":true,\"zipBytes\":234611,\"roundtripEqual\":true,\"workflowArtifacts\":28,\"categoryTrees\":0,\"rawTreeConflicts\":[],\"error\":\"Error: 旧 r9 分类文件未携带完整 contextBindings 与新版结构身份/搜索模块所需迁移上下文，不能可靠转换；直接覆盖还可能丢失当前主结构设置。请先在配置工作台导入原旧版完整配置包，升级后重新导出该单分类或 Class 树，再导入本包。原文件及当前配置未修改。\"}\ncompatibility r10-r6.config.json {\"file\":\"r10-r6.config.json\",\"originalContract\":10,\"importedContract\":10,\"readValid\":true,\"migratedContract\":11,\"migratedValid\":true,\"sourceUnchanged\":true,\"zipBytes\":234622,\"roundtripEqual\":true,\"workflowArtifacts\":28,\"categoryTrees\":16,\"rawTreeConflicts\":[],\"migratedCategoryTrees\":16}\ncompatibility r11-r7.config.json {\"file\":\"r11-r7.config.json\",\"originalContract\":11,\"importedContract\":11,\"readValid\":true,\"migratedContract\":11,\"migratedValid\":true,\"sourceUnchanged\":true,\"zipBytes\":234616,\"roundtripEqual\":true,\"workflowArtifacts\":28,\"categoryTrees\":16,\"rawTreeConflicts\":[],\"migratedCategoryTrees\":16}\nscale {\"nodes\":95,\"workflows\":28,\"bytes\":1621980,\"validateMs\":165.39779999999155,\"valid\":true,\"compileMs\":34.31560000000172,\"stats\":{\"epoch\":5,\"nodes\":95,\"classes\":16,\"cachedPaths\":95,\"hits\":570},\"exportZipMs\":495.82050000000163,\"zipBytes\":234614,\"readZipMs\":78.50759999999718,\"roundtripNodes\":95}\nscale {\"nodes\":195,\"workflows\":28,\"bytes\":4055460,\"validateMs\":402.0926000000036,\"valid\":true,\"compileMs\":67.16049999999814,\"stats\":{\"epoch\":6,\"nodes\":195,\"classes\":116,\"cachedPaths\":195,\"hits\":1170},\"exportZipMs\":1124.3172999999952,\"zipBytes\":642892,\"readZipMs\":210.8688000000111,\"roundtripNodes\":195}\nscale {\"nodes\":495,\"workflows\":28,\"bytes\":11356560,\"validateMs\":1310.488799999992,\"valid\":true,\"compileMs\":164.59189999999944,\"stats\":{\"epoch\":7,\"nodes\":495,\"classes\":416,\"cachedPaths\":495,\"hits\":2970},\"exportZipMs\":3377.2720000000118,\"zipBytes\":1868301,\"readZipMs\":549.2217999999993,\"roundtripNodes\":495}\nAUDIT COMPLETE {\"scenarios\":71,\"gaps\":[],\"output\":\"G:\\\\RIAWebGIS\\\\NewPRES\\\\CairnMap_Codex\\\\wt\\\\point-label-startup-v12-20261020\\\\migration-runs\\\\release-repair-20261017\\\\repaired-audit\"}\nRELEASE GATE PASS: 71/71 expectations, 67 errors blocked at all four boundaries, all historical full packages and 495-node scale retained\n"
+    },
+    {
+      "name": "test-release-template-identities.ts",
+      "passed": true,
+      "durationMs": 1691,
+      "exitCode": 0,
+      "output": "release-template-identities: new field/card identities and self references remap atomically; source and unrelated references preserved; invalid source conflicts remain blocked\n"
+    },
+    {
+      "name": "test-release-validation.ts",
+      "passed": true,
+      "durationMs": 44625,
+      "exitCode": 0,
+      "output": "release-validation: bounded conditions, expression types, cross-entry writes, IDs, CSS colours, nested required, old-context guidance, 16 upgraded trees and 95 single-node imports passed\n"
+    },
+    {
+      "name": "test-render-r7.ts",
+      "passed": true,
+      "durationMs": 5417,
+      "exitCode": 0,
+      "output": "render-r7: 5130 r6/r7 native results equal, cumulative combinations, AND/NOT, classification/unknown paths, immutable activation and migration isolation: OK\n"
+    },
+    {
+      "name": "test-render-templates.ts",
+      "passed": true,
+      "durationMs": 1421,
+      "exitCode": 0,
+      "output": "render-templates: r7 factory, full independent copy, target conditions, internal Zoom values, single-level range and compile rejection: OK\n"
+    },
+    {
+      "name": "test-setting-help.ts",
+      "passed": true,
+      "durationMs": 804,
+      "exitCode": 0,
+      "output": "setting help: 0 control/label sites pending\nsetting-help: 396 static sites, dynamic field/event/direction semantics and new-control coverage passed\n"
+    },
+    {
+      "name": "test-structure-roles.ts",
+      "passed": true,
+      "durationMs": 1803,
+      "exitCode": 0,
+      "output": "structure-roles: arbitrary main/member classes, FLR→BUD/STB, reverse legacy references, world isolation, duplicate/ambiguous blocking, zero selectors, shared floor/click context, hard module inheritance and strict new output passed\n"
+    },
+    {
+      "name": "test-sync01-native-import.ts",
+      "passed": true,
+      "durationMs": 1198,
+      "exitCode": 0,
+      "output": "sync01-native-import: five actual published incompatibilities, lossless attributes/geometry; untrusted/new/modified/cross-world records remain blocked: OK\n"
+    },
+    {
+      "name": "test-sync01-real-data.ts",
+      "passed": true,
+      "durationMs": 1412,
+      "exitCode": 0,
+      "output": "{\n  \"records\": 495,\n  \"evaluations\": 4455,\n  \"visibleByZoom\": {\n    \"0\": 42,\n    \"1\": 42,\n    \"2\": 42,\n    \"3\": 141,\n    \"4\": 210,\n    \"5\": 289,\n    \"6\": 354,\n    \"7\": 352,\n    \"8\": 490\n  },\n  \"cards\": 494,\n  \"editRoutes\": 489,\n  \"failures\": [],\n  \"publishedImports\": 495,\n  \"legacyClassifications\": [\n    {\n      \"id\": \"Test1\",\n      \"classification\": {\n        \"class\": \"BUD\",\n        \"kind\": \"IDS\",\n        \"skind\": \"OLD\"\n      }\n    },\n    {\n      \"id\": \"FLRtest\",\n      \"classification\": {\n        \"class\": \"FLR\",\n        \"kind\": \"T\",\n        \"skind\": \"T\"\n      }\n    },\n    {\n      \"id\": \"TEST2\",\n      \"classification\": {\n        \"class\": \"FLR\",\n        \"kind\": \"T\",\n        \"skind\": \"T\"\n      }\n    },\n    {\n      \"id\": \"Test3\",\n      \"classification\": {\n        \"class\": \"FLR\",\n        \"kind\": \"TTS\",\n        \"skind\": \"TTS\"\n      }\n    },\n    {\n      \"id\": \"Test4\",\n      \"classification\": {\n        \"class\": \"FLR\",\n        \"kind\": \"TTS\",\n        \"skind\": \"TTS\"\n      }\n    },\n    {\n      \"id\": \"Test5\",\n      \"classification\": {\n        \"class\": \"FLR\",\n        \"kind\": \"TTS\",\n        \"skind\": \"TTS\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLBHDA\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLCDA\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLCSPT\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLHBR\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLKDXCSD\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLKXJDDS\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLKXUJDDN\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLYDT\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLZQL\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLZYBL\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLZYNL\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_HaibeiAVE_E\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_HaibeiAVE_W\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_HHBE\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_HHBGE\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_HHBGLOOP\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_HHBGW\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_HHBW\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_HuaqingRDE\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_HuaqingRDW1\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_NanyeAVEN\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_NanyeAVES\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_YunhaiRD\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_ZhichunRDE\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_ZhichunRDW1\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_ZhichunRDW2\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    },\n    {\n      \"id\": \"ZRODNOMNOM_ZhichunRDW3\",\n      \"classification\": {\n        \"class\": \"ROD\",\n        \"kind\": \"NOM\",\n        \"skind\": \"NOM\"\n      }\n    }\n  ],\n  \"strictNativeImportAccepted\": 389,\n  \"strictNativeImportRejections\": [\n    {\n      \"id\": \"Test1\",\n      \"stage\": \"strict-native-import\",\n      \"message\": \"Error: 导入记录的类型、最终分类或几何设置无效。\"\n    },\n    {\n      \"id\": \"FLRtest\",\n      \"stage\": \"strict-native-import\",\n      \"message\": \"Error: 导入记录的类型、最终分类或几何设置无效。\"\n    },\n    {\n      \"id\": \"TEST2\",\n      \"stage\": \"strict-native-import\",\n      \"message\": \"Error: 导入记录的类型、最终分类或几何设置无效。\"\n    },\n    {\n      \"id\": \"Test3\",\n      \"stage\": \"strict-native-import\",\n      \"message\": \"Error: 导入记录的类型、最终分类或几何设置无效。\"\n    },\n    {\n      \"id\": \"Test4\",\n      \"stage\": \"strict-native-import\",\n      \"message\": \"Error: 导入记录的类型、最终分类或几何设置无效。\"\n    },\n    {\n      \"id\": \"Test5\",\n      \"stage\": \"strict-native-import\",\n      \"message\": \"Error: 导入记录的类型、最终分类或几何设置无效。\"\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLBHDA\",\n      \"stage\": \"strict-native-import\",\n      \"message\": \"Error: 导入记录的类型、最终分类或几何设置无效。\"\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLCDA\",\n      \"stage\": \"strict-native-import\",\n      \"message\": \"Error: 导入记录的类型、最终分类或几何设置无效。\"\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLCSPT\",\n      \"stage\": \"strict-native-import\",\n      \"message\": \"Error: 导入记录的类型、最终分类或几何设置无效。\"\n    },\n    {\n      \"id\": \"ZRODNOMNOM_BLHBR\",\n      \"stage\": \"strict-native-import\",\n      \"message\": \"Error: 导入记录的类型、最终分类或几何设置无效。\"\n    }\n  ]\n}\n"
+    },
+    {
+      "name": "test-tile-image-request.ts",
+      "passed": true,
+      "durationMs": 367,
+      "exitCode": 0,
+      "output": "tile-image-request: 0/1/3 bounded retries, single terminal callback, success cleanup, unload cancellation and stale callbacks passed\n"
+    },
+    {
+      "name": "test-unified-r8.ts",
+      "passed": true,
+      "durationMs": 4933,
+      "exitCode": 0,
+      "output": "unified-r8: 5130 r6/r8 native render results, 34 complete records, conditional numeric imports, dictionary arrays, source conflicts, finite calculations and actual ZIP roundtrip: OK\n"
+    },
+    {
+      "name": "test-v1-render-baseline.ts",
+      "passed": true,
+      "durationMs": 385,
+      "exitCode": 0,
+      "output": "V1 render baseline OK (19 probes).\n"
+    },
+    {
+      "name": "test-v1-workflow-output-parity.ts",
+      "passed": true,
+      "durationMs": 1283,
+      "exitCode": 0,
+      "output": "v1-workflow-output-parity: 34 complete records, 3 controlled external bindings: OK\n"
+    },
+    {
+      "name": "test-v3-semantic-parity.ts",
+      "passed": true,
+      "durationMs": 1027,
+      "exitCode": 0,
+      "output": "v3-semantic-parity: 95 nodes, 20 workflows, V1 display/card/workflow mapping: OK\n"
+    },
+    {
+      "name": "test-workflow-calculator.ts",
+      "passed": true,
+      "durationMs": 279,
+      "exitCode": 0,
+      "output": "workflow-calculator: safe functions, nested composition, unchanged + semantics, false/zero, coordinate formats, unknown calls and dependencies: OK\n"
+    },
+    {
+      "name": "test-workflow-capture.ts",
+      "passed": true,
+      "durationMs": 1231,
+      "exitCode": 0,
+      "output": "workflow-capture: optional Y, source/target isolation, conditional Warp path, preserved drawing controls and final self-ID: OK\n"
+    },
+    {
+      "name": "test-workflow-drawing-r8.ts",
+      "passed": true,
+      "durationMs": 1232,
+      "exitCode": 0,
+      "output": "workflow-drawing-r8: TPP legacy final record equality, Warp skip and residual removal, typed point formats, zero/default heights, multipart/hole capture and condition dependencies: OK\n"
+    },
+    {
+      "name": "test-workflow-drawing-session.ts",
+      "passed": true,
+      "durationMs": 421,
+      "exitCode": 0,
+      "output": "drawing-session: TPP backtrack, cloned step identity, information-page edits, active-task isolation, condition invalidation, world pause/resume, explicit discard/manual-start and exit: OK\n"
+    },
+    {
+      "name": "test-workflow-field-controls.ts",
+      "passed": true,
+      "durationMs": 970,
+      "exitCode": 0,
+      "output": "workflow-field-controls: field input/type/default/options/reference/scenes, scalar arrays, real bindings and slots beyond Z: OK\n"
+    },
+    {
+      "name": "test-workflow-forms-r8.ts",
+      "passed": true,
+      "durationMs": 1359,
+      "exitCode": 0,
+      "output": "workflow-forms-r8: 17 default forms, stable slots and moved fixed modules, typed values, complex roundtrip, duplicate conflicts and output scoping: OK\n"
+    },
+    {
+      "name": "test-workflow-output-editor.ts",
+      "passed": true,
+      "durationMs": 1232,
+      "exitCode": 0,
+      "output": "workflow-output-editor: safe expressions, targets, World and draft transitions: OK\n"
+    },
+    {
+      "name": "test-workflow-practical.ts",
+      "passed": true,
+      "durationMs": 1022,
+      "exitCode": 0,
+      "output": "workflow-practical: final-ID graph, protected classification, actor/group constraints, drawing options and world scopes: OK\n"
+    },
+    {
+      "name": "test-world-resource-groups.ts",
+      "passed": true,
+      "durationMs": 354,
+      "exitCode": 0,
+      "output": "world-resource-groups: default parity, canonical projection, two servers/same remote world, scoped source selection/cache identity, missing group/proxy guards and lossless differential migration passed\n"
+    },
+    {
+      "name": "test-display-parity.ts",
+      "passed": true,
+      "durationMs": 890,
+      "exitCode": 0,
+      "output": "display-parity: 24 direct V1/V3 opacity, labelOnly, priority and obstacle-policy cases: OK\ndisplay-parity: polygon candidate weights, source disabled density and missing-icon circle preserved: OK\n"
+    },
+    {
+      "name": "test-label-placement.ts",
+      "passed": true,
+      "durationMs": 263,
+      "exitCode": 0,
+      "output": "label-placement: nine positions, signed X/Y, CSS/bbox origin and legacy baseline: OK\n"
+    },
+    {
+      "name": "test-label-zoom-lifecycle.ts",
+      "passed": true,
+      "durationMs": 1475,
+      "exitCode": 0,
+      "output": "label-zoom-lifecycle: 5985 V1/V3 label eligibility probes across all 95 classifications; only approved RLE Zoom2–4 additions differ; 479 cases require label removal while zooming out\n"
+    },
+    {
+      "name": "test-production-runtime.ts",
+      "passed": true,
+      "durationMs": 2040,
+      "exitCode": 0,
+      "output": "production-runtime: pinned bytes/identity, no foreign URLs, raw-preserving historical views, unknown paths, restored future paths, per-output single parts and Polygon holes passed\n"
+    },
+    {
+      "name": "test-r12-contracts.ts",
+      "passed": true,
+      "durationMs": 8224,
+      "exitCode": 0,
+      "output": "r12 contracts: 10 invalid-setting parity cases; JSON/ZIP category resource merge/conflicts/Class commit, package roundtrip, historical r8-r11 imports and migration idempotence passed.\n"
+    },
+    {
+      "name": "test-r12-preview.ts",
+      "passed": true,
+      "durationMs": 1288,
+      "exitCode": 0,
+      "output": "r12 preview/symbol: target selection, Name, typed zero/false, safe paths, no residue, real coverage, static reachability, migration and placement passed.\n"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "blueprintHashes": {
+    "配置工作台点符号与启动体验升级蓝图-v1.0.md": "4d0d1c1fc1c52221f0d01576935cea0dbc153170dfec44f11f9843eff075e708",
+    "配置工作台点符号与启动体验升级蓝图-v1.1.md": "75780367984453e45c035bf5be5ed4c214f2fc039802040f6b3838af928db564",
+    "配置工作台点符号与启动体验升级蓝图-v1.2.md": "e2aa5ae4ca3cc5a3d34040955556ec8c54fbb45f5a73be8482099b3c3b065109",
+    "待整合要求-启动免SCF与业务入口一致性检查-20261019.md": "b47e88e81c95b82356a731bfb63771ab48a465124db5c970e221d3439138d1ea"
+  },
+  "formalAndV1PathsUnchanged": true,
+  "sharedKernelSha256": "1a3629a7b4f127cab7af55fb372a73b0a4edcdd5b0b0db0af7b0d834ef314a34",
+  "sharedKernelByteIdentical": true
+}

@@ -19,6 +19,9 @@
 
 ## 配置包参考
 
+- [r12 完整 JSON 人工阅读手册与候选](20_config-reference/runtime-v32-json-handbook-r12-20261020/README.md)：完整候选、200种结构/1121项中文字段解析及新图标/图片/胶囊范例；尚未发布。
+- [本轮实现、验收与部署交付](90_roadmap-and-history/point-label-startup-v12-20261020/REPORT.md)。
+
 - [当前 V3.2 完整 JSON 对照手册（r11/r7）](20_config-reference/runtime-v32-json-handbook-r11-r7-20261017/README.md)：当前完整配置副本、中文全字段表、实例行号索引及离线阅读器。下列项目包文档用于 V1 分文件来源体系，阅读当前 V3 整包请先使用此手册。
 - `20_config-reference/ProjectConfigPackage.md`：项目配置包说明。
 - `20_config-reference/ProjectPackageStructure.md`：项目包目录结构说明。
