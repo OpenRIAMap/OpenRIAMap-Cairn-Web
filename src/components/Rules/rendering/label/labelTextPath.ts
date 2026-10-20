@@ -269,7 +269,7 @@ export function shouldUseCjkUprightTextPath(
 ): boolean {
   const anchor = resolveAnchor(options.anchor);
   const policy = anchor.lineTextOrientationPolicy ?? "autoCjkUpright";
-  if (policy === "alwaysTextPath") return false;
+  if (policy === "alwaysTextPath" || policy === "scriptAware") return false;
   if (policy === "alwaysRotated") return true;
   if (!isMostlyCjkText(options.text)) return false;
   const points = pointsFromLatLngs(options.map, options.pathLatLngs);

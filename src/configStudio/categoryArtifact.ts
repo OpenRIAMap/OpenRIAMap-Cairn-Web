@@ -10,7 +10,7 @@ import { createBlankV32Package } from './v32Defaults';
 import { migrateConfigToR9 } from './r9Migration';
 import { newConfigId } from './renderRuleTemplates';
 
-export type CategoryArtifactPayload={schemaVersion:'cairnmap.category-artifact.v1'|'cairnmap.category-artifact.v2';contractRevision:9|10|11;fieldDependencies?:DictionaryFieldDependency[];lookupTables?:LookupTable[];kind:'node'|'classTree';projectId:string;classCode:string;path:ClassificationPath;nodes:CategoryNode[];ancestors:ClassificationPath[];engineFingerprint:string};
+export type CategoryArtifactPayload={schemaVersion:'cairnmap.category-artifact.v1'|'cairnmap.category-artifact.v2';contractRevision:9|10|11|12;resources?:ConfigPackageV3['resources'];fieldDependencies?:DictionaryFieldDependency[];lookupTables?:LookupTable[];kind:'node'|'classTree';projectId:string;classCode:string;path:ClassificationPath;nodes:CategoryNode[];ancestors:ClassificationPath[];engineFingerprint:string};
 export type CategoryArtifact={payload:CategoryArtifactPayload;sha256:string};
 export function categoryStableText(value:unknown):string {if(Array.isArray(value))return '['+value.map(categoryStableText).join(',')+']';if(value&&typeof value==='object')return '{'+Object.entries(value).filter(([,v])=>v!==undefined).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>JSON.stringify(k)+':'+categoryStableText(v)).join(',')+'}';return JSON.stringify(value);}
 async function digest(value:unknown):Promise<string>{return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(categoryStableText(value))))].map(b=>b.toString(16).padStart(2,'0')).join('');}
@@ -21,8 +21,8 @@ function inheritedFieldText(field:FieldDefinition,config:ConfigPackageV3):string
 }
 
 function checkPayload(payload:CategoryArtifactPayload) {
-  if(!payload||!([9,10,11].includes(payload.contractRevision))||payload.schemaVersion!==(payload.contractRevision>=10?'cairnmap.category-artifact.v2':'cairnmap.category-artifact.v1')||!['node','classTree'].includes(payload.kind)||!payload.classCode||!Array.isArray(payload.nodes)||!payload.nodes.length||payload.nodes.length>2048||!Array.isArray(payload.ancestors))throw Error('文件不是受支持的单分类/Class 树输出。');
-  const shape=validateNativeStructure({...createBlankV32Package(),contractRevision:payload.contractRevision,lookupTables:payload.lookupTables,nodes:payload.nodes,workflows:[]});if(shape.length)throw Error(shape.map(i=>`${i.path}：${i.message}`).join('\n'));
+  if(!payload||!([9,10,11,12].includes(payload.contractRevision))||payload.schemaVersion!==(payload.contractRevision>=10?'cairnmap.category-artifact.v2':'cairnmap.category-artifact.v1')||!['node','classTree'].includes(payload.kind)||!payload.classCode||!Array.isArray(payload.nodes)||!payload.nodes.length||payload.nodes.length>2048||!Array.isArray(payload.ancestors))throw Error('文件不是受支持的单分类/Class 树输出。');
+  const shape=validateNativeStructure({...createBlankV32Package(),contractRevision:payload.contractRevision,lookupTables:payload.lookupTables,resources:payload.resources,nodes:payload.nodes,workflows:[]});if(shape.length)throw Error(shape.map(i=>`${i.path}：${i.message}`).join('\n'));
   if(payload.nodes.some(node=>node.path.class!==payload.classCode)||payload.path?.class!==payload.classCode)throw Error('分类文件包含其他 Class 或范围身份不一致。');
   const ids=payload.nodes.map(node=>node.nodeId),paths=payload.nodes.map(node=>classificationPathKey(node.path));if(new Set(ids).size!==ids.length||new Set(paths).size!==paths.length)throw Error('分类文件内部节点 ID/路径重复。');
   for(const node of payload.nodes){const levels=['class','kind','skind','skind2'] as const;for(let index=1;index<levels.length;index++)if(node.path[levels[index]]&&!node.path[levels[index-1]])throw Error('分类路径层级不连续。');}
@@ -35,14 +35,14 @@ function checkPayload(payload:CategoryArtifactPayload) {
 }
 export async function createCategoryArtifact(config:ConfigPackageV3,nodeId:string,kind:'node'|'classTree'):Promise<CategoryArtifact> {
   const report=validateConfigPackage(config);if(!report.valid)throw Error('配置未通过核验，不能导出分类文件。');
-  if(config.contractRevision!==9&&config.contractRevision!==10&&config.contractRevision!==11)throw Error('请先迁移并保存原生配置，再导出分类。');
+  if(config.contractRevision!==9&&config.contractRevision!==10&&config.contractRevision!==11&&config.contractRevision!==12)throw Error('请先迁移并保存原生配置，再导出分类。');
   const selected=config.nodes.find(n=>n.nodeId===nodeId);if(!selected)throw Error('请选择要导出的分类。');
   const path=kind==='classTree'?{class:selected.path.class}:selected.path;
   const nodes=structuredClone(kind==='classTree'?config.nodes.filter(n=>n.path.class===path.class):[selected]);if(kind==='node')nodes[0].children=[];
   const ancestors:ClassificationPath[]=[];let parent=parentClassificationPath(path);while(parent){ancestors.unshift(parent);parent=parentClassificationPath(parent);}
   const tableIds=dictionaryTableIds(config,nodes);
   const lookupTables=config.lookupTables?.filter(table=>tableIds.has(table.id));
-  const payload:CategoryArtifactPayload={schemaVersion:config.contractRevision>=10?'cairnmap.category-artifact.v2':'cairnmap.category-artifact.v1',contractRevision:config.contractRevision as 9|10|11,...(lookupTables?.length?{lookupTables:structuredClone(lookupTables)}:{}),...(config.contractRevision>=11?{fieldDependencies:dictionaryDependencies(config,nodes)}:{}),kind,projectId:config.projectId,classCode:path.class,path,nodes,ancestors,engineFingerprint:await digest(config.engine)};checkPayload(payload);return {payload,sha256:await digest(payload)};
+  const payload:CategoryArtifactPayload={schemaVersion:config.contractRevision>=10?'cairnmap.category-artifact.v2':'cairnmap.category-artifact.v1',contractRevision:config.contractRevision as 9|10|11|12,...(config.contractRevision>=12&&config.resources?{resources:structuredClone(config.resources)}:{}),...(lookupTables?.length?{lookupTables:structuredClone(lookupTables)}:{}),...(config.contractRevision>=11?{fieldDependencies:dictionaryDependencies(config,nodes)}:{}),kind,projectId:config.projectId,classCode:path.class,path,nodes,ancestors,engineFingerprint:await digest(config.engine)};checkPayload(payload);return {payload,sha256:await digest(payload)};
 }
 export async function categoryArtifactBlob(artifact:CategoryArtifact,zip=true):Promise<Blob> {
   checkPayload(artifact.payload);if(artifact.sha256!==await digest(artifact.payload))throw Error('分类内容摘要无效。');
@@ -61,6 +61,7 @@ export type CategoryImportResult={config:ConfigPackageV3;selectedId:string;class
 /** Candidate only: never mutates the saved package or merges old tree nodes. */
 export function prepareCategoryImport(input:ConfigPackageV3,artifact:CategoryArtifact,fixConflicts=false):CategoryImportResult {
   checkPayload(artifact.payload);const config=input.contractRevision<9?migrateConfigToR9(input):structuredClone(input),payload=artifact.payload,changes:string[]=[],conflicts:string[]=[];
+  if(payload.resources){if(payload.contractRevision<12)throw Error('图标资源能力需要契约 r12 分类文件。');for(const resource of payload.resources.iconLibraries){const existing=config.resources?.iconLibraries.find(item=>item.library===resource.library);if(existing&&categoryStableText(existing)!==categoryStableText(resource))throw Error('分类文件的图库资源版本与当前总配置冲突；请使用受支持的同一版本重新导出。');if(!existing)config.resources={iconLibraries:[...config.resources?.iconLibraries??[],structuredClone(resource)]};}}
   if(payload.contractRevision>config.contractRevision)throw Error(`请先将总配置迁移到 r${payload.contractRevision} 或更高的受支持契约，再导入新版分类。`);
   if(payload.contractRevision<10&&config.contractRevision>=10)throw Error(`旧 r${payload.contractRevision} 分类文件未携带完整 contextBindings 与新版结构身份/搜索模块所需迁移上下文，不能可靠转换；直接覆盖还可能丢失当前主结构设置。请先在配置工作台导入原旧版完整配置包，升级后重新导出该单分类或 Class 树，再导入本包。原文件及当前配置未修改。`);
   for(const node of payload.nodes){const identities=new Map<string,string>();for(const field of node.fields){if(identities.has(field.fieldId))throw Error(`分类 ${classificationPathKey(node.path)} 的字段 ID ${field.fieldId} 重复，涉及 ${identities.get(field.fieldId)} / ${field.key}。存在歧义，不能猜测引用。请修复原文件后再导入。`);identities.set(field.fieldId,field.key);}if(node.card?.mode==='fields'&&new Set(node.card.items.map(item=>item.id)).size!==node.card.items.length)throw Error(`分类 ${classificationPathKey(node.path)} 的信息卡条目 ID 重复，请修复原文件后再导入。`);}
@@ -101,14 +102,27 @@ export function prepareClassTreeCommit(current:ConfigPackageV3,baseline:ConfigPa
   if(baseline.contractRevision<9)baseline=migrateConfigToR9(baseline);
   const tree=(config:ConfigPackageV3)=>config.nodes.filter(node=>node.path.class===classCode);
   if(categoryStableText(tree(current))!==categoryStableText(tree(baseline)))throw Error('主配置中的同 Class 树已发生变化，请重新导入/核验，未覆盖较新的修改。');
-  const outside=(config:ConfigPackageV3)=>({...config,lookupTables:undefined,nodes:config.nodes.filter(node=>node.path.class!==classCode),workflows:config.workflows.map(workflow=>({...workflow,steps:workflow.steps.map(step=>({...step,controls:step.controls?.filter(control=>!(control.kind==='classificationPicker'&&control.systemManaged))}))}))});
+  const outside=(config:ConfigPackageV3)=>({...config,lookupTables:undefined,resources:undefined,nodes:config.nodes.filter(node=>node.path.class!==classCode),workflows:config.workflows.map(workflow=>({...workflow,steps:workflow.steps.map(step=>({...step,controls:step.controls?.filter(control=>!(control.kind==='classificationPicker'&&control.systemManaged))}))}))});
+  // Class-only saves may add a declared library used by this tree, but cannot
+  // replace/remove shared capabilities or overwrite a concurrent version.
+  const libraries=[...current.resources?.iconLibraries??[]];
+  for(const original of baseline.resources?.iconLibraries??[])if(!staged.resources?.iconLibraries.some(row=>categoryStableText(row)===categoryStableText(original)))throw Error('Class 树模式不能修改或删除共享图库资源。');
+  const treeText=JSON.stringify(tree(staged));
+  for(const resource of staged.resources?.iconLibraries??[]){
+    const original=baseline.resources?.iconLibraries.find(row=>row.library===resource.library);
+    if(original)continue;
+    if(!treeText.includes('"kind":"icon"'))throw Error('Class 树包含范围外的新图库资源。');
+    const existing=libraries.find(row=>row.library===resource.library);
+    if(existing&&categoryStableText(existing)!==categoryStableText(resource))throw Error('图库资源已由其他保存修改，请重新导入。');
+    if(!existing)libraries.push(structuredClone(resource));
+  }
   const needed=dictionaryTableIds(staged,tree(staged));
   const tables=[...current.lookupTables??[]];
   for(const table of staged.lookupTables??[]){const original=baseline.lookupTables?.find(row=>row.id===table.id);if(original){if(categoryStableText(original)!==categoryStableText(table))throw Error('Class 树模式不能修改共享对照表。');continue;}if(!needed.has(table.id))throw Error('Class 树包含范围外的新对照表。');const existing=tables.find(row=>row.id===table.id);if(existing&&categoryStableText(existing)!==categoryStableText(table))throw Error(`对照表 ${table.id} 已由其他保存修改，请重新导入。`);if(!existing)tables.push(structuredClone(table));}
   if(baseline.lookupTables?.some(table=>!staged.lookupTables?.some(row=>row.id===table.id)))throw Error('Class 树模式不能删除共享对照表。');
   if(categoryStableText(outside(staged))!==categoryStableText(outside(baseline)))throw Error('暂存 Class 树修改了范围外内容，不能注入。');
   const nodes=tree(staged);if(!nodes.some(node=>pathDepth(node.path)===1))throw Error('暂存树缺少 Class 根。');
-  const candidate={...current,...(tables.length?{lookupTables:tables}:{}),nodes:[...current.nodes.filter(node=>node.path.class!==classCode),...structuredClone(nodes)]};
+  const candidate={...current,...(libraries.length?{resources:{iconLibraries:libraries}}:{}),...(tables.length?{lookupTables:tables}:{}),nodes:[...current.nodes.filter(node=>node.path.class!==classCode),...structuredClone(nodes)]};
   candidate.workflows=syncSystemClassification(candidate).workflows;
   const report=validateConfigPackage(candidate);if(!report.valid)throw Error(report.issues.filter(issue=>issue.severity==='error').map(issue=>`${issue.path}：${issue.message}`).join('\n'));return candidate;
 }

@@ -33,5 +33,6 @@ export function ColorBindingEditor({ config, sourcePath: _sourcePath, fields, la
       <HelpLabel context="ColorBindingEditor" className="text-xs">颜色目标要素 ID<select className="mt-1 w-full rounded border px-2 py-1" value={value.targetIdField} onChange={(event) => onChange({ ...value, targetIdField: event.target.value })}>{fields.map((field) => <option key={field}>{field}</option>)}</select></HelpLabel>
       <HelpLabel context="ColorBindingEditor" className="text-xs">目标要素颜色字段<select className="mt-1 w-full rounded border px-2 py-1" value={value.targetColorField} onChange={(event) => onChange({ ...value, targetColorField: event.target.value })}><option value="">选择字段</option>{targetFields.map((field) => <option key={field}>{field}</option>)}</select></HelpLabel>
     </div> : null}
+    {mode === 'field' || mode === 'external' ? <HelpLabel context="ColorBindingEditor" className="mt-2 block text-xs">空值／无效颜色回退<input className="mt-1 block h-8 w-full rounded border" type="color" value={value.fallbackColor ?? '#334155'} onChange={event => onChange({ ...value, fallbackColor: event.target.value })} /></HelpLabel> : null}
   </fieldset>;
 }

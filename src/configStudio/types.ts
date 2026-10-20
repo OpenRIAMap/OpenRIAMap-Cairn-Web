@@ -106,6 +106,36 @@ export type RenderPointIcon = {
   anchor: [number, number];
   fallback: 'hide' | 'circle';
 };
+export type SymbolPlacement = {
+  anchor: { mode: 'center' | 'topCenter' | 'bottomCenter' | 'leftCenter' | 'rightCenter' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight' | 'custom'; x?: number; y?: number };
+  offsetPx: { x: number; y: number };
+};
+export type BasePointStyle = {
+  pointShape: RenderPointShape; size: number; weight: number;
+  lineCap: 'butt' | 'round' | 'square'; lineJoin: 'miter' | 'round' | 'bevel';
+  stroke: RenderColorBinding; fill: RenderColorBinding;
+  strokeOpacity: number; fillOpacity: number;
+};
+export type IconItem = {
+  library: 'pinhead'; id: string; sizePx: number;
+  foreground: RenderColorBinding; foregroundOpacity: number;
+  plate?: { shape: 'circle' | 'square' | 'roundedRect' | 'pin'; paddingPx: number; radiusPx?: number; fill: RenderColorBinding; stroke: RenderColorBinding; strokeWidthPx: number; fillOpacity: number; strokeOpacity: number };
+  placement: SymbolPlacement;
+};
+export type ImagePresentation = { sizePx: { width: number; height: number }; placement: SymbolPlacement };
+export type ImageSource =
+  | { mode: 'fixed'; url: string; presentation: ImagePresentation }
+  | { mode: 'fieldUrl'; field: string; presentation: ImagePresentation }
+  | { mode: 'externalFieldUrl'; targetIdField: string; targetUrlField: string; presentation: ImagePresentation }
+  | { mode: 'valueMap'; field: string; entries: Array<{ value: string | number | boolean; url: string; presentation: ImagePresentation }> };
+export type PointSymbol =
+  | { kind: 'shape'; shape: BasePointStyle }
+  | { kind: 'icon'; icon: { mode: 'single'; item: IconItem } | { mode: 'valueMap'; field: string; entries: Array<{ value: string | number | boolean; item: IconItem }> }; fallback: BasePointStyle }
+  | { kind: 'externalImage'; image: ImageSource; fallback: BasePointStyle };
+export type CustomPillSettings = {
+  lineHeightRatio: number; paddingYRatio: number; paddingXRatio: number; radiusRatio: number;
+  textColor: RenderColorBinding; backgroundColor: RenderColorBinding; strokeColor: RenderColorBinding; strokeWidth: number;
+};
 /**
  * A V3 label is selected by visual family rather than by a lossy "font"
  * enum.  Size is intentionally data, not part of the key, so the editor can
@@ -118,7 +148,8 @@ export type LabelStyleFamily =
   | 'structure-label'
   | 'bubble-dark'
   | 'rle-line-color'
-  | 'rle-pill-color';
+  | 'rle-pill-color'
+  | 'custom_pill_1';
 export type LabelStyleModifiers = { italic?: boolean; underline?: boolean; bold?: boolean };
 export type RenderLabelVisualStyle = {
   family: LabelStyleFamily;
@@ -129,6 +160,7 @@ export type RenderLabelVisualStyle = {
    * pill background. Other families intentionally keep their V1 palette.
    */
   color?: RenderColorBinding;
+  pill?: CustomPillSettings;
 };
 /** @deprecated Read-only compatibility for contract revisions <= 3. */
 export type RenderFont = 'whiteBlackOutline' | 'blue' | 'capsule';
@@ -139,13 +171,15 @@ export type RenderStyle = {
   symbolVisibility?: 'independent' | 'withLabel';
   symbolAnchor?: 'geometry' | 'label';
   pointShape?: RenderPointShape;
+  /** r12 point appearance: exactly one active branch, including per-item placement. */
+  pointSymbol?: PointSymbol;
   /** An authored external icon overrides pointShape for this Zoom rule. */
   icon?: RenderPointIcon;
   size?: number;
   weight?: number;
-  stroke: RenderColorBinding;
+  stroke?: RenderColorBinding;
   fill?: RenderColorBinding;
-  strokeOpacity: number;
+  strokeOpacity?: number;
   fillOpacity?: number;
   dashPreset?: RenderDashPreset;
   lineCap?: 'butt' | 'round' | 'square';
@@ -240,7 +274,8 @@ export type RenderLineLabelExtension = {
   textPathLetterSpacingPx?: number;
   textPathCurvedLetterSpacingPx?: number;
   textPathCurvedSpacingMinBendDeg?: number;
-  orientationPolicy?: 'autoCjkUpright' | 'alwaysTextPath' | 'alwaysRotated';
+  orientationPolicy?: 'autoCjkUpright' | 'alwaysTextPath' | 'alwaysRotated' | 'scriptAware';
+  textPathLengthMode?: 'fixed' | 'actualText';
   textPathVerticalAngleThresholdDeg?: number;
   textPathVerticalLengthRatio?: number;
   candidateOrdering?: 'startToEnd' | 'centerOut';
@@ -897,7 +932,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */
@@ -909,6 +944,7 @@ export type ConfigPackageV3 = {
   registries: ConfigRegistries;
   lookupTables?: LookupTable[];
   application?: import('../core/project/applicationTypes').ApplicationSettings;
+  resources?: { iconLibraries: Array<{ library: 'pinhead'; version: string; manifestSha256: string }> };
   nodes: CategoryNode[];
   /** Required for V3.2-native packages; legacy node.containment is import-only. */
   contextBindings?: ContextBinding[];

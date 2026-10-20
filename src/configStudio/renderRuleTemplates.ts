@@ -1,3 +1,4 @@
+import { r12RenderRule } from './r12Migration';
 import type { ConfigPackageV3, GeometryKind, GeometryProfile, ZoomPriorityRule } from './types';
 import { orderFactoryWorkflowForms } from './workflowFormMigration';
 import { migrateFieldsToR8 } from './fieldMigration';
@@ -26,6 +27,6 @@ export function createEditableConfigPackageFromCurrentProject(): ConfigPackageV3
 }
 export function editableGeometryProfile(geometry: GeometryKind, revision: number): GeometryProfile {
   const profile = createDefaultGeometryProfile(geometry);
-  profile.zoomPriority.rules = profile.zoomPriority.rules.map(rule => normalizeEditedRenderRule(rule, revision));
+  profile.zoomPriority.rules = profile.zoomPriority.rules.map(rule => normalizeEditedRenderRule(revision>=12?r12RenderRule(rule,geometry):rule, revision));
   return profile;
 }

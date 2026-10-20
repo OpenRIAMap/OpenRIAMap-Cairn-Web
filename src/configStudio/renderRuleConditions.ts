@@ -1,6 +1,7 @@
 import type { FieldDefinition, RenderFieldCondition, RenderFieldGroup, RenderRuleConditionalOverride, RenderRuleExtensions, ZoomPriorityRule } from './types';
 import { compileRenderFormula, formulaContradiction, matchesAtomicCondition, matchesRenderFormula } from './renderBooleanFormula';
 import { scalarValueErrors } from './renderScalar';
+import { solveConditionWitness } from './conditionWitness';
 
 const classificationNames = new Set(['class', 'kind', 'skind', 'skind2', 'plinekind', 'plineskind', 'plineskind2', 'pgonkind', 'pgonskind', 'pgonskind2']);
 const dangerous = new Set(['__proto__', 'prototype', 'constructor']);
@@ -26,14 +27,14 @@ export function matchesRenderFields(group: RenderFieldGroup | undefined, read: (
   };
   return match(group);
 }
-export function validateRenderFields(group: RenderFieldGroup | undefined, fields: FieldDefinition[], selectable: string[]): string[] {
+export function validateRenderFields(group: RenderFieldGroup | undefined, fields: FieldDefinition[], selectable: string[], contractRevision = 11): string[] {
   if (!group) return [];
   const issues: string[] = []; let leaves = 0;
   const visit = (node: RenderFieldGroup | RenderFieldCondition, depth: number): void => {
     if (depth > 4) { issues.push('字段组合最多四层。'); return; }
     if ('op' in node) {
       if (node.formula) {
-        try { compileRenderFormula(node.formula); if (formulaContradiction(node.formula)) issues.push('条件公式存在可证明的矛盾，无法命中。'); } catch (error) { issues.push(String(error instanceof Error ? error.message : error)); }
+        try { compileRenderFormula(node.formula); if (contractRevision < 12 && formulaContradiction(node.formula)) issues.push('条件公式存在可证明的矛盾，无法命中。'); } catch (error) { issues.push(String(error instanceof Error ? error.message : error)); }
         if(node.items.length) issues.push('公式与旧组合不能同时包含条件行。');
         node.formula.terms.forEach(term=>{if(!['AND','OR','NOT'].includes(term.relation))issues.push('条件行关系无效。');visit(term.condition,0);});return;
       }
@@ -56,7 +57,9 @@ export function validateRenderFields(group: RenderFieldGroup | undefined, fields
   };
   visit(group, 0);
   if (leaves > (group.formula ? 256 : 64)) issues.push(`字段条件最多 ${group.formula ? 256 : 64} 项。`);
-  if (provenFieldContradiction(group)) issues.push('字段条件存在可证明的矛盾，无法命中。');
+  if (contractRevision >= 12) {
+    if (!issues.length && solveConditionWitness([{ group }], fields).status === 'unsatisfiable') issues.push('字段条件在实际取值域中存在可证明的矛盾，无法命中。');
+  } else if (provenFieldContradiction(group)) issues.push('字段条件存在可证明的矛盾，无法命中。');
   return issues;
 }
 export function provenFieldContradiction(group: RenderFieldGroup): boolean {

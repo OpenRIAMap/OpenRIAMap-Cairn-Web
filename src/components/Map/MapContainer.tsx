@@ -1,3 +1,4 @@
+import { checkBusinessConfiguration } from '../../configRuntime/businessConfiguration';
 import { getApplicationGeneration, getApplicationSettings, applicationWorld, enabledApplicationWorldId, moduleEnabled, subscribeApplication, registerApplicationGuard } from '@/core/project/applicationRuntime';
 import { useSyncExternalStore } from 'react';
 import { isNativeConfigRevision } from '../../configStudio/contract';
@@ -594,6 +595,7 @@ useEffect(() => {
         failWorkspaceAdmission(transition, message);
         return;
       }
+      try { await checkBusinessConfiguration(); } catch(error) { failWorkspaceAdmission(transition,error instanceof Error ? error.message : String(error)); return; }
     }
 
     if (!workspaceTransitionCoordinatorRef.current.activateTarget(transition.token)) return;
@@ -2114,7 +2116,7 @@ case 'players':
 )}
 
       {/* 顶部区域：桌面端恢复原始布局；移动端仅保留搜索框与关于快捷按钮 */}
-      <div className="hidden sm:flex absolute top-4 left-4 right-auto z-[1000] flex-col gap-2 sm:max-w-[300px]">
+      <div data-map-world-controls className="hidden sm:flex absolute top-4 left-4 right-auto z-[1000] flex-col gap-2 sm:max-w-[300px]">
         <AppCard className="bg-white/90 px-3 py-2 sm:px-4">
           <h1 className="text-base sm:text-lg font-bold text-gray-800">RIA 在线地图</h1>
           <WorldSwitcher
@@ -2464,7 +2466,7 @@ case 'players':
 
       {/* 桌面端：右上角图层控制 */}
       <div className={`hidden sm:block absolute top-4 ${application.preferences.toolbar.position==='left'?'left-4':'right-4'} z-[1000]`}>
-        <div className="flex items-start gap-2">
+        <div data-desktop-map-toolbar data-toolbar-side={application.preferences.toolbar.position} className="flex max-w-[calc(100vw-2rem)] flex-wrap items-start justify-end gap-2">
           {rulePanelCollapsed ? <ToolIconButton label="展开图层面板" icon={<Layers3 className="w-5 h-5" />} tone="green" onClick={() => setRulePanelCollapsed(false)} /> : <div className="flex items-start gap-1"><RuleButtonPanel
             activeButtonIds={activeRuleButtonIds}
             onToggle={toggleRuleButton}

@@ -1,10 +1,13 @@
+import { isCjkGlyph } from '../rendering/label/lineScriptMetrics';
+import { usesScriptAwareGlyphs } from '../rendering/label/lineScriptMetrics';
 import {resolveNodeFieldSettings} from '@/configStudio/nodeFieldSettings';
 import {recordWorld,recordPath} from '@/configStudio/structureRoleIndex';
 import {normalizeRuleSourceWorldId} from '@/components/Rules/data/ruleDataSources';
 import { isNativeConfigRevision } from '../../../configStudio/contract';
 import { featureLabelParts, componentLabelId, filterFeatureGeometryParts } from '@/components/Rules/rendering/multipartLabels';
 import { iconBoundsAtAnchor, type LabelPlacement } from '@/components/Rules/rendering/labelPlacement';
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { subscribeSymbolAssets, symbolAssetEpoch } from '../rendering/symbolAssets';
 
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -48,7 +51,7 @@ import {
   compareFloorDisplayOrder,
   formatFloorDisplayLabel,
 } from "@/components/Rules/rendering/order/floorDisplayOrder";
-import { makeLabelDivIcon } from "@/components/Rules/rendering/labelStyles";
+import { makeLabelDivIcon, labelStyleSignature } from "@/components/Rules/rendering/labelStyles";
 import {
   createHighlightLayerForFeature,
   makeClickableLabelMarker,
@@ -1120,6 +1123,7 @@ function disableAdvancedLineText(
   req: LabelRequest,
   reason: string,
 ): LabelRequest {
+  if(usesScriptAwareGlyphs(req.displayAnchor)&&req.displayAnchor?.lineTextRepositionMode==='chainageSearch'&&req.displayAnchor?.lineTextRepositionStrictSvg!==false)return {...req,advancedTextSuppressed:true,textPathBudgetStatus:reason.includes('Budget')||reason==='budgetExceeded'?'budgetExceeded':'disabled',textPathFallbackReason:reason,glyphPathBudgetStatus:'budgetExceeded'} as LabelRequest;
   return {
     ...req,
     lineTextMode: "rotatedLabel",
@@ -1162,11 +1166,12 @@ function applyAdvancedLineTextBudget(
     return disableAdvancedLineText(req, "advancedTextDisabled");
   }
 
-  if ((anchor as any).lineTextRepositionMode === "chainageSearch") {
+  const authoredBudget=Number.isFinite(Number(anchor.advancedLineTextMaxLabels))||Number.isFinite(Number(anchor.advancedLineTextMaxCandidatesPerPass));
+  if ((anchor as any).lineTextRepositionMode === "chainageSearch" && !authoredBudget && !usesScriptAwareGlyphs(anchor)) {
     const cjkGlyphPathMode = (anchor as any).cjkGlyphPathMode ?? "auto";
-    const glyphCount = countRenderableGlyphs(req.text);
+    const glyphCount = usesScriptAwareGlyphs(anchor) ? Array.from(req.text).length : countRenderableGlyphs(req.text);
     const wantsCjkGlyphPath =
-      isMostlyCjkText(req.text) && cjkGlyphPathMode !== "off" && glyphCount > 0;
+      (isMostlyCjkText(req.text) || usesScriptAwareGlyphs(req.displayAnchor)) && cjkGlyphPathMode !== "off" && glyphCount > 0;
     return {
       ...req,
       textPathBudgetStatus: "allowed",
@@ -1195,9 +1200,9 @@ function applyAdvancedLineTextBudget(
   }
 
   const cjkGlyphPathMode = (anchor as any).cjkGlyphPathMode ?? "auto";
-  const glyphCount = countRenderableGlyphs(req.text);
+  const glyphCount = usesScriptAwareGlyphs(anchor) ? Array.from(req.text).length : countRenderableGlyphs(req.text);
   const wantsCjkGlyphPath =
-    isMostlyCjkText(req.text) && cjkGlyphPathMode !== "off" && glyphCount > 0;
+    (isMostlyCjkText(req.text) || usesScriptAwareGlyphs(req.displayAnchor)) && cjkGlyphPathMode !== "off" && glyphCount > 0;
   const glyphMaxCount = Number.isFinite(
     Number((anchor as any).cjkGlyphMaxCount),
   )
@@ -1206,7 +1211,7 @@ function applyAdvancedLineTextBudget(
 
   if (wantsCjkGlyphPath) {
     if (
-      glyphCount > glyphMaxCount ||
+      (usesScriptAwareGlyphs(anchor)?Array.from(req.text).filter(isCjkGlyph).length:glyphCount) > glyphMaxCount ||
       budget.glyphLabelsUsed + 1 > MAX_CJK_GLYPH_PATH_LABELS ||
       budget.glyphsUsed + glyphCount > MAX_TOTAL_CJK_GLYPHS
     ) {
@@ -1726,6 +1731,8 @@ export default function RuleDrivenLayer(props: Props) {
     configRuntime,
     bypassButtonFilter = false,
   } = props;
+
+  const symbolAssetsRevision = useSyncExternalStore(subscribeSymbolAssets, symbolAssetEpoch);
 
   const worldDataset = useRuleDataStore((s) => s.datasets[worldId] ?? null);
   const ensureWorldLoaded = useRuleDataStore((s) => s.ensureWorldLoaded);
@@ -3164,6 +3171,7 @@ export default function RuleDrivenLayer(props: Props) {
         glyphLabelsUsed: 0,
         glyphsUsed: 0,
       };
+      const labelFontFamily = getComputedStyle(map.getContainer()).fontFamily || "Helvetica Neue, Arial, Helvetica, sans-serif";
       const declutterLabelMeta = new Map<
         string,
         { styleKey: any; plan: LabelClickPlan | null; deletePick: boolean }
@@ -3761,6 +3769,10 @@ export default function RuleDrivenLayer(props: Props) {
               req.text,
               reqRotateDeg,
             );
+            if (typeof styleKey === "object" && styleKey?.key === "custom_pill_1" && styleKey.customPill) {
+              req.customPill = { size: styleKey.fontSize, settings: styleKey.customPill.settings };
+              req.font = `700 ${styleKey.fontSize}px ${labelFontFamily}`;
+            }
             declutterLabelMeta.set(req.id, {
               styleKey,
               plan: effectiveFeatureClickPlan,
@@ -3909,6 +3921,7 @@ export default function RuleDrivenLayer(props: Props) {
               : row.priority;
           if (p.hidden) {
             const step =
+              p.textPathBudgetStatus === "budgetExceeded" ? "advanced-budget" :
               (p as any).lineTextRepositionMode === "chainageSearch"
                 ? (p as any).lineTextRepositionFailureReason === "viewport"
                   ? "viewport"
@@ -3926,6 +3939,7 @@ export default function RuleDrivenLayer(props: Props) {
               row,
               step as LineLabelAuditBlockedStep,
               (p as any).lineTextRepositionFailureReason ??
+                p.textPathFallbackReason ??
                 p.hiddenReason ??
                 "hidden by layout",
             );
@@ -4046,12 +4060,7 @@ export default function RuleDrivenLayer(props: Props) {
             finalRotateDeg,
           );
 
-          const styleKeyCache =
-            typeof styleKey === "string"
-              ? styleKey
-              : styleKey && typeof styleKey === "object"
-                ? `${String((styleKey as any).key ?? "")}@${String((styleKey as any).color ?? "")}@${String((styleKey as any).rotateDeg ?? "")}`
-                : String(styleKey);
+          const styleKeyCache = labelStyleSignature(styleKey);
 
           const lineTextMode =
             (p as any).lineTextMode ?? (req as any).lineTextMode;
@@ -4096,7 +4105,7 @@ export default function RuleDrivenLayer(props: Props) {
             advancedTextAllowed &&
             glyphBudgetStatus === "allowed" &&
             cjkGlyphPathMode !== "off" &&
-            isMostlyCjkText(p.text);
+            (isMostlyCjkText(p.text) || usesScriptAwareGlyphs(displayAnchor));
           const cjkGlyphFallbackMode =
             displayAnchor.cjkGlyphFallbackMode ??
             (displayAnchor.cjkGlyphAllowTextPathFallback === true
@@ -4227,7 +4236,7 @@ export default function RuleDrivenLayer(props: Props) {
           ) {
             b.label.setLatLng(ll);
           } else {
-            if (b.label) clearBundleLabel(b, root);
+            if (b.label) clearBundleLabel(b, root, existingIsLineTextMarker && usesScriptAwareGlyphs(displayAnchor));
             if (glyphPathMarker) {
               b.label = glyphPathMarker;
             } else if (textPathMarker) {
@@ -4475,6 +4484,7 @@ export default function RuleDrivenLayer(props: Props) {
     hoveredUid,
     searchFocusedUid,
     configRuntime,
+    symbolAssetsRevision,
   ]);
 
   const showFloorUI = mobileFloorVisible;
@@ -4532,16 +4542,17 @@ function createLayerBundle(
       ? rawClick(r, ctx, store)
       : rawClick
     : null;
+  const assetPending = (typeof symbol?.point === 'function' ? symbol.point(r,ctx,store) : symbol?.point)?.assetStatus === 'pending';
   const clickEnabled = !!(clickPlan && (clickPlan as any).enabled);
-  const assistPickTarget = !!(assistPickActive && isAssistPickTargetFeature(r));
-  const deletePickTarget = !!(deletePickActive && isDeletePickTargetFeature(r));
+  const assistPickTarget = !!(!assetPending && assistPickActive && isAssistPickTargetFeature(r));
+  const deletePickTarget = !!(!assetPending && deletePickActive && isDeletePickTargetFeature(r));
   const pickModeActive = assistPickActive || deletePickActive;
   const normalClickSuppressed = featureInteractionSuppressed && !pickModeActive;
   const effectiveClickPlan = pickModeActive || normalClickSuppressed ? null : clickPlan;
 
   // 【新增】几何点击扩展（最小入侵）：在规则的 labelClick.geom 开启后，点击主几何也触发与 label 点击一致的效果。
   // - 仅在 mode === 'normal' 时生效；labelOnly 下主几何被隐藏且不可交互。
-  const geomAllowed = !!(clickEnabled && (clickPlan as any)?.mode === "normal");
+  const geomAllowed = !!(!assetPending && clickEnabled && (clickPlan as any)?.mode === "normal");
   const geomPointEnabled =
     !pickModeActive && !normalClickSuppressed && !!(geomAllowed && (clickPlan as any)?.geom?.point);
   const geomPathEnabled =
@@ -4944,14 +4955,15 @@ function updateLayerBundle(
       ? rawClick(r, ctx, store)
       : rawClick
     : null;
+  const assetPending = (typeof symbol?.point === 'function' ? symbol.point(r,ctx,store) : symbol?.point)?.assetStatus === 'pending';
   const clickEnabled = !!(clickPlan && (clickPlan as any).enabled);
-  const assistPickTarget = !!(assistPickActive && isAssistPickTargetFeature(r));
-  const deletePickTarget = !!(deletePickActive && isDeletePickTargetFeature(r));
+  const assistPickTarget = !!(!assetPending && assistPickActive && isAssistPickTargetFeature(r));
+  const deletePickTarget = !!(!assetPending && deletePickActive && isDeletePickTargetFeature(r));
   const pickModeActive = assistPickActive || deletePickActive;
   const normalClickSuppressed = featureInteractionSuppressed && !pickModeActive;
   const effectiveClickPlan = pickModeActive || normalClickSuppressed ? null : clickPlan;
 
-  const geomAllowed = !!(clickEnabled && (clickPlan as any)?.mode === "normal");
+  const geomAllowed = !!(!assetPending && clickEnabled && (clickPlan as any)?.mode === "normal");
   const geomPointEnabled =
     !pickModeActive && !normalClickSuppressed && !!(geomAllowed && (clickPlan as any)?.geom?.point);
   const geomPathEnabled =
@@ -5019,6 +5031,7 @@ function updateLayerBundle(
       if (bundle.main instanceof L.CircleMarker) {
         const style = plan?.kind === 'circle' ? (plan.style ?? {}) : {};
         bundle.main.setStyle(style);
+        if(plan?.kind==='circle' && Number.isFinite(plan.radius))bundle.main.setRadius(Number(plan.radius));
         bundle.main.setLatLng(center);
       } else if (bundle.main instanceof L.Marker) {
         bundle.main.setLatLng(center);
@@ -5096,7 +5109,7 @@ function updateLayerBundle(
     const nextHitProxySignature = nativeHitProxySignature('point', pointTolerance, pointProxyRadius, nativePointHitEnabled);
     const nextMarkerInteractive = nativePointHitEnabled ? false : (deletePickTarget ? true : geomPointEnabled);
     const curMarkerInteractive =
-      bundle.kind === "marker"
+      (bundle.kind === "marker" || bundle.kind === "circleMarker")
         ? !!(bundle.main as any)?.options?.interactive
         : undefined;
     const curHasHitProxy = !!bundle.hitProxy;
@@ -5106,7 +5119,7 @@ function updateLayerBundle(
       nextKind !== bundle.kind ||
       nextPointSignature !== bundle.pointSignature ||
       nextIconUrl !== bundle.iconUrl ||
-      (bundle.kind === "marker" &&
+      ((bundle.kind === "marker" || bundle.kind === "circleMarker") &&
         curMarkerInteractive !== nextMarkerInteractive) ||
       curHasHitProxy !== nextHasHitProxy ||
       bundle.hitProxySignature !== nextHitProxySignature
@@ -5149,6 +5162,7 @@ function updateLayerBundle(
     ) {
       const style = plan?.kind === "circle" ? (plan.style ?? {}) : {};
       if (style) bundle.main.setStyle(style);
+      if(plan?.kind==='circle' && Number.isFinite(plan.radius))bundle.main.setRadius(Number(plan.radius));
       bundle.main.setLatLng(latlng);
     }
 

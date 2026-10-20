@@ -1,3 +1,4 @@
+import { scriptGlyphWidths, scriptSpacing, usesScriptAwareGlyphs } from './lineScriptMetrics';
 import * as L from "leaflet";
 import type {
   CjkGlyphRotationPolicy,
@@ -14,6 +15,7 @@ export type CjkGlyphPathGlyph = {
   localAngleDeg: number;
   chainagePx: number;
   isCjk: boolean;
+  widthPx?: number;
 };
 
 export type CjkGlyphPathPlan = {
@@ -47,6 +49,7 @@ export type CjkGlyphPathBuildOptions = {
   pathLatLngs: L.LatLng[];
   anchor?: Partial<DisplayAnchorConfig> | null;
   fontSizePx?: number;
+  font?: string;
   cacheKeyHint?: string;
   metricsOnly?: boolean;
 };
@@ -87,6 +90,9 @@ const CACHE_MAX = 2500;
 const approxMetricsCache = new Map<string, CjkGlyphPathBuildResult>();
 
 type BaseGlyphPath = {
+  scriptAware?: boolean;
+  positions?: number[];
+  widths?: number[];
   anchor: Partial<DisplayAnchorConfig>;
   chars: string[];
   points: L.Point[];
@@ -264,15 +270,15 @@ function boundsForPoints(points: L.Point[]) {
   return { minX, minY, maxX, maxY };
 }
 
-function rotateBoxCorners(cx: number, cy: number, half: number, angle: number): L.Point[] {
+function rotateBoxCorners(cx: number, cy: number, half: number, angle: number, width = half * 2): L.Point[] {
   const rad = (angle * Math.PI) / 180;
   const cos = Math.cos(rad);
   const sin = Math.sin(rad);
   const base = [
-    [-half, -half],
-    [half, -half],
-    [half, half],
-    [-half, half],
+    [-width / 2, -half],
+    [width / 2, -half],
+    [width / 2, half],
+    [-width / 2, half],
   ];
   return base.map(([x, y]) => L.point(cx + x * cos - y * sin, cy + x * sin + y * cos));
 }
@@ -284,7 +290,7 @@ function buildGlyphCollisionRect(
 ) {
   const corners: L.Point[] = [];
   const half = Math.max(8, fontSizePx * 0.62);
-  for (const g of glyphs) corners.push(...rotateBoxCorners(g.x, g.y, half, g.rotateDeg));
+  for (const g of glyphs) corners.push(...rotateBoxCorners(g.x, g.y, half, g.rotateDeg, g.widthPx));
   const b = boundsForPoints(corners.length ? corners : glyphs.map((g) => L.point(g.x, g.y)));
   return {
     x: b.minX - paddingPx,
@@ -332,6 +338,8 @@ function cacheKey(options: CjkGlyphPathBuildOptions, mode: "approx" | "plan"): s
     zoom,
     options.text,
     pathKey,
+    JSON.stringify(a),
+    options.font ?? "",
     a.cjkGlyphPathMode ?? "auto",
     a.cjkGlyphRotationPolicy ?? "uprightWhenSteep",
     a.cjkGlyphUprightAngleThresholdDeg ?? DEFAULT_UPRIGHT_THRESHOLD_DEG,
@@ -362,19 +370,20 @@ function buildGlyphPathBase(options: CjkGlyphPathBuildOptions, key: string): Cjk
   if ((anchor.cjkGlyphPathMode ?? "auto") === "off") {
     return failure("fallbackCjkGlyphPathDisabled", "disabled", key);
   }
-  if (!isMostlyCjkText(options.text)) {
+  const scriptAware = usesScriptAwareGlyphs(anchor);
+  if (!scriptAware && !isMostlyCjkText(options.text)) {
     return failure("fallbackCjkGlyphPathDisabled", "notCjk", key);
   }
-  const chars = glyphChars(options.text);
+  const chars = scriptAware ? Array.from(options.text) : glyphChars(options.text);
   if (!chars.length) return failure("fallbackCjkGlyphPathDisabled", "emptyText", key);
   const maxGlyphs = Math.max(1, finiteNumber(anchor.cjkGlyphMaxCount, DEFAULT_MAX_GLYPHS));
-  if (chars.length > maxGlyphs) {
+  if ((scriptAware ? chars.filter(isCjkChar).length : chars.length) > maxGlyphs || scriptAware && chars.length > 256) {
     return failure("fallbackCjkGlyphPathTextTooLong", "tooManyGlyphs", key);
   }
 
   const rawPoints = pointsFromLatLngs(options.map, options.pathLatLngs);
   if (rawPoints.length < 2) return failure("fallbackMissingPath", "missingPath", key);
-  const points = anchor.cjkGlyphPreferReadableDirection === false
+  const points = (scriptAware ? anchor.textPathPreferReadableDirection : anchor.cjkGlyphPreferReadableDirection) === false
     ? rawPoints
     : preferReadableDirection(rawPoints);
   const len = pathLength(points);
@@ -391,7 +400,26 @@ function buildGlyphPathBase(options: CjkGlyphPathBuildOptions, key: string): Cjk
     return failure("fallbackCjkGlyphPathAngleTooSharp", "totalBendTooLarge", key);
   }
 
-  const fontSizePx = Math.max(8, finiteNumber(options.fontSizePx, DEFAULT_FONT_SIZE_PX));
+  const fontSizePx = Math.max(scriptAware ? 6 : 8, finiteNumber(options.fontSizePx, DEFAULT_FONT_SIZE_PX));
+  if (scriptAware) {
+    const spacingPx = scriptSpacing(totalBend(points), finiteNumber(anchor.textPathLetterSpacingPx,.5), finiteNumber(anchor.textPathCurvedLetterSpacingPx,1.8), finiteNumber(anchor.textPathCurvedSpacingMinBendDeg,30));
+    const widths = scriptGlyphWidths(options.text, options.font ?? '700 ' + fontSizePx + 'px system-ui,-apple-system,Segoe UI,Roboto,sans-serif', fontSizePx);
+    const cjkSpacing=Math.max(0,finiteNumber(anchor.cjkGlyphSpacingPx,2)),cjkAdvance=fontSizePx*1.05+cjkSpacing;
+    const cjkGaps=chars.slice(0,-1).map((char,i)=>isCjkChar(char)&&isCjkChar(chars[i+1]));
+    const gaps=cjkGaps.map(cjk=>cjk?cjkSpacing+fontSizePx*.05:spacingPx);
+    const padding = Math.max(0,finiteNumber(anchor.textPathPaddingPx,28));
+    const fixedMin = anchor.lineTextPathLengthMode === 'actualText' ? 0 : finiteNumber(anchor.textPathMinLengthPx,110);
+    if(len<fixedMin)return failure('fallbackCjkGlyphPathTooShort','pathTooShort',key);
+    let textWidth=widths.reduce((sum,width)=>sum+width,0)+gaps.reduce((sum,gap)=>sum+gap,0), compactUsed=false, advanceScale=1;
+    if(textWidth+padding*2>len){
+      const count=cjkGaps.filter(Boolean).length,needed=textWidth+padding*2-len,minScale=Math.max(.35,Math.min(1,finiteNumber(anchor.cjkGlyphMinAdvanceScale,.62)));
+      if((anchor.cjkGlyphCompactMode??'auto')!=='auto'||!count||needed>count*cjkAdvance*(1-minScale))return failure('fallbackCjkGlyphPathTooShort','pathTooShort',key);
+      const shrink=needed/count;for(let i=0;i<gaps.length;i++)if(cjkGaps[i])gaps[i]-=shrink;
+      textWidth-=needed;compactUsed=true;advanceScale=(cjkAdvance-shrink)/cjkAdvance;
+    }
+    const centers:number[]=[];let cursor=(len-textWidth)/2;for(let i=0;i<chars.length;i++){centers.push(cursor+widths[i]/2);cursor+=widths[i]+(gaps[i]??0);}
+    return {anchor,chars,points,lengthPx:len,fontSizePx,spacingPx,normalAdvancePx:fontSizePx,advancePx:fontSizePx,estimatedTextWidthPx:textWidth,compactUsed,advanceScale,scriptAware:true,positions:centers,widths};
+  }
   const spacingPx = Math.max(0, finiteNumber(anchor.cjkGlyphSpacingPx, DEFAULT_GLYPH_SPACING_PX));
   const normalAdvancePx = fontSizePx * 1.05 + spacingPx;
   const normalSpan = Math.max(fontSizePx, (chars.length - 1) * normalAdvancePx + fontSizePx);
@@ -433,7 +461,7 @@ function buildGlyphPathBase(options: CjkGlyphPathBuildOptions, key: string): Cjk
 
 function buildCjkGlyphPathApproxOnly(options: CjkGlyphPathBuildOptions): CjkGlyphPathBuildResult {
   const key = cacheKey(options, "approx");
-  const cached = approxMetricsCache.get(key);
+  const cached = usesScriptAwareGlyphs(options.anchor) ? undefined : approxMetricsCache.get(key);
   if (cached) return cached;
   const baseOrFailure = buildGlyphPathBase(options, key);
   if ("status" in baseOrFailure) {
@@ -443,7 +471,7 @@ function buildCjkGlyphPathApproxOnly(options: CjkGlyphPathBuildOptions): CjkGlyp
   const base = baseOrFailure;
   const collisionPaddingPx = Math.max(0, finiteNumber(base.anchor.cjkGlyphCollisionPaddingPx, DEFAULT_COLLISION_PADDING_PX));
   const metrics: CjkGlyphPathLayoutMetrics = {
-    collisionRect: approxTextBoxCollisionRect(base, collisionPaddingPx),
+    collisionRect: base.scriptAware ? buildGlyphCollisionRect(sampleGlyphs(base), base.fontSizePx, collisionPaddingPx) : approxTextBoxCollisionRect(base, collisionPaddingPx),
     pathLengthPx: base.lengthPx,
     estimatedTextWidthPx: base.estimatedTextWidthPx,
     glyphCount: base.chars.length,
@@ -462,6 +490,12 @@ function buildCjkGlyphPathApproxOnly(options: CjkGlyphPathBuildOptions): CjkGlyp
   return result;
 }
 
+function sampleGlyphs(base: BaseGlyphPath): CjkGlyphPathGlyph[] {
+  const cum=cumulativeLengths(base.points), start=(base.lengthPx-(base.chars.length-1)*base.advancePx)/2;
+  const policy=base.anchor.cjkGlyphRotationPolicy??'uprightWhenSteep', threshold=Math.max(0,finiteNumber(base.anchor.cjkGlyphUprightAngleThresholdDeg,45));
+  return base.chars.flatMap((char,i)=>{const chainagePx=base.positions?.[i]??start+i*base.advancePx,sampled=pointAtChainage(base.points,cum,chainagePx);if(!sampled)return [];const cjk=isCjkChar(char), angle=normalizeReadableAngle(sampled.angleDeg);return [{char,x:sampled.point.x,y:sampled.point.y,rotateDeg:base.scriptAware&&!cjk?sampled.angleDeg:resolveGlyphRotation(angle,policy,threshold),localAngleDeg:angle,chainagePx,isCjk:cjk,widthPx:base.widths?.[i]}];});
+}
+
 function buildCjkGlyphPathFullPlan(options: CjkGlyphPathBuildOptions): CjkGlyphPathBuildResult {
   const key = cacheKey(options, "plan");
   // RB_SLU_24: do not cache full glyph plans. They contain
@@ -472,29 +506,8 @@ function buildCjkGlyphPathFullPlan(options: CjkGlyphPathBuildOptions): CjkGlyphP
     return baseOrFailure;
   }
   const base = baseOrFailure;
-  const cum = cumulativeLengths(base.points);
-  const start = (base.lengthPx - (base.chars.length - 1) * base.advancePx) / 2;
-  const policy = base.anchor.cjkGlyphRotationPolicy ?? "uprightWhenSteep";
-  const threshold = Math.max(0, finiteNumber(base.anchor.cjkGlyphUprightAngleThresholdDeg, DEFAULT_UPRIGHT_THRESHOLD_DEG));
-  const glyphs: CjkGlyphPathGlyph[] = [];
-
-  for (let i = 0; i < base.chars.length; i++) {
-    const chainagePx = start + i * base.advancePx;
-    const sampled = pointAtChainage(base.points, cum, chainagePx);
-    if (!sampled) {
-      return failure("fallbackCjkGlyphPlanFailed", "planFailed", key);
-    }
-    const readableLocal = normalizeReadableAngle(sampled.angleDeg);
-    glyphs.push({
-      char: base.chars[i],
-      x: sampled.point.x,
-      y: sampled.point.y,
-      rotateDeg: resolveGlyphRotation(readableLocal, policy, threshold),
-      localAngleDeg: readableLocal,
-      chainagePx,
-      isCjk: isCjkChar(base.chars[i]),
-    });
-  }
+  const glyphs = sampleGlyphs(base);
+  if (glyphs.length !== base.chars.length) return failure("fallbackCjkGlyphPlanFailed", "planFailed", key);
 
   const collisionPaddingPx = Math.max(0, finiteNumber(base.anchor.cjkGlyphCollisionPaddingPx, DEFAULT_COLLISION_PADDING_PX));
   const collisionRect = buildGlyphCollisionRect(glyphs, base.fontSizePx, collisionPaddingPx);

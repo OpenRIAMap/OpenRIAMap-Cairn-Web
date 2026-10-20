@@ -12,11 +12,11 @@ import {validateV3WorkflowRecords} from '../../src/configStudio/workflowKernel';
 import {assertStructureTargets} from '../../src/configStudio/structureCommit';
 import type { ConfigPackageV3, MountedFeatureRecord } from '../../src/configStudio/types';
 
-export const rulesVersion='cairnmap-r11-production-1';
+export const rulesVersion='cairnmap-r12-production-1';
 export const validateConfiguration=validateConfigPackage;
 export async function validateConfigurationArchive(bytes:Uint8Array) {
   const config=await readRawNativePackage(new File([bytes], 'configuration.zip') as unknown as globalThis.File) as ConfigPackageV3;
-  if(config.contractRevision!==11)throw Error('Publication requires native contract r11; historical imports remain editable.');
+  if(![11,12].includes(config.contractRevision))throw Error('Publication requires native contract r11 or r12; historical imports remain editable.');
   const report=validateConfigPackage(config);
   if(!report.valid)throw Object.assign(Error('configuration-semantic-validation-failed'),{report});
   const zip=await JSZip.loadAsync(bytes),configBody=await zip.file('config.json')!.async('uint8array'),manifestBody=await zip.file('manifest.json')!.async('uint8array');

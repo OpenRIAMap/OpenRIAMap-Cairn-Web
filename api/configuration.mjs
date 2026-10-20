@@ -5,6 +5,8 @@ import {signDispatcherRequest} from './review-relay-transfer.mjs';
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET') return res.status(405).json({ error: 'method-not-allowed' });
+  const business = req.query?.purpose === 'business' || new URL(req.url ?? '/', 'https://cairn.invalid').searchParams.get('purpose') === 'business';
+  if (business && process.env.CAIRN_CONFIGURATION_RUNTIME_ENABLED !== 'true') return res.status(503).json({error:'configuration-runtime-not-active'});
   if(process.env.CAIRN_CONFIGURATION_RUNTIME_ENABLED==='true'){
     try{
       const base=process.env.CAIRN_CONTROL_API_BASE,secret=process.env.CAIRN_BROKER_TO_DISPATCHER_SECRET;
@@ -12,6 +14,7 @@ export default async function handler(req, res) {
       const body={operation:'configuration-active-read'},signed=signDispatcherRequest(body,secret);
       const response=await fetch(`${base.replace(/\/$/,'')}/v1/review-intents`,{method:'POST',headers:{'content-type':'application/json','x-cairn-timestamp':signed.timestamp,'x-cairn-signature':signed.signature},body:JSON.stringify(body),signal:AbortSignal.timeout(15000)});
       const value=await response.json();if(!response.ok||!value.identity?.configSha256)throw Error('configuration-authority-unavailable');
+      res.setHeader('X-Cairn-Configuration-Authority','scf');
       return res.status(200).json(value.identity);
     }catch{return res.status(503).json({error:'formal-configuration-unavailable'});}
   }

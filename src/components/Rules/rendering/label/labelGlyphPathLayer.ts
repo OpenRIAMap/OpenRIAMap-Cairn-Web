@@ -75,7 +75,7 @@ export function makeCjkGlyphPathLabelMarkerResult(
   const html = `
     <svg class="ria-line-textpath-svg ria-line-glyphpath-svg" width="${plan.width}" height="${plan.height}" viewBox="${plan.viewBox}" aria-hidden="true" style="overflow:visible;pointer-events:auto">
       <style>
-        .ria-line-textpath{font:${style.fontWeight} ${style.fontSize}px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:${safeFill};stroke:${safeStroke};stroke-width:${style.strokeWidth}px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}
+        .ria-line-textpath{white-space:pre;font:${style.fontWeight} ${style.fontSize}px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;fill:${safeFill};stroke:${safeStroke};stroke-width:${style.strokeWidth}px;paint-order:stroke;stroke-linejoin:round;dominant-baseline:central;pointer-events:auto;cursor:pointer;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}
       </style>
       <rect x="0" y="0" width="${plan.width}" height="${plan.height}" fill="transparent" pointer-events="all" />
       <g>${glyphBody}</g>

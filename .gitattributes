@@ -124,3 +124,9 @@ scripts/config-tools/json-handbook/* text eol=lf
 docs/90_roadmap-and-history/runtime-v32-production-promotion-20261017/*.md text eol=lf
 docs/90_roadmap-and-history/runtime-v32-production-promotion-20261017/*.json text eol=lf
 docs/90_roadmap-and-history/runtime-v32-production-promotion-20261017/*.log text eol=lf
+
+# r12 fixed icon assets and JSON reading artifacts carry byte digests.
+/public/icons/pinhead/** text eol=lf
+/src/configStudio/pinhead-*.generated.json text eol=lf
+/docs/20_config-reference/runtime-v32-json-handbook-r12-20261020/* text eol=lf
+/docs/90_roadmap-and-history/point-label-startup-v12-20261020/* text eol=lf

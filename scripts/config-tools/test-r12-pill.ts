@@ -1,0 +1,34 @@
+import { migrateConfigToR12 } from '../../src/configStudio/r12Migration';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { createCustomPill, customPillErrors, customPillMetrics } from '../../src/configStudio/customPill';
+import { validateConfigPackage } from '../../src/configStudio/runtime';
+import type { ConfigPackageV3 } from '../../src/configStudio/types';
+
+const pill = createCustomPill();
+const base = customPillMetrics(13, pill, 30);
+assert.equal(base.paddingX, 7); assert.equal(base.paddingY, 3); assert.equal(base.height, 19);
+assert.equal(base.width, 44); assert.equal(base.radius, 8);
+const zero = customPillMetrics(6.5, { ...pill, paddingXRatio: 0, paddingYRatio: 0, radiusRatio: 0 }, 9);
+assert.equal(zero.width, 9); assert.equal(zero.height, 6.5); assert.equal(zero.radius, 0);
+const border = customPillMetrics(13, { ...pill, strokeWidth: 2 }, 30);
+assert.equal(border.width, 48); assert.equal(border.height, 23);
+assert.equal(customPillMetrics(13, { ...pill, radiusRatio: 10 }, 30).radius, 9.5);
+for (const bad of [-1, NaN, Infinity, 11]) assert(customPillErrors(13, { ...pill, radiusRatio: bad }).length);
+assert(customPillErrors(13, { ...pill, lineHeightRatio: 0 }).length);
+assert.equal(customPillErrors(13, pill).length, 0);
+const binding = { mode: 'fixed' as const, color: '#123456' }, copied = createCustomPill(binding);
+binding.color = '#ffffff'; assert.equal((copied.backgroundColor as typeof binding).color, '#123456');
+
+const identity = JSON.parse(fs.readFileSync('public/configuration/current.json', 'utf8'));
+const config = JSON.parse(fs.readFileSync('public' + identity.configUrl, 'utf8')) as ConfigPackageV3;
+assert.equal(validateConfigPackage(config).valid, true, 'unmodified registered r9/r11 remains valid');
+const next = migrateConfigToR12(config).config;
+const rule = next.nodes.flatMap(n => Object.values(n.geometryProfiles)).flatMap(p => p?.zoomPriority.rules ?? []).find(r => r.label?.style)!;
+rule.label!.style = { family: 'custom_pill_1', size: 13, pill: createCustomPill() };
+assert.equal(validateConfigPackage(next).valid, true, 'r12 supports complete capsule values');
+rule.label!.style.pill!.lineHeightRatio = 0;
+assert(validateConfigPackage(next).issues.some(i => i.code === 'custom-pill-invalid'));
+rule.label!.style.pill = createCustomPill(); next.contractRevision = 11;
+assert(validateConfigPackage(next).issues.some(i => i.code === 'custom-pill-revision'));
+console.log('r12 pill: geometry, zero values, decimals, border, independent bindings, bounds and r11 compatibility passed.');

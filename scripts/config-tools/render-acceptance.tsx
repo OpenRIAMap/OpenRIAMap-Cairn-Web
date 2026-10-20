@@ -1,3 +1,4 @@
+import { migrateConfigToR12 } from '../../src/configStudio/r12Migration';
 import { writeTemporaryRuleSources, writeTemporaryRuleOverrideIds, writeTemporaryRuleDeleteIds } from '../../src/components/Rules/data/temporaryRuleSession';
 import subjectSeed from '../../src/configStudio/defaults/r11-r7.config.json';
 // Local browser acceptance entry; never imported by the application entry point.
@@ -39,7 +40,7 @@ function Harness() {
   const dataset = useMemo(() => ({ features: (datasetOverride?.features ?? makeConfigPreviewFixture(config, node, scenario).features).map((feature) => ({ ...(feature as object), ...featurePatch })) }), [config, node, scenario, featurePatch, datasetOverride]);
   const projection = useMemo(() => new DynmapProjection(ZTH_FLAT_CONFIG), []);
   useEffect(() => {
-    api.acceptance = { map, config, dataset, setConfig, setDataset, setFeaturePatch, setTemporary:(items:unknown[],overrideIds:string[],deleteIds:string[])=>{writeTemporaryRuleSources({zth:[{uid:'acceptance-state',worldId:'zth',enabled:true,items}]});writeTemporaryRuleOverrideIds({zth:overrideIds});writeTemporaryRuleDeleteIds({zth:deleteIds});window.dispatchEvent(new CustomEvent('ria-temp-rule-sources-changed',{detail:{worldId:'zth'}}));}, compilationStats: () => configCompilationStats(runtimeConfig), geometry: resolveGeometryProfile(config, node.path, scenario.includes('Point') ? 'Point' : scenario.includes('Line') ? 'LineString' : 'Polygon'),
+    api.acceptance = { map, projection, config, dataset, setConfig, upgrade:()=>setConfig(current=>migrateConfigToR12(current).config), setDataset, setFeaturePatch, setTemporary:(items:unknown[],overrideIds:string[],deleteIds:string[])=>{writeTemporaryRuleSources({zth:[{uid:'acceptance-state',worldId:'zth',enabled:true,items}]});writeTemporaryRuleOverrideIds({zth:overrideIds});writeTemporaryRuleDeleteIds({zth:deleteIds});window.dispatchEvent(new CustomEvent('ria-temp-rule-sources-changed',{detail:{worldId:'zth'}}));}, compilationStats: () => configCompilationStats(runtimeConfig), geometry: resolveGeometryProfile(config, node.path, scenario.includes('Point') ? 'Point' : scenario.includes('Line') ? 'LineString' : 'Polygon'),
       roundTrip: async () => { const report = validateConfigPackage(config); const archive = await buildConfigPackageArchive(config, report); return readConfigPackage(new File([archive], 'acceptance.zip')); } };
   }, [map, config, runtimeConfig, dataset, node, scenario]);
   return <main style={{ height: 900, width: 1200, margin: 20 }}>

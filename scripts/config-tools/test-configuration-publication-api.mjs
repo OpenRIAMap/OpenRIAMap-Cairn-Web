@@ -35,7 +35,12 @@ try{
     assert.equal(options.headers['x-cairn-signature'],expected);
     return {ok:true,json:async()=>({identity:{configSha256:snapshot}})};
   };
-  const active=response();await configuration({method:'GET'},active);assert.equal(active.statusCode,200);assert.equal(active.body.configSha256,snapshot);assert.equal(active.headers['Cache-Control'],'no-store');
+  const active=response();await configuration({method:'GET'},active);assert.equal(active.statusCode,200);assert.equal(active.body.configSha256,snapshot);assert.equal(active.headers['Cache-Control'],'no-store');assert.equal(active.headers['X-Cairn-Configuration-Authority'],'scf');
+  const business=response();await configuration({method:'GET',url:'/api/configuration?purpose=business'},business);assert.equal(business.statusCode,200);assert.equal(business.headers['X-Cairn-Configuration-Authority'],'scf');
+  process.env.CAIRN_CONFIGURATION_RUNTIME_ENABLED='false';
+  globalThis.fetch=async()=>{throw Error('disabled business runtime must not fetch or use Web seed');};
+  const disabled=response();await configuration({method:'GET',query:{purpose:'business'}},disabled);assert.equal(disabled.statusCode,503);assert.equal(disabled.headers['X-Cairn-Configuration-Authority'],undefined);
+  process.env.CAIRN_CONFIGURATION_RUNTIME_ENABLED='true';
   globalThis.fetch=async()=>{throw Error('authority unavailable');};
   const unavailable=response();await configuration({method:'GET'},unavailable);assert.equal(unavailable.statusCode,503,'never silently use seed after an enabled authority fails');
   const query={purpose:'configuration-publication',mode:'popup',nonce:session.nonce,snapshotSha256:snapshot,baseSha256:base,baseIdentitySha256:session.baseIdentitySha256};

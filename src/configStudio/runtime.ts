@@ -2,6 +2,9 @@ import { isWorldGroups } from '../core/project/applicationResources';
 import { validateWorkflowWrites } from './workflowPreflight';
 import { migrateWorkflowDrawings } from './workflowDrawingMigration';
 import { validCssColor } from './cssColor';
+import { customPillErrors, pillColorBindings } from './customPill';
+import { pointSymbolProblems, pointSymbolBindings, ICON_LIBRARY } from './pointSymbol';
+import { unreachableLocalMappingRows } from './localMappingConstraints';
 let packageValidationRuns=0,workflowValidationRuns=0;
 /** Read-only QA counters: history pagination must never validate/compile trees. */
 export function configPreflightStats(){return {packageValidations:packageValidationRuns,workflowValidations:workflowValidationRuns,compilations:compiledEpoch};}
@@ -116,7 +119,7 @@ export function compileConfigRuntime(value: ConfigPackageV3, validated = false):
   for(const node of config.nodes)for(const profile of Object.values(node.geometryProfiles))for(const rule of profile?.zoomPriority.rules??[]) {
     if(rule.label?.sourceMode==='combined')labelTemplateTokens(rule.label);
     if(rule.when?.fields?.formula)compileRenderFormula(rule.when.fields.formula);
-    for(const binding of [rule.style?.stroke,rule.style?.fill,rule.label?.style?.color,...Object.values(rule.extensions?.interaction??{}).map(state=>state?.strokeColorBinding)])if(binding?.mode==='valueMap')resolveMappedColor(binding,undefined);
+    for(const binding of [rule.style?.stroke,rule.style?.fill,...pointSymbolBindings(rule.style?.pointSymbol).map(row=>row.value),rule.label?.style?.color,...pillColorBindings(rule.label?.style?.pill),...Object.values(rule.extensions?.interaction??{}).map(state=>state?.strokeColorBinding)])if(binding?.mode==='valueMap')resolveMappedColor(binding,undefined);
   }
   return config;
 }
@@ -462,7 +465,7 @@ function validateField(field: FieldDefinition, path: string, known: Set<string>,
   }
 }
 
-function validateRenderColorBinding(binding: unknown, config: ConfigPackageV3, sourcePath: ClassificationPath, path: string, issues: ConfigValidationIssue[]): void {
+export function validateRenderColorBinding(binding: unknown, config: ConfigPackageV3, sourcePath: ClassificationPath, path: string, issues: ConfigValidationIssue[]): void {
   if (!binding || typeof binding !== 'object') { issue(issues, 'error', 'render-color-binding-required', path, '渲染颜色必须设置为直接颜色、当前字段或外部要素字段。'); return; }
   const value = binding as { mode?: string; color?: string; field?: string; target?: ClassificationPath; targetIdField?: string; targetColorField?: string; strategy?: string };
   const fallback = (binding as {fallbackColor?:string}).fallbackColor;
@@ -567,6 +570,13 @@ function validateRuleLabel(
   const supportsModifiers = new Set(['gm-bw', 'gm-outline', 'gm-wtb', 'structure-label']);
   if ((visual.modifiers?.italic || visual.modifiers?.underline) && !supportsModifiers.has(visual.family)) issue(issues, 'error', 'label-style-modifier-invalid', rulePath, '斜体和下划线仅适用于无背景容器的文字样式。');
   const needsColor = visual.family === 'rle-line-color' || visual.family === 'rle-pill-color';
+  if (visual.family === 'custom_pill_1') {
+    if (config.contractRevision < 12) issue(issues, 'error', 'custom-pill-revision', rulePath, '自定义胶囊1需要 r12 契约。');
+    for (const error of customPillErrors(visual.size, visual.pill)) issue(issues, 'error', 'custom-pill-invalid', `${rulePath}/label/style/pill/${error.key}`, error.message);
+    if (visual.color || Object.values(visual.modifiers ?? {}).some(Boolean)) issue(issues, 'error', 'custom-pill-conflicting-style', rulePath, '自定义胶囊不能混用旧颜色或字体修饰。');
+    if (visual.pill) for (const key of ['textColor', 'backgroundColor', 'strokeColor'] as const)
+      validateRenderColorBinding(visual.pill[key], config, sourcePath, `${rulePath}/label/style/pill/${key}`, issues);
+  } else if (visual.pill) issue(issues, 'error', 'custom-pill-inactive', rulePath, '当前 Label 样式不能携带未启用的胶囊设置。');
   if (needsColor) validateRenderColorBinding(visual.color, config, sourcePath, `${rulePath}/label/style/color`, issues);
   if (!needsColor && visual.color) issue(issues, 'warning', 'label-style-color-ignored', rulePath, '当前样式族使用固定的 V1 调色板，颜色绑定不会生效。');
 }
@@ -629,6 +639,17 @@ function validateRuleExtensions(rule: ZoomPriorityRule, geometry: GeometryKind, 
     }
   }
   const line = extensions.lineLabel;
+  if (line && (line.orientationPolicy === 'scriptAware' || line.textPathLengthMode !== undefined) && config.contractRevision < 12) issue(issues,'error','line-script-revision',rulePath,'中英分流和实际文字路径长度需要契约 r12。');
+  if (line && config.contractRevision>=12) {
+    for(const [key,value] of Object.entries(line))if(typeof value==='number'&&(!Number.isFinite(value)||value<0))issue(issues,'error','line-setting-number-invalid',rulePath+'/lineLabel/'+key,'贴线数值必须是有限非负数。');
+    for(const key of ['maxTurnAngleDeg','textPathMaxAngleDeltaDeg','textPathVerticalAngleThresholdDeg','cjkGlyphUprightAngleThresholdDeg','cjkGlyphMaxAngleDeltaDeg'] as const)if(line[key]!==undefined&&line[key]!>180)issue(issues,'error','line-angle-invalid',rulePath+'/lineLabel/'+key,'局部角度必须介于 0–180°。');
+    for(const key of ['textPathVerticalLengthRatio','cjkGlyphMinAdvanceScale','textPathMaxHalfLengthRatio'] as const)if(line[key]!==undefined&&(line[key]!<0||line[key]!>1))issue(issues,'error','line-ratio-invalid',rulePath+'/lineLabel/'+key,'比例必须介于 0–1。');
+    for(const key of ['cjkGlyphMaxCount','advancedTextMaxLabels','advancedTextMaxCandidatesPerPass','candidateMax','anchorSamples'] as const)if(line[key]!==undefined&&(!Number.isInteger(line[key])||line[key]!<1))issue(issues,'error','line-count-invalid',rulePath+'/lineLabel/'+key,'预算和数量必须为正整数。');
+    if(line.orientationPolicy==='scriptAware'&&(line.cjkGlyphPathMode==='off'||line.advancedTextEnabled===false))issue(issues,'error','line-script-disabled',rulePath,'中英分流需要启用共享字形路径，不能同时关闭。');
+    if(line.orientationPolicy==='scriptAware'&&line.repositionMode==='chainageSearch'&&line.repositionStrictSvg!==false&&(line.cjkGlyphFallbackMode==='simpleLineLabel'||line.cjkGlyphFallbackMode==='rotatedLabel'||line.textPathFallback==='rotatedLabel'||line.repositionFailure==='simpleLineLabel'||line.simpleFallbackEnabled===true))issue(issues,'error','line-svg-fallback-conflict',rulePath,'严格 SVG 重定位不能同时声明 HTML／简单文字回退；请选择隐藏或明确的 SVG 路径回退。');
+    const background=['custom_pill_1','bubble-dark','rle-pill-color'].includes(rule.label?.style?.family??'');
+    if(background&&(line.textMode==='textPath'||line.advancedTextEnabled!==false&&(line.textMode==='auto'||line.orientationPolicy==='scriptAware'||line.profile==='strict-on-line')))issue(issues,'error','label-background-svg-capability',rulePath,'胶囊／气泡需要背景容器；当前纯文字贴线 SVG 不支持该样式，请选择普通标签模式。');
+  }
   const lineExtensionConfigured = Boolean(line && Object.entries(line).some(([key, value]) => key === 'profile' ? value !== 'inherit' : value !== undefined));
   if (lineExtensionConfigured && geometry !== 'LineString') issue(issues, 'error', 'line-label-extension-geometry-invalid', rulePath, '线 Label 扩展只能用于线要素。');
   if (line && line.maxTurnAngleDeg !== undefined && (!Number.isFinite(line.maxTurnAngleDeg) || line.maxTurnAngleDeg < 0 || line.maxTurnAngleDeg > 180)) issue(issues, 'error', 'line-label-turn-angle-invalid', rulePath, '线 Label 转角阈值必须介于 0 到 180 度。');
@@ -684,7 +705,7 @@ function validateProfile(profile: GeometryProfile, geometry: GeometryKind, path:
     if (config.contractRevision >= 7) {
       if (!rule.when || !Number.isInteger(min) || !Number.isInteger(max) || min! < 0 || max! > 8 || min! > max!) issue(issues, 'error', 'render-match-zoom-required', rulePath, 'r7 必须填写 0–8 的闭区间整数 Zoom，允许单级区间。');
       if (rule.minZoom !== undefined || rule.maxZoom !== undefined || rule.minExclusive !== undefined || rule.maxExclusive !== undefined || rule.conditionalOverrides !== undefined) issue(issues, 'error', 'render-legacy-match-forbidden', rulePath, 'r7 只使用 when.zoom 和非分类字段组合，不能保留旧匹配或分支。');
-      for (const message of validateRenderFields(rule.when?.fields, resolveSelectableFields(config, sourcePath), resolveSelectableFields(config, sourcePath).map(field => field.key))) issue(issues, 'error', 'render-field-condition-invalid', `${rulePath}/when/fields`, message);
+      for (const message of validateRenderFields(rule.when?.fields, resolveSelectableFields(config, sourcePath), resolveSelectableFields(config, sourcePath).map(field => field.key), config.contractRevision)) issue(issues, 'error', 'render-field-condition-invalid', `${rulePath}/when/fields`, message);
     } else if (rule.when) issue(issues, 'error', 'render-match-revision-invalid', rulePath, '组合规则需要原生 r7；旧包请先无损迁移。');
     if (!rule.representation) issue(issues, 'error', 'render-representation-required', rulePath, '渲染规则必须选择显示种类。');
     else if (!['hidden', 'geometry', 'point', 'labelOnly'].includes(rule.representation)) issue(issues, 'error', 'render-representation-invalid', rulePath, '未知显示种类。');
@@ -697,10 +718,11 @@ function validateProfile(profile: GeometryProfile, geometry: GeometryKind, path:
     if (style?.symbolOffsetPx && (!Number.isFinite(style.symbolOffsetPx.x) || !Number.isFinite(style.symbolOffsetPx.y))) issue(issues, 'error', 'render-symbol-offset-invalid', rulePath, '符号偏移必须为有限像素值。');
     if (style?.symbolAnchor && !['geometry', 'label'].includes(style.symbolAnchor) || style?.symbolVisibility && !['independent', 'withLabel'].includes(style.symbolVisibility)) issue(issues, 'error', 'render-symbol-policy-invalid', rulePath, '符号锚点或可见性策略无效。');
     if (rule.representation !== 'hidden' && !style) issue(issues, 'error', 'render-style-required', rulePath, '非隐藏渲染规则必须定义显示效果。');
-    if (style) {
+    if (config.contractRevision >= 12 && rule.representation !== 'hidden' && (geometry === 'Point' || rule.representation === 'point') && !style?.pointSymbol) issue(issues,'error','point-symbol-required',rulePath,'r12 点状显示必须使用单一 pointSymbol；旧 hide 图片需要明确确认回退。');
+    if (style && !style.pointSymbol) {
       if (style.size !== undefined && (!Number.isFinite(style.size) || style.size <= 0)) issue(issues, 'error', 'render-size-invalid', rulePath, '点符号大小必须为正数。');
       if (style.weight !== undefined && (!Number.isFinite(style.weight) || style.weight < 0)) issue(issues, 'error', 'render-stroke-width-invalid', rulePath, '描边粗细必须为非负数。');
-      if (!Number.isFinite(style.strokeOpacity) || style.strokeOpacity < 0 || style.strokeOpacity > 1) issue(issues, 'error', 'render-stroke-opacity-invalid', rulePath, '描边透明度必须在 0 到 1 之间。');
+      if (!Number.isFinite(style.strokeOpacity) || (style.strokeOpacity ?? -1) < 0 || (style.strokeOpacity ?? -1) > 1) issue(issues, 'error', 'render-stroke-opacity-invalid', rulePath, '描边透明度必须在 0 到 1 之间。');
       if (style.fillOpacity !== undefined && (!Number.isFinite(style.fillOpacity) || style.fillOpacity < 0 || style.fillOpacity > 1)) issue(issues, 'error', 'render-fill-opacity-invalid', rulePath, '填色透明度必须在 0 到 1 之间。');
       validateRenderColorBinding(style.stroke, config, sourcePath, `${rulePath}/style/stroke`, issues);
       if (style.fill) validateRenderColorBinding(style.fill, config, sourcePath, `${rulePath}/style/fill`, issues);
@@ -713,7 +735,19 @@ function validateProfile(profile: GeometryProfile, geometry: GeometryKind, path:
         if (!Array.isArray(style.icon.anchor) || style.icon.anchor.length !== 2 || style.icon.anchor.some((value) => !Number.isFinite(value))) issue(issues, 'error', 'render-icon-anchor-invalid', rulePath, '图标锚点必须是两个有限数字。');
       }
     }
+    if (style?.pointSymbol) {
+      if (config.contractRevision < 12) issue(issues, 'error', 'point-symbol-revision', rulePath, '新点符号来源需要 r12 契约。');
+      if (geometry !== 'Point' && rule.representation !== 'point') issue(issues, 'error', 'point-symbol-geometry', rulePath, '点符号仅用于点或明确的点状表示。');
+      for (const key of ['icon','pointShape','size','weight','stroke','fill','strokeOpacity','fillOpacity','lineCap','lineJoin'] as const)
+        if (style[key] !== undefined) issue(issues, 'error', 'point-symbol-conflicting-style', `${rulePath}/style/${key}`, '点符号不能同时保留旧外观来源。');
+      for (const row of pointSymbolProblems(style.pointSymbol, resolveSelectableFields(config, sourcePath), config))
+        issue(issues, 'error', 'point-symbol-invalid', `${rulePath}/style/pointSymbol/${row.path}`, row.message);
+      for (const row of pointSymbolBindings(style.pointSymbol)) validateRenderColorBinding(row.value, config, sourcePath, `${rulePath}/style/pointSymbol/${row.path}`, issues);
+    }
     validateRuleLabel(rule, rulePath, config, sourcePath, issues);
+    if (config.contractRevision >= 12) for (const row of unreachableLocalMappingRows(rule,resolveSelectableFields(config,sourcePath))) {
+      issue(issues, 'error', 'render-mapping-unreachable', `${rulePath}/${row.path}`, '本地映射行与完整字段条件／外层映射值存在可证明的冲突。');
+    }
     const metric = rule.priority?.metric;
     if (metric && !allowedMetrics(geometry).has(metric.kind)) issue(issues, 'error', 'dynamic-priority-metric-geometry-invalid', rulePath, `${metric.kind} 不适用于 ${geometry}。`);
     if (metric && (!Number.isFinite(metric.multiplier) || (metric.divisor !== undefined && (!Number.isFinite(metric.divisor) || metric.divisor === 0)) || (metric.min !== undefined && metric.max !== undefined && metric.min > metric.max))) issue(issues, 'error', 'dynamic-priority-invalid', rulePath, '动态优先级的倍率、除数或上下界无效。');
@@ -729,8 +763,14 @@ function validateProfile(profile: GeometryProfile, geometry: GeometryKind, path:
         validateCondition(condition, `${overridePath}/when/${conditionIndex}`, issues);
         if ((condition.kind === 'fieldEquals' || condition.kind === 'fieldIn' || condition.kind === 'fieldPresent') && !sourceExists(condition.field, new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key)))) issue(issues, 'error', 'render-conditional-override-field-invalid', `${overridePath}/when/${conditionIndex}`, '字段条件必须使用当前分类的有效字段。', { field: condition.field });
       }
-      if (override.style) {
-        if (!Number.isFinite(override.style.strokeOpacity) || override.style.strokeOpacity < 0 || override.style.strokeOpacity > 1) issue(issues, 'error', 'render-conditional-style-opacity-invalid', overridePath, '条件覆盖的描边透明度必须在 0 到 1 之间。');
+      if (override.style?.pointSymbol) {
+        if(config.contractRevision<12) issue(issues,'error','point-symbol-revision',overridePath,'点符号需要契约 r12。');
+        for(const row of pointSymbolProblems(override.style.pointSymbol,resolveSelectableFields(config,sourcePath),config))issue(issues,'error','point-symbol-invalid',overridePath+'/style/pointSymbol/'+row.path,row.message);
+        for(const row of pointSymbolBindings(override.style.pointSymbol))validateRenderColorBinding(row.value,config,sourcePath,overridePath+'/style/pointSymbol/'+row.path,issues);
+        for(const key of ['icon','pointShape','size','weight','stroke','fill','strokeOpacity','fillOpacity','lineCap','lineJoin'] as const)if(override.style[key]!==undefined)issue(issues,'error','point-symbol-conflicting-style',overridePath+'/style/'+key,'条件覆盖不可同时保存旧点外观。');
+      }
+      if (override.style && !override.style.pointSymbol) {
+        if (!Number.isFinite(override.style.strokeOpacity) || (override.style.strokeOpacity ?? -1) < 0 || (override.style.strokeOpacity ?? -1) > 1) issue(issues, 'error', 'render-conditional-style-opacity-invalid', overridePath, '条件覆盖的描边透明度必须在 0 到 1 之间。');
         validateRenderColorBinding(override.style.stroke, config, sourcePath, `${overridePath}/style/stroke`, issues);
         if (override.style.fill) validateRenderColorBinding(override.style.fill, config, sourcePath, `${overridePath}/style/fill`, issues);
       }
@@ -1232,6 +1272,10 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   const issues: ConfigValidationIssue[] = [];
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: false, createdAt: new Date().toISOString(), issues: structure.map(item => ({ severity: 'error', code: 'native-contract-structure-invalid', ...item })) };
+  if(config.resources){
+    if(config.contractRevision<12)issue(issues,'error','icon-resources-revision','resources','图标资源能力需要契约 r12。');
+    const seen=new Set<string>();for(const item of config.resources.iconLibraries){if(seen.has(item.library))issue(issues,'error','icon-resource-duplicate','resources','同一图库只能声明一次。');seen.add(item.library);if(item.library!==ICON_LIBRARY.library||item.version!==ICON_LIBRARY.version||item.manifestSha256!==ICON_LIBRARY.manifestSha256)issue(issues,'error','icon-resource-unsupported','resources','图库版本或资源摘要不在当前支持的固定清单中。');}
+  }
   if(config.contractRevision>=11)for(const button of config.application?.buttons.items??[]){const rows=button.criteria.paths;if(!rows)issue(issues,'error','button-path-migration-required',`application/buttons/${button.id}`,'r11 按钮需要完整分类路径。');else for(const [index,row] of rows.entries()){if(!hasCategoryNode(config,row))issue(issues,'error','button-path-invalid',`application/buttons/${button.id}/${index}`,'按钮显示内容不是有效分类路径。');if(rows.some((other,at)=>at!==index&&Object.entries(other).every(([key,value])=>!value||row[key as keyof ClassificationPath]===value)))issue(issues,'warning','button-path-redundant',`application/buttons/${button.id}/${index}`,'该范围已被另一条上级或重复范围包含，可删除冗余行。');}}
   if(config.contractRevision<11&&config.application&&isWorldGroups(config.application.sources))issue(issues,'error','resource-groups-revision','application/sources','World resource groups require contract r11.');
   if(config.contractRevision>=10&&!config.application)issue(issues,'error','application-required','application','r10 完整应用包必须包含总体规则。');

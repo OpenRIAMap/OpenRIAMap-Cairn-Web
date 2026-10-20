@@ -184,7 +184,8 @@ export type DisplayTextPathFallback =
 export type DisplayLineTextOrientationPolicy =
   | 'autoCjkUpright'
   | 'alwaysTextPath'
-  | 'alwaysRotated';
+  | 'alwaysRotated'
+  | 'scriptAware';
 
 export type CandidateWeightMode =
   | 'none'
@@ -391,6 +392,7 @@ export type DisplayAnchorConfig = {
   textPathCurvedLetterSpacingPx?: number;
   textPathCurvedSpacingMinBendDeg?: number;
   lineTextOrientationPolicy?: DisplayLineTextOrientationPolicy;
+  lineTextPathLengthMode?: 'fixed'|'actualText';
   textPathVerticalAngleThresholdDeg?: number;
   textPathVerticalLengthRatio?: number;
 
