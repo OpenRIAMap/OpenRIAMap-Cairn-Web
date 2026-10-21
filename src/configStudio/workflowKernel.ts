@@ -1,4 +1,5 @@
 import { tagRecordErrors } from './standardTagFields';
+import { validateStructuredValue } from './valueSchema';
 import { applicationWorld } from '../core/project/applicationRuntime';
 import { coerceWorkflowValues } from './workflowValues';
 import { resolveNodeFieldSettings } from './nodeFieldSettings';
@@ -247,6 +248,7 @@ export function validateV3WorkflowRecords(config: ConfigPackageV3, workflow: Wor
       const required = field.required || field.requiredWhen?.some(condition => condition.kind === 'always' || condition.kind === 'fieldPresent' && !empty(readRecordPath(output.record, condition.field)) === condition.present || condition.kind === 'fieldEquals' && String(readRecordPath(output.record, condition.field) ?? '') === condition.value || condition.kind === 'fieldIn' && condition.values.includes(String(readRecordPath(output.record, condition.field) ?? '')));
       if (required && empty(value)) issues.push({ message: `输出 ${output.outputId} 的 ${field.key} 为必填项。` });
       if (empty(value)) continue;
+      if(field.valueSchema)for(const message of validateStructuredValue(value,field.valueSchema,field.key))issues.push({message});
       const values = field.cardinality === 'multiple' ? Array.isArray(value) ? value : [value] : [value];
       if (field.cardinality === 'multiple' && !Array.isArray(value)) issues.push({ message: `${field.key} 必须是数组。` });
       if (['string','reference'].includes(field.type)&&values.some(item=>typeof item!=='string'))issues.push({message:`${field.key} 必须是文本值。`});

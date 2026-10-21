@@ -62,6 +62,8 @@ export type FieldDefinition = {
   optionValueType?: 'string' | 'number' | 'boolean';
   format?: 'plain' | 'externalLink' | 'boolean' | 'json' | 'date';
   coordinateFormat?: 'coordP' | 'pointObject' | 'coordL' | 'coordG';
+  /** Bounded declarative JSON value contract; no remote references or executable code. */
+  valueSchema?: ValueSchema;
   optionSource?: { registryKey: string; runtimeField?: string };
   placeholder?: string;
   defaultValue?: unknown;
@@ -72,6 +74,18 @@ export type FieldDefinition = {
   /** Set when this node intentionally replaces an inherited declaration. */
   overrideOf?: string;
   inheritance?: InheritanceMode;
+};
+export type ValueSchema = {
+  type?: 'string' | 'number' | 'boolean' | 'array' | 'object';
+  anyOf?: ValueSchema[];
+  properties?: Record<string, ValueSchema>;
+  required?: string[];
+  items?: ValueSchema;
+  enum?: Array<string | number | boolean>;
+  minItems?: number;
+  maxItems?: number;
+  minimum?: number;
+  exclusiveMinimum?: number;
 };
 /** Validation evidence only. Never used to resolve a runtime value or source. */
 export type PrefillAudit = {
@@ -932,7 +946,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */
@@ -973,6 +987,8 @@ export type ConfigValidationIssue = {
   message: string;
   field?: string;
   expected?: string;
+  /** Related configuration paths used by isolated-region dependency validation. */
+  relatedPaths?: string[];
   affectedFeatures?: AffectedFeature[];
   count?: number;
 };

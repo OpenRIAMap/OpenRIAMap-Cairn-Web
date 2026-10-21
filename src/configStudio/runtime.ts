@@ -21,6 +21,8 @@ import {standardTagTableErrors} from './standardTagFields';
 import { mergeInheritedCard } from './cardInheritance';
 import { validatePrefillCopies } from './prefillAudit';
 import { resolveNodeFieldSettings,validateNodeFieldSettings } from './nodeFieldSettings';
+import { validateNavigationConfiguration, validateNavigationRecords } from './navigationValidation';
+import { validateStructuredValue, validateValueSchema } from './valueSchema';
 import { STRUCTURE_CONTEXT_ID,validateMountedStructureRoles } from './structureRoleIndex';
 import { canonicalRenderFields, matchesRenderFields, renderRuleRange, validateRenderFields } from './renderRuleConditions';
 import type {
@@ -436,6 +438,7 @@ function validateCondition(condition: Condition, path: string, issues: ConfigVal
 }
 
 function validateField(field: FieldDefinition, path: string, known: Set<string>, issues: ConfigValidationIssue[]): void {
+  if(field.valueSchema)for(const message of validateValueSchema(field.valueSchema))issue(issues,'error','field-value-schema-invalid',path+'/valueSchema',message);
   const scope = fieldScope(field);
   // Root-level data may legitimately contain a structured object path from
   // V1 (for example `TGTcoordinate.x`). `tags.*` and `extensions.*` remain
@@ -1281,6 +1284,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   if(config.contractRevision>=10&&!config.application)issue(issues,'error','application-required','application','r10 完整应用包必须包含总体规则。');
   if (config.contractRevision >= 10 && config.application) for (const row of validateApplication(config.application, new Set(config.nodes.map(node=>node.path.class)))) issue(issues,'error','application-invalid','application/'+row.path,row.message);
   issues.push(...validateLookupTables(config));
+  issues.push(...validateNavigationConfiguration(config,resolveEffectiveFields));
   for(const error of standardTagTableErrors(config))issue(issues,'error','standard-tag-table-invalid',error.path,error.message);
   issues.push(...validatePrefillCopies(config,resolveEffectiveFields));
   issues.push(...validateNodeFieldSettings(config,resolveEffectiveFields));
@@ -1375,6 +1379,8 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   if (!config.parity) issue(issues, 'warning', 'v1-parity-report-pending', 'parity', 'V1 语义迁移尚未执行；当前仅可作为 V3 原生试验包。');
   else for (const entry of config.parity.entries.filter((item) => item.status === 'unsupported')) issue(issues, 'warning', 'v1-parity-unsupported-pending', `parity/${entry.kind}/${entry.id}`, `V1 配置 ${entry.id} 尚未迁移：${entry.details ?? '未说明原因'}。`);
   const mounted = aggregateMountedIssues(mountedRecords, config);
+  for(const record of mountedRecords)for(const field of resolveEffectiveFields(config,{class:String(record.Class??''),kind:record.Kind as string|undefined,skind:(record.SKind??record.Skind) as string|undefined,skind2:(record.SKind2??record.Skind2) as string|undefined}))if(field.valueSchema){const value=readRecordPath(record,field.key);if(value!==undefined&&value!==null)for(const message of validateStructuredValue(value,field.valueSchema,field.key))mounted.push({severity:'error',code:'mounted-field-structure-invalid',path:'mounted/'+String(record.ID??'')+'/'+field.key,message,relatedPaths:config.nodes.filter(n=>n.fields.some(f=>f.key===field.key)).map(n=>'nodes/'+n.nodeId),affectedFeatures:[{id:String(record.ID??''),name:String(record.Name??record.ID??'')}]});}
+  mounted.push(...validateNavigationRecords(config,mountedRecords));
   mounted.push(...validateMountedStructureRoles(config,mountedRecords));
   issues.push(...mounted);
   const configuration = issues.filter((item) => !item.code.startsWith('mounted-') && !item.code.startsWith('v1-parity')).length;

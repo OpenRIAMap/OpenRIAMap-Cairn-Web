@@ -1,4 +1,4 @@
-import { loadRuleItemsForWorld, normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
+import { loadRuleDataSnapshotForWorld, normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
 import {
   bumpTemporaryRuleDeleteIdsRevision,
   bumpTemporaryRuleOverrideIdsRevision,
@@ -66,10 +66,10 @@ function buildSignature(worldId: string, enabledTemps: TempRuleSource[], overrid
 
 export async function loadEffectiveRuleItemsForWorld(
   worldId: string,
-  opt?: { fetcher?: (url: string) => Promise<any[]> },
+  _opt?: { fetcher?: (url: string) => Promise<any[]> },
 ): Promise<EffectiveRuleItemsResult> {
   const wid = normalizeRuleSourceWorldId(worldId);
-  const baseItems = await loadRuleItemsForWorld(wid, { fetcher: opt?.fetcher });
+  const baseSnapshot = await loadRuleDataSnapshotForWorld(wid),baseItems=baseSnapshot.items;
   const enabledTempSources = readTempSources(wid).filter((t) => t.enabled);
   const overrideIds = enabledTempSources.length > 0 ? readOverrideIds(wid) : new Set<string>();
   const deleteIds = enabledTempSources.length > 0 ? readTempDeleteIds(wid) : new Set<string>();
@@ -98,7 +98,7 @@ export async function loadEffectiveRuleItemsForWorld(
     sourceRevision,
     overrideRevision,
     deleteRevision,
-    signature: buildSignature(wid, enabledTempSources, overrideIds, deleteIds, sourceRevision, overrideRevision, deleteRevision),
+    signature: baseSnapshot.signature+'::'+buildSignature(wid, enabledTempSources, overrideIds, deleteIds, sourceRevision, overrideRevision, deleteRevision),
   };
 }
 

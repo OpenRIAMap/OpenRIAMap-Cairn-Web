@@ -10,7 +10,7 @@ import { createBlankV32Package } from './v32Defaults';
 import { migrateConfigToR9 } from './r9Migration';
 import { newConfigId } from './renderRuleTemplates';
 
-export type CategoryArtifactPayload={schemaVersion:'cairnmap.category-artifact.v1'|'cairnmap.category-artifact.v2';contractRevision:9|10|11|12;resources?:ConfigPackageV3['resources'];fieldDependencies?:DictionaryFieldDependency[];lookupTables?:LookupTable[];kind:'node'|'classTree';projectId:string;classCode:string;path:ClassificationPath;nodes:CategoryNode[];ancestors:ClassificationPath[];engineFingerprint:string};
+export type CategoryArtifactPayload={schemaVersion:'cairnmap.category-artifact.v1'|'cairnmap.category-artifact.v2';contractRevision:9|10|11|12|13;resources?:ConfigPackageV3['resources'];fieldDependencies?:DictionaryFieldDependency[];lookupTables?:LookupTable[];kind:'node'|'classTree';projectId:string;classCode:string;path:ClassificationPath;nodes:CategoryNode[];ancestors:ClassificationPath[];engineFingerprint:string};
 export type CategoryArtifact={payload:CategoryArtifactPayload;sha256:string};
 export function categoryStableText(value:unknown):string {if(Array.isArray(value))return '['+value.map(categoryStableText).join(',')+']';if(value&&typeof value==='object')return '{'+Object.entries(value).filter(([,v])=>v!==undefined).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>JSON.stringify(k)+':'+categoryStableText(v)).join(',')+'}';return JSON.stringify(value);}
 async function digest(value:unknown):Promise<string>{return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(categoryStableText(value))))].map(b=>b.toString(16).padStart(2,'0')).join('');}
@@ -21,7 +21,7 @@ function inheritedFieldText(field:FieldDefinition,config:ConfigPackageV3):string
 }
 
 function checkPayload(payload:CategoryArtifactPayload) {
-  if(!payload||!([9,10,11,12].includes(payload.contractRevision))||payload.schemaVersion!==(payload.contractRevision>=10?'cairnmap.category-artifact.v2':'cairnmap.category-artifact.v1')||!['node','classTree'].includes(payload.kind)||!payload.classCode||!Array.isArray(payload.nodes)||!payload.nodes.length||payload.nodes.length>2048||!Array.isArray(payload.ancestors))throw Error('文件不是受支持的单分类/Class 树输出。');
+  if(!payload||!([9,10,11,12,13].includes(payload.contractRevision))||payload.schemaVersion!==(payload.contractRevision>=10?'cairnmap.category-artifact.v2':'cairnmap.category-artifact.v1')||!['node','classTree'].includes(payload.kind)||!payload.classCode||!Array.isArray(payload.nodes)||!payload.nodes.length||payload.nodes.length>2048||!Array.isArray(payload.ancestors))throw Error('文件不是受支持的单分类/Class 树输出。');
   const shape=validateNativeStructure({...createBlankV32Package(),contractRevision:payload.contractRevision,lookupTables:payload.lookupTables,resources:payload.resources,nodes:payload.nodes,workflows:[]});if(shape.length)throw Error(shape.map(i=>`${i.path}：${i.message}`).join('\n'));
   if(payload.nodes.some(node=>node.path.class!==payload.classCode)||payload.path?.class!==payload.classCode)throw Error('分类文件包含其他 Class 或范围身份不一致。');
   const ids=payload.nodes.map(node=>node.nodeId),paths=payload.nodes.map(node=>classificationPathKey(node.path));if(new Set(ids).size!==ids.length||new Set(paths).size!==paths.length)throw Error('分类文件内部节点 ID/路径重复。');
@@ -35,14 +35,14 @@ function checkPayload(payload:CategoryArtifactPayload) {
 }
 export async function createCategoryArtifact(config:ConfigPackageV3,nodeId:string,kind:'node'|'classTree'):Promise<CategoryArtifact> {
   const report=validateConfigPackage(config);if(!report.valid)throw Error('配置未通过核验，不能导出分类文件。');
-  if(config.contractRevision!==9&&config.contractRevision!==10&&config.contractRevision!==11&&config.contractRevision!==12)throw Error('请先迁移并保存原生配置，再导出分类。');
+  if(config.contractRevision!==9&&config.contractRevision!==10&&config.contractRevision!==11&&config.contractRevision!==12&&config.contractRevision!==13)throw Error('请先迁移并保存原生配置，再导出分类。');
   const selected=config.nodes.find(n=>n.nodeId===nodeId);if(!selected)throw Error('请选择要导出的分类。');
   const path=kind==='classTree'?{class:selected.path.class}:selected.path;
   const nodes=structuredClone(kind==='classTree'?config.nodes.filter(n=>n.path.class===path.class):[selected]);if(kind==='node')nodes[0].children=[];
   const ancestors:ClassificationPath[]=[];let parent=parentClassificationPath(path);while(parent){ancestors.unshift(parent);parent=parentClassificationPath(parent);}
   const tableIds=dictionaryTableIds(config,nodes);
   const lookupTables=config.lookupTables?.filter(table=>tableIds.has(table.id));
-  const payload:CategoryArtifactPayload={schemaVersion:config.contractRevision>=10?'cairnmap.category-artifact.v2':'cairnmap.category-artifact.v1',contractRevision:config.contractRevision as 9|10|11|12,...(config.contractRevision>=12&&config.resources?{resources:structuredClone(config.resources)}:{}),...(lookupTables?.length?{lookupTables:structuredClone(lookupTables)}:{}),...(config.contractRevision>=11?{fieldDependencies:dictionaryDependencies(config,nodes)}:{}),kind,projectId:config.projectId,classCode:path.class,path,nodes,ancestors,engineFingerprint:await digest(config.engine)};checkPayload(payload);return {payload,sha256:await digest(payload)};
+  const payload:CategoryArtifactPayload={schemaVersion:config.contractRevision>=10?'cairnmap.category-artifact.v2':'cairnmap.category-artifact.v1',contractRevision:config.contractRevision as 9|10|11|12|13,...(config.contractRevision>=12&&config.resources?{resources:structuredClone(config.resources)}:{}),...(lookupTables?.length?{lookupTables:structuredClone(lookupTables)}:{}),...(config.contractRevision>=11?{fieldDependencies:dictionaryDependencies(config,nodes)}:{}),kind,projectId:config.projectId,classCode:path.class,path,nodes,ancestors,engineFingerprint:await digest(config.engine)};checkPayload(payload);return {payload,sha256:await digest(payload)};
 }
 export async function categoryArtifactBlob(artifact:CategoryArtifact,zip=true):Promise<Blob> {
   checkPayload(artifact.payload);if(artifact.sha256!==await digest(artifact.payload))throw Error('分类内容摘要无效。');

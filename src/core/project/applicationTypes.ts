@@ -1,4 +1,5 @@
 import type { CairnMapRuleButtonItem } from './environmentTypes';
+import type { NavigationSettings, RailParameters, SharedRailwayRoles } from './navigationTypes';
 export type ApplicationLabel={zh:string;en:string};
 export type ApplicationProjection={id:'dynmap-flat';worldToMap:number[];mapToWorld:number[];mapzoomin:number;mapzoomout:number;tileSize:128;tilescale:number};
 export type ApplicationTiles={baseUrl:string;filteredBaseUrl:string;prefix:string;imageFormat:'jpg'|'png'|'webp';extraZoomLevels:number;minNativeZoom:number;maxNativeZoom:number;attribution:string;maxRetries:number;retryDelay:number};
@@ -30,7 +31,7 @@ export type ApplicationSources=ApplicationSourceSettings|ApplicationWorldGroups;
 export type ApplicationModuleId='mapping'|'measurement'|'navigation'|'search'|'review'|'players'|'settings'|'publicReleases';
 export type ApplicationModules={items:Array<{id:ApplicationModuleId;enabled:boolean;load:'eager'|'lazy'|'preload';exclusiveWith:ApplicationModuleId[]}>;players:{endpoint:string;directEndpoint:string;mode:'proxy'|'direct';pollIntervalMs:number;requestTimeoutMs:number}};
 export type ApplicationReview={enabled:boolean;provider:'github-cookie';protocol:'openriamap-review-v1';auth:{start:string;session:string;logout:string};control:string;workflow:string;publicReleases:string;serverReferences:{oauthClientId:string;oauthRedirectUri:string;sessionSigning:string;controlApiBase:string;brokerSecret:string}};
-export type ApplicationPreferences={language:'zh'|'en';search:{homepageLimit:number;navigationLimit:number;debounceMs:number};navigation:{transferWalkSpeed:number;railRideSpeed:number;transferCostFactor:number;normalPlatformTransferCost:number};map:{logicalInitialZoom:number;leafletOffset:number;scrollWheelZoom:boolean;doubleClickZoom:boolean;dragging:boolean};toolbar:{position:'left'|'right';compact:boolean}};
-export type ApplicationSettings={schemaVersion:'cairnmap.application.v1';worlds:ApplicationWorld[];buttons:ApplicationButtons;sources:ApplicationSources;modules:ApplicationModules;review:ApplicationReview;preferences:ApplicationPreferences};
+export type ApplicationPreferences={language:'zh'|'en';search:{homepageLimit:number;navigationLimit:number;debounceMs:number};navigation?:RailParameters;railwayRoles?:SharedRailwayRoles;map:{logicalInitialZoom:number;leafletOffset:number;scrollWheelZoom:boolean;doubleClickZoom:boolean;dragging:boolean};toolbar:{position:'left'|'right';compact:boolean}};
+export type ApplicationSettings={schemaVersion:'cairnmap.application.v1';worlds:ApplicationWorld[];buttons:ApplicationButtons;sources:ApplicationSources;modules:ApplicationModules;review:ApplicationReview;preferences:ApplicationPreferences;navigation?:NavigationSettings};
 export type ResolvedApplicationSettings=Omit<ApplicationSettings,'sources'|'worlds'>&{sources:ApplicationSourceSettings;worlds:ResolvedApplicationWorld[]};
 export type ApplicationSection=Exclude<keyof ApplicationSettings,'schemaVersion'>;

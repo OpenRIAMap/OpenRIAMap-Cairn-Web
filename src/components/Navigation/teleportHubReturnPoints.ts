@@ -1,3 +1,4 @@
+import { captureNavigationContext, navigationTable, type NavigationContext } from '../../core/project/navigationRuntime';
 import type { Coordinate } from '@/types';
 
 /**
@@ -42,17 +43,20 @@ export const HUB_RETURN_POINTS: Record<string, HubReturnPoint[]> = {
   laputa: [],
 };
 
-export function listHubReturnPoints(worldId: string): HubReturnPoint[] {
+export function listHubReturnPoints(worldId: string, context=captureNavigationContext()): HubReturnPoint[] {
+  if(!context.settings.teleport.enabled)return [];
+  const canonical=(value:string)=>context.configuration?.application?.worlds.find(w=>[w.id,w.prefix,String(w.numericCode),w.label.zh,w.label.en].includes(value))?.id??value;
+  if(context.native)return navigationTable(context,context.settings.teleport.hubTableId,'teleportHub').rows.flatMap(row=>{const hub=row.functionValue;if(!hub||typeof hub!=='object'||!('world' in hub)||canonical(hub.world)!==canonical(worldId))return [];return hub.returnPoints.map(p=>({id:p.id,name:p.label[context.language]||p.label.zh||p.label.en||p.id,hub:row.value,coord:{x:p.x,y:p.y,z:p.z},range:hub.range}));});
   return HUB_RETURN_POINTS[worldId] ?? [];
 }
 
-export function getHubReturnPoint(worldId: string, id: string): HubReturnPoint | undefined {
+export function getHubReturnPoint(worldId: string, id: string, context?: NavigationContext): HubReturnPoint | undefined {
   if (!id) return;
-  return (HUB_RETURN_POINTS[worldId] ?? []).find((p) => p.id === id);
+  return listHubReturnPoints(worldId,context).find((p) => p.id === id);
 }
 
-export function detectHubByProximity(worldId: string, coord: Coordinate): { hub: string; point: HubReturnPoint } | null {
-  const list = HUB_RETURN_POINTS[worldId] ?? [];
+export function detectHubByProximity(worldId: string, coord: Coordinate, context?: NavigationContext): { hub: string; point: HubReturnPoint } | null {
+  const list = listHubReturnPoints(worldId,context);
   for (const p of list) {
     const r = Number.isFinite(p.range as any) ? (p.range as number) : DEFAULT_HUB_RANGE;
     if (Math.abs(coord.x - p.coord.x) <= r && Math.abs(coord.z - p.coord.z) <= r) {

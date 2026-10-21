@@ -12,6 +12,6 @@ export function validateStudioModule(
   const report = validateConfigPackage(config, records);
   if (!isolatedPaths) return report;
   const issues = report.issues.filter(issue => issue.code === 'native-contract-structure-invalid' ||
-    isolatedPaths.some(path => issue.path === path || issue.path.startsWith(path + '/')));
+    isolatedPaths.some(path => [issue.path,...issue.relatedPaths??[]].some(location=>location===path||location.startsWith(path+'/')||path.startsWith(location+'/'))));
   return { ...report, issues, valid: !issues.some(issue => issue.severity === 'error') };
 }

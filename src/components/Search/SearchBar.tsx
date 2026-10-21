@@ -1,3 +1,6 @@
+import { captureNavigationContext } from '@/core/project/navigationRuntime';
+import { subscribeRuntimeConfiguration } from '@/configRuntime/runtimeDataView';
+import { subscribeApplication } from '@/core/project/applicationRuntime';
 import { getApplicationSettings } from '@/core/project/applicationRuntime';
 /**
  * 搜索组件
@@ -131,6 +134,7 @@ function getRuleCenterCoord(r: FeatureRecord): { x: number; y: number; z: number
 }
 
 export function SearchBar({ disabled=false, configRuntime, stations, landmarks, lines, players = [], worldId, onSelect, onLineSelect, mobile = false, variant, onAboutClick }: SearchBarProps) {
+  const sharedSignature=useSyncExternalStore(listener=>{const a=subscribeRuntimeConfiguration(listener),b=subscribeApplication(listener);return()=>{a();b();};},()=>captureNavigationContext().sharedSignature);
   const poolVersion=useSyncExternalStore(listener=>subscribeRuleSearchPool(worldId,listener),()=>getRuleSearchPoolVersion(worldId));
   const nativeSearch=Boolean(configRuntime&&configRuntime.contractRevision>=10);
   const [query, setQuery] = useState('');
@@ -159,7 +163,7 @@ export function SearchBar({ disabled=false, configRuntime, stations, landmarks, 
   return () => {
       cancelled = true;
     };
-  }, [worldId,poolVersion]);
+  }, [worldId,poolVersion,sharedSignature]);
 
   // 用于楼层类（FLR/STF）的“所属建筑/车站建筑”名映射。
   // - 尽量复用 SearchPool（无需额外 fetch）

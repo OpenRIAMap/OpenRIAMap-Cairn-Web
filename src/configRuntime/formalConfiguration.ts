@@ -13,7 +13,7 @@ export type ConfigurationIdentity = {
   contractRevision: number; configSha256: string; manifestSha256: string; configUrl: string;
 };
 export type FormalConfiguration = { config: ConfigPackageV3; identity: ConfigurationIdentity; warning?: string; availableIdentity?: ConfigurationIdentity };
-export const CONFIGURATION_RULES_VERSION = 'cairnmap-r12-production-1';
+export const CONFIGURATION_RULES_VERSION = 'cairnmap-r13-production-1';
 let snapshot: FormalConfiguration | undefined, pending: Promise<FormalConfiguration> | undefined;
 const subscribers = new Set<() => void>();
 export const subscribeFormalConfiguration = (listener: () => void) => { subscribers.add(listener); return () => { subscribers.delete(listener); }; };
@@ -21,7 +21,7 @@ export const getFormalConfiguration = () => snapshot;
 const notify = () => { for (const listener of subscribers) listener(); };
 export function assertConfigurationIdentity(value: unknown): asserts value is ConfigurationIdentity {
   const v = value as ConfigurationIdentity;
-  if (!v || !v.releaseId || !v.packageId || !v.projectId || !Number.isSafeInteger(v.revision) || v.revision < 1 || ![11,12].includes(v.contractRevision) ||
+  if (!v || !v.releaseId || !v.packageId || !v.projectId || !Number.isSafeInteger(v.revision) || v.revision < 1 || ![11,12,13].includes(v.contractRevision) ||
     !/^[a-f0-9]{64}$/.test(v.configSha256) || !/^[a-f0-9]{64}$/.test(v.manifestSha256) || typeof v.configUrl !== 'string') throw Error('正式配置索引身份无效。');
   const url = new URL(v.configUrl, location.origin);
   if (url.origin !== location.origin || url.pathname!==`/configuration/releases/${v.configSha256}/config.json` || url.search || url.hash) throw Error('正式配置必须使用站内受控的内容散列地址。');
