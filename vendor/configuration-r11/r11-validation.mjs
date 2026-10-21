@@ -11278,7 +11278,7 @@ function fieldImportErrors(config, workflow, control) {
   return errors;
 }
 function storedOptionValue(value, kind) {
-  if (value === "" || value == null) return value;
+  if (value == null || typeof value === "string" && !value.trim()) return value;
   if (kind === "number") return Number(value);
   if (kind === "boolean") return value === true || value === "true" ? true : value === false || value === "false" ? false : value;
   if (kind === "string") return typeof value === "object" ? value : String(value);
@@ -12413,6 +12413,81 @@ function standardTagTableErrors(config) {
   return errors;
 }
 
+// src/configStudio/optionalFieldValues.ts
+function isBlankFieldValue(value) {
+  return value == null || typeof value === "string" && value.trim() === "";
+}
+function recordFieldRequired(field, record) {
+  const empty3 = (value) => isBlankFieldValue(value) || Array.isArray(value) && value.length === 0;
+  return Boolean(field.required || field.requiredWhen?.some((condition) => condition.kind === "always" || condition.kind === "fieldPresent" && !empty3(readRecordPath(record, condition.field)) === condition.present || condition.kind === "fieldEquals" && String(readRecordPath(record, condition.field) ?? "") === condition.value || condition.kind === "fieldIn" && condition.values.includes(String(readRecordPath(record, condition.field) ?? ""))));
+}
+var plain2 = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+var safePath = (path2) => path2.split(".").every((key2) => key2 && !["__proto__", "prototype", "constructor"].includes(key2));
+function replacePath(record, path2, value) {
+  if (!safePath(path2)) return;
+  const keys = path2.split(".");
+  let node = record;
+  for (const key2 of keys.slice(0, -1)) {
+    if (!plain2(node[key2])) return;
+    node = node[key2];
+  }
+  if (value === void 0) delete node[keys[keys.length - 1]];
+  else node[keys[keys.length - 1]] = value;
+}
+function schemaBranches(schema, value) {
+  if (schema.type && (schema.type === "array" ? !Array.isArray(value) : schema.type === "object" ? !plain2(value) : typeof value !== schema.type)) return [];
+  return [schema, ...(schema.anyOf ?? []).flatMap((branch) => schemaBranches(branch, value))];
+}
+function cleanStructured(value, schemas, path2, protectedPaths) {
+  const branches2 = schemas.flatMap((schema) => schemaBranches(schema, value));
+  if (Array.isArray(value)) {
+    const items = branches2.flatMap((schema) => schema.items ? [schema.items] : []);
+    return items.length ? value.map((item) => cleanStructured(item, items, path2, protectedPaths)) : value;
+  }
+  if (!plain2(value)) return value;
+  const required = new Set(branches2.flatMap((schema) => schema.required ?? []));
+  for (const key2 of Object.keys(value)) {
+    const children = branches2.flatMap((schema) => schema.properties && Object.prototype.hasOwnProperty.call(schema.properties, key2) ? [schema.properties[key2]] : []);
+    if (!children.length) continue;
+    const childPath = `${path2}.${key2}`;
+    if (!required.has(key2) && !protectedPaths.has(childPath) && isBlankFieldValue(value[key2])) delete value[key2];
+    else value[key2] = cleanStructured(value[key2], children, childPath, protectedPaths);
+  }
+  return value;
+}
+function groupSchemas(config, path2) {
+  const schemas = /* @__PURE__ */ new Map();
+  for (const workflow of config.workflows) for (const output of workflow.outputs) {
+    if (!pathMatchesScope(path2, output.classification)) continue;
+    for (const assignment of output.assignments) {
+      const control = workflow.steps.flatMap((step) => step.controls ?? []).find((item) => item.kind === "group" && item.slot === assignment.expression.trim());
+      if (!control?.group || control.group.storage === "scalar") continue;
+      const properties = Object.fromEntries(control.group.itemFields.map((field) => [field.key, {}]));
+      const required = control.group.itemFields.filter((field) => field.required || field.requiredWhen?.length).map((field) => field.key);
+      const schema = { type: "array", items: { type: "object", properties, required } };
+      schemas.set(assignment.target, [...schemas.get(assignment.target) ?? [], schema]);
+    }
+  }
+  return schemas;
+}
+function omitOptionalFieldValues(config, path2, raw) {
+  const record = structuredClone(raw), fields = resolveEffectiveFields(config, path2), groups = groupSchemas(config, path2);
+  const protectedPaths = new Set(fields.filter((field) => field.emptyValue === "preserve" || recordFieldRequired(field, raw)).map((field) => field.key));
+  for (const field of fields) {
+    if (!safePath(field.key)) continue;
+    const value = readRecordPath(record, field.key), required = recordFieldRequired(field, raw);
+    if (required && field.requiredWhen?.length && isBlankFieldValue(readRecordPath(raw, field.key))) throw Error(`${field.key} \u4E3A\u5FC5\u586B\u9879\u3002`);
+    if (field.emptyValue === "preserve" && isBlankFieldValue(value)) continue;
+    if (!required && isBlankFieldValue(value)) {
+      replacePath(record, field.key, void 0);
+      continue;
+    }
+    const schemas = [...field.valueSchema ? [field.valueSchema] : [], ...groups.get(field.key) ?? []];
+    if (schemas.length) replacePath(record, field.key, cleanStructured(value, schemas, field.key, protectedPaths));
+  }
+  return record;
+}
+
 // src/configStudio/workflowRecord.ts
 function finalizeV3WorkflowRecord(config, output, raw, options) {
   const fields = new Map(resolveEffectiveFields(config, output.classification).map((field) => [field.key, field]));
@@ -12446,15 +12521,15 @@ function finalizeV3WorkflowRecord(config, output, raw, options) {
       return entries.length ? Object.fromEntries(entries) : preserved.has(path2) ? {} : void 0;
     }
     const field = fields.get(path2);
-    if (value === "" && !preserved.has(path2) && !field?.required && field?.emptyValue !== "preserve") return void 0;
-    if (field?.type === "number" && value !== null && value !== "") {
+    if (value === "" && !preserved.has(path2) && !(field && recordFieldRequired(field, input)) && field?.emptyValue !== "preserve") return void 0;
+    if (field?.type === "number" && !isBlankFieldValue(value)) {
       const number3 = Number(value);
       return Number.isFinite(number3) ? number3 : value;
     }
     if (field?.type === "boolean" && typeof value === "string") return value === "true" ? true : value === "false" ? false : value;
     return value;
   };
-  const record = clean(input, "");
+  const record = clean(omitOptionalFieldValues(config, output.classification, input), "");
   const creator = String(raw.Creator ?? "").trim();
   delete record.Creator;
   if (creator) record.CreateBy = creator;
@@ -12616,7 +12691,7 @@ function validateV3WorkflowRecords(config, workflow, result) {
     }
     for (const field of resolveEffectiveFields(config, output.classification)) {
       const value = readRecordPath(output.record, field.key);
-      const required = field.required || field.requiredWhen?.some((condition) => condition.kind === "always" || condition.kind === "fieldPresent" && !empty(readRecordPath(output.record, condition.field)) === condition.present || condition.kind === "fieldEquals" && String(readRecordPath(output.record, condition.field) ?? "") === condition.value || condition.kind === "fieldIn" && condition.values.includes(String(readRecordPath(output.record, condition.field) ?? "")));
+      const required = recordFieldRequired(field, output.record);
       if (required && empty(value)) issues.push({ message: `\u8F93\u51FA ${output.outputId} \u7684 ${field.key} \u4E3A\u5FC5\u586B\u9879\u3002` });
       if (empty(value)) continue;
       if (field.valueSchema) for (const message of validateStructuredValue(value, field.valueSchema, field.key)) issues.push({ message });

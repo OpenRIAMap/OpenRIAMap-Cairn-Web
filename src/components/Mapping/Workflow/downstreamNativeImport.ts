@@ -1,6 +1,8 @@
 import type {ConfigPackageV3} from '@/configStudio/types';
 import {prepareNativeFeatureImport} from '@/configStudio/nativeFeatureImport';
 import {normalizeV3WorldId} from '@/configStudio/workflowKernel';
+import {recordClassification} from '@/configStudio/workflowEditing';
+import {omitOptionalFieldValues} from '@/configStudio/optionalFieldValues';
 import {annotationEqual,assembleAnnotations} from '@/configStudio/workflowAnnotations';
 import {resolveGeometryProfile} from '@/configStudio/runtime';
 import {geometryTypeFromFeatureType,readMultipartGeometry,validateMultipartGeometry,withCanonicalMultipartGeometry} from '@/core/geometry/multipartGeometry';
@@ -19,6 +21,6 @@ export function prepareDownstreamNativeImport(config:ConfigPackageV3,item:Record
   if(geometryError||!read.geometry)throw Error(geometryError??'缺少几何。');
   assembleAnnotations({advanced:{...(item.tags!==undefined?{tags:item.tags}:{}),...(item.extensions!==undefined?{extensions:item.extensions}:{})}});
   const geometry=read.geometry,coords=geometry.type==='Point'?geometry.parts:geometry.type==='LineString'?geometry.parts[0]:geometry.parts[0][0];
-  return {record:withCanonicalMultipartGeometry(structuredClone(item),geometry),geometry,coords,mode:type==='Point'?'point' as const:type==='LineString'?'polyline' as const:'polygon' as const};
+  return {record:withCanonicalMultipartGeometry(omitOptionalFieldValues(config,recordClassification(item),item),geometry),geometry,coords,mode:type==='Point'?'point' as const:type==='LineString'?'polyline' as const:'polygon' as const};
  }
 }

@@ -2,6 +2,7 @@ import type { ConfigPackageV3, WorkflowDefinition } from './types';
 import type { V3WorkflowRunResult } from './workflowKernel';
 import { activeOutputIds } from './workflowDrawing';
 import { normalizeV3WorldId, validateV3WorkflowRecords } from './workflowKernel';
+import {omitOptionalFieldValues} from './optionalFieldValues';
 import { readMultipartGeometry, validateMultipartGeometry } from '../core/geometry/multipartGeometry';
 
 /** Prepare the complete batch before the map mutates any layer. */
@@ -9,10 +10,11 @@ export function prepareNativeWorkflowCommit(config: ConfigPackageV3, workflow: W
   if ((workflow.outputs.some(output=>output.when)||workflow.steps.some(step=>step.when))&&!outputs.executionSlots) throw new Error('条件输出缺少实际求值上下文。');
   const expected=activeOutputIds(workflow,outputs.executionSlots??{});
   if (!expected.length || outputs.length !== expected.length || outputs.some(output=>!expected.includes(output.outputId)) || new Set(outputs.map(output => output.outputId)).size !== outputs.length) throw new Error('工作流输出数量/身份不完整。');
-  const issues = validateV3WorkflowRecords(config, workflow, outputs);
+  const cleaned=outputs.map(output=>({...output,record:omitOptionalFieldValues(config,output.classification,output.record)}));
+  const issues = validateV3WorkflowRecords(config, workflow, cleaned);
   if (issues.length) throw new Error(issues.map(issue => issue.message).join('\n'));
   const ids = new Set<string>();
-  return outputs.map(output => {
+  return cleaned.map(output => {
     const definition = workflow.outputs.find(item => item.id === output.outputId);
     const read = readMultipartGeometry(output.record, definition?.geometry.selected ?? 'Point');
     const geometry = read.geometry;

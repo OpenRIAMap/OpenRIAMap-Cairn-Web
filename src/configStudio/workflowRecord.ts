@@ -2,6 +2,7 @@ import { featureTypeFromGeometryType, multipartGeometryFromSinglePath, withCanon
 import { resolveEffectiveFields } from './runtime';
 import type { ConfigPackageV3, WorkflowOutput } from './types';
 import { isSafeWorkflowTarget } from './workflowExpression';
+import {isBlankFieldValue,omitOptionalFieldValues,recordFieldRequired} from './optionalFieldValues';
 
 /** Serialize authored V3 fields into the shared feature record contract. */
 export function finalizeV3WorkflowRecord(config: ConfigPackageV3, output: WorkflowOutput, raw: Record<string, unknown>, options: { coords: MultipartCoord[]; geometry?:MultipartGeometry; now: Date; preservePaths?:string[] }): Record<string, unknown> {
@@ -32,12 +33,12 @@ export function finalizeV3WorkflowRecord(config: ConfigPackageV3, output: Workfl
       return entries.length ? Object.fromEntries(entries) : preserved.has(path)?{}:undefined;
     }
     const field = fields.get(path);
-    if (value === '' && !preserved.has(path) && !field?.required && field?.emptyValue !== 'preserve') return undefined;
-    if (field?.type === 'number' && value !== null && value !== '') { const number = Number(value); return Number.isFinite(number) ? number : value; }
+    if (value === '' && !preserved.has(path) && !(field&&recordFieldRequired(field,input)) && field?.emptyValue !== 'preserve') return undefined;
+    if (field?.type === 'number' && !isBlankFieldValue(value)) { const number = Number(value); return Number.isFinite(number) ? number : value; }
     if (field?.type === 'boolean' && typeof value === 'string') return value === 'true' ? true : value === 'false' ? false : value;
     return value;
   };
-  const record = clean(input, '') as Record<string, unknown>;
+  const record = clean(omitOptionalFieldValues(config,output.classification,input), '') as Record<string, unknown>;
   const creator = String(raw.Creator ?? '').trim();
   delete record.Creator;
   if (creator) record.CreateBy = creator;

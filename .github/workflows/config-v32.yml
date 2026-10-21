@@ -24,6 +24,7 @@ jobs:
       - name: Verify reproducible shared kernel
         run: node scripts/config-tools/build-server-validation.mjs --check
       - run: npm run verify:config-v32
+      - run: npm run test:optional-field-cleanup
       - run: npm run build
       - name: Verify downstream integration contracts
         run: |

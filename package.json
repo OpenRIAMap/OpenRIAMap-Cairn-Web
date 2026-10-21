@@ -144,7 +144,8 @@
     "build:legacy-v1": "node scripts/config-tools/install-legacy-v1.mjs",
     "test:production-runtime": "node scripts/config-tools/build-server-validation.mjs --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-production-runtime.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-production-mirror.ts && node scripts/config-tools/test-configuration-publication-api.mjs && tsx --tsconfig tsconfig.app.json scripts/config-tools/prepare-production-seed.ts --check",
     "test:r12-capabilities": "node scripts/config-tools/vendor-pinhead.mjs --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-pill.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-witness.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-preview.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-verification.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-assets.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-business.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-contracts.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-studio-session.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-studio-package-candidate.ts",
-    "test:navigation-r13": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-r13.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-runtime-r13.ts"
+    "test:navigation-r13": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-r13.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-runtime-r13.ts",
+    "test:optional-field-cleanup": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-optional-field-cleanup.ts"
   },
   "dependencies": {
     "jszip": "^3.10.1",

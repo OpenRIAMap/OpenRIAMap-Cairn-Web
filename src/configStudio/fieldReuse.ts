@@ -83,7 +83,7 @@ export function fieldImportErrors(config: ConfigPackageV3, workflow: WorkflowDef
   return errors;
 }
 export function storedOptionValue(value: unknown, kind: FieldDefinition['optionValueType']): unknown {
-  if (value === '' || value == null) return value;
+  if (value == null || typeof value==='string'&&!value.trim()) return value;
   if (kind === 'number') return Number(value);
   if (kind === 'boolean') return value===true||value==='true'?true:value===false||value==='false'?false:value;
   if (kind === 'string') return typeof value==='object'?value:String(value);
