@@ -2,6 +2,7 @@ import { tagRecordErrors } from './standardTagFields';
 import { validateStructuredValue } from './valueSchema';
 import { applicationWorld } from '../core/project/applicationRuntime';
 import { coerceWorkflowValues } from './workflowValues';
+import {recordFieldRequired} from './optionalFieldValues';
 import { resolveNodeFieldSettings } from './nodeFieldSettings';
 import { annotationsForOutput, mergeAnnotations, annotationPaths } from './workflowAnnotations';
 import { normalizeRuleSourceWorldId } from '../core/project/worldIdentity';
@@ -245,7 +246,7 @@ export function validateV3WorkflowRecords(config: ConfigPackageV3, workflow: Wor
     }}
     for (const field of resolveEffectiveFields(config, output.classification)) {
       const value = readRecordPath(output.record, field.key);
-      const required = field.required || field.requiredWhen?.some(condition => condition.kind === 'always' || condition.kind === 'fieldPresent' && !empty(readRecordPath(output.record, condition.field)) === condition.present || condition.kind === 'fieldEquals' && String(readRecordPath(output.record, condition.field) ?? '') === condition.value || condition.kind === 'fieldIn' && condition.values.includes(String(readRecordPath(output.record, condition.field) ?? '')));
+      const required = recordFieldRequired(field,output.record);
       if (required && empty(value)) issues.push({ message: `输出 ${output.outputId} 的 ${field.key} 为必填项。` });
       if (empty(value)) continue;
       if(field.valueSchema)for(const message of validateStructuredValue(value,field.valueSchema,field.key))issues.push({message});

@@ -6,6 +6,7 @@ import {prepareDownstreamNativeImport} from '../Workflow/downstreamNativeImport'
 import {NativeWorkflowEditPanel} from '../Workflow/NativeWorkflowEditPanel';
 import {compileWorkflowEditPlan,reverseWorkflowEditEndpoints,hydrateWorkflowEdit,findEditingWorkflow,isQuickMappingWorkflow,type WorkflowEditPlan,type WorkflowEditDraft} from '@/configStudio/workflowEditing';
 import {prepareNativeWorkflowEdit} from '@/configStudio/workflowEditCommit';
+import {omitOptionalFieldValues} from '@/configStudio/optionalFieldValues';
 import {normalizeV3WorldId} from '@/configStudio/V3WorkflowRunner';
 import {useRuleDataStore} from '@/store/ruleDataStore';
 import { NativeWorkflowHost } from '../Workflow/NativeWorkflowHost';
@@ -2184,7 +2185,7 @@ const finishLayer = () => {
         return false;
       }
 
-      const featureInfoOut = withCanonicalMultipartGeometry(
+      let featureInfoOut = withCanonicalMultipartGeometry(
         def.buildFeatureInfo({
           op: 'create',
           mode: 'point',
@@ -2198,6 +2199,8 @@ const finishLayer = () => {
         }),
         multipartGeometryFromSinglePath('Point', pointCoords),
       );
+      try {if(configRuntime)featureInfoOut=omitOptionalFieldValues(configRuntime,recordCategory(featureInfoOut),featureInfoOut);}
+      catch(error){alert(error instanceof Error?error.message:'要素字段无效。');return false;}
 
       const id = nextLayerId.current++;
       const newGroup = makeLeafletGroup('point', pointCoords, drawColor);
@@ -2282,7 +2285,7 @@ const finishLayer = () => {
         return false;
       }
 
-      const featureInfoOut = withCanonicalMultipartGeometry(
+      let featureInfoOut = withCanonicalMultipartGeometry(
         def.buildFeatureInfo({
           op: 'create',
           mode: 'polygon',
@@ -2296,6 +2299,8 @@ const finishLayer = () => {
         }),
         multipartGeometryFromSinglePath('Polygon', finalCoords),
       );
+      try {if(configRuntime)featureInfoOut=omitOptionalFieldValues(configRuntime,recordCategory(featureInfoOut),featureInfoOut);}
+      catch(error){alert(error instanceof Error?error.message:'要素字段无效。');return false;}
 
       const id = nextLayerId.current++;
       const newGroup = makeLeafletGroup('polygon', finalCoords, drawColor);
@@ -2431,7 +2436,8 @@ const finishLayer = () => {
   }
 
   if(configRuntime&&finalGeometry.parts.length>1&&!categoryAllowsParts(configRuntime,recordCategory(finalFeatureInfo),finalGeometry.type)){alert('此分类仅允许一个部件，无法保存多部件要素。完整草稿已保留，请先处理部件数量。');return;}
-  finalFeatureInfo = withCanonicalMultipartGeometry(finalFeatureInfo, finalGeometry);
+  try {finalFeatureInfo = withCanonicalMultipartGeometry(configRuntime?omitOptionalFieldValues(configRuntime,recordCategory(finalFeatureInfo),finalFeatureInfo):finalFeatureInfo, finalGeometry);}
+  catch(error){alert(error instanceof Error?error.message:'要素字段无效。');return;}
 
   const newLayerId = editingLayerId ?? nextLayerId.current++;
 
@@ -4827,10 +4833,11 @@ const commitFeatureFromWorkflow = (args: WorkflowCommitArgs) => {
   // The bridge is shared by every registered workflow.  Applying canonical
   // geometry here, after a format executor, prevents an old executor from
   // reintroducing coordinate / PLpoints / Conpoints aliases.
-  const finalFeatureInfo = withCanonicalMultipartGeometry(
-    formatFeatureInfo,
+  let finalFeatureInfo:Record<string,unknown>;
+  try {finalFeatureInfo = withCanonicalMultipartGeometry(
+    configRuntime?omitOptionalFieldValues(configRuntime,recordCategory(formatFeatureInfo),formatFeatureInfo):formatFeatureInfo,
     multipartGeometryFromSinglePath(geometryKindForDrawMode(args.mode as DrawMode), workflowCoords),
-  );
+  );}catch(error){return {ok:false as const,error:error instanceof Error?error.message:'要素字段无效。'};}
 
   const id = nextLayerId.current++;
   const color = args.color ?? drawColor;

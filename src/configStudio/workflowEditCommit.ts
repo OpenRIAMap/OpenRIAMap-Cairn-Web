@@ -4,6 +4,7 @@ import {assertStructureTargets} from './structureCommit';
 import {compileWorkflowEditPlan,hydrateWorkflowEdit,buildWorkflowEditRecord,workflowEditSlots,recordClassification,assertEditIdentity,type WorkflowEditDraft} from './workflowEditing';
 import {evaluateV3WorkflowOutputs,validateV3WorkflowInputs,validateV3WorkflowRecords} from './workflowKernel';
 import {coerceWorkflowValues} from './workflowValues';
+import {omitOptionalFieldValues} from './optionalFieldValues';
 import {featureTypeFromGeometryType,validateMultipartGeometry,withCanonicalMultipartGeometry,type MultipartGeometry} from '../core/geometry/multipartGeometry';
 import {hasDescendants,pathMatchesScope,resolveGeometryProfile} from './runtime';
 import {captureDrawingSnapshot,drawingKey} from './workflowDrawing';
@@ -13,7 +14,7 @@ export function prepareNativeWorkflowEdit(config:ConfigPackageV3,workflow:Workfl
  if(type!==geometry.type)throw Error('编辑几何类型与工作流不一致。');const geometryError=validateMultipartGeometry(geometry);if(geometryError)throw Error(geometryError);
  const projected={...workflow,steps:[{id:'edit',kind:'form' as const,label:{zh:'编辑',en:''},controls:plan.controls}],actor:{required:false}};
  const inputIssues=validateV3WorkflowInputs(projected,coerceWorkflowValues(projected,workflowEditSlots(plan,original,draft,geometry)),projected.steps,config);if(inputIssues.length)throw Error(inputIssues.map(i=>i.message).join('\n'));
- let record=buildWorkflowEditRecord(plan,original,draft,{geometry});assertEditIdentity(record,original,world,others);
+ let record=omitOptionalFieldValues(config,draft.classification,buildWorkflowEditRecord(plan,original,draft,{geometry}));assertEditIdentity(record,original,world,others);
  record=withCanonicalMultipartGeometry({...record,Type:featureTypeFromGeometryType(geometry.type)},geometry);
  const issues=validateV3WorkflowRecords(config,workflow,[{outputId:workflow.outputs[0].id,classification:draft.classification,geometry:type,record}]);if(issues.length)throw Error(issues.map(i=>i.message).join('\n'));
  assertStructureTargets(config,[record],others);
