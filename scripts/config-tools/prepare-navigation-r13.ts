@@ -30,6 +30,6 @@ await fs.writeFile(path.join(out,'navigation-r13-candidate.zip'),bytes);
 for(const entry of ['config.json','manifest.json','reports/validation-report.json','reports/application-dependencies.json'])await fs.writeFile(path.join(out,path.basename(entry)),await zip.file(entry)!.async('nodebuffer'));
 const diff={source:identity,candidate:{revision:config.revision,contractRevision:config.contractRevision},unpublished:true,changes,unresolved,changedNodes:config.nodes.filter((n:any)=>JSON.stringify(n)!==JSON.stringify(original.nodes.find((v:any)=>v.nodeId===n.nodeId))).map((n:any)=>n.nodeId),workflowsUnchanged:JSON.stringify(config.workflows)===JSON.stringify(original.workflows),lookupTablesUnchanged:JSON.stringify(config.lookupTables)===JSON.stringify(original.lookupTables),dataLevelValidation:'not executed: no worlds mounted',serverArchiveValidated:true,zipSha256:hash(bytes)};
 await fs.writeFile(path.join(out,'migration-diff.json'),JSON.stringify(diff,null,2)+'\n');
-const hashes:Record<string,string>={};for(const file of await fs.readdir(out))if(file.endsWith('.json')||file.endsWith('.zip'))hashes[file]=hash(await fs.readFile(path.join(out,file)));
+const hashes:Record<string,string>={};for(const file of await fs.readdir(out))if(file!=='SHA256.json'&&(file.endsWith('.json')||file.endsWith('.zip')))hashes[file]=hash(await fs.readFile(path.join(out,file)));
 await fs.writeFile(path.join(out,'SHA256.json'),JSON.stringify(hashes,null,2)+'\n');
 console.log(JSON.stringify({out,...diff}));
