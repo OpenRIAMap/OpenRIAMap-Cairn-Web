@@ -1,3 +1,4 @@
+import { assertNavigationInput, captureNavigationContext, navigationRailMatches, isRailStationPoint, type NavigationContext } from '../../core/project/navigationRuntime';
 /**
  * Navigation_RailNewIntegrated.tsx
  *
@@ -84,12 +85,16 @@ export type RailNewStaBuildingSearchItem = {
 };
 
 export async function listRailNewStaBuildingsForSearch(opt: {
+  navigationContext?: NavigationContext;
   worldId: string;
   dataSourceOverride?: Partial<WorldRuleDataSource>;
   filesOverride?: string[];
   fetcher?: (url: string) => Promise<any[]>;
 }): Promise<RailNewStaBuildingSearchItem[]> {
+  const context=opt.navigationContext??captureNavigationContext();
+  if(!context.settings.rail.enabled)return [];
   const { buildings, stas } = await loadRuleParsed(opt.worldId, {
+    navigationContext:context,
     dataSourceOverride: opt.dataSourceOverride,
     filesOverride: opt.filesOverride,
     fetcher: opt.fetcher,
@@ -171,6 +176,7 @@ export type NavRailPlan = {
 // ------------------------------
 
 export type NavigationRailComputeOptions = {
+  navigationContext?: NavigationContext;
   worldId: string;
 
   startBuildingId: string;
@@ -610,7 +616,7 @@ function normalizeWorldId(worldId: string): string {
   return map[wid] ?? wid;
 }
 
-type RuleLoadOptions = Pick<NavigationRailComputeOptions, 'dataSourceOverride' | 'filesOverride' | 'fetcher'> & {
+type RuleLoadOptions = Pick<NavigationRailComputeOptions, 'dataSourceOverride' | 'filesOverride' | 'fetcher' | 'navigationContext'> & {
   /** strict=true：若完全加载不到任何数据则抛错（用于候选列表/调试） */
   strict?: boolean;
 };
@@ -630,7 +636,7 @@ async function resolveRuleSource(worldId: string, opt: RuleLoadOptions) {
   };
 
   const effective = await loadEffectiveRuleItemsForWorld(wid, { fetcher: opt.fetcher });
-  const cacheKey = makeRuleCacheKey(wid, merged, effective.signature);
+  const cacheKey = makeRuleCacheKey(wid, merged, effective.signature)+'::navigation='+(opt.navigationContext??captureNavigationContext()).graphSignature;
   return { wid, merged, cacheKey, items: effective.items as RawItem[] };
 }
 
@@ -663,7 +669,9 @@ async function loadRuleItems(worldId: string, opt: RuleLoadOptions): Promise<any
 }
 
 async function loadRuleParsed(worldId: string, opt: RuleLoadOptions): Promise<RuleParsedBundle> {
+  opt={...opt,navigationContext:opt.navigationContext??captureNavigationContext()};
   const { cacheKey } = await resolveRuleSource(worldId, opt);
+  const context=opt.navigationContext!;
   const allowCache = !opt.fetcher;
   if (allowCache) {
     const cached = RULE_PARSED_CACHE.get(cacheKey);
@@ -671,12 +679,13 @@ async function loadRuleParsed(worldId: string, opt: RuleLoadOptions): Promise<Ru
   }
 
   const items = await loadRuleItems(worldId, opt);
+  assertNavigationInput(context,items,'rail');
   const parsed: RuleParsedBundle = {
     items,
-    stas: parseSta(items),
-    plfs: parsePlf(items),
-    rles: parseRle(items),
-    buildings: parseBuildings(items),
+    stas: parseSta(items,context),
+    plfs: parsePlf(items,context),
+    rles: parseRle(items,context),
+    buildings: parseBuildings(items,context),
   };
 
   if (allowCache) RULE_PARSED_CACHE.set(cacheKey, parsed);
@@ -684,10 +693,10 @@ async function loadRuleParsed(worldId: string, opt: RuleLoadOptions): Promise<Ru
 }
 
 
-function parseSta(all: RawItem[]): Map<string, Sta> {
+function parseSta(all: RawItem[], context: NavigationContext): Map<string, Sta> {
   const out = new Map<string, Sta>();
   for (const it of all) {
-    if (str(it?.Class) !== 'STA') continue;
+    if (!navigationRailMatches('stationAreas',it,context)) continue;
     const stationID = str(it.ID);
     if (!stationID) continue;
     const stationName = str(it.Name ?? stationID);
@@ -729,10 +738,10 @@ function parseSta(all: RawItem[]): Map<string, Sta> {
   return out;
 }
 
-function parsePlf(all: RawItem[]): Map<string, Plf> {
+function parsePlf(all: RawItem[], context: NavigationContext): Map<string, Plf> {
   const out = new Map<string, Plf>();
   for (const it of all) {
-    if (str(it?.Class) !== 'PLF') continue;
+    if (!navigationRailMatches('platforms',it,context)) continue;
     const platformID = str(it.ID);
     if (!platformID) continue;
 
@@ -796,10 +805,10 @@ function normalizeCssColor(input: string | undefined, fallback = '#3b82f6'): str
 }
 
 
-function parseRle(all: RawItem[]): Map<string, Rle> {
+function parseRle(all: RawItem[], context: NavigationContext): Map<string, Rle> {
   const out = new Map<string, Rle>();
   for (const it of all) {
-    if (str(it?.Class) !== 'RLE') continue;
+    if (!navigationRailMatches('lines',it,context)) continue;
     const lineId = str(it.ID);
     if (!lineId) continue;
     const lineName = str(it.Name ?? lineId);
@@ -819,7 +828,7 @@ function parseRle(all: RawItem[]): Map<string, Rle> {
   return out;
 }
 
-function parseBuildings(all: RawItem[]): Map<string, Building> {
+function parseBuildings(all: RawItem[], context: NavigationContext): Map<string, Building> {
   const out = new Map<string, Building>();
 
   const parseStationsGroup = (it: any): string[] => {
@@ -843,8 +852,8 @@ function parseBuildings(all: RawItem[]): Map<string, Building> {
   };
 
   for (const it of all) {
-    const cls = str(it?.Class);
-    if (cls !== 'STB' && cls !== 'SBP') continue;
+    if (!navigationRailMatches('stations',it,context)) continue;
+    const cls = isRailStationPoint(it) ? 'SBP' : 'STB';
 
     const id =
       cls === 'SBP'
@@ -2397,6 +2406,10 @@ async function computeRailPlanWithinGraph(args: {
 // ------------------------------
 
 export async function computeRailPlanBetweenBuildings(opt: NavigationRailComputeOptions): Promise<NavRailPlan> {
+  const context=opt.navigationContext??captureNavigationContext();
+  if(!context.settings.rail.enabled)throw Error('铁路导航未启用。');
+  const parameters=context.settings.rail.parameters;
+  opt={...opt,navigationContext:context,...(context.native?{transferWalkSpeed:opt.transferWalkSpeed??parameters.transferWalkSpeed,railSpeed:opt.railSpeed??parameters.railRideSpeed,stationTransferCostDivisor:opt.stationTransferCostDivisor??parameters.transferCostFactor,normalSamePlatformTransferCost:opt.normalSamePlatformTransferCost??parameters.normalPlatformTransferCost,interCompFlySpeed:opt.interCompFlySpeed??context.settings.common.elytraSpeed}:{})};
   const mode: RailSearchMode = opt.mode ?? 'time';
 
   // 默认参数（可随时由 UI 调整）
@@ -2700,6 +2713,10 @@ export type NavRailNewIntegratedPlan = NavRailPlan & {
  * - 之后在 PLF+RLE 有向图上运行最短路（与 Navigation_Rail.ts 保持一致）
  */
 export async function computeRailPlanFromCoords(opt: NavigationRailNewIntegratedComputeOptions): Promise<NavRailNewIntegratedPlan> {
+  const context=opt.navigationContext??captureNavigationContext();
+  if(!context.settings.rail.enabled)throw Error('铁路导航未启用。');
+  const parameters=context.settings.rail.parameters;
+  opt={...opt,navigationContext:context,...(context.native?{transferWalkSpeed:opt.transferWalkSpeed??parameters.transferWalkSpeed,railSpeed:opt.railSpeed??parameters.railRideSpeed,stationTransferCostDivisor:opt.stationTransferCostDivisor??parameters.transferCostFactor,normalSamePlatformTransferCost:opt.normalSamePlatformTransferCost??parameters.normalPlatformTransferCost,interCompFlySpeed:opt.interCompFlySpeed??context.settings.common.elytraSpeed}:{})};
   const mode: RailSearchMode = opt.mode ?? 'time';
 
   // 默认参数（可随时由 UI 调整）

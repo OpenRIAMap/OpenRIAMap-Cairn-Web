@@ -1,4 +1,7 @@
-import { type ReactNode, type WheelEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { captureNavigationContext, sharedRailMatches } from '@/core/project/navigationRuntime';
+import { subscribeRuntimeConfiguration } from '@/configRuntime/runtimeDataView';
+import { subscribeApplication } from '@/core/project/applicationRuntime';
+import { type ReactNode, type WheelEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
 import DraggablePanel from '@/components/DraggablePanel/DraggablePanel';
 import AppCard from '@/components/ui/AppCard';
@@ -225,15 +228,13 @@ export default function FeatureInteractionCard(props: Props) {
   };
 
   // rail index（仅 STA / STB 需要）
+  const sharedSignature=useSyncExternalStore(listener=>{const a=subscribeRuntimeConfiguration(listener),b=subscribeApplication(listener);return()=>{a();b();};},()=>captureNavigationContext().sharedSignature);
   const [railIndex, setRailIndex] = useState<RailNewIndex | null>(null);
 
   useEffect(() => {
     let alive = true;
 
-    const clsOrKind = String(
-      feature?.meta?.Class ?? feature?.featureInfo?.Kind ?? feature?.featureInfo?.Class ?? '',
-    ).trim();
-    const needRail = clsOrKind === 'STA' || clsOrKind === 'STB' || clsOrKind === 'PLF';
+    const needRail = Boolean(feature&&(['lines','platforms','stationAreas','stations'] as const).some(role=>sharedRailMatches(role,{...feature.featureInfo,Class:feature.meta?.Class??feature.featureInfo?.Class})));
 
     if (!needRail) {
       setRailIndex(null);
@@ -262,7 +263,7 @@ export default function FeatureInteractionCard(props: Props) {
     return () => {
       alive = false;
     };
-  }, [feature]);
+  }, [feature,sharedSignature]);
 
   const v3InfoSections = useMemo(() => {
     if (!configRuntimeCard || !feature) return undefined;

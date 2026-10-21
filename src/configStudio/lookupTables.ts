@@ -74,6 +74,7 @@ export function unbindCardField(config:ConfigPackageV3,item:CardItem):CardItem {
 export function tableReferences(config:ConfigPackageV3, id:string):string[] {
   return [
     ...(config.lookupTables??[]).flatMap(table=>table.rows.filter(row=>row.functionValue&&typeof row.functionValue==='object'&&'valueTableId' in row.functionValue&&row.functionValue.valueTableId===id).map(row=>`标签目录 ${table.id}/${row.value}`)),
+    ...(config.application?.navigation?[...(config.application.navigation.teleport.hubTableId===id?['路径规划 / 传送返回主城']:[]),...(config.application.navigation.road.travelModesTableId===id?['路径规划 / 道路出行方式']:[])]:[]),
     ...config.nodes.flatMap(node=>node.fields.filter(field=>field.optionsTableId===id).map(field=>`分类 ${node.nodeId} / ${field.key}`)),
     ...config.nodes.flatMap(node=>node.card?.mode==='fields'?node.card.items.filter(item=>item.optionsTableId===id).map(item=>`信息卡 ${node.nodeId} / ${item.id}`):[]),
     ...config.workflows.flatMap(workflow=>workflow.steps.flatMap(step=>(step.controls??[]).flatMap(control=>[
@@ -88,6 +89,7 @@ export function renameLookupTable(input:ConfigPackageV3,from:string,to:string):C
   if(!/^[a-z][a-z0-9-]{1,80}$/.test(to)||input.lookupTables?.some(table=>table.id===to))throw Error('表格 ID 格式无效或与已有表格重复。');
   if(!input.lookupTables?.some(table=>table.id===from))throw Error('原表格已不存在。');
   const config=structuredClone(input);
+  if(config.application?.navigation){const nav=config.application.navigation;if(nav.teleport.hubTableId===from)nav.teleport.hubTableId=to;if(nav.road.travelModesTableId===from)nav.road.travelModesTableId=to;}
   config.lookupTables!.find(table=>table.id===from)!.id=to;
   for(const table of config.lookupTables??[])for(const row of table.rows)if(row.functionValue&&typeof row.functionValue==='object'&&'valueTableId' in row.functionValue&&row.functionValue.valueTableId===from)row.functionValue.valueTableId=to;
   const update=(owner:OptionsOwner)=>{if(owner.optionsTableId===from)owner.optionsTableId=to;};

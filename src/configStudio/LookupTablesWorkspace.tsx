@@ -15,9 +15,10 @@ export function LookupTablesWorkspace({ config, draft, onDraftChange, onSave, di
     onDraftChange(lookupDraftSignature(next) === lookupDraftSignature(baseline) ? null : { baseline, value: next });
     setReport(null); setError('');
   };
+  const locate=(result:ConfigValidationReport)=>{const path=result.issues.flatMap(i=>[i.path,...i.relatedPaths??[]]).find(p=>p.startsWith('lookupTables/'));if(path)window.dispatchEvent(new CustomEvent('cairn:lookup-table-error',{detail:path.split('/')[1]}));};
   const validate = () => {
     if (!draft) return;
-    try { setReport(validateStudioModule(prepareLookupTableCommit(config, draft), records, isolated ? ['lookupTables'] : undefined)); setError(''); }
+    try { const result=validateStudioModule(prepareLookupTableCommit(config, draft), records, isolated ? ['lookupTables'] : undefined);setReport(result);locate(result);setError(''); }
     catch (reason) { setError(String(reason)); setReport(null); }
   };
   return <section aria-label="对照表独立编辑区域" className="mb-3 min-w-0 rounded-lg border-2 border-slate-200 p-3">
@@ -25,7 +26,7 @@ export function LookupTablesWorkspace({ config, draft, onDraftChange, onSave, di
       <div className="flex flex-wrap gap-2 text-xs"><button type="button" className="rounded border px-2 py-1" disabled={!draft || busy} onClick={validate}>核验表格</button>
         <button type="button" className="rounded border bg-emerald-600 px-2 py-1 text-white disabled:bg-slate-300" disabled={!draft || disabled || busy} onClick={async () => {
           if (!draft) return; setBusy(true); setError('');
-          try { const result = validateStudioModule(prepareLookupTableCommit(config, draft), records, isolated ? ['lookupTables'] : undefined); setReport(result); if (!result.valid) return; await onSave(draft); onDraftChange(null); setReport(null); }
+          try { const result = validateStudioModule(prepareLookupTableCommit(config, draft), records, isolated ? ['lookupTables'] : undefined); setReport(result); locate(result); if (!result.valid) return; await onSave(draft); onDraftChange(null); setReport(null); }
           catch (reason) { setError(String(reason)); } finally { setBusy(false); }
         }}>保存表格</button>
         <button type="button" className="rounded border px-2 py-1" disabled={!draft || busy} onClick={() => { onDraftChange(null); setReport(null); setError(''); }}>放弃表格草稿</button></div>

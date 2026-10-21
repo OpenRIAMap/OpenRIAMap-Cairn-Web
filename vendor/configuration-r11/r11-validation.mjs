@@ -518,15 +518,15 @@ var require_stream_writable = __commonJS({
     if (typeof Symbol === "function" && Symbol.hasInstance && typeof Function.prototype[Symbol.hasInstance] === "function") {
       realHasInstance = Function.prototype[Symbol.hasInstance];
       Object.defineProperty(Writable, Symbol.hasInstance, {
-        value: function(object) {
-          if (realHasInstance.call(this, object)) return true;
+        value: function(object2) {
+          if (realHasInstance.call(this, object2)) return true;
           if (this !== Writable) return false;
-          return object && object._writableState instanceof WritableState;
+          return object2 && object2._writableState instanceof WritableState;
         }
       });
     } else {
-      realHasInstance = function(object) {
-        return object instanceof this;
+      realHasInstance = function(object2) {
+        return object2 instanceof this;
       };
     }
     function Writable(options) {
@@ -2723,11 +2723,11 @@ var require_utils = __commonJS({
     function identity2(input) {
       return input;
     }
-    function stringToArrayLike(str, array) {
+    function stringToArrayLike(str, array2) {
       for (var i = 0; i < str.length; ++i) {
-        array[i] = str.charCodeAt(i) & 255;
+        array2[i] = str.charCodeAt(i) & 255;
       }
-      return array;
+      return array2;
     }
     var arrayToStringHelper = {
       /**
@@ -2739,16 +2739,16 @@ var require_utils = __commonJS({
        * @return {String} the resulting string.
        * @throws Error if the chunk is too big for the stack.
        */
-      stringifyByChunk: function(array, type, chunk) {
-        var result = [], k = 0, len = array.length;
+      stringifyByChunk: function(array2, type, chunk) {
+        var result = [], k = 0, len = array2.length;
         if (len <= chunk) {
-          return String.fromCharCode.apply(null, array);
+          return String.fromCharCode.apply(null, array2);
         }
         while (k < len) {
           if (type === "array" || type === "nodebuffer") {
-            result.push(String.fromCharCode.apply(null, array.slice(k, Math.min(k + chunk, len))));
+            result.push(String.fromCharCode.apply(null, array2.slice(k, Math.min(k + chunk, len))));
           } else {
-            result.push(String.fromCharCode.apply(null, array.subarray(k, Math.min(k + chunk, len))));
+            result.push(String.fromCharCode.apply(null, array2.subarray(k, Math.min(k + chunk, len))));
           }
           k += chunk;
         }
@@ -2761,10 +2761,10 @@ var require_utils = __commonJS({
        * @param {Array|ArrayBuffer|Uint8Array|Buffer} array the array to transform.
        * @return {String} the result.
        */
-      stringifyByChar: function(array) {
+      stringifyByChar: function(array2) {
         var resultStr = "";
-        for (var i = 0; i < array.length; i++) {
-          resultStr += String.fromCharCode(array[i]);
+        for (var i = 0; i < array2.length; i++) {
+          resultStr += String.fromCharCode(array2[i]);
         }
         return resultStr;
       },
@@ -2791,8 +2791,8 @@ var require_utils = __commonJS({
         })()
       }
     };
-    function arrayLikeToString(array) {
-      var chunk = 65536, type = exports.getTypeOf(array), canUseApply = true;
+    function arrayLikeToString(array2) {
+      var chunk = 65536, type = exports.getTypeOf(array2), canUseApply = true;
       if (type === "uint8array") {
         canUseApply = arrayToStringHelper.applyCanBeUsed.uint8array;
       } else if (type === "nodebuffer") {
@@ -2801,13 +2801,13 @@ var require_utils = __commonJS({
       if (canUseApply) {
         while (chunk > 1) {
           try {
-            return arrayToStringHelper.stringifyByChunk(array, type, chunk);
+            return arrayToStringHelper.stringifyByChunk(array2, type, chunk);
           } catch (e) {
             chunk = Math.floor(chunk / 2);
           }
         }
       }
-      return arrayToStringHelper.stringifyByChar(array);
+      return arrayToStringHelper.stringifyByChar(array2);
     }
     exports.applyFromCharCode = arrayLikeToString;
     function arrayLikeToArrayLike(arrayFrom, arrayTo) {
@@ -8749,8 +8749,8 @@ var require_object = __commonJS({
       } else {
         zipObjectContent = utils.prepareContent(name, data, o.binary, o.optimizedBinaryString, o.base64);
       }
-      var object = new ZipObject(name, zipObjectContent, o);
-      this.files[name] = object;
+      var object2 = new ZipObject(name, zipObjectContent, o);
+      this.files[name] = object2;
     };
     var parentFolder = function(path2) {
       if (path2.slice(-1) === "/") {
@@ -8776,8 +8776,8 @@ var require_object = __commonJS({
       }
       return this.files[name];
     };
-    function isRegExp(object) {
-      return Object.prototype.toString.call(object) === "[object RegExp]";
+    function isRegExp(object2) {
+      return Object.prototype.toString.call(object2) === "[object RegExp]";
     }
     var out = {
       /**
@@ -9762,363 +9762,73 @@ var require_lib3 = __commonJS({
   }
 });
 
-// src/configRuntime/configurationFingerprint.ts
-function stableConfigText(value) {
-  if (Array.isArray(value)) return "[" + value.map((item) => stableConfigText(item) ?? "null").join(",") + "]";
-  if (value && typeof value === "object") {
-    const record = value;
-    return "{" + Object.keys(record).sort().filter((key2) => record[key2] !== void 0).map((key2) => JSON.stringify(key2) + ":" + stableConfigText(record[key2])).join(",") + "}";
-  }
-  return JSON.stringify(value);
+// src/core/project/navigationDefinition.ts
+var RAILWAY_ROLES = ["lines", "platforms", "stationAreas", "stations"];
+function pathCovers(scope, path2) {
+  return ["class", "kind", "skind", "skind2"].every((key2) => !scope[key2] || scope[key2] === path2[key2]);
+}
+function pathsMatch(paths, path2) {
+  return paths.some((scope) => pathCovers(scope, path2));
+}
+function rawClassification(value) {
+  return { class: String(value.Class ?? value.class ?? "").trim(), kind: value.Kind, skind: value.SKind ?? value.Skind, skind2: value.SKind2 ?? value.Skind2 };
 }
 
-// src/configRuntime/classificationCompatibility.ts
-var indexes = /* @__PURE__ */ new WeakMap();
-var key = (path2) => JSON.stringify([path2.class, path2.kind ?? "", path2.skind ?? "", path2.skind2 ?? ""]);
-function readableClassification(config, raw) {
-  let paths = Object.isFrozen(config) ? indexes.get(config) : void 0;
-  if (!paths) {
-    paths = new Set(config.nodes.map((node) => key(node.path)));
-    if (Object.isFrozen(config)) indexes.set(config, paths);
-  }
-  if (paths.has(key(raw))) return raw;
-  if (raw.class === "ROD" && raw.kind && (!raw.skind || raw.skind === "NOM") && (!raw.skind2 || raw.skind2 === "NOM")) {
-    const candidate = { class: raw.class, kind: raw.kind };
-    if (paths.has(key(candidate))) return candidate;
-  }
-  return void 0;
-}
-
-// src/core/geometry/multipartGeometry.ts
-var DEFAULT_GEOMETRY_Y = -64;
-var isObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
-var numberOrNull = (value) => {
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) ? numberValue : null;
+// src/configStudio/valueSchema.ts
+var text = { type: "string" };
+var number = { type: "number" };
+var bool = { type: "boolean" };
+var object = (properties, required = []) => ({ type: "object", properties, required });
+var array = (items) => ({ type: "array", items });
+var id = { anyOf: [text, object({ ID: text }, ["ID"])] };
+var roadId = { anyOf: [text, { type: "array", items: text, minItems: 1 }, ...["tgt", "ID", "id"].map((key2) => object({ [key2]: text }, [key2]))] };
+var VALUE_SCHEMA_TEMPLATES = {
+  "rail-lines": { label: "\u7AD9\u53F0\u7EBF\u8DEF\u5F15\u7528", schema: array({ anyOf: [text, object({ ID: text, Avaliable: bool, Available: bool, NotAvaliable: bool, getin: bool, getout: bool, Overtaking: bool, NextOT: bool, stationDistance: number, bureau: text, line: text }, ["ID"])] }) },
+  "rail-platforms": { label: "\u7AD9\u573A\u7AD9\u53F0\u5F15\u7528", schema: array(id) },
+  "rail-stations": { label: "\u8F66\u7AD9\u7AD9\u573A\u5F15\u7528", schema: array(id) },
+  "road-modes": { label: "\u9053\u8DEF\u51FA\u884C\u65B9\u5F0F", schema: array({ anyOf: [text, { type: "array", items: text, minItems: 1 }, ...["code", "tgt", "ID", "id"].map((key2) => object({ [key2]: text }, [key2]))] }) },
+  "road-connections": { label: "\u9053\u8DEF\u8FDE\u63A5\u5173\u7CFB", schema: array({ anyOf: [...["mode", "Lot"].flatMap((mode) => ["tgt", "Tgt"].map((target) => object({ [mode]: { type: "string", enum: ["endpoint", "middle"] }, [target]: text }, [mode, target])))] }) },
+  "road-blacklist": { label: "\u9053\u8DEF\u8FDE\u63A5\u6392\u9664", schema: array(roadId) },
+  "target-point": { label: "\u4F20\u9001\u76EE\u6807\u5750\u6807", schema: object({ x: number, y: number, z: number }, ["x", "z"]) }
 };
-function canonicalGeometryField(type) {
-  if (type === "Point") return "CoordP";
-  if (type === "LineString") return "CoordL";
-  return "CoordG";
+function validateValueSchema(schema) {
+  let budget = 512;
+  const visit = (s, depth) => {
+    if (--budget < 0 || depth > 12) return ["\u503C\u7ED3\u6784\u8D85\u8FC7\u6DF1\u5EA6\u6216\u89C4\u6A21\u9650\u5236\u3002"];
+    if (!s || typeof s !== "object" || Array.isArray(s)) return ["\u503C\u7ED3\u6784\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002"];
+    if (Object.keys(s).some((key2) => !["type", "anyOf", "properties", "required", "items", "enum", "minItems", "maxItems", "minimum", "exclusiveMinimum"].includes(key2))) return ["\u503C\u7ED3\u6784\u5305\u542B\u4E0D\u652F\u6301\u7684\u5C5E\u6027\u3002"];
+    if (!s.type && !s.anyOf?.length) return ["\u503C\u7ED3\u6784\u5FC5\u987B\u6307\u5B9A\u7C7B\u578B\u6216\u517C\u5BB9\u5206\u652F\u3002"];
+    if (s.anyOf && (!s.anyOf.length || s.anyOf.length > 16)) return ["\u503C\u7ED3\u6784\u517C\u5BB9\u5206\u652F\u6570\u91CF\u65E0\u6548\u3002"];
+    if (s.required?.some((key2) => !s.properties?.[key2] || ["__proto__", "prototype", "constructor"].includes(key2))) return ["\u5FC5\u9700\u5C5E\u6027\u672A\u5B9A\u4E49\u6216\u540D\u79F0\u4E0D\u5B89\u5168\u3002"];
+    if (s.properties && Object.keys(s.properties).some((key2) => ["__proto__", "prototype", "constructor"].includes(key2))) return ["\u503C\u7ED3\u6784\u5C5E\u6027\u540D\u79F0\u4E0D\u5B89\u5168\u3002"];
+    if (s.enum && (!s.enum.length || s.enum.length > 512 || s.enum.some((v) => !["string", "number", "boolean"].includes(typeof v) || typeof v === "number" && !Number.isFinite(v)))) return ["\u503C\u7ED3\u6784\u679A\u4E3E\u65E0\u6548\u3002"];
+    if ([s.minimum, s.exclusiveMinimum].some((v) => v !== void 0 && !Number.isFinite(v))) return ["\u503C\u7ED3\u6784\u6570\u503C\u8FB9\u754C\u65E0\u6548\u3002"];
+    if ([s.minItems, s.maxItems].some((v) => v !== void 0 && (!Number.isSafeInteger(v) || v < 0 || v > 1e5)) || s.minItems !== void 0 && s.maxItems !== void 0 && s.minItems > s.maxItems) return ["\u503C\u7ED3\u6784\u6570\u7EC4\u957F\u5EA6\u8FB9\u754C\u65E0\u6548\u3002"];
+    return [...s.anyOf ?? [], ...Object.values(s.properties ?? {}), ...s.items ? [s.items] : []].flatMap((child) => visit(child, depth + 1));
+  };
+  return visit(schema, 0).slice(0, 20);
 }
-function geometryTypeFromFeatureType(value) {
-  const type = String(value ?? "").trim();
-  if (type === "Points") return "Point";
-  if (type === "Polyline") return "LineString";
-  if (type === "Polygon") return "Polygon";
-  return null;
-}
-function featureTypeFromGeometryType(type) {
-  return type === "Point" ? "Points" : type === "LineString" ? "Polyline" : "Polygon";
-}
-function tupleToCoord(value) {
-  if (!Array.isArray(value) || value.length !== 3) return null;
-  const x = numberOrNull(value[0]);
-  const y = numberOrNull(value[1]);
-  const z = numberOrNull(value[2]);
-  return x === null || y === null || z === null ? null : { x, y, z };
-}
-function legacyTupleToCoord(value) {
-  if (Array.isArray(value)) {
-    const x2 = numberOrNull(value[0]);
-    const y2 = value.length >= 3 ? numberOrNull(value[1]) : DEFAULT_GEOMETRY_Y;
-    const z2 = value.length >= 3 ? numberOrNull(value[2]) : numberOrNull(value[1]);
-    return x2 === null || y2 === null || z2 === null ? null : { x: x2, y: y2, z: z2 };
-  }
-  if (!isObject(value)) return null;
-  const x = numberOrNull(value.x);
-  const z = numberOrNull(value.z);
-  const y = numberOrNull(value.y);
-  return x === null || z === null ? null : { x, y: y ?? DEFAULT_GEOMETRY_Y, z };
-}
-function coordinatesEqual(a, b) {
-  return a.x === b.x && a.y === b.y && a.z === b.z;
-}
-function removeClosingCoordinate(ring) {
-  if (ring.length >= 2 && coordinatesEqual(ring[0], ring[ring.length - 1])) return ring.slice(0, -1);
-  return ring;
-}
-function normalizeRingCoordinates(ring) {
-  const withoutConsecutiveDuplicates = ring.filter((coordinate, index) => index === 0 || !coordinatesEqual(ring[index - 1], coordinate));
-  return removeClosingCoordinate(withoutConsecutiveDuplicates);
-}
-function parseCanonical(value, type) {
-  if (!Array.isArray(value)) return null;
-  if (type === "Point") {
-    const parts2 = value.map(tupleToCoord);
-    return parts2.every(Boolean) ? { type, parts: parts2 } : null;
-  }
-  if (type === "LineString") {
-    const parts2 = value.map((part) => Array.isArray(part) ? part.map(tupleToCoord) : null);
-    return parts2.every((part) => Array.isArray(part) && part.every(Boolean)) ? { type, parts: parts2 } : null;
-  }
-  const parts = value.map((part) => Array.isArray(part) ? part.map((ring) => Array.isArray(ring) ? normalizeRingCoordinates(ring.map(tupleToCoord).filter((coord) => Boolean(coord))) : null) : null);
-  if (!parts.every((part) => Array.isArray(part) && part.length > 0 && part.every((ring) => Array.isArray(ring)))) return null;
-  for (const component of value) {
-    if (!Array.isArray(component)) return null;
-    for (const ring of component) {
-      if (!Array.isArray(ring) || ring.some((tuple) => !tupleToCoord(tuple))) return null;
+function validateStructuredValue(value, schema, path2 = "value") {
+  if (validateValueSchema(schema).length) return [`${path2}\uFF1A\u5B57\u6BB5\u503C\u7ED3\u6784\u58F0\u660E\u65E0\u6548\u3002`];
+  let budget = 2e4;
+  const visit = (v, s, p, depth) => {
+    if (--budget < 0 || depth > 24) return [`${p}\uFF1A\u503C\u68C0\u67E5\u8D85\u8FC7\u89C4\u6A21\u9650\u5236\u3002`];
+    if (s.anyOf && !s.anyOf.some((branch) => visit(v, branch, p, depth + 1).length === 0)) return [`${p}\uFF1A\u4E0D\u7B26\u5408\u4EFB\u4F55\u5141\u8BB8\u7684\u7ED3\u6784\u3002`];
+    if (s.type && (s.type === "array" ? !Array.isArray(v) : s.type === "object" ? !v || typeof v !== "object" || Array.isArray(v) : typeof v !== s.type)) return [`${p}\uFF1A\u9700\u8981 ${s.type}\u3002`];
+    if (typeof v === "number" && (!Number.isFinite(v) || s.minimum !== void 0 && v < s.minimum || s.exclusiveMinimum !== void 0 && v <= s.exclusiveMinimum)) return [`${p}\uFF1A\u6570\u503C\u65E0\u6548\u6216\u8D8A\u754C\u3002`];
+    if (s.enum && !s.enum.includes(v)) return [`${p}\uFF1A\u503C\u4E0D\u5728\u5141\u8BB8\u679A\u4E3E\u4E2D\u3002`];
+    if (Array.isArray(v)) {
+      if (s.minItems !== void 0 && v.length < s.minItems || s.maxItems !== void 0 && v.length > s.maxItems) return [`${p}\uFF1A\u6570\u7EC4\u957F\u5EA6\u4E0D\u7B26\u5408\u8981\u6C42\u3002`];
+      if (v.length > 1e5) return [`${p}\uFF1A\u6570\u7EC4\u8FC7\u5927\u3002`];
+      return s.items ? v.flatMap((item, i) => visit(item, s.items, `${p}/${i}`, depth + 1)).slice(0, 20) : [];
     }
-  }
-  return { type, parts };
-}
-function parseLegacy(value, type) {
-  if (type === "Point") {
-    const coord = legacyTupleToCoord(value);
-    return coord ? { type, parts: [coord] } : null;
-  }
-  if (!Array.isArray(value)) return null;
-  const path2 = value.map(legacyTupleToCoord);
-  if (!path2.every(Boolean)) return null;
-  if (type === "LineString") return { type, parts: [path2] };
-  return { type, parts: [[normalizeRingCoordinates(path2)]] };
-}
-function stableGeometry(geometry) {
-  return JSON.stringify(serializeMultipartGeometry(geometry));
-}
-function readMultipartGeometry(featureInfo, type, legacySourceField) {
-  const info = isObject(featureInfo) ? featureInfo : {};
-  const canonicalField = canonicalGeometryField(type);
-  const hasCanonical = Object.prototype.hasOwnProperty.call(info, canonicalField);
-  const canonical2 = hasCanonical ? parseCanonical(info[canonicalField], type) : null;
-  if (hasCanonical && !canonical2) return { geometry: null, source: "canonical", error: `${canonicalField} \u683C\u5F0F\u65E0\u6548` };
-  const legacyCandidates = Array.from(new Set([
-    legacySourceField,
-    type === "Point" ? "coordinate" : void 0,
-    type === "LineString" ? "PLpoints" : void 0,
-    type === "LineString" ? "Linepoints" : void 0,
-    type === "Polygon" ? "Conpoints" : void 0,
-    type === "Polygon" ? "Flrpoints" : void 0
-  ].filter((field) => Boolean(field))));
-  const legacyEntries = legacyCandidates.filter((field) => Object.prototype.hasOwnProperty.call(info, field));
-  const parsedLegacy = legacyEntries.map((field) => ({ field, geometry: parseLegacy(info[field], type) }));
-  const invalidLegacy = parsedLegacy.find((entry) => !entry.geometry);
-  if (invalidLegacy) return { geometry: null, source: "legacy", error: `${invalidLegacy.field} \u683C\u5F0F\u65E0\u6548` };
-  const legacy = parsedLegacy[0]?.geometry ?? null;
-  if (legacy && parsedLegacy.some((entry) => stableGeometry(entry.geometry) !== stableGeometry(legacy))) {
-    return { geometry: null, source: "legacy", error: "geometry-field-conflict" };
-  }
-  if (canonical2 && legacy && stableGeometry(canonical2) !== stableGeometry(legacy)) {
-    return { geometry: null, source: "canonical", error: "geometry-field-conflict" };
-  }
-  if (canonical2) return { geometry: canonical2, source: "canonical" };
-  if (legacy) return { geometry: legacy, source: "legacy" };
-  return { geometry: null, source: "none" };
-}
-function serializeMultipartGeometry(geometry) {
-  const tuple = (coord) => [coord.x, coord.y, coord.z];
-  if (geometry.type === "Point") return geometry.parts.map(tuple);
-  if (geometry.type === "LineString") return geometry.parts.map((part) => part.map(tuple));
-  return geometry.parts.map((part) => part.map((ring) => normalizeRingCoordinates(ring).map(tuple)));
-}
-function withCanonicalMultipartGeometry(featureInfo, geometry) {
-  const out = { ...featureInfo };
-  out[canonicalGeometryField(geometry.type)] = serializeMultipartGeometry(geometry);
-  const legacyFields = geometry.type === "Point" ? ["coordinate"] : geometry.type === "LineString" ? ["PLpoints", "Linepoints"] : ["Conpoints", "Flrpoints"];
-  for (const field of legacyFields) delete out[field];
-  return out;
-}
-function multipartGeometryFromSinglePath(type, coords) {
-  const normalized = coords.map((coord) => ({
-    x: Number(coord.x),
-    y: Number.isFinite(Number(coord.y)) ? Number(coord.y) : DEFAULT_GEOMETRY_Y,
-    z: Number(coord.z)
-  }));
-  if (type === "Point") return { type, parts: normalized };
-  if (type === "LineString") return { type, parts: [normalized] };
-  return { type, parts: [[normalized]] };
-}
-function flattenMultipartCoordinates(geometry) {
-  if (!geometry) return [];
-  if (geometry.type === "Point") return geometry.parts;
-  if (geometry.type === "LineString") return geometry.parts.flat();
-  return geometry.parts.flat(2);
-}
-function signedArea(ring) {
-  let area = 0;
-  for (let index = 0; index < ring.length; index += 1) {
-    const a = ring[index];
-    const b = ring[(index + 1) % ring.length];
-    area += a.x * b.z - b.x * a.z;
-  }
-  return area / 2;
-}
-function orientation(a, b, c) {
-  const result = (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x);
-  return Math.abs(result) < 1e-9 ? 0 : result > 0 ? 1 : -1;
-}
-function onSegment(a, b, c) {
-  return Math.min(a.x, c.x) <= b.x && b.x <= Math.max(a.x, c.x) && Math.min(a.z, c.z) <= b.z && b.z <= Math.max(a.z, c.z);
-}
-function segmentsIntersect(a, b, c, d) {
-  const o1 = orientation(a, b, c);
-  const o2 = orientation(a, b, d);
-  const o3 = orientation(c, d, a);
-  const o4 = orientation(c, d, b);
-  if (o1 !== o2 && o3 !== o4) return true;
-  return o1 === 0 && onSegment(a, c, b) || o2 === 0 && onSegment(a, d, b) || o3 === 0 && onSegment(c, a, d) || o4 === 0 && onSegment(c, b, d);
-}
-function ringSelfIntersects(ring) {
-  for (let i = 0; i < ring.length; i += 1) {
-    const a = ring[i];
-    const b = ring[(i + 1) % ring.length];
-    for (let j = i + 1; j < ring.length; j += 1) {
-      if (j === i || (j + 1) % ring.length === i || (i + 1) % ring.length === j) continue;
-      const c = ring[j];
-      const d = ring[(j + 1) % ring.length];
-      if (segmentsIntersect(a, b, c, d)) return true;
+    if (v && typeof v === "object") {
+      const row2 = v;
+      return [...(s.required ?? []).filter((key2) => row2[key2] === void 0).map((key2) => `${p}/${key2}\uFF1A\u7F3A\u5C11\u5FC5\u9700\u5C5E\u6027\u3002`), ...Object.entries(s.properties ?? {}).flatMap(([key2, child]) => row2[key2] === void 0 ? [] : visit(row2[key2], child, `${p}/${key2}`, depth + 1))].slice(0, 20);
     }
-  }
-  return false;
-}
-function pointInRing(point, ring) {
-  for (let index = 0; index < ring.length; index += 1) {
-    const a = ring[index];
-    const b = ring[(index + 1) % ring.length];
-    if (orientation(a, point, b) === 0 && onSegment(a, point, b)) return false;
-  }
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const a = ring[i];
-    const b = ring[j];
-    const intersects = a.z > point.z !== b.z > point.z && point.x < (b.x - a.x) * (point.z - a.z) / (b.z - a.z) + a.x;
-    if (intersects) inside = !inside;
-  }
-  return inside;
-}
-function ringsIntersect(a, b) {
-  for (let ai = 0; ai < a.length; ai += 1) {
-    const aNext = a[(ai + 1) % a.length];
-    for (let bi = 0; bi < b.length; bi += 1) {
-      if (segmentsIntersect(a[ai], aNext, b[bi], b[(bi + 1) % b.length])) return true;
-    }
-  }
-  return false;
-}
-function validateMultipartGeometry(geometry) {
-  if (!geometry) return "\u7F3A\u5C11\u51E0\u4F55\u5750\u6807";
-  const invalidCoordinate = flattenMultipartCoordinates(geometry).find((coord) => !Number.isFinite(coord.x) || !Number.isFinite(coord.y) || !Number.isFinite(coord.z));
-  if (invalidCoordinate) return "\u5750\u6807\u5FC5\u987B\u4E3A\u6709\u9650\u7684 [x, y, z] \u6570\u5B57";
-  if (geometry.type === "Point") return geometry.parts.length > 0 ? void 0 : "CoordP \u81F3\u5C11\u9700\u8981 1 \u4E2A\u5750\u6807";
-  if (geometry.type === "LineString") {
-    const invalidPart = geometry.parts.findIndex((part) => part.length < 2);
-    return invalidPart >= 0 ? `CoordL \u7B2C ${invalidPart + 1} \u4E2A\u90E8\u4EF6\u81F3\u5C11\u9700\u8981 2 \u4E2A\u5750\u6807` : void 0;
-  }
-  for (let partIndex = 0; partIndex < geometry.parts.length; partIndex += 1) {
-    const [outer, ...holes] = geometry.parts[partIndex];
-    if (!outer || outer.length < 3) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5916\u8FB9\u754C\u81F3\u5C11\u9700\u8981 3 \u4E2A\u5750\u6807`;
-    if (Math.abs(signedArea(outer)) < 1e-9 || ringSelfIntersects(outer)) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5916\u8FB9\u754C\u62D3\u6251\u65E0\u6548`;
-    for (let holeIndex = 0; holeIndex < holes.length; holeIndex += 1) {
-      const hole = holes[holeIndex];
-      if (hole.length < 3 || Math.abs(signedArea(hole)) < 1e-9 || ringSelfIntersects(hole)) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5185\u90E8\u6D1E ${holeIndex + 1} \u62D3\u6251\u65E0\u6548`;
-      if (!pointInRing(hole[0], outer) || ringsIntersect(hole, outer)) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5185\u90E8\u6D1E ${holeIndex + 1} \u5FC5\u987B\u5B8C\u5168\u4F4D\u4E8E\u5916\u8FB9\u754C\u5185`;
-      for (let prior = 0; prior < holeIndex; prior += 1) {
-        if (ringsIntersect(hole, holes[prior]) || pointInRing(hole[0], holes[prior])) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5185\u90E8\u6D1E\u4E0D\u80FD\u91CD\u53E0`;
-      }
-    }
-  }
-  return void 0;
-}
-
-// scripts/config-tools/server-validation-entry.ts
-var import_jszip2 = __toESM(require_lib3(), 1);
-import { File } from "node:buffer";
-import { createHash } from "node:crypto";
-
-// src/configStudio/nativeArchive.ts
-var import_jszip = __toESM(require_lib3(), 1);
-
-// src/configStudio/archivePolicy.ts
-var CONFIG_IMPORT_LIMITS = Object.freeze({ compressedBytes: 64 * 1024 * 1024, totalBytes: 128 * 1024 * 1024, fileBytes: 64 * 1024 * 1024, entries: 512, jsonDepth: 64 });
-function importProgress(options, stage) {
-  options.signal?.throwIfAborted();
-  options.onProgress?.(stage);
-}
-function parseConfigJson(text) {
-  let depth = 0, quoted = false, escape2 = false;
-  for (const char of text) {
-    if (quoted) {
-      if (escape2) escape2 = false;
-      else if (char === "\\") escape2 = true;
-      else if (char === '"') quoted = false;
-    } else if (char === '"') quoted = true;
-    else if (char === "{" || char === "[") {
-      if (++depth > CONFIG_IMPORT_LIMITS.jsonDepth) throw Error(`JSON \u5D4C\u5957\u6DF1\u5EA6\u8D85\u8FC7\u5BFC\u5165\u9884\u7B97 ${CONFIG_IMPORT_LIMITS.jsonDepth}\uFF1B\u8BF7\u79BB\u7EBF\u68C0\u67E5\u540E\u62C6\u9664\u65E0\u6548\u5D4C\u5957\u3002`);
-    } else if (char === "}" || char === "]") depth--;
-  }
-  return JSON.parse(text);
-}
-function safeArchivePath(path2) {
-  return Boolean(path2) && !/[\\\x00-\x1f:]/.test(path2) && !path2.startsWith("/") && path2.split("/").every((part, index, parts) => part !== "." && part !== ".." && (part !== "" || index === parts.length - 1));
-}
-function inspectConfigZip(bytes) {
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), names2 = /* @__PURE__ */ new Map();
-  let end = -1;
-  for (let at2 = bytes.length - 22; at2 >= Math.max(0, bytes.length - 65557); at2--) if (view.getUint32(at2, true) === 101010256 && at2 + 22 + view.getUint16(at2 + 20, true) === bytes.length) {
-    end = at2;
-    break;
-  }
-  if (end < 0) throw Error("ZIP \u76EE\u5F55\u635F\u574F\u3002");
-  const count = view.getUint16(end + 10, true), size = view.getUint32(end + 12, true), offset = view.getUint32(end + 16, true);
-  if (view.getUint16(end + 4, true) || view.getUint16(end + 6, true) || view.getUint16(end + 8, true) !== count || count === 65535 || offset === 4294967295 || size === 4294967295) throw Error("\u4E0D\u652F\u6301\u591A\u5377\u6216 ZIP64 \u914D\u7F6E\u5F52\u6863\uFF1B\u8BF7\u4F7F\u7528\u6807\u51C6\u914D\u7F6E ZIP/JSON\u3002");
-  if (count > CONFIG_IMPORT_LIMITS.entries) throw Error(`ZIP \u6761\u76EE ${count} \u8D85\u8FC7\u5BFC\u5165\u9884\u7B97 ${CONFIG_IMPORT_LIMITS.entries}\u3002`);
-  if (offset + size > end) throw Error("ZIP \u76EE\u5F55\u8303\u56F4\u65E0\u6548\u3002");
-  let at = offset, total = 0;
-  for (let index = 0; index < count; index++) {
-    if (at + 46 > offset + size || view.getUint32(at, true) !== 33639248) throw Error("ZIP \u6761\u76EE\u635F\u574F\u3002");
-    const length = view.getUint16(at + 28, true), extra = view.getUint16(at + 30, true), comment = view.getUint16(at + 32, true), fileSize = view.getUint32(at + 24, true);
-    if (at + 46 + length + extra + comment > offset + size) throw Error("ZIP \u6761\u76EE\u540D\u79F0\u8303\u56F4\u65E0\u6548\u3002");
-    const name = new TextDecoder("utf-8", { fatal: true }).decode(bytes.subarray(at + 46, at + 46 + length));
-    if (!safeArchivePath(name) || names2.has(name)) throw Error(`ZIP \u8DEF\u5F84\u4E0D\u5408\u6CD5\u6216\u91CD\u590D\uFF1A${name}`);
-    if (fileSize > CONFIG_IMPORT_LIMITS.fileBytes || (total += fileSize) > CONFIG_IMPORT_LIMITS.totalBytes) throw Error(`ZIP \u89E3\u538B\u9884\u7B97\u8D85\u9650\uFF1A\u5355\u6587\u4EF6 ${fileSize} / ${CONFIG_IMPORT_LIMITS.fileBytes} \u5B57\u8282\uFF0C\u7D2F\u8BA1 ${total} / ${CONFIG_IMPORT_LIMITS.totalBytes} \u5B57\u8282\u3002\u8BF7\u79BB\u7EBF\u68C0\u67E5\u6216\u8C03\u6574\u96C6\u4E2D\u5BFC\u5165\u7B56\u7565\u3002`);
-    names2.set(name, fileSize);
-    at += 46 + length + extra + comment;
-  }
-  if (at !== offset + size) throw Error("ZIP \u76EE\u5F55\u957F\u5EA6\u4E0D\u4E00\u81F4\u3002");
-  return names2;
-}
-
-// src/configStudio/nativeArchive.ts
-var isRecord = (value) => !!value && typeof value === "object" && !Array.isArray(value);
-async function sha256(value) {
-  return [...new Uint8Array(await crypto.subtle.digest("SHA-256", value))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-async function readRawNativePackage(file, options = {}) {
-  importProgress(options, "\u8BFB\u53D6\u914D\u7F6E\u6587\u4EF6");
-  if (file.size > CONFIG_IMPORT_LIMITS.compressedBytes) throw Error(`\u914D\u7F6E\u6587\u4EF6 ${file.size} \u5B57\u8282\uFF0C\u8D85\u8FC7\u5BFC\u5165\u9884\u7B97 ${CONFIG_IMPORT_LIMITS.compressedBytes} \u5B57\u8282\u3002\u8BF7\u79BB\u7EBF\u68C0\u67E5\u6216\u8C03\u6574\u96C6\u4E2D\u5BFC\u5165\u7B56\u7565\u3002`);
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const isZip = bytes[0] === 80 && bytes[1] === 75;
-  if (!isZip) {
-    importProgress(options, "\u68C0\u67E5 JSON \u7ED3\u6784\u4E0E\u7248\u672C");
-    return parseConfigJson(new TextDecoder().decode(bytes));
-  }
-  const entries = inspectConfigZip(bytes);
-  importProgress(options, "\u68C0\u67E5\u5F52\u6863\u76EE\u5F55");
-  const zip = await import_jszip.default.loadAsync(bytes);
-  const manifestRaw = await zip.file("manifest.json")?.async("string");
-  if (!manifestRaw || !zip.file("config.json")) throw new Error("\u914D\u7F6E\u5305\u7F3A\u5C11 manifest.json \u6216 config.json\u3002");
-  const manifest = parseConfigJson(manifestRaw);
-  if (!isRecord(manifest) || manifest.schemaVersion !== "cairnmap.config-package-manifest.v3") throw Error("\u4E0D\u652F\u6301\u6B64\u914D\u7F6E manifest \u7248\u672C\uFF1B\u8BF7\u4F7F\u7528\u517C\u5BB9\u7248\u672C\u5347\u7EA7\u540E\u91CD\u65B0\u5BFC\u51FA\u3002");
-  const manifestKeys = /* @__PURE__ */ new Set(["schemaVersion", "contractRevision", "packageId", "projectId", "revision", "createdAt", "sourceManifestSha256", "files"]);
-  if (Object.keys(manifest).some((key2) => !manifestKeys.has(key2))) throw Error("manifest \u5305\u542B\u5F53\u524D schema \u672A\u5B9A\u4E49\u7684\u5C5E\u6027\u3002");
-  if (!Array.isArray(manifest.files) || !manifest.files.length || manifest.files.length > CONFIG_IMPORT_LIMITS.entries || typeof manifest.packageId !== "string" || typeof manifest.projectId !== "string" || !Number.isSafeInteger(manifest.revision) || !Number.isSafeInteger(manifest.contractRevision) || typeof manifest.createdAt !== "string" || !Number.isFinite(Date.parse(manifest.createdAt))) throw Error("\u914D\u7F6E manifest \u7ED3\u6784\u6216\u8EAB\u4EFD\u65E0\u6548\u3002");
-  const declared = /* @__PURE__ */ new Set(), bodies = /* @__PURE__ */ new Map();
-  for (const item of manifest.files) {
-    if (!isRecord(item) || Object.keys(item).some((key2) => !["path", "sha256", "byteLength"].includes(key2)) || typeof item.path !== "string" || !safeArchivePath(item.path) || item.path.endsWith("/") || item.path === "manifest.json" || declared.has(item.path) || typeof item.sha256 !== "string" || !/^[0-9a-f]{64}$/i.test(item.sha256) || !Number.isSafeInteger(item.byteLength) || Number(item.byteLength) < 0) throw Error("manifest \u6587\u4EF6\u58F0\u660E\u5B58\u5728\u65E0\u6548\u5C5E\u6027\u3001\u8DEF\u5F84\u3001\u91CD\u590D\u6216\u6458\u8981\u683C\u5F0F\u9519\u8BEF\u3002");
-    declared.add(item.path);
-    importProgress(options, `\u6838\u5BF9\u6587\u4EF6\u5B8C\u6574\u6027\uFF1A${item.path}`);
-    const entry = zip.file(item.path);
-    if (!entry) throw Error(`\u914D\u7F6E\u5305\u7F3A\u5C11\u58F0\u660E\u6587\u4EF6 ${item.path}\u3002`);
-    const body = await entry.async("uint8array");
-    if (body.byteLength !== item.byteLength || body.byteLength !== entries.get(item.path) || await sha256(body) !== item.sha256.toLowerCase()) throw Error(`\u914D\u7F6E\u5305 ${item.path} \u54C8\u5E0C\u6821\u9A8C\u5931\u8D25\u6216 byteLength \u4E0D\u4E00\u81F4\u3002`);
-    bodies.set(item.path, body);
-  }
-  for (const required of ["config.json", "reports/validation-report.json", "reports/v1-parity-report.json"]) if (!declared.has(required)) throw Error(`manifest \u7F3A\u5C11\u5FC5\u9700\u6587\u4EF6 ${required}\u3002`);
-  for (const name of entries.keys()) if (name !== "manifest.json" && !name.endsWith("/") && !declared.has(name)) throw Error(`\u914D\u7F6E\u5305\u5305\u542B\u672A\u58F0\u660E\u9644\u52A0\u6587\u4EF6 ${name}\uFF1B\u8BF7\u91CD\u65B0\u5BFC\u51FA\uFF0C\u4E0D\u80FD\u5C06\u5176\u9690\u5F0F\u5E94\u7528\u3002`);
-  const raw = parseConfigJson(new TextDecoder("utf-8", { fatal: true }).decode(bodies.get("config.json")));
-  if (!isRecord(raw) || ["packageId", "projectId", "revision", "contractRevision", "sourceManifestSha256"].some((key2) => manifest[key2] !== raw[key2])) throw Error("manifest \u4E0E config \u7684\u5305\u8EAB\u4EFD\u3001revision \u6216\u5951\u7EA6\u4E0D\u4E00\u81F4\u3002");
-  importProgress(options, "\u8FC1\u79FB\u4E0E\u68C0\u67E5\u914D\u7F6E\u7ED3\u6784");
-  return raw;
+    return [];
+  };
+  return visit(value, schema, path2, 0);
 }
 
 // src/core/project/applicationResources.ts
@@ -10138,9 +9848,9 @@ function expandWorldTemplate(template, worldKey) {
 }
 function resourceGroupForWorld(application, worldId2) {
   if (!isWorldGroups(application.sources)) return void 0;
-  const id = application.sources.bindings[worldId2] ?? application.sources.defaultGroupId;
-  const group = application.sources.groups.find((group2) => group2.id === id);
-  if (!group || !group.enabled) throw Error(`\u4E16\u754C ${worldId2} \u7684\u6765\u6E90\u914D\u7F6E\u7EC4 ${id} \u4E0D\u5B58\u5728\u6216\u672A\u542F\u7528\u3002`);
+  const id2 = application.sources.bindings[worldId2] ?? application.sources.defaultGroupId;
+  const group = application.sources.groups.find((group2) => group2.id === id2);
+  if (!group || !group.enabled) throw Error(`\u4E16\u754C ${worldId2} \u7684\u6765\u6E90\u914D\u7F6E\u7EC4 ${id2} \u4E0D\u5B58\u5728\u6216\u672A\u542F\u7528\u3002`);
   return group;
 }
 function defaultSourceSettings(application) {
@@ -10201,7 +9911,7 @@ function validateResourceGroups(application) {
       if (source.transport === "github-raw-compatible" && !group.sources.github.sourceIds.includes(source.id)) fail(path2, "GitHub \u8BBF\u95EE\u65B9\u5F0F\u672A\u7ED1\u5B9A\u8BE5\u7EC4\u6570\u636E\u6E90\u3002");
     }
     if (!group.sources.items.some((source) => source.id === group.sources.defaultSourceId && source.enabled)) fail(path2, "\u7EC4\u5185\u9ED8\u8BA4\u6570\u636E\u6E90\u4E0D\u5B58\u5728\u6216\u672A\u542F\u7528\u3002");
-    if (group.sources.github.sourceIds.some((id) => !sourceIds.has(id))) fail(path2, "\u7EC4\u5185 GitHub \u6765\u6E90\u5F15\u7528\u4E0D\u5B58\u5728\u3002");
+    if (group.sources.github.sourceIds.some((id2) => !sourceIds.has(id2))) fail(path2, "\u7EC4\u5185 GitHub \u6765\u6E90\u5F15\u7528\u4E0D\u5B58\u5728\u3002");
     if (group.sources.linkModes.items.filter((mode) => mode.default).length !== 1) fail(path2, "\u7EC4\u5185\u987B\u6709\u4E00\u4E2A\u9ED8\u8BA4\u94FE\u63A5\u6A21\u5F0F\u3002");
     const modeIds = /* @__PURE__ */ new Set();
     for (const mode of group.sources.linkModes.items) {
@@ -10234,7 +9944,7 @@ function validateResourceGroups(application) {
   }
   if (!config.groups.some((group) => group.id === config.defaultGroupId && group.enabled)) fail("sources/defaultGroupId", "\u9ED8\u8BA4\u6765\u6E90\u7EC4\u5FC5\u987B\u5B58\u5728\u4E14\u542F\u7528\u3002");
   if (config.sharedInterfaceGroupId && !ids.has(config.sharedInterfaceGroupId)) fail("sources/sharedInterfaceGroupId", "\u5F53\u524D\u5E94\u7528\u5BA1\u6838\uFF0F\u73A9\u5BB6\u670D\u52A1\u7684\u6765\u6E90\u7EC4\u5F15\u7528\u4E0D\u5B58\u5728\u3002");
-  for (const [world, id] of Object.entries(config.bindings)) if (!worlds.has(world) || !config.groups.some((group) => group.id === id && group.enabled)) fail("sources/bindings/" + world, "\u7ED1\u5B9A\u7684\u4E16\u754C\u6216\u542F\u7528\u6765\u6E90\u7EC4\u4E0D\u5B58\u5728\u3002");
+  for (const [world, id2] of Object.entries(config.bindings)) if (!worlds.has(world) || !config.groups.some((group) => group.id === id2 && group.enabled)) fail("sources/bindings/" + world, "\u7ED1\u5B9A\u7684\u4E16\u754C\u6216\u542F\u7528\u6765\u6E90\u7EC4\u4E0D\u5B58\u5728\u3002");
   const normalizedWorlds = /* @__PURE__ */ new Set();
   for (const world of application.worlds) {
     const normalized = world.id.toLowerCase();
@@ -10354,10 +10064,10 @@ function parseWorkflowExpression(source) {
       }
       throw new Error("\u6587\u672C\u7F3A\u5C11\u7ED3\u675F\u5F15\u53F7\u3002");
     }
-    const number2 = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/.exec(source.slice(cursor));
-    if (number2) {
-      cursor += number2[0].length;
-      const value = Number(number2[0]);
+    const number3 = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/.exec(source.slice(cursor));
+    if (number3) {
+      cursor += number3[0].length;
+      const value = Number(number3[0]);
       if (!Number.isFinite(value)) throw new Error("\u6570\u503C\u65E0\u6548\u3002");
       return { kind: "literal", value };
     }
@@ -10408,19 +10118,19 @@ function workflowExpressionTokens(expression) {
   return [...new Set((expression.kind === "join" || expression.kind === "call" ? expression.args : expression.parts).flatMap(workflowExpressionTokens))];
 }
 function evaluateWorkflowExpression(source, slots, system) {
-  const text = (value) => value == null ? "" : typeof value === "string" ? value : JSON.stringify(value);
+  const text2 = (value) => value == null ? "" : typeof value === "string" ? value : JSON.stringify(value);
   const run = (expression) => {
     if (expression.kind === "literal") return expression.value;
     if (expression.kind === "token") return Object.prototype.hasOwnProperty.call(system, expression.name) ? system[expression.name] : Object.prototype.hasOwnProperty.call(slots, expression.name) ? slots[expression.name] : void 0;
-    if (expression.kind === "concat") return expression.parts.map((part) => text(run(part))).join("");
+    if (expression.kind === "concat") return expression.parts.map((part) => text2(run(part))).join("");
     if (expression.kind === "call") {
       const values2 = expression.args.map(run);
       const value = values2[0];
       const numeric2 = (raw) => {
         if (raw == null || typeof raw === "string" && !raw.trim()) throw new Error("\u6570\u503C\u53C2\u6570\u5C1A\u672A\u586B\u5199\u3002");
-        const number2 = Number(raw);
-        if (!Number.isFinite(number2)) throw new Error("\u6570\u503C\u53C2\u6570\u65E0\u6548\u3002");
-        return number2;
+        const number3 = Number(raw);
+        if (!Number.isFinite(number3)) throw new Error("\u6570\u503C\u53C2\u6570\u65E0\u6548\u3002");
+        return number3;
       };
       const finite = (value2) => {
         if (!Number.isFinite(value2)) throw new Error("\u8BA1\u7B97\u7ED3\u679C\u8D85\u51FA\u6709\u9650\u6570\u503C\u8303\u56F4\u3002");
@@ -10440,15 +10150,15 @@ function evaluateWorkflowExpression(source, slots, system) {
         case "coalesce":
           return values2.find((item) => item != null && !(typeof item === "string" && !item.trim()));
         case "text":
-          return text(value);
+          return text2(value);
         case "number":
           return numeric2(value);
         case "trim":
-          return text(value).trim();
+          return text2(value).trim();
         case "upper":
-          return text(value).toUpperCase();
+          return text2(value).toUpperCase();
         case "lower":
-          return text(value).toLowerCase();
+          return text2(value).toLowerCase();
         case "abs":
           return Math.abs(numeric2(value));
         case "round":
@@ -10478,7 +10188,7 @@ function evaluateWorkflowExpression(source, slots, system) {
       }
     }
     const [separator, ...parts] = expression.args;
-    return parts.map(run).filter((value) => value != null && String(value).trim()).map(text).join(text(run(separator)));
+    return parts.map(run).filter((value) => value != null && String(value).trim()).map(text2).join(text2(run(separator)));
   };
   return run(parseWorkflowExpression(source));
 }
@@ -10536,6 +10246,7 @@ function constant(value) {
   const result = shape(value == null ? "null" : Array.isArray(value) ? "array" : typeof value);
   result.constants = [value];
   if (Array.isArray(value)) result.item = value.length ? union(value.map(constant)) : shape("unknown");
+  else if (value && typeof value === "object") result.properties = Object.fromEntries(Object.entries(value).map(([key2, v]) => [key2, constant(v)]));
   return result;
 }
 function union(values2) {
@@ -10545,10 +10256,31 @@ function union(values2) {
     ...values2.some((value) => value.item) ? { item: union(values2.flatMap((value) => value.item ? [value.item] : [])) } : {}
   };
 }
+function shapeFitsSchema(actual, schema, depth = 0) {
+  if (depth > 12 || actual.kinds.includes("unknown")) return void 0;
+  if (actual.constants) return actual.constants.every((value) => validateStructuredValue(value, schema).length === 0);
+  if (schema.anyOf) {
+    const branches2 = schema.anyOf.map((branch) => shapeFitsSchema(actual, branch, depth + 1));
+    return branches2.includes(true) ? true : branches2.includes(void 0) ? void 0 : false;
+  }
+  if (schema.type && actual.kinds.some((kind) => kind !== schema.type)) return false;
+  if (schema.type === "array" && schema.items && actual.item) return shapeFitsSchema(actual.item, schema.items, depth + 1);
+  if (schema.type === "object") {
+    if (!actual.properties) return void 0;
+    if (schema.required?.some((key2) => !actual.properties?.[key2])) return false;
+    const matches = Object.entries(schema.properties ?? {}).flatMap(([key2, child]) => actual.properties?.[key2] ? [shapeFitsSchema(actual.properties[key2], child, depth + 1)] : []);
+    return matches.includes(false) ? false : matches.includes(void 0) ? void 0 : true;
+  }
+  return true;
+}
+function schemaShape(schema) {
+  if (schema.anyOf) return union(schema.anyOf.map(schemaShape));
+  return { kinds: [schema.type ?? "unknown"], ...schema.items ? { item: schemaShape(schema.items) } : {}, ...schema.properties ? { properties: Object.fromEntries(Object.entries(schema.properties).map(([key2, value]) => [key2, schemaShape(value)])) } : {} };
+}
 function fieldShape(field) {
   if (!field) return shape("unknown");
   const type = field.type === "enum" ? field.optionValueType ?? "string" : field.type === "reference" ? "string" : field.type;
-  const result = type === "json" ? field.coordinateFormat ? shape(field.coordinateFormat === "pointObject" ? "object" : "array") : shape("unknown") : shape(type);
+  const result = type === "json" ? field.valueSchema ? schemaShape(field.valueSchema) : field.coordinateFormat ? shape(field.coordinateFormat === "pointObject" ? "object" : "array") : shape("unknown") : shape(type);
   if (field.cardinality === "multiple") return { kinds: ["array"], item: result };
   return result;
 }
@@ -10562,7 +10294,7 @@ function validateWorkflowWrites(workflow, fields) {
     workflow.outputs.forEach((_, index) => tokens.set(`${token}_${index + 1}`, shape("string")));
   }
   const controlShape = (control) => {
-    if (control.kind === "group" && "group" in control) return { kinds: ["array"], item: control.group?.storage === "scalar" ? controlShape(control.group.itemFields[0]) : shape("object") };
+    if (control.kind === "group" && "group" in control) return { kinds: ["array"], item: control.group?.storage === "scalar" ? controlShape(control.group.itemFields[0]) : { kinds: ["object"], properties: Object.fromEntries((control.group?.itemFields ?? []).map((f) => [f.key, controlShape(f)])) } };
     if (control.kind === "json" || control.kind === "runtimeValue" || control.kind === "component") return shape("unknown");
     if (control.kind === "select") {
       const type = control.optionValueType ?? "string";
@@ -10607,7 +10339,12 @@ function validateWorkflowWrites(workflow, fields) {
       try {
         const ast = parseWorkflowExpression(assignment.expression);
         const actual = workflowExpressionTokens(ast).length ? infer(ast) : constant(evaluateWorkflowExpression(assignment.expression, {}, {}));
-        if (!field || field.type === "json" && field.cardinality === "single" && !field.coordinateFormat) continue;
+        if (!field || field.type === "json" && field.cardinality === "single" && !field.coordinateFormat && !field.valueSchema) continue;
+        if (field.valueSchema) {
+          const match = shapeFitsSchema(actual, field.valueSchema);
+          if (match === false) add("workflow-value-schema-conflict", path2, `${field.key} \u7684\u8F93\u51FA\u7ED3\u6784\u4E0E\u5B57\u6BB5\u7ED3\u6784\u6A21\u677F\u51B2\u7A81\u3002`);
+          else if (match === void 0) add("workflow-value-schema-unknown", path2, `${field.key} \u7684\u52A8\u6001\u7ED3\u6784\u9700\u8BD5\u8FD0\u884C\u6838\u5BF9\uFF1B\u5B9E\u9645\u63D0\u4EA4\u4ECD\u4F1A\u68C0\u67E5\u5177\u4F53\u503C\u3002`, "warning");
+        }
         if (actual.constants?.every(isEmpty)) continue;
         const expected = fieldShape(field);
         const actualKinds = actual.kinds.filter((kind) => kind !== "null");
@@ -10712,8 +10449,8 @@ function migrateWorkflowDrawings(value) {
 
 // src/configStudio/cssColor.ts
 var names = new Set("aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray lightgreen lightgrey lightpink lightsalmon lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise palevioletred papayawhip peachpuff peru pink plum powderblue purple rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue slateblue slategray slategrey snow springgreen steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen transparent".split(" "));
-var number = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
-var numeric = (value) => number.test(value) && Number.isFinite(Number(value));
+var number2 = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
+var numeric = (value) => number2.test(value) && Number.isFinite(Number(value));
 var channel = (value) => numeric(value.endsWith("%") ? value.slice(0, -1) : value);
 function validCssColor(input) {
   if (typeof input !== "string") return false;
@@ -10738,8 +10475,8 @@ function customPillErrors(size, value) {
   const errors = [];
   if (!Number.isFinite(size) || size < 6 || size > 72) errors.push({ key: "size", message: "\u80F6\u56CA\u5B57\u53F7\u5FC5\u987B\u4ECB\u4E8E 6\u201372px\u3002" });
   for (const key2 of ["lineHeightRatio", "paddingYRatio", "paddingXRatio", "radiusRatio"]) {
-    const number2 = value[key2];
-    if (!Number.isFinite(number2) || number2 > 10 || number2 < 0 || key2 === "lineHeightRatio" && number2 === 0)
+    const number3 = value[key2];
+    if (!Number.isFinite(number3) || number3 > 10 || number3 < 0 || key2 === "lineHeightRatio" && number3 === 0)
       errors.push({ key: key2, message: `${key2} \u5FC5\u987B\u662F${key2 === "lineHeightRatio" ? "\u5927\u4E8E 0" : "\u975E\u8D1F"}\u4E14\u4E0D\u8D85\u8FC7 10 \u7684\u6709\u9650\u6570\u5B57\u3002` });
   }
   if (!Number.isFinite(value.strokeWidth) || value.strokeWidth < 0 || value.strokeWidth > 72)
@@ -10765,7 +10502,7 @@ var validMappedColor = (color) => typeof color === "string" && /^#[a-f\d]{6}$/i.
 // src/configStudio/pointSymbol.ts
 var ICON_LIBRARY = { library: "pinhead", version: pinhead_capabilities_generated_default.version, manifestSha256: pinhead_capabilities_generated_default.manifestSha256 };
 var iconIds = new Set(pinhead_capabilities_generated_default.ids);
-var supportedIconId = (id) => iconIds.has(id);
+var supportedIconId = (id2) => iconIds.has(id2);
 function acceptableImageUrl(value) {
   if (typeof value !== "string" || !value.trim() || value.length > 8192) return false;
   try {
@@ -10851,8 +10588,8 @@ function pointSymbolProblems(value, fields, config) {
       if (source.mode === "fixed" && !acceptableImageUrl(source.url)) fail("image/url", "\u56FE\u7247\u94FE\u63A5\u5FC5\u987B\u662F\u6709\u6548 HTTP(S) \u6216\u7AD9\u5185\u5730\u5740\u3002");
       if (source.mode === "fieldUrl") field(source.field, "image/field");
       if (source.mode === "externalFieldUrl") {
-        const id = field(source.targetIdField, "image/targetIdField");
-        if (id && !["string", "reference", "enum"].includes(id.type)) fail("image/targetIdField", "\u5916\u90E8\u76EE\u6807 ID \u9700\u8981\u5355\u503C\u6587\u672C\uFF0F\u5F15\u7528\u5B57\u6BB5\u3002");
+        const id2 = field(source.targetIdField, "image/targetIdField");
+        if (id2 && !["string", "reference", "enum"].includes(id2.type)) fail("image/targetIdField", "\u5916\u90E8\u76EE\u6807 ID \u9700\u8981\u5355\u503C\u6587\u672C\uFF0F\u5F15\u7528\u5B57\u6BB5\u3002");
         if (!source.targetUrlField || !source.targetUrlField.split(".").every((part) => /^[A-Za-z_][A-Za-z0-9_-]*$/.test(part) && !["constructor", "prototype", "__proto__"].includes(part))) fail("image/targetUrlField", "\u624B\u586B\u76EE\u6807\u5B57\u6BB5\u8DEF\u5F84\u65E0\u6548\u3002");
       }
     }
@@ -10882,15 +10619,15 @@ function pointSymbolBindings(value) {
 
 // src/configStudio/renderBooleanFormula.ts
 var cache = /* @__PURE__ */ new WeakMap();
-function parse(text, known) {
-  if (text.length > 16384) throw Error("\u6761\u4EF6\u516C\u5F0F\u8D85\u8FC7 16 KiB\u3002");
+function parse(text2, known) {
+  if (text2.length > 16384) throw Error("\u6761\u4EF6\u516C\u5F0F\u8D85\u8FC7 16 KiB\u3002");
   const tokens = [];
   const re = /\s*([A-Z][A-Z0-9_]*|[()])/igy;
   let offset = 0;
-  while (offset < text.length) {
-    if (!text.slice(offset).trim()) break;
+  while (offset < text2.length) {
+    if (!text2.slice(offset).trim()) break;
     re.lastIndex = offset;
-    const token = re.exec(text);
+    const token = re.exec(text2);
     if (!token) throw Error(`\u6761\u4EF6\u516C\u5F0F\u5728\u7B2C ${offset + 1} \u4E2A\u5B57\u7B26\u65E0\u6548\u3002`);
     tokens.push(token[1].toUpperCase());
     offset = re.lastIndex;
@@ -10939,7 +10676,7 @@ function compileRenderFormula(formula) {
   if ((formula.groups?.length ?? 0) > 256 || formula.expression.length + (formula.groups ?? []).reduce((sum2, g) => sum2 + g.expression.length, 0) > 16384) throw Error("\u6761\u4EF6\u53CA\u547D\u540D\u7EC4\u516C\u5F0F\u603B\u957F\u5EA6\u8D85\u8FC7 16 KiB\uFF0C\u6216\u547D\u540D\u7EC4\u8D85\u8FC7 256 \u9879\u3002");
   if (formula.terms.some((t) => !/^C\d+$/.test(t.id)) || formula.groups?.some((g) => !/^G\d+$/.test(g.id))) throw Error("\u6761\u4EF6\u4F7F\u7528 C \u7F16\u53F7\uFF0C\u547D\u540D\u7EC4\u4F7F\u7528 G \u7F16\u53F7\u3002");
   const ids = [...formula.terms.map((t) => t.id), ...(formula.groups ?? []).map((g) => g.id)];
-  if (ids.some((id) => !/^C\d+$|^G\d+$/.test(id)) || new Set(ids).size !== ids.length) throw Error("\u6761\u4EF6/\u7EC4\u7F16\u53F7\u65E0\u6548\u6216\u91CD\u590D\u3002");
+  if (ids.some((id2) => !/^C\d+$|^G\d+$/.test(id2)) || new Set(ids).size !== ids.length) throw Error("\u6761\u4EF6/\u7EC4\u7F16\u53F7\u65E0\u6548\u6216\u91CD\u590D\u3002");
   const known = new Set(ids), termIds = new Set(formula.terms.map((t) => t.id)), groups = new Map(formula.groups?.map((g) => [g.id, g.expression])), compiledGroups = /* @__PURE__ */ new Map();
   const resolve = (ast2, stack, depth) => {
     if (depth > 32) throw Error("\u7EC4\u5408\u516C\u5F0F\u8D85\u8FC7 32 \u5C42\u3002");
@@ -10955,7 +10692,7 @@ function compileRenderFormula(formula) {
     }
     return ast2.kind === "not" ? { ...ast2, child: resolve(ast2.child, stack, depth + 1) } : { ...ast2, left: resolve(ast2.left, stack, depth + 1), right: resolve(ast2.right, stack, depth + 1) };
   };
-  for (const [id, text] of groups) if (!compiledGroups.has(id)) compiledGroups.set(id, resolve(parse(text, known), /* @__PURE__ */ new Set([id]), 0));
+  for (const [id2, text2] of groups) if (!compiledGroups.has(id2)) compiledGroups.set(id2, resolve(parse(text2, known), /* @__PURE__ */ new Set([id2]), 0));
   const ast = resolve(parse(formula.expression, known), /* @__PURE__ */ new Set(), 0);
   if (Object.isFrozen(formula)) cache.set(formula, ast);
   return ast;
@@ -10997,7 +10734,7 @@ function formulaContradiction(formula) {
     if (!candidates.some((value) => constraints.every(({ condition, positive }) => matchesAtomicCondition(condition, () => value) === positive))) return true;
   }
   if (formula.terms.length > 10) return false;
-  for (let mask = 0; mask < 2 ** formula.terms.length; mask++) if (evaluate(ast, (id) => Boolean(mask & 1 << formula.terms.findIndex((t) => t.id === id)))) return false;
+  for (let mask = 0; mask < 2 ** formula.terms.length; mask++) if (evaluate(ast, (id2) => Boolean(mask & 1 << formula.terms.findIndex((t) => t.id === id2)))) return false;
   return true;
 }
 
@@ -11085,7 +10822,7 @@ function candidateDomain(field, facts, seed, respectRequired) {
       if (lower !== void 0) values2.push(strict ? nextNumber(lower, 1) : lower);
       values2.push(0);
       const numbers = literals.flatMap((value) => typeof value === "number" ? [value] : typeof value === "string" && value.trim() && Number.isFinite(Number(value)) ? [Number(value)] : []);
-      for (const number2 of numbers) values2.push(number2, nextNumber(number2, 1), nextNumber(number2, -1));
+      for (const number3 of numbers) values2.push(number3, nextNumber(number3, 1), nextNumber(number3, -1));
     }
     if (!type || type === "string") {
       if (!required) values2.push("");
@@ -11240,7 +10977,7 @@ var BUTTON_TONES = {
   amber: { label: "\u7425\u73C0", active: "bg-amber-100 text-amber-700" },
   indigo: { label: "\u975B\u84DD", active: "bg-indigo-100 text-indigo-700" }
 };
-var isButtonIcon = (value) => BUTTON_ICONS.some(([id]) => id === value);
+var isButtonIcon = (value) => BUTTON_ICONS.some(([id2]) => id2 === value);
 var isButtonTone = (value) => Object.prototype.hasOwnProperty.call(BUTTON_TONES, value);
 
 // src/core/project/applicationValidation.ts
@@ -11287,7 +11024,7 @@ function validateApplication(input, classCodes) {
     if (!world.tiles.filteredBaseUrl.startsWith("/") || world.tiles.filteredBaseUrl.startsWith("//")) url(world.tiles.filteredBaseUrl, path2 + "/tiles/filteredBaseUrl");
     const projection = world.projection;
     if (projection.id !== "dynmap-flat" || projection.worldToMap.length !== 9 || projection.mapToWorld.length !== 9 || ![...projection.worldToMap, ...projection.mapToWorld].every(Number.isFinite)) fail(path2, "\u6295\u5F71\u5FC5\u987B\u4F7F\u7528\u6CE8\u518C\u7684 dynmap-flat \u548C\u4E24\u7EC4 9 \u9879\u6709\u9650\u53C2\u6570\u3002");
-    if (![projection.mapzoomin, projection.mapzoomout, projection.tilescale, world.tiles.extraZoomLevels].every((number2) => Number.isSafeInteger(number2) && number2 >= 0 && number2 <= 16)) fail(path2, "\u6295\u5F71/\u74E6\u7247\u7F29\u653E\u53C2\u6570\u987B\u4E3A 0\u201316 \u6574\u6570\u3002");
+    if (![projection.mapzoomin, projection.mapzoomout, projection.tilescale, world.tiles.extraZoomLevels].every((number3) => Number.isSafeInteger(number3) && number3 >= 0 && number3 <= 16)) fail(path2, "\u6295\u5F71/\u74E6\u7247\u7F29\u653E\u53C2\u6570\u987B\u4E3A 0\u201316 \u6574\u6570\u3002");
     if (!Number.isInteger(world.tiles.minNativeZoom) || !Number.isInteger(world.tiles.maxNativeZoom) || world.tiles.minNativeZoom > world.tiles.maxNativeZoom || world.tiles.minNativeZoom < value.preferences.map.leafletOffset || world.tiles.maxNativeZoom > 8 + value.preferences.map.leafletOffset) fail(path2, "\u539F\u751F\u74E6\u7247\u8303\u56F4\u5FC5\u987B\u4F4D\u4E8E\u903B\u8F91 Zoom \u6620\u5C04\u5185\u4E14\u4E0B\u9650\u4E0D\u5927\u4E8E\u4E0A\u9650\u3002");
     if (!Number.isInteger(world.tiles.maxRetries) || world.tiles.maxRetries < 0 || world.tiles.maxRetries > 10 || !Number.isFinite(world.tiles.retryDelay) || world.tiles.retryDelay < 0) fail(path2, "\u74E6\u7247\u91CD\u8BD5\u6B21\u6570/\u95F4\u9694\u65E0\u6548\u3002");
   }
@@ -11309,33 +11046,33 @@ function validateApplication(input, classCodes) {
     const behavior = button.behavior;
     for (const target of [...behavior?.exclusiveWith ?? [], ...behavior?.disableWhenEnabled ?? [], ...behavior?.enableWhenEnabled ?? [], ...(behavior?.linkedButtons ?? []).map((row2) => row2.targetId)]) if (target === button.id || !buttons.has(target)) fail(path2, `\u5173\u8054\u6309\u94AE\u4E0D\u5B58\u5728\u6216\u5F15\u7528\u81EA\u8EAB\uFF1A${target}`);
     const enables = /* @__PURE__ */ new Set([...behavior?.enableWhenEnabled ?? [], ...(behavior?.linkedButtons ?? []).filter((row2) => row2.mode !== "disableWhenThisEnabled").map((row2) => row2.targetId)]), disables = /* @__PURE__ */ new Set([...behavior?.disableWhenEnabled ?? [], ...behavior?.exclusiveWith ?? [], ...(behavior?.linkedButtons ?? []).filter((row2) => row2.mode === "disableWhenThisEnabled").map((row2) => row2.targetId)]);
-    for (const id of enables) if (disables.has(id)) fail(path2, `\u6309\u94AE\u540C\u65F6\u8981\u6C42\u5F00/\u5173\uFF1A${id}`);
+    for (const id2 of enables) if (disables.has(id2)) fail(path2, `\u6309\u94AE\u540C\u65F6\u8981\u6C42\u5F00/\u5173\uFF1A${id2}`);
   }
   const graph = new Map(value.buttons.items.map((button) => [button.id, [...button.behavior?.enableWhenEnabled ?? [], ...button.behavior?.linkedButtons?.filter((row2) => row2.mode !== "disableWhenThisEnabled").map((row2) => row2.targetId) ?? []]]));
-  const walk = (id, stack, done2) => {
-    if (stack.has(id)) {
-      fail("buttons", "\u8054\u52A8\u5B58\u5728\u5FAA\u73AF\uFF1A" + id);
+  const walk = (id2, stack, done2) => {
+    if (stack.has(id2)) {
+      fail("buttons", "\u8054\u52A8\u5B58\u5728\u5FAA\u73AF\uFF1A" + id2);
       return;
     }
-    if (done2.has(id)) return;
-    stack.add(id);
-    for (const next of graph.get(id) ?? []) walk(next, stack, done2);
-    stack.delete(id);
-    done2.add(id);
+    if (done2.has(id2)) return;
+    stack.add(id2);
+    for (const next of graph.get(id2) ?? []) walk(next, stack, done2);
+    stack.delete(id2);
+    done2.add(id2);
   };
   const done = /* @__PURE__ */ new Set();
-  for (const id of buttons) walk(id, /* @__PURE__ */ new Set(), done);
+  for (const id2 of buttons) walk(id2, /* @__PURE__ */ new Set(), done);
   for (const [world, ids] of Object.entries(value.buttons.byWorld)) {
     if (!worlds.has(world)) fail("buttons/byWorld", "\u9ED8\u8BA4\u6309\u94AE\u4E16\u754C\u4E0D\u5B58\u5728\uFF1A" + world);
     checkDefaults(ids, world);
   }
   checkDefaults(value.buttons.fallback, "fallback");
   function checkDefaults(ids, context) {
-    if (new Set(ids).size !== ids.length || ids.some((id) => !buttons.has(id))) fail("buttons/defaults", `\u9ED8\u8BA4\u6309\u94AE\u91CD\u590D\u6216\u4E0D\u5B58\u5728\uFF1A${context}`);
+    if (new Set(ids).size !== ids.length || ids.some((id2) => !buttons.has(id2))) fail("buttons/defaults", `\u9ED8\u8BA4\u6309\u94AE\u91CD\u590D\u6216\u4E0D\u5B58\u5728\uFF1A${context}`);
     if (value.buttons.maxActive > 0 && ids.length > value.buttons.maxActive) fail("buttons/defaults", `\u9ED8\u8BA4\u6570\u91CF\u8D85\u8FC7\u4E0A\u9650\uFF1A${context}`);
-    for (const id of ids) {
-      const button = value.buttons.items.find((row2) => row2.id === id);
-      if (button?.behavior?.exclusiveWith?.some((target) => ids.includes(target))) fail("buttons/defaults", `\u9ED8\u8BA4\u6309\u94AE\u4E92\u65A5\uFF1A${context}/${id}`);
+    for (const id2 of ids) {
+      const button = value.buttons.items.find((row2) => row2.id === id2);
+      if (button?.behavior?.exclusiveWith?.some((target) => ids.includes(target))) fail("buttons/defaults", `\u9ED8\u8BA4\u6309\u94AE\u4E92\u65A5\uFF1A${context}/${id2}`);
     }
   }
   if (!Number.isInteger(value.buttons.maxActive) || value.buttons.maxActive < 0) fail("buttons/maxActive", "\u6700\u5927\u6D3B\u52A8\u6570\u987B\u4E3A\u975E\u8D1F\u6574\u6570\u3002");
@@ -11346,15 +11083,15 @@ function validateApplication(input, classCodes) {
     if (source.readerKind !== "formal-release-v2" || source.readerSchemaVersion !== "openriamap.formal-release-reader.v2") fail("sources", "\u53EA\u63A5\u53D7\u73B0\u5F79\u6B63\u5F0F\u53D1\u5E03\u683C\u5F0F\u3002");
     if (source.transport === "github-raw-compatible" && !value.sources.github.sourceIds.includes(source.id)) fail("sources", "GitHub transport \u7F3A\u5C11\u6E90\u7ED1\u5B9A\u3002");
   }
-  for (const id of value.sources.github.sourceIds) if (!sources.has(id)) fail("sources/github", "\u955C\u50CF\u6E90\u4E0D\u5B58\u5728\uFF1A" + id);
+  for (const id2 of value.sources.github.sourceIds) if (!sources.has(id2)) fail("sources/github", "\u955C\u50CF\u6E90\u4E0D\u5B58\u5728\uFF1A" + id2);
   if (![value.sources.github.owner, value.sources.github.repo, value.sources.github.branch].every((part) => part && /^[A-Za-z0-9_.\/-]+$/.test(part) && !part.includes(".."))) fail("sources/github", "\u4ED3\u5E93/\u5206\u652F\u53C2\u6570\u65E0\u6548\u3002");
   if (!modes.size || value.sources.linkModes.items.filter((mode) => mode.default).length !== 1) fail("sources/linkModes", "\u5FC5\u987B\u6709\u4E00\u4E2A\u9ED8\u8BA4\u94FE\u63A5\u6A21\u5F0F\u3002");
   for (const mode of value.sources.linkModes.items) url(mode.baseUrl, `sources/linkModes/${mode.id}`);
   const modules = unique(value.modules.items, "modules");
-  for (const module of value.modules.items) for (const id of module.exclusiveWith) if (!modules.has(id) || id === module.id) fail("modules", "\u6A21\u5757\u4E92\u65A5\u76EE\u6807\u4E0D\u5B58\u5728\u6216\u662F\u81EA\u8EAB\u3002");
-  for (const id of ["mapping", "measurement", "navigation", "search", "review", "players", "settings", "publicReleases"]) if (!modules.has(id)) fail("modules", "\u7F3A\u5C11\u6CE8\u518C\u6A21\u5757\uFF1A" + id);
+  for (const module of value.modules.items) for (const id2 of module.exclusiveWith) if (!modules.has(id2) || id2 === module.id) fail("modules", "\u6A21\u5757\u4E92\u65A5\u76EE\u6807\u4E0D\u5B58\u5728\u6216\u662F\u81EA\u8EAB\u3002");
+  for (const id2 of ["mapping", "measurement", "navigation", "search", "review", "players", "settings", "publicReleases"]) if (!modules.has(id2)) fail("modules", "\u7F3A\u5C11\u6CE8\u518C\u6A21\u5757\uFF1A" + id2);
   for (const module of value.modules.items) if (!["mapping", "measurement", "review"].includes(module.id) && module.load !== "eager") fail("modules", "\u5185\u7F6E\u6A21\u5757\u4F7F\u7528 eager \u52A0\u8F7D\uFF1B\u6309\u9700/\u9884\u8F7D\u53EA\u7528\u4E8E\u6CE8\u518C\u5206\u5305\u3002");
-  for (const id of ["mapping", "measurement", "review"]) for (const other of ["mapping", "measurement", "review"]) if (id !== other && !value.modules.items.find((module) => module.id === id)?.exclusiveWith.includes(other)) fail("modules", "\u6D4B\u7ED8\u3001\u6D4B\u91CF\u3001\u5BA1\u6838\u5FC5\u987B\u4FDD\u7559\u5355\u4E00\u6D3B\u52A8\u5DE5\u4F5C\u533A\u4E92\u65A5\u5173\u7CFB\u3002");
+  for (const id2 of ["mapping", "measurement", "review"]) for (const other of ["mapping", "measurement", "review"]) if (id2 !== other && !value.modules.items.find((module) => module.id === id2)?.exclusiveWith.includes(other)) fail("modules", "\u6D4B\u7ED8\u3001\u6D4B\u91CF\u3001\u5BA1\u6838\u5FC5\u987B\u4FDD\u7559\u5355\u4E00\u6D3B\u52A8\u5DE5\u4F5C\u533A\u4E92\u65A5\u5173\u7CFB\u3002");
   if (value.modules.players.pollIntervalMs < 1e3 || value.modules.players.requestTimeoutMs < 1e3) fail("modules/players", "\u73A9\u5BB6\u8F6E\u8BE2\u548C\u8D85\u65F6\u4E0D\u80FD\u5C0F\u4E8E 1000ms\u3002");
   if (!value.modules.players.endpoint.startsWith("/") || value.modules.players.endpoint.startsWith("//")) url(value.modules.players.endpoint.replace("{timestamp}", "0").replace("{world}", "zth"), "modules/players/endpoint");
   url(value.modules.players.directEndpoint.replace("{timestamp}", "0").replace("{world}", "zth"), "modules/players/directEndpoint");
@@ -11364,7 +11101,13 @@ function validateApplication(input, classCodes) {
   if (!Number.isInteger(preferences.map.leafletOffset) || Math.abs(preferences.map.leafletOffset) > 8 || !Number.isInteger(preferences.map.logicalInitialZoom) || preferences.map.logicalInitialZoom < 0 || preferences.map.logicalInitialZoom > 8) fail("preferences/map", "\u903B\u8F91 Zoom \u4E3A 0\u20138\uFF0C\u6620\u5C04\u504F\u79FB\u987B\u4E3A -8\u20138 \u6574\u6570\u3002");
   for (const count of [preferences.search.homepageLimit, preferences.search.navigationLimit]) if (!Number.isInteger(count) || count < 1 || count > 200) fail("preferences/search", "\u7ED3\u679C\u6570\u91CF\u987B\u4E3A 1\u2013200 \u6574\u6570\u3002");
   if (!Number.isFinite(preferences.search.debounceMs) || preferences.search.debounceMs < 0 || preferences.search.debounceMs > 2e3) fail("preferences/search", "\u5EF6\u8FDF\u987B\u4E3A 0\u20132000ms\u3002");
-  for (const [key2, number2] of Object.entries(value.preferences.navigation)) if (!Number.isFinite(number2) || number2 < 0 || key2 !== "normalPlatformTransferCost" && number2 === 0) fail("preferences/navigation/" + key2, "\u5BFC\u822A\u901F\u5EA6/\u7CFB\u6570\u5FC5\u987B\u4E3A\u6B63\u6709\u9650\u6570\u503C\uFF0C\u6362\u4E58\u6210\u672C\u53EF\u4E3A\u96F6\u3002");
+  for (const [key2, number3] of Object.entries(value.preferences.navigation ?? {})) if (!Number.isFinite(number3) || number3 < 0 || key2 !== "normalPlatformTransferCost" && number3 === 0) fail("preferences/navigation/" + key2, "\u5BFC\u822A\u901F\u5EA6/\u7CFB\u6570\u5FC5\u987B\u4E3A\u6B63\u6709\u9650\u6570\u503C\uFF0C\u6362\u4E58\u6210\u672C\u53EF\u4E3A\u96F6\u3002");
+  if (value.navigation) {
+    for (const [key2, number3] of Object.entries({ ...value.navigation.rail.parameters, ...value.navigation.common })) if (typeof number3 !== "number" || !Number.isFinite(number3) || number3 < 0 || key2 !== "normalPlatformTransferCost" && number3 === 0) fail("navigation/" + key2, "\u5BFC\u822A\u901F\u5EA6\uFF0F\u9664\u6570\u5FC5\u987B\u4E3A\u6B63\u6709\u9650\u6570\u503C\uFF0C\u540C\u53F0\u6210\u672C\u53EF\u4E3A\u96F6\u3002");
+    for (const key2 of ["rail", "teleport", "road"]) if (!(value.navigation[key2].name.zh.trim() || value.navigation[key2].name.en.trim())) fail("navigation/" + key2 + "/name", "\u5BFC\u822A\u663E\u793A\u540D\u79F0\u81F3\u5C11\u586B\u5199\u4E00\u79CD\u8BED\u8A00\u3002");
+    if (value.preferences.navigation) fail("navigation", "r13 \u5BFC\u822A\u53C2\u6570\u4E0D\u80FD\u4E0E\u65E7\u5BFC\u822A\u53C2\u6570\u5E76\u5B58\u3002");
+    if (!value.preferences.railwayRoles) fail("preferences/railwayRoles", "\u65B0\u5BFC\u822A\u9700\u8981\u72EC\u7ACB\u7684\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u5B9A\u4E49\u3002");
+  }
   return issues;
 }
 
@@ -11423,7 +11166,7 @@ function validateExternalEditBinding(workflow) {
 }
 
 // src/configStudio/workflowFieldControl.ts
-function workflowControlFromField(field, slot, id, config) {
+function workflowControlFromField(field, slot, id2, config) {
   if (!isSafeWorkflowTarget(field.key) || PROTECTED_WORKFLOW_TARGETS.has(field.key) || field.key === "ID") throw new Error("\u7CFB\u7EDF\u5B57\u6BB5\u4E0D\u80FD\u901A\u8FC7\u666E\u901A\u5B57\u6BB5\u8F93\u5165\u91CD\u65B0\u5B9A\u4E49\u3002");
   if (field.scenes?.workflow === false) throw new Error("\u6B64\u5B57\u6BB5\u672A\u5F00\u653E\u4E3A\u65B0\u5DE5\u4F5C\u6D41\u8F93\u5165\u3002");
   const kind = field.input === "text" && field.type === "number" ? "number" : field.input;
@@ -11439,7 +11182,7 @@ function workflowControlFromField(field, slot, id, config) {
     cacheScope: "world"
   } : void 0 : void 0;
   if (kind === "featureSearch" && !search) throw new Error("\u8981\u7D20\u641C\u7D22\u8F93\u5165\u9700\u8981\u5148\u5728\u5B57\u6BB5\u5B9A\u4E49\u4E2D\u8BBE\u7F6E\u5F15\u7528\u76EE\u6807\u3002");
-  const common = { id, slot, columns: 1, label: structuredClone(field.labels), required: field.required, placeholder: field.placeholder, defaultValue: structuredClone(field.defaultValue), optionValueType: field.optionValueType ?? (field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : void 0), fieldFormat: field.format };
+  const common = { id: id2, slot, columns: 1, label: structuredClone(field.labels), required: field.required, placeholder: field.placeholder, defaultValue: structuredClone(field.defaultValue), optionValueType: field.optionValueType ?? (field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : void 0), fieldFormat: field.format };
   if (field.type === "json" && field.cardinality === "multiple") return { ...common, kind: "json" };
   if (field.cardinality === "multiple") return { ...common, kind: "group", group: {
     storage: "scalar",
@@ -11448,122 +11191,6 @@ function workflowControlFromField(field, slot, id, config) {
     itemFields: [{ key: "", kind, label: structuredClone(field.labels), options: config ? resolveWorkflowSelectOptions(config, field) : field.options, search, required: true, placeholder: field.placeholder, optionValueType: field.optionValueType ?? (field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : void 0), fieldFormat: field.format }]
   } };
   return { ...common, kind, options: field.options, optionSource: field.optionSource, search };
-}
-
-// src/configStudio/lookupTables.ts
-function referencedField(config, ref) {
-  const node = config.nodes.find((node2) => node2.nodeId === ref.nodeId);
-  const matches = node ? resolveEffectiveFields(config, node.path).filter((field) => field.fieldId === ref.fieldId) : [];
-  return matches.length === 1 ? matches[0] : void 0;
-}
-function effectiveOptionTable(config, owner) {
-  if (owner.optionsFieldRef) {
-    if (!("nodes" in config)) return { valueType: owner.optionValueType ?? "string", rows: [] };
-    const field = referencedField(config, owner.optionsFieldRef);
-    return field ? { valueType: field.optionValueType ?? field.optionTable?.valueType ?? "string", rows: field.options ?? [] } : { valueType: owner.optionValueType ?? "string", rows: [] };
-  }
-  const table = owner.optionsTableId ? config.lookupTables?.find((table2) => table2.id === owner.optionsTableId) : void 0;
-  if (owner.optionsTableId) return { valueType: table?.valueType ?? owner.optionValueType ?? "string", rows: table?.rows ?? [] };
-  return owner.optionTable ?? { valueType: owner.optionValueType ?? "string", rows: owner.options ?? [] };
-}
-function effectiveOptions(config, owner) {
-  const rows = effectiveOptionTable(config, owner).rows;
-  return rows.map(({ value, label }) => ({ value, label }));
-}
-function effectiveOptionsOwner(config, owner) {
-  if (!owner.optionsFieldRef && !owner.optionsTableId && !owner.optionTable) return owner;
-  const table = effectiveOptionTable(config, owner);
-  return { ...owner, options: effectiveOptions(config, owner), optionValueType: table.valueType };
-}
-function cardOptionsOwner(item) {
-  return { ...item, options: item.valueOptions };
-}
-function resolveBoundCard(config, item) {
-  const field = item.fieldBinding ? referencedField(config, item.fieldBinding) : void 0;
-  const next = field ? { ...item, source: field.key, label: field.labels, options: { ...item.options, format: field.options?.length ? "enum" : field.format ?? "plain" } } : item;
-  const owner = cardOptionsOwner(next);
-  return owner.optionTable || owner.optionsTableId || owner.optionsFieldRef ? { ...next, valueOptions: effectiveOptions(config, owner) } : next;
-}
-function validateLookupTables(config, includeNodes = true) {
-  const issues = [];
-  const error = (path2, message, code = "lookup-table-invalid") => issues.push({ severity: "error", code, path: path2, message });
-  if (config.contractRevision < 10 && (config.lookupTables?.length || config.nodes.some((n) => n.fields.some((f) => f.optionsTableId)) || config.workflows.some((w) => w.steps.some((s) => s.controls?.some((c) => c.optionsTableId || c.group?.itemFields.some((f) => f.optionsTableId)))))) error("lookupTables", "\u5BF9\u7167\u8868\u9700\u8981 r10 \u5951\u7EA6\u3002");
-  const ids = /* @__PURE__ */ new Set();
-  for (const table of config.lookupTables ?? []) {
-    const path2 = `lookupTables/${table.id}`;
-    if (!/^[a-z][a-z0-9-]{1,80}$/.test(table.id) || ids.has(table.id)) error(path2, "\u8868\u683C ID \u5FC5\u987B\u6709\u6548\u4E14\u552F\u4E00\u3002");
-    ids.add(table.id);
-    if (!(table.label.zh.trim() || config.contractRevision >= 11 && table.label.en.trim())) error(path2, "\u8868\u683C\u9700\u8981\u4E2D\u6587\u6216\u82F1\u6587\u540D\u79F0\u3002");
-    if (!table.rows.length) error(path2, "\u8868\u683C\u81F3\u5C11\u9700\u8981\u4E00\u884C\u3002");
-    const values2 = /* @__PURE__ */ new Set();
-    const pointIds = /* @__PURE__ */ new Set();
-    for (const [index, row2] of table.rows.entries()) {
-      const at = `${path2}/rows/${index}`, normalized = table.valueType === "number" ? String(Number(row2.value)) : row2.value;
-      if (!row2.value.trim() || values2.has(normalized) || table.valueType === "number" && !Number.isFinite(Number(row2.value)) || table.valueType === "boolean" && !["true", "false"].includes(row2.value)) error(at, "\u5B58\u50A8\u503C\u4E3A\u7A7A\u3001\u91CD\u590D\u6216\u7C7B\u578B\u4E0D\u7B26\u3002");
-      values2.add(normalized);
-      if (!(row2.label.zh.trim() || config.contractRevision >= 11 && row2.label.en.trim())) error(at, "\u5BF9\u7167\u884C\u9700\u8981\u4E2D\u6587\u6216\u82F1\u6587\u540D\u79F0\u3002");
-      if (table.functionKind === "none" && row2.functionValue !== void 0) error(at, "\u65E0\u529F\u80FD\u503C\u8868\u683C\u4E0D\u80FD\u5305\u542B\u529F\u80FD\u503C\u3002");
-      if (table.functionKind === "speed" && (typeof row2.functionValue !== "number" || !Number.isFinite(row2.functionValue) || row2.functionValue <= 0)) error(at, "\u51FA\u884C\u901F\u5EA6\u5FC5\u987B\u4E3A\u6B63\u6570\uFF0C\u5355\u4F4D\u4E3A\u65B9\u5757/\u79D2\u3002");
-      if (table.functionKind === "teleportHub") {
-        const hub = row2.functionValue;
-        if (!hub || typeof hub === "number" || !("world" in hub) || !hub.world.trim() || !Number.isFinite(hub.range) || hub.range <= 0 || !hub.returnPoints.length) {
-          error(at, "\u67A2\u7EBD\u9700\u8BBE\u7F6E\u4E16\u754C\u3001\u6B63\u6570\u8303\u56F4\u53CA\u81F3\u5C11\u4E00\u4E2A\u8FD4\u56DE\u70B9\u3002");
-          continue;
-        }
-        for (const point of hub.returnPoints) {
-          if (!point.id.trim() || pointIds.has(`${hub.world}/${point.id}`) || ![point.x, point.y, point.z].every(Number.isFinite) || !point.label.zh.trim()) error(at, "\u8FD4\u56DE\u70B9 ID/\u540D\u79F0/\u5750\u6807\u65E0\u6548\uFF0C\u6216\u540C\u4E16\u754C ID \u91CD\u590D\u3002");
-          pointIds.add(`${hub.world}/${point.id}`);
-        }
-      }
-    }
-  }
-  const inspect = (owner, path2) => {
-    if (!owner.optionsTableId) return;
-    const table = config.lookupTables?.find((row2) => row2.id === owner.optionsTableId);
-    if (!table) error(path2, `\u5F15\u7528\u7684\u5BF9\u7167\u8868 ${owner.optionsTableId} \u4E0D\u5B58\u5728\u3002`, "lookup-table-reference-missing");
-    if (table && table.valueType !== (owner.optionValueType ?? "string")) error(path2, "\u8868\u683C\u5B58\u50A8\u503C\u7C7B\u578B\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u8868\u683C\u786E\u8BA4\u7ED1\u5B9A\u7C7B\u578B\u3002", "lookup-table-type-changed");
-    if (owner.options?.length) error(path2, "\u7ED1\u5B9A\u8868\u683C\u540E\u4E0D\u80FD\u540C\u65F6\u4FDD\u5B58\u72EC\u7ACB\u5BF9\u7167\u884C\uFF0C\u8BF7\u5148\u89E3\u9664\u7ED1\u5B9A\u3002");
-  };
-  if (includeNodes) config.nodes.forEach((node) => node.fields.forEach((field) => inspect(field, `nodes/${node.nodeId}/fields/${field.fieldId}`)));
-  config.workflows.forEach((w) => w.steps.forEach((s) => s.controls?.forEach((c) => {
-    inspect(c, `workflows/${w.id}/${c.id}`);
-    c.group?.itemFields.forEach((f) => inspect(f, `workflows/${w.id}/${c.id}/${f.key}`));
-  })));
-  if (config.contractRevision >= 11) {
-    const check = (owner, path2, expected, defaultValue) => {
-      if ([Boolean(owner.optionsFieldRef), Boolean(owner.optionsTableId), Boolean(owner.optionTable)].filter(Boolean).length > 1) error(path2, "\u526F\u672C\u3001\u5B57\u6BB5\u5BF9\u7167\u548C\u516C\u5171\u8868\u53EA\u80FD\u9009\u62E9\u4E00\u79CD\u6765\u6E90\u3002");
-      if ((owner.optionsTableId || owner.optionsFieldRef || owner.optionTable) && owner.options?.length) error(path2, "\u5BF9\u7167\u4E3B\u4F53\u6216\u7ED1\u5B9A\u4E0D\u80FD\u540C\u65F6\u4FDD\u5B58\u65E7\u5F0F\u72EC\u7ACB\u884C\u3002");
-      const table = effectiveOptionTable(config, owner), binding = owner.optionsTableId || owner.optionsFieldRef;
-      if (owner.optionsFieldRef && !referencedField(config, owner.optionsFieldRef)) error(path2, "\u7ED1\u5B9A\u5B57\u6BB5\u4E0D\u5B58\u5728\u6216\u5728\u8BE5\u5206\u7C7B\u4E2D\u4E0D\u518D\u6709\u6548\u3002", "lookup-field-reference-missing");
-      if (binding && !table.rows.length) error(path2, "\u7ED1\u5B9A\u6765\u6E90\u4E3A\u7A7A\uFF0C\u5FC5\u987B\u624B\u52A8\u4FEE\u590D\u3002", "lookup-binding-empty");
-      if (binding && owner.optionValueType && table.valueType !== owner.optionValueType) error(path2, "\u7ED1\u5B9A\u6765\u6E90\u7C7B\u578B\u5DF2\u6539\u53D8\uFF0C\u8BF7\u91CD\u65B0\u7ED1\u5B9A\u786E\u8BA4\u3002", "lookup-binding-type-changed");
-      if (expected && table.rows.length && table.valueType !== expected) error(path2, "\u5BF9\u7167\u503C\u7C7B\u578B\u4E0E\u76EE\u6807\u5B57\u6BB5\u4FDD\u5B58\u7C7B\u578B\u4E0D\u517C\u5BB9\u3002");
-      const values2 = /* @__PURE__ */ new Set();
-      for (const row2 of table.rows) {
-        const key2 = table.valueType === "number" ? String(Number(row2.value)) : row2.value;
-        if (!row2.value.trim() || values2.has(key2) || table.valueType === "number" && !Number.isFinite(Number(row2.value)) || table.valueType === "boolean" && !["true", "false"].includes(row2.value) || !(row2.label.zh.trim() || row2.label.en.trim())) error(path2, "\u5BF9\u7167\u5305\u542B\u7A7A\u540D\u79F0\u3001\u91CD\u590D\u503C\u6216\u4E0D\u5408\u6CD5\u7684\u4FDD\u5B58\u503C\u3002");
-        values2.add(key2);
-      }
-      if (defaultValue !== void 0 && table.rows.length && (!table.rows.some((row2) => row2.value === String(defaultValue)) || typeof defaultValue !== table.valueType)) error(path2, "\u9ED8\u8BA4\u503C\u4E0E\u5F53\u524D\u5BF9\u7167\u7684\u4FDD\u5B58\u503C\u6216\u7C7B\u578B\u4E0D\u517C\u5BB9\u3002");
-    };
-    if (includeNodes) config.nodes.forEach((node) => {
-      node.fields.forEach((field) => check(field, `nodes/${node.nodeId}/fields/${field.fieldId}`, field.type === "enum" ? field.optionValueType ?? "string" : field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : field.type === "string" ? "string" : void 0));
-      if (node.card?.mode === "fields") node.card.items.forEach((item) => {
-        const path2 = `nodes/${node.nodeId}/card/${item.id}`;
-        check(cardOptionsOwner(item), path2);
-        if (item.fieldBinding) {
-          const field = referencedField(config, item.fieldBinding);
-          if (!field) error(path2, "\u4FE1\u606F\u5361\u5B57\u6BB5\u7ED1\u5B9A\u6765\u6E90\u4E0D\u5B58\u5728\u3002", "card-field-binding-missing");
-          else if (!(field.labels.zh.trim() || field.labels.en.trim())) error(path2, "\u7ED1\u5B9A\u5B57\u6BB5\u6CA1\u6709\u6709\u6548\u663E\u793A\u540D\u79F0\u3002");
-        }
-      });
-    });
-    config.workflows.forEach((w) => w.steps.forEach((s) => s.controls?.forEach((c) => {
-      check(c, `workflows/${w.id}/${c.id}`, void 0, c.defaultValue);
-      c.group?.itemFields.forEach((f) => check(f, `workflows/${w.id}/${c.id}/${f.key}`, void 0, f.defaultValue));
-    })));
-  }
-  return issues;
 }
 
 // src/configStudio/fieldReuse.ts
@@ -11755,10 +11382,10 @@ function assertStructureTargets(config, created, existing) {
   for (const record of created) {
     const role = resolveNodeFieldSettings(config, path(record)).value.structure;
     if (!role?.enabled || role.role !== "member") continue;
-    const id = role.hostField ? readRecordPath(record, role.hostField) : void 0, world = normalizeRuleSourceWorldId2(String(record.World ?? ""));
-    const candidates = records.filter((row2) => normalizeRuleSourceWorldId2(String(row2.World ?? "")) === world && row2.ID === id);
+    const id2 = role.hostField ? readRecordPath(record, role.hostField) : void 0, world = normalizeRuleSourceWorldId2(String(record.World ?? ""));
+    const candidates = records.filter((row2) => normalizeRuleSourceWorldId2(String(row2.World ?? "")) === world && row2.ID === id2);
     const targetRole = candidates.length === 1 ? resolveNodeFieldSettings(config, path(candidates[0])).value.structure : void 0;
-    if (candidates.length !== 1 || !targetRole?.enabled || targetRole.role !== "main") throw Error(`\u9644\u5C5E ${record.ID} \u7684\u4E3B\u7ED3\u6784 ${String(id)} \u4E0D\u5B58\u5728\u3001\u4E0D\u552F\u4E00\u6216\u672A\u542F\u7528\u4E3B\u7ED3\u6784\u8EAB\u4EFD\u3002`);
+    if (candidates.length !== 1 || !targetRole?.enabled || targetRole.role !== "main") throw Error(`\u9644\u5C5E ${record.ID} \u7684\u4E3B\u7ED3\u6784 ${String(id2)} \u4E0D\u5B58\u5728\u3001\u4E0D\u552F\u4E00\u6216\u672A\u542F\u7528\u4E3B\u7ED3\u6784\u8EAB\u4EFD\u3002`);
   }
 }
 
@@ -11802,8 +11429,8 @@ function rowValue(row2) {
 function assembleAnnotations(value) {
   const result = { tags: {}, extensions: {} };
   for (const namespace of ["tags", "extensions"]) {
-    const text = value?.advancedText?.[namespace];
-    const advanced = text?.trim() ? JSON.parse(text) : value?.advanced?.[namespace];
+    const text2 = value?.advancedText?.[namespace];
+    const advanced = text2?.trim() ? JSON.parse(text2) : value?.advanced?.[namespace];
     if (advanced !== void 0) {
       if (!plain(advanced)) throw new Error(`${namespace} \u9AD8\u7EA7\u6570\u636E\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002`);
       if (namespace === "extensions" && Object.values(advanced).some((group) => !plain(group))) throw new Error("\u6269\u5C55\u9AD8\u7EA7\u5BF9\u8C61\u7684\u6BCF\u4E2A\u7EC4\u5FC5\u987B\u662F\u5B57\u6BB5\u5BF9\u8C61\u3002");
@@ -11888,8 +11515,8 @@ function coerceWorkflowValues(workflow, raw) {
     if (control.valueNormalization === "abbr") slots[control.slot] = String(value).trim().replace(/\s+/g, "").replace(/[^A-Za-z0-9_-]/g, "");
     else if (control.valueNormalization === "trim") slots[control.slot] = String(value).replace(/\r\n?/g, "\n").trim();
     else if ((control.valueNormalization === "number" || control.kind === "number") && String(value).trim()) {
-      const number2 = Number(value);
-      if (Number.isFinite(number2)) slots[control.slot] = number2;
+      const number3 = Number(value);
+      if (Number.isFinite(number3)) slots[control.slot] = number3;
     }
   }
   return slots;
@@ -12264,7 +11891,7 @@ function defaultApplicationSettings() {
       github: { sourceIds: formal_data_source_runtime_default.githubRawTransport.sourceIds, ...formal_data_source_runtime_default.githubRawTransport.repository },
       linkModes: { storageKey: sourceLinkModes_default.storageKey, legacyStorageKeys: sourceLinkModes_default.legacyStorageKeys ?? [], items: sourceLinkModes_default.items.map((item) => ({ id: item.id, label: { zh: item.label, en: "" }, baseUrl: item.rawCompatibleBaseUrl, default: Boolean(item.default) })) }
     },
-    modules: { items: ["mapping", "measurement", "navigation", "search", "review", "players", "settings", "publicReleases"].map((id) => ({ id, enabled: true, load: id === "mapping" || id === "measurement" || id === "review" ? "lazy" : "eager", exclusiveWith: id === "mapping" ? ["measurement", "review"] : id === "measurement" ? ["mapping", "review"] : id === "review" ? ["mapping", "measurement"] : [] })), players: { endpoint: "/api/dynmap/_{world}/up/world/world/{timestamp}", directEndpoint: "https://satellite.ria.red/map/_{world}/up/world/world/{timestamp}", mode: "proxy", pollIntervalMs: 5e3, requestTimeoutMs: 1e4 } },
+    modules: { items: ["mapping", "measurement", "navigation", "search", "review", "players", "settings", "publicReleases"].map((id2) => ({ id: id2, enabled: true, load: id2 === "mapping" || id2 === "measurement" || id2 === "review" ? "lazy" : "eager", exclusiveWith: id2 === "mapping" ? ["measurement", "review"] : id2 === "measurement" ? ["mapping", "review"] : id2 === "review" ? ["mapping", "measurement"] : [] })), players: { endpoint: "/api/dynmap/_{world}/up/world/world/{timestamp}", directEndpoint: "https://satellite.ria.red/map/_{world}/up/world/world/{timestamp}", mode: "proxy", pollIntervalMs: 5e3, requestTimeoutMs: 1e4 } },
     review: { enabled: true, provider: "github-cookie", protocol: "openriamap-review-v1", auth: { start: "/api/auth/github/start", session: "/api/auth/github/session", logout: "/api/auth/github/logout" }, control: "/api/review-control", workflow: "/api/review-workflow", publicReleases: "/api/public-review-releases", serverReferences: { oauthClientId: "CAIRN_GITHUB_OAUTH_CLIENT_ID", oauthRedirectUri: "CAIRN_GITHUB_OAUTH_REDIRECT_URI", sessionSigning: "CAIRN_SESSION_SIGNING_SECRET", controlApiBase: "CAIRN_CONTROL_API_BASE", brokerSecret: "CAIRN_BROKER_TO_DISPATCHER_SECRET" } },
     preferences: { language: "zh", search: { homepageLimit: 35, navigationLimit: 30, debounceMs: 0 }, navigation: { transferWalkSpeed: 3, railRideSpeed: 16, transferCostFactor: 1, normalPlatformTransferCost: 5 }, map: { logicalInitialZoom: 5, leafletOffset: -3, scrollWheelZoom: true, doubleClickZoom: true, dragging: true }, toolbar: { position: "right", compact: false } }
   };
@@ -12274,8 +11901,8 @@ function defaultApplicationSettings() {
 var current = defaultApplicationSettings();
 var resolved = resolveApplicationSettings(current);
 var getApplicationSettings = () => resolved;
-function applicationWorld(id) {
-  const value = resolved.worlds.find((world) => world.id === id) || resolved.worlds.find((world) => world.enabled && world.default) || resolved.worlds.find((world) => world.enabled);
+function applicationWorld(id2) {
+  const value = resolved.worlds.find((world) => world.id === id2) || resolved.worlds.find((world) => world.enabled && world.default) || resolved.worlds.find((world) => world.enabled);
   if (!value) throw Error("\u6CA1\u6709\u5DF2\u542F\u7528\u4E16\u754C\u3002");
   return value;
 }
@@ -12284,6 +11911,237 @@ function applicationWorld(id) {
 function normalizeRuleSourceWorldId(worldId2) {
   const raw = String(worldId2 ?? "").trim(), worlds = getApplicationSettings().worlds;
   return worlds.find((world) => world.id.toLowerCase() === raw.toLowerCase() || world.prefix.toLowerCase() === raw.toLowerCase() || String(world.numericCode) === raw || world.label.zh === raw || world.label.en && world.label.en === raw)?.id ?? (raw || applicationWorld("").id);
+}
+
+// src/core/geometry/multipartGeometry.ts
+var DEFAULT_GEOMETRY_Y = -64;
+var isObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+var numberOrNull = (value) => {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+};
+function canonicalGeometryField(type) {
+  if (type === "Point") return "CoordP";
+  if (type === "LineString") return "CoordL";
+  return "CoordG";
+}
+function geometryTypeFromFeatureType(value) {
+  const type = String(value ?? "").trim();
+  if (type === "Points") return "Point";
+  if (type === "Polyline") return "LineString";
+  if (type === "Polygon") return "Polygon";
+  return null;
+}
+function featureTypeFromGeometryType(type) {
+  return type === "Point" ? "Points" : type === "LineString" ? "Polyline" : "Polygon";
+}
+function tupleToCoord(value) {
+  if (!Array.isArray(value) || value.length !== 3) return null;
+  const x = numberOrNull(value[0]);
+  const y = numberOrNull(value[1]);
+  const z = numberOrNull(value[2]);
+  return x === null || y === null || z === null ? null : { x, y, z };
+}
+function legacyTupleToCoord(value) {
+  if (Array.isArray(value)) {
+    const x2 = numberOrNull(value[0]);
+    const y2 = value.length >= 3 ? numberOrNull(value[1]) : DEFAULT_GEOMETRY_Y;
+    const z2 = value.length >= 3 ? numberOrNull(value[2]) : numberOrNull(value[1]);
+    return x2 === null || y2 === null || z2 === null ? null : { x: x2, y: y2, z: z2 };
+  }
+  if (!isObject(value)) return null;
+  const x = numberOrNull(value.x);
+  const z = numberOrNull(value.z);
+  const y = numberOrNull(value.y);
+  return x === null || z === null ? null : { x, y: y ?? DEFAULT_GEOMETRY_Y, z };
+}
+function coordinatesEqual(a, b) {
+  return a.x === b.x && a.y === b.y && a.z === b.z;
+}
+function removeClosingCoordinate(ring) {
+  if (ring.length >= 2 && coordinatesEqual(ring[0], ring[ring.length - 1])) return ring.slice(0, -1);
+  return ring;
+}
+function normalizeRingCoordinates(ring) {
+  const withoutConsecutiveDuplicates = ring.filter((coordinate, index) => index === 0 || !coordinatesEqual(ring[index - 1], coordinate));
+  return removeClosingCoordinate(withoutConsecutiveDuplicates);
+}
+function parseCanonical(value, type) {
+  if (!Array.isArray(value)) return null;
+  if (type === "Point") {
+    const parts2 = value.map(tupleToCoord);
+    return parts2.every(Boolean) ? { type, parts: parts2 } : null;
+  }
+  if (type === "LineString") {
+    const parts2 = value.map((part) => Array.isArray(part) ? part.map(tupleToCoord) : null);
+    return parts2.every((part) => Array.isArray(part) && part.every(Boolean)) ? { type, parts: parts2 } : null;
+  }
+  const parts = value.map((part) => Array.isArray(part) ? part.map((ring) => Array.isArray(ring) ? normalizeRingCoordinates(ring.map(tupleToCoord).filter((coord) => Boolean(coord))) : null) : null);
+  if (!parts.every((part) => Array.isArray(part) && part.length > 0 && part.every((ring) => Array.isArray(ring)))) return null;
+  for (const component of value) {
+    if (!Array.isArray(component)) return null;
+    for (const ring of component) {
+      if (!Array.isArray(ring) || ring.some((tuple) => !tupleToCoord(tuple))) return null;
+    }
+  }
+  return { type, parts };
+}
+function parseLegacy(value, type) {
+  if (type === "Point") {
+    const coord = legacyTupleToCoord(value);
+    return coord ? { type, parts: [coord] } : null;
+  }
+  if (!Array.isArray(value)) return null;
+  const path2 = value.map(legacyTupleToCoord);
+  if (!path2.every(Boolean)) return null;
+  if (type === "LineString") return { type, parts: [path2] };
+  return { type, parts: [[normalizeRingCoordinates(path2)]] };
+}
+function stableGeometry(geometry) {
+  return JSON.stringify(serializeMultipartGeometry(geometry));
+}
+function readMultipartGeometry(featureInfo, type, legacySourceField) {
+  const info = isObject(featureInfo) ? featureInfo : {};
+  const canonicalField = canonicalGeometryField(type);
+  const hasCanonical = Object.prototype.hasOwnProperty.call(info, canonicalField);
+  const canonical2 = hasCanonical ? parseCanonical(info[canonicalField], type) : null;
+  if (hasCanonical && !canonical2) return { geometry: null, source: "canonical", error: `${canonicalField} \u683C\u5F0F\u65E0\u6548` };
+  const legacyCandidates = Array.from(new Set([
+    legacySourceField,
+    type === "Point" ? "coordinate" : void 0,
+    type === "LineString" ? "PLpoints" : void 0,
+    type === "LineString" ? "Linepoints" : void 0,
+    type === "Polygon" ? "Conpoints" : void 0,
+    type === "Polygon" ? "Flrpoints" : void 0
+  ].filter((field) => Boolean(field))));
+  const legacyEntries = legacyCandidates.filter((field) => Object.prototype.hasOwnProperty.call(info, field));
+  const parsedLegacy = legacyEntries.map((field) => ({ field, geometry: parseLegacy(info[field], type) }));
+  const invalidLegacy = parsedLegacy.find((entry) => !entry.geometry);
+  if (invalidLegacy) return { geometry: null, source: "legacy", error: `${invalidLegacy.field} \u683C\u5F0F\u65E0\u6548` };
+  const legacy = parsedLegacy[0]?.geometry ?? null;
+  if (legacy && parsedLegacy.some((entry) => stableGeometry(entry.geometry) !== stableGeometry(legacy))) {
+    return { geometry: null, source: "legacy", error: "geometry-field-conflict" };
+  }
+  if (canonical2 && legacy && stableGeometry(canonical2) !== stableGeometry(legacy)) {
+    return { geometry: null, source: "canonical", error: "geometry-field-conflict" };
+  }
+  if (canonical2) return { geometry: canonical2, source: "canonical" };
+  if (legacy) return { geometry: legacy, source: "legacy" };
+  return { geometry: null, source: "none" };
+}
+function serializeMultipartGeometry(geometry) {
+  const tuple = (coord) => [coord.x, coord.y, coord.z];
+  if (geometry.type === "Point") return geometry.parts.map(tuple);
+  if (geometry.type === "LineString") return geometry.parts.map((part) => part.map(tuple));
+  return geometry.parts.map((part) => part.map((ring) => normalizeRingCoordinates(ring).map(tuple)));
+}
+function withCanonicalMultipartGeometry(featureInfo, geometry) {
+  const out = { ...featureInfo };
+  out[canonicalGeometryField(geometry.type)] = serializeMultipartGeometry(geometry);
+  const legacyFields = geometry.type === "Point" ? ["coordinate"] : geometry.type === "LineString" ? ["PLpoints", "Linepoints"] : ["Conpoints", "Flrpoints"];
+  for (const field of legacyFields) delete out[field];
+  return out;
+}
+function multipartGeometryFromSinglePath(type, coords) {
+  const normalized = coords.map((coord) => ({
+    x: Number(coord.x),
+    y: Number.isFinite(Number(coord.y)) ? Number(coord.y) : DEFAULT_GEOMETRY_Y,
+    z: Number(coord.z)
+  }));
+  if (type === "Point") return { type, parts: normalized };
+  if (type === "LineString") return { type, parts: [normalized] };
+  return { type, parts: [[normalized]] };
+}
+function flattenMultipartCoordinates(geometry) {
+  if (!geometry) return [];
+  if (geometry.type === "Point") return geometry.parts;
+  if (geometry.type === "LineString") return geometry.parts.flat();
+  return geometry.parts.flat(2);
+}
+function signedArea(ring) {
+  let area = 0;
+  for (let index = 0; index < ring.length; index += 1) {
+    const a = ring[index];
+    const b = ring[(index + 1) % ring.length];
+    area += a.x * b.z - b.x * a.z;
+  }
+  return area / 2;
+}
+function orientation(a, b, c) {
+  const result = (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x);
+  return Math.abs(result) < 1e-9 ? 0 : result > 0 ? 1 : -1;
+}
+function onSegment(a, b, c) {
+  return Math.min(a.x, c.x) <= b.x && b.x <= Math.max(a.x, c.x) && Math.min(a.z, c.z) <= b.z && b.z <= Math.max(a.z, c.z);
+}
+function segmentsIntersect(a, b, c, d) {
+  const o1 = orientation(a, b, c);
+  const o2 = orientation(a, b, d);
+  const o3 = orientation(c, d, a);
+  const o4 = orientation(c, d, b);
+  if (o1 !== o2 && o3 !== o4) return true;
+  return o1 === 0 && onSegment(a, c, b) || o2 === 0 && onSegment(a, d, b) || o3 === 0 && onSegment(c, a, d) || o4 === 0 && onSegment(c, b, d);
+}
+function ringSelfIntersects(ring) {
+  for (let i = 0; i < ring.length; i += 1) {
+    const a = ring[i];
+    const b = ring[(i + 1) % ring.length];
+    for (let j = i + 1; j < ring.length; j += 1) {
+      if (j === i || (j + 1) % ring.length === i || (i + 1) % ring.length === j) continue;
+      const c = ring[j];
+      const d = ring[(j + 1) % ring.length];
+      if (segmentsIntersect(a, b, c, d)) return true;
+    }
+  }
+  return false;
+}
+function pointInRing(point, ring) {
+  for (let index = 0; index < ring.length; index += 1) {
+    const a = ring[index];
+    const b = ring[(index + 1) % ring.length];
+    if (orientation(a, point, b) === 0 && onSegment(a, point, b)) return false;
+  }
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i];
+    const b = ring[j];
+    const intersects = a.z > point.z !== b.z > point.z && point.x < (b.x - a.x) * (point.z - a.z) / (b.z - a.z) + a.x;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+function ringsIntersect(a, b) {
+  for (let ai = 0; ai < a.length; ai += 1) {
+    const aNext = a[(ai + 1) % a.length];
+    for (let bi = 0; bi < b.length; bi += 1) {
+      if (segmentsIntersect(a[ai], aNext, b[bi], b[(bi + 1) % b.length])) return true;
+    }
+  }
+  return false;
+}
+function validateMultipartGeometry(geometry) {
+  if (!geometry) return "\u7F3A\u5C11\u51E0\u4F55\u5750\u6807";
+  const invalidCoordinate = flattenMultipartCoordinates(geometry).find((coord) => !Number.isFinite(coord.x) || !Number.isFinite(coord.y) || !Number.isFinite(coord.z));
+  if (invalidCoordinate) return "\u5750\u6807\u5FC5\u987B\u4E3A\u6709\u9650\u7684 [x, y, z] \u6570\u5B57";
+  if (geometry.type === "Point") return geometry.parts.length > 0 ? void 0 : "CoordP \u81F3\u5C11\u9700\u8981 1 \u4E2A\u5750\u6807";
+  if (geometry.type === "LineString") {
+    const invalidPart = geometry.parts.findIndex((part) => part.length < 2);
+    return invalidPart >= 0 ? `CoordL \u7B2C ${invalidPart + 1} \u4E2A\u90E8\u4EF6\u81F3\u5C11\u9700\u8981 2 \u4E2A\u5750\u6807` : void 0;
+  }
+  for (let partIndex = 0; partIndex < geometry.parts.length; partIndex += 1) {
+    const [outer, ...holes] = geometry.parts[partIndex];
+    if (!outer || outer.length < 3) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5916\u8FB9\u754C\u81F3\u5C11\u9700\u8981 3 \u4E2A\u5750\u6807`;
+    if (Math.abs(signedArea(outer)) < 1e-9 || ringSelfIntersects(outer)) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5916\u8FB9\u754C\u62D3\u6251\u65E0\u6548`;
+    for (let holeIndex = 0; holeIndex < holes.length; holeIndex += 1) {
+      const hole = holes[holeIndex];
+      if (hole.length < 3 || Math.abs(signedArea(hole)) < 1e-9 || ringSelfIntersects(hole)) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5185\u90E8\u6D1E ${holeIndex + 1} \u62D3\u6251\u65E0\u6548`;
+      if (!pointInRing(hole[0], outer) || ringsIntersect(hole, outer)) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5185\u90E8\u6D1E ${holeIndex + 1} \u5FC5\u987B\u5B8C\u5168\u4F4D\u4E8E\u5916\u8FB9\u754C\u5185`;
+      for (let prior = 0; prior < holeIndex; prior += 1) {
+        if (ringsIntersect(hole, holes[prior]) || pointInRing(hole[0], holes[prior])) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5185\u90E8\u6D1E\u4E0D\u80FD\u91CD\u53E0`;
+      }
+    }
+  }
+  return void 0;
 }
 
 // src/configStudio/workflowDrawing.ts
@@ -12443,22 +12301,22 @@ function workflowEditSlots(plan, original, draft, supplied) {
 }
 function buildWorkflowEditRecord(plan, original, draft, options = {}) {
   const record = structuredClone(original), slots = coerceWorkflowValues(plan.workflow, workflowEditSlots(plan, original, draft, options.geometry)), initial = draft.initialSlots;
-  const id = String(draft.slots.EDIT_ID ?? "").trim();
-  if (!id) throw Error("ID \u4E0D\u80FD\u4E3A\u7A7A\u3002");
-  record.ID = id;
+  const id2 = String(draft.slots.EDIT_ID ?? "").trim();
+  if (!id2) throw Error("ID \u4E0D\u80FD\u4E3A\u7A7A\u3002");
+  record.ID = id2;
   if (!pathMatchesScope(draft.classification, plan.scope)) throw Error("\u4E0D\u80FD\u5C06\u8981\u7D20\u6539\u4E3A\u5DE5\u4F5C\u6D41\u4F5C\u7528\u8303\u56F4\u4E4B\u5916\u7684\u5206\u7C7B\u3002");
   if (!annotationEqual(draft.classification, recordClassification(original))) {
     for (const [key2, value] of [["Class", draft.classification.class], ["Kind", draft.classification.kind], ["SKind", draft.classification.skind], ["SKind2", draft.classification.skind2]]) if (value) record[key2] = value;
     else delete record[key2];
   }
-  const system = { ID: id, World: original.World, Class: draft.classification.class, Kind: draft.classification.kind ?? "", Skind: draft.classification.skind ?? "", Skind2: draft.classification.skind2 ?? "", Creator: original.CreateBy ?? "" };
+  const system = { ID: id2, World: original.World, Class: draft.classification.class, Kind: draft.classification.kind ?? "", Skind: draft.classification.skind ?? "", Skind2: draft.classification.skind2 ?? "", Creator: original.CreateBy ?? "" };
   Object.assign(system, Object.fromEntries(Object.entries(system).map(([key2, value]) => [`${key2}_1`, value])));
   const geometryDirty = Boolean(options.geometry && !annotationEqual(options.geometry, readMultipartGeometry(original, plan.workflow.outputs[0].geometry.selected).geometry));
   const geometryTokens = new Set(plan.workflow.steps.flatMap((s) => [s.drawing?.captureSlot, s.drawing?.pointSlot]).filter((slot) => Boolean(slot)).flatMap((slot) => [slot, `${slot}_X`, `${slot}_Y`, `${slot}_Z`, `${slot}_HEIGHT`]));
   const beforePath = recordClassification(original), classificationDirty = !annotationEqual(draft.classification, beforePath);
   for (const assignment of plan.workflow.outputs[0].assignments) if (assignment.target !== "ID") {
     const tokens = workflowExpressionTokens(parseWorkflowExpression(assignment.expression));
-    if (tokens.some((t) => plan.controls.some((c) => c.slot === t) && !annotationEqual(draft.slots[t], initial[t]) || geometryDirty && geometryTokens.has(t) || /^ID(?:_1)?$/.test(t) && id !== String(original.ID) || classificationDirty && /^(Class|Kind|Skind|Skind2)(?:_1)?$/.test(t))) setPath(record, assignment.target, evaluateWorkflowExpression(assignment.expression, slots, system));
+    if (tokens.some((t) => plan.controls.some((c) => c.slot === t) && !annotationEqual(draft.slots[t], initial[t]) || geometryDirty && geometryTokens.has(t) || /^ID(?:_1)?$/.test(t) && id2 !== String(original.ID) || classificationDirty && /^(Class|Kind|Skind|Skind2)(?:_1)?$/.test(t))) setPath(record, assignment.target, evaluateWorkflowExpression(assignment.expression, slots, system));
   }
   for (const binding of plan.bindings) if (plan.workflow.steps.some((step) => step.drawing?.heightSlot === binding.slot) && !annotationEqual(draft.slots[binding.slot], initial[binding.slot])) setPath(record, binding.target, slots[binding.slot]);
   for (const step of plan.workflow.steps) for (const binding of step.drawing?.bindings ?? []) if (binding.outputId === plan.workflow.outputs[0].id && (geometryDirty || step.drawing?.heightSlot && !annotationEqual(draft.slots[step.drawing.heightSlot], initial[step.drawing.heightSlot]))) {
@@ -12515,9 +12373,9 @@ function tagRecordErrors(config, path2, record) {
 function standardTagTableErrors(config) {
   if (config.contractRevision < 11) return [];
   const errors = [], fail = (path2, message) => errors.push({ path: path2, message });
-  for (const [id, kind] of [["teleport-hubs", "teleportHub"], ["road-travel-modes", "speed"], ["standard-tag-fields", "tagField"]]) {
-    const table2 = config.lookupTables?.find((table3) => table3.id === id);
-    if (!table2 || table2.functionKind !== kind || table2.valueType !== "string") fail(`lookupTables/${id}`, "\u7CFB\u7EDF\u6807\u51C6\u8868\u7F3A\u5931\uFF0C\u6216\u5176\u56FA\u5B9A ID\u3001\u7528\u9014\u3001\u4FDD\u5B58\u503C\u7C7B\u578B\u88AB\u4FEE\u6539\u3002");
+  for (const [id2, kind] of [["teleport-hubs", "teleportHub"], ["road-travel-modes", "speed"], ["standard-tag-fields", "tagField"]]) {
+    const table2 = config.lookupTables?.find((table3) => table3.id === id2);
+    if (!table2 || table2.functionKind !== kind || table2.valueType !== "string") fail(`lookupTables/${id2}`, "\u7CFB\u7EDF\u6807\u51C6\u8868\u7F3A\u5931\uFF0C\u6216\u5176\u56FA\u5B9A ID\u3001\u7528\u9014\u3001\u4FDD\u5B58\u503C\u7C7B\u578B\u88AB\u4FEE\u6539\u3002");
   }
   for (const table2 of config.lookupTables ?? []) if (table2.functionKind === "tagField") {
     if (table2.valueType !== "string") fail(`lookupTables/${table2.id}`, "\u6807\u7B7E\u540D\u79F0\u76EE\u5F55\u5FC5\u987B\u4EE5\u6587\u672C key \u4FDD\u5B58\u3002");
@@ -12590,8 +12448,8 @@ function finalizeV3WorkflowRecord(config, output, raw, options) {
     const field = fields.get(path2);
     if (value === "" && !preserved.has(path2) && !field?.required && field?.emptyValue !== "preserve") return void 0;
     if (field?.type === "number" && value !== null && value !== "") {
-      const number2 = Number(value);
-      return Number.isFinite(number2) ? number2 : value;
+      const number3 = Number(value);
+      return Number.isFinite(number3) ? number3 : value;
     }
     if (field?.type === "boolean" && typeof value === "string") return value === "true" ? true : value === "false" ? false : value;
     return value;
@@ -12761,6 +12619,7 @@ function validateV3WorkflowRecords(config, workflow, result) {
       const required = field.required || field.requiredWhen?.some((condition) => condition.kind === "always" || condition.kind === "fieldPresent" && !empty(readRecordPath(output.record, condition.field)) === condition.present || condition.kind === "fieldEquals" && String(readRecordPath(output.record, condition.field) ?? "") === condition.value || condition.kind === "fieldIn" && condition.values.includes(String(readRecordPath(output.record, condition.field) ?? "")));
       if (required && empty(value)) issues.push({ message: `\u8F93\u51FA ${output.outputId} \u7684 ${field.key} \u4E3A\u5FC5\u586B\u9879\u3002` });
       if (empty(value)) continue;
+      if (field.valueSchema) for (const message of validateStructuredValue(value, field.valueSchema, field.key)) issues.push({ message });
       const values2 = field.cardinality === "multiple" ? Array.isArray(value) ? value : [value] : [value];
       if (field.cardinality === "multiple" && !Array.isArray(value)) issues.push({ message: `${field.key} \u5FC5\u987B\u662F\u6570\u7EC4\u3002` });
       if (["string", "reference"].includes(field.type) && values2.some((item) => typeof item !== "string")) issues.push({ message: `${field.key} \u5FC5\u987B\u662F\u6587\u672C\u503C\u3002` });
@@ -12802,7 +12661,7 @@ function testWorkflowEditConversion(config, workflow, records = []) {
 
 // src/configStudio/contract.ts
 function isNativeConfigRevision(value) {
-  return value === 5 || value === 6 || value === 7 || value === 8 || value === 9 || value === 10 || value === 11 || value === 12;
+  return typeof value === "number" && Number.isInteger(value) && value >= 5 && value <= 13;
 }
 
 // src/configStudio/cardInheritance.ts
@@ -12829,11 +12688,11 @@ function canonical(value) {
   return Array.isArray(value) ? "[" + value.map(canonical).join(",") + "]" : value && typeof value === "object" ? "{" + Object.entries(value).filter(([, v]) => v !== void 0).sort(([a], [b]) => a.localeCompare(b)).map(([key2, v]) => JSON.stringify(key2) + ":" + canonical(v)).join(",") + "}" : JSON.stringify(value);
 }
 function fieldFingerprint(field) {
-  const text = canonical({ key: field.key, type: field.type, cardinality: field.cardinality, input: field.input, labels: field.labels, description: field.description, options: field.options, optionValueType: field.optionValueType, format: field.format });
+  const text2 = canonical({ key: field.key, type: field.type, cardinality: field.cardinality, input: field.input, labels: field.labels, description: field.description, options: field.options, optionValueType: field.optionValueType, format: field.format });
   let a = 2166136261, b = 5381;
-  for (let i = 0; i < text.length; i++) {
-    a = Math.imul(a ^ text.charCodeAt(i), 16777619);
-    b = Math.imul(b, 33) ^ text.charCodeAt(i);
+  for (let i = 0; i < text2.length; i++) {
+    a = Math.imul(a ^ text2.charCodeAt(i), 16777619);
+    b = Math.imul(b, 33) ^ text2.charCodeAt(i);
   }
   return `field-v1-${(a >>> 0).toString(16).padStart(8, "0")}${(b >>> 0).toString(16).padStart(8, "0")}`;
 }
@@ -12884,12 +12743,12 @@ function buildStructureIndex(config, store) {
   const existing = cache3.get(store)?.get(config);
   if (existing) return existing;
   const result = { byUid: /* @__PURE__ */ new Map(), roles: /* @__PURE__ */ new Map(), hostsByMember: /* @__PURE__ */ new Map(), membersByHost: /* @__PURE__ */ new Map(), diagnostics: [] }, ids = /* @__PURE__ */ new Map();
-  const key2 = (record, id = recordId(record)) => `${recordWorld(record)}/${id}`;
+  const key2 = (record, id2 = recordId(record)) => `${recordWorld(record)}/${id2}`;
   for (const record of store.all) {
     if (record.featureInfo?.__disabled || record.meta.disabled) continue;
     result.byUid.set(record.uid, record);
-    const id = recordId(record);
-    if (id) {
+    const id2 = recordId(record);
+    if (id2) {
       const rows = ids.get(key2(record)) ?? [];
       rows.push(record);
       ids.set(key2(record), rows);
@@ -12924,15 +12783,15 @@ function buildStructureIndex(config, store) {
       else result.diagnostics.push({ code: "structure-target-missing", record: member.uid, message: `\u6CA1\u6709\u627E\u5230\u540C\u4E16\u754C\u4E3B\u7ED3\u6784 ${refs[0]}\u3002` });
     }
   }
-  for (const [host, role] of result.roles) if (role.role === "main" && role.memberField) for (const id of values(host, role.memberField)) {
-    const matches = ids.get(key2(host, id)) ?? [];
+  for (const [host, role] of result.roles) if (role.role === "main" && role.memberField) for (const id2 of values(host, role.memberField)) {
+    const matches = ids.get(key2(host, id2)) ?? [];
     if (matches.length > 1) {
-      result.diagnostics.push({ code: "structure-id-ambiguous", record: host.uid, message: `\u540C\u4E16\u754C\u9644\u5C5E ID ${id} \u91CD\u590D\u3002` });
+      result.diagnostics.push({ code: "structure-id-ambiguous", record: host.uid, message: `\u540C\u4E16\u754C\u9644\u5C5E ID ${id2} \u91CD\u590D\u3002` });
       continue;
     }
     const member = matches[0], memberRole = member ? result.roles.get(member) : void 0;
     if (!member || memberRole?.role !== "member") {
-      result.diagnostics.push({ code: "structure-reverse-target-missing", record: host.uid, message: `\u6CA1\u6709\u627E\u5230\u540C\u4E16\u754C\u9644\u5C5E\u7ED3\u6784 ${id}\u3002` });
+      result.diagnostics.push({ code: "structure-reverse-target-missing", record: host.uid, message: `\u6CA1\u6709\u627E\u5230\u540C\u4E16\u754C\u9644\u5C5E\u7ED3\u6784 ${id2}\u3002` });
       continue;
     }
     if (member && memberRole?.role === "member" && !ambiguousMembers.has(member) && !values(member, memberRole.hostField).length) {
@@ -17248,7 +17107,57 @@ var native_contract_schema_generated_default = {
         "normalPlatformTransferCost"
       ]
     },
+    t84: {
+      type: "object",
+      properties: {
+        lines: {
+          type: "array",
+          items: {
+            ref: "t16"
+          }
+        },
+        platforms: {
+          type: "array",
+          items: {
+            ref: "t16"
+          }
+        },
+        stationAreas: {
+          type: "array",
+          items: {
+            ref: "t16"
+          }
+        },
+        stations: {
+          type: "array",
+          items: {
+            ref: "t16"
+          }
+        }
+      },
+      required: [
+        "lines",
+        "platforms",
+        "stationAreas",
+        "stations"
+      ]
+    },
     t83: {
+      type: "object",
+      properties: {
+        schemaVersion: {
+          const: "cairnmap.railway-roles.v1"
+        },
+        selectors: {
+          ref: "t84"
+        }
+      },
+      required: [
+        "schemaVersion",
+        "selectors"
+      ]
+    },
+    t85: {
       type: "object",
       properties: {
         logicalInitialZoom: {
@@ -17275,7 +17184,7 @@ var native_contract_schema_generated_default = {
         "dragging"
       ]
     },
-    t84: {
+    t86: {
       type: "object",
       properties: {
         position: {
@@ -17314,21 +17223,177 @@ var native_contract_schema_generated_default = {
           ref: "t81"
         },
         navigation: {
-          ref: "t82"
+          anyOf: [
+            {
+              ref: "t82"
+            }
+          ]
+        },
+        railwayRoles: {
+          anyOf: [
+            {
+              ref: "t83"
+            }
+          ]
         },
         map: {
-          ref: "t83"
+          ref: "t85"
         },
         toolbar: {
-          ref: "t84"
+          ref: "t86"
         }
       },
       required: [
         "language",
         "search",
-        "navigation",
         "map",
         "toolbar"
+      ]
+    },
+    t88: {
+      type: "object",
+      properties: {
+        enabled: {
+          type: "boolean"
+        },
+        name: {
+          ref: "t1"
+        },
+        parameters: {
+          ref: "t82"
+        },
+        selectors: {
+          ref: "t84"
+        }
+      },
+      required: [
+        "enabled",
+        "name",
+        "parameters",
+        "selectors"
+      ]
+    },
+    t90: {
+      type: "object",
+      properties: {
+        teleportPoints: {
+          type: "array",
+          items: {
+            ref: "t16"
+          }
+        },
+        warpPoints: {
+          type: "array",
+          items: {
+            ref: "t16"
+          }
+        }
+      },
+      required: [
+        "teleportPoints",
+        "warpPoints"
+      ]
+    },
+    t89: {
+      type: "object",
+      properties: {
+        enabled: {
+          type: "boolean"
+        },
+        name: {
+          ref: "t1"
+        },
+        hubTableId: {
+          type: "string"
+        },
+        selectors: {
+          ref: "t90"
+        }
+      },
+      required: [
+        "enabled",
+        "name",
+        "hubTableId",
+        "selectors"
+      ]
+    },
+    t92: {
+      type: "object",
+      properties: {
+        roads: {
+          type: "array",
+          items: {
+            ref: "t16"
+          }
+        }
+      },
+      required: [
+        "roads"
+      ]
+    },
+    t91: {
+      type: "object",
+      properties: {
+        enabled: {
+          type: "boolean"
+        },
+        name: {
+          ref: "t1"
+        },
+        travelModesTableId: {
+          type: "string"
+        },
+        selectors: {
+          ref: "t92"
+        }
+      },
+      required: [
+        "enabled",
+        "name",
+        "travelModesTableId",
+        "selectors"
+      ]
+    },
+    t93: {
+      type: "object",
+      properties: {
+        elytraSpeed: {
+          type: "number"
+        },
+        walkSpeed: {
+          type: "number"
+        }
+      },
+      required: [
+        "elytraSpeed",
+        "walkSpeed"
+      ]
+    },
+    t87: {
+      type: "object",
+      properties: {
+        schemaVersion: {
+          const: "cairnmap.navigation.v1"
+        },
+        rail: {
+          ref: "t88"
+        },
+        teleport: {
+          ref: "t89"
+        },
+        road: {
+          ref: "t91"
+        },
+        common: {
+          ref: "t93"
+        }
+      },
+      required: [
+        "schemaVersion",
+        "rail",
+        "teleport",
+        "road",
+        "common"
       ]
     },
     t51: {
@@ -17364,6 +17429,13 @@ var native_contract_schema_generated_default = {
         },
         preferences: {
           ref: "t80"
+        },
+        navigation: {
+          anyOf: [
+            {
+              ref: "t87"
+            }
+          ]
         }
       },
       required: [
@@ -17376,7 +17448,7 @@ var native_contract_schema_generated_default = {
         "preferences"
       ]
     },
-    t86: {
+    t95: {
       type: "object",
       properties: {
         library: {
@@ -17395,13 +17467,13 @@ var native_contract_schema_generated_default = {
         "manifestSha256"
       ]
     },
-    t85: {
+    t94: {
       type: "object",
       properties: {
         iconLibraries: {
           type: "array",
           items: {
-            ref: "t86"
+            ref: "t95"
           }
         }
       },
@@ -17409,7 +17481,7 @@ var native_contract_schema_generated_default = {
         "iconLibraries"
       ]
     },
-    t88: {
+    t97: {
       type: "object",
       properties: {
         class: {
@@ -17443,7 +17515,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t89: {
+    t98: {
       type: "object",
       properties: {
         fields: {
@@ -17462,7 +17534,7 @@ var native_contract_schema_generated_default = {
         "card"
       ]
     },
-    t90: {
+    t99: {
       type: "object",
       properties: {
         fields: {
@@ -17508,7 +17580,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t91: {
+    t100: {
       type: "object",
       properties: {
         fields: {
@@ -17570,7 +17642,7 @@ var native_contract_schema_generated_default = {
         "card"
       ]
     },
-    t93: {
+    t102: {
       type: "object",
       properties: {
         kind: {
@@ -17581,7 +17653,7 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t94: {
+    t103: {
       type: "object",
       properties: {
         kind: {
@@ -17606,7 +17678,7 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t95: {
+    t104: {
       type: "object",
       properties: {
         kind: {
@@ -17642,7 +17714,7 @@ var native_contract_schema_generated_default = {
         "scope"
       ]
     },
-    t96: {
+    t105: {
       type: "object",
       properties: {
         kind: {
@@ -17661,7 +17733,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t97: {
+    t106: {
       type: "object",
       properties: {
         kind: {
@@ -17683,7 +17755,7 @@ var native_contract_schema_generated_default = {
         "values"
       ]
     },
-    t98: {
+    t107: {
       type: "object",
       properties: {
         kind: {
@@ -17702,7 +17774,125 @@ var native_contract_schema_generated_default = {
         "present"
       ]
     },
-    t99: {
+    t109: {
+      type: "object",
+      properties: {},
+      required: [],
+      additionalProperties: {
+        ref: "t108"
+      }
+    },
+    t108: {
+      type: "object",
+      properties: {
+        type: {
+          anyOf: [
+            {
+              const: "string"
+            },
+            {
+              const: "number"
+            },
+            {
+              const: "boolean"
+            },
+            {
+              const: "object"
+            },
+            {
+              const: "array"
+            }
+          ]
+        },
+        anyOf: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                ref: "t108"
+              }
+            }
+          ]
+        },
+        properties: {
+          anyOf: [
+            {
+              ref: "t109"
+            }
+          ]
+        },
+        required: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                type: "string"
+              }
+            }
+          ]
+        },
+        items: {
+          anyOf: [
+            {
+              ref: "t108"
+            }
+          ]
+        },
+        enum: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                anyOf: [
+                  {
+                    type: "string"
+                  },
+                  {
+                    type: "number"
+                  },
+                  {
+                    const: false
+                  },
+                  {
+                    const: true
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        minItems: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        maxItems: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        minimum: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        exclusiveMinimum: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t110: {
       type: "object",
       properties: {
         registryKey: {
@@ -17720,7 +17910,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t100: {
+    t111: {
       type: "object",
       properties: {
         workflow: {
@@ -17766,7 +17956,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t101: {
+    t112: {
       type: "object",
       properties: {
         classCode: {
@@ -17788,7 +17978,7 @@ var native_contract_schema_generated_default = {
         "matchField"
       ]
     },
-    t92: {
+    t101: {
       type: "object",
       properties: {
         fieldId: {
@@ -17891,22 +18081,22 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t93"
+                    ref: "t102"
                   },
                   {
-                    ref: "t94"
+                    ref: "t103"
                   },
                   {
-                    ref: "t95"
+                    ref: "t104"
                   },
                   {
-                    ref: "t96"
+                    ref: "t105"
                   },
                   {
-                    ref: "t97"
+                    ref: "t106"
                   },
                   {
-                    ref: "t98"
+                    ref: "t107"
                   }
                 ]
               }
@@ -17991,10 +18181,17 @@ var native_contract_schema_generated_default = {
             }
           ]
         },
+        valueSchema: {
+          anyOf: [
+            {
+              ref: "t108"
+            }
+          ]
+        },
         optionSource: {
           anyOf: [
             {
-              ref: "t99"
+              ref: "t110"
             }
           ]
         },
@@ -18026,14 +18223,14 @@ var native_contract_schema_generated_default = {
         scenes: {
           anyOf: [
             {
-              ref: "t100"
+              ref: "t111"
             }
           ]
         },
         reference: {
           anyOf: [
             {
-              ref: "t101"
+              ref: "t112"
             }
           ]
         },
@@ -18068,7 +18265,7 @@ var native_contract_schema_generated_default = {
         "description"
       ]
     },
-    t103: {
+    t114: {
       type: "object",
       properties: {
         enabled: {
@@ -18121,7 +18318,7 @@ var native_contract_schema_generated_default = {
         "role"
       ]
     },
-    t107: {
+    t118: {
       type: "object",
       properties: {
         path: {
@@ -18140,11 +18337,11 @@ var native_contract_schema_generated_default = {
         "key"
       ]
     },
-    t106: {
+    t117: {
       type: "object",
       properties: {
         source: {
-          ref: "t107"
+          ref: "t118"
         },
         fingerprint: {
           type: "string"
@@ -18162,7 +18359,7 @@ var native_contract_schema_generated_default = {
         "fingerprint"
       ]
     },
-    t105: {
+    t116: {
       type: "object",
       properties: {
         mode: {
@@ -18232,7 +18429,7 @@ var native_contract_schema_generated_default = {
         prefillAudit: {
           anyOf: [
             {
-              ref: "t106"
+              ref: "t117"
             }
           ]
         }
@@ -18241,7 +18438,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t108: {
+    t119: {
       type: "object",
       properties: {
         mode: {
@@ -18306,7 +18503,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t104: {
+    t115: {
       type: "object",
       properties: {
         enabled: {
@@ -18336,10 +18533,10 @@ var native_contract_schema_generated_default = {
           ]
         },
         subtitle: {
-          ref: "t105"
+          ref: "t116"
         },
         extension: {
-          ref: "t108"
+          ref: "t119"
         }
       },
       required: [
@@ -18349,27 +18546,27 @@ var native_contract_schema_generated_default = {
         "extension"
       ]
     },
-    t102: {
+    t113: {
       type: "object",
       properties: {
         structure: {
           anyOf: [
             {
-              ref: "t103"
+              ref: "t114"
             }
           ]
         },
         search: {
           anyOf: [
             {
-              ref: "t104"
+              ref: "t115"
             }
           ]
         }
       },
       required: []
     },
-    t111: {
+    t122: {
       type: "object",
       properties: {
         weight: {
@@ -18403,7 +18600,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t112: {
+    t123: {
       type: "object",
       properties: {
         zLevel: {
@@ -18428,7 +18625,7 @@ var native_contract_schema_generated_default = {
         "zLevel"
       ]
     },
-    t115: {
+    t126: {
       type: "object",
       properties: {
         kind: {
@@ -18501,7 +18698,7 @@ var native_contract_schema_generated_default = {
         "rounding"
       ]
     },
-    t114: {
+    t125: {
       type: "object",
       properties: {
         role: {
@@ -18546,7 +18743,7 @@ var native_contract_schema_generated_default = {
         metric: {
           anyOf: [
             {
-              ref: "t115"
+              ref: "t126"
             }
           ]
         },
@@ -18564,7 +18761,7 @@ var native_contract_schema_generated_default = {
         "hideWhenColliding"
       ]
     },
-    t113: {
+    t124: {
       type: "object",
       properties: {
         visible: {
@@ -18585,28 +18782,28 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t93"
+                ref: "t102"
               },
               {
-                ref: "t94"
+                ref: "t103"
               },
               {
-                ref: "t95"
+                ref: "t104"
               },
               {
-                ref: "t96"
+                ref: "t105"
               },
               {
-                ref: "t97"
+                ref: "t106"
               },
               {
-                ref: "t98"
+                ref: "t107"
               }
             ]
           }
         },
         collision: {
-          ref: "t114"
+          ref: "t125"
         }
       },
       required: [
@@ -18616,7 +18813,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t119: {
+    t130: {
       type: "object",
       properties: {
         min: {
@@ -18631,7 +18828,7 @@ var native_contract_schema_generated_default = {
         "max"
       ]
     },
-    t121: {
+    t132: {
       type: "object",
       properties: {
         kind: {
@@ -18720,7 +18917,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t123: {
+    t134: {
       type: "object",
       properties: {
         id: {
@@ -18742,16 +18939,16 @@ var native_contract_schema_generated_default = {
         condition: {
           anyOf: [
             {
-              ref: "t96"
+              ref: "t105"
             },
             {
-              ref: "t97"
+              ref: "t106"
             },
             {
-              ref: "t98"
+              ref: "t107"
             },
             {
-              ref: "t121"
+              ref: "t132"
             }
           ]
         }
@@ -18762,7 +18959,7 @@ var native_contract_schema_generated_default = {
         "condition"
       ]
     },
-    t124: {
+    t135: {
       type: "object",
       properties: {
         id: {
@@ -18777,7 +18974,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t122: {
+    t133: {
       type: "object",
       properties: {
         expression: {
@@ -18796,7 +18993,7 @@ var native_contract_schema_generated_default = {
         terms: {
           type: "array",
           items: {
-            ref: "t123"
+            ref: "t134"
           }
         },
         groups: {
@@ -18804,7 +19001,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t124"
+                ref: "t135"
               }
             }
           ]
@@ -18815,7 +19012,7 @@ var native_contract_schema_generated_default = {
         "terms"
       ]
     },
-    t120: {
+    t131: {
       type: "object",
       properties: {
         op: {
@@ -18836,19 +19033,19 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t96"
+                ref: "t105"
               },
               {
-                ref: "t97"
+                ref: "t106"
               },
               {
-                ref: "t98"
+                ref: "t107"
               },
               {
-                ref: "t120"
+                ref: "t131"
               },
               {
-                ref: "t121"
+                ref: "t132"
               }
             ]
           }
@@ -18856,7 +19053,7 @@ var native_contract_schema_generated_default = {
         formula: {
           anyOf: [
             {
-              ref: "t122"
+              ref: "t133"
             }
           ]
         }
@@ -18866,16 +19063,16 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t118: {
+    t129: {
       type: "object",
       properties: {
         zoom: {
-          ref: "t119"
+          ref: "t130"
         },
         fields: {
           anyOf: [
             {
-              ref: "t120"
+              ref: "t131"
             }
           ]
         }
@@ -18884,7 +19081,7 @@ var native_contract_schema_generated_default = {
         "zoom"
       ]
     },
-    t126: {
+    t137: {
       type: "object",
       properties: {
         x: {
@@ -18899,7 +19096,7 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t128: {
+    t139: {
       type: "object",
       properties: {
         pointShape: {
@@ -19013,14 +19210,14 @@ var native_contract_schema_generated_default = {
         "fillOpacity"
       ]
     },
-    t127: {
+    t138: {
       type: "object",
       properties: {
         kind: {
           const: "shape"
         },
         shape: {
-          ref: "t128"
+          ref: "t139"
         }
       },
       required: [
@@ -19028,7 +19225,7 @@ var native_contract_schema_generated_default = {
         "shape"
       ]
     },
-    t132: {
+    t143: {
       type: "object",
       properties: {
         shape: {
@@ -19115,7 +19312,7 @@ var native_contract_schema_generated_default = {
         "strokeOpacity"
       ]
     },
-    t134: {
+    t145: {
       type: "object",
       properties: {
         mode: {
@@ -19171,7 +19368,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t135: {
+    t146: {
       type: "object",
       properties: {
         x: {
@@ -19186,14 +19383,14 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t133: {
+    t144: {
       type: "object",
       properties: {
         anchor: {
-          ref: "t134"
+          ref: "t145"
         },
         offsetPx: {
-          ref: "t135"
+          ref: "t146"
         }
       },
       required: [
@@ -19201,7 +19398,7 @@ var native_contract_schema_generated_default = {
         "offsetPx"
       ]
     },
-    t131: {
+    t142: {
       type: "object",
       properties: {
         library: {
@@ -19238,12 +19435,12 @@ var native_contract_schema_generated_default = {
         plate: {
           anyOf: [
             {
-              ref: "t132"
+              ref: "t143"
             }
           ]
         },
         placement: {
-          ref: "t133"
+          ref: "t144"
         }
       },
       required: [
@@ -19255,14 +19452,14 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t130: {
+    t141: {
       type: "object",
       properties: {
         mode: {
           const: "single"
         },
         item: {
-          ref: "t131"
+          ref: "t142"
         }
       },
       required: [
@@ -19270,7 +19467,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t137: {
+    t148: {
       type: "object",
       properties: {
         value: {
@@ -19290,7 +19487,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         item: {
-          ref: "t131"
+          ref: "t142"
         }
       },
       required: [
@@ -19298,7 +19495,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t136: {
+    t147: {
       type: "object",
       properties: {
         mode: {
@@ -19310,7 +19507,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t137"
+            ref: "t148"
           }
         }
       },
@@ -19320,7 +19517,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t129: {
+    t140: {
       type: "object",
       properties: {
         kind: {
@@ -19329,15 +19526,15 @@ var native_contract_schema_generated_default = {
         icon: {
           anyOf: [
             {
-              ref: "t130"
+              ref: "t141"
             },
             {
-              ref: "t136"
+              ref: "t147"
             }
           ]
         },
         fallback: {
-          ref: "t128"
+          ref: "t139"
         }
       },
       required: [
@@ -19346,7 +19543,7 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t141: {
+    t152: {
       type: "object",
       properties: {
         width: {
@@ -19361,14 +19558,14 @@ var native_contract_schema_generated_default = {
         "height"
       ]
     },
-    t140: {
+    t151: {
       type: "object",
       properties: {
         sizePx: {
-          ref: "t141"
+          ref: "t152"
         },
         placement: {
-          ref: "t133"
+          ref: "t144"
         }
       },
       required: [
@@ -19376,7 +19573,7 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t139: {
+    t150: {
       type: "object",
       properties: {
         mode: {
@@ -19386,7 +19583,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t140"
+          ref: "t151"
         }
       },
       required: [
@@ -19395,7 +19592,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t142: {
+    t153: {
       type: "object",
       properties: {
         mode: {
@@ -19405,7 +19602,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t140"
+          ref: "t151"
         }
       },
       required: [
@@ -19414,7 +19611,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t143: {
+    t154: {
       type: "object",
       properties: {
         mode: {
@@ -19427,7 +19624,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t140"
+          ref: "t151"
         }
       },
       required: [
@@ -19437,7 +19634,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t145: {
+    t156: {
       type: "object",
       properties: {
         value: {
@@ -19460,7 +19657,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t140"
+          ref: "t151"
         }
       },
       required: [
@@ -19469,7 +19666,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t144: {
+    t155: {
       type: "object",
       properties: {
         mode: {
@@ -19481,7 +19678,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t145"
+            ref: "t156"
           }
         }
       },
@@ -19491,7 +19688,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t138: {
+    t149: {
       type: "object",
       properties: {
         kind: {
@@ -19500,21 +19697,21 @@ var native_contract_schema_generated_default = {
         image: {
           anyOf: [
             {
-              ref: "t139"
+              ref: "t150"
             },
             {
-              ref: "t142"
+              ref: "t153"
             },
             {
-              ref: "t143"
+              ref: "t154"
             },
             {
-              ref: "t144"
+              ref: "t155"
             }
           ]
         },
         fallback: {
-          ref: "t128"
+          ref: "t139"
         }
       },
       required: [
@@ -19523,7 +19720,7 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t146: {
+    t157: {
       type: "object",
       properties: {
         source: {
@@ -19569,13 +19766,13 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t125: {
+    t136: {
       type: "object",
       properties: {
         symbolOffsetPx: {
           anyOf: [
             {
-              ref: "t126"
+              ref: "t137"
             }
           ]
         },
@@ -19624,20 +19821,20 @@ var native_contract_schema_generated_default = {
         pointSymbol: {
           anyOf: [
             {
-              ref: "t127"
-            },
-            {
-              ref: "t129"
-            },
-            {
               ref: "t138"
+            },
+            {
+              ref: "t140"
+            },
+            {
+              ref: "t149"
             }
           ]
         },
         icon: {
           anyOf: [
             {
-              ref: "t146"
+              ref: "t157"
             }
           ]
         },
@@ -19752,7 +19949,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t149: {
+    t160: {
       type: "object",
       properties: {
         italic: {
@@ -19788,7 +19985,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t150: {
+    t161: {
       type: "object",
       properties: {
         lineHeightRatio: {
@@ -19875,7 +20072,7 @@ var native_contract_schema_generated_default = {
         "strokeWidth"
       ]
     },
-    t148: {
+    t159: {
       type: "object",
       properties: {
         family: {
@@ -19912,7 +20109,7 @@ var native_contract_schema_generated_default = {
         modifiers: {
           anyOf: [
             {
-              ref: "t149"
+              ref: "t160"
             }
           ]
         },
@@ -19938,7 +20135,7 @@ var native_contract_schema_generated_default = {
         pill: {
           anyOf: [
             {
-              ref: "t150"
+              ref: "t161"
             }
           ]
         }
@@ -19948,7 +20145,7 @@ var native_contract_schema_generated_default = {
         "size"
       ]
     },
-    t151: {
+    t162: {
       type: "object",
       properties: {},
       required: [],
@@ -19963,7 +20160,7 @@ var native_contract_schema_generated_default = {
         ]
       }
     },
-    t147: {
+    t158: {
       type: "object",
       properties: {
         visible: {
@@ -19972,7 +20169,7 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t148"
+              ref: "t159"
             }
           ]
         },
@@ -20063,7 +20260,7 @@ var native_contract_schema_generated_default = {
         fallbackValueFormats: {
           anyOf: [
             {
-              ref: "t151"
+              ref: "t162"
             }
           ]
         },
@@ -20142,7 +20339,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         collision: {
-          ref: "t114"
+          ref: "t125"
         }
       },
       required: [
@@ -20150,7 +20347,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t153: {
+    t164: {
       type: "object",
       properties: {
         point: {
@@ -20206,18 +20403,18 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t152: {
+    t163: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t153"
+          ref: "t164"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t155: {
+    t166: {
       type: "object",
       properties: {
         mode: {
@@ -20240,7 +20437,7 @@ var native_contract_schema_generated_default = {
         metric: {
           anyOf: [
             {
-              ref: "t115"
+              ref: "t126"
             }
           ]
         }
@@ -20249,7 +20446,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t154: {
+    t165: {
       type: "object",
       properties: {
         id: {
@@ -20260,22 +20457,22 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t93"
+                ref: "t102"
               },
               {
-                ref: "t94"
+                ref: "t103"
               },
               {
-                ref: "t95"
+                ref: "t104"
               },
               {
-                ref: "t96"
+                ref: "t105"
               },
               {
-                ref: "t97"
+                ref: "t106"
               },
               {
-                ref: "t98"
+                ref: "t107"
               }
             ]
           }
@@ -20299,28 +20496,28 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t125"
+              ref: "t136"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t147"
+              ref: "t158"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t112"
+              ref: "t123"
             }
           ]
         },
         priority: {
           anyOf: [
             {
-              ref: "t155"
+              ref: "t166"
             }
           ]
         },
@@ -20337,13 +20534,13 @@ var native_contract_schema_generated_default = {
         "when"
       ]
     },
-    t157: {
+    t168: {
       type: "object",
       properties: {},
       required: [],
       additionalProperties: {}
     },
-    t158: {
+    t169: {
       type: "object",
       properties: {
         preserveFallback: {
@@ -20366,55 +20563,55 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t156: {
+    t167: {
       type: "object",
       properties: {
         predicates: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         },
         visibility: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         },
         geometry: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         },
         symbol: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         },
         collision: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         },
         selection: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         },
@@ -20431,14 +20628,14 @@ var native_contract_schema_generated_default = {
         legacyRuntime: {
           anyOf: [
             {
-              ref: "t158"
+              ref: "t169"
             }
           ]
         }
       },
       required: []
     },
-    t117: {
+    t128: {
       type: "object",
       properties: {
         id: {
@@ -20447,7 +20644,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t118"
+              ref: "t129"
             }
           ]
         },
@@ -20484,28 +20681,28 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t125"
+              ref: "t136"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t147"
+              ref: "t158"
             }
           ]
         },
         interaction: {
           anyOf: [
             {
-              ref: "t152"
+              ref: "t163"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t112"
+              ref: "t123"
             }
           ]
         },
@@ -20521,7 +20718,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t154"
+                ref: "t165"
               }
             }
           ]
@@ -20529,7 +20726,7 @@ var native_contract_schema_generated_default = {
         advanced: {
           anyOf: [
             {
-              ref: "t156"
+              ref: "t167"
             }
           ]
         },
@@ -20569,7 +20766,7 @@ var native_contract_schema_generated_default = {
         priority: {
           anyOf: [
             {
-              ref: "t155"
+              ref: "t166"
             }
           ]
         }
@@ -20578,13 +20775,13 @@ var native_contract_schema_generated_default = {
         "id"
       ]
     },
-    t116: {
+    t127: {
       type: "object",
       properties: {
         rules: {
           type: "array",
           items: {
-            ref: "t117"
+            ref: "t128"
           }
         }
       },
@@ -20592,18 +20789,18 @@ var native_contract_schema_generated_default = {
         "rules"
       ]
     },
-    t159: {
+    t170: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t153"
+          ref: "t164"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t160: {
+    t171: {
       type: "object",
       properties: {
         ruleIds: {
@@ -20631,7 +20828,7 @@ var native_contract_schema_generated_default = {
         "specialLogicKeys"
       ]
     },
-    t110: {
+    t121: {
       type: "object",
       properties: {
         renderState: {
@@ -20670,38 +20867,38 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t111"
+              ref: "t122"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t112"
+              ref: "t123"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t113"
+              ref: "t124"
             }
           ]
         },
         zoomPriority: {
-          ref: "t116"
+          ref: "t127"
         },
         interaction: {
           anyOf: [
             {
-              ref: "t159"
+              ref: "t170"
             }
           ]
         },
         legacyDisplay: {
           anyOf: [
             {
-              ref: "t160"
+              ref: "t171"
             }
           ]
         }
@@ -20712,34 +20909,34 @@ var native_contract_schema_generated_default = {
         "zoomPriority"
       ]
     },
-    t109: {
+    t120: {
       type: "object",
       properties: {
         Point: {
           anyOf: [
             {
-              ref: "t110"
+              ref: "t121"
             }
           ]
         },
         LineString: {
           anyOf: [
             {
-              ref: "t110"
+              ref: "t121"
             }
           ]
         },
         Polygon: {
           anyOf: [
             {
-              ref: "t110"
+              ref: "t121"
             }
           ]
         }
       },
       required: []
     },
-    t161: {
+    t172: {
       type: "object",
       properties: {
         enabled: {
@@ -20774,7 +20971,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t164: {
+    t175: {
       type: "object",
       properties: {
         nodeId: {
@@ -20789,7 +20986,7 @@ var native_contract_schema_generated_default = {
         "fieldId"
       ]
     },
-    t165: {
+    t176: {
       type: "object",
       properties: {
         nodeId: {
@@ -20804,7 +21001,7 @@ var native_contract_schema_generated_default = {
         "itemId"
       ]
     },
-    t166: {
+    t177: {
       type: "object",
       properties: {
         colorSource: {
@@ -20899,7 +21096,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t167: {
+    t178: {
       type: "object",
       properties: {
         targetRole: {
@@ -20970,7 +21167,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t163: {
+    t174: {
       type: "object",
       properties: {
         id: {
@@ -20979,14 +21176,14 @@ var native_contract_schema_generated_default = {
         fieldBinding: {
           anyOf: [
             {
-              ref: "t164"
+              ref: "t175"
             }
           ]
         },
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t164"
+              ref: "t175"
             }
           ]
         },
@@ -21020,14 +21217,14 @@ var native_contract_schema_generated_default = {
         inheritFrom: {
           anyOf: [
             {
-              ref: "t165"
+              ref: "t176"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t106"
+              ref: "t117"
             }
           ]
         },
@@ -21142,14 +21339,14 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t166"
+              ref: "t177"
             }
           ]
         },
         relation: {
           anyOf: [
             {
-              ref: "t167"
+              ref: "t178"
             }
           ]
         }
@@ -21161,7 +21358,7 @@ var native_contract_schema_generated_default = {
         "renderer"
       ]
     },
-    t168: {
+    t179: {
       type: "object",
       properties: {
         enabled: {
@@ -21231,7 +21428,7 @@ var native_contract_schema_generated_default = {
         "includeSystem"
       ]
     },
-    t162: {
+    t173: {
       type: "object",
       properties: {
         mode: {
@@ -21240,13 +21437,13 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t163"
+            ref: "t174"
           }
         },
         remaining: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t179"
             }
           ]
         }
@@ -21256,7 +21453,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t169: {
+    t180: {
       type: "object",
       properties: {
         mode: {
@@ -21268,7 +21465,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         }
@@ -21278,7 +21475,7 @@ var native_contract_schema_generated_default = {
         "layoutId"
       ]
     },
-    t170: {
+    t181: {
       type: "object",
       properties: {
         mode: {
@@ -21290,7 +21487,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         }
@@ -21300,7 +21497,7 @@ var native_contract_schema_generated_default = {
         "componentKey"
       ]
     },
-    t171: {
+    t182: {
       type: "object",
       properties: {
         classCode: {
@@ -21329,7 +21526,7 @@ var native_contract_schema_generated_default = {
         source: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         }
@@ -21339,7 +21536,7 @@ var native_contract_schema_generated_default = {
         "displayRuleIds"
       ]
     },
-    t87: {
+    t96: {
       type: "object",
       properties: {
         nodeId: {
@@ -21351,7 +21548,7 @@ var native_contract_schema_generated_default = {
         classificationLabels: {
           anyOf: [
             {
-              ref: "t88"
+              ref: "t97"
             }
           ]
         },
@@ -21364,34 +21561,34 @@ var native_contract_schema_generated_default = {
         inheritDown: {
           anyOf: [
             {
-              ref: "t89"
+              ref: "t98"
             }
           ]
         },
         receiveFromParent: {
           anyOf: [
             {
-              ref: "t90"
+              ref: "t99"
             }
           ]
         },
         policies: {
           anyOf: [
             {
-              ref: "t91"
+              ref: "t100"
             }
           ]
         },
         fields: {
           type: "array",
           items: {
-            ref: "t92"
+            ref: "t101"
           }
         },
         fieldSettings: {
           anyOf: [
             {
-              ref: "t102"
+              ref: "t113"
             }
           ]
         },
@@ -21409,32 +21606,32 @@ var native_contract_schema_generated_default = {
           ]
         },
         geometryProfiles: {
-          ref: "t109"
+          ref: "t120"
         },
         containment: {
           anyOf: [
             {
-              ref: "t161"
+              ref: "t172"
             }
           ]
         },
         card: {
           anyOf: [
             {
-              ref: "t162"
+              ref: "t173"
             },
             {
-              ref: "t169"
+              ref: "t180"
             },
             {
-              ref: "t170"
+              ref: "t181"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t171"
+              ref: "t182"
             }
           ]
         }
@@ -21447,7 +21644,7 @@ var native_contract_schema_generated_default = {
         "geometryProfiles"
       ]
     },
-    t173: {
+    t184: {
       type: "object",
       properties: {
         classification: {
@@ -21462,7 +21659,7 @@ var native_contract_schema_generated_default = {
         "referenceField"
       ]
     },
-    t172: {
+    t183: {
       type: "object",
       properties: {
         id: {
@@ -21472,10 +21669,10 @@ var native_contract_schema_generated_default = {
           ref: "t1"
         },
         host: {
-          ref: "t173"
+          ref: "t184"
         },
         member: {
-          ref: "t173"
+          ref: "t184"
         },
         memberSelectorField: {
           anyOf: [
@@ -21510,7 +21707,7 @@ var native_contract_schema_generated_default = {
         "profile"
       ]
     },
-    t176: {
+    t187: {
       type: "object",
       properties: {
         slot: {
@@ -21525,7 +21722,7 @@ var native_contract_schema_generated_default = {
         "target"
       ]
     },
-    t175: {
+    t186: {
       type: "object",
       properties: {
         enabled: {
@@ -21553,7 +21750,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t176"
+                ref: "t187"
               }
             }
           ]
@@ -21563,7 +21760,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t177: {
+    t188: {
       type: "object",
       properties: {
         required: {
@@ -21574,7 +21771,7 @@ var native_contract_schema_generated_default = {
         "required"
       ]
     },
-    t181: {
+    t192: {
       type: "object",
       properties: {
         placeholder: {
@@ -21587,7 +21784,7 @@ var native_contract_schema_generated_default = {
         reference: {
           anyOf: [
             {
-              ref: "t101"
+              ref: "t112"
             }
           ]
         },
@@ -21689,22 +21886,22 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t93"
+                    ref: "t102"
                   },
                   {
-                    ref: "t94"
+                    ref: "t103"
                   },
                   {
-                    ref: "t95"
+                    ref: "t104"
                   },
                   {
-                    ref: "t96"
+                    ref: "t105"
                   },
                   {
-                    ref: "t97"
+                    ref: "t106"
                   },
                   {
-                    ref: "t98"
+                    ref: "t107"
                   }
                 ]
               }
@@ -21742,7 +21939,7 @@ var native_contract_schema_generated_default = {
         "input"
       ]
     },
-    t180: {
+    t191: {
       type: "object",
       properties: {
         nodeId: {
@@ -21752,7 +21949,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         snapshot: {
-          ref: "t181"
+          ref: "t192"
         },
         overrides: {
           type: "array",
@@ -21768,7 +21965,7 @@ var native_contract_schema_generated_default = {
         "overrides"
       ]
     },
-    t182: {
+    t193: {
       type: "object",
       properties: {
         token: {
@@ -21834,7 +22031,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t182"
+                ref: "t193"
               }
             }
           ]
@@ -21844,7 +22041,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t182"
+                ref: "t193"
               }
             }
           ]
@@ -21855,7 +22052,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t183: {
+    t194: {
       type: "object",
       properties: {
         registryKey: {
@@ -21866,7 +22063,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t185: {
+    t196: {
       type: "object",
       properties: {
         matcher: {
@@ -21905,7 +22102,7 @@ var native_contract_schema_generated_default = {
         "maxResults"
       ]
     },
-    t184: {
+    t195: {
       type: "object",
       properties: {
         target: {
@@ -22032,7 +22229,7 @@ var native_contract_schema_generated_default = {
         coarse: {
           anyOf: [
             {
-              ref: "t185"
+              ref: "t196"
             }
           ]
         }
@@ -22042,7 +22239,7 @@ var native_contract_schema_generated_default = {
         "cacheScope"
       ]
     },
-    t187: {
+    t198: {
       type: "object",
       properties: {
         optionTable: {
@@ -22055,14 +22252,14 @@ var native_contract_schema_generated_default = {
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t164"
+              ref: "t175"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t106"
+              ref: "t117"
             }
           ]
         },
@@ -22152,7 +22349,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t184"
+              ref: "t195"
             }
           ]
         },
@@ -22191,7 +22388,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t180"
+              ref: "t191"
             }
           ]
         },
@@ -22200,7 +22397,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t182"
+                ref: "t193"
               }
             }
           ]
@@ -22228,13 +22425,13 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t186: {
+    t197: {
       type: "object",
       properties: {
         itemFields: {
           type: "array",
           items: {
-            ref: "t187"
+            ref: "t198"
           }
         },
         storage: {
@@ -22276,7 +22473,7 @@ var native_contract_schema_generated_default = {
         "itemFields"
       ]
     },
-    t188: {
+    t199: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -22291,7 +22488,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t179: {
+    t190: {
       type: "object",
       properties: {
         optionTable: {
@@ -22304,14 +22501,14 @@ var native_contract_schema_generated_default = {
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t164"
+              ref: "t175"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t106"
+              ref: "t117"
             }
           ]
         },
@@ -22413,7 +22610,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t180"
+              ref: "t191"
             }
           ]
         },
@@ -22454,7 +22651,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t182"
+                ref: "t193"
               }
             }
           ]
@@ -22479,7 +22676,7 @@ var native_contract_schema_generated_default = {
         optionSource: {
           anyOf: [
             {
-              ref: "t183"
+              ref: "t194"
             }
           ]
         },
@@ -22501,7 +22698,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t184"
+              ref: "t195"
             }
           ]
         },
@@ -22532,7 +22729,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t182"
+              ref: "t193"
             }
           ]
         },
@@ -22549,14 +22746,14 @@ var native_contract_schema_generated_default = {
         group: {
           anyOf: [
             {
-              ref: "t186"
+              ref: "t197"
             }
           ]
         },
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t188"
+              ref: "t199"
             }
           ]
         },
@@ -22570,7 +22767,7 @@ var native_contract_schema_generated_default = {
         legacyBlock: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         }
@@ -22582,7 +22779,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t189: {
+    t200: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -22597,7 +22794,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t191: {
+    t202: {
       type: "object",
       properties: {
         id: {
@@ -22622,7 +22819,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t182"
+              ref: "t193"
             }
           ]
         }
@@ -22633,7 +22830,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t192: {
+    t203: {
       type: "object",
       properties: {
         outputId: {
@@ -22659,7 +22856,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t190: {
+    t201: {
       type: "object",
       properties: {
         enabledFromThisPage: {
@@ -22711,7 +22908,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t191"
+                ref: "t202"
               }
             }
           ]
@@ -22761,7 +22958,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t192"
+                ref: "t203"
               }
             }
           ]
@@ -22769,7 +22966,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t178: {
+    t189: {
       type: "object",
       properties: {
         id: {
@@ -22809,7 +23006,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t179"
+                ref: "t190"
               }
             }
           ]
@@ -22854,7 +23051,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t182"
+              ref: "t193"
             }
           ]
         },
@@ -22868,21 +23065,21 @@ var native_contract_schema_generated_default = {
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t189"
+              ref: "t200"
             }
           ]
         },
         drawing: {
           anyOf: [
             {
-              ref: "t190"
+              ref: "t201"
             }
           ]
         },
         legacyPage: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         }
@@ -22893,7 +23090,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t194: {
+    t205: {
       type: "object",
       properties: {
         id: {
@@ -22908,7 +23105,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t182"
+              ref: "t193"
             }
           ]
         }
@@ -22919,7 +23116,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t195: {
+    t206: {
       type: "object",
       properties: {
         selected: {
@@ -22960,7 +23157,7 @@ var native_contract_schema_generated_default = {
         "selected"
       ]
     },
-    t193: {
+    t204: {
       type: "object",
       properties: {
         id: {
@@ -22972,18 +23169,18 @@ var native_contract_schema_generated_default = {
         assignments: {
           type: "array",
           items: {
-            ref: "t194"
+            ref: "t205"
           }
         },
         when: {
           anyOf: [
             {
-              ref: "t182"
+              ref: "t193"
             }
           ]
         },
         geometry: {
-          ref: "t195"
+          ref: "t206"
         }
       },
       required: [
@@ -22993,7 +23190,7 @@ var native_contract_schema_generated_default = {
         "geometry"
       ]
     },
-    t196: {
+    t207: {
       type: "object",
       properties: {
         componentKey: {
@@ -23045,7 +23242,7 @@ var native_contract_schema_generated_default = {
         "reason"
       ]
     },
-    t197: {
+    t208: {
       type: "object",
       properties: {
         runtimeMode: {
@@ -23065,21 +23262,21 @@ var native_contract_schema_generated_default = {
         output: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         },
         source: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t168"
             }
           ]
         }
       },
       required: []
     },
-    t174: {
+    t185: {
       type: "object",
       properties: {
         id: {
@@ -23111,14 +23308,14 @@ var native_contract_schema_generated_default = {
         editor: {
           anyOf: [
             {
-              ref: "t175"
+              ref: "t186"
             }
           ]
         },
         actor: {
           anyOf: [
             {
-              ref: "t177"
+              ref: "t188"
             }
           ]
         },
@@ -23132,13 +23329,13 @@ var native_contract_schema_generated_default = {
         steps: {
           type: "array",
           items: {
-            ref: "t178"
+            ref: "t189"
           }
         },
         outputs: {
           type: "array",
           items: {
-            ref: "t193"
+            ref: "t204"
           }
         },
         assignments: {
@@ -23146,7 +23343,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t194"
+                ref: "t205"
               }
             }
           ]
@@ -23154,14 +23351,14 @@ var native_contract_schema_generated_default = {
         external: {
           anyOf: [
             {
-              ref: "t196"
+              ref: "t207"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t197"
+              ref: "t208"
             }
           ]
         }
@@ -23174,7 +23371,7 @@ var native_contract_schema_generated_default = {
         "outputs"
       ]
     },
-    t199: {
+    t210: {
       type: "object",
       properties: {
         kind: {
@@ -23231,7 +23428,7 @@ var native_contract_schema_generated_default = {
         "status"
       ]
     },
-    t198: {
+    t209: {
       type: "object",
       properties: {
         schemaVersion: {
@@ -23247,7 +23444,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t199"
+            ref: "t210"
           }
         },
         generatedAt: {
@@ -23297,6 +23494,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: 12
+            },
+            {
+              const: 13
             }
           ]
         },
@@ -23349,14 +23549,14 @@ var native_contract_schema_generated_default = {
         resources: {
           anyOf: [
             {
-              ref: "t85"
+              ref: "t94"
             }
           ]
         },
         nodes: {
           type: "array",
           items: {
-            ref: "t87"
+            ref: "t96"
           }
         },
         contextBindings: {
@@ -23364,7 +23564,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t172"
+                ref: "t183"
               }
             }
           ]
@@ -23372,13 +23572,13 @@ var native_contract_schema_generated_default = {
         workflows: {
           type: "array",
           items: {
-            ref: "t174"
+            ref: "t185"
           }
         },
         parity: {
           anyOf: [
             {
-              ref: "t198"
+              ref: "t209"
             }
           ]
         }
@@ -23669,10 +23869,10 @@ function resolveRenderExtensions(config, geometry, local) {
   for (const [key2, value] of Object.entries(local ?? {})) {
     if (value === void 0) continue;
     if (value && typeof value === "object" && !Array.isArray(value)) {
-      const object = value;
-      if (object.mode === "inherit") continue;
+      const object2 = value;
+      if (object2.mode === "inherit") continue;
       const previous = result[key2];
-      const patch = Object.fromEntries(Object.entries(object).filter(([, item]) => item !== void 0 && item !== "inherit"));
+      const patch = Object.fromEntries(Object.entries(object2).filter(([, item]) => item !== void 0 && item !== "inherit"));
       result[key2] = { ...previous && typeof previous === "object" ? previous : {}, ...patch };
     } else result[key2] = value;
   }
@@ -23716,6 +23916,7 @@ function validateCondition(condition, path2, issues) {
   if (condition.kind === "bboxArea" && condition.min !== void 0 && condition.max !== void 0 && condition.min > condition.max) issue(issues, "error", "bbox-range-invalid", path2, "\u9762\u79EF\u533A\u95F4\u7684\u4E0B\u754C\u4E0D\u80FD\u5927\u4E8E\u4E0A\u754C\u3002");
 }
 function validateField(field, path2, known, issues) {
+  if (field.valueSchema) for (const message of validateValueSchema(field.valueSchema)) issue(issues, "error", "field-value-schema-invalid", path2 + "/valueSchema", message);
   const scope = fieldScope(field);
   const rootKey = /^(?!tags\.)(?!extensions\.)[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/;
   const nestedKey = /^(?:tags|extensions)\.[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/;
@@ -24080,8 +24281,8 @@ function validateProfile(profile, geometry, path2, config, sourcePath, issues) {
     } else if (a.min <= b.max && b.min <= a.max) issue(issues, "error", "render-zoom-interval-overlap", path2, `\u6E32\u67D3\u89C4\u5219 ${a.id} \u4E0E ${b.id} \u7684\u95ED\u533A\u95F4\u91CD\u53E0\u3002`);
   }
 }
-function registryHas(items, id, classCode) {
-  const item = items.find((entry) => entry.id === id);
+function registryHas(items, id2, classCode) {
+  const item = items.find((entry) => entry.id === id2);
   return Boolean(item && (!item.allowedClasses?.length || item.allowedClasses.includes(classCode)));
 }
 function sourceExists(source, fields) {
@@ -24339,7 +24540,7 @@ function validateWorkflow(workflow, config, issues) {
   for (const step of workflow.steps) {
     if (step.drawing?.drawMode && step.drawing.drawMode !== { Point: "point", LineString: "polyline", Polygon: "polygon" }[step.geometry?.[0] ?? "Point"]) issue(issues, "error", "workflow-draw-mode-invalid", `${base}/steps/${step.id}`, "\u7ED8\u5236\u6A21\u5F0F\u5FC5\u987B\u4E0E\u56FA\u5B9A\u51E0\u4F55\u7C7B\u578B\u4E00\u81F4\u3002");
     const ids = (step.drawing?.auxiliaryPoints ?? []).map((point) => point.id);
-    if (ids.some((id) => !id) || new Set(ids).size !== ids.length) issue(issues, "error", "workflow-auxiliary-id-invalid", `${base}/steps/${step.id}`, "\u8F85\u52A9\u70B9\u6807\u8BC6\u5FC5\u987B\u5B58\u5728\u4E14\u552F\u4E00\u3002");
+    if (ids.some((id2) => !id2) || new Set(ids).size !== ids.length) issue(issues, "error", "workflow-auxiliary-id-invalid", `${base}/steps/${step.id}`, "\u8F85\u52A9\u70B9\u6807\u8BC6\u5FC5\u987B\u5B58\u5728\u4E14\u552F\u4E00\u3002");
   }
   for (const step of workflow.steps) for (const point of step.drawing?.auxiliaryPoints ?? []) validateWorkflowValueCondition(point.when, allTokens, `${base}/steps/${step.id}/drawing/${point.id}`, issues);
   const validateOptions = (control, path2) => {
@@ -24560,6 +24761,7 @@ function validateConfigPackage(config, mountedRecords = []) {
   if (config.contractRevision >= 10 && !config.application) issue(issues, "error", "application-required", "application", "r10 \u5B8C\u6574\u5E94\u7528\u5305\u5FC5\u987B\u5305\u542B\u603B\u4F53\u89C4\u5219\u3002");
   if (config.contractRevision >= 10 && config.application) for (const row2 of validateApplication(config.application, new Set(config.nodes.map((node) => node.path.class)))) issue(issues, "error", "application-invalid", "application/" + row2.path, row2.message);
   issues.push(...validateLookupTables(config));
+  issues.push(...validateNavigationConfiguration(config, resolveEffectiveFields));
   for (const error of standardTagTableErrors(config)) issue(issues, "error", "standard-tag-table-invalid", error.path, error.message);
   issues.push(...validatePrefillCopies(config, resolveEffectiveFields));
   issues.push(...validateNodeFieldSettings(config, resolveEffectiveFields));
@@ -24638,7 +24840,7 @@ function validateConfigPackage(config, mountedRecords = []) {
       if (seen.has(childId)) issue(issues, "error", "category-child-duplicate", `nodes/${node.nodeId}/children`, `\u5B50\u5206\u7C7B ${childId} \u91CD\u590D\u3002`);
       seen.add(childId);
     }
-    for (const id of expected) if (!seen.has(id)) issue(issues, "error", "category-child-omitted", `nodes/${node.nodeId}/children`, `children \u9057\u6F0F path \u5B9A\u4E49\u7684\u76F4\u63A5\u5B50\u5206\u7C7B ${id}\u3002`);
+    for (const id2 of expected) if (!seen.has(id2)) issue(issues, "error", "category-child-omitted", `nodes/${node.nodeId}/children`, `children \u9057\u6F0F path \u5B9A\u4E49\u7684\u76F4\u63A5\u5B50\u5206\u7C7B ${id2}\u3002`);
   }
   const workflowIds = /* @__PURE__ */ new Set();
   for (const workflow of config.workflows) {
@@ -24665,11 +24867,476 @@ function validateConfigPackage(config, mountedRecords = []) {
   if (!config.parity) issue(issues, "warning", "v1-parity-report-pending", "parity", "V1 \u8BED\u4E49\u8FC1\u79FB\u5C1A\u672A\u6267\u884C\uFF1B\u5F53\u524D\u4EC5\u53EF\u4F5C\u4E3A V3 \u539F\u751F\u8BD5\u9A8C\u5305\u3002");
   else for (const entry of config.parity.entries.filter((item) => item.status === "unsupported")) issue(issues, "warning", "v1-parity-unsupported-pending", `parity/${entry.kind}/${entry.id}`, `V1 \u914D\u7F6E ${entry.id} \u5C1A\u672A\u8FC1\u79FB\uFF1A${entry.details ?? "\u672A\u8BF4\u660E\u539F\u56E0"}\u3002`);
   const mounted = aggregateMountedIssues(mountedRecords, config);
+  for (const record of mountedRecords) for (const field of resolveEffectiveFields(config, { class: String(record.Class ?? ""), kind: record.Kind, skind: record.SKind ?? record.Skind, skind2: record.SKind2 ?? record.Skind2 })) if (field.valueSchema) {
+    const value = readRecordPath(record, field.key);
+    if (value !== void 0 && value !== null) for (const message of validateStructuredValue(value, field.valueSchema, field.key)) mounted.push({ severity: "error", code: "mounted-field-structure-invalid", path: "mounted/" + String(record.ID ?? "") + "/" + field.key, message, relatedPaths: config.nodes.filter((n) => n.fields.some((f) => f.key === field.key)).map((n) => "nodes/" + n.nodeId), affectedFeatures: [{ id: String(record.ID ?? ""), name: String(record.Name ?? record.ID ?? "") }] });
+  }
+  mounted.push(...validateNavigationRecords(config, mountedRecords));
   mounted.push(...validateMountedStructureRoles(config, mountedRecords));
   issues.push(...mounted);
   const configuration = issues.filter((item) => !item.code.startsWith("mounted-") && !item.code.startsWith("v1-parity")).length;
   const parity = issues.filter((item) => item.code.startsWith("v1-parity")).length;
   return { schemaVersion: "cairnmap.config-validation-report.v3", valid: !issues.some((item) => item.severity === "error"), createdAt: (/* @__PURE__ */ new Date()).toISOString(), issues, summary: { configuration, parity, mountedData: mounted.length, affectedFeatures: mounted.reduce((total, item) => total + (item.affectedFeatures?.length ?? 0), 0) } };
+}
+
+// src/configStudio/lookupTables.ts
+function referencedField(config, ref) {
+  const node = config.nodes.find((node2) => node2.nodeId === ref.nodeId);
+  const matches = node ? resolveEffectiveFields(config, node.path).filter((field) => field.fieldId === ref.fieldId) : [];
+  return matches.length === 1 ? matches[0] : void 0;
+}
+function effectiveOptionTable(config, owner) {
+  if (owner.optionsFieldRef) {
+    if (!("nodes" in config)) return { valueType: owner.optionValueType ?? "string", rows: [] };
+    const field = referencedField(config, owner.optionsFieldRef);
+    return field ? { valueType: field.optionValueType ?? field.optionTable?.valueType ?? "string", rows: field.options ?? [] } : { valueType: owner.optionValueType ?? "string", rows: [] };
+  }
+  const table = owner.optionsTableId ? config.lookupTables?.find((table2) => table2.id === owner.optionsTableId) : void 0;
+  if (owner.optionsTableId) return { valueType: table?.valueType ?? owner.optionValueType ?? "string", rows: table?.rows ?? [] };
+  return owner.optionTable ?? { valueType: owner.optionValueType ?? "string", rows: owner.options ?? [] };
+}
+function effectiveOptions(config, owner) {
+  const rows = effectiveOptionTable(config, owner).rows;
+  return rows.map(({ value, label }) => ({ value, label }));
+}
+function effectiveOptionsOwner(config, owner) {
+  if (!owner.optionsFieldRef && !owner.optionsTableId && !owner.optionTable) return owner;
+  const table = effectiveOptionTable(config, owner);
+  return { ...owner, options: effectiveOptions(config, owner), optionValueType: table.valueType };
+}
+function cardOptionsOwner(item) {
+  return { ...item, options: item.valueOptions };
+}
+function resolveBoundCard(config, item) {
+  const field = item.fieldBinding ? referencedField(config, item.fieldBinding) : void 0;
+  const next = field ? { ...item, source: field.key, label: field.labels, options: { ...item.options, format: field.options?.length ? "enum" : field.format ?? "plain" } } : item;
+  const owner = cardOptionsOwner(next);
+  return owner.optionTable || owner.optionsTableId || owner.optionsFieldRef ? { ...next, valueOptions: effectiveOptions(config, owner) } : next;
+}
+function validateLookupTables(config, includeNodes = true) {
+  const issues = [];
+  const error = (path2, message, code = "lookup-table-invalid") => issues.push({ severity: "error", code, path: path2, message });
+  if (config.contractRevision < 10 && (config.lookupTables?.length || config.nodes.some((n) => n.fields.some((f) => f.optionsTableId)) || config.workflows.some((w) => w.steps.some((s) => s.controls?.some((c) => c.optionsTableId || c.group?.itemFields.some((f) => f.optionsTableId)))))) error("lookupTables", "\u5BF9\u7167\u8868\u9700\u8981 r10 \u5951\u7EA6\u3002");
+  const ids = /* @__PURE__ */ new Set();
+  for (const table of config.lookupTables ?? []) {
+    const path2 = `lookupTables/${table.id}`;
+    if (!/^[a-z][a-z0-9-]{1,80}$/.test(table.id) || ids.has(table.id)) error(path2, "\u8868\u683C ID \u5FC5\u987B\u6709\u6548\u4E14\u552F\u4E00\u3002");
+    ids.add(table.id);
+    if (!(table.label.zh.trim() || config.contractRevision >= 11 && table.label.en.trim())) error(path2, "\u8868\u683C\u9700\u8981\u4E2D\u6587\u6216\u82F1\u6587\u540D\u79F0\u3002");
+    if (!table.rows.length) error(path2, "\u8868\u683C\u81F3\u5C11\u9700\u8981\u4E00\u884C\u3002");
+    const values2 = /* @__PURE__ */ new Set();
+    const pointIds = /* @__PURE__ */ new Set();
+    for (const [index, row2] of table.rows.entries()) {
+      const at = `${path2}/rows/${index}`, normalized = table.valueType === "number" ? String(Number(row2.value)) : row2.value;
+      if (!row2.value.trim() || values2.has(normalized) || table.valueType === "number" && !Number.isFinite(Number(row2.value)) || table.valueType === "boolean" && !["true", "false"].includes(row2.value)) error(at, "\u5B58\u50A8\u503C\u4E3A\u7A7A\u3001\u91CD\u590D\u6216\u7C7B\u578B\u4E0D\u7B26\u3002");
+      values2.add(normalized);
+      if (!(row2.label.zh.trim() || config.contractRevision >= 11 && row2.label.en.trim())) error(at, "\u5BF9\u7167\u884C\u9700\u8981\u4E2D\u6587\u6216\u82F1\u6587\u540D\u79F0\u3002");
+      if (table.functionKind === "none" && row2.functionValue !== void 0) error(at, "\u65E0\u529F\u80FD\u503C\u8868\u683C\u4E0D\u80FD\u5305\u542B\u529F\u80FD\u503C\u3002");
+      if (table.functionKind === "speed" && (typeof row2.functionValue !== "number" || !Number.isFinite(row2.functionValue) || row2.functionValue <= 0)) error(at, "\u51FA\u884C\u901F\u5EA6\u5FC5\u987B\u4E3A\u6B63\u6570\uFF0C\u5355\u4F4D\u4E3A\u65B9\u5757/\u79D2\u3002");
+      if (table.functionKind === "teleportHub") {
+        const hub = row2.functionValue;
+        if (!hub || typeof hub === "number" || !("world" in hub) || !hub.world.trim() || !Number.isFinite(hub.range) || hub.range <= 0 || !hub.returnPoints.length) {
+          error(at, "\u67A2\u7EBD\u9700\u8BBE\u7F6E\u4E16\u754C\u3001\u6B63\u6570\u8303\u56F4\u53CA\u81F3\u5C11\u4E00\u4E2A\u8FD4\u56DE\u70B9\u3002");
+          continue;
+        }
+        for (const point of hub.returnPoints) {
+          if (!point.id.trim() || pointIds.has(`${hub.world}/${point.id}`) || ![point.x, point.y, point.z].every(Number.isFinite) || !point.label.zh.trim()) error(at, "\u8FD4\u56DE\u70B9 ID/\u540D\u79F0/\u5750\u6807\u65E0\u6548\uFF0C\u6216\u540C\u4E16\u754C ID \u91CD\u590D\u3002");
+          pointIds.add(`${hub.world}/${point.id}`);
+        }
+      }
+    }
+  }
+  const inspect = (owner, path2) => {
+    if (!owner.optionsTableId) return;
+    const table = config.lookupTables?.find((row2) => row2.id === owner.optionsTableId);
+    if (!table) error(path2, `\u5F15\u7528\u7684\u5BF9\u7167\u8868 ${owner.optionsTableId} \u4E0D\u5B58\u5728\u3002`, "lookup-table-reference-missing");
+    if (table && table.valueType !== (owner.optionValueType ?? "string")) error(path2, "\u8868\u683C\u5B58\u50A8\u503C\u7C7B\u578B\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u8868\u683C\u786E\u8BA4\u7ED1\u5B9A\u7C7B\u578B\u3002", "lookup-table-type-changed");
+    if (owner.options?.length) error(path2, "\u7ED1\u5B9A\u8868\u683C\u540E\u4E0D\u80FD\u540C\u65F6\u4FDD\u5B58\u72EC\u7ACB\u5BF9\u7167\u884C\uFF0C\u8BF7\u5148\u89E3\u9664\u7ED1\u5B9A\u3002");
+  };
+  if (includeNodes) config.nodes.forEach((node) => node.fields.forEach((field) => inspect(field, `nodes/${node.nodeId}/fields/${field.fieldId}`)));
+  config.workflows.forEach((w) => w.steps.forEach((s) => s.controls?.forEach((c) => {
+    inspect(c, `workflows/${w.id}/${c.id}`);
+    c.group?.itemFields.forEach((f) => inspect(f, `workflows/${w.id}/${c.id}/${f.key}`));
+  })));
+  if (config.contractRevision >= 11) {
+    const check = (owner, path2, expected, defaultValue) => {
+      if ([Boolean(owner.optionsFieldRef), Boolean(owner.optionsTableId), Boolean(owner.optionTable)].filter(Boolean).length > 1) error(path2, "\u526F\u672C\u3001\u5B57\u6BB5\u5BF9\u7167\u548C\u516C\u5171\u8868\u53EA\u80FD\u9009\u62E9\u4E00\u79CD\u6765\u6E90\u3002");
+      if ((owner.optionsTableId || owner.optionsFieldRef || owner.optionTable) && owner.options?.length) error(path2, "\u5BF9\u7167\u4E3B\u4F53\u6216\u7ED1\u5B9A\u4E0D\u80FD\u540C\u65F6\u4FDD\u5B58\u65E7\u5F0F\u72EC\u7ACB\u884C\u3002");
+      const table = effectiveOptionTable(config, owner), binding = owner.optionsTableId || owner.optionsFieldRef;
+      if (owner.optionsFieldRef && !referencedField(config, owner.optionsFieldRef)) error(path2, "\u7ED1\u5B9A\u5B57\u6BB5\u4E0D\u5B58\u5728\u6216\u5728\u8BE5\u5206\u7C7B\u4E2D\u4E0D\u518D\u6709\u6548\u3002", "lookup-field-reference-missing");
+      if (binding && !table.rows.length) error(path2, "\u7ED1\u5B9A\u6765\u6E90\u4E3A\u7A7A\uFF0C\u5FC5\u987B\u624B\u52A8\u4FEE\u590D\u3002", "lookup-binding-empty");
+      if (binding && owner.optionValueType && table.valueType !== owner.optionValueType) error(path2, "\u7ED1\u5B9A\u6765\u6E90\u7C7B\u578B\u5DF2\u6539\u53D8\uFF0C\u8BF7\u91CD\u65B0\u7ED1\u5B9A\u786E\u8BA4\u3002", "lookup-binding-type-changed");
+      if (expected && table.rows.length && table.valueType !== expected) error(path2, "\u5BF9\u7167\u503C\u7C7B\u578B\u4E0E\u76EE\u6807\u5B57\u6BB5\u4FDD\u5B58\u7C7B\u578B\u4E0D\u517C\u5BB9\u3002");
+      const values2 = /* @__PURE__ */ new Set();
+      for (const row2 of table.rows) {
+        const key2 = table.valueType === "number" ? String(Number(row2.value)) : row2.value;
+        if (!row2.value.trim() || values2.has(key2) || table.valueType === "number" && !Number.isFinite(Number(row2.value)) || table.valueType === "boolean" && !["true", "false"].includes(row2.value) || !(row2.label.zh.trim() || row2.label.en.trim())) error(path2, "\u5BF9\u7167\u5305\u542B\u7A7A\u540D\u79F0\u3001\u91CD\u590D\u503C\u6216\u4E0D\u5408\u6CD5\u7684\u4FDD\u5B58\u503C\u3002");
+        values2.add(key2);
+      }
+      if (defaultValue !== void 0 && table.rows.length && (!table.rows.some((row2) => row2.value === String(defaultValue)) || typeof defaultValue !== table.valueType)) error(path2, "\u9ED8\u8BA4\u503C\u4E0E\u5F53\u524D\u5BF9\u7167\u7684\u4FDD\u5B58\u503C\u6216\u7C7B\u578B\u4E0D\u517C\u5BB9\u3002");
+    };
+    if (includeNodes) config.nodes.forEach((node) => {
+      node.fields.forEach((field) => check(field, `nodes/${node.nodeId}/fields/${field.fieldId}`, field.type === "enum" ? field.optionValueType ?? "string" : field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : field.type === "string" ? "string" : void 0));
+      if (node.card?.mode === "fields") node.card.items.forEach((item) => {
+        const path2 = `nodes/${node.nodeId}/card/${item.id}`;
+        check(cardOptionsOwner(item), path2);
+        if (item.fieldBinding) {
+          const field = referencedField(config, item.fieldBinding);
+          if (!field) error(path2, "\u4FE1\u606F\u5361\u5B57\u6BB5\u7ED1\u5B9A\u6765\u6E90\u4E0D\u5B58\u5728\u3002", "card-field-binding-missing");
+          else if (!(field.labels.zh.trim() || field.labels.en.trim())) error(path2, "\u7ED1\u5B9A\u5B57\u6BB5\u6CA1\u6709\u6709\u6548\u663E\u793A\u540D\u79F0\u3002");
+        }
+      });
+    });
+    config.workflows.forEach((w) => w.steps.forEach((s) => s.controls?.forEach((c) => {
+      check(c, `workflows/${w.id}/${c.id}`, void 0, c.defaultValue);
+      c.group?.itemFields.forEach((f) => check(f, `workflows/${w.id}/${c.id}/${f.key}`, void 0, f.defaultValue));
+    })));
+  }
+  return issues;
+}
+
+// src/configStudio/navigationValidation.ts
+var sharedBase = "application/preferences/railwayRoles";
+var navBase = "application/navigation";
+var stable2 = (value) => JSON.stringify(value, (_key, row2) => row2 && typeof row2 === "object" && !Array.isArray(row2) ? Object.fromEntries(Object.entries(row2).sort(([a], [b]) => a.localeCompare(b))) : row2);
+function validateNavigationConfiguration(config, fields) {
+  const issues = [], app = config.application;
+  const add = (path2, message, relatedPaths = [], severity = "error") => issues.push({ severity, code: "navigation-configuration-invalid", path: path2, message, relatedPaths });
+  if (config.contractRevision < 13) {
+    if (app?.navigation || app?.preferences.railwayRoles || config.nodes.some((n) => n.fields.some((f) => f.valueSchema))) add(navBase, "\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u3001\u5BFC\u822A\u8BBE\u7F6E\u53CA\u503C\u7ED3\u6784\u58F0\u660E\u9700\u8981\u5951\u7EA6 r13\u3002");
+    return issues;
+  }
+  if (!app?.navigation || !app.preferences.railwayRoles) {
+    add(navBase, "r13 \u5FC5\u987B\u5305\u542B\u8DEF\u5F84\u89C4\u5212\u8BBE\u7F6E\u548C\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u5B9A\u4E49\u3002", [sharedBase]);
+    return issues;
+  }
+  if (app.preferences.navigation) add(navBase, "\u65E7\u5BFC\u822A\u53C2\u6570\u4E0E r13 \u8BBE\u7F6E\u4E0D\u80FD\u5E76\u5B58\u3002", ["application/preferences/navigation"]);
+  const nav = app.navigation, shared = app.preferences.railwayRoles.selectors;
+  const pointNodes = (path2) => config.nodes.filter((n) => pathCovers(path2, n.path));
+  const geometry = (path2) => {
+    const nodes = config.nodes.filter((n) => pathCovers(n.path, path2) && n.geometryType).sort((a, b) => Object.values(a.path).filter(Boolean).length - Object.values(b.path).filter(Boolean).length);
+    return nodes[nodes.length - 1]?.geometryType;
+  };
+  const checkPaths = (rows, base, required) => {
+    if (required && !rows.length) add(base, "\u542F\u7528\u7684\u89D2\u8272\uFF0F\u53C2\u4E0E\u8303\u56F4\u81F3\u5C11\u9700\u8981\u4E00\u6761\u5206\u7C7B\u3002");
+    for (const [i, row2] of rows.entries()) {
+      if (!row2.class || row2.skind && !row2.kind || row2.skind2 && !row2.skind || !config.nodes.some((n) => stable2(n.path) === stable2(Object.fromEntries(Object.entries(row2).filter(([, v]) => v))))) add(`${base}/${i}`, "Class \u5FC5\u586B\uFF0C\u56DB\u7EA7\u5206\u7C7B\u5FC5\u987B\u8FDE\u7EED\u4E14\u5B58\u5728\u3002");
+      if (rows.some((other, at) => at !== i && pathCovers(other, row2))) add(`${base}/${i}`, "\u8303\u56F4\u88AB\u540C\u89D2\u8272\u53E6\u4E00\u884C\u5305\u542B\uFF0C\u53EF\u6574\u7406\u5197\u4F59\u884C\u3002", [], "warning");
+    }
+  };
+  const shape2 = (field, template, path2, related) => {
+    if (!field.valueSchema || stable2(field.valueSchema) !== stable2(VALUE_SCHEMA_TEMPLATES[template].schema)) add(path2, `${field.key} \u9700\u8981\u5DF2\u6CE8\u518C\u7684\u201C${VALUE_SCHEMA_TEMPLATES[template].label}\u201D\u503C\u7ED3\u6784\u6A21\u677F\u3002`, related);
+  };
+  const inspect = (rows, base, role, navigation) => {
+    const nodes = [...new Map(rows.flatMap(pointNodes).map((n) => [n.nodeId, n])).values()];
+    for (const node of nodes) {
+      const fs = fields(config, node.path), byKey = new Map(fs.map((f) => [f.key, f])), related = [`nodes/${node.nodeId}`];
+      const field = (key2, kind, required = false, template) => {
+        const f = byKey.get(key2);
+        if (!f) {
+          if (required) add(base, `${node.nodeId} \u7F3A\u5C11 ${key2} \u5B57\u6BB5\u5B9A\u4E49\u3002`, related);
+          return;
+        }
+        const type = f.type === "enum" ? f.optionValueType ?? "string" : f.type === "reference" ? "string" : f.type;
+        if (type !== kind || f.cardinality !== "single") add(base, `${node.nodeId} \u7684 ${key2} \u9700\u8981\u5355\u503C ${kind}\u3002`, related);
+        if (template && type === "json") shape2(f, template, base, related);
+      };
+      const reference = (key2, scopes, matchField = "ID") => {
+        const ref = byKey.get(key2)?.reference;
+        if (ref && (ref.matchField !== matchField || !scopes.some((p) => p.class === ref.classCode))) add(base, `${node.nodeId} \u7684 ${key2} \u5F15\u7528\u76EE\u6807\u4E0E\u89D2\u8272\u8303\u56F4\u4E0D\u517C\u5BB9\u3002`, related);
+      };
+      const domain = (key2, tableId) => {
+        const f = byKey.get(key2);
+        if (!f || f.type !== "enum") return;
+        const allowed = new Set(config.lookupTables?.find((t) => t.id === tableId)?.rows.map((r) => r.value));
+        const declared = effectiveOptionTable(config, f);
+        if (declared.rows.some((row2) => !allowed.has(row2.value))) add(base, `${node.nodeId} \u7684 ${key2} \u679A\u4E3E\u57DF\u8D85\u51FA\u7ED1\u5B9A\u529F\u80FD\u8868\u3002`, [...related, `lookupTables/${tableId}`]);
+      };
+      field("Name", "string");
+      if (role === "lines") {
+        field("direction", "number", navigation);
+        field("color", "string");
+        field("bureau", "string");
+        field("line", "string");
+      }
+      if (role === "platforms") {
+        field("lines", "json", true, "rail-lines");
+        field("Situation", "boolean", navigation);
+        field("Connect", "boolean", navigation);
+      }
+      if (role === "stationAreas") {
+        field("platforms", "json", true, "rail-platforms");
+        field("STBuilding", "string", true);
+        reference("STBuilding", shared.stations);
+      }
+      if (role === "stations") for (const key2 of ["Stations", "stations", "stationsgroup", "stationsGroup", "StationsGroup", "Stationsgroup"]) field(key2, "json", false, "rail-stations");
+      if (role === "roads") {
+        field("Level", "number", true);
+        field("Oneway", "boolean", true);
+        for (const key2 of ["Enter", "Exit", "SelfJunction"]) field(key2, "boolean");
+        field("Speed", "number");
+        field("Mode", "json", false, "road-modes");
+        field("ConnectL", "json", false, "road-connections");
+        field("Blacklist", "json", false, "road-blacklist");
+      }
+      if (role === "teleportPoints") {
+        field("hub", "string");
+        field("TGTWarp", "string");
+        field("TGTcoordinate", "json", false, "target-point");
+        for (const key2 of ["TGT_x", "TGT_z", "TGTelevation"]) field(key2, "number");
+        if (!byKey.has("TGTWarp") && !byKey.has("TGTcoordinate") && !(byKey.has("TGT_x") && byKey.has("TGT_z"))) add(base, `${node.nodeId} \u7F3A\u5C11 Warp \u6216\u76EE\u6807\u5750\u6807\u5B57\u6BB5\u3002`, related);
+        reference("TGTWarp", nav.teleport.selectors.warpPoints, "WRPointI2D");
+        domain("hub", nav.teleport.hubTableId);
+      }
+      if (role === "warpPoints") field("WRPointI2D", "string", true);
+      if (navigation) {
+        const allowed = role === "lines" || role === "roads" ? ["LineString"] : role === "stations" ? ["Point", "Polygon"] : ["Point"];
+        if (!allowed.includes(geometry(node.path) ?? "")) add(base, `${node.nodeId} \u7684\u6709\u6548\u51E0\u4F55\u4E0D\u9002\u5408\u8BE5\u5BFC\u822A\u89D2\u8272\u3002`, related);
+      }
+    }
+  };
+  const sharedUsed = nav.rail.enabled || config.nodes.some((n) => n.card?.mode === "fields" && n.card.items.some((i) => i.renderer === "lineChips") || n.fieldSettings?.search?.extension?.mode === "lineChips");
+  for (const role of RAILWAY_ROLES) {
+    const sPath = `${sharedBase}/selectors/${role}`, nPath = `${navBase}/rail/selectors/${role}`;
+    checkPaths(shared[role], sPath, sharedUsed);
+    inspect(shared[role], sPath, role, false);
+    checkPaths(nav.rail.selectors[role], nPath, nav.rail.enabled);
+    for (const [i, row2] of nav.rail.selectors[role].entries()) if (!shared[role].some((scope) => pathCovers(scope, row2))) add(`${nPath}/${i}`, "\u5BFC\u822A\u53C2\u4E0E\u8303\u56F4\u8D85\u51FA\u540C\u89D2\u8272\u5171\u4EAB\u5B9A\u4E49\uFF0C\u8BF7\u534F\u8C03\u4FEE\u6539\u4E24\u533A\u3002", [sPath]);
+    if (nav.rail.enabled) inspect(nav.rail.selectors[role], nPath, role, true);
+  }
+  const overlap = (roles) => {
+    for (let a = 0; a < roles.length; a++) for (let b = a + 1; b < roles.length; b++) if (roles[a][1].some((x) => roles[b][1].some((y) => pathCovers(x, y) || pathCovers(y, x)))) add(roles[a][0], "\u4E0D\u540C\u89D2\u8272\u7684\u5206\u7C7B\u8303\u56F4\u91CD\u53E0\u3002", [roles[b][0]]);
+  };
+  overlap(RAILWAY_ROLES.map((role) => [`${sharedBase}/selectors/${role}`, shared[role]]));
+  for (const role of ["teleportPoints", "warpPoints"]) {
+    const base = `${navBase}/teleport/selectors/${role}`;
+    checkPaths(nav.teleport.selectors[role], base, nav.teleport.enabled);
+    if (nav.teleport.enabled) inspect(nav.teleport.selectors[role], base, role, true);
+  }
+  overlap(["teleportPoints", "warpPoints"].map((role) => [`${navBase}/teleport/selectors/${role}`, nav.teleport.selectors[role]]));
+  checkPaths(nav.road.selectors.roads, `${navBase}/road/selectors/roads`, nav.road.enabled);
+  if (nav.road.enabled) inspect(nav.road.selectors.roads, `${navBase}/road/selectors/roads`, "roads", true);
+  for (const [module, id2, kind] of [["teleport", nav.teleport.hubTableId, "teleportHub"], ["road", nav.road.travelModesTableId, "speed"]]) {
+    const table = config.lookupTables?.find((t) => t.id === id2), path2 = `${navBase}/${module}`;
+    if (!id2 && !nav[module].enabled) continue;
+    if (!table || table.functionKind !== kind || table.valueType !== "string") {
+      add(path2, "\u7ED1\u5B9A\u8868\u4E0D\u5B58\u5728\uFF0C\u6216\u529F\u80FD\u503C\u683C\u5F0F\uFF0F\u6587\u672C\u5B58\u50A8\u7C7B\u578B\u4E0D\u517C\u5BB9\u3002", [`lookupTables/${id2}`]);
+      continue;
+    }
+    if (!table.rows.length) add(path2, "\u5BFC\u822A\u7ED1\u5B9A\u8868\u4E0D\u80FD\u4E3A\u7A7A\u3002", [`lookupTables/${id2}`]);
+    for (const row2 of table.rows) {
+      const value = row2.functionValue;
+      if (kind === "teleportHub" && value && typeof value === "object" && "world" in value && !app.worlds.some((w) => [w.id, w.prefix, String(w.numericCode), w.label.zh, w.label.en].includes(value.world))) add(path2, "\u67A2\u7EBD\u6307\u5B9A\u7684\u4E16\u754C\u4E0D\u5B58\u5728\u3002", [`lookupTables/${id2}`, "application/worlds"]);
+    }
+  }
+  for (const node of config.nodes) for (const f of node.fields) if (f.valueSchema) {
+    if (f.type !== "json" || f.cardinality !== "single") add(`nodes/${node.nodeId}/fields/${f.fieldId}`, "\u7ED3\u6784\u58F0\u660E\u7528\u4E8E\u5355\u503C JSON \u5BB9\u5668\u3002");
+    for (const error of validateValueSchema(f.valueSchema)) add(`nodes/${node.nodeId}/fields/${f.fieldId}/valueSchema`, error);
+  }
+  return issues;
+}
+function validateNavigationRecords(config, records) {
+  const app = config.application, nav = app?.navigation, shared = app?.preferences.railwayRoles?.selectors;
+  if (config.contractRevision < 13 || !nav || !shared) return [];
+  const result = [], ids = /* @__PURE__ */ new Map(), warps = /* @__PURE__ */ new Map();
+  const world = (r) => app.worlds.find((w) => [w.id, w.prefix, String(w.numericCode), w.label.zh, w.label.en].includes(String(r.World)))?.id ?? String(r.World ?? "");
+  const role = (r, key2) => pathsMatch(shared[key2], rawClassification(r));
+  const add = (r, message, path2, warning = false) => result.push({ severity: warning ? "warning" : "error", code: "mounted-navigation-invalid", path: path2, message, relatedPaths: [sharedBase, navBase, ...path2.startsWith(`${navBase}/road`) ? [`lookupTables/${nav.road.travelModesTableId}`] : path2.startsWith(`${navBase}/teleport`) ? [`lookupTables/${nav.teleport.hubTableId}`] : [], ...config.nodes.filter((n) => pathCovers(n.path, rawClassification(r))).map((n) => `nodes/${n.nodeId}`)], affectedFeatures: [{ id: String(r.ID ?? ""), name: String(r.Name ?? r.ID ?? "") }] });
+  const insert = (map, key2, r) => {
+    const rows = map.get(key2) ?? [];
+    rows.push(r);
+    map.set(key2, rows);
+  };
+  const stationKey = (r) => String(r.staBuildingID ?? (r.Type === "Points" || r.Class === "SBP" ? r.staBuildingPointId ?? r.ID : r.staBuildingId ?? r.buildingID ?? r.BuildingID ?? r.buildingId ?? r.ID) ?? "");
+  for (const r of records) {
+    insert(ids, `${world(r)}/${r.ID}`, r);
+    if (role(r, "stations") && stationKey(r) !== String(r.ID)) insert(ids, `${world(r)}/${stationKey(r)}`, r);
+    if (pathsMatch(nav.teleport.selectors.warpPoints, rawClassification(r))) insert(warps, `${world(r)}/${r.WRPointI2D ?? r.wrPointI2D ?? ""}`, r);
+  }
+  const refs = (r, key2) => Array.isArray(r[key2]) ? r[key2].map((v) => typeof v === "object" && v ? String(v.ID ?? "") : String(v)) : [];
+  const check = (r, id2, target) => {
+    const candidates = ids.get(`${world(r)}/${id2}`) ?? [];
+    if (candidates.length !== 1 || !role(candidates[0], target)) add(r, `\u94C1\u8DEF\u5173\u8054 ${id2} \u7F3A\u5931\u3001\u91CD\u590D\u6216\u89D2\u8272\u4E0D\u7B26\u3002`, sharedBase);
+    else if (nav.rail.enabled && RAILWAY_ROLES.some((k) => pathsMatch(nav.rail.selectors[k], rawClassification(r))) && !pathsMatch(nav.rail.selectors[target], rawClassification(candidates[0]))) add(r, `\u5173\u8054 ${id2} \u4E0D\u5728\u5BFC\u822A\u53C2\u4E0E\u8303\u56F4\uFF1B\u4EC5\u6392\u9664\u8BE5\u5BFC\u822A\u8FB9\u3002`, `${navBase}/rail`, true);
+  };
+  const finite = (v) => typeof v === "number" && Number.isFinite(v);
+  const coordinate = (v) => Boolean(v && typeof v === "object" && finite(v.x) && finite(v.z));
+  const codes = new Set(config.lookupTables?.find((t) => t.id === nav.road.travelModesTableId)?.rows.map((row2) => row2.value));
+  for (const r of records) {
+    const isRoad = pathsMatch(nav.road.selectors.roads, rawClassification(r)), isWarp = pathsMatch(nav.teleport.selectors.warpPoints, rawClassification(r)), isTeleport = pathsMatch(nav.teleport.selectors.teleportPoints, rawClassification(r));
+    if ((RAILWAY_ROLES.some((key2) => role(r, key2)) || isRoad || isWarp || isTeleport) && (ids.get(`${world(r)}/${r.ID}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C ID \u91CD\u590D\uFF0C\u65E0\u6CD5\u552F\u4E00\u89E3\u6790\u3002", navBase);
+    if (role(r, "stations") && (ids.get(`${world(r)}/${stationKey(r)}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C\u8F66\u7AD9\u89C4\u8303\u5EFA\u7B51 ID \u91CD\u590D\u3002", sharedBase);
+    if (role(r, "platforms")) {
+      for (const id2 of refs(r, "lines")) if (id2) check(r, id2, "lines");
+    }
+    if (role(r, "stationAreas")) {
+      for (const id2 of refs(r, "platforms")) if (id2) check(r, id2, "platforms");
+      if (r.STBuilding) check(r, String(r.STBuilding), "stations");
+    }
+    if (role(r, "stations")) {
+      for (const key2 of ["Stations", "stations", "stationsgroup", "stationsGroup", "StationsGroup", "Stationsgroup"]) for (const id2 of refs(r, key2)) if (id2) check(r, id2, "stationAreas");
+    }
+    if (role(r, "lines") && r.direction !== void 0 && (!finite(r.direction) || !Number.isInteger(r.direction) || Number(r.direction) < 0 || Number(r.direction) > 7)) add(r, "direction \u5FC5\u987B\u4E3A 0\u20137 \u6574\u6570\u3002", `${navBase}/rail`);
+    if (isRoad) {
+      if (r.Speed !== void 0 && (!finite(r.Speed) || Number(r.Speed) <= 0)) add(r, "\u9053\u8DEF Speed \u5FC5\u987B\u4E3A\u6B63\u6709\u9650\u6570\u3002", `${navBase}/road`);
+      if (Array.isArray(r.Mode)) for (const v of r.Mode) {
+        const code = typeof v === "string" ? v : Array.isArray(v) ? String(v[0] ?? "") : v && typeof v === "object" ? String(v.code ?? v.tgt ?? v.ID ?? v.id ?? "") : "";
+        if (!codes.has(code)) add(r, `\u9053\u8DEF Mode ${code} \u4E0D\u5728\u7ED1\u5B9A\u901F\u5EA6\u8868\u4E2D\u3002`, `${navBase}/road`);
+      }
+      for (const key2 of ["ConnectL", "Blacklist"]) if (Array.isArray(r[key2])) for (const v of r[key2]) {
+        const row2 = v && typeof v === "object" ? v : {};
+        const id2 = typeof v === "string" ? v : Array.isArray(v) ? String(v[0] ?? "") : String(row2.tgt ?? row2.Tgt ?? row2.ID ?? row2.id ?? "");
+        if (!id2) continue;
+        const candidates = ids.get(`${world(r)}/${id2}`) ?? [];
+        if (!candidates.length) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5B58\u5728\u3002`, `${navBase}/road`);
+        else if (candidates.length !== 1) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/road`);
+        else if (!pathsMatch(nav.road.selectors.roads, rawClassification(candidates[0]))) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5728\u9053\u8DEF\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u8FDE\u63A5\u3002`, `${navBase}/road`, true);
+      }
+    }
+    if (isWarp) {
+      const key2 = String(r.WRPointI2D ?? r.wrPointI2D ?? "").trim();
+      if (!key2 || (warps.get(`${world(r)}/${key2}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C Warp \u5B9A\u4F4D\u952E\u7F3A\u5931\u6216\u91CD\u590D\u3002", `${navBase}/teleport`);
+    }
+    if (isTeleport) {
+      const key2 = String(r.TGTWarp ?? r.tgtWarp ?? "").trim();
+      const target = warps.get(`${world(r)}/${key2}`) ?? [];
+      const explicit = coordinate(r.TGTcoordinate) || finite(r.TGT_x) && finite(r.TGT_z);
+      const excluded = key2 && records.filter((other) => world(other) === world(r) && String(other.WRPointI2D ?? other.wrPointI2D ?? "") === key2);
+      if (key2 && target.length > 1) add(r, `Warp \u76EE\u6807 ${key2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/teleport`);
+      else if (!(key2 && target.length === 1) && !explicit) add(r, excluded && excluded.length === 1 ? `Warp \u76EE\u6807 ${key2} \u4E0D\u5728\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u4F20\u9001\u8FB9\u3002` : `\u4F20\u9001\u76EE\u6807\u65E0\u6CD5\u89E3\u6790${key2 ? `\uFF1A${key2}` : ""}\u3002`, `${navBase}/teleport`, Boolean(excluded && excluded.length === 1));
+      const hub = String(r.hub ?? r.tags?.hub ?? "").trim();
+      if (hub && !config.lookupTables?.find((t) => t.id === nav.teleport.hubTableId)?.rows.some((row2) => row2.value === hub && row2.functionValue && typeof row2.functionValue === "object" && "world" in row2.functionValue && world({ World: row2.functionValue.world }) === world(r))) add(r, `hub ${hub} \u4E0D\u5728\u5F53\u524D\u4E16\u754C\u7684\u7ED1\u5B9A\u67A2\u7EBD\u8868\u4E2D\u3002`, `${navBase}/teleport`);
+    }
+  }
+  return result;
+}
+
+// src/configRuntime/configurationFingerprint.ts
+function stableConfigText(value) {
+  if (Array.isArray(value)) return "[" + value.map((item) => stableConfigText(item) ?? "null").join(",") + "]";
+  if (value && typeof value === "object") {
+    const record = value;
+    return "{" + Object.keys(record).sort().filter((key2) => record[key2] !== void 0).map((key2) => JSON.stringify(key2) + ":" + stableConfigText(record[key2])).join(",") + "}";
+  }
+  return JSON.stringify(value);
+}
+
+// src/configRuntime/classificationCompatibility.ts
+var indexes = /* @__PURE__ */ new WeakMap();
+var key = (path2) => JSON.stringify([path2.class, path2.kind ?? "", path2.skind ?? "", path2.skind2 ?? ""]);
+function readableClassification(config, raw) {
+  let paths = Object.isFrozen(config) ? indexes.get(config) : void 0;
+  if (!paths) {
+    paths = new Set(config.nodes.map((node) => key(node.path)));
+    if (Object.isFrozen(config)) indexes.set(config, paths);
+  }
+  if (paths.has(key(raw))) return raw;
+  if (raw.class === "ROD" && raw.kind && (!raw.skind || raw.skind === "NOM") && (!raw.skind2 || raw.skind2 === "NOM")) {
+    const candidate = { class: raw.class, kind: raw.kind };
+    if (paths.has(key(candidate))) return candidate;
+  }
+  return void 0;
+}
+
+// scripts/config-tools/server-validation-entry.ts
+var import_jszip2 = __toESM(require_lib3(), 1);
+import { File } from "node:buffer";
+import { createHash } from "node:crypto";
+
+// src/configStudio/nativeArchive.ts
+var import_jszip = __toESM(require_lib3(), 1);
+
+// src/configStudio/archivePolicy.ts
+var CONFIG_IMPORT_LIMITS = Object.freeze({ compressedBytes: 64 * 1024 * 1024, totalBytes: 128 * 1024 * 1024, fileBytes: 64 * 1024 * 1024, entries: 512, jsonDepth: 64 });
+function importProgress(options, stage) {
+  options.signal?.throwIfAborted();
+  options.onProgress?.(stage);
+}
+function parseConfigJson(text2) {
+  let depth = 0, quoted = false, escape2 = false;
+  for (const char of text2) {
+    if (quoted) {
+      if (escape2) escape2 = false;
+      else if (char === "\\") escape2 = true;
+      else if (char === '"') quoted = false;
+    } else if (char === '"') quoted = true;
+    else if (char === "{" || char === "[") {
+      if (++depth > CONFIG_IMPORT_LIMITS.jsonDepth) throw Error(`JSON \u5D4C\u5957\u6DF1\u5EA6\u8D85\u8FC7\u5BFC\u5165\u9884\u7B97 ${CONFIG_IMPORT_LIMITS.jsonDepth}\uFF1B\u8BF7\u79BB\u7EBF\u68C0\u67E5\u540E\u62C6\u9664\u65E0\u6548\u5D4C\u5957\u3002`);
+    } else if (char === "}" || char === "]") depth--;
+  }
+  return JSON.parse(text2);
+}
+function safeArchivePath(path2) {
+  return Boolean(path2) && !/[\\\x00-\x1f:]/.test(path2) && !path2.startsWith("/") && path2.split("/").every((part, index, parts) => part !== "." && part !== ".." && (part !== "" || index === parts.length - 1));
+}
+function inspectConfigZip(bytes) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), names2 = /* @__PURE__ */ new Map();
+  let end = -1;
+  for (let at2 = bytes.length - 22; at2 >= Math.max(0, bytes.length - 65557); at2--) if (view.getUint32(at2, true) === 101010256 && at2 + 22 + view.getUint16(at2 + 20, true) === bytes.length) {
+    end = at2;
+    break;
+  }
+  if (end < 0) throw Error("ZIP \u76EE\u5F55\u635F\u574F\u3002");
+  const count = view.getUint16(end + 10, true), size = view.getUint32(end + 12, true), offset = view.getUint32(end + 16, true);
+  if (view.getUint16(end + 4, true) || view.getUint16(end + 6, true) || view.getUint16(end + 8, true) !== count || count === 65535 || offset === 4294967295 || size === 4294967295) throw Error("\u4E0D\u652F\u6301\u591A\u5377\u6216 ZIP64 \u914D\u7F6E\u5F52\u6863\uFF1B\u8BF7\u4F7F\u7528\u6807\u51C6\u914D\u7F6E ZIP/JSON\u3002");
+  if (count > CONFIG_IMPORT_LIMITS.entries) throw Error(`ZIP \u6761\u76EE ${count} \u8D85\u8FC7\u5BFC\u5165\u9884\u7B97 ${CONFIG_IMPORT_LIMITS.entries}\u3002`);
+  if (offset + size > end) throw Error("ZIP \u76EE\u5F55\u8303\u56F4\u65E0\u6548\u3002");
+  let at = offset, total = 0;
+  for (let index = 0; index < count; index++) {
+    if (at + 46 > offset + size || view.getUint32(at, true) !== 33639248) throw Error("ZIP \u6761\u76EE\u635F\u574F\u3002");
+    const length = view.getUint16(at + 28, true), extra = view.getUint16(at + 30, true), comment = view.getUint16(at + 32, true), fileSize = view.getUint32(at + 24, true);
+    if (at + 46 + length + extra + comment > offset + size) throw Error("ZIP \u6761\u76EE\u540D\u79F0\u8303\u56F4\u65E0\u6548\u3002");
+    const name = new TextDecoder("utf-8", { fatal: true }).decode(bytes.subarray(at + 46, at + 46 + length));
+    if (!safeArchivePath(name) || names2.has(name)) throw Error(`ZIP \u8DEF\u5F84\u4E0D\u5408\u6CD5\u6216\u91CD\u590D\uFF1A${name}`);
+    if (fileSize > CONFIG_IMPORT_LIMITS.fileBytes || (total += fileSize) > CONFIG_IMPORT_LIMITS.totalBytes) throw Error(`ZIP \u89E3\u538B\u9884\u7B97\u8D85\u9650\uFF1A\u5355\u6587\u4EF6 ${fileSize} / ${CONFIG_IMPORT_LIMITS.fileBytes} \u5B57\u8282\uFF0C\u7D2F\u8BA1 ${total} / ${CONFIG_IMPORT_LIMITS.totalBytes} \u5B57\u8282\u3002\u8BF7\u79BB\u7EBF\u68C0\u67E5\u6216\u8C03\u6574\u96C6\u4E2D\u5BFC\u5165\u7B56\u7565\u3002`);
+    names2.set(name, fileSize);
+    at += 46 + length + extra + comment;
+  }
+  if (at !== offset + size) throw Error("ZIP \u76EE\u5F55\u957F\u5EA6\u4E0D\u4E00\u81F4\u3002");
+  return names2;
+}
+
+// src/configStudio/nativeArchive.ts
+var isRecord = (value) => !!value && typeof value === "object" && !Array.isArray(value);
+async function sha256(value) {
+  return [...new Uint8Array(await crypto.subtle.digest("SHA-256", value))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+async function readRawNativePackage(file, options = {}) {
+  importProgress(options, "\u8BFB\u53D6\u914D\u7F6E\u6587\u4EF6");
+  if (file.size > CONFIG_IMPORT_LIMITS.compressedBytes) throw Error(`\u914D\u7F6E\u6587\u4EF6 ${file.size} \u5B57\u8282\uFF0C\u8D85\u8FC7\u5BFC\u5165\u9884\u7B97 ${CONFIG_IMPORT_LIMITS.compressedBytes} \u5B57\u8282\u3002\u8BF7\u79BB\u7EBF\u68C0\u67E5\u6216\u8C03\u6574\u96C6\u4E2D\u5BFC\u5165\u7B56\u7565\u3002`);
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const isZip = bytes[0] === 80 && bytes[1] === 75;
+  if (!isZip) {
+    importProgress(options, "\u68C0\u67E5 JSON \u7ED3\u6784\u4E0E\u7248\u672C");
+    return parseConfigJson(new TextDecoder().decode(bytes));
+  }
+  const entries = inspectConfigZip(bytes);
+  importProgress(options, "\u68C0\u67E5\u5F52\u6863\u76EE\u5F55");
+  const zip = await import_jszip.default.loadAsync(bytes);
+  const manifestRaw = await zip.file("manifest.json")?.async("string");
+  if (!manifestRaw || !zip.file("config.json")) throw new Error("\u914D\u7F6E\u5305\u7F3A\u5C11 manifest.json \u6216 config.json\u3002");
+  const manifest = parseConfigJson(manifestRaw);
+  if (!isRecord(manifest) || manifest.schemaVersion !== "cairnmap.config-package-manifest.v3") throw Error("\u4E0D\u652F\u6301\u6B64\u914D\u7F6E manifest \u7248\u672C\uFF1B\u8BF7\u4F7F\u7528\u517C\u5BB9\u7248\u672C\u5347\u7EA7\u540E\u91CD\u65B0\u5BFC\u51FA\u3002");
+  const manifestKeys = /* @__PURE__ */ new Set(["schemaVersion", "contractRevision", "packageId", "projectId", "revision", "createdAt", "sourceManifestSha256", "files"]);
+  if (Object.keys(manifest).some((key2) => !manifestKeys.has(key2))) throw Error("manifest \u5305\u542B\u5F53\u524D schema \u672A\u5B9A\u4E49\u7684\u5C5E\u6027\u3002");
+  if (!Array.isArray(manifest.files) || !manifest.files.length || manifest.files.length > CONFIG_IMPORT_LIMITS.entries || typeof manifest.packageId !== "string" || typeof manifest.projectId !== "string" || !Number.isSafeInteger(manifest.revision) || !Number.isSafeInteger(manifest.contractRevision) || typeof manifest.createdAt !== "string" || !Number.isFinite(Date.parse(manifest.createdAt))) throw Error("\u914D\u7F6E manifest \u7ED3\u6784\u6216\u8EAB\u4EFD\u65E0\u6548\u3002");
+  const declared = /* @__PURE__ */ new Set(), bodies = /* @__PURE__ */ new Map();
+  for (const item of manifest.files) {
+    if (!isRecord(item) || Object.keys(item).some((key2) => !["path", "sha256", "byteLength"].includes(key2)) || typeof item.path !== "string" || !safeArchivePath(item.path) || item.path.endsWith("/") || item.path === "manifest.json" || declared.has(item.path) || typeof item.sha256 !== "string" || !/^[0-9a-f]{64}$/i.test(item.sha256) || !Number.isSafeInteger(item.byteLength) || Number(item.byteLength) < 0) throw Error("manifest \u6587\u4EF6\u58F0\u660E\u5B58\u5728\u65E0\u6548\u5C5E\u6027\u3001\u8DEF\u5F84\u3001\u91CD\u590D\u6216\u6458\u8981\u683C\u5F0F\u9519\u8BEF\u3002");
+    declared.add(item.path);
+    importProgress(options, `\u6838\u5BF9\u6587\u4EF6\u5B8C\u6574\u6027\uFF1A${item.path}`);
+    const entry = zip.file(item.path);
+    if (!entry) throw Error(`\u914D\u7F6E\u5305\u7F3A\u5C11\u58F0\u660E\u6587\u4EF6 ${item.path}\u3002`);
+    const body = await entry.async("uint8array");
+    if (body.byteLength !== item.byteLength || body.byteLength !== entries.get(item.path) || await sha256(body) !== item.sha256.toLowerCase()) throw Error(`\u914D\u7F6E\u5305 ${item.path} \u54C8\u5E0C\u6821\u9A8C\u5931\u8D25\u6216 byteLength \u4E0D\u4E00\u81F4\u3002`);
+    bodies.set(item.path, body);
+  }
+  for (const required of ["config.json", "reports/validation-report.json", "reports/v1-parity-report.json"]) if (!declared.has(required)) throw Error(`manifest \u7F3A\u5C11\u5FC5\u9700\u6587\u4EF6 ${required}\u3002`);
+  for (const name of entries.keys()) if (name !== "manifest.json" && !name.endsWith("/") && !declared.has(name)) throw Error(`\u914D\u7F6E\u5305\u5305\u542B\u672A\u58F0\u660E\u9644\u52A0\u6587\u4EF6 ${name}\uFF1B\u8BF7\u91CD\u65B0\u5BFC\u51FA\uFF0C\u4E0D\u80FD\u5C06\u5176\u9690\u5F0F\u5E94\u7528\u3002`);
+  const raw = parseConfigJson(new TextDecoder("utf-8", { fatal: true }).decode(bodies.get("config.json")));
+  if (!isRecord(raw) || ["packageId", "projectId", "revision", "contractRevision", "sourceManifestSha256"].some((key2) => manifest[key2] !== raw[key2])) throw Error("manifest \u4E0E config \u7684\u5305\u8EAB\u4EFD\u3001revision \u6216\u5951\u7EA6\u4E0D\u4E00\u81F4\u3002");
+  importProgress(options, "\u8FC1\u79FB\u4E0E\u68C0\u67E5\u914D\u7F6E\u7ED3\u6784");
+  return raw;
 }
 
 // src/configStudio/multipartPolicy.ts
@@ -24678,11 +25345,11 @@ function recordCategory(record) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-r12-production-1";
+var rulesVersion = "cairnmap-r13-production-1";
 var validateConfiguration = validateConfigPackage;
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));
-  if (![11, 12].includes(config.contractRevision)) throw Error("Publication requires native contract r11 or r12; historical imports remain editable.");
+  if (![11, 12, 13].includes(config.contractRevision)) throw Error("Publication requires native contract r11, r12 or r13; historical imports remain editable.");
   const report = validateConfigPackage(config);
   if (!report.valid) throw Object.assign(Error("configuration-semantic-validation-failed"), { report });
   const zip = await import_jszip2.default.loadAsync(bytes), configBody = await zip.file("config.json").async("uint8array"), manifestBody = await zip.file("manifest.json").async("uint8array");
@@ -24727,6 +25394,8 @@ function validateIncomingBatch(config, created, existing, deletes = []) {
     return !update;
   });
   assertStructureTargets(config, created, surviving);
+  const navigationIssues = validateNavigationRecords(config, [...surviving, ...created]).filter((issue2) => issue2.severity === "error");
+  if (navigationIssues.length) throw Object.assign(Error("configuration-navigation-relations-invalid"), { issues: navigationIssues });
 }
 export {
   stableConfigText as configurationSnapshotText,

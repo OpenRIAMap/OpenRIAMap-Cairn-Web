@@ -1,3 +1,5 @@
+import { assertNavigationInput, captureNavigationContext, type NavigationContext } from '../../core/project/navigationRuntime';
+import { matchesRaw } from '../../core/project/navigationDefinition';
 /**
  * Navigation_TeleportNewIntegrated.tsx
  *
@@ -88,6 +90,7 @@ export type NavTeleportNewIntegratedPlan = {
 };
 
 export type NavigationTeleportComputeOptions = {
+  navigationContext?: NavigationContext;
   worldId: string;
   startCoord: Coordinate;
   endCoord: Coordinate;
@@ -201,26 +204,28 @@ const TPP_CACHE: Record<string, { points: TeleportPoint[]; loadedAt: number; key
 
 
 async function loadTeleportPoints(worldId: string, opt: {
+  navigationContext?: NavigationContext;
   dataSourceOverride?: Partial<WorldRuleDataSource>;
   filesOverride?: string[];
   fetcher?: (url: string) => Promise<any[]>;
 }): Promise<{ points: TeleportPoint[]; signature: string }> {
+  const context=opt.navigationContext??captureNavigationContext();
   const wid = normalizeRuleSourceWorldId(worldId);
   const effective = await loadEffectiveRuleItemsForWorld(wid, { fetcher: opt.fetcher });
 
-  const cacheKey = `${wid}::${effective.signature}`;
+  const cacheKey = `${wid}::${effective.signature}::nav=${context.graphSignature}`;
   const cached = TPP_CACHE[wid];
-  if (cached && cached.key === cacheKey) return { points: cached.points, signature: effective.signature };
+  if (cached && cached.key === cacheKey) return { points: cached.points, signature: cacheKey };
 
+  assertNavigationInput(context,effective.items,'teleport');
   const allItems = effective.items;
   const wrpMap = new Map<string, { coord: Coordinate; elevation?: number }>();
   const tppRaw: any[] = [];
 
   for (const item of allItems) {
     if (!item || typeof item !== 'object') continue;
-    const cls = String((item as any).Class ?? (item as any).class ?? '').trim();
 
-    if (cls === 'WRP') {
+    if (matchesRaw(context.settings.teleport.selectors.warpPoints,item)) {
       const i2d = String((item as any).WRPointI2D ?? (item as any).wrPointI2D ?? '').trim();
       const c = (item as any).coordinate;
       if (!i2d || !c) continue;
@@ -232,7 +237,7 @@ async function loadTeleportPoints(worldId: string, opt: {
       continue;
     }
 
-    if (cls === 'TPP') {
+    if (matchesRaw(context.settings.teleport.selectors.teleportPoints,item)) {
       tppRaw.push(item);
     }
   }
@@ -275,7 +280,7 @@ async function loadTeleportPoints(worldId: string, opt: {
   }
 
   TPP_CACHE[wid] = { points: out, loadedAt: Date.now(), key: cacheKey };
-  return { points: out, signature: effective.signature };
+  return { points: out, signature: cacheKey };
 }
 
 // ------------------------------
@@ -326,6 +331,9 @@ function pickNearestK(nodes: Coordinate[], from: Coordinate, k: number): number[
 // ------------------------------
 
 export async function computeTeleportNewPlanFromCoords(opt: NavigationTeleportComputeOptions): Promise<NavTeleportNewIntegratedPlan> {
+  const context=opt.navigationContext??captureNavigationContext();
+  if(!context.settings.teleport.enabled)throw Error('传送导航未启用。');
+  opt={...opt,navigationContext:context,...(context.native?{elytraSpeed:opt.elytraSpeed??context.settings.common.elytraSpeed,walkSpeed:opt.walkSpeed??context.settings.common.walkSpeed}:{})};
   const worldId = opt.worldId;
   const useElytra = opt.useElytra ?? true;
 
@@ -346,6 +354,7 @@ export async function computeTeleportNewPlanFromCoords(opt: NavigationTeleportCo
   const endCoord = normCoord(opt.endCoord);
 
   const teleportLoad = await loadTeleportPoints(worldId, {
+    navigationContext:context,
     dataSourceOverride: opt.dataSourceOverride,
     filesOverride: opt.filesOverride,
     fetcher: opt.fetcher,
@@ -373,7 +382,7 @@ export async function computeTeleportNewPlanFromCoords(opt: NavigationTeleportCo
   const segments: TeleportNewSegment[] = [];
 
   if (opt.returnToHub?.enabled && opt.returnToHub.returnPointId) {
-    const rp = getHubReturnPoint(worldId, opt.returnToHub.returnPointId);
+    const rp = getHubReturnPoint(worldId, opt.returnToHub.returnPointId, context);
     if (rp) {
       usedReturnPointId = rp.id;
       usedHub = rp.hub;
@@ -391,7 +400,7 @@ export async function computeTeleportNewPlanFromCoords(opt: NavigationTeleportCo
 
   // --- hub detect (only if no explicit return hub yet)
   if (!usedHub) {
-    const hubHit = detectHubByProximity(worldId, startCoord);
+    const hubHit = detectHubByProximity(worldId, startCoord, context);
     if (hubHit) usedHub = hubHit.hub;
   }
 

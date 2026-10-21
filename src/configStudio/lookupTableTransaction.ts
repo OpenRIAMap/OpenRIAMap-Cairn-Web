@@ -15,6 +15,11 @@ export function lookupReferenceOwners(config: ConfigPackageV3): Map<string, Opti
     owners.set(JSON.stringify(['control', workflow.id, step.id, control.id]), control);
     for (const field of control.group?.itemFields ?? []) owners.set(JSON.stringify(['group', workflow.id, step.id, control.id, field.key]), field);
   }
+  const nav=config.application?.navigation;
+  if(nav){
+    owners.set('navigation/teleport', {get optionsTableId(){return nav.teleport.hubTableId;},set optionsTableId(value){nav.teleport.hubTableId=value??'';}});
+    owners.set('navigation/road', {get optionsTableId(){return nav.road.travelModesTableId;},set optionsTableId(value){nav.road.travelModesTableId=value??'';}});
+  }
   return owners;
 }
 

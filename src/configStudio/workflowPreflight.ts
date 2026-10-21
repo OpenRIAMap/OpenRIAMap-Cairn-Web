@@ -1,3 +1,5 @@
+import { validateStructuredValue } from './valueSchema';
+import type { ValueSchema } from './types';
 import type { ClassificationPath, ConfigValidationIssue, FieldDefinition, WorkflowControl, WorkflowDefinition, WorkflowGroupField, WorkflowValueCondition } from './types';
 import { evaluateWorkflowExpression, parseWorkflowExpression, workflowExpressionTokens, WORKFLOW_SYSTEM_TOKENS, type WorkflowExpression } from './workflowExpression';
 
@@ -51,12 +53,13 @@ export function workflowConditionsDisjoint(left: Array<WorkflowValueCondition | 
 }
 
 type Kind = 'string' | 'number' | 'boolean' | 'object' | 'array' | 'null' | 'unknown';
-type Shape = { kinds: Kind[]; item?: Shape; constants?: unknown[] };
+type Shape = { kinds: Kind[]; item?: Shape; constants?: unknown[]; properties?:Record<string,Shape> };
 const shape = (...kinds: Kind[]): Shape => ({ kinds });
 function constant(value: unknown): Shape {
   const result = shape(value == null ? 'null' : Array.isArray(value) ? 'array' : typeof value as Kind);
   result.constants = [value];
   if (Array.isArray(value)) result.item = value.length ? union(value.map(constant)) : shape('unknown');
+  else if(value&&typeof value==='object')result.properties=Object.fromEntries(Object.entries(value).map(([key,v])=>[key,constant(v)]));
   return result;
 }
 function union(values: Shape[]): Shape {
@@ -64,10 +67,28 @@ function union(values: Shape[]): Shape {
     ...(values.every(value => value.constants) ? { constants: values.flatMap(value => value.constants!) } : {}),
     ...(values.some(value => value.item) ? { item: union(values.flatMap(value => value.item ? [value.item] : [])) } : {}) };
 }
+function shapeFitsSchema(actual:Shape,schema:ValueSchema,depth=0):boolean|undefined {
+  if(depth>12||actual.kinds.includes('unknown'))return undefined;
+  if(actual.constants)return actual.constants.every(value=>validateStructuredValue(value,schema).length===0);
+  if(schema.anyOf){const branches=schema.anyOf.map(branch=>shapeFitsSchema(actual,branch,depth+1));return branches.includes(true)?true:branches.includes(undefined)?undefined:false;}
+  if(schema.type&&actual.kinds.some(kind=>kind!==schema.type))return false;
+  if(schema.type==='array'&&schema.items&&actual.item)return shapeFitsSchema(actual.item,schema.items,depth+1);
+  if(schema.type==='object'){
+    if(!actual.properties)return undefined;
+    if(schema.required?.some(key=>!actual.properties?.[key]))return false;
+    const matches=Object.entries(schema.properties??{}).flatMap(([key,child])=>actual.properties?.[key]?[shapeFitsSchema(actual.properties[key],child,depth+1)]:[]);
+    return matches.includes(false)?false:matches.includes(undefined)?undefined:true;
+  }
+  return true;
+}
+function schemaShape(schema:ValueSchema):Shape {
+  if(schema.anyOf)return union(schema.anyOf.map(schemaShape));
+  return {kinds:[schema.type??'unknown'],...(schema.items?{item:schemaShape(schema.items)}:{}),...(schema.properties?{properties:Object.fromEntries(Object.entries(schema.properties).map(([key,value])=>[key,schemaShape(value)]))}:{})};
+}
 function fieldShape(field?: FieldDefinition): Shape {
   if (!field) return shape('unknown');
   const type = field.type === 'enum' ? field.optionValueType ?? 'string' : field.type === 'reference' ? 'string' : field.type;
-  const result = type === 'json' ? field.coordinateFormat ? shape(field.coordinateFormat==='pointObject'?'object':'array') : shape('unknown') : shape(type as Kind);
+  const result = type === 'json' ? field.valueSchema ? schemaShape(field.valueSchema) : field.coordinateFormat ? shape(field.coordinateFormat==='pointObject'?'object':'array') : shape('unknown') : shape(type as Kind);
   if (field.cardinality === 'multiple') return { kinds: ['array'], item: result };
   return result;
 }
@@ -84,7 +105,7 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
     workflow.outputs.forEach((_, index) => tokens.set(`${token}_${index + 1}`, shape('string')));
   }
   const controlShape = (control: WorkflowControl | WorkflowGroupField): Shape => {
-    if (control.kind === 'group' && 'group' in control) return { kinds: ['array'], item: control.group?.storage === 'scalar' ? controlShape(control.group.itemFields[0]) : shape('object') };
+    if (control.kind === 'group' && 'group' in control) return { kinds: ['array'], item: control.group?.storage === 'scalar' ? controlShape(control.group.itemFields[0]) : {kinds:['object'],properties:Object.fromEntries((control.group?.itemFields??[]).map(f=>[f.key,controlShape(f)]))} };
     if (control.kind === 'json' || control.kind === 'runtimeValue' || control.kind === 'component') return shape('unknown');
     if (control.kind === 'select') {
       const type = control.optionValueType ?? 'string';
@@ -127,7 +148,8 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
       try {
         const ast = parseWorkflowExpression(assignment.expression);
         const actual = workflowExpressionTokens(ast).length ? infer(ast) : constant(evaluateWorkflowExpression(assignment.expression, {}, {}));
-        if (!field || field.type === 'json' && field.cardinality==='single' && !field.coordinateFormat) continue;
+        if (!field || field.type === 'json' && field.cardinality==='single' && !field.coordinateFormat&&!field.valueSchema) continue;
+        if(field.valueSchema){const match=shapeFitsSchema(actual,field.valueSchema);if(match===false)add('workflow-value-schema-conflict',path,`${field.key} 的输出结构与字段结构模板冲突。`);else if(match===undefined)add('workflow-value-schema-unknown',path,`${field.key} 的动态结构需试运行核对；实际提交仍会检查具体值。`,'warning');}
         // Optional empties retain the existing finalizer's omit/preserve rules.
         if (actual.constants?.every(isEmpty)) continue;
         const expected = fieldShape(field);

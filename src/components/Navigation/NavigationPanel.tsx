@@ -1,3 +1,6 @@
+import { captureNavigationContext, roadTravelProfiles, navigationLabel } from '@/core/project/navigationRuntime';
+import { subscribeRuntimeConfiguration } from '@/configRuntime/runtimeDataView';
+import { subscribeApplication } from '@/core/project/applicationRuntime';
 import { getApplicationSettings } from '@/core/project/applicationRuntime';
 /**
  * 导航面板组件
@@ -41,7 +44,7 @@ import { ensureLegacyDataLoaded } from '@/lib/legacyDataLoader';
 import { computeRailPlanFromCoords, type NavRailNewIntegratedPlan, type TransferType } from './Navigation_RailNewIntegrated';
 import { listRailNewStaBuildingsForSearch, type RailNewStaBuildingSearchItem } from './Navigation_RailNewIntegrated';
 import { computeTeleportNewPlanFromCoords, type NavTeleportNewIntegratedPlan } from './Navigation_TeleportNewIntegrated';
-import { computeRoadPlanFromCoords, ROAD_TRAVEL_PROFILES, type NavRoadPlan } from './Navigation_Road';
+import { computeRoadPlanFromCoords, type NavRoadPlan } from './Navigation_Road';
 import { listHubReturnPoints } from './teleportHubReturnPoints';
 import type { RouteHighlightData, RouteStyledSegment, RouteStationMarker } from '@/components/Map/RouteHighlightLayer';
 import AppButton from '@/components/ui/AppButton';
@@ -92,7 +95,8 @@ function formatArrivalTime(secondsFromNow: number): string {
 }
 
 function calculateWalkTime(distance: number, useElytra: boolean = true): number {
-  const speed = useElytra ? 40 : 4.317;
+  const common=captureNavigationContext().settings.common;
+  const speed = useElytra ? common.elytraSpeed : common.walkSpeed;
   return distance / speed;
 }
 
@@ -830,10 +834,16 @@ export function NavigationPanel({
   initialEndPoint,
 }: NavigationPanelProps) {
   const poolVersion=useSyncExternalStore(listener=>subscribeRuleSearchPool(worldId,listener),()=>getRuleSearchPoolVersion(worldId));
+  const navigationRevision=useSyncExternalStore(listener=>{const a=subscribeRuntimeConfiguration(listener),b=subscribeApplication(listener);return()=>{a();b();};},()=>captureNavigationContext().signature);
+  const context=useMemo(()=>captureNavigationContext(),[navigationRevision]);
+  const roadProfiles=useMemo(()=>roadTravelProfiles(context),[context]);
+  const modes=TRAVEL_MODES.filter(item=>item.mode==='walk'||context.settings[item.mode==='rail_new'?'rail':item.mode==='teleport_new'?'teleport':'road'].enabled).map(item=>({...item,label:item.mode==='walk'?item.label:navigationLabel(context,item.mode==='rail_new'?'rail':item.mode==='teleport_new'?'teleport':'road')}));
+  const requestGeneration=useRef(0),routeFoundRef=useRef(onRouteFound);routeFoundRef.current=onRouteFound;
+  const [navigationError,setNavigationError]=useState('');
   const nativeSearch=Boolean(configRuntime&&configRuntime.contractRevision>=10);
   const [startPoint, setStartPoint] = useState<SearchItem | null>(null);
   const [endPoint, setEndPoint] = useState<SearchItem | null>(null);
-  const [travelMode, setTravelMode] = useState<TravelModePanel>('rail_new');
+  const [travelMode, setTravelMode] = useState<TravelModePanel>(()=>modes[0]?.mode??'walk');
   const [preferLessTransfer, setPreferLessTransfer] = useState(true);
   const [useElytra, setUseElytra] = useState(true);
 
@@ -876,8 +886,10 @@ export function NavigationPanel({
   const [searchProgressOpen, setSearchProgressOpen] = useState(false);
   const [searchProgressText, setSearchProgressText] = useState('正在计算最短路径');
 
+
   // 道路：出行方式（速度）选择
-  const [roadProfileName, setRoadProfileName] = useState<string>(ROAD_TRAVEL_PROFILES[0]?.name ?? '步行');
+  const [roadProfileCode, setRoadProfileCode] = useState<string>(roadProfiles[0]?.code ?? '');
+  useEffect(()=>{if(!roadProfiles.some(p=>p.code===roadProfileCode))setRoadProfileCode(roadProfiles[0]?.code??'');},[roadProfiles,roadProfileCode]);
 
   // 道路：起/终点层数偏好（用于择优评分）
   const [roadStartLevelPref, setRoadStartLevelPref] = useState<number>(0);
@@ -965,13 +977,13 @@ useEffect(() => {
   };
 
   // teleport_new：返回主城
-  const hubReturnPoints = useMemo(() => listHubReturnPoints(worldId), [worldId]);
+  const hubReturnPoints = useMemo(() => listHubReturnPoints(worldId,context), [worldId,context]);
   const [returnToHubEnabled, setReturnToHubEnabled] = useState(false);
   const [returnPointId, setReturnPointId] = useState<string>('');
 
   useEffect(() => {
     if (!hubReturnPoints.length) {
-      setReturnPointId('');
+      setReturnPointId('');setReturnToHubEnabled(false);
       return;
     }
     // 若未设置或选项已失效，则默认选第一个
@@ -1091,7 +1103,7 @@ useEffect(() => {
   return () => {
     alive = false;
   };
-}, [worldId]);
+}, [worldId,navigationRevision,poolVersion]);
 
 
   // rail_new：每段展开状态
@@ -1112,7 +1124,7 @@ useEffect(() => {
     return () => {
       alive = false;
     };
-  }, [worldId]);
+  }, [worldId,context.sharedSignature,poolVersion]);
 
   const buildingNameIndex = useMemo(() => {
     // 用于楼层类补充“所属建筑名”
@@ -1238,8 +1250,12 @@ useEffect(() => {
   };
 
   // 搜索
+  useEffect(()=>{requestGeneration.current++;setResultLegacy(null);setResultRailNew(null);setResultTeleportNew(null);setResultRoad(null);setSearching(false);setSearchProgressOpen(false);setNavigationError('');routeFoundRef.current?.([]);if(!modes.some(item=>item.mode===travelMode))setTravelMode(modes[0]?.mode??'walk');return()=>{requestGeneration.current++;};},[navigationRevision,worldId,poolVersion,travelMode,startPoint,endPoint,useElytra,preferLessTransfer,roadProfileCode,roadStartLevelPref,roadEndLevelPref,returnToHubEnabled,returnPointId]);
   const handleSearch = async () => {
     if (!startPoint || !endPoint) return;
+    const runContext=captureNavigationContext(),token=++requestGeneration.current,datasetVersion=getRuleSearchPoolVersion(worldId);
+    const current=()=>token===requestGeneration.current&&runContext.signature===captureNavigationContext().signature&&datasetVersion===getRuleSearchPoolVersion(worldId);
+    setNavigationError('');
 
     const isSameLocation = startPoint.coord.x === endPoint.coord.x && startPoint.coord.z === endPoint.coord.z;
     if (isSameLocation) {
@@ -1264,7 +1280,7 @@ useEffect(() => {
     setSearchProgressText('正在计算最短路径');
 
     const progressTimer = window.setTimeout(() => {
-      setSearchProgressOpen(true);
+      if(current())setSearchProgressOpen(true);
     }, 3000);
 
     try {
@@ -1274,18 +1290,20 @@ useEffect(() => {
 
 if (travelMode === 'rail_new') {
   const raw = await computeRailPlanFromCoords({
+    navigationContext:runContext,
     worldId,
     startCoord: startPoint.coord,
     endCoord: endPoint.coord,
     mode: preferLessTransfer ? 'transfers' : 'time',
 
     // 参数映射：保持你原 UI config 不动
-    transferWalkSpeed: getApplicationSettings().preferences.navigation.transferWalkSpeed,
-    railSpeed: getApplicationSettings().preferences.navigation.railRideSpeed,
-    stationTransferCostDivisor: getApplicationSettings().preferences.navigation.transferCostFactor,
-    normalSamePlatformTransferCost: getApplicationSettings().preferences.navigation.normalPlatformTransferCost,
+    transferWalkSpeed: runContext.settings.rail.parameters.transferWalkSpeed,
+    railSpeed: runContext.settings.rail.parameters.railRideSpeed,
+    stationTransferCostDivisor: runContext.settings.rail.parameters.transferCostFactor,
+    normalSamePlatformTransferCost: runContext.settings.rail.parameters.normalPlatformTransferCost,
   });
 
+  if(!current())return;
   const plan = buildRailNewPlanFromIntegrated(raw, startPoint.coord, endPoint.coord, useElytra);
 
   setResultRailNew(plan);
@@ -1305,6 +1323,7 @@ if (travelMode === 'rail_new') {
 // teleport_new：直接调用增强版传送图寻路
 if (travelMode === 'teleport_new') {
   const raw = await computeTeleportNewPlanFromCoords({
+    navigationContext:runContext,
     worldId,
     startCoord: startPoint.coord,
     endCoord: endPoint.coord,
@@ -1315,6 +1334,7 @@ if (travelMode === 'teleport_new') {
     },
   });
 
+  if(!current())return;
   setResultTeleportNew(raw);
   setResultLegacy(null);
   setResultRailNew(null);
@@ -1329,8 +1349,9 @@ if (travelMode === 'teleport_new') {
 
 // road：道路导航（ROD）
 if (travelMode === 'road') {
-  const profile = ROAD_TRAVEL_PROFILES.find(p => p.name === roadProfileName) ?? ROAD_TRAVEL_PROFILES[0];
+  const profile = roadProfiles.find(p => p.code === roadProfileCode) ?? roadProfiles[0];
   const raw = await computeRoadPlanFromCoords({
+    navigationContext:runContext,
     worldId,
     startCoord: startPoint.coord,
     endCoord: endPoint.coord,
@@ -1340,7 +1361,7 @@ if (travelMode === 'road') {
     // 与 rail_new / teleport_new 一致：面板“鞘翅接驳”仅影响起终点接驳段
     useElytra,
     // 经验值：与铁路(新)模块默认跨组件飞行速度一致
-    elytraSpeed: 40,
+    elytraSpeed: runContext.settings.common.elytraSpeed,
     elytraThreshold: 50,
     // StepA eps：按你的要求默认 1.5
     eps: 1.5,
@@ -1349,9 +1370,10 @@ if (travelMode === 'road') {
     endLevelPref: roadEndLevelPref,
   });
 
+  if(!current())return;
   // 记录 profile 名称（便于结果展示）
   if (raw.ok) {
-    raw.profileName = profile?.name ?? roadProfileName;
+    raw.profileName = profile?.name ?? roadProfileCode;
     raw.profileSpeed = profile?.speed ?? (raw.profileSpeed ?? 4.3);
   }
 
@@ -1432,6 +1454,7 @@ if (travelMode === 'road') {
           break;
       }
 
+      if(!current())return;
       setResultLegacy(pathResult);
       setResultRailNew(null);
       setResultTeleportNew(null);
@@ -1452,10 +1475,9 @@ if (travelMode === 'road') {
         }
         onRouteFound(path);
       }
-    } finally {
+    } catch(error) {if(current())setNavigationError(error instanceof Error?error.message:String(error));} finally {
       window.clearTimeout(progressTimer);
-      setSearchProgressOpen(false);
-      setSearching(false);
+      if(token===requestGeneration.current){setSearchProgressOpen(false);setSearching(false);}
     }
   };
 
@@ -1466,7 +1488,7 @@ if (travelMode === 'road') {
   const hasResult = !!(resultLegacy || resultRailNew || resultTeleportNew || resultRoad);
 
   return (
-    <AppCard className="relative w-full sm:w-72 max-h-[70vh] sm:max-h-[82vh] flex flex-col">
+    <AppCard className="relative w-full sm:w-72 max-h-[70vh] sm:max-h-[82vh] flex flex-col">{navigationError?<p role="alert" className="m-3 rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">{navigationError}</p>:null}
       {searchProgressOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20">
           <AppCard className="p-4 w-[240px]">
@@ -1495,7 +1517,7 @@ if (travelMode === 'road') {
 
       {/* 模式选择 */}
       <div className="flex border-b">
-        {TRAVEL_MODES.map(({ mode, label, icon: Icon }) => (
+        {modes.map(({ mode, label, icon: Icon }) => (
           <AppButton
             key={mode}
             className={`flex-1 py-2 px-1 flex flex-col items-center gap-0.5 text-xs transition-colors ${
@@ -1609,14 +1631,14 @@ if (travelMode === 'road') {
             <div className="text-[11px] text-gray-500 mb-1">出行方式</div>
             <select
               className="w-full border rounded px-2 py-1 text-xs bg-white"
-              value={roadProfileName}
+              value={roadProfileCode}
               onChange={(e) => {
-                setRoadProfileName(e.target.value);
+                setRoadProfileCode(e.target.value);
                 setResultRoad(null);
               }}
             >
-              {ROAD_TRAVEL_PROFILES.map((p) => (
-                <option key={p.name} value={p.name}>
+              {roadProfiles.map((p) => (
+                <option key={p.code} value={p.code}>
                   {p.name}（{p.speed}格/秒）
                 </option>
               ))}
@@ -1757,7 +1779,7 @@ if (travelMode === 'road') {
                   {/* 概览（截图风格简化版） */}
                   <div className="bg-gray-50 rounded-lg p-3 mb-3">
                     <div className="flex items-center justify-between">
-                      <div className="text-sm font-semibold text-gray-800">铁路（新）</div>
+                      <div className="text-sm font-semibold text-gray-800">{navigationLabel(context,'rail')}</div>
                       <div className="text-xs text-gray-500">
                         到达时间 <span className="font-medium text-gray-800">{formatArrivalTime(resultRailNew.totalTimeSeconds)}</span>
                       </div>
@@ -1929,7 +1951,7 @@ if (travelMode === 'road') {
                 <>
                   <div className="bg-gray-50 rounded-lg p-3 mb-3">
                     <div className="flex items-center justify-between">
-                      <div className="text-sm font-semibold text-gray-800">传送（新）</div>
+                      <div className="text-sm font-semibold text-gray-800">{navigationLabel(context,'teleport')}</div>
                       <div className="text-xs text-gray-500">
                         到达时间 <span className="font-medium text-gray-800">{formatArrivalTime(resultTeleportNew.totalTimeSeconds)}</span>
                       </div>
@@ -2045,7 +2067,7 @@ if (travelMode === 'road') {
                 <>
                   <div className="bg-gray-50 rounded-lg p-3 mb-3">
                     <div className="flex items-center justify-between">
-                      <div className="text-sm font-semibold text-gray-800">道路</div>
+                      <div className="text-sm font-semibold text-gray-800">{navigationLabel(context,'road')}</div>
                       <div className="text-xs text-gray-500">
                         到达时间 <span className="font-medium text-gray-800">{formatArrivalTime(resultRoad.totalTimeSeconds)}</span>
                       </div>
@@ -2160,7 +2182,7 @@ if (travelMode === 'road') {
                     <div className="flex items-center gap-1">
                       <Clock className="w-3 h-3 text-gray-400" />
                       <span className="text-gray-500">预计:</span>
-                      <span className="font-medium text-orange-600">{formatTime((legacyBundle?.calculateEstimatedTime?.(resultLegacy, useElytra) ?? 0))}</span>
+                      <span className="font-medium text-orange-600">{formatTime(context.native&&travelMode==='walk'?calculateWalkTime(resultLegacy.totalWalkDistance,useElytra):(legacyBundle?.calculateEstimatedTime?.(resultLegacy, useElytra) ?? 0))}</span>
                     </div>
                     {resultLegacy.totalTransfers > 0 && (
                       <div className="flex items-center gap-1">
@@ -2188,7 +2210,7 @@ if (travelMode === 'road') {
 
                   {useElytra && resultLegacy.totalWalkDistance > 0 && (() => {
                     const consumption: ReturnType<NonNullable<LegacyModuleBundle['calculateElytraConsumption']>> =
-                      legacyBundle?.calculateElytraConsumption?.(resultLegacy.totalWalkDistance) ?? {
+                      legacyBundle?.calculateElytraConsumption?.(context.native?resultLegacy.totalWalkDistance*40/context.settings.common.elytraSpeed:resultLegacy.totalWalkDistance) ?? {
                         flightTime: 0,
                         durabilityUsed: 0,
                         durabilityUsedUnbreaking: 0,
@@ -2225,7 +2247,7 @@ if (travelMode === 'road') {
                   <div className="space-y-2">
                     {resultLegacy.segments.map((segment, index) => {
                       if (segment.type === 'walk') {
-                        const walkTime = (legacyBundle?.calculateWalkTime?.(segment.distance, useElytra) ?? 0);
+                        const walkTime = calculateWalkTime(segment.distance,useElytra);
                         return (
                           <div key={index} className="relative pl-5">
                             {index < resultLegacy.segments.length - 1 && (

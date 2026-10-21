@@ -1,6 +1,7 @@
 import { subscribeApplication } from '@/core/project/applicationRuntime';
 import { getOpenRIAMapDataSourcesConfig } from '../../../core/project/openriamapRiaEnvironment';
 import { loadWorldRuleDataset } from '@/components/Rules/data/worldRuleDatasetLoader';
+import { getRuleDataSourceSnapshot } from './formalDataSourceRuntime';
 
 /**
  * 规则驱动图层的数据源清单（按 worldId 管理）。
@@ -48,6 +49,11 @@ export {normalizeRuleSourceWorldId} from '@/core/project/worldIdentity';
 import {normalizeRuleSourceWorldId} from '@/core/project/worldIdentity';
 export async function loadRuleItemsForWorld(worldId:string,_opt?:{fetcher?:(url:string)=>Promise<any[]>}):Promise<any[]> {
   return (await loadWorldRuleDataset(normalizeRuleSourceWorldId(worldId))).features;
+}
+export async function loadRuleDataSnapshotForWorld(worldId:string){
+  const wid=normalizeRuleSourceWorldId(worldId),source=getRuleDataSourceSnapshot(wid);
+  const dataset=await loadWorldRuleDataset(wid,undefined,source);
+  return {items:dataset.features,signature:JSON.stringify({source:dataset.sourceId,transport:source.transportId,generation:source.generation,release:dataset.releaseId,version:dataset.formalVersion,reader:dataset.readerSchemaVersion,group:dataset.resourceGroupId,world:dataset.worldId})};
 }
 
 subscribeApplication(()=>{RULE_DATA_SOURCES=buildRuleDataSources();});

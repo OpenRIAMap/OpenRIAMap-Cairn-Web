@@ -2,6 +2,7 @@ import type {ConfigPackageV3,ClassificationPath} from '../configStudio/types';
 import type {RuleWorldDataset} from '../components/Rules/data/sourceTypes';
 import {readableClassification} from './classificationCompatibility';
 let config:ConfigPackageV3|undefined;
+export const getRuntimeConfiguration=()=>config;
 const originals=new WeakMap<RuleWorldDataset,RuleWorldDataset>(),listeners=new Set<()=>void>();
 const diagnostics=new Map<string,{legacyPlaceholders:number;unknown:Array<{id:string;path:ClassificationPath}>}>();
 export const subscribeRuntimeConfiguration=(listener:()=>void)=>{listeners.add(listener);return()=>{listeners.delete(listener);};};

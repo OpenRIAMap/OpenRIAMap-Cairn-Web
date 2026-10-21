@@ -47,6 +47,12 @@ export function validateApplication(input:ApplicationSettings,classCodes?:Set<st
   for(const ref of Object.values(value.review.serverReferences))if(!/^[A-Z][A-Z0-9_]*$/.test(ref))fail('review/serverReferences','仅保存服务端环境变量引用名。');
   const preferences=value.preferences;if(!Number.isInteger(preferences.map.leafletOffset)||Math.abs(preferences.map.leafletOffset)>8||!Number.isInteger(preferences.map.logicalInitialZoom)||preferences.map.logicalInitialZoom<0||preferences.map.logicalInitialZoom>8)fail('preferences/map','逻辑 Zoom 为 0–8，映射偏移须为 -8–8 整数。');
   for(const count of [preferences.search.homepageLimit,preferences.search.navigationLimit])if(!Number.isInteger(count)||count<1||count>200)fail('preferences/search','结果数量须为 1–200 整数。');if(!Number.isFinite(preferences.search.debounceMs)||preferences.search.debounceMs<0||preferences.search.debounceMs>2000)fail('preferences/search','延迟须为 0–2000ms。');
-  for(const [key,number] of Object.entries(value.preferences.navigation))if(!Number.isFinite(number)||number<0||key!=='normalPlatformTransferCost'&&number===0)fail('preferences/navigation/'+key,'导航速度/系数必须为正有限数值，换乘成本可为零。');
+  for(const [key,number] of Object.entries(value.preferences.navigation??{}))if(!Number.isFinite(number)||number<0||key!=='normalPlatformTransferCost'&&number===0)fail('preferences/navigation/'+key,'导航速度/系数必须为正有限数值，换乘成本可为零。');
+  if(value.navigation){
+    for(const [key,number] of Object.entries({...value.navigation.rail.parameters,...value.navigation.common}))if(typeof number!=='number'||!Number.isFinite(number)||number<0||key!=='normalPlatformTransferCost'&&number===0)fail('navigation/'+key,'导航速度／除数必须为正有限数值，同台成本可为零。');
+    for(const key of ['rail','teleport','road'] as const)if(!(value.navigation[key].name.zh.trim()||value.navigation[key].name.en.trim()))fail('navigation/'+key+'/name','导航显示名称至少填写一种语言。');
+    if(value.preferences.navigation)fail('navigation','r13 导航参数不能与旧导航参数并存。');
+    if(!value.preferences.railwayRoles)fail('preferences/railwayRoles','新导航需要独立的共享铁路角色定义。');
+  }
   return issues;
 }

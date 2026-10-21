@@ -6,6 +6,7 @@ export function mergeApplicationSection(current:ApplicationSettings,section:Appl
 }
 export function applicationIdentityImpact(before:ApplicationSettings,after:ApplicationSettings):string[]{
   const changes:string[]=[];
+  if(JSON.stringify(before.preferences.railwayRoles)!==JSON.stringify(after.preferences.railwayRoles))changes.push('共享铁路角色定义将变更：全局搜索线路标记、信息卡包含线路与铁路导航将重新核对共享角色及关联；导航参与范围不会被自动扩大或裁剪。');
   for(const [key,rows,next] of [['世界',before.worlds,after.worlds],['按钮',before.buttons.items,after.buttons.items],['来源',defaultSourceSettings(before).items,defaultSourceSettings(after).items]] as const){
     for(const row of rows)if(!next.some(item=>item.id===row.id))changes.push(`${key} ${row.id} 将移除：相关数据、分享链接、默认绑定或已记忆状态需要重新确认。`);
   }

@@ -5,12 +5,13 @@ import {createHash} from 'node:crypto';
 import JSZip from 'jszip';
 import {buildConfigPackageArchive} from '../../src/configStudio/package';
 import {validateConfigPackage} from '../../src/configStudio/runtime';
+import {migrateConfigToR13} from '../../src/configStudio/r13Migration';
 import {migrateConfigToR12} from '../../src/configStudio/r12Migration';
 import {verifyPublishedMirror} from './productionMirror';
 import {readFormalRelayContext} from '../relay/formal-configuration-context.mjs';
 const hash=(body:Uint8Array)=>createHash('sha256').update(body).digest('hex');
 const historical=JSON.parse(await fs.readFile('src/configStudio/defaults/r11-r7.config.json','utf8'));
-for(const config of [structuredClone(historical),migrateConfigToR12(historical).config]){
+for(const config of [structuredClone(historical),migrateConfigToR12(historical).config,migrateConfigToR13(historical).config]){
 config.revision=8;config.displayName.en+=' next release';
 const archive=new Uint8Array(await(await buildConfigPackageArchive(config,validateConfigPackage(config))).arrayBuffer()),zip=await JSZip.loadAsync(archive);
 const raw=await zip.file('config.json')!.async('nodebuffer'),manifest=await zip.file('manifest.json')!.async('nodebuffer');
@@ -23,7 +24,7 @@ assert.equal((await verifyPublishedMirror(root)).identity.revision,8,'a later le
 assert.equal(readFormalRelayContext(config.projectId,{publicRoot:root}).configuration.revision,8,'CLI tasks read the updated published mirror');
 assert.equal((await verifyPublishedMirror(root)).identity.contractRevision,config.contractRevision);
 assert.equal(readFormalRelayContext(config.projectId,{publicRoot:root}).configuration.contractRevision,config.contractRevision);
-await fs.writeFile(pointer,JSON.stringify({...identity,contractRevision:13}));
+await fs.writeFile(pointer,JSON.stringify({...identity,contractRevision:14}));
 await assert.rejects(()=>verifyPublishedMirror(root),/identity/);
 assert.throws(()=>readFormalRelayContext(config.projectId,{publicRoot:root}),/identity-invalid/);
 await fs.writeFile(pointer,JSON.stringify({...identity,contractRevision:config.contractRevision===11?12:11}));
@@ -35,4 +36,4 @@ await fs.writeFile(pointer,JSON.stringify({...identity,revision:9}));
 await assert.rejects(()=>verifyPublishedMirror(root),/package/);
 await fs.writeFile(pointer,JSON.stringify(identity));
 }
-console.log('production-mirror: r11/r12 current pass independently of immutable r7 seed; unknown/mismatched contracts rejected; raw hashes, archive equality, revision identity, controlled URLs and CLI advancement verified');
+console.log('production-mirror: r11/r12/r13 current pass independently of immutable r7 seed; unknown/mismatched contracts rejected; raw hashes, archive equality, revision identity, controlled URLs and CLI advancement verified');

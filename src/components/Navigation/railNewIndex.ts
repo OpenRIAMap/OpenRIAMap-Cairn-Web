@@ -1,3 +1,4 @@
+import { assertNavigationInput, captureNavigationContext, sharedRailMatches, isRailStationPoint, type NavigationContext } from '../../core/project/navigationRuntime';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
@@ -229,10 +230,10 @@ function normalizeCssColor(input: any, fallback = '#999999'): string {
 // Parsers
 // ------------------------------
 
-function parseSta(all: any[]): Map<string, RailSta> {
+function parseSta(all: any[], context: NavigationContext): Map<string, RailSta> {
   const out = new Map<string, RailSta>();
   for (const it of all) {
-    if (str(it?.Class) !== 'STA') continue;
+    if (!sharedRailMatches('stationAreas',it,context)) continue;
     const id = str(it.ID);
     if (!id) continue;
     const name = str(it.Name ?? id) || id;
@@ -255,10 +256,10 @@ function parseSta(all: any[]): Map<string, RailSta> {
   return out;
 }
 
-function parsePlf(all: any[]): Map<string, RailPlf> {
+function parsePlf(all: any[], context: NavigationContext): Map<string, RailPlf> {
   const out = new Map<string, RailPlf>();
   for (const it of all) {
-    if (str(it?.Class) !== 'PLF') continue;
+    if (!sharedRailMatches('platforms',it,context)) continue;
     const id = str(it.ID);
     if (!id) continue;
     const Connect = asBool(it.Connect, true);
@@ -283,10 +284,10 @@ function parsePlf(all: any[]): Map<string, RailPlf> {
   return out;
 }
 
-function parseRle(all: any[]): Map<string, RailRle> {
+function parseRle(all: any[], context: NavigationContext): Map<string, RailRle> {
   const out = new Map<string, RailRle>();
   for (const it of all) {
-    if (str(it?.Class) !== 'RLE') continue;
+    if (!sharedRailMatches('lines',it,context)) continue;
 
     // RLE 主键统一为 ID
     const idPrimary = str(it.ID ?? '');
@@ -347,7 +348,7 @@ function parseRle(all: any[]): Map<string, RailRle> {
   return out;
 }
 
-function parseBuildings(all: any[]): Map<string, RailBuilding> {
+function parseBuildings(all: any[], context: NavigationContext): Map<string, RailBuilding> {
   const out = new Map<string, RailBuilding>();
 
   const parseStationsGroup = (it: any): string[] => {
@@ -370,8 +371,8 @@ function parseBuildings(all: any[]): Map<string, RailBuilding> {
   };
 
   for (const it of all) {
-    const cls = str(it?.Class);
-    if (cls !== 'STB' && cls !== 'SBP') continue;
+    if (!sharedRailMatches('stations',it,context)) continue;
+    const cls = isRailStationPoint(it) ? 'SBP' : 'STB';
 
     const id =
       cls === 'SBP'
@@ -472,14 +473,16 @@ function buildStationBuildingIndex(stas: Map<string, RailSta>, buildings: Map<st
 
 export async function loadRailNewIndex(worldId: string): Promise<RailNewIndex> {
   const wid = normalizeWorldId(worldId);
-  const { items, cacheKey } = await loadRuleItems(wid);
+  const context=captureNavigationContext();
+  const loaded = await loadRuleItems(wid),items=loaded.items,cacheKey=loaded.cacheKey+'::roles='+context.sharedSignature;
+  assertNavigationInput(context,items,'shared');
   const cached = RAIL_INDEX_CACHE.get(cacheKey);
   if (cached) return cached;
 
-  const stas = parseSta(items);
-  const plfs = parsePlf(items);
-  const rles = parseRle(items);
-  const buildings = parseBuildings(items);
+  const stas = parseSta(items,context);
+  const plfs = parsePlf(items,context);
+  const rles = parseRle(items,context);
+  const buildings = parseBuildings(items,context);
   const { stationToBuildings, buildingToStations } = buildStationBuildingIndex(stas, buildings);
 
   const idx: RailNewIndex = {

@@ -1,3 +1,5 @@
+import { assertNavigationInput, captureNavigationContext, roadTravelProfiles, type NavigationContext } from '../../core/project/navigationRuntime';
+import { matchesRaw } from '../../core/project/navigationDefinition';
 /**
  * Navigation_Road.tsx
  *
@@ -47,7 +49,7 @@ export const ROAD_TRAVEL_PROFILES: RoadTravelProfile[] = [
   // { name: '船', speed: 7.0 },
 ];
 
-const ROAD_TRAVEL_PROFILE_CODES = new Set(ROAD_TRAVEL_PROFILES.map(p => p.code));
+
 
 
 export type RoadTurnAction = 'start' | 'continue' | 'slight_left' | 'left' | 'slight_right' | 'right' | 'uturn' | 'arrive';
@@ -96,6 +98,7 @@ export type NavRoadPlan = {
 };
 
 export type NavigationRoadComputeOptions = {
+  navigationContext?: NavigationContext;
   worldId: string;
   startCoord: Coordinate;
   endCoord: Coordinate;
@@ -231,9 +234,9 @@ type RoadFeature = {
 const ROD_CACHE: Record<string, { key: string; roads: RoadFeature[]; loadedAt: number }> = {};
 
 
-function parseRoadFromRaw(it: any): RoadFeature | null {
-  const Class = String(it?.Class ?? '').trim().toUpperCase();
-  if (Class !== 'ROD') return null;
+function parseRoadFromRaw(it: any, context: NavigationContext): RoadFeature | null {
+  const modeCodes=new Set(roadTravelProfiles(context).map(p=>p.code));
+  if (!matchesRaw(context.settings.road.selectors.roads,it)) return null;
   const id = String(it?.ID ?? '').trim();
   if (!id) return null;
   const name = String(it?.Name ?? '').trim() || '道路';
@@ -265,9 +268,11 @@ function parseRoadFromRaw(it: any): RoadFeature | null {
           if (x && typeof x === 'object') return String(x?.code ?? x?.tgt ?? x?.ID ?? x?.id ?? '').trim();
           return '';
         })
-        .filter((s: string) => !!s && ROAD_TRAVEL_PROFILE_CODES.has(s))
+        .filter((s: string) => !!s)
     : undefined;
-  const modes2 = (modes && modes.length) ? Array.from(new Set(modes)) : undefined;
+  if(context.native&&((rawMode!==undefined&&!Array.isArray(rawMode))||modes?.some(code=>!modeCodes.has(code))))return null;
+  const allowedModes=modes?.filter(code=>modeCodes.has(code));
+  const modes2 = allowedModes?.length ? Array.from(new Set(allowedModes)) : undefined;
 
 
   // Blacklist：兼容 [[ID]] / [ID] / [{tgt}]
@@ -282,6 +287,7 @@ function parseRoadFromRaw(it: any): RoadFeature | null {
         })
         .filter((s: string) => !!s)
     : undefined;
+  if(context.native&&it?.Speed!==undefined&&(typeof it.Speed!=='number'||!Number.isFinite(it.Speed)||it.Speed<=0))return null;
   const speed = Number.isFinite(Number(it?.Speed)) ? Number(it.Speed) : undefined;
 
   const lp = it?.Linepoints;
@@ -302,10 +308,12 @@ function parseRoadFromRaw(it: any): RoadFeature | null {
 }
 
 async function loadRoadFeatures(worldId: string, opt: {
+  navigationContext?: NavigationContext;
   dataSourceOverride?: Partial<WorldRuleDataSource>;
   filesOverride?: string[];
   fetcher?: (url: string) => Promise<any[]>;
 }): Promise<{ roads: RoadFeature[]; signature: string }> {
+  const context=opt.navigationContext??captureNavigationContext();
   const base = RULE_DATA_SOURCES[worldId];
   if (!base) return { roads: [], signature: `eff::${worldId}::none` };
 
@@ -317,19 +325,20 @@ async function loadRoadFeatures(worldId: string, opt: {
   };
 
   const effective = await loadEffectiveRuleItemsForWorld(worldId, { fetcher: opt.fetcher });
-  const key = `${ds.baseUrl}::${(ds.files ?? []).join('|')}::src=${ds.sourceMode ?? 'pub'}::sig=${effective.signature}`;
+  const key = `${ds.baseUrl}::${(ds.files ?? []).join('|')}::src=${ds.sourceMode ?? 'pub'}::sig=${effective.signature}::nav=${context.graphSignature}`;
   const cached = ROD_CACHE[worldId];
-  if (cached && cached.key === key && Array.isArray(cached.roads)) return { roads: cached.roads, signature: effective.signature };
+  if (cached && cached.key === key && Array.isArray(cached.roads)) return { roads: cached.roads, signature: key };
 
+  assertNavigationInput(context,effective.items,'road');
   const out: RoadFeature[] = [];
   for (const it of effective.items) {
-    const parsed = parseRoadFromRaw(it);
+    const parsed = parseRoadFromRaw(it,context);
     if (!parsed) continue;
     out.push(parsed);
   }
 
   ROD_CACHE[worldId] = { key, roads: out, loadedAt: Date.now() };
-  return { roads: out, signature: effective.signature };
+  return { roads: out, signature: key };
 }
 
 /**
@@ -1356,6 +1365,10 @@ function buildInstructions(args: {
 // ------------------------------
 
 export async function computeRoadPlanFromCoords(opt: NavigationRoadComputeOptions): Promise<NavRoadPlan> {
+  const context=opt.navigationContext??captureNavigationContext();
+  if(!context.settings.road.enabled)throw Error('道路导航未启用。');
+  if(context.native){const profiles=roadTravelProfiles(context),profile=opt.travelModeCode?profiles.find(p=>p.code===opt.travelModeCode):profiles[0];if(!profile)throw Error('所选出行方式不存在。');opt={...opt,travelModeCode:profile.code,defaultSpeed:profile.speed,elytraSpeed:context.settings.common.elytraSpeed};}
+  opt={...opt,navigationContext:context};
   const worldId = opt.worldId;
   const start = normCoord(opt.startCoord);
   const end = normCoord(opt.endCoord);
@@ -1367,6 +1380,7 @@ export async function computeRoadPlanFromCoords(opt: NavigationRoadComputeOption
 
   // 1) load roads
   const loadedRoads = await loadRoadFeatures(worldId, {
+    navigationContext:context,
     dataSourceOverride: opt.dataSourceOverride,
     filesOverride: opt.filesOverride,
     fetcher: opt.fetcher,
