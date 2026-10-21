@@ -1,3 +1,4 @@
+import { checkPublicationWebDeployment, type PublicationWebState } from './publicationDeployment';
 import {HelpLabel} from './SettingHelp';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ConfigDialog } from './ConfigDialog';
@@ -27,16 +28,27 @@ export function GlobalPackageControls({ config, records = [], hasDraft, onSaved,
   const [server,setServer] = useState<ServerResult>(), [warningsAccepted,setWarningsAccepted] = useState(false);
   const [authenticated,setAuthenticated] = useState(false);
   const [serverRevision,setServerRevision]=useState(0);
+  const [web,setWeb]=useState<PublicationWebState>();
+  const [webChecking,setWebChecking]=useState(false);
+  const [webCheck,setWebCheck]=useState(0);
   const operationId=useRef(crypto.randomUUID());
   const snapshot = useMemo(()=>stableConfigText(config),[config]);
   const recordText = useMemo(()=>stableConfigText(records),[records]);
-  const candidate = useRef<{config:ConfigPackageV3;blob:Blob;snapshotHash:string;archiveHash:string;requestId:string}>();
+  const candidate = useRef<{config:ConfigPackageV3;blob:Blob;snapshotHash:string;archiveHash:string;requestId:string;baseKey:string}>();
   const live = useRef({snapshot,recordText,hasDraft,base}); live.current={snapshot,recordText,hasDraft,base};
   const baseKey=base?stableConfigText(base):'';
   const valid = !!gate && !hasDraft && gate.snapshot===snapshot && gate.records===recordText && gate.base===baseKey && gate.rules===CONFIGURATION_RULES_VERSION;
   const inform = (value:string)=>{setMessage(value);onMessage(value);};
   useEffect(()=>{let active=true;const check=()=>void readFormalIdentity().then(value=>{if(active)setBase(value);}).catch(error=>{if(active){setBase(undefined);setGate(undefined);inform(String(error));}});check();const timer=setInterval(check,60000);window.addEventListener('focus',check);return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',check);};},[]);
-  useEffect(()=>{setGate(current=>current&&!hasDraft&&current.snapshot===snapshot&&current.records===recordText&&current.base===baseKey?current:undefined);setServer(undefined);setAuthenticated(false);candidate.current=undefined;setWarningsAccepted(false);setServerRevision(0);operationId.current=crypto.randomUUID();},[snapshot,recordText,hasDraft,baseKey]);
+  useEffect(()=>{setGate(current=>current&&!hasDraft&&current.snapshot===snapshot&&current.records===recordText&&current.base===baseKey?current:undefined);},[snapshot,recordText,hasDraft,baseKey]);
+  // A remote baseline change after activation must not erase the tracked task.
+  useEffect(()=>{setServer(undefined);setWeb(undefined);setAuthenticated(false);candidate.current=undefined;setWarningsAccepted(false);setServerRevision(0);operationId.current=crypto.randomUUID();},[snapshot,recordText,hasDraft]);
+  useEffect(()=>{
+    if(server?.state!=='complete'||!server.identity){setWeb(undefined);setWebChecking(false);return;}
+    const abort=new AbortController();setWebChecking(true);
+    void checkPublicationWebDeployment(server.identity,abort.signal).then(result=>{if(!abort.signal.aborted)setWeb(result);}).finally(()=>{if(!abort.signal.aborted)setWebChecking(false);});
+    return()=>abort.abort();
+  },[server?.state,server?.identity,webCheck]);
   const validate = async()=>{
     if(hasDraft){inform('请先保存或放弃所有模块、工作流和 Class 树草稿。');return;}
     setBusy(true);try{
@@ -51,12 +63,13 @@ export function GlobalPackageControls({ config, records = [], hasDraft, onSaved,
   const prepare = async()=>{
     const assertCurrent=()=>{if(!valid||live.current.hasDraft||live.current.snapshot!==snapshot||live.current.recordText!==recordText||stableConfigText(live.current.base)!==baseKey)throw Error('全局核验已失效，请重新核验。');};
     assertCurrent();
+    if(candidate.current&&candidate.current.baseKey!==baseKey)throw Error('正式基线已改变，请重新登录并准备新候选。');
     if(candidate.current)return candidate.current;
     const revision=Math.max(Math.max(config.revision,await highestConfigLabRevision(config.packageId),base?.revision??0)+1,serverRevision);
     const next={...config,revision},report=validateConfigPackage(next,records);
     if(!report.valid)throw Error('自动修订候选未通过核验。');
     const blob=await buildConfigPackageArchive(next,report);
-    const value={config:next,blob,snapshotHash:await sha256Bytes(new TextEncoder().encode(stableConfigText(next))),archiveHash:await sha256Bytes(await blob.arrayBuffer()),requestId:operationId.current};
+    const value={config:next,blob,snapshotHash:await sha256Bytes(new TextEncoder().encode(stableConfigText(next))),archiveHash:await sha256Bytes(await blob.arrayBuffer()),requestId:operationId.current,baseKey};
     assertCurrent();
     candidate.current=value;return value;
   };
@@ -78,6 +91,7 @@ export function GlobalPackageControls({ config, records = [], hasDraft, onSaved,
     setBusy(true);try{
       // Open synchronously to retain browser popup permission.
       const popup=window.open('about:blank','cairnmap-configuration-auth','popup,width=620,height=760');if(!popup)throw Error('请允许身份确认弹窗。');
+      if(candidate.current&&candidate.current.baseKey!==baseKey){candidate.current=undefined;setServer(undefined);operationId.current=crypto.randomUUID();}
       const value=await prepare(),nonce=crypto.randomUUID();
       const url=new URL('/api/auth/github/start',location.origin);for(const [key,item] of Object.entries({purpose:'configuration-publication',mode:'popup',nonce,snapshotSha256:value.snapshotHash,baseSha256:base!.configSha256,baseIdentitySha256:await sha256Bytes(new TextEncoder().encode(stableConfigText(base)))}))url.searchParams.set(key,item);
       popup.location.assign(url.toString());
@@ -109,7 +123,8 @@ export function GlobalPackageControls({ config, records = [], hasDraft, onSaved,
       <p className="text-sm">下载将自动分配高于已保存、已导出及已知正式版本的修订号。在线发布由服务端最终分配。</p>
       {!valid?<p role="alert" className="text-rose-700">全局核验已失效，请关闭并重新核验。</p>:null}
       <div className="flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-2" disabled={busy||!valid} onClick={()=>void download()}>下载配置整包</button><button type="button" className="rounded bg-violet-600 px-3 py-2 text-white" disabled={busy||!valid} onClick={()=>void login()}>重新登录并准备上传</button>{authenticated?<button type="button" className="rounded border px-3 py-2" disabled={busy||!valid} onClick={()=>void preflight()}>再次核验</button>:null}</div>
-      {server?<section className="space-y-2 rounded border bg-slate-50 p-3"><p>操作者：{server.actor??'等待服务端确认'} · 阶段：{server.state}</p><p>候选：r{server.revision} · {server.jobId}</p><p className="break-all text-xs">JSON SHA-256: {server.configSha256}</p><p className="break-all text-xs">Manifest SHA-256: {server.manifestSha256}</p><p className="break-all text-xs">ZIP SHA-256: {server.archiveSha256}</p>{server.summary?.map((item,index)=><p key={index} className="text-xs">{item}</p>)}{server.report?.issues.map((issue,index)=><p key={index} className={issue.severity==='error'?'text-rose-700':'text-amber-800'}>{issue.message}</p>)}{warning?<HelpLabel context="GlobalPackageControls" className="flex gap-2"><input type="checkbox" checked={warningsAccepted} onChange={event=>setWarningsAccepted(event.target.checked)}/>已检查以上警告</HelpLabel>:null}<button type="button" className="rounded border px-3 py-2" disabled={busy} onClick={()=>void refresh()}>查询进度</button><button type="button" className="ml-2 rounded bg-emerald-600 px-3 py-2 text-white disabled:bg-slate-300" disabled={busy||!valid||!authenticated||server.report?.valid!==true||!server.receipt||warning&&!warningsAccepted} onClick={()=>void publish()}>上传并发布</button></section>:null}
+      {server?<section className="space-y-2 rounded border bg-slate-50 p-3"><p>操作者：{server.actor??'等待服务端确认'} · 服务端阶段：{server.state}</p><p>候选：r{server.revision} · {server.jobId}</p><p className="break-all text-xs">JSON SHA-256: {server.configSha256}</p><p className="break-all text-xs">Manifest SHA-256: {server.manifestSha256}</p><p className="break-all text-xs">ZIP SHA-256: {server.archiveSha256}</p>{server.summary?.map((item,index)=><p key={index} className="text-xs">{item}</p>)}{server.report?.issues.map((issue,index)=><p key={index} className={issue.severity==='error'?'text-rose-700':'text-amber-800'}>{issue.message}</p>)}{warning?<HelpLabel context="GlobalPackageControls" className="flex gap-2"><input type="checkbox" checked={warningsAccepted} onChange={event=>setWarningsAccepted(event.target.checked)}/>已检查以上警告</HelpLabel>:null}<button type="button" className="rounded border px-3 py-2" disabled={busy} onClick={()=>void refresh()}>查询进度</button><button type="button" className="ml-2 rounded bg-emerald-600 px-3 py-2 text-white disabled:bg-slate-300" disabled={busy||!valid||!authenticated||server.report?.valid!==true||!server.receipt||warning&&!warningsAccepted} onClick={()=>void publish()}>上传并发布</button></section>:null}
+      {server?.state==='complete'?<section className="space-y-2 rounded border bg-slate-50 p-3 text-sm" role="status"><p>{webChecking?'正在确认最终 Web 部署…':web?.message??'服务端发布完成，等待确认最终 Web 部署。'}</p><button type="button" className="rounded border px-3 py-2" disabled={webChecking} onClick={()=>setWebCheck(value=>value+1)}>检查最终 Web 部署</button></section>:null}
       <p role="status" className="text-sm">{message}</p>
     </ConfigDialog>
   </>;

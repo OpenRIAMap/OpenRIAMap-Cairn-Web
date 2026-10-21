@@ -75,7 +75,7 @@
     "test:multipart-geometry": "tsx --tsconfig ./tsconfig.app.json ./scripts/geometry/test-multipart-geometry.ts",
     "test:config-studio-v3": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-config-studio-v3.ts",
     "audit:eol": "node ./scripts/quality/check-eol.mjs",
-    "prebuild": "npm run verify:config-v32 && npm run test:release-repair && npm run test:production-runtime && npm run test:deployment-finalization",
+    "prebuild": "npm run verify:production-build",
     "test:deployment-finalization": "tsx --tsconfig tsconfig.app.json scripts/data-source/test-deployment-finalization.ts",
     "validate:review-contract-boundary": "node ./scripts/review/validate-review-contract-boundary.mjs",
     "test:v3-semantic-parity": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-v3-semantic-parity.ts",
@@ -89,7 +89,7 @@
     "test:package-roundtrip": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-package-roundtrip.ts",
     "test:localization": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-localization.ts",
     "verify:config-v32": "npm run test:native-contract-schema && npm run test:v1-render-baseline && npm run test:config-studio-v3 && npm run test:v3-semantic-parity && npm run test:workflow-output-editor && npm run test:v1-workflow-output-parity && npm run test:label-placement && npm run test:map-zoom && npm run test:multipart-labels && npm run test:localization && npm run test:package-roundtrip && npm run test:external-workflow-output-parity && npm run test:native-contract && npm run test:workflow-practical && npm run test:native-workflow-commit && npm run test:display-parity && npm run test:density-stability && npm run test:card-parity && npm run test:workflow-capture && npm run test:config-activation && npm run test:workflow-field-controls && npm run test:compiled-runtime && npm run test:render-r7 && npm run test:render-templates && npm run test:category-templates && npm run test:field-reuse-r8 && npm run test:workflow-calculator && npm run test:workflow-drawing-r8 && npm run test:workflow-forms-r8 && npm run test:unified-r8 && npm run test:r9-migration-prefill && npm run test:r9-category-initialization && npm run test:r9-category-artifact && npm run test:r9-render-formula-color && npm run test:r9-workflow-editing && npm run test:r9-rail-editing && npm run test:r9-trp-external-editing && npm run test:r9-final-package && npm run test:sync01-native-import && npm run test:workflow-drawing-session && npm run test:lookup-tables && npm run test:hard-inheritance-prefill && npm run test:structure-roles && npm run test:config-search && npm run test:label-template && npm run test:application-settings && npm run test:category-transactions-r10 && npm run test:r10-final-package && npm run test:lookup-table-transactions && npm run test:world-resource-groups && npm run test:tile-image-request && npm run test:r11-dictionaries && npm run test:r11-buttons && npm run test:r11-workflow-tags && npm run test:setting-help && npm run test:r11-final-package && npm run test:label-zoom-lifecycle && npm run test:r12-capabilities && npm run test:navigation-r13",
-    "test:config-v32-acceptance": "npm run build",
+    "test:config-v32-acceptance": "npm run verify:ci && npm run build",
     "test:native-contract": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-native-contract.ts",
     "test:workflow-practical": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-workflow-practical.ts",
     "test:native-workflow-commit": "tsx --tsconfig ./tsconfig.app.json ./scripts/config-tools/test-native-workflow-commit.ts",
@@ -145,7 +145,13 @@
     "test:production-runtime": "node scripts/config-tools/build-server-validation.mjs --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-production-runtime.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-production-mirror.ts && node scripts/config-tools/test-configuration-publication-api.mjs && tsx --tsconfig tsconfig.app.json scripts/config-tools/prepare-production-seed.ts --check",
     "test:r12-capabilities": "node scripts/config-tools/vendor-pinhead.mjs --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-pill.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-witness.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-preview.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-verification.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-assets.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-business.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-contracts.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-r12-studio-session.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-studio-package-candidate.ts",
     "test:navigation-r13": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-r13.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-runtime-r13.ts",
-    "test:optional-field-cleanup": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-optional-field-cleanup.ts"
+    "test:optional-field-cleanup": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-optional-field-cleanup.ts",
+    "verify:production-build": "node scripts/config-tools/build-server-validation.mjs --check && node scripts/config-tools/vendor-pinhead.mjs --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/prepare-production-seed.ts --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/validate-production-build.ts",
+    "verify:ci": "npm run verify:config-v32 && npm run test:release-repair && npm run test:production-runtime && npm run test:deployment-finalization && npm run test:optional-field-cleanup && npm run test:navigation-canonical && npm run test:workflow-search && npm run test:production-build-guards && npm run test:publication-deployment",
+    "test:navigation-canonical": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-runtime-r13.ts --canonical-only",
+    "test:workflow-search": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-workflow-search.ts",
+    "test:production-build-guards": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-production-build-guards.ts",
+    "test:publication-deployment": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-publication-deployment.ts"
   },
   "dependencies": {
     "jszip": "^3.10.1",

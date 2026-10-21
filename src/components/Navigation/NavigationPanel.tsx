@@ -306,6 +306,7 @@ interface RailNewRailLeg extends RailNewLegBase {
 type RailNewLeg = RailNewWalkLeg | RailNewRailLeg;
 
 interface RailNewPlan {
+  reason?: string;
   found: boolean;
   totalTimeSeconds: number;
   totalDistance: number;
@@ -723,7 +724,7 @@ function buildRouteHighlightFromIntegrated(raw: NavRailNewIntegratedPlan, startC
 
 function buildRailNewPlanFromIntegrated(raw: NavRailNewIntegratedPlan, startCoord: Coordinate, endCoord: Coordinate, useElytra: boolean): RailNewPlan {
   if (!raw.ok) {
-    return { found: false, totalTimeSeconds: 0, totalDistance: 0, totalTransfers: 0, legs: [] };
+    return { found: false, reason: raw.reason, totalTimeSeconds: 0, totalDistance: 0, totalTransfers: 0, legs: [] };
   }
 
   const startB = raw.startResolvedBuilding?.point;
@@ -993,6 +994,7 @@ useEffect(() => {
   }, [hubReturnPoints, returnPointId]);
 
   const [railNewStaBuildingItems, setRailNewStaBuildingItems] = useState<SearchItem[]>([]);
+  const [railSearchError,setRailSearchError]=useState('');
 
   useEffect(() => {
     if (!legacyModuleLoaded) return;
@@ -1062,6 +1064,7 @@ useEffect(() => {
 
 useEffect(() => {
   let alive = true;
+  setRailNewStaBuildingItems([]);setRailSearchError('');
 
   (async () => {
     try {
@@ -1095,7 +1098,7 @@ useEffect(() => {
       setRailNewStaBuildingItems(items);
     } catch (err) {
       console.error('[rail_new] listRailNewStaBuildingsForSearch failed', err);
-      if (alive) setRailNewStaBuildingItems([]);
+      if (alive) {setRailNewStaBuildingItems([]);setRailSearchError(`车站搜索数据准备失败：${err instanceof Error?err.message:String(err)}`);}
     }
 
   })();
@@ -1488,7 +1491,7 @@ if (travelMode === 'road') {
   const hasResult = !!(resultLegacy || resultRailNew || resultTeleportNew || resultRoad);
 
   return (
-    <AppCard className="relative w-full sm:w-72 max-h-[70vh] sm:max-h-[82vh] flex flex-col">{navigationError?<p role="alert" className="m-3 rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">{navigationError}</p>:null}
+    <AppCard className="relative w-full sm:w-72 max-h-[70vh] sm:max-h-[82vh] flex flex-col">{navigationError||travelMode==='rail_new'&&railSearchError?<p role="alert" className="m-3 rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">{navigationError||railSearchError}</p>:null}
       {searchProgressOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20">
           <AppCard className="p-4 w-[240px]">
@@ -1938,7 +1941,7 @@ if (travelMode === 'road') {
                 <div className="text-center text-gray-500 py-4 text-sm">
                   {startPoint?.coord.x === endPoint?.coord.x && startPoint?.coord.z === endPoint?.coord.z
                     ? '起点和终点相同'
-                    : '未找到可用路线（请检查：站台 Situation/Available、线路方向、换乘归属 STB/SBP 等）'}
+                    : resultRailNew.reason || '未找到可用铁路路线'}
                 </div>
               )}
             </>

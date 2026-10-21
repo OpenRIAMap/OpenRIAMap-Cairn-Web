@@ -1,3 +1,4 @@
+import { navigationPoint, navigationLine, navigationPolygon } from '@/core/project/navigationGeometry';
 import { assertNavigationInput, captureNavigationContext, navigationRailMatches, isRailStationPoint, type NavigationContext } from '../../core/project/navigationRuntime';
 /**
  * Navigation_RailNewIntegrated.tsx
@@ -339,10 +340,6 @@ type Rle = {
   totalLen: number;
 };
 
-function num(v: any, fallback = 0): number {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
 
 function str(v: any): string {
   const s = String(v ?? '').trim();
@@ -358,34 +355,6 @@ function asBool(v: any, fallback = false): boolean {
     if (t === 'false' || t === '0' || t === 'no') return false;
   }
   return fallback;
-}
-
-function toCoord(v: any): Coordinate | null {
-  if (!v) return null;
-  if (Array.isArray(v)) {
-    const x = num(v[0], NaN);
-    const z = v.length >= 3 ? num(v[2], NaN) : num(v[1], NaN);
-    const y = v.length >= 3 ? num(v[1], -64) : -64;
-    if (Number.isFinite(x) && Number.isFinite(z)) return { x, y: Number.isFinite(y) ? y : -64, z };
-    return null;
-  }
-  if (typeof v === 'object') {
-    const x = num(v.x, NaN);
-    const z = num(v.z, NaN);
-    const y = num(v.y ?? -64, -64);
-    if (Number.isFinite(x) && Number.isFinite(z)) return { x, y: Number.isFinite(y) ? y : -64, z };
-  }
-  return null;
-}
-
-function coordArray(v: any): Coordinate[] {
-  if (!Array.isArray(v)) return [];
-  const out: Coordinate[] = [];
-  for (const p of v) {
-    const c = toCoord(p);
-    if (c) out.push(c);
-  }
-  return out;
 }
 
 function distXZ(a: Coordinate, b: Coordinate): number {
@@ -700,8 +669,7 @@ function parseSta(all: RawItem[], context: NavigationContext): Map<string, Sta> 
     const stationID = str(it.ID);
     if (!stationID) continue;
     const stationName = str(it.Name ?? stationID);
-    const c = toCoord(it.coordinate);
-    if (!c) continue;
+    const c = navigationPoint(it);
 
     // 新规范字段：STBuilding（车站所属车站建体 STB/SBP 的 ID）
     // - 兼容：旧数据可能缺失；也可能使用不同大小写
@@ -745,8 +713,7 @@ function parsePlf(all: RawItem[], context: NavigationContext): Map<string, Plf> 
     const platformID = str(it.ID);
     if (!platformID) continue;
 
-    const c = toCoord(it.coordinate);
-    if (!c) continue;
+    const c = navigationPoint(it);
 
     const Situation = asBool(it.Situation, true);
     const Connect = asBool(it.Connect, true);
@@ -817,8 +784,7 @@ function parseRle(all: RawItem[], context: NavigationContext): Map<string, Rle> 
     const bureau = it.bureau ? str(it.bureau) : undefined;
     const line = it.line ? str(it.line) : undefined;
 
-    const points = coordArray(it.PLpoints ?? it.plpoints ?? it.points);
-    if (points.length < 2) continue;
+    const points = navigationLine(it);
 
     const cumlen = buildCumLen(points);
     const totalLen = cumlen[cumlen.length - 1];
@@ -900,37 +866,9 @@ function parseBuildings(all: RawItem[], context: NavigationContext): Map<string,
               id
           );
 
-          
-let representativePoint: Coordinate | null = null;
-let polygon: Coordinate[] | undefined = undefined;
-
-// 允许直接给中心点（STB 也兼容）
-const coordPoint =
-  toCoord(it.coordinate ?? it.center ?? it.Coord ?? it.coord) ?? null;
-
-if (cls === 'SBP') {
-  representativePoint = coordPoint;
-} else {
-  // STB：优先多边形中心，其次退化到 coordinate/center
-  const con = coordArray(
-    it.Conpoints ??
-      it.conpoints ??
-      it.Flrpoints ??
-      it.flrpoints ??
-      it.points ??
-      it.Points
-  );
-
-  if (con.length >= 3) {
-    polygon = con;
-    representativePoint = centroidPolygonXZ(con) ?? coordPoint;
-  } else {
-    representativePoint = coordPoint;
-  }
-}
-
-if (!representativePoint) continue;
-
+    const polygon = cls === 'STB' ? navigationPolygon(it) : undefined;
+    const representativePoint = polygon ? centroidPolygonXZ(polygon) : navigationPoint(it);
+    if (!representativePoint) throw Error(`${id} 的车站建筑中心无法计算。`);
 
     const stationIds = parseStationsGroup(it);
 

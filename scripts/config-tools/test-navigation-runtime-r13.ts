@@ -12,6 +12,9 @@ import { relatedLineTokens } from '../../src/components/Search/relatedLineTokens
 import { computeRailPlanFromCoords } from '../../src/components/Navigation/Navigation_RailNewIntegrated';
 import { computeTeleportNewPlanFromCoords } from '../../src/components/Navigation/Navigation_TeleportNewIntegrated';
 import { computeRoadPlanFromCoords } from '../../src/components/Navigation/Navigation_Road';
+import { navigationPoint, navigationLine, navigationPolygon } from '../../src/core/project/navigationGeometry';
+import { migrateConfigToR12 } from '../../src/configStudio/r12Migration';
+import { listRailNewStaBuildingsForSearch } from '../../src/components/Navigation/Navigation_RailNewIntegrated';
 import { listHubReturnPoints } from '../../src/components/Navigation/teleportHubReturnPoints';
 
 const localValues=new Map<string,string>();
@@ -22,7 +25,7 @@ const extra=structuredClone(base.nodes.find(n=>n.path.class==='RLE')!);extra.nod
 base.application!.preferences.railwayRoles!.selectors.lines.push({class:'XRL'});
 for(const group of (base.application!.sources as any).groups){group.dataPathTemplate='';for(const source of group.sources.items){source.rootUrl='https://navigation-fixture.invalid';source.transport='direct';}}
 const activate=(config:ConfigPackageV3)=>{const report=validateConfigPackage(config);assert(report.valid,JSON.stringify(report.issues.filter(i=>i.severity==='error')));setRuntimeConfiguration(config);applyApplicationSettings(config.application);};
-let records=JSON.parse(fs.readFileSync('scripts/config-tools/fixtures/navigation-r13-records.json','utf8')) as Record<string,any>[];
+let records=JSON.parse(fs.readFileSync(process.argv.includes('--canonical-only')?'scripts/config-tools/fixtures/navigation-canonical-records.json':'scripts/config-tools/fixtures/navigation-r13-records.json','utf8')) as Record<string,any>[];
 records.push({...structuredClone(records.find(r=>r.ID==='road-main')!),ID:'road-other',Class:'XRD',Kind:undefined,Name:'Custom road'});
 let release=1;
 const documents=new Map<string,Buffer>();
@@ -57,6 +60,29 @@ try{
   const scoped=structuredClone(faster);scoped.application!.navigation!.road.selectors.roads=[{class:'XRD'}];activate(scoped);
   const scopedRoad=await computeRoadPlanFromCoords({worldId:'zth',startCoord:{x:0,y:64,z:0},endCoord:{x:100,y:64,z:0},defaultSpeed:999,travelModeCode:'WALK'});assert(scopedRoad.ok);assert(scopedRoad.segments.filter(s=>s.kind==='road').every(s=>s.roadId==='road-other'));activate(faster);
   const teleport=await computeTeleportNewPlanFromCoords({worldId:'zth',startCoord:{x:0,y:64,z:0},endCoord:{x:1000,y:64,z:0},useElytra:false});assert(teleport.ok,teleport.reason);assert.equal(teleport.teleportCount,1);
+  if(process.argv.includes('--canonical-only')){
+    assert(records.every(r=>!['coordinate','PLpoints','Linepoints','Conpoints','Flrpoints'].some(key=>Object.hasOwn(r,key))));
+    assert.equal((await listRailNewStaBuildingsForSearch({worldId:'zth'})).length,2);
+    const originalBuilding=structuredClone(records.find(r=>r.ID==='building-a')!);
+    Object.assign(records.find(r=>r.ID==='building-a')!,{Class:'STB',Type:'Polygons',CoordG:[[[[-5,64,-5],[5,64,-5],[5,64,5],[-5,64,5]]]]});delete records.find(r=>r.ID==='building-a')!.CoordP;
+    release++;rebuild();
+    const polygonRoute=await computeRailPlanFromCoords({worldId:'zth',startCoord:{x:0,y:64,z:0},endCoord:{x:100,y:64,z:0},interCompEnabled:false});assert(polygonRoute.ok,polygonRoute.reason);assert.equal(polygonRoute.startResolvedBuilding!.point.x,0);
+    records[records.findIndex(r=>r.ID==='building-a')]=originalBuilding;release++;rebuild();
+    const historical=migrateConfigToR12(JSON.parse(fs.readFileSync('src/configStudio/defaults/r11-r7.config.json','utf8'))).config;historical.application!.sources=structuredClone(base.application!.sources);activate(historical);
+    assert((await computeRailPlanFromCoords({worldId:'zth',startCoord:{x:0,z:0},endCoord:{x:100,z:0},interCompEnabled:false})).ok);
+    assert((await computeRoadPlanFromCoords({worldId:'zth',startCoord:{x:0,z:0},endCoord:{x:100,z:0},defaultSpeed:4.3,travelModeCode:'WALK'})).ok);
+    assert((await computeTeleportNewPlanFromCoords({worldId:'zth',startCoord:{x:0,z:0},endCoord:{x:1000,z:0},useElytra:false})).ok);
+    activate(faster);
+    const warpKey=records.find(r=>r.ID==='teleport-main')!.TGTWarp;records.find(r=>r.ID==='teleport-main')!.TGTWarp='missing-warp';release++;rebuild();await assert.rejects(computeTeleportNewPlanFromCoords({worldId:'zth',startCoord:{x:0,z:0},endCoord:{x:1000,z:0}}),/传送目标无法解析/);records.find(r=>r.ID==='teleport-main')!.TGTWarp=warpKey;release++;rebuild();
+    assert.throws(()=>navigationPoint({ID:'bad-point',CoordP:[]}),/bad-point.*导航几何/);
+    assert.throws(()=>navigationLine({ID:'conflict-line',CoordL:[[[0,64,0],[1,64,0]]],PLpoints:[[0,64,0],[2,64,0]]}),/conflict-line.*geometry-field-conflict/);
+    assert.throws(()=>navigationPoint({ID:'multi-point',CoordP:[[0,64,0],[1,64,0]]}),/单部件/);
+    assert.equal(navigationLine({ID:'legacy-lowercase',plpoints:[[0,64,0],[1,64,0]]}).length,2);
+    assert.equal(navigationPoint({ID:'legacy-center',center:{x:3,y:64,z:4}}).x,3);
+    assert.throws(()=>navigationLine({ID:'alias-conflict',CoordL:[[[0,64,0],[1,64,0]]],points:[[0,64,0],[2,64,0]]}),/geometry-field-conflict/);
+    assert.throws(()=>navigationPolygon({ID:'multi-building',CoordG:[[[[0,0,0],[10,0,0],[10,0,10]]],[[[20,0,0],[30,0,0],[30,0,10]]]]}),/单部件/);
+    console.log('Canonical-only regression: r12/r13 rail, road, teleport, station search, CoordG centroid, target diagnostics, invalid/conflicting and unsupported multipart geometry passed.');
+  }
   const noWarp=structuredClone(faster);noWarp.application!.navigation!.teleport.enabled=false;noWarp.application!.navigation!.teleport.selectors.warpPoints=[];activate(noWarp);await assert.rejects(computeTeleportNewPlanFromCoords({worldId:'zth',startCoord:{x:0,z:0},endCoord:{x:1000,z:0}}),/未启用/);
   const hub=structuredClone(faster);const table=hub.lookupTables!.find(t=>t.id==='teleport-hubs')!;const row=table.rows[0].functionValue as any;row.returnPoints[0].label.zh='已更新返回点';activate(hub);assert(listHubReturnPoints('zth')[0].name==='已更新返回点');
   const oldIndex=await loadRailNewIndex('zth');records=structuredClone(records);records.find(r=>r.ID==='line-main')!.Name='新数据线路';release++;rebuild();
