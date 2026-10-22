@@ -1,0 +1,255 @@
+[
+  {
+    "ID": "line-main",
+    "Class": "RLE",
+    "World": "zth",
+    "Type": "Lines",
+    "Name": "主线路",
+    "bureau": "TEST",
+    "line": "1",
+    "color": "#ff0000",
+    "direction": 0,
+    "CoordL": [
+      [
+        [
+          0,
+          64,
+          0
+        ],
+        [
+          100,
+          64,
+          0
+        ]
+      ]
+    ]
+  },
+  {
+    "ID": "line-extra",
+    "Class": "XRL",
+    "World": "zth",
+    "Type": "Lines",
+    "Name": "共享附加线路",
+    "bureau": "TEST",
+    "line": "2",
+    "color": "#0000ff",
+    "direction": 0,
+    "CoordL": [
+      [
+        [
+          0,
+          64,
+          0
+        ],
+        [
+          100,
+          64,
+          0
+        ]
+      ]
+    ]
+  },
+  {
+    "ID": "platform-a",
+    "Class": "PLF",
+    "World": "zth",
+    "Type": "Points",
+    "Name": "A站台",
+    "CoordP": [
+      [
+        0,
+        64,
+        0
+      ]
+    ],
+    "Situation": true,
+    "Connect": true,
+    "lines": [
+      {
+        "ID": "line-main",
+        "getin": true,
+        "getout": true,
+        "Avaliable": true
+      },
+      {
+        "ID": "line-extra",
+        "getin": true,
+        "getout": true,
+        "Avaliable": true
+      }
+    ]
+  },
+  {
+    "ID": "platform-b",
+    "Class": "PLF",
+    "World": "zth",
+    "Type": "Points",
+    "Name": "B站台",
+    "CoordP": [
+      [
+        100,
+        64,
+        0
+      ]
+    ],
+    "Situation": true,
+    "Connect": true,
+    "lines": [
+      {
+        "ID": "line-main",
+        "getin": true,
+        "getout": true,
+        "Avaliable": true
+      },
+      {
+        "ID": "line-extra",
+        "getin": true,
+        "getout": true,
+        "Avaliable": true
+      }
+    ]
+  },
+  {
+    "ID": "station-a",
+    "Class": "STA",
+    "World": "zth",
+    "Type": "Points",
+    "Name": "A站场",
+    "CoordP": [
+      [
+        0,
+        64,
+        0
+      ]
+    ],
+    "STBuilding": "building-a",
+    "platforms": [
+      {
+        "ID": "platform-a"
+      }
+    ]
+  },
+  {
+    "ID": "station-b",
+    "Class": "STA",
+    "World": "zth",
+    "Type": "Points",
+    "Name": "B站场",
+    "CoordP": [
+      [
+        100,
+        64,
+        0
+      ]
+    ],
+    "STBuilding": "building-b",
+    "platforms": [
+      {
+        "ID": "platform-b"
+      }
+    ]
+  },
+  {
+    "ID": "building-a",
+    "Class": "SBP",
+    "World": "zth",
+    "Type": "Points",
+    "Name": "A车站",
+    "CoordP": [
+      [
+        0,
+        64,
+        0
+      ]
+    ],
+    "stations": [
+      {
+        "ID": "station-a"
+      }
+    ]
+  },
+  {
+    "ID": "building-b",
+    "Class": "SBP",
+    "World": "zth",
+    "Type": "Points",
+    "Name": "B车站",
+    "CoordP": [
+      [
+        100,
+        64,
+        0
+      ]
+    ],
+    "stations": [
+      {
+        "ID": "station-b"
+      }
+    ]
+  },
+  {
+    "ID": "road-main",
+    "Class": "ROD",
+    "Kind": "NOM",
+    "World": "zth",
+    "Type": "Lines",
+    "Name": "测试道路",
+    "Level": 0,
+    "Oneway": false,
+    "Enter": true,
+    "Exit": true,
+    "CoordL": [
+      [
+        [
+          0,
+          64,
+          0
+        ],
+        [
+          100,
+          64,
+          0
+        ]
+      ]
+    ],
+    "Mode": [
+      {
+        "code": "WALK"
+      }
+    ]
+  },
+  {
+    "ID": "warp-main",
+    "Class": "WRP",
+    "Kind": "NOM",
+    "SKind": "NOM",
+    "World": "zth",
+    "Type": "Points",
+    "Name": "测试Warp",
+    "WRPointI2D": "warp-key",
+    "CoordP": [
+      [
+        1000,
+        64,
+        0
+      ]
+    ]
+  },
+  {
+    "ID": "teleport-main",
+    "Class": "TPP",
+    "Kind": "NOM",
+    "SKind": "NOM",
+    "World": "zth",
+    "Type": "Points",
+    "Name": "测试传送点",
+    "CoordP": [
+      [
+        0,
+        64,
+        0
+      ]
+    ],
+    "TGTWarp": "warp-key"
+  }
+]

@@ -32,6 +32,7 @@ export type RuleWorldDataset = {
   sourceId?: string;
   transportId?: string;
   readerSchemaVersion?: string;
+  sourceGeneration?: number;
   loadedAt: number;
   features: Record<string, unknown>[];
 };

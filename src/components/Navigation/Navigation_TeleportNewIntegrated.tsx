@@ -1,3 +1,4 @@
+import { navigationPoint } from '@/core/project/navigationGeometry';
 import { assertNavigationInput, captureNavigationContext, type NavigationContext } from '../../core/project/navigationRuntime';
 import { matchesRaw } from '../../core/project/navigationDefinition';
 /**
@@ -227,9 +228,8 @@ async function loadTeleportPoints(worldId: string, opt: {
 
     if (matchesRaw(context.settings.teleport.selectors.warpPoints,item)) {
       const i2d = String((item as any).WRPointI2D ?? (item as any).wrPointI2D ?? '').trim();
-      const c = (item as any).coordinate;
-      if (!i2d || !c) continue;
-      if (!isFiniteNum(c.x) || !isFiniteNum(c.z)) continue;
+      const c = navigationPoint(item);
+      if (!i2d) throw Error(`${String(item.ID ?? 'Warp')} 缺少 Warp 定位键。`);
       const cy = Number((c as any).y);
       const elev = (item as any).elevation;
       const y = Number.isFinite(cy) ? cy : (isFiniteNum(elev) ? Number(elev) : DEFAULT_Y);
@@ -248,8 +248,7 @@ async function loadTeleportPoints(worldId: string, opt: {
     const name = String((item as any).Name ?? id).trim();
     const hub = String((item as any).hub ?? (item as any).tags?.hub ?? '').trim() || undefined;
 
-    const c = (item as any).coordinate;
-    if (!c || !isFiniteNum(c.x) || !isFiniteNum(c.z)) continue;
+    const c = navigationPoint(item);
 
     const warp = String((item as any).TGTWarp ?? (item as any).tgtWarp ?? '').trim();
     let tgt: Coordinate | null = null;
@@ -269,7 +268,7 @@ async function loadTeleportPoints(worldId: string, opt: {
       }
     }
 
-    if (!id || !tgt) continue;
+    if (!id || !tgt) throw Error(`${id || '传送点'} 的传送目标无法解析${warp ? `：Warp ${warp} 不存在且没有有效目标坐标` : '：缺少有效目标坐标或 Warp'}。`);
 
     const srcy = Number((c as any).y);
     const selev = (item as any).elevation;

@@ -7,7 +7,7 @@ import { defaultNavigationSettings, defaultRailwaySelectors, matchesRaw } from '
 import { defaultLookupTables } from '../../configStudio/lookupTables';
 import { validateStructuredValue, valueSchemaTemplate } from '../../configStudio/valueSchema';
 import { validateNavigationRecords } from '../../configStudio/navigationValidation';
-import { readMultipartGeometry, validateMultipartGeometry } from '../geometry/multipartGeometry';
+import { readNavigationGeometry } from './navigationGeometry';
 
 export type NavigationContext = {
   configuration?: ConfigPackageV3;
@@ -57,7 +57,7 @@ export function isRailStationPoint(record:Record<string,unknown>):boolean {
   if(record.Type==='Polygon'||record.Type==='Polygons')return false;
   if(record.Class==='STB')return false;
   if(record.Class==='SBP')return true;
-  return !Array.isArray(record.Conpoints)&&!Array.isArray(record.Flrpoints)&&Boolean(record.coordinate);
+  return !record.CoordG&&!Array.isArray(record.Conpoints)&&!Array.isArray(record.Flrpoints)&&Boolean(record.CoordP??record.coordinate);
 }
 export const navigationPathForRecord=(record:Record<string,unknown>):ClassificationPath=>({class:String(record.Class??''),kind:record.Kind as string|undefined,skind:(record.SKind??record.Skind) as string|undefined,skind2:(record.SKind2??record.Skind2) as string|undefined});
 export function assertNavigationInput(context:NavigationContext,items:Record<string,unknown>[],mode:'shared'|'rail'|'teleport'|'road'):void {
@@ -81,8 +81,7 @@ export function assertNavigationInput(context:NavigationContext,items:Record<str
     if(warp){scalar('WRPointI2D','string');scalar('elevation','number');}
     if(mode!=='shared'){
       const kind=road||rail&&matches('lines',record)?'LineString':rail&&matches('stations',record)&&!isRailStationPoint(record)?'Polygon':'Point';
-      const read=readMultipartGeometry(record,kind),error=read.error??validateMultipartGeometry(read.geometry);
-      if(error||!read.geometry||read.geometry.parts.length!==1)throw Error(`${id} 的导航几何无法安全解析${error?`：${error}`:'：仅支持单部件导航几何'}。`);
+      readNavigationGeometry(record,kind);
     }
     if(rail&&matches('platforms',record)){templates.push(['lines','rail-lines']);for(const key of ['Situation','Connect'])if(record[key]!==undefined&&typeof record[key]!=='boolean')throw Error(`${id}/${key} 需要布尔值。`);}
     if(rail&&matches('stationAreas',record))templates.push(['platforms','rail-platforms']);

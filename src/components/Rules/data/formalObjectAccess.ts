@@ -7,7 +7,7 @@ const requests = new Map<AbortController, string | undefined>();
 const segment = /^[A-Za-z0-9_][A-Za-z0-9._-]*$/;
 
 export class FormalObjectError extends Error {
-  constructor(message: string, readonly code: 'http' | 'integrity' | 'path' | 'aborted' | 'response', readonly status?: number) {
+  constructor(message: string, readonly code: 'http' | 'integrity' | 'path' | 'aborted' | 'timeout' | 'response', readonly status?: number) {
     super(message); this.name = 'FormalObjectError';
   }
 }
@@ -41,23 +41,29 @@ export async function formalBytesSha256(bytes: Uint8Array): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', bytes as BufferSource);
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
-export async function fetchFormalObject<T>(source: RuleDataSourceSnapshot, key: string, options: { releaseId?: string; integrity?: FormalObjectIntegrity } = {}): Promise<T> {
+export async function fetchFormalObject<T>(source: RuleDataSourceSnapshot, key: string, options: { releaseId?: string; integrity?: FormalObjectIntegrity; signal?: AbortSignal; timeoutMs?: number } = {}): Promise<T> {
   const url = formalObjectUrl(source, key, options.releaseId), controller = new AbortController();
+  const abort = () => controller.abort(options.signal?.reason);
+  if (options.signal?.aborted) abort(); else options.signal?.addEventListener('abort', abort, { once: true });
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, options.timeoutMs ?? 30000);
   requests.set(controller, source.worldId);
   try {
     const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
     if (!response.ok) throw new FormalObjectError(`正式数据请求失败（HTTP ${response.status}）。`, 'http', response.status);
     const bytes = new Uint8Array(await response.arrayBuffer());
     if (bytes.byteLength > 64 * 1024 * 1024) throw new FormalObjectError('正式对象超出读取大小限制。', 'integrity');
+    if (controller.signal.aborted) throw controller.signal.reason;
     const expected = options.integrity;
     if (expected?.byteLength !== undefined && bytes.byteLength !== expected.byteLength) throw new FormalObjectError('正式对象字节长度与清单不符。', 'integrity');
     if (expected?.sha256 && await formalBytesSha256(bytes) !== expected.sha256) throw new FormalObjectError('正式对象SHA256与清单不符。', 'integrity');
     try { return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) as T; }
     catch { throw new FormalObjectError('正式数据接口未返回有效JSON。', 'response'); }
   } catch (error) {
+    if (timedOut) throw new FormalObjectError('正式数据读取超时，请重试。', 'timeout');
     if (controller.signal.aborted) throw new FormalObjectError('已取消过期的数据读取。', 'aborted');
     throw error;
-  } finally { requests.delete(controller); }
+  } finally { clearTimeout(timer); options.signal?.removeEventListener('abort', abort); requests.delete(controller); }
 }
 export function abortFormalObjectRequests(worldIds?: readonly string[]): void {
   for (const [controller, worldId] of requests) {

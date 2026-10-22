@@ -6,11 +6,11 @@ import { validateConfigPackage } from '../../src/configStudio/runtime';
 import { basePointFromLegacy, defaultSymbolPlacement, placementAnchor, pointSymbolProblems, pointSymbolReach, supportedIconId } from '../../src/configStudio/pointSymbol';
 import type { FieldDefinition, PointSymbol, RenderFieldGroup } from '../../src/configStudio/types';
 
-const identity = JSON.parse(fs.readFileSync('public/configuration/current.json','utf8'));
-const original = JSON.parse(fs.readFileSync('public'+identity.configUrl,'utf8'));
+const fixturePath='src/configStudio/defaults/r11-r7.config.json';
+const original = JSON.parse(fs.readFileSync(fixturePath,'utf8'));
 const migration = migrateConfigToR12(original), config = migration.config;
 assert.equal(migration.unresolved.length,0); assert(validateConfigPackage(config).valid);
-assert.deepEqual(original,JSON.parse(fs.readFileSync('public'+identity.configUrl,'utf8')),'migration cannot mutate formal r11');
+assert.deepEqual(original,JSON.parse(fs.readFileSync(fixturePath,'utf8')),'migration cannot mutate formal r11');
 const node=config.nodes.find(n=>n.nodeId==='class-sbp')!;
 node.classificationLabels={class:{zh:'车站建筑',en:'Station building'}};
 node.fields.push(...(['previewFlag','previewCount'].map((key,i)=>({fieldId:'preview-test-'+i,key,type:i?'number':'boolean',input:i?'text':'toggle',description:{zh:'',en:''},cardinality:'single',required:false,labels:{zh:key,en:''},inheritance:'overridable'})) as FieldDefinition[]));

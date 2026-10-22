@@ -1,3 +1,4 @@
+import { navigationLine } from '@/core/project/navigationGeometry';
 import { assertNavigationInput, captureNavigationContext, roadTravelProfiles, type NavigationContext } from '../../core/project/navigationRuntime';
 import { matchesRaw } from '../../core/project/navigationDefinition';
 /**
@@ -290,18 +291,7 @@ function parseRoadFromRaw(it: any, context: NavigationContext): RoadFeature | nu
   if(context.native&&it?.Speed!==undefined&&(typeof it.Speed!=='number'||!Number.isFinite(it.Speed)||it.Speed<=0))return null;
   const speed = Number.isFinite(Number(it?.Speed)) ? Number(it.Speed) : undefined;
 
-  const lp = it?.Linepoints;
-  if (!Array.isArray(lp) || lp.length < 2) return null;
-  const coords = lp
-    .map((p: any) => {
-      const x = Number(p?.[0]);
-      const y = Array.isArray(p) && p.length >= 3 ? Number(p?.[1]) : DEFAULT_Y;
-      const z = Array.isArray(p) && p.length >= 3 ? Number(p?.[2]) : Number(p?.[1]);
-      if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
-      return { x, z, y: Number.isFinite(y) ? y : DEFAULT_Y } as Coordinate;
-    })
-    .filter(Boolean) as Coordinate[];
-  if (coords.length < 2) return null;
+  const coords = navigationLine(it);
 
   return { id, name, level, oneway, enter, exit, selfJunction, connectL, blacklist, modes: modes2, speed, coords };
 

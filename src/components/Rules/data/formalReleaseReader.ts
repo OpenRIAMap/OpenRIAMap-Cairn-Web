@@ -14,7 +14,7 @@ export type FormalWorldRelease = {
 };
 
 export type FormalReleaseSet = { schemaVersion: 'openriamap.current-release-set.v2'; releaseId: string; formalVersion: number | null; worlds: string[] };
-export type FormalReadOptions = { releaseId?: string; integrity?: FormalObjectIntegrity };
+export type FormalReadOptions = { releaseId?: string; integrity?: FormalObjectIntegrity; signal?: AbortSignal };
 /** Test/host adapters receive the logical key and declared integrity contract. */
 export type FormalReleaseFetchJson = <T>(key: string, stage: FormalReleaseReaderError['stage'], options?: FormalReadOptions) => Promise<T>;
 
@@ -53,7 +53,7 @@ function safeObjectKey(value: string, stage: FormalReleaseReaderError['stage']):
   catch { throw new FormalReleaseReaderError(stage, 'invalid object key'); }
 }
 
-async function fetchFormalJson<T>(source: RuleDataSourceSnapshot, key: string, stage: FormalReleaseReaderError['stage'], options?: FormalReadOptions): Promise<T> {
+export async function fetchFormalJson<T>(source: RuleDataSourceSnapshot, key: string, stage: FormalReleaseReaderError['stage'], options?: FormalReadOptions): Promise<T> {
   try {
     return await fetchFormalObject<T>(source, safeObjectKey(key, stage), options);
   } catch (error) {

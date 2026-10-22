@@ -20,8 +20,7 @@ assert.equal(customPillErrors(13, pill).length, 0);
 const binding = { mode: 'fixed' as const, color: '#123456' }, copied = createCustomPill(binding);
 binding.color = '#ffffff'; assert.equal((copied.backgroundColor as typeof binding).color, '#123456');
 
-const identity = JSON.parse(fs.readFileSync('public/configuration/current.json', 'utf8'));
-const config = JSON.parse(fs.readFileSync('public' + identity.configUrl, 'utf8')) as ConfigPackageV3;
+const config = JSON.parse(fs.readFileSync('src/configStudio/defaults/r11-r7.config.json', 'utf8')) as ConfigPackageV3;
 assert.equal(validateConfigPackage(config).valid, true, 'unmodified registered r9/r11 remains valid');
 const next = migrateConfigToR12(config).config;
 const rule = next.nodes.flatMap(n => Object.values(n.geometryProfiles)).flatMap(p => p?.zoomPriority.rules ?? []).find(r => r.label?.style)!;
