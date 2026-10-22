@@ -3,7 +3,7 @@ import { requestReviewConfirmation } from '../components/Review/ReviewConfirmati
 
 const identityKeys = ['projectId', 'packageId', 'contractRevision', 'revision', 'configSha256', 'manifestSha256', 'releaseId'] as const;
 export function businessIdentitiesMatch(web: ConfigurationIdentity, active: ConfigurationIdentity) { return identityKeys.every(key => web[key] === active[key]); }
-function describe(value?: ConfigurationIdentity) { return value ? `${value.projectId} / ${value.packageId}\n配置 r${value.revision} · 契约 r${value.contractRevision}\n发布：${value.releaseId}\nSHA-256：${value.configSha256}` : '未获得可验证身份'; }
+function describe(value?: ConfigurationIdentity) { return value ? `${value.projectId} / ${value.packageId}\n配置 r${value.revision} · 契约 c${value.contractRevision}\n发布：${value.releaseId}\nSHA-256：${value.configSha256}` : '未获得可验证身份'; }
 /** Called only at review admission / relay upload. No pass cache, timer, startup or capture-revision gate. */
 export async function checkBusinessConfiguration(fetcher: typeof fetch = fetch, web: ConfigurationIdentity | undefined = getFormalConfiguration()?.identity): Promise<void> {
   if (!web) throw Error('当前 Web 没有已核验的正式配置身份；请回到正式地图后重试。');

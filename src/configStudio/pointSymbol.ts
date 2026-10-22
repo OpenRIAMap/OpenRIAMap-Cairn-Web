@@ -1,3 +1,4 @@
+import {defaultHalo,haloWidth,haloProblems,symbolHalos} from './halo';
 import pinhead from './pinhead-capabilities.generated.json';
 import type { BasePointStyle, ConfigPackageV3, FieldDefinition, IconItem, PointSymbol, RenderColorBinding, RenderStyle, SymbolPlacement } from './types';
 import { scalarValueErrors } from './renderScalar';
@@ -13,8 +14,8 @@ export function declareNewIconCapability(previous:ConfigPackageV3,next:ConfigPac
   if(next.contractRevision<12||hasIcons(previous)||!hasIcons(next)||next.resources?.iconLibraries.some(item=>item.library==='pinhead'))return next;
   return {...next,resources:{iconLibraries:[...next.resources?.iconLibraries??[],{...ICON_LIBRARY}]}};
 }
-export function basePointFromLegacy(style: Partial<RenderStyle> = {}): BasePointStyle {
-  return structuredClone({ pointShape: style.pointShape ?? 'circle', size: style.size ?? 5, weight: style.weight ?? 1,
+export function basePointFromLegacy(style: Partial<RenderStyle> = {},contractRevision=12): BasePointStyle {
+  return structuredClone({ ...(contractRevision>=14?{halo:style.halo??defaultHalo()}:{}),pointShape: style.pointShape ?? 'circle', size: style.size ?? 5, weight: style.weight ?? 1,
     lineCap: style.lineCap ?? 'round', lineJoin: style.lineJoin ?? 'round',
     stroke: style.stroke ?? { mode: 'fixed', color: '#334155' }, fill: style.fill ?? { mode: 'fixed', color: '#2563eb' },
     strokeOpacity: style.strokeOpacity ?? 1, fillOpacity: style.fillOpacity ?? 1 });
@@ -33,12 +34,12 @@ export function placementAnchor(value: SymbolPlacement, width: number, height: n
 const reachCache = new WeakMap<PointSymbol, number>();
 export function pointSymbolReach(symbol?: PointSymbol): number {
   if (!symbol) return 0; const prior = reachCache.get(symbol); if (prior !== undefined) return prior;
-  const base = (value: BasePointStyle) => value.size + value.weight;
+  const base = (value: BasePointStyle) => value.size + value.weight + haloWidth(value.halo);
   const image = (width: number, height: number, placement: SymbolPlacement) => { const anchor = placementAnchor(placement,width,height); return Math.max(Math.abs(anchor[0]),Math.abs(width-anchor[0]),Math.abs(anchor[1]),Math.abs(height-anchor[1])); };
   let result: number;
   if (symbol.kind === 'shape') result = base(symbol.shape);
-  else if (symbol.kind === 'icon') { const items = symbol.icon.mode === 'single' ? [symbol.icon.item] : symbol.icon.entries.map(row => row.item); result = Math.max(base(symbol.fallback), ...items.map(item => image(item.sizePx,item.sizePx,item.placement))); }
-  else { const items = symbol.image.mode === 'valueMap' ? symbol.image.entries.map(row => row.presentation) : [symbol.image.presentation]; result = Math.max(base(symbol.fallback), ...items.map(item => image(item.sizePx.width,item.sizePx.height,item.placement))); }
+  else if (symbol.kind === 'icon') { const items = symbol.icon.mode === 'single' ? [symbol.icon.item] : symbol.icon.entries.map(row => row.item); result = Math.max(base(symbol.fallback), ...items.map(item => image(item.sizePx,item.sizePx,item.placement)+haloWidth(item.halo))); }
+  else { const items = symbol.image.mode === 'valueMap' ? symbol.image.entries.map(row => row.presentation) : [symbol.image.presentation]; result = Math.max(base(symbol.fallback), ...items.map(item => image(item.sizePx.width,item.sizePx.height,item.placement)+haloWidth(item.halo))); }
   reachCache.set(symbol,result); return result;
 }
 export type SymbolProblem = { path: string; message: string };
@@ -108,6 +109,7 @@ export function pointSymbolProblems(value: PointSymbol, fields: FieldDefinition[
       }
     }
   }
+  for(const row of symbolHalos(value))for(const message of haloProblems(row.value,config.contractRevision>=14))fail(row.path,message);
   return issues;
 }
 export function pointSymbolBindings(value?: PointSymbol): Array<{ path: string; value: RenderColorBinding }> {
@@ -126,5 +128,6 @@ export function pointSymbolBindings(value?: PointSymbol): Array<{ path: string; 
       else value.icon.entries.forEach((row, i) => item(row.item, `icon/entries/${i}/item`));
     }
   }
+  for(const row of symbolHalos(value))if(row.value)result.push({path:row.path+'/color',value:row.value.color});
   return result;
 }

@@ -1,3 +1,4 @@
+import {getWorkspaceState} from './workspaceController';
 import {readRawNativePackage} from './nativeArchive';
 import {readEditorNativeContents} from './editorNativeArchive';
 import {TEMPORARY_REPORT_PATH,readTemporaryDiagnostic,diagnosticMismatch,type TemporaryDiagnostic} from './temporaryDiagnostic';
@@ -103,7 +104,7 @@ async function encodeConfigArchive(config:ConfigPackageV3,report:ConfigValidatio
 export async function buildTemporaryConfigArchive(config:ConfigPackageV3,run:WorkspaceValidation,generation:number):Promise<Blob>{
   if(!currentValidation(run,generation)||run.configFingerprint!==await sha256(textEncoder.encode(stableConfigText(config))))throw Error('全局核验已失效，请重新完整核验后临时下载。');
   if(!isNativeConfigRevision(config.contractRevision)||validateNativeStructure(config).length)throw Error('配置结构无法安全重新导入，不能临时归档。');
-  const temporary:TemporaryDiagnostic={schemaVersion:'cairnmap.temporary-validation.v1',exportedAt:new Date().toISOString(),configuration:{packageId:config.packageId,projectId:config.projectId,revision:config.revision,contractRevision:config.contractRevision,configSha256:await sha256(textEncoder.encode(readableConfigText(config)))},validator:{rulesVersion:run.rulesVersion,fingerprint:run.validatorFingerprint,resourceFingerprint:run.resourceFingerprint},scope:{configuration:true,mountedData:run.mountedCount>0,mountedDataIdentity:run.mountedCount?run.recordsFingerprint:null,mountedCount:run.mountedCount},report:run.report};
+  const temporary:TemporaryDiagnostic={schemaVersion:'cairnmap.temporary-validation.v1',exportedAt:new Date().toISOString(),configuration:{packageId:config.packageId,projectId:config.projectId,revision:config.revision,contractRevision:config.contractRevision,configSha256:await sha256(textEncoder.encode(readableConfigText(config)))},validator:{rulesVersion:run.rulesVersion,fingerprint:run.validatorFingerprint,resourceFingerprint:run.resourceFingerprint},scope:{configuration:true,mountedData:run.mountedCount>0,mountedDataIdentity:run.mountedCount?run.recordsFingerprint:null,mountedCount:run.mountedCount},report:run.report,...(getWorkspaceState().migration?.report?{migration:getWorkspaceState().migration!.report}:{})};
   return encodeConfigArchive(config,run.report,temporary);
 }
 

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import {validateConfiguration,validateIncomingRecord,rulesVersion} from '../../vendor/configuration-r11/r11-validation.mjs';
+import {validateConfiguration,validateIncomingRecord,rulesVersion,CONTRACT_CAPABILITIES} from '../../vendor/configuration-r11/r11-validation.mjs';
 
 const root=path.resolve(import.meta.dirname,'../..');
 const hash=body=>crypto.createHash('sha256').update(body).digest('hex');
@@ -9,7 +9,7 @@ const hash=body=>crypto.createHash('sha256').update(body).digest('hex');
  * same authority through configuration-context; local drafts are never read. */
 export function readFormalRelayContext(projectId,{publicRoot=path.join(root,'public'),identity:pinnedIdentity}={}){
   const identity=pinnedIdentity??JSON.parse(fs.readFileSync(path.join(publicRoot,'configuration/current.json'),'utf8'));
-  if(identity.projectId!==projectId||![11,12,13].includes(identity.contractRevision)||!/^[a-f0-9]{64}$/.test(identity.configSha256??'')||identity.configUrl!==`/configuration/releases/${identity.configSha256}/config.json`)throw Error('formal-relay-configuration-identity-invalid');
+  if(identity.projectId!==projectId||!CONTRACT_CAPABILITIES.publication.includes(identity.contractRevision)||!/^[a-f0-9]{64}$/.test(identity.configSha256??'')||identity.configUrl!==`/configuration/releases/${identity.configSha256}/config.json`)throw Error('formal-relay-configuration-identity-invalid');
   const file=path.join(publicRoot,identity.configUrl.slice(1));
   if(fs.statSync(file).size>64*1024*1024)throw Error('formal-relay-configuration-budget');
   const bytes=fs.readFileSync(file),manifest=fs.readFileSync(path.join(path.dirname(file),'manifest.json'));

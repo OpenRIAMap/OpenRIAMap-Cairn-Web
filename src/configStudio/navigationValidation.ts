@@ -10,10 +10,10 @@ export function validateNavigationConfiguration(config: ConfigPackageV3, fields:
   const issues: ConfigValidationIssue[] = [], app = config.application;
   const add = (path: string, message: string, relatedPaths: string[] = [], severity: 'error' | 'warning' = 'error') => issues.push({ severity, code: 'navigation-configuration-invalid', path, message, relatedPaths });
   if (config.contractRevision < 13) {
-    if (app?.navigation || app?.preferences.railwayRoles || config.nodes.some(n => n.fields.some(f => f.valueSchema))) add(navBase, '共享铁路角色、导航设置及值结构声明需要契约 r13。');
+    if (app?.navigation || app?.preferences.railwayRoles || config.nodes.some(n => n.fields.some(f => f.valueSchema))) add(navBase, '共享铁路角色、导航设置及值结构声明需要契约 c13。');
     return issues;
   }
-  if (!app?.navigation || !app.preferences.railwayRoles) { add(navBase, 'r13 必须包含路径规划设置和共享铁路角色定义。', [sharedBase]); return issues; }
+  if (!app?.navigation || !app.preferences.railwayRoles) { add(navBase, 'c13 必须包含路径规划设置和共享铁路角色定义。', [sharedBase]); return issues; }
   if (app.preferences.navigation) add(navBase, '旧导航参数与 r13 设置不能并存。', ['application/preferences/navigation']);
   const nav = app.navigation, shared = app.preferences.railwayRoles.selectors;
   const pointNodes = (path: ClassificationPath) => config.nodes.filter(n => pathCovers(path, n.path));

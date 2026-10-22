@@ -623,7 +623,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
 
         {formal?<div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900 space-y-1 break-words [overflow-wrap:anywhere]">
           <p className="font-semibold">正式配置身份</p>
-          <p>{formal.packageId} · 契约r{formal.contractRevision} / 修订r{formal.revision}</p>
+          <p>{formal.packageId} · 契约c{formal.contractRevision} / 修订r{formal.revision}</p>
           <p>{formal.releaseId}</p>
           <details><summary>配置摘要</summary><p>{formal.configSha256}</p></details>
           <p>本地工作台草稿与试运行版本独立保存，不作为主地图正式配置。</p>

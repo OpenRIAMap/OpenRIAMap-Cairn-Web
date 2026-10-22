@@ -1,3 +1,4 @@
+import {assertKnownMigrationInput} from './contract';
 import type { ConfigPackageV3, GeometryKind, RenderStyle, ZoomPriorityRule } from './types';
 import { migrateConfigToR11 } from './r11Migration';
 import { basePointFromLegacy, ICON_LIBRARY } from './pointSymbol';
@@ -7,7 +8,7 @@ export function r12PointStyle(style: RenderStyle, confirmHiddenFallback = false)
   // A historical hide decision needs an explicit user choice. Preserve the invalid draft until then.
   if (style.icon?.fallback === 'hide' && !confirmHiddenFallback) return structuredClone(style);
   const shape = basePointFromLegacy({ ...style, size: style.size ?? Math.max(4, Number(style.weight ?? 2) * 3) });
-  const { pointShape: _shape, icon, size: _size, weight: _weight, stroke: _stroke, fill: _fill, strokeOpacity: _opacity, fillOpacity: _fillOpacity, lineCap: _cap, lineJoin: _join, ...other } = style;
+  const { halo:_halo,pointShape: _shape, icon, size: _size, weight: _weight, stroke: _stroke, fill: _fill, strokeOpacity: _opacity, fillOpacity: _fillOpacity, lineCap: _cap, lineJoin: _join, ...other } = style;
   return { ...other, pointSymbol: icon ? { kind: 'externalImage', image: { mode: 'fieldUrl', field: icon.source, presentation: { sizePx: { width: icon.size[0], height: icon.size[1] }, placement: { anchor: { mode: 'custom', x: icon.anchor[0], y: icon.anchor[1] }, offsetPx: { x: 0, y: 0 } } } }, fallback: shape } : { kind: 'shape', shape } };
 }
 export function r12RenderRule(rule: ZoomPriorityRule, geometry: GeometryKind): ZoomPriorityRule {
@@ -17,6 +18,7 @@ export function r12RenderRule(rule: ZoomPriorityRule, geometry: GeometryKind): Z
   return result;
 }
 export function migrateConfigToR12(value: ConfigPackageV3): { config: ConfigPackageV3; changes: string[]; unresolved: string[] } {
+  assertKnownMigrationInput(value.contractRevision);
   if (value.contractRevision >= 12) return { config: structuredClone(value), changes: [], unresolved: [] };
   const previous = value.contractRevision < 11 ? migrateConfigToR11(value) : { config: structuredClone(value), changes: [] };
   const config = previous.config, changes = [...previous.changes], unresolved: string[] = [];
@@ -39,6 +41,6 @@ export function migrateConfigToR12(value: ConfigPackageV3): { config: ConfigPack
       return converted;
     });
   }
-  changes.push('升级契约 r12；原始历史配置保持可读。Pinhead v25 资源能力已声明，未自动把旧 hide 回退改成圆点。');
+  changes.push('升级契约 c12；原始历史配置保持可读。Pinhead v25 资源能力已声明，未自动把旧 hide 回退改成圆点。');
   return { config, changes, unresolved };
 }

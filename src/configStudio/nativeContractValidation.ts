@@ -1,4 +1,6 @@
 import generated from './native-contract-schema.generated.json';
+import {symbolHalos} from './halo';
+import type {ConfigPackageV3,RenderStyle} from './types';
 type Schema = { ref?: string; type?: string; const?: unknown; anyOf?: Schema[]; tuple?: Schema[]; items?: Schema; properties?: Record<string, Schema>; required?: string[]; additionalProperties?: Schema };
 export type NativeStructureIssue = { path: string; message: string };
 /** Strict executable shape generated from the same TypeScript contract used
@@ -37,5 +39,21 @@ export function validateNativeStructure(value: unknown): NativeStructureIssue[] 
     }
     return typeof value === schema.type && (schema.type !== 'number' || Number.isFinite(value)) ? [] : [{ path, message: `配置值必须为有效的 ${schema.type}。` }];
   };
-  return inspect(value, generated.root, 'config', 0);
+  const issues=inspect(value, generated.root, 'config', 0);
+  if(issues.length)return issues;
+  const config=value as ConfigPackageV3;
+  const check=(style:RenderStyle|undefined,path:string,required:boolean)=>{
+    const halos=[{path:path+'/halo',value:style?.halo,required},...symbolHalos(style?.pointSymbol).map(row=>({path:path+'/pointSymbol/'+row.path,value:row.value,required:config.contractRevision>=14}))];
+    for(const row of halos){
+      if(config.contractRevision<14&&row.value!==undefined)issues.push({path:row.path,message:'Halo 最低要求契约 c14，不能在旧契约中加入新属性。'});
+      if(config.contractRevision>=14&&row.required&&!row.value)issues.push({path:row.path,message:'缺少 c14 必需 Halo 设置，请明确迁移来源配置。'});
+    }
+    if(style?.pointSymbol&&style.halo)issues.push({path:path+'/halo',message:'点状显示的 Halo 必须放在具体形状／图标／图片定义中，不能同时设置顶层 Halo。'});
+  };
+  for(const node of config.nodes)for(const [geometry,profile] of Object.entries(node.geometryProfiles))if(profile)for(const rule of profile.zoomPriority.rules){
+    const path=`config/nodes/${node.nodeId}/geometryProfiles/${geometry}/rules/${rule.id}/style`;
+    check(rule.style,path,config.contractRevision>=14&&geometry!=='Point'&&rule.representation!=='point'&&rule.representation!=='hidden'&&rule.representation!=='labelOnly');
+    for(const branch of rule.conditionalOverrides??[])check(branch.style,`${path}/conditionalOverrides/${branch.id}`,false);
+  }
+  return issues;
 }

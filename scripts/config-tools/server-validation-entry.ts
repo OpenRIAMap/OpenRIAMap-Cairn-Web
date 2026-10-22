@@ -1,3 +1,5 @@
+import {CONTRACT_CAPABILITIES,supportsContract} from '../../src/configStudio/contract';
+export {CONTRACT_CAPABILITIES};
 import { validateNavigationRecords } from '../../src/configStudio/navigationValidation';
 export {stableConfigText as configurationSnapshotText} from '../../src/configRuntime/configurationFingerprint';
 import {readableClassification} from '../../src/configRuntime/classificationCompatibility';
@@ -13,11 +15,11 @@ import {validateV3WorkflowRecords} from '../../src/configStudio/workflowKernel';
 import {assertStructureTargets} from '../../src/configStudio/structureCommit';
 import type { ConfigPackageV3, MountedFeatureRecord } from '../../src/configStudio/types';
 
-export const rulesVersion='cairnmap-r13-production-1';
+export const rulesVersion='cairnmap-c14-production-1';
 export const validateConfiguration=validateConfigPackage;
 export async function validateConfigurationArchive(bytes:Uint8Array) {
   const config=await readRawNativePackage(new File([bytes], 'configuration.zip') as unknown as globalThis.File) as ConfigPackageV3;
-  if(![11,12,13].includes(config.contractRevision))throw Error('Publication requires native contract r11, r12 or r13; historical imports remain editable.');
+  if(!supportsContract('publication',config.contractRevision))throw Error('Publication requires supported contracts '+CONTRACT_CAPABILITIES.publication.map(v=>'c'+v).join(', ')+'.');
   const report=validateConfigPackage(config);
   if(!report.valid)throw Object.assign(Error('configuration-semantic-validation-failed'),{report});
   const zip=await JSZip.loadAsync(bytes),configBody=await zip.file('config.json')!.async('uint8array'),manifestBody=await zip.file('manifest.json')!.async('uint8array');

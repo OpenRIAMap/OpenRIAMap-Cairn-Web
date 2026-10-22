@@ -1,3 +1,4 @@
+import {assertKnownMigrationInput} from './contract';
 import { defaultApplicationSettings } from '../core/project/applicationDefaults';
 import type { CategorySearch, ConfigPackageV3 } from './types';
 import { resolveNodeFieldSettings } from './nodeFieldSettings';
@@ -13,7 +14,8 @@ export type R10MigrationReport={from:number;to:10;changes:Array<{path:string;mes
 /** Upgrade adds capabilities without reusing the frozen r9/r5 identity. */
 export function migrateConfigToR10(value:ConfigPackageV3):{config:ConfigPackageV3;report:R10MigrationReport}{
   const report:R10MigrationReport={from:value.contractRevision,to:10,changes:[]};
-  if(value.contractRevision===10)return {config:structuredClone(value),report};
+  assertKnownMigrationInput(value.contractRevision);
+  if(value.contractRevision>=10)return {config:structuredClone(value),report};
   const original=value.contractRevision<9?migrateConfigToR9(value):structuredClone(value),config=structuredClone(original);
   config.contractRevision=10;config.revision=Math.max(value.revision+1,6);
   config.application=defaultApplicationSettings();

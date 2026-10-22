@@ -1,3 +1,4 @@
+import {addC14ProfileDefaults} from './contractMigration';
 import { r12RenderRule } from './r12Migration';
 import type { ConfigPackageV3, GeometryKind, GeometryProfile, ZoomPriorityRule } from './types';
 import { orderFactoryWorkflowForms } from './workflowFormMigration';
@@ -21,12 +22,13 @@ export function normalizeEditedRenderRule(rule: ZoomPriorityRule, revision: numb
 export function createEditableConfigPackageFromCurrentProject(): ConfigPackageV3 {
   const source = createConfigPackageFromCurrentProject();
   const migration = migrateRenderRulesToR7(source);
-  if (!migration.config) throw new Error(`原生 r7 工厂包迁移失败：${migration.issues.join('；')}`);
+  if (!migration.config) throw new Error(`原生 c7 工厂包迁移失败：${migration.issues.join('；')}`);
   const config=migrateFieldsToR8(migration.config);config.workflows=config.workflows.map(orderFactoryWorkflowForms);
   return { ...config, revision: source.revision + 2 };
 }
 export function editableGeometryProfile(geometry: GeometryKind, revision: number): GeometryProfile {
   const profile = createDefaultGeometryProfile(geometry);
   profile.zoomPriority.rules = profile.zoomPriority.rules.map(rule => normalizeEditedRenderRule(revision>=12?r12RenderRule(rule,geometry):rule, revision));
+  if(revision>=14)addC14ProfileDefaults(profile,geometry);
   return profile;
 }

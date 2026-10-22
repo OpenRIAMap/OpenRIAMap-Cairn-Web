@@ -147,13 +147,14 @@
     "test:navigation-r13": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-r13.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-runtime-r13.ts",
     "test:optional-field-cleanup": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-optional-field-cleanup.ts",
     "verify:production-build": "node scripts/config-tools/build-server-validation.mjs --check && node scripts/config-tools/vendor-pinhead.mjs --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/prepare-production-seed.ts --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/validate-production-build.ts",
-    "verify:ci": "npm run verify:config-v32 && npm run test:release-repair && npm run test:production-runtime && npm run test:deployment-finalization && npm run test:optional-field-cleanup && npm run test:navigation-canonical && npm run test:workflow-search && npm run test:production-build-guards && npm run test:publication-deployment && npm run test:studio-formal-default && npm run test:studio-temporary-package",
+    "verify:ci": "npm run verify:config-v32 && npm run test:release-repair && npm run test:production-runtime && npm run test:deployment-finalization && npm run test:optional-field-cleanup && npm run test:navigation-canonical && npm run test:workflow-search && npm run test:production-build-guards && npm run test:publication-deployment && npm run test:studio-formal-default && npm run test:studio-temporary-package && npm run test:c14",
     "test:navigation-canonical": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-runtime-r13.ts --canonical-only",
     "test:workflow-search": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-workflow-search.ts",
     "test:production-build-guards": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-production-build-guards.ts",
     "test:publication-deployment": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-publication-deployment.ts",
     "test:studio-formal-default": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-studio-formal-default.ts",
-    "test:studio-temporary-package": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-studio-temporary-package.ts"
+    "test:studio-temporary-package": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-studio-temporary-package.ts",
+    "test:c14": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-contract-maintenance.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-c14-migration.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-c14-halo.ts"
   },
   "dependencies": {
     "jszip": "^3.10.1",

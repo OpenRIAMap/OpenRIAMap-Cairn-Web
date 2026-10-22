@@ -2,8 +2,9 @@ import { uniqueImageTarget } from './imageTargetIndex';
 import { resolveLabelText } from '@/configStudio/labelTemplate';
 import {resolveMappedColor} from '../../../configStudio/renderScalar';
 import { validCssColor } from '../../../configStudio/cssColor';
+import {haloWidth} from '../../../configStudio/halo';
 import { placementAnchor, acceptableImageUrl, pointSymbolReach } from '../../../configStudio/pointSymbol';
-import { composeIconSvg } from '../../../configStudio/iconComposition';
+import { composeIconSvg,iconCanvas } from '../../../configStudio/iconComposition';
 import { pinheadPath, externalImageAsset, symbolAssetEpoch } from '../rendering/symbolAssets';
 import {buildStructureIndex,structureSelector,STRUCTURE_CONTEXT_ID,type StructureIndex} from '../../../configStudio/structureRoleIndex';
 import { isNativeConfigRevision } from '../../../configStudio/contract';
@@ -80,7 +81,7 @@ export function configRuntimeViewportReach(config: ConfigPackageV3, record: Feat
   const offsets = active?.extensions?.anchor?.candidateOffsetsPx ?? [];
   return Math.max(1024, textLength * fontSize * 2 + Math.abs(label?.offsetX ?? 0) + Math.abs(label?.offsetY ?? 0)
     + Math.abs(style?.symbolOffsetPx?.x ?? 0) + Math.abs(style?.symbolOffsetPx?.y ?? 0)
-    + pointSymbolReach(style?.pointSymbol) + (style?.size ?? 0) + (style?.weight ?? 0) + Math.max(0, ...(style?.icon?.size ?? []), ...(style?.icon?.anchor ?? []).map(Math.abs))
+    + haloWidth(style?.halo) + pointSymbolReach(style?.pointSymbol) + (style?.size ?? 0) + (style?.weight ?? 0) + Math.max(0, ...(style?.icon?.size ?? []), ...(style?.icon?.anchor ?? []).map(Math.abs))
     + Math.max(0, ...offsets.map(offset => Math.abs(offset.x) + Math.abs(offset.y))) + (active?.extensions?.hitTolerancePx ?? 0));
 }
 
@@ -653,6 +654,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
     lineJoin: style.lineJoin ?? 'round',
     pane,
     interactive: pathInteractive,
+    halo:haloWidth(style.halo)>0?{widthPx:haloWidth(style.halo),color:resolveColor(record,style.halo!.color,'#ffffff',store)}:undefined,
   };
   const labelKey = labelStyleKey(nativeLabelStyle, record, store);
   const screenGate = active.extensions?.screenGate;
@@ -683,9 +685,12 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
       : { kind: 'shape' as const, shape: style.pointShape, radius: style.size ?? Math.max(4, Number(style.weight ?? 2) * 3), style: pathStyle, pane, zIndexOffset: active.geometryStack.zLevel + (active.geometryStack.zIndexOffset ?? 0) + ruleDisplayPriority };
   const selectedVisual = resolveConfigInteractionVisual(config, record, ctx, 'selected', store);
   let nativePointPlan: Record<string, unknown> = { ...pointPlan, screenOffsetPx: style.symbolOffsetPx, followLabelAnchor: style.symbolAnchor === 'label', visibility: style.symbolVisibility };
+  if(pathStyle.halo&&nativePointPlan.kind==='circle')nativePointPlan={...nativePointPlan,kind:'shape',shape:'circle',halo:pathStyle.halo};
+  else if(pathStyle.halo)nativePointPlan={...nativePointPlan,halo:pathStyle.halo};
   if (pointSymbol && pointSymbol.kind !== 'shape') {
     let url: string | undefined, size: [number, number] | undefined, anchor: [number, number] | undefined;
     let status: 'pending' | 'success' | 'failure' = 'failure';
+    let imageHalo:import('../rendering/geometryHalo').ResolvedHalo|undefined,hitIconSize:[number,number]|undefined,hitIconAnchor:[number,number]|undefined,haloInsetPx=0;
     if (pointSymbol.kind === 'icon') {
       const source = pointSymbol.icon;
       const item = source.mode === 'single' ? source.item : source.entries.find(row => row.value === featureValue(record, source.field))?.item;
@@ -693,7 +698,8 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
         const asset = pinheadPath(item.id); status = asset.phase;
         if (asset.phase === 'success' && asset.value) {
           url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(composeIconSvg(item, asset.value, (binding, fallback) => resolveColor(record, binding, fallback, store)));
-          size = [item.sizePx, item.sizePx]; anchor = placementAnchor(item.placement, ...size);
+          const canvas=iconCanvas(item);hitIconSize=[item.sizePx,item.sizePx];hitIconAnchor=placementAnchor(item.placement,...hitIconSize);
+          size=[canvas.size,canvas.size];anchor=[hitIconAnchor[0]+canvas.padding,hitIconAnchor[1]+canvas.padding];haloInsetPx=canvas.padding;
         }
       }
     } else {
@@ -712,11 +718,11 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
       }
       if (acceptableImageUrl(candidate) && presentation) {
         const asset = externalImageAsset(candidate); status = asset.phase;
-        if (status === 'success') { url = candidate; size = [presentation.sizePx.width, presentation.sizePx.height]; anchor = placementAnchor(presentation.placement, ...size); }
+        if (status === 'success') { imageHalo=haloWidth(presentation.halo)>0?{widthPx:haloWidth(presentation.halo),color:resolveColor(record,presentation.halo!.color,'#ffffff',store)}:undefined; url = candidate; size = [presentation.sizePx.width, presentation.sizePx.height]; anchor = placementAnchor(presentation.placement, ...size); }
       }
     }
     if (status === 'pending') nativePointPlan = { ...nativePointPlan, kind: 'circle', radius: 0, style: { ...pathStyle, opacity: 0, fillOpacity: 0, weight: 0, interactive: false }, assetStatus: status };
-    else if (status === 'success' && url && size && anchor) nativePointPlan = { ...nativePointPlan, kind: 'icon', iconUrl: url, iconUrlFrom: undefined, iconSize: size, iconAnchor: anchor, assetStatus: status };
+    else if (status === 'success' && url && size && anchor) nativePointPlan = { ...nativePointPlan, kind: 'icon', halo:undefined,iconUrl: url, iconUrlFrom: undefined, iconSize: size, iconAnchor: anchor, imageHalo,hitIconSize,hitIconAnchor,haloInsetPx,assetStatus: status };
     else nativePointPlan = { ...nativePointPlan, assetStatus: 'failure' };
   }
 

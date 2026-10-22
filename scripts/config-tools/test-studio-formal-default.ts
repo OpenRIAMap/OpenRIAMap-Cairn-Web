@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { fetchFormalDefaultConfig } from '../../src/configStudio/formalDefault';
 import { loadDefaultConfig } from '../../src/configStudio/defaultConfigProvider';
 import { migrateConfigToR12 } from '../../src/configStudio/r12Migration';
+import {migratePackageToC14} from '../../src/configStudio/contractMigration';
 import { migrateConfigToR13 } from '../../src/configStudio/r13Migration';
 import { hasStudioDraft, type StudioEditingSession } from '../../src/configStudio/studioSession';
 import { getFormalConfiguration, type ConfigurationIdentity } from '../../src/configRuntime/formalConfiguration';
@@ -31,7 +32,7 @@ globalThis.fetch = async (input, options) => {
   return new Response(bytes);
 };
 try {
-  for (const config of [seed, migrateConfigToR12(seed).config, migrateConfigToR13(seed).config]) {
+  for (const config of [seed, migrateConfigToR12(seed).config, migrateConfigToR13(seed).config, migratePackageToC14(migrateConfigToR13(seed).config).config]) {
     select(config);
     const loaded = await fetchFormalDefaultConfig();
     assert.equal(loaded.contractRevision, config.contractRevision);
@@ -58,5 +59,5 @@ try {
   for (const field of ['draft', 'tree', 'editing', 'lookupDraft', 'engineDraft', 'packageCandidate', 'workflowSession', 'generalDrafts']) {
     assert.equal(hasStudioDraft({ ...session, [field]: field === 'generalDrafts' ? { preferences: {} } : field==='workflowSession'?{draft:{},tables:[],selectedId:''}:true } as StudioEditingSession), true, field);
   }
-  console.log(`Studio formal defaults: contracts r11/r12/r13, hashes, identity, controlled URLs, publication race, retry and all draft scopes passed (${requests.length} static requests; zero SCF calls).`);
+  console.log(`Studio formal defaults: contracts c11/c12/c13/c14, hashes, identity, controlled URLs, publication race, retry and all draft scopes passed (${requests.length} static requests; zero SCF calls).`);
 } finally { globalThis.fetch = originalFetch; }

@@ -113,6 +113,8 @@ export type RenderColorBinding =
    */
   | { mode: 'relatedLine'; strategy: 'featureRelation' | 'platformFirstLine' | 'stationFirstPlatform'; fallbackColor?: string };
 export type RenderPointShape = 'circle' | 'square' | 'triangle' | 'regular4' | 'regular5' | 'regular6';
+/** Optional in historical contracts; c14 requires it on complete symbol styles. */
+export type HaloSettings = { enabled: boolean; widthPx: number; color: RenderColorBinding };
 export type RenderDashPreset = 'solid' | 'dash' | 'dotDash' | 'dotDotDash';
 export type RenderPointIcon = {
   source: string;
@@ -125,18 +127,20 @@ export type SymbolPlacement = {
   offsetPx: { x: number; y: number };
 };
 export type BasePointStyle = {
+  halo?: HaloSettings;
   pointShape: RenderPointShape; size: number; weight: number;
   lineCap: 'butt' | 'round' | 'square'; lineJoin: 'miter' | 'round' | 'bevel';
   stroke: RenderColorBinding; fill: RenderColorBinding;
   strokeOpacity: number; fillOpacity: number;
 };
 export type IconItem = {
+  halo?: HaloSettings;
   library: 'pinhead'; id: string; sizePx: number;
   foreground: RenderColorBinding; foregroundOpacity: number;
   plate?: { shape: 'circle' | 'square' | 'roundedRect' | 'pin'; paddingPx: number; radiusPx?: number; fill: RenderColorBinding; stroke: RenderColorBinding; strokeWidthPx: number; fillOpacity: number; strokeOpacity: number };
   placement: SymbolPlacement;
 };
-export type ImagePresentation = { sizePx: { width: number; height: number }; placement: SymbolPlacement };
+export type ImagePresentation = { sizePx: { width: number; height: number }; placement: SymbolPlacement; halo?: HaloSettings };
 export type ImageSource =
   | { mode: 'fixed'; url: string; presentation: ImagePresentation }
   | { mode: 'fieldUrl'; field: string; presentation: ImagePresentation }
@@ -179,6 +183,8 @@ export type RenderLabelVisualStyle = {
 /** @deprecated Read-only compatibility for contract revisions <= 3. */
 export type RenderFont = 'whiteBlackOutline' | 'blue' | 'capsule';
 export type RenderStyle = {
+  /** Geometry halo; partial conditional styles omit it to inherit the main style. */
+  halo?: HaloSettings;
   /** Screen pixels; does not modify source/world geometry. */
   symbolOffsetPx?: { x: number; y: number };
   /** True symbols may follow their label's visibility, without decorating text. */
@@ -946,7 +952,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */

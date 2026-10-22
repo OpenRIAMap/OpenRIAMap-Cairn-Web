@@ -1,3 +1,4 @@
+import {assertKnownMigrationInput} from './contract';
 import type { CardItem, ConfigPackageV3 } from './types';
 import { resolveCardConfiguration, resolveEffectiveFields } from './runtime';
 import { resolveWorkflowFields, fieldImportErrors } from './fieldReuse';
@@ -7,7 +8,8 @@ import {renderGroupToFormula} from './renderBooleanFormula';
 
 /** Materialise the old executed values before removing live source metadata. */
 export function migrateConfigToR9(value:ConfigPackageV3):ConfigPackageV3 {
-  if(value.contractRevision===9)return structuredClone(value);
+  assertKnownMigrationInput(value.contractRevision);
+  if(value.contractRevision>=9)return structuredClone(value);
   let original=structuredClone(value);
   if(original.contractRevision<8) {const migration=migrateRenderRulesToR7(original);if(!migration.config)throw Error(migration.issues.join('；'));original=migrateFieldsToR8(migration.config);}
   const config=structuredClone(original);

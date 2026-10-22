@@ -11,5 +11,6 @@ export type WorkspaceCheckpoint = {
   schemaVersion: 'cairnmap.studio-workspace.v1';
   config: ConfigPackageV3; session?: StudioEditingSession;
   validation?: WorkspaceValidation; importedDiagnostic?: TemporaryDiagnostic;
+  migration?: import('./migrationAttachment').MigrationAttachment;
   generation: number; updatedAt: string;
 };

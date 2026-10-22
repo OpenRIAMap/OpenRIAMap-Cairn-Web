@@ -64,7 +64,7 @@ for(const value of ['',[],null]){mounted.tags.nomenclator=value;assert.equal(mis
 field.requiredWhen=[{kind:'fieldEquals',field:'tags.flag',value:'yes'}];mounted.tags={flag:'no'};assert.equal(missing(),false);mounted.tags.flag='yes';assert.equal(missing(),true);
 field.validateExistingData=false;assert.equal(missing(),false);
 const old=JSON.parse(fs.readFileSync('src/configStudio/defaults/r9-r5.config.json','utf8')) as ConfigPackageV3;
-for(const code of ['BUD','STB','FLR','STF','RLE']){const artifact=await createCategoryArtifact(old,old.nodes.find(n=>n.path.class===code&&!n.path.kind)!.nodeId,'classTree');assert.throws(()=>prepareCategoryImport(base,artifact),/旧 r9.*完整配置包/);}
+for(const code of ['BUD','STB','FLR','STF','RLE']){const artifact=await createCategoryArtifact(old,old.nodes.find(n=>n.path.class===code&&!n.path.kind)!.nodeId,'classTree');assert.throws(()=>prepareCategoryImport(base,artifact),/旧 c9.*完整配置包/);}
 const upgraded=migrateConfigToR11(old).config;
 let trees=0;
 for(const node of upgraded.nodes.filter(n=>!n.path.kind)){assert.ok(prepareCategoryImport(base,await createCategoryArtifact(upgraded,node.nodeId,'classTree')).report.valid);trees++;}

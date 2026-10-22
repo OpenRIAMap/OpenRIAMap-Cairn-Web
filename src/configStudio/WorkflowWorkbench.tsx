@@ -1,5 +1,7 @@
 import {HelpControl} from './SettingHelp';
 import {NewWorkflowDialog,type WorkflowCreationDraft} from './NewWorkflowDialog';
+import {captureImportOriginal} from './migrationAttachment';
+import {getWorkspaceState,setMigrationAttachment} from './workspaceController';
 import {buildWorkflowArtifact,prepareWorkflowArtifactImport,type WorkflowArtifact} from './workflowArtifact';
 import { Download, FileUp, FolderOpen, Plus, Save, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -94,9 +96,11 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
   };
   const importFile = async (file: File) => {
     try {
+      if(!confirmDiscardDraft('导入工作流设计稿'))return;
+      setMigrationAttachment({original:await captureImportOriginal(file)});
       const raw=JSON.parse(await file.text());
       const imported=prepareWorkflowArtifactImport(config,raw);
-      if (!confirmDiscardDraft('导入工作流设计稿')) return;
+      if(imported.migration)setMigrationAttachment({...getWorkspaceState().migration,report:imported.migration},imported.workflow);
       setDraftTables(imported.tables);
       setDraft(canonicalizeWorkflow(imported.workflow,{...config,lookupTables:[...config.lookupTables??[],...imported.tables]}));
       setSelectedId('');

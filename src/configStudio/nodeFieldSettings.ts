@@ -20,7 +20,7 @@ export function incomingNodeFieldSettings(config:ConfigPackageV3,node:CategoryNo
 export function validateNodeFieldSettings(config:ConfigPackageV3,resolveFields:(config:ConfigPackageV3,path:ClassificationPath)=>FieldDefinition[]):ConfigValidationIssue[]{
   const issues:ConfigValidationIssue[]=[];
   const error=(path:string,message:string)=>issues.push({severity:'error',code:'field-settings-invalid',path,message});
-  if(config.contractRevision<10){if(config.nodes.some(node=>node.fieldSettings))error('nodes','通用包含关系与搜索控制需要 r10。');return issues;}
+  if(config.contractRevision<10){if(config.nodes.some(node=>node.fieldSettings))error('nodes','通用包含关系与搜索控制需要 c10。');return issues;}
   if(config.contextBindings?.length)error('contextBindings','r10 以分类自身角色定义包含关系，不能保留旧的分类对绑定。');
   for(const node of config.nodes){
     const path=`nodes/${node.nodeId}/fieldSettings`,effective=resolveNodeFieldSettings(config,node.path),incoming=incomingNodeFieldSettings(config,node);

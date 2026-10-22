@@ -13,6 +13,7 @@ export function localMappingConstraints(rule: ZoomPriorityRule): LocalMappingCon
   };
   const icon = (item: IconItem, path: string, parents: PreviewPin[]) => {
     colors(item.foreground, path + '/foreground', parents);
+    colors(item.halo?.color,path+'/halo/color',parents);
     colors(item.plate?.fill, path + '/plate/fill', parents); colors(item.plate?.stroke, path + '/plate/stroke', parents);
   };
   const symbol = rule.style?.pointSymbol;
@@ -20,6 +21,7 @@ export function localMappingConstraints(rule: ZoomPriorityRule): LocalMappingCon
     const base = symbol.kind === 'shape' ? symbol.shape : symbol.fallback;
     colors(base.stroke, 'style/pointSymbol/' + (symbol.kind === 'shape' ? 'shape' : 'fallback') + '/stroke');
     colors(base.fill, 'style/pointSymbol/' + (symbol.kind === 'shape' ? 'shape' : 'fallback') + '/fill');
+    colors(base.halo?.color,'style/pointSymbol/'+(symbol.kind==='shape'?'shape':'fallback')+'/halo/color');
     if (symbol.kind === 'icon') {
       if (symbol.icon.mode === 'single') icon(symbol.icon.item, 'style/pointSymbol/icon/item', []);
       else {
@@ -31,9 +33,12 @@ export function localMappingConstraints(rule: ZoomPriorityRule): LocalMappingCon
       }
     } else if (symbol.kind === 'externalImage' && symbol.image.mode === 'valueMap') {
       const source = symbol.image;
-      source.entries.forEach((row, i) => rows.push({ path: `style/pointSymbol/image/entries/${i}`, pins: [{ field: source.field, value: row.value }] }));
+      source.entries.forEach((row,i)=>{const path=`style/pointSymbol/image/entries/${i}`,pins=[{field:source.field,value:row.value}];rows.push({path,pins});colors(row.presentation.halo?.color,path+'/presentation/halo/color',pins);});
+    } else if(symbol.kind==='externalImage'&&symbol.image.mode!=='valueMap'){
+      colors(symbol.image.presentation.halo?.color,'style/pointSymbol/image/presentation/halo/color');
     }
   } else { colors(rule.style?.stroke, 'style/stroke'); colors(rule.style?.fill, 'style/fill'); }
+  colors(rule.style?.halo?.color,'style/halo/color');
   colors(rule.label?.style?.color, 'label/style/color');
   const pill = rule.label?.style?.pill;
   if (pill) for (const key of ['textColor','backgroundColor','strokeColor'] as const) colors(pill[key], 'label/style/pill/' + key);

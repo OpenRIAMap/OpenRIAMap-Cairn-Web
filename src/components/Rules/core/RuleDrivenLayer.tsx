@@ -5,6 +5,7 @@ import {recordWorld,recordPath} from '@/configStudio/structureRoleIndex';
 import {normalizeRuleSourceWorldId} from '@/components/Rules/data/ruleDataSources';
 import { isNativeConfigRevision } from '../../../configStudio/contract';
 import { featureLabelParts, componentLabelId, filterFeatureGeometryParts } from '@/components/Rules/rendering/multipartLabels';
+import {bindGeometryHalo,nativeImageIcon} from '../rendering/geometryHalo';
 import { iconBoundsAtAnchor, unionScreenRects, type LabelPlacement } from '@/components/Rules/rendering/labelPlacement';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { subscribeSymbolAssets, symbolAssetEpoch } from '../rendering/symbolAssets';
@@ -809,9 +810,9 @@ function nativeHitProxySignature(kind: string, tolerance: number, baseSize: numb
   return enabled && tolerance > 0 ? `${kind}:${tolerance}:${baseSize}` : undefined;
 }
 
-function createNativePointHitProxy(latlngs: L.LatLng[], radius: number, iconPlan?: { iconSize?: [number, number]; iconAnchor?: [number, number] }, tolerance = 0): L.Layer {
+function createNativePointHitProxy(latlngs: L.LatLng[], radius: number, iconPlan?: { iconSize?: [number, number]; iconAnchor?: [number, number]; hitIconSize?:[number,number];hitIconAnchor?:[number,number] }, tolerance = 0): L.Layer {
   if (iconPlan) {
-    const bounds = iconBoundsAtAnchor({ x: 0, y: 0 }, iconPlan.iconSize ?? [24, 24], iconPlan.iconAnchor ?? [12, 12], tolerance);
+    const bounds = iconBoundsAtAnchor({ x: 0, y: 0 }, iconPlan.hitIconSize??iconPlan.iconSize ?? [24, 24], iconPlan.hitIconAnchor??iconPlan.iconAnchor ?? [12, 12], tolerance);
     const makeIcon = (latlng: L.LatLng) => L.marker(latlng, { pane: 'ria-point', interactive: true, icon: L.divIcon({ className: 'ria-config-hit-proxy', iconSize: [bounds.w, bounds.h], iconAnchor: [-bounds.x, -bounds.y], html: '<span style="display:block;width:100%;height:100%;background:transparent"></span>' }) });
     return latlngs.length === 1 ? makeIcon(latlngs[0]) : L.featureGroup(latlngs.map(makeIcon));
   }
@@ -950,16 +951,16 @@ function safeSvgColor(value: unknown, fallback: string): string {
 }
 
 function configIconSignature(plan: any, url: string | undefined): string | undefined {
-  return url ? JSON.stringify([url, plan?.iconSize ?? [24, 24], plan?.iconAnchor ?? [12, 12], plan?.zIndexOffset ?? 0]) : undefined;
+  return url ? JSON.stringify([url, plan?.iconSize ?? [24, 24], plan?.iconAnchor ?? [12, 12], plan?.zIndexOffset ?? 0,plan?.imageHalo??null]) : undefined;
 }
 
 function configShapeSignature(plan: any): string {
-  return `config-shape:${plan?.shape ?? 'square'}:${plan?.radius ?? 6}:${plan?.style?.color ?? ''}:${plan?.style?.fillColor ?? ''}:${plan?.style?.weight ?? ''}:${plan?.style?.opacity ?? ''}:${plan?.style?.fillOpacity ?? ''}`;
+  return `config-shape:${plan?.shape ?? 'square'}:${plan?.radius ?? 6}:${plan?.style?.color ?? ''}:${plan?.style?.fillColor ?? ''}:${plan?.style?.weight ?? ''}:${plan?.style?.opacity ?? ''}:${plan?.style?.fillOpacity ?? ''}:${JSON.stringify(plan?.halo??null)}`;
 }
 
 function makeConfigShapeMarker(latlng: L.LatLng, plan: any, pane: string, interactive: boolean): L.Marker {
   const radius = Math.max(2, Number(plan?.radius ?? 6));
-  const size = Math.ceil(radius * 2 + Math.max(0, Number(plan?.style?.weight ?? 0)) * 2 + 4);
+  const size = Math.ceil(radius * 2 + Math.max(0, Number(plan?.style?.weight ?? 0)) * 2 + 4 + 2*Number(plan?.halo?.widthPx??0));
   const center = size / 2;
   const outer = Math.max(1, radius - 1);
   const stroke = safeSvgColor(plan?.style?.color, '#111827');
@@ -972,7 +973,7 @@ function makeConfigShapeMarker(latlng: L.LatLng, plan: any, pane: string, intera
     return `${(center + outer * Math.cos(angle)).toFixed(2)},${(center + outer * Math.sin(angle)).toFixed(2)}`;
   }).join(' ');
   const shape = String(plan?.shape ?? 'square');
-  const figure = shape === 'triangle'
+  const figure = shape === 'circle' ? `<circle cx="${center}" cy="${center}" r="${radius}"/>` : shape === 'triangle'
     ? `<polygon points="${pointsFor(3)}" />`
     : shape === 'regular4'
       ? `<polygon points="${pointsFor(4, -45)}" />`
@@ -981,7 +982,7 @@ function makeConfigShapeMarker(latlng: L.LatLng, plan: any, pane: string, intera
         : shape === 'regular6'
           ? `<polygon points="${pointsFor(6, -90)}" />`
           : `<rect x="${(center - outer).toFixed(2)}" y="${(center - outer).toFixed(2)}" width="${(outer * 2).toFixed(2)}" height="${(outer * 2).toFixed(2)}" />`;
-  const html = `<svg aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg"><g stroke="${stroke}" fill="${fill}" stroke-width="${strokeWidth}" stroke-opacity="${opacity}" fill-opacity="${fillOpacity}">${figure}</g></svg>`;
+  const html = `<svg aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${plan?.halo?.widthPx>0?`<g fill="none" stroke="${safeSvgColor(plan.halo.color,'#ffffff')}" stroke-width="${strokeWidth+2*plan.halo.widthPx}" stroke-linecap="${plan?.style?.lineCap??'round'}" stroke-linejoin="${plan?.style?.lineJoin??'round'}">${figure}</g>`:''}<g stroke="${stroke}" fill="${fill}" stroke-width="${strokeWidth}" stroke-opacity="${opacity}" fill-opacity="${fillOpacity}">${figure}</g></svg>`;
   return L.marker(latlng, {
     pane,
     icon: L.divIcon({ className: 'ria-config-shape-marker', html, iconSize: [size, size], iconAnchor: [center, center] }),
@@ -3419,14 +3420,14 @@ export default function RuleDrivenLayer(props: Props) {
           let h = 28;
 
           // circleMarker：radius 是 CircleMarkerOptions 才有，类型上用 any 取值即可（不改类型定义）
-          if (pointPlan?.kind === "circle") {
+          if (pointPlan?.kind === "circle" || pointPlan?.kind === "shape" && Number((pointPlan as any)?.halo?.widthPx??0)>0) {
             const radius = Number(
               (pointPlan as any)?.radius ??
                 (pointPlan as any)?.style?.radius ??
                 6,
             );
             const weight = Number((pointPlan as any)?.style?.weight ?? 0);
-            const half = Math.max(4, radius + weight + 2);
+            const half = Math.max(4, radius + weight + 2 + Number((pointPlan as any)?.halo?.widthPx??0));
             w = half * 2;
             h = half * 2;
           }
@@ -3445,7 +3446,7 @@ export default function RuleDrivenLayer(props: Props) {
           }
 
           const bounds = pointPlan?.kind === 'icon'
-            ? iconBoundsAtAnchor(pt, [w, h], pointPlan.iconAnchor ?? [w / 2, h / 2])
+            ? iconBoundsAtAnchor(pt, [w, h], pointPlan.iconAnchor ?? [w / 2, h / 2],pointPlan.imageHalo?.widthPx??0)
             : { x: pt.x - w / 2, y: pt.y - h / 2, w, h };
           avoidRectsPx.push({ ...bounds, ownerUid: displayPlan.anchor.multipartMode === 'perPart' ? componentLabelId(r.uid, symbolIndex) : r.uid });
         }
@@ -3702,10 +3703,10 @@ export default function RuleDrivenLayer(props: Props) {
             req.geometrySignature = configRuntime ? JSON.stringify(sourceRecord.multipartGeometry ?? sourceRecord.coords3 ?? sourceRecord.p3) : undefined;
             if (!req.symbolDensityBlocked && nativeBundle?.nativeSymbol?.visibility === 'withLabel' && (nativeSymbolPlan as any)?.assetStatus !== 'pending') {
               const offset=nativeBundle.nativeSymbol.screenOffsetPx??{x:0,y:0},plan=nativeSymbolPlan as any;
-              req.symbolBounds={radius:Number(plan?.radius??0)+Number(plan?.style?.weight??0)/2,offsetX:offset.x,offsetY:offset.y};
-              if(plan?.kind==='icon'||plan?.assetStatus){
+              req.symbolBounds={radius:Number(plan?.radius??0)+Number(plan?.style?.weight??0)/2+Number(plan?.halo?.widthPx??0),offsetX:offset.x,offsetY:offset.y};
+              if(plan?.kind==='icon'||plan?.assetStatus||symbolAnchors.length>1&&Number(plan?.halo?.widthPx??0)>0){
                 const reference=map.latLngToContainerPoint(req.anchorLatLng),parts=req.partIndex===undefined?(symbolAnchors.length?symbolAnchors:[req.anchorLatLng]):[symbolAnchors[req.partIndex]??req.anchorLatLng];
-                const boxes=parts.map(part=>{const p=map.latLngToContainerPoint(part),origin={x:p.x-reference.x+offset.x,y:p.y-reference.y+offset.y};return plan.kind==='icon'?iconBoundsAtAnchor(origin,plan.iconSize??[24,24],plan.iconAnchor??[12,12]):{x:origin.x-req.symbolBounds!.radius,y:origin.y-req.symbolBounds!.radius,w:2*req.symbolBounds!.radius,h:2*req.symbolBounds!.radius};});
+                const boxes=parts.map(part=>{const p=map.latLngToContainerPoint(part),origin={x:p.x-reference.x+offset.x,y:p.y-reference.y+offset.y};return plan.kind==='icon'?iconBoundsAtAnchor(origin,plan.iconSize??[24,24],plan.iconAnchor??[12,12],plan.imageHalo?.widthPx??0):{x:origin.x-req.symbolBounds!.radius,y:origin.y-req.symbolBounds!.radius,w:2*req.symbolBounds!.radius,h:2*req.symbolBounds!.radius};});
                 req.symbolBounds={...req.symbolBounds,box:unionScreenRects(boxes),anchorPx:nativeBundle.nativeSymbol.followLabelAnchor?undefined:reference};
               }
             }
@@ -4592,7 +4593,7 @@ function createLayerBundle(
     // Native V3 hit tolerance owns a separate transparent target.  Keeping the
     // visible marker non-interactive prevents one click from reaching both it
     // and the proxy, while legacy V1 keeps its original Leaflet event surface.
-    const nativePointHitEnabled = pointTolerance > 0 && (deletePickTarget || geomPointEnabled);
+    const nativePointHitEnabled = (pointTolerance > 0 || (Number(plan?.haloInsetPx??0)>0||Number(plan?.halo?.widthPx??0)>0)) && (deletePickTarget || geomPointEnabled);
     const pointInteractive = nativePointHitEnabled ? false : (deletePickTarget ? true : geomPointEnabled);
     const pointProxyRadius = Math.max(5, Number(plan?.radius ?? 5) + pointTolerance);
 
@@ -4604,7 +4605,7 @@ function createLayerBundle(
           if (iconUrl) {
             return L.marker(pointLatLng, {
               pane: mainPane,
-              icon: L.icon({ iconUrl, iconSize: plan.iconSize ?? [24, 24], iconAnchor: plan.iconAnchor ?? [12, 12] }),
+              icon: nativeImageIcon(plan,iconUrl),
               interactive: pointInteractive,
               zIndexOffset: (plan as any)?.zIndexOffset ?? 0,
             });
@@ -4686,11 +4687,7 @@ function createLayerBundle(
         main = cm;
         kind = "circleMarker";
       } else {
-        const icon = L.icon({
-          iconUrl,
-          iconSize: plan.iconSize ?? [24, 24],
-          iconAnchor: plan.iconAnchor ?? [12, 12],
-        });
+        const icon = nativeImageIcon(plan,iconUrl);
         main = L.marker(latlng, {
           pane: mainPane,
           icon,
@@ -4788,14 +4785,14 @@ function createLayerBundle(
     const plan = typeof symbol.point === 'function' ? symbol.point(r, ctx, store) : symbol.point;
     const mainPane = (plan as any)?.pane ?? symbol?.pane ?? 'ria-point';
     const pointTolerance = nativeHitTolerance(displayPlan);
-    const nativePointHitEnabled = pointTolerance > 0 && (deletePickTarget || (geomPointEnabled || geomPathEnabled));
+    const nativePointHitEnabled = (pointTolerance > 0 || (Number(plan?.haloInsetPx??0)>0||Number(plan?.halo?.widthPx??0)>0)) && (deletePickTarget || (geomPointEnabled || geomPathEnabled));
     const interactive = nativePointHitEnabled ? false : (deletePickTarget ? true : (geomPointEnabled || geomPathEnabled));
     const pointProxyRadius = Math.max(5, Number(plan?.radius ?? 5) + pointTolerance);
     const makeCenterMarker = (latlng: L.LatLng): L.Layer => plan?.kind === 'icon'
       ? (() => {
           const iconUrl = plan.iconUrl ?? (plan.iconUrlFrom ? String((r.featureInfo as any)?.[plan.iconUrlFrom] ?? '').trim() : undefined);
           return iconUrl
-            ? L.marker(latlng, { pane: mainPane, icon: L.icon({ iconUrl, iconSize: plan.iconSize ?? [24, 24], iconAnchor: plan.iconAnchor ?? [12, 12] }), interactive, zIndexOffset: plan.zIndexOffset ?? 0 })
+            ? L.marker(latlng, { pane: mainPane, icon: nativeImageIcon(plan,iconUrl), interactive, zIndexOffset: plan.zIndexOffset ?? 0 })
             : L.circleMarker(latlng, { pane: mainPane, radius: 5, interactive, color: '#111827', weight: 2, opacity: 0.9, fillOpacity: 0.6, fillColor: '#f97316' });
         })()
       : plan?.kind === 'shape'
@@ -4871,6 +4868,7 @@ function createLayerBundle(
             interactive: mainInteractive,
           });
 
+    bindGeometryHalo(main,(style as L.PathOptions&{halo?:import('../rendering/geometryHalo').ResolvedHalo})?.halo);
     // 【新增】几何点击：线/面要素本体点击 / 辅助线专用拾取
     (main as any).off?.("click");
     let hitProxy: L.Layer | undefined;
@@ -5021,7 +5019,7 @@ function updateLayerBundle(
       const expectedSignature = plan?.kind === 'shape' ? configShapeSignature(plan) : configIconSignature(plan, iconUrl);
       const centerSignature = JSON.stringify(centers.map((item) => [item.lat, item.lng]));
       const pointTolerance = nativeHitTolerance(displayPlan);
-      const nativePointHitEnabled = pointTolerance > 0 && (deletePickTarget || (geomPointEnabled || geomPathEnabled));
+      const nativePointHitEnabled = (pointTolerance > 0 || (Number(plan?.haloInsetPx??0)>0||Number(plan?.halo?.widthPx??0)>0)) && (deletePickTarget || (geomPointEnabled || geomPathEnabled));
       const nextInteractive = nativePointHitEnabled ? false : (deletePickTarget || geomPointEnabled || geomPathEnabled);
       const pointProxyRadius = Math.max(5, Number(plan?.radius ?? 5) + pointTolerance);
       const expectedHitProxySignature = nativeHitProxySignature('point-representation', pointTolerance, pointProxyRadius, nativePointHitEnabled);
@@ -5112,7 +5110,7 @@ function updateLayerBundle(
     // Marker interactivity cannot reliably be toggled in place.  Native V3
     // tolerance uses its transparent sibling instead of widening the marker.
     const pointTolerance = nativeHitTolerance(displayPlan);
-    const nativePointHitEnabled = pointTolerance > 0 && (deletePickTarget || geomPointEnabled);
+    const nativePointHitEnabled = (pointTolerance > 0 || (Number(plan?.haloInsetPx??0)>0||Number(plan?.halo?.widthPx??0)>0)) && (deletePickTarget || geomPointEnabled);
     const pointProxyRadius = Math.max(5, Number(plan?.radius ?? 5) + pointTolerance);
     const nextHitProxySignature = nativeHitProxySignature('point', pointTolerance, pointProxyRadius, nativePointHitEnabled);
     const nextMarkerInteractive = nativePointHitEnabled ? false : (deletePickTarget ? true : geomPointEnabled);
@@ -5278,6 +5276,7 @@ function updateLayerBundle(
   // 线/面：更新 style
   if (bundle.main instanceof L.Path) {
     if (nextPathStyle) bundle.main.setStyle(nextPathStyle);
+    bindGeometryHalo(bundle.main,(nextPathStyle as L.PathOptions&{halo?:import('../rendering/geometryHalo').ResolvedHalo})?.halo);
   }
 
   // 【新增】几何点击：线/面（更新时重绑）
