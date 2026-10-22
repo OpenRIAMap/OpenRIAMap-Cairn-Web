@@ -7,6 +7,10 @@ export type PackageCandidate = { baseline: ConfigPackageV3; config: ConfigPackag
 export type FeatureDraftScope = 'package' | 'category';
 export type StudioEditingSession={draft:ConfigPackageV3|null;draftScope?:FeatureDraftScope;tree:ClassTreeSession|null;selectedId:string;editing:boolean;baseline:ConfigPackageV3;generalDrafts?:import('./GeneralRulesEditor').GeneralDrafts;lookupDraft?:import('./lookupTableTransaction').LookupTableDraft|null;engineDraft?:EngineDraft|null;packageCandidate?:PackageCandidate|null;activeTab?:StudioTab;workflowSession?:WorkflowEditingSession|null};
 
+export function hasStudioDraft(session?: StudioEditingSession): boolean {
+  return Boolean(session && (session.draft || session.tree || session.editing || session.lookupDraft || session.engineDraft || session.packageCandidate || session.workflowSession || Object.keys(session.generalDrafts ?? {}).length));
+}
+
 export function recoverPackageCandidate(session?: StudioEditingSession): PackageCandidate | null {
   if (session?.packageCandidate) return session.packageCandidate;
   return session?.draft && !session.tree && featureDraftScope(session) === 'package'

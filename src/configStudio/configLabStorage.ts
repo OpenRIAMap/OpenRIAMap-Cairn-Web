@@ -123,8 +123,8 @@ export async function highestConfigLabRevision(packageId:string):Promise<number>
   const database=await db(),prefix=HISTORY_PREFIX+packageId+':';
   return new Promise<number>((resolve,reject)=>{const request=database.transaction(STORE,'readonly').objectStore(STORE).getAllKeys();request.onerror=()=>reject(request.error);request.onsuccess=()=>resolve(request.result.reduce<number>((maximum,key)=>{const text=String(key);if(!text.startsWith(prefix))return maximum;const revision=Number(text.slice(prefix.length));return Number.isSafeInteger(revision)?Math.max(maximum,revision):maximum;},0));}).finally(()=>database.close());
 }
-export async function saveActiveConfigChoice(choice:ActiveConfigChoice):Promise<void> {
-  const database=await db();return new Promise<void>((resolve,reject)=>{const transaction=database.transaction(STORE,'readwrite');transaction.objectStore(STORE).put(choice,'active-choice');transaction.oncomplete=()=>resolve();transaction.onerror=()=>reject(transaction.error);}).finally(()=>database.close());
+export async function saveActiveConfigChoice(choice:ActiveConfigChoice,clearEditing=false):Promise<void> {
+  const database=await db();return new Promise<void>((resolve,reject)=>{const transaction=database.transaction(STORE,'readwrite'),store=transaction.objectStore(STORE);store.put(choice,'active-choice');if(clearEditing)store.delete('studio-editing-session');transaction.oncomplete=()=>resolve();transaction.onerror=()=>reject(transaction.error);}).finally(()=>database.close());
 }
 
 export async function readRawConfigLatest(): Promise<string | undefined> {

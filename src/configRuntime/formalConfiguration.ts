@@ -46,8 +46,8 @@ export async function verifyFormalConfiguration(identity: ConfigurationIdentity,
   return { identity, config: compileConfigRuntime(config, true) };
 }
 /** Public deployment metadata only. No SCF call, regardless of hostname. */
-export async function readFormalIdentity(): Promise<ConfigurationIdentity> {
-  const response = await fetch('/configuration/current.json', { cache: 'no-cache' });
+export async function readFormalIdentity(signal?: AbortSignal): Promise<ConfigurationIdentity> {
+  const response = await fetch('/configuration/current.json', { cache: 'no-cache', signal });
   if (!response.ok) throw Error(`正式配置静态索引读取失败（${response.status}）。`);
   const value = await response.json(); assertConfigurationIdentity(value); return value;
 }
