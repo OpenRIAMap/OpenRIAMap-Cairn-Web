@@ -4,12 +4,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ConfigDialog } from './ConfigDialog';
 import type { ConfigPackageV3, MountedFeatureRecord } from './types';
 import { validateConfigPackage } from './runtime';
-import { buildConfigPackageArchive, downloadConfigPackage } from './package';
+import { buildConfigPackageArchive, buildTemporaryConfigArchive, downloadConfigPackage } from './package';
+import {useWorkspaceState} from './ConfigBootstrap';
+import {getWorkspaceState,recordWorkspaceValidation,flushWorkspace,invalidateWorkspaceValidation} from './workspaceController';
+import {validateWorkspace,currentValidation,VALIDATION_SESSION} from './workspaceValidation';
+import type {WorkspaceValidation} from './workspaceTypes';
 import { highestConfigLabRevision } from './configLabStorage';
 import { persistActiveConfig, readDurableActiveConfig, stableConfigText } from './defaultConfigProvider';
 import { CONFIGURATION_RULES_VERSION, readFormalIdentity, sha256Bytes, type ConfigurationIdentity } from '../configRuntime/formalConfiguration';
 
-type Gate = { snapshot: string; records: string; base: string; rules: string };
+type Gate = { snapshot: string; records: string; base: string; rules: string; run: WorkspaceValidation };
 type ServerResult = { jobId?:string; state?:string; revision?:number; configSha256?:string; report?:{valid:boolean;issues:Array<{severity:string;message:string}>}; identity?:ConfigurationIdentity; upload?:{url:string;headers?:Record<string,string>}; receipt?:string; error?:string; message?:string; diagnosticId?:string; actor?:string; summary?:string[]; manifestSha256?:string; archiveSha256?:string };
 async function command(operation: string, body: Record<string, unknown> = {}): Promise<ServerResult> {
   const response = await fetch('/api/config-publication', { method:'POST', credentials:'same-origin', headers:{'content-type':'application/json'}, body:JSON.stringify({operation,...body}) });
@@ -21,7 +25,9 @@ async function command(operation: string, body: Record<string, unknown> = {}): P
   return result;
 }
 
-export function GlobalPackageControls({ config, records = [], hasDraft, onSaved, onMessage }: { config:ConfigPackageV3; records?:MountedFeatureRecord[]; hasDraft:boolean; onSaved:(value:ConfigPackageV3)=>void; onMessage:(value:string)=>void }) {
+export function GlobalPackageControls({ config, records = [], hasDraft, formalBlocked=false, onValidated, onSaved, onMessage }: { config:ConfigPackageV3; records?:MountedFeatureRecord[]; hasDraft:boolean; formalBlocked?:boolean; onValidated?:(run:WorkspaceValidation)=>void; onSaved:(value:ConfigPackageV3)=>void; onMessage:(value:string)=>void }) {
+  const workspace=useWorkspaceState();
+  const [temporaryOpen,setTemporaryOpen]=useState(false),[cacheFailure,setCacheFailure]=useState('');
   const [base,setBase] = useState<ConfigurationIdentity>();
   const [gate,setGate] = useState<Gate>();
   const [open,setOpen] = useState(false), [busy,setBusy] = useState(false), [message,setMessage] = useState('');
@@ -37,10 +43,11 @@ export function GlobalPackageControls({ config, records = [], hasDraft, onSaved,
   const candidate = useRef<{config:ConfigPackageV3;blob:Blob;snapshotHash:string;archiveHash:string;requestId:string;baseKey:string}>();
   const live = useRef({snapshot,recordText,hasDraft,base}); live.current={snapshot,recordText,hasDraft,base};
   const baseKey=base?stableConfigText(base):'';
-  const valid = !!gate && !hasDraft && gate.snapshot===snapshot && gate.records===recordText && gate.base===baseKey && gate.rules===CONFIGURATION_RULES_VERSION;
+  const checked = !!gate && !hasDraft && gate.snapshot===snapshot && gate.records===recordText && gate.rules===CONFIGURATION_RULES_VERSION && currentValidation(gate.run,workspace.generation);
+  const valid = checked && !formalBlocked && gate.run.report.valid && !!base && gate.base===baseKey;
   const inform = (value:string)=>{setMessage(value);onMessage(value);};
   useEffect(()=>{let active=true;const check=()=>void readFormalIdentity().then(value=>{if(active)setBase(value);}).catch(error=>{if(active){setBase(undefined);setGate(undefined);inform(String(error));}});check();const timer=setInterval(check,60000);window.addEventListener('focus',check);return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',check);};},[]);
-  useEffect(()=>{setGate(current=>current&&!hasDraft&&current.snapshot===snapshot&&current.records===recordText&&current.base===baseKey?current:undefined);},[snapshot,recordText,hasDraft,baseKey]);
+  useEffect(()=>{setGate(current=>current&&!hasDraft&&current.snapshot===snapshot&&current.records===recordText&&current.run.generation===workspace.generation?current:undefined);},[snapshot,recordText,hasDraft,workspace.generation]);
   // A remote baseline change after activation must not erase the tracked task.
   useEffect(()=>{setServer(undefined);setWeb(undefined);setAuthenticated(false);candidate.current=undefined;setWarningsAccepted(false);setServerRevision(0);operationId.current=crypto.randomUUID();},[snapshot,recordText,hasDraft]);
   useEffect(()=>{
@@ -49,16 +56,34 @@ export function GlobalPackageControls({ config, records = [], hasDraft, onSaved,
     void checkPublicationWebDeployment(server.identity,abort.signal).then(result=>{if(!abort.signal.aborted)setWeb(result);}).finally(()=>{if(!abort.signal.aborted)setWebChecking(false);});
     return()=>abort.abort();
   },[server?.state,server?.identity,webCheck]);
+  useEffect(()=>{
+    const run=workspace.validation;if(!run||run.sessionId!==VALIDATION_SESSION||hasDraft||!currentValidation(run,workspace.generation))return;
+    let live=true;
+    void Promise.all([snapshot,recordText].map(text=>sha256Bytes(new TextEncoder().encode(text)))).then(([configHash,recordsHash])=>{
+      if(live&&run.configFingerprint===configHash&&run.recordsFingerprint===recordsHash)setGate({snapshot,records:recordText,base:baseKey,rules:CONFIGURATION_RULES_VERSION,run});
+    });return()=>{live=false;};
+  },[workspace.validation,workspace.generation,snapshot,recordText,hasDraft]);
+  useEffect(()=>{
+    let live=true;void sha256Bytes(new TextEncoder().encode(recordText)).then(hash=>{const run=getWorkspaceState().validation;if(live&&run&&run.recordsFingerprint!==hash)invalidateWorkspaceValidation();});return()=>{live=false;};
+  },[recordText]);
   const validate = async()=>{
-    if(hasDraft){inform('请先保存或放弃所有模块、工作流和 Class 树草稿。');return;}
+    if(hasDraft){inform('请先保存或放弃所有区域、工作流和 Class 树草稿。');return;}
     setBusy(true);try{
-      const baseline=await readFormalIdentity();setBase(baseline);
-      const durable=await readDurableActiveConfig();if(stableConfigText(durable.config)!==snapshot)throw Error('本地已保存版本已改变，请刷新编辑器后核验。');
-      const report=validateConfigPackage(config,records);
-      if(!report.valid)throw Error(report.issues.filter(issue=>issue.severity==='error').slice(0,8).map(issue=>issue.message).join('；'));
+      const run=await validateWorkspace(config,records,getWorkspaceState().generation);
       if(live.current.snapshot!==snapshot||live.current.hasDraft||live.current.recordText!==recordText)throw Error('核验期间内容已改变，请重新核验。');
-      setGate({snapshot,records:recordText,base:stableConfigText(baseline),rules:CONFIGURATION_RULES_VERSION});inform(`全局核验通过：${report.issues.length} 项提示。可打开整包下载/上传。`);
+      recordWorkspaceValidation(run);setGate({snapshot,records:recordText,base:baseKey,rules:CONFIGURATION_RULES_VERSION,run});onValidated?.(run);
+      inform(run.report.valid?`全局核验通过：${run.report.issues.length} 项提示。`:`全局核验未通过：${run.report.issues.filter(item=>item.severity==='error').length} 项阻断。可以临时保存和下载以继续修复。`);
     }catch(error){setGate(undefined);inform(String(error));}finally{setBusy(false);}
+  };
+  const temporaryDownload=async(downloadOnly=false)=>{
+    if(!checked||!gate)return;setBusy(true);setCacheFailure('');
+    try{
+      const blob=await buildTemporaryConfigArchive(config,gate.run,getWorkspaceState().generation);
+      if(!downloadOnly)try{await flushWorkspace();}catch(error){setCacheFailure(String(error));return;}
+      if(live.current.snapshot!==snapshot||live.current.hasDraft||live.current.recordText!==recordText||!currentValidation(gate.run,getWorkspaceState().generation))throw Error('内容已改变，请重新全局核验。');
+      const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`${config.packageId}.r${config.revision}.contract-r${config.contractRevision}.temporary.${Date.now()}.zip`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      setTemporaryOpen(false);inform('已发起临时诊断包下载；仅用于继续编辑与排查，不代表正式核验通过。');
+    }catch(error){inform(String(error));}finally{setBusy(false);}
   };
   const prepare = async()=>{
     const assertCurrent=()=>{if(!valid||live.current.hasDraft||live.current.snapshot!==snapshot||live.current.recordText!==recordText||stableConfigText(live.current.base)!==baseKey)throw Error('全局核验已失效，请重新核验。');};
@@ -82,6 +107,7 @@ export function GlobalPackageControls({ config, records = [], hasDraft, onSaved,
         // Reallocate under the cross-tab lock; never reuse an occupied revision.
         if(candidate.current&&await highestConfigLabRevision(config.packageId)>=candidate.current.config.revision){candidate.current=undefined;setAuthenticated(false);setServer(undefined);operationId.current=crypto.randomUUID();}
         const value=await prepare();const saved=await persistActiveConfig(value.config,false,durable);
+        await flushWorkspace();
         downloadConfigPackage(value.blob,value.config);onSaved(saved);setOpen(false);inform(`已下载 ${value.config.packageId} r${value.config.revision}；正式配置保持当前发布版本。`);
       };
       if(navigator.locks)await navigator.locks.request(`cairnmap-config-export:${config.packageId}`,operation);else await operation();
@@ -117,7 +143,15 @@ export function GlobalPackageControls({ config, records = [], hasDraft, onSaved,
   const publish = async()=>{setBusy(true);try{const result=await command('confirm',{jobId:server?.jobId,receipt:server?.receipt,requestId:candidate.current?.requestId,warningsAccepted});setServer(result);inform(`配置发布任务：${result.state??'queued'}。`);}catch(error){inform(String(error));}finally{setBusy(false);}};
   const refresh = async()=>{setBusy(true);try{const result=await command('status',{jobId:server?.jobId,requestId:candidate.current?.requestId});setServer(result);inform(`发布阶段：${result.state}${result.error?'；'+result.error:''}`);}catch(error){inform(String(error));}finally{setBusy(false);}};
   const warning=server?.report?.issues.some(issue=>issue.severity==='warning');
-  return <><button type="button" className="rounded border px-3 py-1.5 text-sm disabled:opacity-40" disabled={busy||hasDraft} onClick={()=>void validate()}>全局核验</button><button type="button" className="rounded bg-emerald-600 px-3 py-1.5 text-sm text-white disabled:bg-slate-300" disabled={!valid||busy} onClick={()=>setOpen(true)}>整包下载/上传</button>
+  return <><button type="button" className="rounded border px-3 py-1.5 text-sm disabled:opacity-40" disabled={busy||hasDraft} onClick={()=>void validate()}>全局核验</button><button type="button" className="rounded border border-violet-300 px-3 py-1.5 text-sm disabled:opacity-40" disabled={!checked||busy} onClick={()=>{setCacheFailure('');setTemporaryOpen(true);}}>临时保存和下载</button><button type="button" className="rounded bg-emerald-600 px-3 py-1.5 text-sm text-white disabled:bg-slate-300" disabled={!valid||busy} onClick={()=>setOpen(true)}>整包下载/上传</button>
+    <ConfigDialog open={temporaryOpen} title="临时保存和下载" onClose={()=>setTemporaryOpen(false)} busy={busy}>
+      <p>{config.packageId} · 配置 r{config.revision} · 契约 r{config.contractRevision}</p>
+      <p>错误 {gate?.run.report.issues.filter(item=>item.severity==='error').length??0} 项，警告 {gate?.run.report.issues.filter(item=>item.severity==='warning').length??0} 项。</p>
+      <p className="text-sm">此文件保留配置和本次诊断报告，仅用于继续编辑或排查。临时下载不代表正式核验通过，不会上传或发布。</p>
+      {!checked?<p role="alert" className="text-rose-700">内容已改变，请关闭并重新全局核验。</p>:null}
+      <button type="button" className="rounded bg-violet-600 px-3 py-2 text-white disabled:bg-slate-300" disabled={!checked||busy} onClick={()=>void temporaryDownload()}>确认临时保存并下载</button>
+      {cacheFailure?<div role="alert" className="text-rose-700">本地缓存失败：{cacheFailure}<button type="button" className="ml-2 rounded border px-3 py-2" disabled={!checked||busy} onClick={()=>void temporaryDownload(true)}>仅下载副本</button></div>:null}
+    </ConfigDialog>
     <ConfigDialog open={open} title="整包下载/上传" onClose={()=>setOpen(false)} busy={busy}>
       <p className="text-sm">正式基线：{base?.packageId} r{base?.revision} · 契约 r{base?.contractRevision}</p><p className="break-all text-xs">SHA-256：{base?.configSha256}</p>
       <p className="text-sm">下载将自动分配高于已保存、已导出及已知正式版本的修订号。在线发布由服务端最终分配。</p>

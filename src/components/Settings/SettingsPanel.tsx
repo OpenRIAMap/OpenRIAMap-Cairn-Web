@@ -1,3 +1,4 @@
+import {ConfigDialog} from '@/configStudio/ConfigDialog';
 import { retiredSourceNotice } from '@/components/Rules/data/formalDataSourceRuntime';
 import {getFormalConfiguration,subscribeFormalConfiguration} from '@/configRuntime/formalConfiguration';
 import {getRuntimeDataDiagnostics} from '@/configRuntime/runtimeDataView';
@@ -17,10 +18,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 import { useLoadingStore } from '@/store/loadingStore';
 import { useRuleDataStore } from '@/store/ruleDataStore';
-import { downloadDataToolSchema } from '@/components/Common/exportDataToolSchema';
 import { type RuleWorldVersion } from '@/components/Rules/data/worldRuleDatasetLoader';
-import {dataToolSchemaWarnings} from '@/components/Common/buildDataToolSchema';
-import { compareFormalSourceVersions, formalSourcePresentation, readWorldPublicationStatuses, type SourceComparison, type WorldPublicationStatus } from '@/components/Rules/data/formalSourceStatus';
+import { compareFormalSourceVersions, readWorldPublicationStatuses, type SourceComparison, type WorldPublicationStatus } from '@/components/Rules/data/formalSourceStatus';
 import {
   calculateRuleCacheSize,
   removeRuleWorldCachesForSource,
@@ -94,7 +93,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   const worldSyncEpoch=useRef(0),comparisonEpoch=useRef(0);
   const [sourceComparison,setSourceComparison]=useState<SourceComparison|null>(null);
   const [comparisonBusy,setComparisonBusy]=useState(false);
-  const [schemaMessage,setSchemaMessage]=useState('');
+  const [comparisonOpen,setComparisonOpen]=useState(false),[comparisonError,setComparisonError]=useState('');
   const [pwaStatus, setPwaStatus] = useState<{
     isInstalled: boolean;
     canInstall: boolean;
@@ -113,7 +112,6 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   const dataSourceController = getRuleDataSourceSelectionController(dataSource.worldId);
   const dataSourcePolicy = getRuleDataSourceSelectionPolicy(dataSource.worldId);
   const sourceScope=JSON.stringify([dataSource.worldId,dataSource.resourceGroupId,dataSource.sourceId,dataSource.transportId,dataSource.generation]);
-  const sourceDetails=formalSourcePresentation(dataSource);
   const [dataSourceDraft, setDataSourceDraft] = useState(() => dataSource.sourceId);
   const [dataSourceStatus, setDataSourceStatus] = useState<{ tone: 'success' | 'error' | 'info'; text: string } | null>(null);
 
@@ -133,8 +131,9 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   useEffect(()=>{setSourceComparison(null);setComparisonBusy(false);setSourceLinkModeStatus('');setDataSourceStatus(null);void syncRuleWorldRows();return()=>{worldSyncEpoch.current++;comparisonEpoch.current++;};},[sourceScope,application]);
 
   const handleCompareSources=async()=>{
-    const epoch=++comparisonEpoch.current;setComparisonBusy(true);
+    const epoch=++comparisonEpoch.current;setComparisonBusy(true);setComparisonError('');
     try{const result=await compareFormalSourceVersions(dataSource.worldId);if(epoch===comparisonEpoch.current)setSourceComparison(result);}
+    catch(error){if(epoch===comparisonEpoch.current)setComparisonError(String(error));}
     finally{if(epoch===comparisonEpoch.current)setComparisonBusy(false);}
   };
 
@@ -338,11 +337,6 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
     await syncRuleWorldRows();
   };
 
-  // 导出 Data Tool Schema
-  const handleExportDataSchema = () => {
-    try{downloadDataToolSchema();setSchemaMessage('已从当前正式V3配置导出兼容Schema。');}catch(error){setSchemaMessage(error instanceof Error?error.message:String(error));}
-  };
-
   // 安装 PWA
   const handleInstallPWA = async () => {
     if (!deferredPrompt) return;
@@ -386,13 +380,6 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
             loginLabel={reviewAuthLoginLabel}
           />
         ) : null}
-        {formal?<div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900 space-y-1 break-words [overflow-wrap:anywhere]">
-          <p className="font-semibold">正式配置身份</p>
-          <p>{formal.packageId} · 契约r{formal.contractRevision} / 修订r{formal.revision}</p>
-          <p>{formal.releaseId}</p>
-          <details><summary>配置摘要</summary><p>{formal.configSha256}</p></details>
-          <p>本地工作台草稿与试运行版本独立保存，不作为主地图正式配置。</p>
-        </div>:null}
         {/* 世界数据版本 */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -513,15 +500,8 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
             }}
           />
 
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 space-y-2 break-words [overflow-wrap:anywhere]">
-            <p className="font-semibold text-gray-800">实际运行来源</p>
-            <p>{dataSource.label} · 来源组 {dataSource.resourceGroupId??'默认'} · 世界 {dataSource.worldId??'—'}{dataSource.remoteWorldId&&dataSource.remoteWorldId!==dataSource.worldId?` → ${dataSource.remoteWorldId}`:''}</p>
-            <p>{sourceDetails.layout}</p>
-            <p>数据根地址：{dataSource.rootUrl}</p>
-            <details><summary>实际发布入口与传输身份</summary><p>{sourceDetails.releaseSetUrl}</p><p>{sourceDetails.worldPointerUrl}</p><p>{dataSource.transportId}</p></details>
-            <AppButton disabled={comparisonBusy} onClick={()=>void handleCompareSources()} className="rounded border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-700 disabled:opacity-50">{comparisonBusy?'正在比较…':'比较权威来源与镜像'}</AppButton>
-            {sourceComparison?<p role="status" className={sourceComparison.state==='same'?'text-green-700':sourceComparison.state==='different'?'text-orange-700':'text-gray-600'}>{sourceComparison.text}</p>:null}
-          </div>
+          <div className="flex gap-2"><AppButton disabled={comparisonBusy} onClick={()=>{setComparisonOpen(true);void handleCompareSources();}} className="rounded border border-gray-300 bg-white px-3 py-2 text-xs text-gray-700 disabled:opacity-50">{comparisonBusy?'正在比较…':'比较权威来源和镜像'}</AppButton></div>
+          <ConfigDialog open={comparisonOpen} title="权威来源和镜像对比" onClose={()=>setComparisonOpen(false)}><p role="status">{comparisonBusy?'正在读取并比较来源版本…':comparisonError||sourceComparison?.text||'尚未获得比较结果。'}</p></ConfigDialog>
 
           <div className="flex gap-2">
             <AppButton
@@ -609,7 +589,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
         </div>
 
 
-        {/* Data Tool Schema */}
+        {/* 配置编辑入口 */}
         {onOpenConfigStudio ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -641,29 +621,13 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
           </div>
         ) : null}
 
-        {/* Data Tool Schema */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            <Download className="w-4 h-4" />
-            <span>Data Tool Schema</span>
-          </div>
-
-          <div className="bg-gray-50 rounded-lg p-3 space-y-2 text-sm text-gray-600">
-            <p>从当前正式V3配置导出1.1.0兼容格式的 data_tool_schema.json。</p>
-            <p>可提供给 OpenRIAMap-Data 的 Tool 进行 sync-web-schema 使用。</p>
-            {formalConfiguration?dataToolSchemaWarnings(formalConfiguration.config).map(text=><p key={text} className="text-xs text-amber-800">{text}</p>):null}
-          </div>
-
-          <AppButton
-            onClick={handleExportDataSchema}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm rounded-lg transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            <span>导出 Data Schema</span>
-          </AppButton>
-          {schemaMessage?<p role="status" className="text-xs text-blue-800 break-words">{schemaMessage}</p>:null}
-        </div>
-
+        {formal?<div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900 space-y-1 break-words [overflow-wrap:anywhere]">
+          <p className="font-semibold">正式配置身份</p>
+          <p>{formal.packageId} · 契约r{formal.contractRevision} / 修订r{formal.revision}</p>
+          <p>{formal.releaseId}</p>
+          <details><summary>配置摘要</summary><p>{formal.configSha256}</p></details>
+          <p>本地工作台草稿与试运行版本独立保存，不作为主地图正式配置。</p>
+        </div>:null}
         {/* 关于 */}
         <div className="text-xs text-gray-400 text-center pt-2">
           <p>主地图使用正式配置及当前正式数据发布。</p>

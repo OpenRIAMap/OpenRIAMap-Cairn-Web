@@ -1,11 +1,13 @@
 import {HelpControl} from './SettingHelp';
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import {ConfigDialog} from './ConfigDialog';
 import {SettingField} from './SettingField';
 import type {ConfigPackageV3,ConfigValidationReport,WorkflowDefinition} from './types';
 import {cloneWorkflowTemplate} from './workflowTemplate';
-export function NewWorkflowDialog({config,onClose,onCreate}:{config:ConfigPackageV3;onClose:()=>void;onCreate:(workflow:WorkflowDefinition,report?:ConfigValidationReport)=>void}){
-  const [mode,setMode]=useState<'blank'|'template'>('blank'),[query,setQuery]=useState(''),[source,setSource]=useState(''),[id,setId]=useState(`workflow-${Date.now().toString(36)}`),[zh,setZh]=useState(''),[en,setEn]=useState(''),[error,setError]=useState('');
+export type WorkflowCreationDraft={mode:'blank'|'template';query:string;source:string;id:string;zh:string;en:string};
+export function NewWorkflowDialog({config,onClose,onCreate,initialDraft,onStateChange}:{initialDraft?:WorkflowCreationDraft;onStateChange?:(value:WorkflowCreationDraft)=>void;config:ConfigPackageV3;onClose:()=>void;onCreate:(workflow:WorkflowDefinition,report?:ConfigValidationReport)=>void}){
+  const [mode,setMode]=useState<'blank'|'template'>(initialDraft?.mode??'blank'),[query,setQuery]=useState(initialDraft?.query??''),[source,setSource]=useState(initialDraft?.source??''),[id,setId]=useState(initialDraft?.id??`workflow-${Date.now().toString(36)}`),[zh,setZh]=useState(initialDraft?.zh??''),[en,setEn]=useState(initialDraft?.en??''),[error,setError]=useState('');
+  useEffect(()=>{onStateChange?.({mode,query,source,id,zh,en});},[mode,query,source,id,zh,en,onStateChange]);
   const templates=config.workflows.filter(flow=>`${flow.id} ${flow.label.zh} ${flow.label.en} ${flow.mode} ${flow.target?.class??flow.outputs[0]?.classification.class??''}`.toLowerCase().includes(query.toLowerCase()));
   return <ConfigDialog open title="新建工作流" onClose={onClose}><SettingField title="初始化方式" help="空白从最小标准流程开始；模板复制完整设置及已有引用，之后独立编辑。编辑用途和分类路由冲突会报告并阻止保存，不修改原工作流。"><select aria-label="工作流初始化方式" value={mode} onChange={event=>setMode(event.target.value as typeof mode)}><option value="blank">空白工作流</option><option value="template">使用已有工作流模板</option></select></SettingField>
     {mode==='template'?<><SettingField title="搜索工作流模板" help="按名称、ID、模式或主分类搜索已保存的工作流。仅复制当前模板快照，不建立后续同步。"><input aria-label="搜索工作流模板" value={query} onChange={event=>setQuery(event.target.value)}/></SettingField><HelpControl context="NewWorkflowDialog"><select aria-label="工作流模板" size={6} className="w-full min-w-0" value={source} onChange={event=>setSource(event.target.value)}>{templates.map(flow=><option key={flow.id} value={flow.id}>{flow.label.zh||flow.label.en}（{flow.id}）· {flow.mode} · {flow.target?.class??flow.outputs[0]?.classification.class}</option>)}</select></HelpControl></>:null}
