@@ -51,3 +51,28 @@ jobs:
           npm run validate:project-config
           npm run validate:native-relay-accept-guards
           npm run validate:native-relay-config-resolver
+      - name: Studio workspace browser regressions (local-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/studio-browser-venv"
+          "$RUNNER_TEMP/studio-browser-venv/bin/pip" install websocket-client==1.8.0
+          export CAIRNMAP_CDP_PORT=9502
+          export CAIRNMAP_APP_URL=http://127.0.0.1:5298
+          export CAIRNMAP_ACCEPTANCE_OUT="$RUNNER_TEMP/studio-browser/verification"
+          mkdir -p "$CAIRNMAP_ACCEPTANCE_OUT"
+          npm run dev -- --host 127.0.0.1 --port 5298 --strictPort > "$RUNNER_TEMP/studio-vite.log" 2>&1 &
+          studio_vite_pid=$!
+          studio_chrome_pid=''
+          trap 'kill "$studio_vite_pid" ${studio_chrome_pid:-} 2>/dev/null || true' EXIT
+          studio_chrome=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
+          "$studio_chrome" --headless=new --no-sandbox --disable-dev-shm-usage --disable-background-networking --disable-component-update --no-first-run --no-default-browser-check \
+            --remote-debugging-port=9502 --remote-allow-origins=http://127.0.0.1:9502 \
+            --host-resolver-rules='MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1' \
+            --user-data-dir="$RUNNER_TEMP/studio-browser-profile" about:blank > "$RUNNER_TEMP/studio-chrome.log" 2>&1 &
+          studio_chrome_pid=$!
+          for attempt in $(seq 1 60); do
+            if curl --noproxy '*' -fsS "$CAIRNMAP_APP_URL/" > /dev/null 2>&1 && curl --noproxy '*' -fsS http://127.0.0.1:9502/json/version > /dev/null 2>&1; then break; fi
+            sleep 0.5
+          done
+          "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/studio_workspace_acceptance.py

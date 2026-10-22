@@ -56,7 +56,7 @@ try {
   const session: StudioEditingSession = { baseline: seed, draft: null, tree: null, selectedId: '', editing: false };
   assert.equal(hasStudioDraft(session), false);
   for (const field of ['draft', 'tree', 'editing', 'lookupDraft', 'engineDraft', 'packageCandidate', 'workflowSession', 'generalDrafts']) {
-    assert.equal(hasStudioDraft({ ...session, [field]: field === 'generalDrafts' ? { preferences: {} } : true } as StudioEditingSession), true, field);
+    assert.equal(hasStudioDraft({ ...session, [field]: field === 'generalDrafts' ? { preferences: {} } : field==='workflowSession'?{draft:{},tables:[],selectedId:''}:true } as StudioEditingSession), true, field);
   }
   console.log(`Studio formal defaults: contracts r11/r12/r13, hashes, identity, controlled URLs, publication race, retry and all draft scopes passed (${requests.length} static requests; zero SCF calls).`);
 } finally { globalThis.fetch = originalFetch; }

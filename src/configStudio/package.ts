@@ -1,4 +1,9 @@
 import {readRawNativePackage} from './nativeArchive';
+import {readEditorNativeContents} from './editorNativeArchive';
+import {TEMPORARY_REPORT_PATH,readTemporaryDiagnostic,diagnosticMismatch,type TemporaryDiagnostic} from './temporaryDiagnostic';
+import type { WorkspaceValidation } from './workspaceTypes';
+import { currentValidation } from './workspaceValidation';
+import { stableConfigText } from '../configRuntime/configurationFingerprint';
 import { DYNMAP_FLAT_PRESET, isWorldGroups } from '../core/project/applicationResources';
 import {CONFIG_IMPORT_LIMITS,type ConfigImportOptions} from './archivePolicy';
 import { validateNativeStructure } from './nativeContractValidation';
@@ -55,16 +60,21 @@ async function sha256(value: Uint8Array): Promise<string> {
 export async function buildConfigPackageArchive(config: ConfigPackageV3, report: ConfigValidationReport): Promise<Blob> {
   report = validateConfigPackage(config);
   if (!report.valid) throw new Error('配置无效，不能归档导出。请先修复校验报告中的错误。');
+  return encodeConfigArchive(config,report);
+}
+export function readableConfigText(config:ConfigPackageV3):string{return JSON.stringify(JSON.parse(stableStringify(config)),null,2)+'\n';}
+async function encodeConfigArchive(config:ConfigPackageV3,report:ConfigValidationReport,temporary?:TemporaryDiagnostic):Promise<Blob>{
   const parity = config.parity ?? {
     schemaVersion: 'cairnmap.v1-parity-report.v2' as const,
     generatedAt: new Date().toISOString(),
     entries: [],
   };
   const files = [
-    { path: 'config.json', body: JSON.stringify(JSON.parse(stableStringify(config)),null,2)+'\n' },
+    { path: 'config.json', body: readableConfigText(config) },
     { path: 'reports/validation-report.json', body: stableStringify(report) },
     { path: 'reports/v1-parity-report.json', body: stableStringify(parity) },
   ];
+  if(temporary)files.push({path:TEMPORARY_REPORT_PATH,body:JSON.stringify(temporary,null,2)+'\n'});
   if(config.application)files.push({path:'reports/application-dependencies.json',body:stableStringify({schemaVersion:'cairnmap.application-dependencies.v1',projectionIds:[...new Set(config.application.worlds.map(world=>(world.projectionOverride??world.projection??DYNMAP_FLAT_PRESET).id))],readers:(isWorldGroups(config.application.sources)?config.application.sources.groups.flatMap(group=>group.sources.items):config.application.sources.items).map(source=>({sourceId:source.id,readerKind:source.readerKind,schemaVersion:source.readerSchemaVersion,transport:source.transport})),reviewProtocol:config.application.review.protocol,authProvider:config.application.review.provider,serverEnvironmentReferences:Object.values(config.application.review.serverReferences),externalWorkflowKeys:config.workflows.filter(workflow=>workflow.mode==='external').map(workflow=>workflow.external?.componentKey),labelTemplate:'cairnmap.label-template.v1',...(config.application.navigation?{navigation:{sharedRailwayRoles:config.application.preferences.railwayRoles,settings:config.application.navigation}}:{}),lookupTables:(config.lookupTables??[]).map(table=>({id:table.id,functionKind:table.functionKind}))})});
   const manifestFiles = await Promise.all(files.map(async (file) => {
     const bytes = textEncoder.encode(file.body);
@@ -88,6 +98,13 @@ export async function buildConfigPackageArchive(config: ConfigPackageV3, report:
   const blob=await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 9 } });
   if(blob.size>CONFIG_IMPORT_LIMITS.compressedBytes)throw Error(`导出 ZIP 为 ${blob.size} 字节，超过可重新导入的压缩包预算 ${CONFIG_IMPORT_LIMITS.compressedBytes}。请调整集中策略或离线检查。`);
   return blob;
+}
+
+export async function buildTemporaryConfigArchive(config:ConfigPackageV3,run:WorkspaceValidation,generation:number):Promise<Blob>{
+  if(!currentValidation(run,generation)||run.configFingerprint!==await sha256(textEncoder.encode(stableConfigText(config))))throw Error('全局核验已失效，请重新完整核验后临时下载。');
+  if(!isNativeConfigRevision(config.contractRevision)||validateNativeStructure(config).length)throw Error('配置结构无法安全重新导入，不能临时归档。');
+  const temporary:TemporaryDiagnostic={schemaVersion:'cairnmap.temporary-validation.v1',exportedAt:new Date().toISOString(),configuration:{packageId:config.packageId,projectId:config.projectId,revision:config.revision,contractRevision:config.contractRevision,configSha256:await sha256(textEncoder.encode(readableConfigText(config)))},validator:{rulesVersion:run.rulesVersion,fingerprint:run.validatorFingerprint,resourceFingerprint:run.resourceFingerprint},scope:{configuration:true,mountedData:run.mountedCount>0,mountedDataIdentity:run.mountedCount?run.recordsFingerprint:null,mountedCount:run.mountedCount},report:run.report};
+  return encodeConfigArchive(config,run.report,temporary);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -561,6 +578,12 @@ function asConfig(value: unknown): ConfigPackageV3 {
 }
 
 export async function readConfigPackage(file:File,options:ConfigImportOptions={}):Promise<ConfigPackageV3>{return asConfig(await readRawNativePackage(file,options));}
+
+export async function readConfigPackageWithDiagnostics(file:File,options:ConfigImportOptions={}):Promise<{config:ConfigPackageV3;diagnostic?:TemporaryDiagnostic;recheckReason?:string}>{
+  const contents=await readEditorNativeContents(file,options),config=asConfig(contents.config),diagnostic=readTemporaryDiagnostic(contents.temporary);
+  const recheckReason=contents.diagnosticIssue??(contents.temporary!==undefined&&!diagnostic?'临时报告格式无效，确认后将按当前核验器重新检查。':diagnostic?await diagnosticMismatch(diagnostic,config,contents.configBytes):undefined);
+  return {config,diagnostic,recheckReason};
+}
 
 export function downloadConfigPackage(blob: Blob, config: ConfigPackageV3): void {
   const url = URL.createObjectURL(blob);

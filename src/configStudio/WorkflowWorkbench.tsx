@@ -1,5 +1,5 @@
 import {HelpControl} from './SettingHelp';
-import {NewWorkflowDialog} from './NewWorkflowDialog';
+import {NewWorkflowDialog,type WorkflowCreationDraft} from './NewWorkflowDialog';
 import {buildWorkflowArtifact,prepareWorkflowArtifactImport,type WorkflowArtifact} from './workflowArtifact';
 import { Download, FileUp, FolderOpen, Plus, Save, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -9,7 +9,7 @@ import { validateConfigPackage, validateWorkflowDefinition, resolveEffectiveFiel
 import { canonicalizeWorkflow, V3WorkflowEditor } from './V3WorkflowEditor';
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
-export type WorkflowEditingSession = { selectedId: string; draft: WorkflowDefinition; tables: LookupTable[] };
+export type WorkflowEditingSession = { selectedId: string; draft: WorkflowDefinition|null; tables: LookupTable[]; creation?:WorkflowCreationDraft };
 
 export interface WorkflowWorkbenchProps {
   config: ConfigPackageV3;
@@ -36,14 +36,15 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
   const [selectedId, setSelectedId] = useState(initialSession?.selectedId ?? config.workflows[0]?.id ?? '');
   const [draftTables,setDraftTables]=useState<LookupTable[]>(initialSession?.tables ?? []);
   const draftConfig=useMemo(()=>draftTables.length?{...config,lookupTables:[...config.lookupTables??[],...draftTables]}:config,[config,draftTables]);
-  const [creating,setCreating]=useState(false);
+  const [creating,setCreating]=useState(Boolean(initialSession?.creation));
+  const [creation,setCreation]=useState<WorkflowCreationDraft|undefined>(initialSession?.creation);
   const [draft, setDraft] = useState<WorkflowDefinition | null>(initialSession?.draft ?? null);
   const [report, setReport] = useState<ConfigValidationReport | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const selected = useMemo(() => config.workflows.find((workflow) => workflow.id === selectedId), [config.workflows, selectedId]);
 
   useEffect(() => { onDraftStateChange?.(draft !== null || creating); }, [draft, creating, onDraftStateChange]);
-  useEffect(() => { onSessionChange?.(draft ? { selectedId, draft, tables: draftTables } : null); }, [selectedId, draft, draftTables, onSessionChange]);
+  useEffect(() => { onSessionChange?.({ selectedId, draft, tables: draftTables,...(creating&&creation?{creation}:{}) }); }, [selectedId, draft, draftTables, creating, creation, onSessionChange]);
 
   useEffect(() => {
     if (selectedId && config.workflows.some((workflow) => workflow.id === selectedId)) return;
@@ -106,7 +107,7 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
   };
 
   return <section aria-label="工作流编辑区域" className="cm-authoring-pane h-full max-h-full min-h-0 overflow-y-auto overscroll-contain rounded-xl border bg-white p-4">
-    {creating?<NewWorkflowDialog config={config} onClose={()=>setCreating(false)} onCreate={(next,report)=>{setDraftTables([]);setSelectedId('');setDraft(canonicalizeWorkflow(next,config));setReport(report??null);setCreating(false);}}/>:null}
+    {creating?<NewWorkflowDialog config={config} initialDraft={creation} onStateChange={setCreation} onClose={()=>{setCreating(false);setCreation(undefined);}} onCreate={(next,report)=>{setDraftTables([]);setSelectedId('');setDraft(canonicalizeWorkflow(next,config));setReport(report??null);setCreating(false);}}/>:null}
     <input ref={fileRef} className="hidden" type="file" accept="application/json,.json" onChange={(event) => {
       const file = event.target.files?.[0];
       if (file) void importFile(file);
