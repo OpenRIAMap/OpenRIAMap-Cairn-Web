@@ -9763,88 +9763,19 @@ var require_lib3 = __commonJS({
 });
 
 // src/configStudio/contract.ts
-var NATIVE_CONFIG_REVISION = 14;
+var NATIVE_CONFIG_REVISION = 15;
 var CONTRACT_CAPABILITIES = {
   latest: NATIVE_CONFIG_REVISION,
-  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
-  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14],
-  category: [9, 10, 11, 12, 13, 14],
-  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
-  publication: [11, 12, 13, 14],
-  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14]] }
+  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  category: [9, 10, 11, 12, 13, 14, 15],
+  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  publication: [11, 12, 13, 14, 15],
+  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15]] }
 };
 var supportsContract = (capability, value) => typeof value === "number" && CONTRACT_CAPABILITIES[capability].includes(value);
 function isNativeConfigRevision(value) {
   return supportsContract("native", value);
-}
-
-// src/core/project/navigationDefinition.ts
-var RAILWAY_ROLES = ["lines", "platforms", "stationAreas", "stations"];
-function pathCovers(scope, path2) {
-  return ["class", "kind", "skind", "skind2"].every((key2) => !scope[key2] || scope[key2] === path2[key2]);
-}
-function pathsMatch(paths, path2) {
-  return paths.some((scope) => pathCovers(scope, path2));
-}
-function rawClassification(value) {
-  return { class: String(value.Class ?? value.class ?? "").trim(), kind: value.Kind, skind: value.SKind ?? value.Skind, skind2: value.SKind2 ?? value.Skind2 };
-}
-
-// src/configStudio/valueSchema.ts
-var text = { type: "string" };
-var number = { type: "number" };
-var bool = { type: "boolean" };
-var object = (properties, required = []) => ({ type: "object", properties, required });
-var array = (items) => ({ type: "array", items });
-var id = { anyOf: [text, object({ ID: text }, ["ID"])] };
-var roadId = { anyOf: [text, { type: "array", items: text, minItems: 1 }, ...["tgt", "ID", "id"].map((key2) => object({ [key2]: text }, [key2]))] };
-var VALUE_SCHEMA_TEMPLATES = {
-  "rail-lines": { label: "\u7AD9\u53F0\u7EBF\u8DEF\u5F15\u7528", schema: array({ anyOf: [text, object({ ID: text, Avaliable: bool, Available: bool, NotAvaliable: bool, getin: bool, getout: bool, Overtaking: bool, NextOT: bool, stationDistance: number, bureau: text, line: text }, ["ID"])] }) },
-  "rail-platforms": { label: "\u7AD9\u573A\u7AD9\u53F0\u5F15\u7528", schema: array(id) },
-  "rail-stations": { label: "\u8F66\u7AD9\u7AD9\u573A\u5F15\u7528", schema: array(id) },
-  "road-modes": { label: "\u9053\u8DEF\u51FA\u884C\u65B9\u5F0F", schema: array({ anyOf: [text, { type: "array", items: text, minItems: 1 }, ...["code", "tgt", "ID", "id"].map((key2) => object({ [key2]: text }, [key2]))] }) },
-  "road-connections": { label: "\u9053\u8DEF\u8FDE\u63A5\u5173\u7CFB", schema: array({ anyOf: [...["mode", "Lot"].flatMap((mode) => ["tgt", "Tgt"].map((target) => object({ [mode]: { type: "string", enum: ["endpoint", "middle"] }, [target]: text }, [mode, target])))] }) },
-  "road-blacklist": { label: "\u9053\u8DEF\u8FDE\u63A5\u6392\u9664", schema: array(roadId) },
-  "target-point": { label: "\u4F20\u9001\u76EE\u6807\u5750\u6807", schema: object({ x: number, y: number, z: number }, ["x", "z"]) }
-};
-function validateValueSchema(schema) {
-  let budget = 512;
-  const visit = (s, depth) => {
-    if (--budget < 0 || depth > 12) return ["\u503C\u7ED3\u6784\u8D85\u8FC7\u6DF1\u5EA6\u6216\u89C4\u6A21\u9650\u5236\u3002"];
-    if (!s || typeof s !== "object" || Array.isArray(s)) return ["\u503C\u7ED3\u6784\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002"];
-    if (Object.keys(s).some((key2) => !["type", "anyOf", "properties", "required", "items", "enum", "minItems", "maxItems", "minimum", "exclusiveMinimum"].includes(key2))) return ["\u503C\u7ED3\u6784\u5305\u542B\u4E0D\u652F\u6301\u7684\u5C5E\u6027\u3002"];
-    if (!s.type && !s.anyOf?.length) return ["\u503C\u7ED3\u6784\u5FC5\u987B\u6307\u5B9A\u7C7B\u578B\u6216\u517C\u5BB9\u5206\u652F\u3002"];
-    if (s.anyOf && (!s.anyOf.length || s.anyOf.length > 16)) return ["\u503C\u7ED3\u6784\u517C\u5BB9\u5206\u652F\u6570\u91CF\u65E0\u6548\u3002"];
-    if (s.required?.some((key2) => !s.properties?.[key2] || ["__proto__", "prototype", "constructor"].includes(key2))) return ["\u5FC5\u9700\u5C5E\u6027\u672A\u5B9A\u4E49\u6216\u540D\u79F0\u4E0D\u5B89\u5168\u3002"];
-    if (s.properties && Object.keys(s.properties).some((key2) => ["__proto__", "prototype", "constructor"].includes(key2))) return ["\u503C\u7ED3\u6784\u5C5E\u6027\u540D\u79F0\u4E0D\u5B89\u5168\u3002"];
-    if (s.enum && (!s.enum.length || s.enum.length > 512 || s.enum.some((v) => !["string", "number", "boolean"].includes(typeof v) || typeof v === "number" && !Number.isFinite(v)))) return ["\u503C\u7ED3\u6784\u679A\u4E3E\u65E0\u6548\u3002"];
-    if ([s.minimum, s.exclusiveMinimum].some((v) => v !== void 0 && !Number.isFinite(v))) return ["\u503C\u7ED3\u6784\u6570\u503C\u8FB9\u754C\u65E0\u6548\u3002"];
-    if ([s.minItems, s.maxItems].some((v) => v !== void 0 && (!Number.isSafeInteger(v) || v < 0 || v > 1e5)) || s.minItems !== void 0 && s.maxItems !== void 0 && s.minItems > s.maxItems) return ["\u503C\u7ED3\u6784\u6570\u7EC4\u957F\u5EA6\u8FB9\u754C\u65E0\u6548\u3002"];
-    return [...s.anyOf ?? [], ...Object.values(s.properties ?? {}), ...s.items ? [s.items] : []].flatMap((child) => visit(child, depth + 1));
-  };
-  return visit(schema, 0).slice(0, 20);
-}
-function validateStructuredValue(value, schema, path2 = "value") {
-  if (validateValueSchema(schema).length) return [`${path2}\uFF1A\u5B57\u6BB5\u503C\u7ED3\u6784\u58F0\u660E\u65E0\u6548\u3002`];
-  let budget = 2e4;
-  const visit = (v, s, p, depth) => {
-    if (--budget < 0 || depth > 24) return [`${p}\uFF1A\u503C\u68C0\u67E5\u8D85\u8FC7\u89C4\u6A21\u9650\u5236\u3002`];
-    if (s.anyOf && !s.anyOf.some((branch) => visit(v, branch, p, depth + 1).length === 0)) return [`${p}\uFF1A\u4E0D\u7B26\u5408\u4EFB\u4F55\u5141\u8BB8\u7684\u7ED3\u6784\u3002`];
-    if (s.type && (s.type === "array" ? !Array.isArray(v) : s.type === "object" ? !v || typeof v !== "object" || Array.isArray(v) : typeof v !== s.type)) return [`${p}\uFF1A\u9700\u8981 ${s.type}\u3002`];
-    if (typeof v === "number" && (!Number.isFinite(v) || s.minimum !== void 0 && v < s.minimum || s.exclusiveMinimum !== void 0 && v <= s.exclusiveMinimum)) return [`${p}\uFF1A\u6570\u503C\u65E0\u6548\u6216\u8D8A\u754C\u3002`];
-    if (s.enum && !s.enum.includes(v)) return [`${p}\uFF1A\u503C\u4E0D\u5728\u5141\u8BB8\u679A\u4E3E\u4E2D\u3002`];
-    if (Array.isArray(v)) {
-      if (s.minItems !== void 0 && v.length < s.minItems || s.maxItems !== void 0 && v.length > s.maxItems) return [`${p}\uFF1A\u6570\u7EC4\u957F\u5EA6\u4E0D\u7B26\u5408\u8981\u6C42\u3002`];
-      if (v.length > 1e5) return [`${p}\uFF1A\u6570\u7EC4\u8FC7\u5927\u3002`];
-      return s.items ? v.flatMap((item, i) => visit(item, s.items, `${p}/${i}`, depth + 1)).slice(0, 20) : [];
-    }
-    if (v && typeof v === "object") {
-      const row2 = v;
-      return [...(s.required ?? []).filter((key2) => row2[key2] === void 0).map((key2) => `${p}/${key2}\uFF1A\u7F3A\u5C11\u5FC5\u9700\u5C5E\u6027\u3002`), ...Object.entries(s.properties ?? {}).flatMap(([key2, child]) => row2[key2] === void 0 ? [] : visit(row2[key2], child, `${p}/${key2}`, depth + 1))].slice(0, 20);
-    }
-    return [];
-  };
-  return visit(value, schema, path2, 0);
 }
 
 // src/core/project/applicationResources.ts
@@ -9974,6 +9905,63 @@ function validateResourceGroups(application) {
     }
   }
   return issues;
+}
+
+// src/configStudio/valueSchema.ts
+var text = { type: "string" };
+var number = { type: "number" };
+var bool = { type: "boolean" };
+var object = (properties, required = []) => ({ type: "object", properties, required });
+var array = (items) => ({ type: "array", items });
+var id = { anyOf: [text, object({ ID: text }, ["ID"])] };
+var roadId = { anyOf: [text, { type: "array", items: text, minItems: 1 }, ...["tgt", "ID", "id"].map((key2) => object({ [key2]: text }, [key2]))] };
+var VALUE_SCHEMA_TEMPLATES = {
+  "rail-lines": { label: "\u7AD9\u53F0\u7EBF\u8DEF\u5F15\u7528", schema: array({ anyOf: [text, object({ ID: text, Avaliable: bool, Available: bool, NotAvaliable: bool, getin: bool, getout: bool, Overtaking: bool, NextOT: bool, stationDistance: number, bureau: text, line: text }, ["ID"])] }) },
+  "rail-platforms": { label: "\u7AD9\u573A\u7AD9\u53F0\u5F15\u7528", schema: array(id) },
+  "rail-stations": { label: "\u8F66\u7AD9\u7AD9\u573A\u5F15\u7528", schema: array(id) },
+  "road-modes": { label: "\u9053\u8DEF\u51FA\u884C\u65B9\u5F0F", schema: array({ anyOf: [text, { type: "array", items: text, minItems: 1 }, ...["code", "tgt", "ID", "id"].map((key2) => object({ [key2]: text }, [key2]))] }) },
+  "road-connections": { label: "\u9053\u8DEF\u8FDE\u63A5\u5173\u7CFB", schema: array({ anyOf: [...["mode", "Lot"].flatMap((mode) => ["tgt", "Tgt"].map((target) => object({ [mode]: { type: "string", enum: ["endpoint", "middle"] }, [target]: text }, [mode, target])))] }) },
+  "road-blacklist": { label: "\u9053\u8DEF\u8FDE\u63A5\u6392\u9664", schema: array(roadId) },
+  "target-point": { label: "\u4F20\u9001\u76EE\u6807\u5750\u6807", schema: object({ x: number, y: number, z: number }, ["x", "z"]) }
+};
+function validateValueSchema(schema) {
+  let budget = 512;
+  const visit = (s, depth) => {
+    if (--budget < 0 || depth > 12) return ["\u503C\u7ED3\u6784\u8D85\u8FC7\u6DF1\u5EA6\u6216\u89C4\u6A21\u9650\u5236\u3002"];
+    if (!s || typeof s !== "object" || Array.isArray(s)) return ["\u503C\u7ED3\u6784\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002"];
+    if (Object.keys(s).some((key2) => !["type", "anyOf", "properties", "required", "items", "enum", "minItems", "maxItems", "minimum", "exclusiveMinimum"].includes(key2))) return ["\u503C\u7ED3\u6784\u5305\u542B\u4E0D\u652F\u6301\u7684\u5C5E\u6027\u3002"];
+    if (!s.type && !s.anyOf?.length) return ["\u503C\u7ED3\u6784\u5FC5\u987B\u6307\u5B9A\u7C7B\u578B\u6216\u517C\u5BB9\u5206\u652F\u3002"];
+    if (s.anyOf && (!s.anyOf.length || s.anyOf.length > 16)) return ["\u503C\u7ED3\u6784\u517C\u5BB9\u5206\u652F\u6570\u91CF\u65E0\u6548\u3002"];
+    if (s.required?.some((key2) => !s.properties?.[key2] || ["__proto__", "prototype", "constructor"].includes(key2))) return ["\u5FC5\u9700\u5C5E\u6027\u672A\u5B9A\u4E49\u6216\u540D\u79F0\u4E0D\u5B89\u5168\u3002"];
+    if (s.properties && Object.keys(s.properties).some((key2) => ["__proto__", "prototype", "constructor"].includes(key2))) return ["\u503C\u7ED3\u6784\u5C5E\u6027\u540D\u79F0\u4E0D\u5B89\u5168\u3002"];
+    if (s.enum && (!s.enum.length || s.enum.length > 512 || s.enum.some((v) => !["string", "number", "boolean"].includes(typeof v) || typeof v === "number" && !Number.isFinite(v)))) return ["\u503C\u7ED3\u6784\u679A\u4E3E\u65E0\u6548\u3002"];
+    if ([s.minimum, s.exclusiveMinimum].some((v) => v !== void 0 && !Number.isFinite(v))) return ["\u503C\u7ED3\u6784\u6570\u503C\u8FB9\u754C\u65E0\u6548\u3002"];
+    if ([s.minItems, s.maxItems].some((v) => v !== void 0 && (!Number.isSafeInteger(v) || v < 0 || v > 1e5)) || s.minItems !== void 0 && s.maxItems !== void 0 && s.minItems > s.maxItems) return ["\u503C\u7ED3\u6784\u6570\u7EC4\u957F\u5EA6\u8FB9\u754C\u65E0\u6548\u3002"];
+    return [...s.anyOf ?? [], ...Object.values(s.properties ?? {}), ...s.items ? [s.items] : []].flatMap((child) => visit(child, depth + 1));
+  };
+  return visit(schema, 0).slice(0, 20);
+}
+function validateStructuredValue(value, schema, path2 = "value") {
+  if (validateValueSchema(schema).length) return [`${path2}\uFF1A\u5B57\u6BB5\u503C\u7ED3\u6784\u58F0\u660E\u65E0\u6548\u3002`];
+  let budget = 2e4;
+  const visit = (v, s, p, depth) => {
+    if (--budget < 0 || depth > 24) return [`${p}\uFF1A\u503C\u68C0\u67E5\u8D85\u8FC7\u89C4\u6A21\u9650\u5236\u3002`];
+    if (s.anyOf && !s.anyOf.some((branch) => visit(v, branch, p, depth + 1).length === 0)) return [`${p}\uFF1A\u4E0D\u7B26\u5408\u4EFB\u4F55\u5141\u8BB8\u7684\u7ED3\u6784\u3002`];
+    if (s.type && (s.type === "array" ? !Array.isArray(v) : s.type === "object" ? !v || typeof v !== "object" || Array.isArray(v) : typeof v !== s.type)) return [`${p}\uFF1A\u9700\u8981 ${s.type}\u3002`];
+    if (typeof v === "number" && (!Number.isFinite(v) || s.minimum !== void 0 && v < s.minimum || s.exclusiveMinimum !== void 0 && v <= s.exclusiveMinimum)) return [`${p}\uFF1A\u6570\u503C\u65E0\u6548\u6216\u8D8A\u754C\u3002`];
+    if (s.enum && !s.enum.includes(v)) return [`${p}\uFF1A\u503C\u4E0D\u5728\u5141\u8BB8\u679A\u4E3E\u4E2D\u3002`];
+    if (Array.isArray(v)) {
+      if (s.minItems !== void 0 && v.length < s.minItems || s.maxItems !== void 0 && v.length > s.maxItems) return [`${p}\uFF1A\u6570\u7EC4\u957F\u5EA6\u4E0D\u7B26\u5408\u8981\u6C42\u3002`];
+      if (v.length > 1e5) return [`${p}\uFF1A\u6570\u7EC4\u8FC7\u5927\u3002`];
+      return s.items ? v.flatMap((item, i) => visit(item, s.items, `${p}/${i}`, depth + 1)).slice(0, 20) : [];
+    }
+    if (v && typeof v === "object") {
+      const row2 = v;
+      return [...(s.required ?? []).filter((key2) => row2[key2] === void 0).map((key2) => `${p}/${key2}\uFF1A\u7F3A\u5C11\u5FC5\u9700\u5C5E\u6027\u3002`), ...Object.entries(s.properties ?? {}).flatMap(([key2, child]) => row2[key2] === void 0 ? [] : visit(row2[key2], child, `${p}/${key2}`, depth + 1))].slice(0, 20);
+    }
+    return [];
+  };
+  return visit(value, schema, path2, 0);
 }
 
 // src/configStudio/workflowExpression.ts
@@ -10300,7 +10288,7 @@ function fieldShape(field) {
   if (field.cardinality === "multiple") return { kinds: ["array"], item: result };
   return result;
 }
-function validateWorkflowWrites(workflow, fields) {
+function validateWorkflowWrites(workflow, fields, candidate) {
   const issues = [];
   const base = `workflows/${workflow.id}`;
   const add = (code, path2, message, severity = "error") => issues.push({ severity, code, path: path2, message });
@@ -10346,11 +10334,14 @@ function validateWorkflowWrites(workflow, fields) {
     return shape("number");
   };
   for (const output of workflow.outputs) {
+    if (candidate && output.id !== candidate.outputId) continue;
+    const constraint = candidate ? workflowCandidateConstraint(candidate.classification, workflow.outputs.indexOf(output)) : void 0;
     const writers = [];
-    const targetFields = fields(output.classification);
+    const targetFields = fields(candidate?.classification ?? output.classification ?? { class: "" });
     for (const assignment of output.assignments) {
       const path2 = `${base}/outputs/${output.id}/assignments/${assignment.id}`;
-      writers.push({ target: assignment.target, path: path2, conditions: [output.when, assignment.when] });
+      if (constraint && workflowConditionsDisjoint([constraint], [output.when, assignment.when]) === true) continue;
+      writers.push({ target: assignment.target, path: path2, conditions: [constraint, output.when, assignment.when] });
       const field = targetFields.find((field2) => field2.key === assignment.target);
       try {
         const ast = parseWorkflowExpression(assignment.expression);
@@ -10380,7 +10371,7 @@ function validateWorkflowWrites(workflow, fields) {
         }
       }
     }
-    for (const step of workflow.steps) for (const [index, binding] of (step.drawing?.bindings ?? []).entries()) if (binding.outputId === output.id) writers.push({ target: binding.target, path: `${base}/steps/${step.id}/drawing/bindings/${index}`, conditions: [output.when, step.when, workflow.outputs.find((item) => item.id === step.outputId)?.when] });
+    for (const step of workflow.steps) for (const [index, binding] of (step.drawing?.bindings ?? []).entries()) if (binding.outputId === output.id) writers.push({ target: binding.target, path: `${base}/steps/${step.id}/drawing/bindings/${index}`, conditions: [constraint, output.when, step.when, workflow.outputs.find((item) => item.id === step.outputId)?.when] });
     const indexed = /* @__PURE__ */ new Map();
     for (const writer of writers) indexed.set(writer.target, [...indexed.get(writer.target) ?? [], writer]);
     for (const group of indexed.values()) {
@@ -10406,6 +10397,10 @@ function validateWorkflowWrites(workflow, fields) {
   }
   return issues;
 }
+function workflowCandidateConstraint(path2, index) {
+  const values2 = { Class: path2.class, Kind: path2.kind ?? "", Skind: path2.skind ?? "", Skind2: path2.skind2 ?? "" };
+  return { token: "", operator: "present", all: Object.entries(values2).flatMap(([token, value]) => [token, `${token}_${index + 1}`].map((token2) => ({ token: token2, operator: "equals", value }))) };
+}
 
 // src/configStudio/workflowDrawingMigration.ts
 function migrateWorkflowDrawings(value) {
@@ -10423,7 +10418,7 @@ function migrateWorkflowDrawings(value) {
       main.drawing.captureSlot ??= `${main.drawing.pointSlot}_GEOMETRY`;
       main.drawing.returnFormat ??= main.geometry?.[0] === "Point" ? "coordP" : main.geometry?.[0] === "LineString" ? "coordL" : "coordG";
     }
-    if (workflow.outputs.find((output2) => output2.id === main.outputId)?.classification.class === "TPP" && main.label.zh === "\u7ED8\u5236") main.label = { ...main.label, zh: "\u8D77\u70B9\u5750\u6807" };
+    if (workflow.outputs.find((output2) => output2.id === main.outputId)?.classification?.class === "TPP" && main.label.zh === "\u7ED8\u5236") main.label = { ...main.label, zh: "\u8D77\u70B9\u5750\u6807" };
     steps.push(main);
     for (const point of points ?? []) {
       const moved = (main.controls ?? []).filter((control) => point.when && JSON.stringify(control.when) === JSON.stringify(point.when));
@@ -10434,7 +10429,7 @@ function migrateWorkflowDrawings(value) {
       }), drawing: { enabledFromThisPage: true, allowBack: true, keepDrawingWhenBack: true, captureSlot: point.slot, returnFormat: "pointObject", multiple: false, heightSlot: moved.find((control) => control.kind === "number")?.slot, bindings: [] } };
       steps.push(extra);
       const output2 = workflow.outputs.find((output3) => output3.id === original.outputId);
-      if (output2?.classification.class === "TPP") {
+      if (output2?.classification?.class === "TPP") {
         const known = output2.assignments.filter((assignment) => ["TGTcoordinate.x", "TGTcoordinate.y", "TGTcoordinate.z", "TGTelevation"].includes(assignment.target));
         const recognized = known.every((assignment) => ["-64", `${point.slot}_X`, `${point.slot}_Y`, `${point.slot}_Z`, extra.drawing?.heightSlot].includes(assignment.expression));
         if (recognized) {
@@ -10444,7 +10439,7 @@ function migrateWorkflowDrawings(value) {
       }
     }
     const output = workflow.outputs.find((output2) => output2.id === main.outputId);
-    if (output && ["TPP", "WRP"].includes(output.classification.class) && main.drawing.pointSlot) {
+    if (output && ["TPP", "WRP"].includes(output.classification?.class ?? "") && main.drawing.pointSlot) {
       const elevation = (main.controls ?? []).find((control) => control.slot === "SOURCE_ELEVATION");
       const rows = output.assignments.filter((assignment) => assignment.target === "elevation");
       if (elevation && rows.length && rows.every((assignment) => ["SOURCE_ELEVATION", "SOURCE_POINT_Y"].includes(assignment.expression))) {
@@ -11240,6 +11235,122 @@ function workflowControlFromField(field, slot, id2, config) {
     itemFields: [{ key: "", kind, label: structuredClone(field.labels), options: config ? resolveWorkflowSelectOptions(config, field) : field.options, search, required: true, placeholder: field.placeholder, optionValueType: field.optionValueType ?? (field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : void 0), fieldFormat: field.format }]
   } };
   return { ...common, kind, options: field.options, optionSource: field.optionSource, search };
+}
+
+// src/configStudio/lookupTables.ts
+function referencedField(config, ref) {
+  const node = config.nodes.find((node2) => node2.nodeId === ref.nodeId);
+  const matches = node ? resolveEffectiveFields(config, node.path).filter((field) => field.fieldId === ref.fieldId) : [];
+  return matches.length === 1 ? matches[0] : void 0;
+}
+function effectiveOptionTable(config, owner) {
+  if (owner.optionsFieldRef) {
+    if (!("nodes" in config)) return { valueType: owner.optionValueType ?? "string", rows: [] };
+    const field = referencedField(config, owner.optionsFieldRef);
+    return field ? { valueType: field.optionValueType ?? field.optionTable?.valueType ?? "string", rows: field.options ?? [] } : { valueType: owner.optionValueType ?? "string", rows: [] };
+  }
+  const table = owner.optionsTableId ? config.lookupTables?.find((table2) => table2.id === owner.optionsTableId) : void 0;
+  if (owner.optionsTableId) return { valueType: table?.valueType ?? owner.optionValueType ?? "string", rows: table?.rows ?? [] };
+  return owner.optionTable ?? { valueType: owner.optionValueType ?? "string", rows: owner.options ?? [] };
+}
+function effectiveOptions(config, owner) {
+  const rows = effectiveOptionTable(config, owner).rows;
+  return rows.map(({ value, label }) => ({ value, label }));
+}
+function effectiveOptionsOwner(config, owner) {
+  if (!owner.optionsFieldRef && !owner.optionsTableId && !owner.optionTable) return owner;
+  const table = effectiveOptionTable(config, owner);
+  return { ...owner, options: effectiveOptions(config, owner), optionValueType: table.valueType };
+}
+function cardOptionsOwner(item) {
+  return { ...item, options: item.valueOptions };
+}
+function resolveBoundCard(config, item) {
+  const field = item.fieldBinding ? referencedField(config, item.fieldBinding) : void 0;
+  const next = field ? { ...item, source: field.key, label: field.labels, options: { ...item.options, format: field.options?.length ? "enum" : field.format ?? "plain" } } : item;
+  const owner = cardOptionsOwner(next);
+  return owner.optionTable || owner.optionsTableId || owner.optionsFieldRef ? { ...next, valueOptions: effectiveOptions(config, owner) } : next;
+}
+function validateLookupTables(config, includeNodes = true) {
+  const issues = [];
+  const error = (path2, message, code = "lookup-table-invalid") => issues.push({ severity: "error", code, path: path2, message });
+  if (config.contractRevision < 10 && (config.lookupTables?.length || config.nodes.some((n) => n.fields.some((f) => f.optionsTableId)) || config.workflows.some((w) => w.steps.some((s) => s.controls?.some((c) => c.optionsTableId || c.group?.itemFields.some((f) => f.optionsTableId)))))) error("lookupTables", "\u5BF9\u7167\u8868\u9700\u8981 c10 \u5951\u7EA6\u3002");
+  const ids = /* @__PURE__ */ new Set();
+  for (const table of config.lookupTables ?? []) {
+    const path2 = `lookupTables/${table.id}`;
+    if (!/^[a-z][a-z0-9-]{1,80}$/.test(table.id) || ids.has(table.id)) error(path2, "\u8868\u683C ID \u5FC5\u987B\u6709\u6548\u4E14\u552F\u4E00\u3002");
+    ids.add(table.id);
+    if (!(table.label.zh.trim() || config.contractRevision >= 11 && table.label.en.trim())) error(path2, "\u8868\u683C\u9700\u8981\u4E2D\u6587\u6216\u82F1\u6587\u540D\u79F0\u3002");
+    if (!table.rows.length) error(path2, "\u8868\u683C\u81F3\u5C11\u9700\u8981\u4E00\u884C\u3002");
+    const values2 = /* @__PURE__ */ new Set();
+    const pointIds = /* @__PURE__ */ new Set();
+    for (const [index, row2] of table.rows.entries()) {
+      const at = `${path2}/rows/${index}`, normalized = table.valueType === "number" ? String(Number(row2.value)) : row2.value;
+      if (!row2.value.trim() || values2.has(normalized) || table.valueType === "number" && !Number.isFinite(Number(row2.value)) || table.valueType === "boolean" && !["true", "false"].includes(row2.value)) error(at, "\u5B58\u50A8\u503C\u4E3A\u7A7A\u3001\u91CD\u590D\u6216\u7C7B\u578B\u4E0D\u7B26\u3002");
+      values2.add(normalized);
+      if (!(row2.label.zh.trim() || config.contractRevision >= 11 && row2.label.en.trim())) error(at, "\u5BF9\u7167\u884C\u9700\u8981\u4E2D\u6587\u6216\u82F1\u6587\u540D\u79F0\u3002");
+      if (table.functionKind === "none" && row2.functionValue !== void 0) error(at, "\u65E0\u529F\u80FD\u503C\u8868\u683C\u4E0D\u80FD\u5305\u542B\u529F\u80FD\u503C\u3002");
+      if (table.functionKind === "speed" && (typeof row2.functionValue !== "number" || !Number.isFinite(row2.functionValue) || row2.functionValue <= 0)) error(at, "\u51FA\u884C\u901F\u5EA6\u5FC5\u987B\u4E3A\u6B63\u6570\uFF0C\u5355\u4F4D\u4E3A\u65B9\u5757/\u79D2\u3002");
+      if (table.functionKind === "teleportHub") {
+        const hub = row2.functionValue;
+        if (!hub || typeof hub === "number" || !("world" in hub) || !hub.world.trim() || !Number.isFinite(hub.range) || hub.range <= 0 || !hub.returnPoints.length) {
+          error(at, "\u67A2\u7EBD\u9700\u8BBE\u7F6E\u4E16\u754C\u3001\u6B63\u6570\u8303\u56F4\u53CA\u81F3\u5C11\u4E00\u4E2A\u8FD4\u56DE\u70B9\u3002");
+          continue;
+        }
+        for (const point of hub.returnPoints) {
+          if (!point.id.trim() || pointIds.has(`${hub.world}/${point.id}`) || ![point.x, point.y, point.z].every(Number.isFinite) || !point.label.zh.trim()) error(at, "\u8FD4\u56DE\u70B9 ID/\u540D\u79F0/\u5750\u6807\u65E0\u6548\uFF0C\u6216\u540C\u4E16\u754C ID \u91CD\u590D\u3002");
+          pointIds.add(`${hub.world}/${point.id}`);
+        }
+      }
+    }
+  }
+  const inspect = (owner, path2) => {
+    if (!owner.optionsTableId) return;
+    const table = config.lookupTables?.find((row2) => row2.id === owner.optionsTableId);
+    if (!table) error(path2, `\u5F15\u7528\u7684\u5BF9\u7167\u8868 ${owner.optionsTableId} \u4E0D\u5B58\u5728\u3002`, "lookup-table-reference-missing");
+    if (table && table.valueType !== (owner.optionValueType ?? "string")) error(path2, "\u8868\u683C\u5B58\u50A8\u503C\u7C7B\u578B\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u8868\u683C\u786E\u8BA4\u7ED1\u5B9A\u7C7B\u578B\u3002", "lookup-table-type-changed");
+    if (owner.options?.length) error(path2, "\u7ED1\u5B9A\u8868\u683C\u540E\u4E0D\u80FD\u540C\u65F6\u4FDD\u5B58\u72EC\u7ACB\u5BF9\u7167\u884C\uFF0C\u8BF7\u5148\u89E3\u9664\u7ED1\u5B9A\u3002");
+  };
+  if (includeNodes) config.nodes.forEach((node) => node.fields.forEach((field) => inspect(field, `nodes/${node.nodeId}/fields/${field.fieldId}`)));
+  config.workflows.forEach((w) => w.steps.forEach((s) => s.controls?.forEach((c) => {
+    inspect(c, `workflows/${w.id}/${c.id}`);
+    c.group?.itemFields.forEach((f) => inspect(f, `workflows/${w.id}/${c.id}/${f.key}`));
+  })));
+  if (config.contractRevision >= 11) {
+    const check = (owner, path2, expected, defaultValue) => {
+      if ([Boolean(owner.optionsFieldRef), Boolean(owner.optionsTableId), Boolean(owner.optionTable)].filter(Boolean).length > 1) error(path2, "\u526F\u672C\u3001\u5B57\u6BB5\u5BF9\u7167\u548C\u516C\u5171\u8868\u53EA\u80FD\u9009\u62E9\u4E00\u79CD\u6765\u6E90\u3002");
+      if ((owner.optionsTableId || owner.optionsFieldRef || owner.optionTable) && owner.options?.length) error(path2, "\u5BF9\u7167\u4E3B\u4F53\u6216\u7ED1\u5B9A\u4E0D\u80FD\u540C\u65F6\u4FDD\u5B58\u65E7\u5F0F\u72EC\u7ACB\u884C\u3002");
+      const table = effectiveOptionTable(config, owner), binding = owner.optionsTableId || owner.optionsFieldRef;
+      if (owner.optionsFieldRef && !referencedField(config, owner.optionsFieldRef)) error(path2, "\u7ED1\u5B9A\u5B57\u6BB5\u4E0D\u5B58\u5728\u6216\u5728\u8BE5\u5206\u7C7B\u4E2D\u4E0D\u518D\u6709\u6548\u3002", "lookup-field-reference-missing");
+      if (binding && !table.rows.length) error(path2, "\u7ED1\u5B9A\u6765\u6E90\u4E3A\u7A7A\uFF0C\u5FC5\u987B\u624B\u52A8\u4FEE\u590D\u3002", "lookup-binding-empty");
+      if (binding && owner.optionValueType && table.valueType !== owner.optionValueType) error(path2, "\u7ED1\u5B9A\u6765\u6E90\u7C7B\u578B\u5DF2\u6539\u53D8\uFF0C\u8BF7\u91CD\u65B0\u7ED1\u5B9A\u786E\u8BA4\u3002", "lookup-binding-type-changed");
+      if (expected && table.rows.length && table.valueType !== expected) error(path2, "\u5BF9\u7167\u503C\u7C7B\u578B\u4E0E\u76EE\u6807\u5B57\u6BB5\u4FDD\u5B58\u7C7B\u578B\u4E0D\u517C\u5BB9\u3002");
+      const values2 = /* @__PURE__ */ new Set();
+      for (const row2 of table.rows) {
+        const key2 = table.valueType === "number" ? String(Number(row2.value)) : row2.value;
+        if (!row2.value.trim() || values2.has(key2) || table.valueType === "number" && !Number.isFinite(Number(row2.value)) || table.valueType === "boolean" && !["true", "false"].includes(row2.value) || !(row2.label.zh.trim() || row2.label.en.trim())) error(path2, "\u5BF9\u7167\u5305\u542B\u7A7A\u540D\u79F0\u3001\u91CD\u590D\u503C\u6216\u4E0D\u5408\u6CD5\u7684\u4FDD\u5B58\u503C\u3002");
+        values2.add(key2);
+      }
+      if (defaultValue !== void 0 && table.rows.length && (!table.rows.some((row2) => row2.value === String(defaultValue)) || typeof defaultValue !== table.valueType)) error(path2, "\u9ED8\u8BA4\u503C\u4E0E\u5F53\u524D\u5BF9\u7167\u7684\u4FDD\u5B58\u503C\u6216\u7C7B\u578B\u4E0D\u517C\u5BB9\u3002");
+    };
+    if (includeNodes) config.nodes.forEach((node) => {
+      node.fields.forEach((field) => check(field, `nodes/${node.nodeId}/fields/${field.fieldId}`, field.type === "enum" ? field.optionValueType ?? "string" : field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : field.type === "string" ? "string" : void 0));
+      if (node.card?.mode === "fields") node.card.items.forEach((item) => {
+        const path2 = `nodes/${node.nodeId}/card/${item.id}`;
+        check(cardOptionsOwner(item), path2);
+        if (item.fieldBinding) {
+          const field = referencedField(config, item.fieldBinding);
+          if (!field) error(path2, "\u4FE1\u606F\u5361\u5B57\u6BB5\u7ED1\u5B9A\u6765\u6E90\u4E0D\u5B58\u5728\u3002", "card-field-binding-missing");
+          else if (!(field.labels.zh.trim() || field.labels.en.trim())) error(path2, "\u7ED1\u5B9A\u5B57\u6BB5\u6CA1\u6709\u6709\u6548\u663E\u793A\u540D\u79F0\u3002");
+        }
+      });
+    });
+    config.workflows.forEach((w) => w.steps.forEach((s) => s.controls?.forEach((c) => {
+      check(c, `workflows/${w.id}/${c.id}`, void 0, c.defaultValue);
+      c.group?.itemFields.forEach((f) => check(f, `workflows/${w.id}/${c.id}/${f.key}`, void 0, f.defaultValue));
+    })));
+  }
+  return issues;
 }
 
 // src/configStudio/fieldReuse.ts
@@ -12262,8 +12373,9 @@ function compileWorkflowEditPlan(workflow, config) {
   if (workflow.outputs.length !== 1 || drawings.length !== 1 || drawings[0]?.outputId !== workflow.outputs[0]?.id) errors.push("\u5FC5\u987B\u53EA\u6709\u4E00\u4E2A\u660E\u786E\u7ED1\u5B9A\u8F93\u51FA\u7684\u8981\u7D20\u7ED8\u5236\u3002");
   if (workflow.steps.some((s) => s.when || s.controls?.some((c) => c.when || c.group?.itemFields.some((f) => "when" in f && f.when))) || workflow.outputs.some((o) => o.when || o.assignments.some((a) => a.when))) errors.push("\u4E0D\u80FD\u5305\u542B\u8F93\u5165\u3001\u9875\u9762\u6216\u8F93\u51FA\u7684\u542F\u7528\u6761\u4EF6\u3002");
   if (errors.length) throw Error(errors.join("\n"));
-  const output = workflow.outputs[0], scope = workflow.editor?.scope ?? output.classification;
-  if (!pathMatchesScope(scope, output.classification) || !config.nodes.some((n) => classificationPathKey(n.path) === classificationPathKey(scope))) throw Error("\u7F16\u8F91\u4F5C\u7528\u8303\u56F4\u5FC5\u987B\u4E3A\u8F93\u51FA\u8303\u56F4\u5185\u7684\u5B9E\u9645\u5206\u7C7B\u3002");
+  const output = workflow.outputs[0], scope = workflow.editor?.scope ?? output.classification ?? { class: "" };
+  const classifications = workflowClassificationGroup(config, output).paths.filter((path2) => pathMatchesScope(path2, scope));
+  if (workflow.editor?.scope && !hasCategoryNode(config, scope) || !classifications.length || config.contractRevision < 15 && (!output.classification || !pathMatchesScope(scope, output.classification) || !config.nodes.some((n) => classificationPathKey(n.path) === classificationPathKey(scope)))) throw Error("\u7F16\u8F91\u4F5C\u7528\u8303\u56F4\u5FC5\u987B\u4E3A\u8F93\u51FA\u8303\u56F4\u5185\u7684\u5B9E\u9645\u5206\u7C7B\u3002");
   const controls = workflow.steps.flatMap((s) => s.controls ?? []), tokens = new Set(controls.flatMap((c) => c.slot ? [c.slot] : [])), needed = /* @__PURE__ */ new Set(), idOnly = /* @__PURE__ */ new Set(), bindings = [];
   for (const assignment of output.assignments) {
     const ast = parseWorkflowExpression(assignment.expression), used = workflowExpressionTokens(ast).filter((t) => tokens.has(t));
@@ -12280,13 +12392,13 @@ function compileWorkflowEditPlan(workflow, config) {
   for (const control of controls) for (const condition of control.requiredWhen ?? []) for (const token of conditionTokens(condition)) if (tokens.has(token)) needed.add(token);
   const explicit = workflow.editor?.backfill ?? [];
   for (const binding of explicit) {
-    if (!tokens.has(binding.slot) || !isSafeWorkflowTarget(binding.target) || !resolveSelectableFields(config, scope).some((f) => f.key === binding.target) || ["World", "Class", "Kind", "SKind", "SKind2", "Creator", "CreateBy", "CreateTime"].includes(binding.target)) errors.push(`\u56DE\u586B\u6620\u5C04 ${binding.slot} \u2192 ${binding.target} \u65E0\u6548\u3002`);
+    if (!tokens.has(binding.slot) || !isSafeWorkflowTarget(binding.target) || !workflowOutputFields(config, output).some((f) => f.key === binding.target) || ["World", "Class", "Kind", "SKind", "SKind2", "Creator", "CreateBy", "CreateTime"].includes(binding.target)) errors.push(`\u56DE\u586B\u6620\u5C04 ${binding.slot} \u2192 ${binding.target} \u65E0\u6548\u3002`);
     else bindings.push({ ...binding });
   }
   const removed = controls.filter((c) => c.slot && idOnly.has(c.slot) && !needed.has(c.slot)), kept = controls.filter((c) => !removed.includes(c));
   for (const control of kept) if (control.slot && !bindings.some((b) => b.slot === control.slot) && !["classificationPicker", "tagsExtensions"].includes(control.kind)) errors.push(`\u63A7\u4EF6 ${control.slot}\uFF08${control.label.zh}\uFF09\u7F3A\u5C11\u53EF\u9006\u76F4\u63A5\u8D4B\u503C\u6216\u660E\u786E\u56DE\u586B\u6620\u5C04\u3002`);
   if (errors.length) throw Error(errors.join("\n"));
-  return { workflow: structuredClone(workflow), scope, controls: structuredClone(kept), removed: structuredClone(removed), bindings: bindings.filter((b, i, all) => all.findIndex((x) => x.slot === b.slot && x.target === b.target) === i) };
+  return { workflow: structuredClone(workflow), scope, classifications, controls: structuredClone(kept), removed: structuredClone(removed), bindings: bindings.filter((b, i, all) => all.findIndex((x) => x.slot === b.slot && x.target === b.target) === i) };
 }
 function conditionTokens(condition) {
   return [condition.token, ...(condition.all ?? condition.any ?? []).flatMap(conditionTokens)].filter(Boolean);
@@ -12321,7 +12433,7 @@ function residualAnnotations(plan, record) {
 }
 function hydrateWorkflowEdit(plan, record) {
   const classification = recordClassification(record);
-  if (!pathMatchesScope(classification, plan.scope)) throw Error("\u8BB0\u5F55\u4E0D\u5728\u7F16\u8F91\u5DE5\u4F5C\u6D41\u7684\u4F5C\u7528\u8303\u56F4\u5185\u3002");
+  if (!pathMatchesScope(classification, plan.scope) || plan.workflow.outputs[0].classificationGroup && !plan.classifications.some((path2) => classificationPathKey(path2) === classificationPathKey(classification))) throw Error("\u8BB0\u5F55\u4E0D\u5728\u7F16\u8F91\u5DE5\u4F5C\u6D41\u7684\u4F5C\u7528\u8303\u56F4\u5185\u3002");
   const slots = { EDIT_ID: record.ID };
   for (const control of plan.controls) {
     if (control.kind === "classificationPicker") {
@@ -12353,7 +12465,7 @@ function buildWorkflowEditRecord(plan, original, draft, options = {}) {
   const id2 = String(draft.slots.EDIT_ID ?? "").trim();
   if (!id2) throw Error("ID \u4E0D\u80FD\u4E3A\u7A7A\u3002");
   record.ID = id2;
-  if (!pathMatchesScope(draft.classification, plan.scope)) throw Error("\u4E0D\u80FD\u5C06\u8981\u7D20\u6539\u4E3A\u5DE5\u4F5C\u6D41\u4F5C\u7528\u8303\u56F4\u4E4B\u5916\u7684\u5206\u7C7B\u3002");
+  if (!pathMatchesScope(draft.classification, plan.scope) || plan.workflow.outputs[0].classificationGroup && !plan.classifications.some((path2) => classificationPathKey(path2) === classificationPathKey(draft.classification))) throw Error("\u4E0D\u80FD\u5C06\u8981\u7D20\u6539\u4E3A\u5DE5\u4F5C\u6D41\u4F5C\u7528\u8303\u56F4\u4E4B\u5916\u7684\u5206\u7C7B\u3002");
   if (!annotationEqual(draft.classification, recordClassification(original))) {
     for (const [key2, value] of [["Class", draft.classification.class], ["Kind", draft.classification.kind], ["SKind", draft.classification.skind], ["SKind2", draft.classification.skind2]]) if (value) record[key2] = value;
     else delete record[key2];
@@ -12507,7 +12619,7 @@ function cleanStructured(value, schemas, path2, protectedPaths) {
 function groupSchemas(config, path2) {
   const schemas = /* @__PURE__ */ new Map();
   for (const workflow of config.workflows) for (const output of workflow.outputs) {
-    if (!pathMatchesScope(path2, output.classification)) continue;
+    if (config.contractRevision >= 15 ? !outputAcceptsClassification(config, output, path2) : !output.classification || !pathMatchesScope(path2, output.classification)) continue;
     for (const assignment of output.assignments) {
       const control = workflow.steps.flatMap((step) => step.controls ?? []).find((item) => item.kind === "group" && item.slot === assignment.expression.trim());
       if (!control?.group || control.group.storage === "scalar") continue;
@@ -12608,8 +12720,9 @@ function setPath2(target, path2, value) {
   }
   cursor[parts[parts.length - 1]] = value;
 }
-function resolvedClassification(output, selections) {
-  return selections[output.id] ?? output.classification;
+function resolvedClassification(output, selections, config) {
+  const paths = config && config.contractRevision >= 15 ? workflowClassificationGroup(config, output).paths : [];
+  return selections[output.id] ?? output.classification ?? (paths.length === 1 ? paths[0] : { class: "" });
 }
 function parseStructuredOutput(target, value) {
   if (target !== "tags" && target !== "extensions") return value;
@@ -12643,8 +12756,8 @@ function workflowOutputSystem(workflow, slots, options, outputId) {
   const world = normalizeV3WorldId(options.world ?? slots.World ?? "zth");
   const values2 = (classification) => ({ World: world, WorldPrefix: resolveV3WorldPrefix(world), Class: classification.class, Kind: classification.kind ?? "", Skind: classification.skind ?? "", Skind2: classification.skind2 ?? "", Creator: slots.actor ?? "", ID: slots.ID ?? "" });
   const selected = workflow.outputs.find((output) => output.id === outputId) ?? workflow.outputs[0];
-  const system = selected ? values2(resolvedClassification(selected, options.classifications ?? {})) : {};
-  workflow.outputs.forEach((output, index) => Object.entries(values2(resolvedClassification(output, options.classifications ?? {}))).forEach(([key2, value]) => {
+  const system = selected ? values2(resolvedClassification(selected, options.classifications ?? {}, options.config)) : {};
+  workflow.outputs.forEach((output, index) => Object.entries(values2(resolvedClassification(output, options.classifications ?? {}, options.config))).forEach(([key2, value]) => {
     system[`${key2}_${index + 1}`] = value;
   }));
   return system;
@@ -12662,10 +12775,10 @@ function evaluateV3WorkflowOutputs(workflow, slots, options = {}) {
   for (const index of workflowOutputAssemblyOrder(workflow)) {
     const output = workflow.outputs[index];
     if (!active.has(output.id)) continue;
-    const classification = resolvedClassification(output, options.classifications ?? {});
+    const classification = resolvedClassification(output, options.classifications ?? {}, options.config);
     const system = workflowOutputSystem(workflow, slots, { ...options, world }, output.id);
     for (const [otherIndex, result] of assembled) system[`ID_${otherIndex + 1}`] = result.record.ID ?? "";
-    if (options.config && (!hasCategoryNode(options.config, classification) || hasDescendants(options.config, classification) || !pathMatchesScope(classification, output.classification) || !resolveGeometryProfile(options.config, classification, output.geometry.selected)?.enabled)) throw new Error(`\u8F93\u51FA ${output.id} \u5FC5\u987B\u9009\u62E9\u6700\u7EC8\u5206\u7C7B\u4E0E\u6709\u6548\u51E0\u4F55\u3002`);
+    if (options.config && (!recordClassificationEligible(options.config, classification, output.geometry.selected) || !outputAcceptsClassification(options.config, output, classification))) throw new Error(`\u8F93\u51FA ${output.id} \u5FC5\u987B\u9009\u62E9\u6700\u7EC8\u5206\u7C7B\u4E0E\u6709\u6548\u51E0\u4F55\u3002`);
     const record = { World: world, Class: classification.class, ...classification.kind ? { Kind: classification.kind } : {}, ...classification.skind ? { SKind: classification.skind } : {}, ...classification.skind2 ? { SKind2: classification.skind2 } : {} };
     const actor = String(slots.actor ?? "").trim();
     if (actor) record.Creator = actor;
@@ -12722,7 +12835,7 @@ function validateV3WorkflowRecords(config, workflow, result) {
   const issues = [];
   for (const output of result) {
     const definition = workflow.outputs.find((item) => item.id === output.outputId);
-    if (!definition || !hasCategoryNode(config, output.classification) || !pathMatchesScope(output.classification, definition.classification)) {
+    if (!definition || !recordClassificationEligible(config, output.classification, definition.geometry.selected) || !outputAcceptsClassification(config, definition, output.classification)) {
       issues.push({ message: `\u8F93\u51FA ${output.outputId} \u7684\u5206\u7C7B\u65E0\u6548\u3002` });
       continue;
     }
@@ -12759,8 +12872,8 @@ function validateV3WorkflowRecords(config, workflow, result) {
 // src/configStudio/workflowEditCommit.ts
 function testWorkflowEditConversion(config, workflow, records = []) {
   workflow = resolveWorkflowFields(config, workflow);
-  const plan = compileWorkflowEditPlan(workflow, config), output = workflow.outputs[0], matching = records.filter((r) => pathMatchesScope(recordClassification(r), plan.scope));
-  const path2 = config.nodes.find((n) => pathMatchesScope(n.path, plan.scope) && !hasDescendants(config, n.path) && resolveGeometryProfile(config, n.path, output.geometry.selected)?.enabled)?.path;
+  const plan = compileWorkflowEditPlan(workflow, config), output = workflow.outputs[0], matching = records.filter((r) => plan.classifications.some((path3) => classificationPathKey(path3) === classificationPathKey(recordClassification(r))));
+  const path2 = plan.classifications[0];
   if (!path2) throw Error("\u7F16\u8F91\u8303\u56F4\u6CA1\u6709\u6700\u7EC8\u53EF\u7528\u5206\u7C7B\u3002");
   const slots = { ID: "EDIT_SAMPLE", actor: "editing-test" };
   for (const control of workflow.steps.flatMap((s) => s.controls ?? [])) {
@@ -12841,6 +12954,234 @@ function validatePrefillCopies(config, resolve) {
     if (current2 !== audit.fingerprint && current2 !== audit.confirmedFingerprint) issues.push({ severity: "warning", code: "prefill-copy-outdated", path: path2, field: field.key, message: `\u6765\u6E90 ${source} / ${field.key} \u7684\u5B9A\u4E49\u3001\u540D\u79F0\u3001\u7C7B\u578B\u6216\u5BF9\u7167\u5DF2\u53D8\u5316\uFF1B${path2} \u4ECD\u4FDD\u7559\u72EC\u7ACB\u526F\u672C\u3002\u8BF7\u91CD\u65B0\u9884\u586B\uFF0C\u6216\u786E\u8BA4\u4FDD\u7559\u672C\u6B21\u81EA\u5B9A\u4E49\u526F\u672C\u3002` });
   });
   return issues;
+}
+
+// src/core/project/navigationDefinition.ts
+var RAILWAY_ROLES = ["lines", "platforms", "stationAreas", "stations"];
+function pathCovers(scope, path2) {
+  return ["class", "kind", "skind", "skind2"].every((key2) => !scope[key2] || scope[key2] === path2[key2]);
+}
+function pathsMatch(paths, path2) {
+  return paths.some((scope) => pathCovers(scope, path2));
+}
+function rawClassification(value) {
+  return { class: String(value.Class ?? value.class ?? "").trim(), kind: value.Kind, skind: value.SKind ?? value.Skind, skind2: value.SKind2 ?? value.Skind2 };
+}
+
+// src/configStudio/navigationValidation.ts
+var sharedBase = "application/preferences/railwayRoles";
+var navBase = "application/navigation";
+var stable2 = (value) => JSON.stringify(value, (_key, row2) => row2 && typeof row2 === "object" && !Array.isArray(row2) ? Object.fromEntries(Object.entries(row2).sort(([a], [b]) => a.localeCompare(b))) : row2);
+function validateNavigationConfiguration(config, fields) {
+  const issues = [], app = config.application;
+  const add = (path2, message, relatedPaths = [], severity = "error") => issues.push({ severity, code: "navigation-configuration-invalid", path: path2, message, relatedPaths });
+  if (config.contractRevision < 13) {
+    if (app?.navigation || app?.preferences.railwayRoles || config.nodes.some((n) => n.fields.some((f) => f.valueSchema))) add(navBase, "\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u3001\u5BFC\u822A\u8BBE\u7F6E\u53CA\u503C\u7ED3\u6784\u58F0\u660E\u9700\u8981\u5951\u7EA6 c13\u3002");
+    return issues;
+  }
+  if (!app?.navigation || !app.preferences.railwayRoles) {
+    add(navBase, "c13 \u5FC5\u987B\u5305\u542B\u8DEF\u5F84\u89C4\u5212\u8BBE\u7F6E\u548C\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u5B9A\u4E49\u3002", [sharedBase]);
+    return issues;
+  }
+  if (app.preferences.navigation) add(navBase, "\u65E7\u5BFC\u822A\u53C2\u6570\u4E0E r13 \u8BBE\u7F6E\u4E0D\u80FD\u5E76\u5B58\u3002", ["application/preferences/navigation"]);
+  const nav = app.navigation, shared = app.preferences.railwayRoles.selectors;
+  const pointNodes = (path2) => config.nodes.filter((n) => pathCovers(path2, n.path));
+  const geometry = (path2) => {
+    const nodes = config.nodes.filter((n) => pathCovers(n.path, path2) && n.geometryType).sort((a, b) => Object.values(a.path).filter(Boolean).length - Object.values(b.path).filter(Boolean).length);
+    return nodes[nodes.length - 1]?.geometryType;
+  };
+  const checkPaths = (rows, base, required) => {
+    if (required && !rows.length) add(base, "\u542F\u7528\u7684\u89D2\u8272\uFF0F\u53C2\u4E0E\u8303\u56F4\u81F3\u5C11\u9700\u8981\u4E00\u6761\u5206\u7C7B\u3002");
+    for (const [i, row2] of rows.entries()) {
+      if (!row2.class || row2.skind && !row2.kind || row2.skind2 && !row2.skind || !config.nodes.some((n) => stable2(n.path) === stable2(Object.fromEntries(Object.entries(row2).filter(([, v]) => v))))) add(`${base}/${i}`, "Class \u5FC5\u586B\uFF0C\u56DB\u7EA7\u5206\u7C7B\u5FC5\u987B\u8FDE\u7EED\u4E14\u5B58\u5728\u3002");
+      if (rows.some((other, at) => at !== i && pathCovers(other, row2))) add(`${base}/${i}`, "\u8303\u56F4\u88AB\u540C\u89D2\u8272\u53E6\u4E00\u884C\u5305\u542B\uFF0C\u53EF\u6574\u7406\u5197\u4F59\u884C\u3002", [], "warning");
+    }
+  };
+  const shape2 = (field, template, path2, related) => {
+    if (!field.valueSchema || stable2(field.valueSchema) !== stable2(VALUE_SCHEMA_TEMPLATES[template].schema)) add(path2, `${field.key} \u9700\u8981\u5DF2\u6CE8\u518C\u7684\u201C${VALUE_SCHEMA_TEMPLATES[template].label}\u201D\u503C\u7ED3\u6784\u6A21\u677F\u3002`, related);
+  };
+  const inspect = (rows, base, role, navigation) => {
+    const nodes = [...new Map(rows.flatMap(pointNodes).map((n) => [n.nodeId, n])).values()];
+    for (const node of nodes) {
+      const fs = fields(config, node.path), byKey = new Map(fs.map((f) => [f.key, f])), related = [`nodes/${node.nodeId}`];
+      const field = (key2, kind, required = false, template) => {
+        const f = byKey.get(key2);
+        if (!f) {
+          if (required) add(base, `${node.nodeId} \u7F3A\u5C11 ${key2} \u5B57\u6BB5\u5B9A\u4E49\u3002`, related);
+          return;
+        }
+        const type = f.type === "enum" ? f.optionValueType ?? "string" : f.type === "reference" ? "string" : f.type;
+        if (type !== kind || f.cardinality !== "single") add(base, `${node.nodeId} \u7684 ${key2} \u9700\u8981\u5355\u503C ${kind}\u3002`, related);
+        if (template && type === "json") shape2(f, template, base, related);
+      };
+      const reference = (key2, scopes, matchField = "ID") => {
+        const ref = byKey.get(key2)?.reference;
+        if (ref && (ref.matchField !== matchField || !scopes.some((p) => p.class === ref.classCode))) add(base, `${node.nodeId} \u7684 ${key2} \u5F15\u7528\u76EE\u6807\u4E0E\u89D2\u8272\u8303\u56F4\u4E0D\u517C\u5BB9\u3002`, related);
+      };
+      const domain = (key2, tableId) => {
+        const f = byKey.get(key2);
+        if (!f || f.type !== "enum") return;
+        const allowed = new Set(config.lookupTables?.find((t) => t.id === tableId)?.rows.map((r) => r.value));
+        const declared = effectiveOptionTable(config, f);
+        if (declared.rows.some((row2) => !allowed.has(row2.value))) add(base, `${node.nodeId} \u7684 ${key2} \u679A\u4E3E\u57DF\u8D85\u51FA\u7ED1\u5B9A\u529F\u80FD\u8868\u3002`, [...related, `lookupTables/${tableId}`]);
+      };
+      field("Name", "string");
+      if (role === "lines") {
+        field("direction", "number", navigation);
+        field("color", "string");
+        field("bureau", "string");
+        field("line", "string");
+      }
+      if (role === "platforms") {
+        field("lines", "json", true, "rail-lines");
+        field("Situation", "boolean", navigation);
+        field("Connect", "boolean", navigation);
+      }
+      if (role === "stationAreas") {
+        field("platforms", "json", true, "rail-platforms");
+        field("STBuilding", "string", true);
+        reference("STBuilding", shared.stations);
+      }
+      if (role === "stations") for (const key2 of ["Stations", "stations", "stationsgroup", "stationsGroup", "StationsGroup", "Stationsgroup"]) field(key2, "json", false, "rail-stations");
+      if (role === "roads") {
+        field("Level", "number", true);
+        field("Oneway", "boolean", true);
+        for (const key2 of ["Enter", "Exit", "SelfJunction"]) field(key2, "boolean");
+        field("Speed", "number");
+        field("Mode", "json", false, "road-modes");
+        field("ConnectL", "json", false, "road-connections");
+        field("Blacklist", "json", false, "road-blacklist");
+      }
+      if (role === "teleportPoints") {
+        field("hub", "string");
+        field("TGTWarp", "string");
+        field("TGTcoordinate", "json", false, "target-point");
+        for (const key2 of ["TGT_x", "TGT_z", "TGTelevation"]) field(key2, "number");
+        if (!byKey.has("TGTWarp") && !byKey.has("TGTcoordinate") && !(byKey.has("TGT_x") && byKey.has("TGT_z"))) add(base, `${node.nodeId} \u7F3A\u5C11 Warp \u6216\u76EE\u6807\u5750\u6807\u5B57\u6BB5\u3002`, related);
+        reference("TGTWarp", nav.teleport.selectors.warpPoints, "WRPointI2D");
+        domain("hub", nav.teleport.hubTableId);
+      }
+      if (role === "warpPoints") field("WRPointI2D", "string", true);
+      if (navigation) {
+        const allowed = role === "lines" || role === "roads" ? ["LineString"] : role === "stations" ? ["Point", "Polygon"] : ["Point"];
+        if (!allowed.includes(geometry(node.path) ?? "")) add(base, `${node.nodeId} \u7684\u6709\u6548\u51E0\u4F55\u4E0D\u9002\u5408\u8BE5\u5BFC\u822A\u89D2\u8272\u3002`, related);
+      }
+    }
+  };
+  const sharedUsed = nav.rail.enabled || config.nodes.some((n) => n.card?.mode === "fields" && n.card.items.some((i) => i.renderer === "lineChips") || n.fieldSettings?.search?.extension?.mode === "lineChips");
+  for (const role of RAILWAY_ROLES) {
+    const sPath = `${sharedBase}/selectors/${role}`, nPath = `${navBase}/rail/selectors/${role}`;
+    checkPaths(shared[role], sPath, sharedUsed);
+    inspect(shared[role], sPath, role, false);
+    checkPaths(nav.rail.selectors[role], nPath, nav.rail.enabled);
+    for (const [i, row2] of nav.rail.selectors[role].entries()) if (!shared[role].some((scope) => pathCovers(scope, row2))) add(`${nPath}/${i}`, "\u5BFC\u822A\u53C2\u4E0E\u8303\u56F4\u8D85\u51FA\u540C\u89D2\u8272\u5171\u4EAB\u5B9A\u4E49\uFF0C\u8BF7\u534F\u8C03\u4FEE\u6539\u4E24\u533A\u3002", [sPath]);
+    if (nav.rail.enabled) inspect(nav.rail.selectors[role], nPath, role, true);
+  }
+  const overlap = (roles) => {
+    for (let a = 0; a < roles.length; a++) for (let b = a + 1; b < roles.length; b++) if (roles[a][1].some((x) => roles[b][1].some((y) => pathCovers(x, y) || pathCovers(y, x)))) add(roles[a][0], "\u4E0D\u540C\u89D2\u8272\u7684\u5206\u7C7B\u8303\u56F4\u91CD\u53E0\u3002", [roles[b][0]]);
+  };
+  overlap(RAILWAY_ROLES.map((role) => [`${sharedBase}/selectors/${role}`, shared[role]]));
+  for (const role of ["teleportPoints", "warpPoints"]) {
+    const base = `${navBase}/teleport/selectors/${role}`;
+    checkPaths(nav.teleport.selectors[role], base, nav.teleport.enabled);
+    if (nav.teleport.enabled) inspect(nav.teleport.selectors[role], base, role, true);
+  }
+  overlap(["teleportPoints", "warpPoints"].map((role) => [`${navBase}/teleport/selectors/${role}`, nav.teleport.selectors[role]]));
+  checkPaths(nav.road.selectors.roads, `${navBase}/road/selectors/roads`, nav.road.enabled);
+  if (nav.road.enabled) inspect(nav.road.selectors.roads, `${navBase}/road/selectors/roads`, "roads", true);
+  for (const [module, id2, kind] of [["teleport", nav.teleport.hubTableId, "teleportHub"], ["road", nav.road.travelModesTableId, "speed"]]) {
+    const table = config.lookupTables?.find((t) => t.id === id2), path2 = `${navBase}/${module}`;
+    if (!id2 && !nav[module].enabled) continue;
+    if (!table || table.functionKind !== kind || table.valueType !== "string") {
+      add(path2, "\u7ED1\u5B9A\u8868\u4E0D\u5B58\u5728\uFF0C\u6216\u529F\u80FD\u503C\u683C\u5F0F\uFF0F\u6587\u672C\u5B58\u50A8\u7C7B\u578B\u4E0D\u517C\u5BB9\u3002", [`lookupTables/${id2}`]);
+      continue;
+    }
+    if (!table.rows.length) add(path2, "\u5BFC\u822A\u7ED1\u5B9A\u8868\u4E0D\u80FD\u4E3A\u7A7A\u3002", [`lookupTables/${id2}`]);
+    for (const row2 of table.rows) {
+      const value = row2.functionValue;
+      if (kind === "teleportHub" && value && typeof value === "object" && "world" in value && !app.worlds.some((w) => [w.id, w.prefix, String(w.numericCode), w.label.zh, w.label.en].includes(value.world))) add(path2, "\u67A2\u7EBD\u6307\u5B9A\u7684\u4E16\u754C\u4E0D\u5B58\u5728\u3002", [`lookupTables/${id2}`, "application/worlds"]);
+    }
+  }
+  for (const node of config.nodes) for (const f of node.fields) if (f.valueSchema) {
+    if (f.type !== "json" || f.cardinality !== "single") add(`nodes/${node.nodeId}/fields/${f.fieldId}`, "\u7ED3\u6784\u58F0\u660E\u7528\u4E8E\u5355\u503C JSON \u5BB9\u5668\u3002");
+    for (const error of validateValueSchema(f.valueSchema)) add(`nodes/${node.nodeId}/fields/${f.fieldId}/valueSchema`, error);
+  }
+  return issues;
+}
+function validateNavigationRecords(config, records) {
+  const app = config.application, nav = app?.navigation, shared = app?.preferences.railwayRoles?.selectors;
+  if (config.contractRevision < 13 || !nav || !shared) return [];
+  const result = [], ids = /* @__PURE__ */ new Map(), warps = /* @__PURE__ */ new Map();
+  const world = (r) => app.worlds.find((w) => [w.id, w.prefix, String(w.numericCode), w.label.zh, w.label.en].includes(String(r.World)))?.id ?? String(r.World ?? "");
+  const role = (r, key2) => pathsMatch(shared[key2], rawClassification(r));
+  const add = (r, message, path2, warning = false) => result.push({ severity: warning ? "warning" : "error", code: "mounted-navigation-invalid", path: path2, message, relatedPaths: [sharedBase, navBase, ...path2.startsWith(`${navBase}/road`) ? [`lookupTables/${nav.road.travelModesTableId}`] : path2.startsWith(`${navBase}/teleport`) ? [`lookupTables/${nav.teleport.hubTableId}`] : [], ...config.nodes.filter((n) => pathCovers(n.path, rawClassification(r))).map((n) => `nodes/${n.nodeId}`)], affectedFeatures: [{ id: String(r.ID ?? ""), name: String(r.Name ?? r.ID ?? "") }] });
+  const insert = (map, key2, r) => {
+    const rows = map.get(key2) ?? [];
+    rows.push(r);
+    map.set(key2, rows);
+  };
+  const stationKey = (r) => String(r.staBuildingID ?? (r.Type === "Points" || r.Class === "SBP" ? r.staBuildingPointId ?? r.ID : r.staBuildingId ?? r.buildingID ?? r.BuildingID ?? r.buildingId ?? r.ID) ?? "");
+  for (const r of records) {
+    insert(ids, `${world(r)}/${r.ID}`, r);
+    if (role(r, "stations") && stationKey(r) !== String(r.ID)) insert(ids, `${world(r)}/${stationKey(r)}`, r);
+    if (pathsMatch(nav.teleport.selectors.warpPoints, rawClassification(r))) insert(warps, `${world(r)}/${r.WRPointI2D ?? r.wrPointI2D ?? ""}`, r);
+  }
+  const refs = (r, key2) => Array.isArray(r[key2]) ? r[key2].map((v) => typeof v === "object" && v ? String(v.ID ?? "") : String(v)) : [];
+  const check = (r, id2, target) => {
+    const candidates = ids.get(`${world(r)}/${id2}`) ?? [];
+    if (candidates.length !== 1 || !role(candidates[0], target)) add(r, `\u94C1\u8DEF\u5173\u8054 ${id2} \u7F3A\u5931\u3001\u91CD\u590D\u6216\u89D2\u8272\u4E0D\u7B26\u3002`, sharedBase);
+    else if (nav.rail.enabled && RAILWAY_ROLES.some((k) => pathsMatch(nav.rail.selectors[k], rawClassification(r))) && !pathsMatch(nav.rail.selectors[target], rawClassification(candidates[0]))) add(r, `\u5173\u8054 ${id2} \u4E0D\u5728\u5BFC\u822A\u53C2\u4E0E\u8303\u56F4\uFF1B\u4EC5\u6392\u9664\u8BE5\u5BFC\u822A\u8FB9\u3002`, `${navBase}/rail`, true);
+  };
+  const finite = (v) => typeof v === "number" && Number.isFinite(v);
+  const coordinate = (v) => Boolean(v && typeof v === "object" && finite(v.x) && finite(v.z));
+  const codes = new Set(config.lookupTables?.find((t) => t.id === nav.road.travelModesTableId)?.rows.map((row2) => row2.value));
+  for (const r of records) {
+    const isRoad = pathsMatch(nav.road.selectors.roads, rawClassification(r)), isWarp = pathsMatch(nav.teleport.selectors.warpPoints, rawClassification(r)), isTeleport = pathsMatch(nav.teleport.selectors.teleportPoints, rawClassification(r));
+    if ((RAILWAY_ROLES.some((key2) => role(r, key2)) || isRoad || isWarp || isTeleport) && (ids.get(`${world(r)}/${r.ID}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C ID \u91CD\u590D\uFF0C\u65E0\u6CD5\u552F\u4E00\u89E3\u6790\u3002", navBase);
+    if (role(r, "stations") && (ids.get(`${world(r)}/${stationKey(r)}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C\u8F66\u7AD9\u89C4\u8303\u5EFA\u7B51 ID \u91CD\u590D\u3002", sharedBase);
+    if (role(r, "platforms")) {
+      for (const id2 of refs(r, "lines")) if (id2) check(r, id2, "lines");
+    }
+    if (role(r, "stationAreas")) {
+      for (const id2 of refs(r, "platforms")) if (id2) check(r, id2, "platforms");
+      if (r.STBuilding) check(r, String(r.STBuilding), "stations");
+    }
+    if (role(r, "stations")) {
+      for (const key2 of ["Stations", "stations", "stationsgroup", "stationsGroup", "StationsGroup", "Stationsgroup"]) for (const id2 of refs(r, key2)) if (id2) check(r, id2, "stationAreas");
+    }
+    if (role(r, "lines") && r.direction !== void 0 && (!finite(r.direction) || !Number.isInteger(r.direction) || Number(r.direction) < 0 || Number(r.direction) > 7)) add(r, "direction \u5FC5\u987B\u4E3A 0\u20137 \u6574\u6570\u3002", `${navBase}/rail`);
+    if (isRoad) {
+      if (r.Speed !== void 0 && (!finite(r.Speed) || Number(r.Speed) <= 0)) add(r, "\u9053\u8DEF Speed \u5FC5\u987B\u4E3A\u6B63\u6709\u9650\u6570\u3002", `${navBase}/road`);
+      if (Array.isArray(r.Mode)) for (const v of r.Mode) {
+        const code = typeof v === "string" ? v : Array.isArray(v) ? String(v[0] ?? "") : v && typeof v === "object" ? String(v.code ?? v.tgt ?? v.ID ?? v.id ?? "") : "";
+        if (!codes.has(code)) add(r, `\u9053\u8DEF Mode ${code} \u4E0D\u5728\u7ED1\u5B9A\u901F\u5EA6\u8868\u4E2D\u3002`, `${navBase}/road`);
+      }
+      for (const key2 of ["ConnectL", "Blacklist"]) if (Array.isArray(r[key2])) for (const v of r[key2]) {
+        const row2 = v && typeof v === "object" ? v : {};
+        const id2 = typeof v === "string" ? v : Array.isArray(v) ? String(v[0] ?? "") : String(row2.tgt ?? row2.Tgt ?? row2.ID ?? row2.id ?? "");
+        if (!id2) continue;
+        const candidates = ids.get(`${world(r)}/${id2}`) ?? [];
+        if (!candidates.length) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5B58\u5728\u3002`, `${navBase}/road`);
+        else if (candidates.length !== 1) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/road`);
+        else if (!pathsMatch(nav.road.selectors.roads, rawClassification(candidates[0]))) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5728\u9053\u8DEF\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u8FDE\u63A5\u3002`, `${navBase}/road`, true);
+      }
+    }
+    if (isWarp) {
+      const key2 = String(r.WRPointI2D ?? r.wrPointI2D ?? "").trim();
+      if (!key2 || (warps.get(`${world(r)}/${key2}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C Warp \u5B9A\u4F4D\u952E\u7F3A\u5931\u6216\u91CD\u590D\u3002", `${navBase}/teleport`);
+    }
+    if (isTeleport) {
+      const key2 = String(r.TGTWarp ?? r.tgtWarp ?? "").trim();
+      const target = warps.get(`${world(r)}/${key2}`) ?? [];
+      const explicit = coordinate(r.TGTcoordinate) || finite(r.TGT_x) && finite(r.TGT_z);
+      const excluded = key2 && records.filter((other) => world(other) === world(r) && String(other.WRPointI2D ?? other.wrPointI2D ?? "") === key2);
+      if (key2 && target.length > 1) add(r, `Warp \u76EE\u6807 ${key2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/teleport`);
+      else if (!(key2 && target.length === 1) && !explicit) add(r, excluded && excluded.length === 1 ? `Warp \u76EE\u6807 ${key2} \u4E0D\u5728\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u4F20\u9001\u8FB9\u3002` : `\u4F20\u9001\u76EE\u6807\u65E0\u6CD5\u89E3\u6790${key2 ? `\uFF1A${key2}` : ""}\u3002`, `${navBase}/teleport`, Boolean(excluded && excluded.length === 1));
+      const hub = String(r.hub ?? r.tags?.hub ?? "").trim();
+      if (hub && !config.lookupTables?.find((t) => t.id === nav.teleport.hubTableId)?.rows.some((row2) => row2.value === hub && row2.functionValue && typeof row2.functionValue === "object" && "world" in row2.functionValue && world({ World: row2.functionValue.world }) === world(r))) add(r, `hub ${hub} \u4E0D\u5728\u5F53\u524D\u4E16\u754C\u7684\u7ED1\u5B9A\u67A2\u7EBD\u8868\u4E2D\u3002`, `${navBase}/teleport`);
+    }
+  }
+  return result;
 }
 
 // src/configStudio/structureRoleIndex.ts
@@ -19238,6 +19579,45 @@ var native_contract_schema_generated_default = {
     t138: {
       type: "object",
       properties: {
+        enabled: {
+          type: "boolean"
+        },
+        widthPx: {
+          type: "number"
+        },
+        color: {
+          anyOf: [
+            {
+              ref: "t11"
+            },
+            {
+              ref: "t13"
+            },
+            {
+              ref: "t14"
+            },
+            {
+              ref: "t15"
+            },
+            {
+              ref: "t17"
+            }
+          ]
+        },
+        showInner: {
+          type: "boolean"
+        }
+      },
+      required: [
+        "enabled",
+        "widthPx",
+        "color",
+        "showInner"
+      ]
+    },
+    t139: {
+      type: "object",
+      properties: {
         x: {
           type: "number"
         },
@@ -19250,7 +19630,7 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t140: {
+    t141: {
       type: "object",
       properties: {
         halo: {
@@ -19371,14 +19751,14 @@ var native_contract_schema_generated_default = {
         "fillOpacity"
       ]
     },
-    t139: {
+    t140: {
       type: "object",
       properties: {
         kind: {
           const: "shape"
         },
         shape: {
-          ref: "t140"
+          ref: "t141"
         }
       },
       required: [
@@ -19386,7 +19766,7 @@ var native_contract_schema_generated_default = {
         "shape"
       ]
     },
-    t144: {
+    t145: {
       type: "object",
       properties: {
         shape: {
@@ -19473,7 +19853,7 @@ var native_contract_schema_generated_default = {
         "strokeOpacity"
       ]
     },
-    t146: {
+    t147: {
       type: "object",
       properties: {
         mode: {
@@ -19529,7 +19909,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t147: {
+    t148: {
       type: "object",
       properties: {
         x: {
@@ -19544,14 +19924,14 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t145: {
+    t146: {
       type: "object",
       properties: {
         anchor: {
-          ref: "t146"
+          ref: "t147"
         },
         offsetPx: {
-          ref: "t147"
+          ref: "t148"
         }
       },
       required: [
@@ -19559,7 +19939,7 @@ var native_contract_schema_generated_default = {
         "offsetPx"
       ]
     },
-    t143: {
+    t144: {
       type: "object",
       properties: {
         halo: {
@@ -19603,12 +19983,12 @@ var native_contract_schema_generated_default = {
         plate: {
           anyOf: [
             {
-              ref: "t144"
+              ref: "t145"
             }
           ]
         },
         placement: {
-          ref: "t145"
+          ref: "t146"
         }
       },
       required: [
@@ -19620,14 +20000,14 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t142: {
+    t143: {
       type: "object",
       properties: {
         mode: {
           const: "single"
         },
         item: {
-          ref: "t143"
+          ref: "t144"
         }
       },
       required: [
@@ -19635,7 +20015,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t149: {
+    t150: {
       type: "object",
       properties: {
         value: {
@@ -19655,7 +20035,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         item: {
-          ref: "t143"
+          ref: "t144"
         }
       },
       required: [
@@ -19663,7 +20043,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t148: {
+    t149: {
       type: "object",
       properties: {
         mode: {
@@ -19675,7 +20055,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t149"
+            ref: "t150"
           }
         }
       },
@@ -19685,7 +20065,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t141: {
+    t142: {
       type: "object",
       properties: {
         kind: {
@@ -19694,15 +20074,15 @@ var native_contract_schema_generated_default = {
         icon: {
           anyOf: [
             {
-              ref: "t142"
+              ref: "t143"
             },
             {
-              ref: "t148"
+              ref: "t149"
             }
           ]
         },
         fallback: {
-          ref: "t140"
+          ref: "t141"
         }
       },
       required: [
@@ -19711,7 +20091,7 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t153: {
+    t154: {
       type: "object",
       properties: {
         width: {
@@ -19726,14 +20106,14 @@ var native_contract_schema_generated_default = {
         "height"
       ]
     },
-    t152: {
+    t153: {
       type: "object",
       properties: {
         sizePx: {
-          ref: "t153"
+          ref: "t154"
         },
         placement: {
-          ref: "t145"
+          ref: "t146"
         },
         halo: {
           anyOf: [
@@ -19748,7 +20128,7 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t151: {
+    t152: {
       type: "object",
       properties: {
         mode: {
@@ -19758,7 +20138,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t152"
+          ref: "t153"
         }
       },
       required: [
@@ -19767,7 +20147,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t154: {
+    t155: {
       type: "object",
       properties: {
         mode: {
@@ -19777,7 +20157,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t152"
+          ref: "t153"
         }
       },
       required: [
@@ -19786,7 +20166,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t155: {
+    t156: {
       type: "object",
       properties: {
         mode: {
@@ -19799,7 +20179,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t152"
+          ref: "t153"
         }
       },
       required: [
@@ -19809,7 +20189,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t157: {
+    t158: {
       type: "object",
       properties: {
         value: {
@@ -19832,7 +20212,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t152"
+          ref: "t153"
         }
       },
       required: [
@@ -19841,7 +20221,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t156: {
+    t157: {
       type: "object",
       properties: {
         mode: {
@@ -19853,7 +20233,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t157"
+            ref: "t158"
           }
         }
       },
@@ -19863,7 +20243,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t150: {
+    t151: {
       type: "object",
       properties: {
         kind: {
@@ -19872,21 +20252,21 @@ var native_contract_schema_generated_default = {
         image: {
           anyOf: [
             {
-              ref: "t151"
-            },
-            {
-              ref: "t154"
+              ref: "t152"
             },
             {
               ref: "t155"
             },
             {
               ref: "t156"
+            },
+            {
+              ref: "t157"
             }
           ]
         },
         fallback: {
-          ref: "t140"
+          ref: "t141"
         }
       },
       required: [
@@ -19895,7 +20275,7 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t158: {
+    t159: {
       type: "object",
       properties: {
         source: {
@@ -19948,13 +20328,16 @@ var native_contract_schema_generated_default = {
           anyOf: [
             {
               ref: "t137"
+            },
+            {
+              ref: "t138"
             }
           ]
         },
         symbolOffsetPx: {
           anyOf: [
             {
-              ref: "t138"
+              ref: "t139"
             }
           ]
         },
@@ -20003,20 +20386,20 @@ var native_contract_schema_generated_default = {
         pointSymbol: {
           anyOf: [
             {
-              ref: "t139"
+              ref: "t140"
             },
             {
-              ref: "t141"
+              ref: "t142"
             },
             {
-              ref: "t150"
+              ref: "t151"
             }
           ]
         },
         icon: {
           anyOf: [
             {
-              ref: "t158"
+              ref: "t159"
             }
           ]
         },
@@ -20131,7 +20514,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t161: {
+    t162: {
       type: "object",
       properties: {
         italic: {
@@ -20167,7 +20550,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t162: {
+    t163: {
       type: "object",
       properties: {
         lineHeightRatio: {
@@ -20254,7 +20637,7 @@ var native_contract_schema_generated_default = {
         "strokeWidth"
       ]
     },
-    t160: {
+    t161: {
       type: "object",
       properties: {
         family: {
@@ -20291,7 +20674,7 @@ var native_contract_schema_generated_default = {
         modifiers: {
           anyOf: [
             {
-              ref: "t161"
+              ref: "t162"
             }
           ]
         },
@@ -20317,7 +20700,7 @@ var native_contract_schema_generated_default = {
         pill: {
           anyOf: [
             {
-              ref: "t162"
+              ref: "t163"
             }
           ]
         }
@@ -20327,7 +20710,7 @@ var native_contract_schema_generated_default = {
         "size"
       ]
     },
-    t163: {
+    t164: {
       type: "object",
       properties: {},
       required: [],
@@ -20342,7 +20725,7 @@ var native_contract_schema_generated_default = {
         ]
       }
     },
-    t159: {
+    t160: {
       type: "object",
       properties: {
         visible: {
@@ -20351,7 +20734,7 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t160"
+              ref: "t161"
             }
           ]
         },
@@ -20442,7 +20825,7 @@ var native_contract_schema_generated_default = {
         fallbackValueFormats: {
           anyOf: [
             {
-              ref: "t163"
+              ref: "t164"
             }
           ]
         },
@@ -20529,7 +20912,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t165: {
+    t166: {
       type: "object",
       properties: {
         point: {
@@ -20585,18 +20968,18 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t164: {
+    t165: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t165"
+          ref: "t166"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t167: {
+    t168: {
       type: "object",
       properties: {
         mode: {
@@ -20628,7 +21011,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t166: {
+    t167: {
       type: "object",
       properties: {
         id: {
@@ -20685,7 +21068,7 @@ var native_contract_schema_generated_default = {
         label: {
           anyOf: [
             {
-              ref: "t159"
+              ref: "t160"
             }
           ]
         },
@@ -20699,7 +21082,7 @@ var native_contract_schema_generated_default = {
         priority: {
           anyOf: [
             {
-              ref: "t167"
+              ref: "t168"
             }
           ]
         },
@@ -20716,13 +21099,13 @@ var native_contract_schema_generated_default = {
         "when"
       ]
     },
-    t169: {
+    t170: {
       type: "object",
       properties: {},
       required: [],
       additionalProperties: {}
     },
-    t170: {
+    t171: {
       type: "object",
       properties: {
         preserveFallback: {
@@ -20745,55 +21128,55 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t168: {
+    t169: {
       type: "object",
       properties: {
         predicates: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         },
         visibility: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         },
         geometry: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         },
         symbol: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         },
         collision: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         },
         selection: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         },
@@ -20810,7 +21193,7 @@ var native_contract_schema_generated_default = {
         legacyRuntime: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t171"
             }
           ]
         }
@@ -20822,6 +21205,16 @@ var native_contract_schema_generated_default = {
       properties: {
         id: {
           type: "string"
+        },
+        multipartAnchor: {
+          anyOf: [
+            {
+              const: "perPart"
+            },
+            {
+              const: "featureBbox"
+            }
+          ]
         },
         when: {
           anyOf: [
@@ -20870,14 +21263,14 @@ var native_contract_schema_generated_default = {
         label: {
           anyOf: [
             {
-              ref: "t159"
+              ref: "t160"
             }
           ]
         },
         interaction: {
           anyOf: [
             {
-              ref: "t164"
+              ref: "t165"
             }
           ]
         },
@@ -20900,7 +21293,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t166"
+                ref: "t167"
               }
             }
           ]
@@ -20908,7 +21301,7 @@ var native_contract_schema_generated_default = {
         advanced: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         },
@@ -20948,7 +21341,7 @@ var native_contract_schema_generated_default = {
         priority: {
           anyOf: [
             {
-              ref: "t167"
+              ref: "t168"
             }
           ]
         }
@@ -20971,18 +21364,18 @@ var native_contract_schema_generated_default = {
         "rules"
       ]
     },
-    t171: {
+    t172: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t165"
+          ref: "t166"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t172: {
+    t173: {
       type: "object",
       properties: {
         ruleIds: {
@@ -21073,14 +21466,14 @@ var native_contract_schema_generated_default = {
         interaction: {
           anyOf: [
             {
-              ref: "t171"
+              ref: "t172"
             }
           ]
         },
         legacyDisplay: {
           anyOf: [
             {
-              ref: "t172"
+              ref: "t173"
             }
           ]
         }
@@ -21118,7 +21511,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t173: {
+    t174: {
       type: "object",
       properties: {
         enabled: {
@@ -21153,7 +21546,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t176: {
+    t177: {
       type: "object",
       properties: {
         nodeId: {
@@ -21168,7 +21561,7 @@ var native_contract_schema_generated_default = {
         "fieldId"
       ]
     },
-    t177: {
+    t178: {
       type: "object",
       properties: {
         nodeId: {
@@ -21183,7 +21576,7 @@ var native_contract_schema_generated_default = {
         "itemId"
       ]
     },
-    t178: {
+    t179: {
       type: "object",
       properties: {
         colorSource: {
@@ -21278,7 +21671,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t179: {
+    t180: {
       type: "object",
       properties: {
         targetRole: {
@@ -21349,7 +21742,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t175: {
+    t176: {
       type: "object",
       properties: {
         id: {
@@ -21358,14 +21751,14 @@ var native_contract_schema_generated_default = {
         fieldBinding: {
           anyOf: [
             {
-              ref: "t176"
+              ref: "t177"
             }
           ]
         },
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t176"
+              ref: "t177"
             }
           ]
         },
@@ -21399,7 +21792,7 @@ var native_contract_schema_generated_default = {
         inheritFrom: {
           anyOf: [
             {
-              ref: "t177"
+              ref: "t178"
             }
           ]
         },
@@ -21521,14 +21914,14 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t178"
+              ref: "t179"
             }
           ]
         },
         relation: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t180"
             }
           ]
         }
@@ -21540,7 +21933,7 @@ var native_contract_schema_generated_default = {
         "renderer"
       ]
     },
-    t180: {
+    t181: {
       type: "object",
       properties: {
         enabled: {
@@ -21610,7 +22003,7 @@ var native_contract_schema_generated_default = {
         "includeSystem"
       ]
     },
-    t174: {
+    t175: {
       type: "object",
       properties: {
         mode: {
@@ -21619,13 +22012,13 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t175"
+            ref: "t176"
           }
         },
         remaining: {
           anyOf: [
             {
-              ref: "t180"
+              ref: "t181"
             }
           ]
         }
@@ -21635,7 +22028,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t181: {
+    t182: {
       type: "object",
       properties: {
         mode: {
@@ -21647,7 +22040,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         }
@@ -21657,7 +22050,7 @@ var native_contract_schema_generated_default = {
         "layoutId"
       ]
     },
-    t182: {
+    t183: {
       type: "object",
       properties: {
         mode: {
@@ -21669,7 +22062,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         }
@@ -21679,7 +22072,7 @@ var native_contract_schema_generated_default = {
         "componentKey"
       ]
     },
-    t183: {
+    t184: {
       type: "object",
       properties: {
         classCode: {
@@ -21708,7 +22101,7 @@ var native_contract_schema_generated_default = {
         source: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         }
@@ -21793,27 +22186,27 @@ var native_contract_schema_generated_default = {
         containment: {
           anyOf: [
             {
-              ref: "t173"
+              ref: "t174"
             }
           ]
         },
         card: {
           anyOf: [
             {
-              ref: "t174"
-            },
-            {
-              ref: "t181"
+              ref: "t175"
             },
             {
               ref: "t182"
+            },
+            {
+              ref: "t183"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t183"
+              ref: "t184"
             }
           ]
         }
@@ -21826,7 +22219,7 @@ var native_contract_schema_generated_default = {
         "geometryProfiles"
       ]
     },
-    t185: {
+    t186: {
       type: "object",
       properties: {
         classification: {
@@ -21841,7 +22234,7 @@ var native_contract_schema_generated_default = {
         "referenceField"
       ]
     },
-    t184: {
+    t185: {
       type: "object",
       properties: {
         id: {
@@ -21851,10 +22244,10 @@ var native_contract_schema_generated_default = {
           ref: "t1"
         },
         host: {
-          ref: "t185"
+          ref: "t186"
         },
         member: {
-          ref: "t185"
+          ref: "t186"
         },
         memberSelectorField: {
           anyOf: [
@@ -21889,7 +22282,7 @@ var native_contract_schema_generated_default = {
         "profile"
       ]
     },
-    t188: {
+    t189: {
       type: "object",
       properties: {
         slot: {
@@ -21904,7 +22297,7 @@ var native_contract_schema_generated_default = {
         "target"
       ]
     },
-    t187: {
+    t188: {
       type: "object",
       properties: {
         enabled: {
@@ -21932,7 +22325,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t188"
+                ref: "t189"
               }
             }
           ]
@@ -21942,7 +22335,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t189: {
+    t190: {
       type: "object",
       properties: {
         required: {
@@ -21953,7 +22346,7 @@ var native_contract_schema_generated_default = {
         "required"
       ]
     },
-    t193: {
+    t194: {
       type: "object",
       properties: {
         placeholder: {
@@ -22121,7 +22514,7 @@ var native_contract_schema_generated_default = {
         "input"
       ]
     },
-    t192: {
+    t193: {
       type: "object",
       properties: {
         nodeId: {
@@ -22131,7 +22524,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         snapshot: {
-          ref: "t193"
+          ref: "t194"
         },
         overrides: {
           type: "array",
@@ -22147,7 +22540,7 @@ var native_contract_schema_generated_default = {
         "overrides"
       ]
     },
-    t194: {
+    t195: {
       type: "object",
       properties: {
         token: {
@@ -22213,7 +22606,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t194"
+                ref: "t195"
               }
             }
           ]
@@ -22223,7 +22616,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t194"
+                ref: "t195"
               }
             }
           ]
@@ -22234,7 +22627,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t195: {
+    t196: {
       type: "object",
       properties: {
         registryKey: {
@@ -22245,7 +22638,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t197: {
+    t198: {
       type: "object",
       properties: {
         matcher: {
@@ -22284,7 +22677,7 @@ var native_contract_schema_generated_default = {
         "maxResults"
       ]
     },
-    t196: {
+    t197: {
       type: "object",
       properties: {
         target: {
@@ -22411,7 +22804,7 @@ var native_contract_schema_generated_default = {
         coarse: {
           anyOf: [
             {
-              ref: "t197"
+              ref: "t198"
             }
           ]
         }
@@ -22421,7 +22814,7 @@ var native_contract_schema_generated_default = {
         "cacheScope"
       ]
     },
-    t199: {
+    t200: {
       type: "object",
       properties: {
         optionTable: {
@@ -22434,7 +22827,7 @@ var native_contract_schema_generated_default = {
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t176"
+              ref: "t177"
             }
           ]
         },
@@ -22531,7 +22924,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t196"
+              ref: "t197"
             }
           ]
         },
@@ -22570,7 +22963,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t192"
+              ref: "t193"
             }
           ]
         },
@@ -22579,7 +22972,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t194"
+                ref: "t195"
               }
             }
           ]
@@ -22607,13 +23000,13 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t198: {
+    t199: {
       type: "object",
       properties: {
         itemFields: {
           type: "array",
           items: {
-            ref: "t199"
+            ref: "t200"
           }
         },
         storage: {
@@ -22655,7 +23048,7 @@ var native_contract_schema_generated_default = {
         "itemFields"
       ]
     },
-    t200: {
+    t201: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -22670,7 +23063,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t191: {
+    t192: {
       type: "object",
       properties: {
         optionTable: {
@@ -22683,7 +23076,7 @@ var native_contract_schema_generated_default = {
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t176"
+              ref: "t177"
             }
           ]
         },
@@ -22792,7 +23185,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t192"
+              ref: "t193"
             }
           ]
         },
@@ -22833,7 +23226,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t194"
+                ref: "t195"
               }
             }
           ]
@@ -22858,7 +23251,7 @@ var native_contract_schema_generated_default = {
         optionSource: {
           anyOf: [
             {
-              ref: "t195"
+              ref: "t196"
             }
           ]
         },
@@ -22880,7 +23273,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t196"
+              ref: "t197"
             }
           ]
         },
@@ -22911,7 +23304,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t194"
+              ref: "t195"
             }
           ]
         },
@@ -22928,14 +23321,14 @@ var native_contract_schema_generated_default = {
         group: {
           anyOf: [
             {
-              ref: "t198"
+              ref: "t199"
             }
           ]
         },
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t200"
+              ref: "t201"
             }
           ]
         },
@@ -22949,7 +23342,7 @@ var native_contract_schema_generated_default = {
         legacyBlock: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         }
@@ -22961,7 +23354,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t201: {
+    t202: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -22976,7 +23369,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t203: {
+    t204: {
       type: "object",
       properties: {
         id: {
@@ -23001,7 +23394,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t194"
+              ref: "t195"
             }
           ]
         }
@@ -23012,7 +23405,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t204: {
+    t205: {
       type: "object",
       properties: {
         outputId: {
@@ -23038,7 +23431,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t202: {
+    t203: {
       type: "object",
       properties: {
         enabledFromThisPage: {
@@ -23090,7 +23483,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t203"
+                ref: "t204"
               }
             }
           ]
@@ -23140,7 +23533,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t204"
+                ref: "t205"
               }
             }
           ]
@@ -23148,7 +23541,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t190: {
+    t191: {
       type: "object",
       properties: {
         id: {
@@ -23188,7 +23581,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t191"
+                ref: "t192"
               }
             }
           ]
@@ -23233,7 +23626,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t194"
+              ref: "t195"
             }
           ]
         },
@@ -23247,21 +23640,21 @@ var native_contract_schema_generated_default = {
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t201"
+              ref: "t202"
             }
           ]
         },
         drawing: {
           anyOf: [
             {
-              ref: "t202"
+              ref: "t203"
             }
           ]
         },
         legacyPage: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         }
@@ -23272,7 +23665,47 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t206: {
+    t208: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string"
+        },
+        mode: {
+          anyOf: [
+            {
+              const: "self"
+            },
+            {
+              const: "leafDescendants"
+            }
+          ]
+        },
+        path: {
+          ref: "t16"
+        }
+      },
+      required: [
+        "id",
+        "mode",
+        "path"
+      ]
+    },
+    t207: {
+      type: "object",
+      properties: {
+        selectors: {
+          type: "array",
+          items: {
+            ref: "t208"
+          }
+        }
+      },
+      required: [
+        "selectors"
+      ]
+    },
+    t209: {
       type: "object",
       properties: {
         id: {
@@ -23287,7 +23720,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t194"
+              ref: "t195"
             }
           ]
         }
@@ -23298,7 +23731,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t207: {
+    t210: {
       type: "object",
       properties: {
         selected: {
@@ -23339,40 +23772,50 @@ var native_contract_schema_generated_default = {
         "selected"
       ]
     },
-    t205: {
+    t206: {
       type: "object",
       properties: {
         id: {
           type: "string"
         },
         classification: {
-          ref: "t16"
+          anyOf: [
+            {
+              ref: "t16"
+            }
+          ]
+        },
+        classificationGroup: {
+          anyOf: [
+            {
+              ref: "t207"
+            }
+          ]
         },
         assignments: {
           type: "array",
           items: {
-            ref: "t206"
+            ref: "t209"
           }
         },
         when: {
           anyOf: [
             {
-              ref: "t194"
+              ref: "t195"
             }
           ]
         },
         geometry: {
-          ref: "t207"
+          ref: "t210"
         }
       },
       required: [
         "id",
-        "classification",
         "assignments",
         "geometry"
       ]
     },
-    t208: {
+    t211: {
       type: "object",
       properties: {
         componentKey: {
@@ -23424,7 +23867,7 @@ var native_contract_schema_generated_default = {
         "reason"
       ]
     },
-    t209: {
+    t212: {
       type: "object",
       properties: {
         runtimeMode: {
@@ -23444,21 +23887,21 @@ var native_contract_schema_generated_default = {
         output: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         },
         source: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         }
       },
       required: []
     },
-    t186: {
+    t187: {
       type: "object",
       properties: {
         id: {
@@ -23490,14 +23933,14 @@ var native_contract_schema_generated_default = {
         editor: {
           anyOf: [
             {
-              ref: "t187"
+              ref: "t188"
             }
           ]
         },
         actor: {
           anyOf: [
             {
-              ref: "t189"
+              ref: "t190"
             }
           ]
         },
@@ -23511,13 +23954,13 @@ var native_contract_schema_generated_default = {
         steps: {
           type: "array",
           items: {
-            ref: "t190"
+            ref: "t191"
           }
         },
         outputs: {
           type: "array",
           items: {
-            ref: "t205"
+            ref: "t206"
           }
         },
         assignments: {
@@ -23525,7 +23968,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t206"
+                ref: "t209"
               }
             }
           ]
@@ -23533,14 +23976,14 @@ var native_contract_schema_generated_default = {
         external: {
           anyOf: [
             {
-              ref: "t208"
+              ref: "t211"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t209"
+              ref: "t212"
             }
           ]
         }
@@ -23553,7 +23996,7 @@ var native_contract_schema_generated_default = {
         "outputs"
       ]
     },
-    t211: {
+    t214: {
       type: "object",
       properties: {
         kind: {
@@ -23610,7 +24053,7 @@ var native_contract_schema_generated_default = {
         "status"
       ]
     },
-    t210: {
+    t213: {
       type: "object",
       properties: {
         schemaVersion: {
@@ -23626,7 +24069,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t211"
+            ref: "t214"
           }
         },
         generatedAt: {
@@ -23682,6 +24125,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: 14
+            },
+            {
+              const: 15
             }
           ]
         },
@@ -23749,7 +24195,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t184"
+                ref: "t185"
               }
             }
           ]
@@ -23757,13 +24203,13 @@ var native_contract_schema_generated_default = {
         workflows: {
           type: "array",
           items: {
-            ref: "t186"
+            ref: "t187"
           }
         },
         parity: {
           anyOf: [
             {
-              ref: "t210"
+              ref: "t213"
             }
           ]
         }
@@ -23820,6 +24266,32 @@ function validateNativeStructure(value) {
   const issues = inspect(value, native_contract_schema_generated_default.root, "config", 0);
   if (issues.length) return issues;
   const config = value;
+  const c15 = config.contractRevision >= 15;
+  for (const node of config.nodes) for (const [geometry, profile] of Object.entries(node.geometryProfiles)) if (profile) {
+    const at = "config/nodes/" + node.nodeId + "/geometryProfiles/" + geometry;
+    if (c15 && (profile.anchor !== void 0 || profile.interaction !== void 0)) issues.push({ path: at, message: "c15 \u951A\u70B9\u4E0E\u4EA4\u4E92\u5FC5\u987B\u4F4D\u4E8E\u6BCF\u6761\u6E32\u67D3\u89C4\u5219\uFF0C\u4E0D\u80FD\u6B8B\u7559\u51E0\u4F55\u7EA7\u6743\u5A01\u8BBE\u7F6E\u3002" });
+    for (const rule of profile.zoomPriority.rules) {
+      if (c15 && (!["featureBbox", "perPart"].includes(rule.multipartAnchor ?? "") || !rule.interaction?.triggers)) issues.push({ path: at + "/rules/" + rule.id, message: "\u7F3A\u5C11 c15 \u89C4\u5219\u7EA7\u591A\u90E8\u4EF6\u951A\u70B9\u6216\u4EA4\u4E92\u89E6\u53D1\u3002" });
+      if (!c15 && rule.multipartAnchor !== void 0) issues.push({ path: at + "/rules/" + rule.id, message: "\u89C4\u5219\u7EA7\u591A\u90E8\u4EF6\u951A\u70B9\u6700\u4F4E\u8981\u6C42 c15\u3002" });
+      for (const [style, representation] of [[rule.style, rule.representation], ...(rule.conditionalOverrides ?? []).map((branch) => [branch.style, branch.representation ?? rule.representation])]) if (style?.halo) {
+        const point = geometry === "Point" || representation === "point";
+        const inner = "showInner" in style.halo;
+        if (inner && (!c15 || geometry !== "Polygon" || point)) issues.push({ path: at + "/rules/" + rule.id + "/halo", message: "\u5185\u4FA7 Halo \u4EC5\u7528\u4E8E c15 \u9762\u51E0\u4F55\u3002" });
+        if (c15 && geometry === "Polygon" && !point && !inner) issues.push({ path: at + "/rules/" + rule.id + "/halo", message: "\u7F3A\u5C11\u9762\u5185\u4FA7 Halo \u7684\u660E\u786E\u5E03\u5C14\u8BBE\u7F6E\u3002" });
+      }
+    }
+  }
+  for (const workflow of config.workflows) {
+    if (c15 && workflow.mode === "composed" && workflow.target) issues.push({ path: "config/workflows/" + workflow.id + "/target", message: "c15 \u5206\u7C7B\u7EC4\u4E0D\u80FD\u4FDD\u7559\u65E7 target \u526F\u672C\u3002" });
+    if (c15) {
+      for (const step of workflow.steps) for (const control of step.controls ?? []) if (control.kind === "classificationPicker" && control.classificationScope) issues.push({ path: "config/workflows/" + workflow.id + "/controls/" + control.id, message: "c15 \u5206\u7C7B\u63A7\u4EF6\u7531 outputId \u89E3\u6790\u5206\u7C7B\u7EC4\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u8303\u56F4\u526F\u672C\u3002" });
+    }
+  }
+  for (const workflow of config.workflows) for (const output of workflow.outputs) {
+    const at = "config/workflows/" + workflow.id + "/outputs/" + output.id;
+    if (c15 && (!output.classificationGroup || output.classification !== void 0)) issues.push({ path: at, message: "c15 \u8F93\u51FA\u5FC5\u987B\u4F7F\u7528\u5206\u7C7B\u7EC4\uFF0C\u4E0D\u5F97\u4FDD\u7559\u5355\u8DEF\u5F84\u8F93\u51FA\u526F\u672C\u3002" });
+    if (!c15 && (!output.classification || output.classificationGroup)) issues.push({ path: at, message: "\u6B64\u5386\u53F2\u5951\u7EA6\u5FC5\u987B\u4F7F\u7528\u5355\u8DEF\u5F84\u8F93\u51FA\uFF0C\u5206\u7C7B\u7EC4\u6700\u4F4E\u8981\u6C42 c15\u3002" });
+  }
   const check = (style, path2, required) => {
     const halos = [{ path: path2 + "/halo", value: style?.halo, required }, ...symbolHalos(style?.pointSymbol).map((row2) => ({ path: path2 + "/pointSymbol/" + row2.path, value: row2.value, required: config.contractRevision >= 14 }))];
     for (const row2 of halos) {
@@ -24380,16 +24852,24 @@ function validateProfile(profile, geometry, path2, config, sourcePath, issues) {
   if (isNativeConfigRevision(config.contractRevision) && (profile.color !== void 0 || profile.style !== void 0 || profile.geometryStack !== void 0 || profile.label !== void 0 || profile.legacyDisplay !== void 0)) {
     issue(issues, "error", "legacy-profile-field-forbidden", path2, "V3.2 \u7684\u663E\u793A\u503C\u5FC5\u987B\u4F4D\u4E8E\u5404 Zoom \u6E32\u67D3\u89C4\u5219\u5185\uFF0C\u4E0D\u80FD\u4F7F\u7528\u65E7\u51E0\u4F55\u5C42\u7EA7\u6216 label \u914D\u7F6E\u5B57\u6BB5\u3002");
   }
-  if (!profile.allowMultipleParts && profile.anchor === "perPart") issue(issues, "error", "anchor-requires-multipart", path2, "\u4EC5\u5141\u8BB8\u591A\u90E8\u4EF6\u65F6\u624D\u80FD\u9009\u62E9\u201C\u5404\u90E8\u4EF6\u201D\u951A\u70B9\u3002");
+  if (config.contractRevision < 15 && !profile.allowMultipleParts && profile.anchor === "perPart") issue(issues, "error", "anchor-requires-multipart", path2, "\u4EC5\u5141\u8BB8\u591A\u90E8\u4EF6\u65F6\u624D\u80FD\u9009\u62E9\u201C\u5404\u90E8\u4EF6\u201D\u951A\u70B9\u3002");
   const allowed = new Set(allowedTriggerKeys(geometry));
-  const triggers = profile.interaction?.triggers ?? {};
-  for (const [key2, enabled] of Object.entries(triggers)) if (enabled && !allowed.has(key2)) issue(issues, "error", "interaction-trigger-geometry-invalid", path2, `${key2} \u4E0D\u9002\u7528\u4E8E ${geometry}\u3002`);
-  if (profile.enabled && !Object.values(triggers).some(Boolean)) issue(issues, "warning", "interaction-trigger-none", path2, "\u5DF2\u542F\u7528\u7684\u51E0\u4F55\u7C7B\u578B\u6CA1\u6709\u4EA4\u4E92\u89E6\u53D1\u5668\uFF0C\u5C06\u4E0D\u80FD\u901A\u8FC7\u5730\u56FE\u6253\u5F00\u4FE1\u606F\u5361\u3002");
+  if (config.contractRevision < 15) {
+    const triggers = profile.interaction?.triggers ?? {};
+    for (const [key2, enabled] of Object.entries(triggers)) if (enabled && !allowed.has(key2)) issue(issues, "error", "interaction-trigger-geometry-invalid", path2, `${key2} \u4E0D\u9002\u7528\u4E8E ${geometry}\u3002`);
+    if (profile.enabled && !Object.values(triggers).some(Boolean)) issue(issues, "warning", "interaction-trigger-none", path2, "\u5DF2\u542F\u7528\u7684\u51E0\u4F55\u7C7B\u578B\u6CA1\u6709\u4EA4\u4E92\u89E6\u53D1\u5668\uFF0C\u5C06\u4E0D\u80FD\u901A\u8FC7\u5730\u56FE\u6253\u5F00\u4FE1\u606F\u5361\u3002");
+  }
   if (!profile.zoomPriority.rules.length && !(config.contractRevision >= 9 && profile.renderState === "unconfigured")) issue(issues, "error", "render-rule-missing", path2, "\u6BCF\u79CD\u5DF2\u542F\u7528\u51E0\u4F55\u81F3\u5C11\u9700\u8981\u4E00\u4E2A\u6E32\u67D3\u89C4\u5219\u3002");
   if (config.contractRevision >= 9 && profile.renderState === "unconfigured" && profile.zoomPriority.rules.length) issue(issues, "error", "unconfigured-render-has-rules", path2, "\u672A\u914D\u7F6E\u663E\u793A\u72B6\u6001\u4E0D\u80FD\u542B\u6709\u6D3B\u52A8\u89C4\u5219\u3002");
   const intervals = [];
   for (const [index, rule] of profile.zoomPriority.rules.entries()) {
     const rulePath = `${path2}/renderRules/${rule.id || index + 1}`;
+    if (config.contractRevision >= 15) {
+      const triggers = rule.interaction?.triggers ?? {}, permitted = /* @__PURE__ */ new Set([...allowed, "point"]);
+      for (const [key2, enabled] of Object.entries(triggers)) if (enabled && !permitted.has(key2)) issue(issues, "error", "interaction-trigger-geometry-invalid", rulePath, `${key2} \u4E0D\u9002\u7528\u4E8E ${geometry}\u3002`);
+      const active = rule.representation === "labelOnly" ? ["label"] : geometry === "Point" || rule.representation === "point" ? ["point", "label"] : [...allowed];
+      if (profile.enabled && rule.representation !== "hidden" && !active.some((key2) => triggers[key2])) issue(issues, "warning", "interaction-trigger-none", rulePath, "\u672C\u89C4\u5219\u672A\u542F\u7528\u5F53\u524D\u663E\u793A\u79CD\u7C7B\u7684\u4EA4\u4E92\u89E6\u53D1\u5668\u3002");
+    }
     const min = rule.when?.zoom.min ?? rule.minZoom;
     const max = rule.when?.zoom.max ?? rule.maxZoom;
     if (config.contractRevision >= 7) {
@@ -24590,14 +25070,32 @@ function validateSearch(control, config, path2, issues) {
 function targetSupportsClassificationPicker(config, target) {
   return hasDescendants(config, target);
 }
-function validateWorkflowOutput(output, _outputIndex, workflow, config, slots, issues) {
+function validateWorkflowOutput(output, _outputIndex, workflow, config, slots, issues, concrete) {
   const base = `workflows/${workflow.id}/outputs/${output.id}`;
-  if (!isContinuousPath(output.classification) || !hasCategoryNode(config, output.classification)) issue(issues, "error", "workflow-output-classification-invalid", base, "\u5DE5\u4F5C\u6D41\u8F93\u51FA\u5FC5\u987B\u9009\u62E9\u5B58\u5728\u4E14\u8FDE\u7EED\u7684\u76EE\u6807\u5206\u7C7B\u3002");
+  if (config.contractRevision >= 15 && !concrete) {
+    const group = workflowClassificationGroup(config, output), ids = /* @__PURE__ */ new Set();
+    if (!output.classificationGroup?.selectors.length) issue(issues, "error", "workflow-classification-group-empty", base, "\u5206\u7C7B\u7EC4\u81F3\u5C11\u9700\u8981\u4E00\u6761\u5206\u7C7B\u8BBE\u7F6E\u3002");
+    for (const row2 of output.classificationGroup?.selectors ?? []) {
+      if (!row2.id || ids.has(row2.id)) issue(issues, "error", "workflow-selector-id-invalid", base, "\u5206\u7C7B\u8BBE\u7F6E ID \u4E3A\u7A7A\u6216\u91CD\u590D\u3002");
+      ids.add(row2.id);
+    }
+    for (const row2 of group.rows) if (row2.error) issue(issues, "error", "workflow-classification-selector-invalid", base + "/selectors/" + row2.id, row2.error);
+    if (!group.paths.length) issue(issues, "error", "workflow-classification-group-empty", base, "\u5206\u7C7B\u7EC4\u6CA1\u6709\u7B26\u5408\u56FA\u5B9A\u7C7B\u578B\u7684\u6709\u6548\u5019\u9009\u3002");
+    for (const path2 of group.paths) {
+      const local = [];
+      validateWorkflowOutput({ ...output, classification: path2 }, _outputIndex, workflow, config, slots, local, path2);
+      issues.push(...local.map((item) => ({ ...item, message: "[" + classificationPathKey(path2) + "] " + item.message })));
+    }
+    return;
+  }
+  const classification = concrete ?? output.classification ?? { class: "" };
+  if (!isContinuousPath(classification) || !hasCategoryNode(config, classification)) issue(issues, "error", "workflow-output-classification-invalid", base, "\u5DE5\u4F5C\u6D41\u8F93\u51FA\u5FC5\u987B\u9009\u62E9\u5B58\u5728\u4E14\u8FDE\u7EED\u7684\u76EE\u6807\u5206\u7C7B\u3002");
   if (!output.geometry.selected) issue(issues, "error", "workflow-output-geometry-required", base, "\u6BCF\u4E2A\u5DE5\u4F5C\u6D41\u8F93\u51FA\u5FC5\u987B\u9009\u62E9\u56FA\u5B9A\u7ED8\u5236\u7C7B\u578B\u3002");
-  else if (!listCategoryPaths(config, output.classification).some((path2) => !hasDescendants(config, path2) && resolveGeometryProfile(config, path2, output.geometry.selected)?.enabled)) issue(issues, "error", "workflow-output-geometry-disabled", base, `\u8F93\u51FA\u8303\u56F4\u6CA1\u6709\u6700\u7EC8\u5206\u7C7B\u542F\u7528 ${output.geometry.selected} \u7ED8\u5236\u7C7B\u578B\u3002`);
-  const fields = new Set(resolveEffectiveFields(config, output.classification).map((field) => field.key));
+  else if (!(config.contractRevision >= 15 ? resolveGeometryProfile(config, classification, output.geometry.selected)?.enabled : listCategoryPaths(config, classification).some((path2) => !hasDescendants(config, path2) && resolveGeometryProfile(config, path2, output.geometry.selected)?.enabled))) issue(issues, "error", "workflow-output-geometry-disabled", base, `\u8F93\u51FA\u8303\u56F4\u6CA1\u6709\u6700\u7EC8\u5206\u7C7B\u542F\u7528 ${output.geometry.selected} \u7ED8\u5236\u7C7B\u578B\u3002`);
+  const fields = new Set(resolveEffectiveFields(config, classification).map((field) => field.key));
   const tokens = /* @__PURE__ */ new Set([...WORKFLOW_SYSTEM_TOKENS, ...workflow.outputs.flatMap((_, index) => WORKFLOW_SYSTEM_TOKENS.map((item) => `${item}_${index + 1}`)), ...slots, ...workflowDerivedPointTokens(workflow)]);
   const assignmentIds = /* @__PURE__ */ new Set();
+  const constraint = concrete ? workflowCandidateConstraint(concrete, _outputIndex) : void 0;
   for (const assignment of output.assignments) {
     const assignmentPath = `${base}/assignments/${assignment.id}`;
     validateWorkflowValueCondition(assignment.when, tokens, assignmentPath, issues);
@@ -24606,11 +25104,12 @@ function validateWorkflowOutput(output, _outputIndex, workflow, config, slots, i
       if (assignment.expression.trim() !== token || !WORKFLOW_SYSTEM_TOKENS.includes(token)) issue(issues, "error", "workflow-system-target-protected", assignmentPath, `\u7CFB\u7EDF\u5B57\u6BB5 ${assignment.target} \u4E0D\u80FD\u7531\u5B57\u6BB5\u7EC4\u88C5\u8986\u76D6\u3002`);
     }
     if (!assignment.target.trim() || !assignment.expression.trim()) issue(issues, "error", "workflow-assignment-invalid", assignmentPath, "\u5B57\u6BB5\u7EC4\u88C5\u5FC5\u987B\u540C\u65F6\u6307\u5B9A\u76EE\u6807\u548C\u8868\u8FBE\u5F0F\u3002");
-    if (!isSafeWorkflowTarget(assignment.target) || !fields.has(assignment.target) && !/^tags\.[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/.test(assignment.target) && !/^extensions\.[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/.test(assignment.target) && !SYSTEM_FIELD_KEYS.has(assignment.target)) issue(issues, "error", "workflow-assignment-target-invalid", assignmentPath, `\u5B57\u6BB5\u7EC4\u88C5\u76EE\u6807 ${assignment.target} \u4E0D\u662F\u6709\u6548\u5B57\u6BB5\u3001tags \u6216 extensions \u8DEF\u5F84\u3002`);
+    const reachable = !constraint || workflowConditionsDisjoint([constraint], [output.when, assignment.when]) !== true;
+    if (reachable && (!isSafeWorkflowTarget(assignment.target) || !fields.has(assignment.target) && !/^tags\.[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/.test(assignment.target) && !/^extensions\.[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/.test(assignment.target) && !SYSTEM_FIELD_KEYS.has(assignment.target))) issue(issues, "error", "workflow-assignment-target-invalid", assignmentPath, `\u5B57\u6BB5\u7EC4\u88C5\u76EE\u6807 ${assignment.target} \u4E0D\u662F\u6709\u6548\u5B57\u6BB5\u3001tags \u6216 extensions \u8DEF\u5F84\u3002`);
     if (!assignment.id || assignmentIds.has(assignment.id)) issue(issues, "error", "workflow-assignment-id-invalid", assignmentPath, "\u7EC4\u88C5\u884C\u6807\u8BC6\u5FC5\u987B\u5B58\u5728\u4E14\u4E0D\u80FD\u91CD\u590D\u3002");
-    const field = resolveEffectiveFields(config, output.classification).find((field2) => field2.key === assignment.target);
+    const field = resolveEffectiveFields(config, classification).find((field2) => field2.key === assignment.target);
     const control = controlsFor(workflow).find((control2) => control2.slot === assignment.expression.trim());
-    if (control && field && (control.fieldSource || config.contractRevision >= 8)) {
+    if (reachable && control && field && (control.fieldSource || config.contractRevision >= 8)) {
       const leaf = control.kind === "group" ? control.group?.itemFields[0] : control;
       const returned = leaf && (leaf.kind === "featureSearch" || leaf.kind === "coarseSearch") && leaf.search ? resolveSelectableFields(config, leaf.search.target).find((field2) => field2.key === leaf.search.returnField) : void 0;
       const actualType = control.kind === "group" && control.group?.storage === "object" ? "json" : leaf?.kind === "select" ? leaf.optionValueType ?? "string" : leaf?.kind === "json" ? "json" : leaf?.valueNormalization === "trim" || leaf?.valueNormalization === "abbr" ? "string" : leaf?.kind === "number" || leaf?.valueNormalization === "number" ? "number" : leaf?.kind === "toggle" ? "boolean" : returned ? returned.type === "enum" ? returned.optionValueType ?? "string" : returned.type === "reference" ? "string" : returned.type : "string";
@@ -24733,7 +25232,7 @@ function validateWorkflow(workflow, config, issues) {
       if (drawing?.returnFormat === "pointObject" && drawing.multiple) issue(issues, "error", "workflow-drawing-format-invalid", path2, "\u5750\u6807\u5BF9\u8C61\u53EA\u80FD\u9009\u62E9\u5355\u70B9\u3002");
       for (const binding of drawing?.bindings ?? []) {
         const output = workflow.outputs.find((output2) => output2.id === binding.outputId);
-        const field = output && resolveEffectiveFields(config, output.classification).find((field2) => field2.key === binding.target);
+        const field = output && workflowOutputFields(config, output).find((field2) => field2.key === binding.target);
         if (!output || !isSafeWorkflowTarget(binding.target) || PROTECTED_WORKFLOW_TARGETS.has(binding.target.split(".")[0]) || !field && !/^(tags|extensions)\./.test(binding.target)) issue(issues, "error", "workflow-drawing-target-invalid", path2, `\u7ED8\u5236\u7ED1\u5B9A ${binding.target} \u5FC5\u987B\u9009\u62E9\u5BF9\u5E94\u8F93\u51FA\u7684\u6709\u6548\u5B57\u6BB5\u3002`);
         if (field && binding.value === "geometry" && (field.type !== "json" || field.coordinateFormat && field.coordinateFormat !== drawing?.returnFormat)) issue(issues, "error", "workflow-drawing-target-format-invalid", path2, "\u5750\u6807\u8FD4\u56DE\u683C\u5F0F\u4E0E\u76EE\u6807\u5B57\u6BB5\u7ED3\u6784\u4E0D\u4E00\u81F4\u3002");
         if (field && binding.value === "height" && field.type !== "number") issue(issues, "error", "workflow-drawing-target-format-invalid", path2, "\u9AD8\u5EA6\u76EE\u6807\u5FC5\u987B\u4E3A\u6570\u503C\u5B57\u6BB5\u3002");
@@ -24779,7 +25278,7 @@ function validateWorkflow(workflow, config, issues) {
     if (control.kind === "featureSearch" || control.kind === "coarseSearch") validateSearch(control, config, controlPath, issues);
     if (control.kind === "classificationPicker") {
       if (!control.outputId || !workflow.outputs.some((output) => output.id === control.outputId)) issue(issues, "error", "workflow-classification-output-invalid", controlPath, "\u7CFB\u7EDF Classification \u63A7\u4EF6\u5FC5\u987B\u7CBE\u786E\u7ED1\u5B9A\u4E00\u4E2A\u5DE5\u4F5C\u6D41\u8F93\u51FA\u3002");
-      if (!control.classificationScope || !isContinuousPath(control.classificationScope) || !hasCategoryNode(config, control.classificationScope)) issue(issues, "error", "workflow-classification-scope-invalid", controlPath, "\u7CFB\u7EDF Classification \u63A7\u4EF6\u5FC5\u987B\u9009\u62E9\u6709\u6548\u7684\u5206\u7C7B\u8303\u56F4\u3002");
+      if (config.contractRevision < 15 && (!control.classificationScope || !isContinuousPath(control.classificationScope) || !hasCategoryNode(config, control.classificationScope))) issue(issues, "error", "workflow-classification-scope-invalid", controlPath, "\u7CFB\u7EDF Classification \u63A7\u4EF6\u5FC5\u987B\u9009\u62E9\u6709\u6548\u7684\u5206\u7C7B\u8303\u56F4\u3002");
     }
     if (control.kind === "group") {
       const group = control.group;
@@ -24802,11 +25301,13 @@ function validateWorkflow(workflow, config, issues) {
   }
   ;
   for (const [outputIndex, output] of workflow.outputs.entries()) {
-    const managed = controlList.filter((control) => control.kind === "classificationPicker" && control.systemManaged && (control.outputId === output.id || !control.outputId && control.classificationScope && classificationPathKey(control.classificationScope) === classificationPathKey(output.classification)));
-    if (targetSupportsClassificationPicker(config, output.classification) !== Boolean(managed.length)) issue(issues, "error", "workflow-classification-picker-stale", `${base}/outputs/${output.id}`, "\u5DE5\u4F5C\u6D41\u8F93\u51FA\u5206\u7C7B\u7684\u5B50\u5206\u7C7B\u72B6\u6001\u5DF2\u53D8\u5316\uFF1B\u8BF7\u6253\u5F00\u5DE5\u4F5C\u6D41\u4EE5\u5237\u65B0\u7CFB\u7EDF Classification \u63A7\u4EF6\u3002");
+    const managed = controlList.filter((control) => control.kind === "classificationPicker" && control.systemManaged && (control.outputId === output.id || !control.outputId && control.classificationScope && classificationPathKey(control.classificationScope) === classificationPathKey(output.classification ?? { class: "" })));
+    if ((config.contractRevision >= 15 ? workflowClassificationGroup(config, output).paths.length > 1 : Boolean(output.classification && targetSupportsClassificationPicker(config, output.classification))) !== Boolean(managed.length)) issue(issues, "error", "workflow-classification-picker-stale", `${base}/outputs/${output.id}`, "\u5DE5\u4F5C\u6D41\u8F93\u51FA\u5206\u7C7B\u7684\u5B50\u5206\u7C7B\u72B6\u6001\u5DF2\u53D8\u5316\uFF1B\u8BF7\u6253\u5F00\u5DE5\u4F5C\u6D41\u4EE5\u5237\u65B0\u7CFB\u7EDF Classification \u63A7\u4EF6\u3002");
     validateWorkflowOutput(output, outputIndex, workflow, config, slots, issues);
   }
-  issues.push(...validateWorkflowWrites(config.contractRevision < 8 ? migrateWorkflowDrawings(workflow) : workflow, (path2) => resolveSelectableFields(config, path2)));
+  if (config.contractRevision >= 15) {
+    for (const output of workflow.outputs) for (const path2 of workflowClassificationGroup(config, output).paths) issues.push(...validateWorkflowWrites(workflow, (target) => resolveEffectiveFields(config, target), { outputId: output.id, classification: path2 }).map((item) => ({ ...item, message: "[" + classificationPathKey(path2) + "] " + item.message })));
+  } else issues.push(...validateWorkflowWrites(config.contractRevision < 8 ? migrateWorkflowDrawings(workflow) : workflow, (path2) => resolveSelectableFields(config, path2)));
 }
 function conditionMatches(record, conditions) {
   if (!conditions?.length) return true;
@@ -25056,13 +25557,23 @@ function validateConfigPackage(config, mountedRecords = []) {
   const editorScopes = /* @__PURE__ */ new Set();
   for (const workflow of config.workflows.filter((w) => w.editor?.enabled)) {
     const scope = workflow.editor?.scope ?? workflow.outputs[0]?.classification ?? workflow.target;
-    if (!scope) {
-      issue(issues, "error", "workflow-editor-scope-required", `workflows/${workflow.id}`, "\u7F16\u8F91\u5DE5\u4F5C\u6D41\u7F3A\u5C11\u4F5C\u7528\u8303\u56F4\u3002");
-      continue;
+    if (config.contractRevision < 15) {
+      if (!scope) {
+        issue(issues, "error", "workflow-editor-scope-required", `workflows/${workflow.id}`, "\u7F16\u8F91\u5DE5\u4F5C\u6D41\u7F3A\u5C11\u4F5C\u7528\u8303\u56F4\u3002");
+        continue;
+      }
+      const key2 = classificationPathKey(scope);
+      if (editorScopes.has(key2)) issue(issues, "error", "workflow-editor-route-duplicate", `workflows/${workflow.id}`, "\u540C\u4E00\u5206\u7C7B\u8303\u56F4\u5B58\u5728\u591A\u4E2A\u7F16\u8F91\u5DE5\u4F5C\u6D41\u3002");
+      editorScopes.add(key2);
+    } else {
+      const rank = Object.values(scope ?? {}).filter(Boolean).length;
+      const candidates = workflow.mode === "external" && scope ? listCategoryPaths(config, scope).filter((path2) => resolveGeometryProfile(config, path2, "Point")?.enabled) : workflow.outputs.flatMap((output) => workflowClassificationGroup(config, output).paths);
+      for (const path2 of [...new Map(candidates.filter((path3) => !scope || pathMatchesScope(path3, scope)).map((path3) => [classificationPathKey(path3), path3])).values()]) {
+        const key2 = rank + ":" + classificationPathKey(path2);
+        if (editorScopes.has(key2)) issue(issues, "error", "workflow-editor-route-duplicate", `workflows/${workflow.id}`, "\u5206\u7C7B " + classificationPathKey(path2) + " \u5B58\u5728\u540C\u4F18\u5148\u7EA7\u7F16\u8F91\u8DEF\u7531\u3002");
+        editorScopes.add(key2);
+      }
     }
-    const key2 = classificationPathKey(scope);
-    if (editorScopes.has(key2)) issue(issues, "error", "workflow-editor-route-duplicate", `workflows/${workflow.id}`, "\u540C\u4E00\u5206\u7C7B\u8303\u56F4\u5B58\u5728\u591A\u4E2A\u7F16\u8F91\u5DE5\u4F5C\u6D41\u3002");
-    editorScopes.add(key2);
   }
   validateContextBindings(config, issues);
   for (const node of config.nodes) {
@@ -25084,336 +25595,43 @@ function validateConfigPackage(config, mountedRecords = []) {
   return { schemaVersion: "cairnmap.config-validation-report.v3", valid: !issues.some((item) => item.severity === "error"), createdAt: (/* @__PURE__ */ new Date()).toISOString(), issues, summary: { configuration, parity, mountedData: mounted.length, affectedFeatures: mounted.reduce((total, item) => total + (item.affectedFeatures?.length ?? 0), 0) } };
 }
 
-// src/configStudio/lookupTables.ts
-function referencedField(config, ref) {
-  const node = config.nodes.find((node2) => node2.nodeId === ref.nodeId);
-  const matches = node ? resolveEffectiveFields(config, node.path).filter((field) => field.fieldId === ref.fieldId) : [];
-  return matches.length === 1 ? matches[0] : void 0;
-}
-function effectiveOptionTable(config, owner) {
-  if (owner.optionsFieldRef) {
-    if (!("nodes" in config)) return { valueType: owner.optionValueType ?? "string", rows: [] };
-    const field = referencedField(config, owner.optionsFieldRef);
-    return field ? { valueType: field.optionValueType ?? field.optionTable?.valueType ?? "string", rows: field.options ?? [] } : { valueType: owner.optionValueType ?? "string", rows: [] };
+// src/configStudio/workflowClassificationGroup.ts
+var cache4 = /* @__PURE__ */ new WeakMap();
+var levels = ["class", "kind", "skind", "skind2"];
+var continuous = (path2) => Boolean(path2?.class) && levels.every((key2, index) => !path2[key2] || levels.slice(0, index).every((parent) => Boolean(path2[parent])));
+var same = (a, b) => classificationPathKey(a) === classificationPathKey(b);
+function workflowClassificationGroup(config, output) {
+  const prior = cache4.get(config)?.get(output);
+  if (prior) return prior;
+  const selectors = config.contractRevision >= 15 ? output.classificationGroup?.selectors ?? [] : output.classification ? [{ id: "legacy", mode: "leafDescendants", path: output.classification }] : [];
+  const rows = selectors.map((selector) => {
+    if (!continuous(selector.path) || !hasCategoryNode(config, selector.path)) return { id: selector.id, paths: [], filtered: 0, error: "\u5206\u7C7B\u8DEF\u5F84\u4E0D\u5B58\u5728\u6216\u4E0D\u8FDE\u7EED\u3002" };
+    if (!["self", "leafDescendants"].includes(selector.mode)) return { id: selector.id, paths: [], filtered: 0, error: "\u5206\u7C7B\u6307\u5B9A\u65B9\u5F0F\u65E0\u6548\u3002" };
+    const expanded = selector.mode === "self" ? [selector.path] : config.nodes.filter((node) => pathMatchesScope(node.path, selector.path) && !hasDescendants(config, node.path)).map((node) => node.path);
+    const paths2 = expanded.filter((path2) => resolveGeometryProfile(config, path2, output.geometry.selected)?.enabled);
+    return { id: selector.id, paths: paths2, filtered: expanded.length - paths2.length, ...!paths2.length ? { error: "\u6B64\u884C\u6CA1\u6709\u542F\u7528\u56FA\u5B9A\u7ED8\u5236\u7C7B\u578B\u7684\u53EF\u9009\u5206\u7C7B\u3002" } : {} };
+  });
+  const paths = [...new Map(rows.flatMap((row2) => row2.paths).map((path2) => [classificationPathKey(path2), path2])).values()];
+  const result = { paths, rows };
+  let outputs = cache4.get(config);
+  if (!outputs) {
+    outputs = /* @__PURE__ */ new WeakMap();
+    cache4.set(config, outputs);
   }
-  const table = owner.optionsTableId ? config.lookupTables?.find((table2) => table2.id === owner.optionsTableId) : void 0;
-  if (owner.optionsTableId) return { valueType: table?.valueType ?? owner.optionValueType ?? "string", rows: table?.rows ?? [] };
-  return owner.optionTable ?? { valueType: owner.optionValueType ?? "string", rows: owner.options ?? [] };
-}
-function effectiveOptions(config, owner) {
-  const rows = effectiveOptionTable(config, owner).rows;
-  return rows.map(({ value, label }) => ({ value, label }));
-}
-function effectiveOptionsOwner(config, owner) {
-  if (!owner.optionsFieldRef && !owner.optionsTableId && !owner.optionTable) return owner;
-  const table = effectiveOptionTable(config, owner);
-  return { ...owner, options: effectiveOptions(config, owner), optionValueType: table.valueType };
-}
-function cardOptionsOwner(item) {
-  return { ...item, options: item.valueOptions };
-}
-function resolveBoundCard(config, item) {
-  const field = item.fieldBinding ? referencedField(config, item.fieldBinding) : void 0;
-  const next = field ? { ...item, source: field.key, label: field.labels, options: { ...item.options, format: field.options?.length ? "enum" : field.format ?? "plain" } } : item;
-  const owner = cardOptionsOwner(next);
-  return owner.optionTable || owner.optionsTableId || owner.optionsFieldRef ? { ...next, valueOptions: effectiveOptions(config, owner) } : next;
-}
-function validateLookupTables(config, includeNodes = true) {
-  const issues = [];
-  const error = (path2, message, code = "lookup-table-invalid") => issues.push({ severity: "error", code, path: path2, message });
-  if (config.contractRevision < 10 && (config.lookupTables?.length || config.nodes.some((n) => n.fields.some((f) => f.optionsTableId)) || config.workflows.some((w) => w.steps.some((s) => s.controls?.some((c) => c.optionsTableId || c.group?.itemFields.some((f) => f.optionsTableId)))))) error("lookupTables", "\u5BF9\u7167\u8868\u9700\u8981 c10 \u5951\u7EA6\u3002");
-  const ids = /* @__PURE__ */ new Set();
-  for (const table of config.lookupTables ?? []) {
-    const path2 = `lookupTables/${table.id}`;
-    if (!/^[a-z][a-z0-9-]{1,80}$/.test(table.id) || ids.has(table.id)) error(path2, "\u8868\u683C ID \u5FC5\u987B\u6709\u6548\u4E14\u552F\u4E00\u3002");
-    ids.add(table.id);
-    if (!(table.label.zh.trim() || config.contractRevision >= 11 && table.label.en.trim())) error(path2, "\u8868\u683C\u9700\u8981\u4E2D\u6587\u6216\u82F1\u6587\u540D\u79F0\u3002");
-    if (!table.rows.length) error(path2, "\u8868\u683C\u81F3\u5C11\u9700\u8981\u4E00\u884C\u3002");
-    const values2 = /* @__PURE__ */ new Set();
-    const pointIds = /* @__PURE__ */ new Set();
-    for (const [index, row2] of table.rows.entries()) {
-      const at = `${path2}/rows/${index}`, normalized = table.valueType === "number" ? String(Number(row2.value)) : row2.value;
-      if (!row2.value.trim() || values2.has(normalized) || table.valueType === "number" && !Number.isFinite(Number(row2.value)) || table.valueType === "boolean" && !["true", "false"].includes(row2.value)) error(at, "\u5B58\u50A8\u503C\u4E3A\u7A7A\u3001\u91CD\u590D\u6216\u7C7B\u578B\u4E0D\u7B26\u3002");
-      values2.add(normalized);
-      if (!(row2.label.zh.trim() || config.contractRevision >= 11 && row2.label.en.trim())) error(at, "\u5BF9\u7167\u884C\u9700\u8981\u4E2D\u6587\u6216\u82F1\u6587\u540D\u79F0\u3002");
-      if (table.functionKind === "none" && row2.functionValue !== void 0) error(at, "\u65E0\u529F\u80FD\u503C\u8868\u683C\u4E0D\u80FD\u5305\u542B\u529F\u80FD\u503C\u3002");
-      if (table.functionKind === "speed" && (typeof row2.functionValue !== "number" || !Number.isFinite(row2.functionValue) || row2.functionValue <= 0)) error(at, "\u51FA\u884C\u901F\u5EA6\u5FC5\u987B\u4E3A\u6B63\u6570\uFF0C\u5355\u4F4D\u4E3A\u65B9\u5757/\u79D2\u3002");
-      if (table.functionKind === "teleportHub") {
-        const hub = row2.functionValue;
-        if (!hub || typeof hub === "number" || !("world" in hub) || !hub.world.trim() || !Number.isFinite(hub.range) || hub.range <= 0 || !hub.returnPoints.length) {
-          error(at, "\u67A2\u7EBD\u9700\u8BBE\u7F6E\u4E16\u754C\u3001\u6B63\u6570\u8303\u56F4\u53CA\u81F3\u5C11\u4E00\u4E2A\u8FD4\u56DE\u70B9\u3002");
-          continue;
-        }
-        for (const point of hub.returnPoints) {
-          if (!point.id.trim() || pointIds.has(`${hub.world}/${point.id}`) || ![point.x, point.y, point.z].every(Number.isFinite) || !point.label.zh.trim()) error(at, "\u8FD4\u56DE\u70B9 ID/\u540D\u79F0/\u5750\u6807\u65E0\u6548\uFF0C\u6216\u540C\u4E16\u754C ID \u91CD\u590D\u3002");
-          pointIds.add(`${hub.world}/${point.id}`);
-        }
-      }
-    }
-  }
-  const inspect = (owner, path2) => {
-    if (!owner.optionsTableId) return;
-    const table = config.lookupTables?.find((row2) => row2.id === owner.optionsTableId);
-    if (!table) error(path2, `\u5F15\u7528\u7684\u5BF9\u7167\u8868 ${owner.optionsTableId} \u4E0D\u5B58\u5728\u3002`, "lookup-table-reference-missing");
-    if (table && table.valueType !== (owner.optionValueType ?? "string")) error(path2, "\u8868\u683C\u5B58\u50A8\u503C\u7C7B\u578B\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u8868\u683C\u786E\u8BA4\u7ED1\u5B9A\u7C7B\u578B\u3002", "lookup-table-type-changed");
-    if (owner.options?.length) error(path2, "\u7ED1\u5B9A\u8868\u683C\u540E\u4E0D\u80FD\u540C\u65F6\u4FDD\u5B58\u72EC\u7ACB\u5BF9\u7167\u884C\uFF0C\u8BF7\u5148\u89E3\u9664\u7ED1\u5B9A\u3002");
-  };
-  if (includeNodes) config.nodes.forEach((node) => node.fields.forEach((field) => inspect(field, `nodes/${node.nodeId}/fields/${field.fieldId}`)));
-  config.workflows.forEach((w) => w.steps.forEach((s) => s.controls?.forEach((c) => {
-    inspect(c, `workflows/${w.id}/${c.id}`);
-    c.group?.itemFields.forEach((f) => inspect(f, `workflows/${w.id}/${c.id}/${f.key}`));
-  })));
-  if (config.contractRevision >= 11) {
-    const check = (owner, path2, expected, defaultValue) => {
-      if ([Boolean(owner.optionsFieldRef), Boolean(owner.optionsTableId), Boolean(owner.optionTable)].filter(Boolean).length > 1) error(path2, "\u526F\u672C\u3001\u5B57\u6BB5\u5BF9\u7167\u548C\u516C\u5171\u8868\u53EA\u80FD\u9009\u62E9\u4E00\u79CD\u6765\u6E90\u3002");
-      if ((owner.optionsTableId || owner.optionsFieldRef || owner.optionTable) && owner.options?.length) error(path2, "\u5BF9\u7167\u4E3B\u4F53\u6216\u7ED1\u5B9A\u4E0D\u80FD\u540C\u65F6\u4FDD\u5B58\u65E7\u5F0F\u72EC\u7ACB\u884C\u3002");
-      const table = effectiveOptionTable(config, owner), binding = owner.optionsTableId || owner.optionsFieldRef;
-      if (owner.optionsFieldRef && !referencedField(config, owner.optionsFieldRef)) error(path2, "\u7ED1\u5B9A\u5B57\u6BB5\u4E0D\u5B58\u5728\u6216\u5728\u8BE5\u5206\u7C7B\u4E2D\u4E0D\u518D\u6709\u6548\u3002", "lookup-field-reference-missing");
-      if (binding && !table.rows.length) error(path2, "\u7ED1\u5B9A\u6765\u6E90\u4E3A\u7A7A\uFF0C\u5FC5\u987B\u624B\u52A8\u4FEE\u590D\u3002", "lookup-binding-empty");
-      if (binding && owner.optionValueType && table.valueType !== owner.optionValueType) error(path2, "\u7ED1\u5B9A\u6765\u6E90\u7C7B\u578B\u5DF2\u6539\u53D8\uFF0C\u8BF7\u91CD\u65B0\u7ED1\u5B9A\u786E\u8BA4\u3002", "lookup-binding-type-changed");
-      if (expected && table.rows.length && table.valueType !== expected) error(path2, "\u5BF9\u7167\u503C\u7C7B\u578B\u4E0E\u76EE\u6807\u5B57\u6BB5\u4FDD\u5B58\u7C7B\u578B\u4E0D\u517C\u5BB9\u3002");
-      const values2 = /* @__PURE__ */ new Set();
-      for (const row2 of table.rows) {
-        const key2 = table.valueType === "number" ? String(Number(row2.value)) : row2.value;
-        if (!row2.value.trim() || values2.has(key2) || table.valueType === "number" && !Number.isFinite(Number(row2.value)) || table.valueType === "boolean" && !["true", "false"].includes(row2.value) || !(row2.label.zh.trim() || row2.label.en.trim())) error(path2, "\u5BF9\u7167\u5305\u542B\u7A7A\u540D\u79F0\u3001\u91CD\u590D\u503C\u6216\u4E0D\u5408\u6CD5\u7684\u4FDD\u5B58\u503C\u3002");
-        values2.add(key2);
-      }
-      if (defaultValue !== void 0 && table.rows.length && (!table.rows.some((row2) => row2.value === String(defaultValue)) || typeof defaultValue !== table.valueType)) error(path2, "\u9ED8\u8BA4\u503C\u4E0E\u5F53\u524D\u5BF9\u7167\u7684\u4FDD\u5B58\u503C\u6216\u7C7B\u578B\u4E0D\u517C\u5BB9\u3002");
-    };
-    if (includeNodes) config.nodes.forEach((node) => {
-      node.fields.forEach((field) => check(field, `nodes/${node.nodeId}/fields/${field.fieldId}`, field.type === "enum" ? field.optionValueType ?? "string" : field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : field.type === "string" ? "string" : void 0));
-      if (node.card?.mode === "fields") node.card.items.forEach((item) => {
-        const path2 = `nodes/${node.nodeId}/card/${item.id}`;
-        check(cardOptionsOwner(item), path2);
-        if (item.fieldBinding) {
-          const field = referencedField(config, item.fieldBinding);
-          if (!field) error(path2, "\u4FE1\u606F\u5361\u5B57\u6BB5\u7ED1\u5B9A\u6765\u6E90\u4E0D\u5B58\u5728\u3002", "card-field-binding-missing");
-          else if (!(field.labels.zh.trim() || field.labels.en.trim())) error(path2, "\u7ED1\u5B9A\u5B57\u6BB5\u6CA1\u6709\u6709\u6548\u663E\u793A\u540D\u79F0\u3002");
-        }
-      });
-    });
-    config.workflows.forEach((w) => w.steps.forEach((s) => s.controls?.forEach((c) => {
-      check(c, `workflows/${w.id}/${c.id}`, void 0, c.defaultValue);
-      c.group?.itemFields.forEach((f) => check(f, `workflows/${w.id}/${c.id}/${f.key}`, void 0, f.defaultValue));
-    })));
-  }
-  return issues;
-}
-
-// src/configStudio/navigationValidation.ts
-var sharedBase = "application/preferences/railwayRoles";
-var navBase = "application/navigation";
-var stable2 = (value) => JSON.stringify(value, (_key, row2) => row2 && typeof row2 === "object" && !Array.isArray(row2) ? Object.fromEntries(Object.entries(row2).sort(([a], [b]) => a.localeCompare(b))) : row2);
-function validateNavigationConfiguration(config, fields) {
-  const issues = [], app = config.application;
-  const add = (path2, message, relatedPaths = [], severity = "error") => issues.push({ severity, code: "navigation-configuration-invalid", path: path2, message, relatedPaths });
-  if (config.contractRevision < 13) {
-    if (app?.navigation || app?.preferences.railwayRoles || config.nodes.some((n) => n.fields.some((f) => f.valueSchema))) add(navBase, "\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u3001\u5BFC\u822A\u8BBE\u7F6E\u53CA\u503C\u7ED3\u6784\u58F0\u660E\u9700\u8981\u5951\u7EA6 c13\u3002");
-    return issues;
-  }
-  if (!app?.navigation || !app.preferences.railwayRoles) {
-    add(navBase, "c13 \u5FC5\u987B\u5305\u542B\u8DEF\u5F84\u89C4\u5212\u8BBE\u7F6E\u548C\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u5B9A\u4E49\u3002", [sharedBase]);
-    return issues;
-  }
-  if (app.preferences.navigation) add(navBase, "\u65E7\u5BFC\u822A\u53C2\u6570\u4E0E r13 \u8BBE\u7F6E\u4E0D\u80FD\u5E76\u5B58\u3002", ["application/preferences/navigation"]);
-  const nav = app.navigation, shared = app.preferences.railwayRoles.selectors;
-  const pointNodes = (path2) => config.nodes.filter((n) => pathCovers(path2, n.path));
-  const geometry = (path2) => {
-    const nodes = config.nodes.filter((n) => pathCovers(n.path, path2) && n.geometryType).sort((a, b) => Object.values(a.path).filter(Boolean).length - Object.values(b.path).filter(Boolean).length);
-    return nodes[nodes.length - 1]?.geometryType;
-  };
-  const checkPaths = (rows, base, required) => {
-    if (required && !rows.length) add(base, "\u542F\u7528\u7684\u89D2\u8272\uFF0F\u53C2\u4E0E\u8303\u56F4\u81F3\u5C11\u9700\u8981\u4E00\u6761\u5206\u7C7B\u3002");
-    for (const [i, row2] of rows.entries()) {
-      if (!row2.class || row2.skind && !row2.kind || row2.skind2 && !row2.skind || !config.nodes.some((n) => stable2(n.path) === stable2(Object.fromEntries(Object.entries(row2).filter(([, v]) => v))))) add(`${base}/${i}`, "Class \u5FC5\u586B\uFF0C\u56DB\u7EA7\u5206\u7C7B\u5FC5\u987B\u8FDE\u7EED\u4E14\u5B58\u5728\u3002");
-      if (rows.some((other, at) => at !== i && pathCovers(other, row2))) add(`${base}/${i}`, "\u8303\u56F4\u88AB\u540C\u89D2\u8272\u53E6\u4E00\u884C\u5305\u542B\uFF0C\u53EF\u6574\u7406\u5197\u4F59\u884C\u3002", [], "warning");
-    }
-  };
-  const shape2 = (field, template, path2, related) => {
-    if (!field.valueSchema || stable2(field.valueSchema) !== stable2(VALUE_SCHEMA_TEMPLATES[template].schema)) add(path2, `${field.key} \u9700\u8981\u5DF2\u6CE8\u518C\u7684\u201C${VALUE_SCHEMA_TEMPLATES[template].label}\u201D\u503C\u7ED3\u6784\u6A21\u677F\u3002`, related);
-  };
-  const inspect = (rows, base, role, navigation) => {
-    const nodes = [...new Map(rows.flatMap(pointNodes).map((n) => [n.nodeId, n])).values()];
-    for (const node of nodes) {
-      const fs = fields(config, node.path), byKey = new Map(fs.map((f) => [f.key, f])), related = [`nodes/${node.nodeId}`];
-      const field = (key2, kind, required = false, template) => {
-        const f = byKey.get(key2);
-        if (!f) {
-          if (required) add(base, `${node.nodeId} \u7F3A\u5C11 ${key2} \u5B57\u6BB5\u5B9A\u4E49\u3002`, related);
-          return;
-        }
-        const type = f.type === "enum" ? f.optionValueType ?? "string" : f.type === "reference" ? "string" : f.type;
-        if (type !== kind || f.cardinality !== "single") add(base, `${node.nodeId} \u7684 ${key2} \u9700\u8981\u5355\u503C ${kind}\u3002`, related);
-        if (template && type === "json") shape2(f, template, base, related);
-      };
-      const reference = (key2, scopes, matchField = "ID") => {
-        const ref = byKey.get(key2)?.reference;
-        if (ref && (ref.matchField !== matchField || !scopes.some((p) => p.class === ref.classCode))) add(base, `${node.nodeId} \u7684 ${key2} \u5F15\u7528\u76EE\u6807\u4E0E\u89D2\u8272\u8303\u56F4\u4E0D\u517C\u5BB9\u3002`, related);
-      };
-      const domain = (key2, tableId) => {
-        const f = byKey.get(key2);
-        if (!f || f.type !== "enum") return;
-        const allowed = new Set(config.lookupTables?.find((t) => t.id === tableId)?.rows.map((r) => r.value));
-        const declared = effectiveOptionTable(config, f);
-        if (declared.rows.some((row2) => !allowed.has(row2.value))) add(base, `${node.nodeId} \u7684 ${key2} \u679A\u4E3E\u57DF\u8D85\u51FA\u7ED1\u5B9A\u529F\u80FD\u8868\u3002`, [...related, `lookupTables/${tableId}`]);
-      };
-      field("Name", "string");
-      if (role === "lines") {
-        field("direction", "number", navigation);
-        field("color", "string");
-        field("bureau", "string");
-        field("line", "string");
-      }
-      if (role === "platforms") {
-        field("lines", "json", true, "rail-lines");
-        field("Situation", "boolean", navigation);
-        field("Connect", "boolean", navigation);
-      }
-      if (role === "stationAreas") {
-        field("platforms", "json", true, "rail-platforms");
-        field("STBuilding", "string", true);
-        reference("STBuilding", shared.stations);
-      }
-      if (role === "stations") for (const key2 of ["Stations", "stations", "stationsgroup", "stationsGroup", "StationsGroup", "Stationsgroup"]) field(key2, "json", false, "rail-stations");
-      if (role === "roads") {
-        field("Level", "number", true);
-        field("Oneway", "boolean", true);
-        for (const key2 of ["Enter", "Exit", "SelfJunction"]) field(key2, "boolean");
-        field("Speed", "number");
-        field("Mode", "json", false, "road-modes");
-        field("ConnectL", "json", false, "road-connections");
-        field("Blacklist", "json", false, "road-blacklist");
-      }
-      if (role === "teleportPoints") {
-        field("hub", "string");
-        field("TGTWarp", "string");
-        field("TGTcoordinate", "json", false, "target-point");
-        for (const key2 of ["TGT_x", "TGT_z", "TGTelevation"]) field(key2, "number");
-        if (!byKey.has("TGTWarp") && !byKey.has("TGTcoordinate") && !(byKey.has("TGT_x") && byKey.has("TGT_z"))) add(base, `${node.nodeId} \u7F3A\u5C11 Warp \u6216\u76EE\u6807\u5750\u6807\u5B57\u6BB5\u3002`, related);
-        reference("TGTWarp", nav.teleport.selectors.warpPoints, "WRPointI2D");
-        domain("hub", nav.teleport.hubTableId);
-      }
-      if (role === "warpPoints") field("WRPointI2D", "string", true);
-      if (navigation) {
-        const allowed = role === "lines" || role === "roads" ? ["LineString"] : role === "stations" ? ["Point", "Polygon"] : ["Point"];
-        if (!allowed.includes(geometry(node.path) ?? "")) add(base, `${node.nodeId} \u7684\u6709\u6548\u51E0\u4F55\u4E0D\u9002\u5408\u8BE5\u5BFC\u822A\u89D2\u8272\u3002`, related);
-      }
-    }
-  };
-  const sharedUsed = nav.rail.enabled || config.nodes.some((n) => n.card?.mode === "fields" && n.card.items.some((i) => i.renderer === "lineChips") || n.fieldSettings?.search?.extension?.mode === "lineChips");
-  for (const role of RAILWAY_ROLES) {
-    const sPath = `${sharedBase}/selectors/${role}`, nPath = `${navBase}/rail/selectors/${role}`;
-    checkPaths(shared[role], sPath, sharedUsed);
-    inspect(shared[role], sPath, role, false);
-    checkPaths(nav.rail.selectors[role], nPath, nav.rail.enabled);
-    for (const [i, row2] of nav.rail.selectors[role].entries()) if (!shared[role].some((scope) => pathCovers(scope, row2))) add(`${nPath}/${i}`, "\u5BFC\u822A\u53C2\u4E0E\u8303\u56F4\u8D85\u51FA\u540C\u89D2\u8272\u5171\u4EAB\u5B9A\u4E49\uFF0C\u8BF7\u534F\u8C03\u4FEE\u6539\u4E24\u533A\u3002", [sPath]);
-    if (nav.rail.enabled) inspect(nav.rail.selectors[role], nPath, role, true);
-  }
-  const overlap = (roles) => {
-    for (let a = 0; a < roles.length; a++) for (let b = a + 1; b < roles.length; b++) if (roles[a][1].some((x) => roles[b][1].some((y) => pathCovers(x, y) || pathCovers(y, x)))) add(roles[a][0], "\u4E0D\u540C\u89D2\u8272\u7684\u5206\u7C7B\u8303\u56F4\u91CD\u53E0\u3002", [roles[b][0]]);
-  };
-  overlap(RAILWAY_ROLES.map((role) => [`${sharedBase}/selectors/${role}`, shared[role]]));
-  for (const role of ["teleportPoints", "warpPoints"]) {
-    const base = `${navBase}/teleport/selectors/${role}`;
-    checkPaths(nav.teleport.selectors[role], base, nav.teleport.enabled);
-    if (nav.teleport.enabled) inspect(nav.teleport.selectors[role], base, role, true);
-  }
-  overlap(["teleportPoints", "warpPoints"].map((role) => [`${navBase}/teleport/selectors/${role}`, nav.teleport.selectors[role]]));
-  checkPaths(nav.road.selectors.roads, `${navBase}/road/selectors/roads`, nav.road.enabled);
-  if (nav.road.enabled) inspect(nav.road.selectors.roads, `${navBase}/road/selectors/roads`, "roads", true);
-  for (const [module, id2, kind] of [["teleport", nav.teleport.hubTableId, "teleportHub"], ["road", nav.road.travelModesTableId, "speed"]]) {
-    const table = config.lookupTables?.find((t) => t.id === id2), path2 = `${navBase}/${module}`;
-    if (!id2 && !nav[module].enabled) continue;
-    if (!table || table.functionKind !== kind || table.valueType !== "string") {
-      add(path2, "\u7ED1\u5B9A\u8868\u4E0D\u5B58\u5728\uFF0C\u6216\u529F\u80FD\u503C\u683C\u5F0F\uFF0F\u6587\u672C\u5B58\u50A8\u7C7B\u578B\u4E0D\u517C\u5BB9\u3002", [`lookupTables/${id2}`]);
-      continue;
-    }
-    if (!table.rows.length) add(path2, "\u5BFC\u822A\u7ED1\u5B9A\u8868\u4E0D\u80FD\u4E3A\u7A7A\u3002", [`lookupTables/${id2}`]);
-    for (const row2 of table.rows) {
-      const value = row2.functionValue;
-      if (kind === "teleportHub" && value && typeof value === "object" && "world" in value && !app.worlds.some((w) => [w.id, w.prefix, String(w.numericCode), w.label.zh, w.label.en].includes(value.world))) add(path2, "\u67A2\u7EBD\u6307\u5B9A\u7684\u4E16\u754C\u4E0D\u5B58\u5728\u3002", [`lookupTables/${id2}`, "application/worlds"]);
-    }
-  }
-  for (const node of config.nodes) for (const f of node.fields) if (f.valueSchema) {
-    if (f.type !== "json" || f.cardinality !== "single") add(`nodes/${node.nodeId}/fields/${f.fieldId}`, "\u7ED3\u6784\u58F0\u660E\u7528\u4E8E\u5355\u503C JSON \u5BB9\u5668\u3002");
-    for (const error of validateValueSchema(f.valueSchema)) add(`nodes/${node.nodeId}/fields/${f.fieldId}/valueSchema`, error);
-  }
-  return issues;
-}
-function validateNavigationRecords(config, records) {
-  const app = config.application, nav = app?.navigation, shared = app?.preferences.railwayRoles?.selectors;
-  if (config.contractRevision < 13 || !nav || !shared) return [];
-  const result = [], ids = /* @__PURE__ */ new Map(), warps = /* @__PURE__ */ new Map();
-  const world = (r) => app.worlds.find((w) => [w.id, w.prefix, String(w.numericCode), w.label.zh, w.label.en].includes(String(r.World)))?.id ?? String(r.World ?? "");
-  const role = (r, key2) => pathsMatch(shared[key2], rawClassification(r));
-  const add = (r, message, path2, warning = false) => result.push({ severity: warning ? "warning" : "error", code: "mounted-navigation-invalid", path: path2, message, relatedPaths: [sharedBase, navBase, ...path2.startsWith(`${navBase}/road`) ? [`lookupTables/${nav.road.travelModesTableId}`] : path2.startsWith(`${navBase}/teleport`) ? [`lookupTables/${nav.teleport.hubTableId}`] : [], ...config.nodes.filter((n) => pathCovers(n.path, rawClassification(r))).map((n) => `nodes/${n.nodeId}`)], affectedFeatures: [{ id: String(r.ID ?? ""), name: String(r.Name ?? r.ID ?? "") }] });
-  const insert = (map, key2, r) => {
-    const rows = map.get(key2) ?? [];
-    rows.push(r);
-    map.set(key2, rows);
-  };
-  const stationKey = (r) => String(r.staBuildingID ?? (r.Type === "Points" || r.Class === "SBP" ? r.staBuildingPointId ?? r.ID : r.staBuildingId ?? r.buildingID ?? r.BuildingID ?? r.buildingId ?? r.ID) ?? "");
-  for (const r of records) {
-    insert(ids, `${world(r)}/${r.ID}`, r);
-    if (role(r, "stations") && stationKey(r) !== String(r.ID)) insert(ids, `${world(r)}/${stationKey(r)}`, r);
-    if (pathsMatch(nav.teleport.selectors.warpPoints, rawClassification(r))) insert(warps, `${world(r)}/${r.WRPointI2D ?? r.wrPointI2D ?? ""}`, r);
-  }
-  const refs = (r, key2) => Array.isArray(r[key2]) ? r[key2].map((v) => typeof v === "object" && v ? String(v.ID ?? "") : String(v)) : [];
-  const check = (r, id2, target) => {
-    const candidates = ids.get(`${world(r)}/${id2}`) ?? [];
-    if (candidates.length !== 1 || !role(candidates[0], target)) add(r, `\u94C1\u8DEF\u5173\u8054 ${id2} \u7F3A\u5931\u3001\u91CD\u590D\u6216\u89D2\u8272\u4E0D\u7B26\u3002`, sharedBase);
-    else if (nav.rail.enabled && RAILWAY_ROLES.some((k) => pathsMatch(nav.rail.selectors[k], rawClassification(r))) && !pathsMatch(nav.rail.selectors[target], rawClassification(candidates[0]))) add(r, `\u5173\u8054 ${id2} \u4E0D\u5728\u5BFC\u822A\u53C2\u4E0E\u8303\u56F4\uFF1B\u4EC5\u6392\u9664\u8BE5\u5BFC\u822A\u8FB9\u3002`, `${navBase}/rail`, true);
-  };
-  const finite = (v) => typeof v === "number" && Number.isFinite(v);
-  const coordinate = (v) => Boolean(v && typeof v === "object" && finite(v.x) && finite(v.z));
-  const codes = new Set(config.lookupTables?.find((t) => t.id === nav.road.travelModesTableId)?.rows.map((row2) => row2.value));
-  for (const r of records) {
-    const isRoad = pathsMatch(nav.road.selectors.roads, rawClassification(r)), isWarp = pathsMatch(nav.teleport.selectors.warpPoints, rawClassification(r)), isTeleport = pathsMatch(nav.teleport.selectors.teleportPoints, rawClassification(r));
-    if ((RAILWAY_ROLES.some((key2) => role(r, key2)) || isRoad || isWarp || isTeleport) && (ids.get(`${world(r)}/${r.ID}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C ID \u91CD\u590D\uFF0C\u65E0\u6CD5\u552F\u4E00\u89E3\u6790\u3002", navBase);
-    if (role(r, "stations") && (ids.get(`${world(r)}/${stationKey(r)}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C\u8F66\u7AD9\u89C4\u8303\u5EFA\u7B51 ID \u91CD\u590D\u3002", sharedBase);
-    if (role(r, "platforms")) {
-      for (const id2 of refs(r, "lines")) if (id2) check(r, id2, "lines");
-    }
-    if (role(r, "stationAreas")) {
-      for (const id2 of refs(r, "platforms")) if (id2) check(r, id2, "platforms");
-      if (r.STBuilding) check(r, String(r.STBuilding), "stations");
-    }
-    if (role(r, "stations")) {
-      for (const key2 of ["Stations", "stations", "stationsgroup", "stationsGroup", "StationsGroup", "Stationsgroup"]) for (const id2 of refs(r, key2)) if (id2) check(r, id2, "stationAreas");
-    }
-    if (role(r, "lines") && r.direction !== void 0 && (!finite(r.direction) || !Number.isInteger(r.direction) || Number(r.direction) < 0 || Number(r.direction) > 7)) add(r, "direction \u5FC5\u987B\u4E3A 0\u20137 \u6574\u6570\u3002", `${navBase}/rail`);
-    if (isRoad) {
-      if (r.Speed !== void 0 && (!finite(r.Speed) || Number(r.Speed) <= 0)) add(r, "\u9053\u8DEF Speed \u5FC5\u987B\u4E3A\u6B63\u6709\u9650\u6570\u3002", `${navBase}/road`);
-      if (Array.isArray(r.Mode)) for (const v of r.Mode) {
-        const code = typeof v === "string" ? v : Array.isArray(v) ? String(v[0] ?? "") : v && typeof v === "object" ? String(v.code ?? v.tgt ?? v.ID ?? v.id ?? "") : "";
-        if (!codes.has(code)) add(r, `\u9053\u8DEF Mode ${code} \u4E0D\u5728\u7ED1\u5B9A\u901F\u5EA6\u8868\u4E2D\u3002`, `${navBase}/road`);
-      }
-      for (const key2 of ["ConnectL", "Blacklist"]) if (Array.isArray(r[key2])) for (const v of r[key2]) {
-        const row2 = v && typeof v === "object" ? v : {};
-        const id2 = typeof v === "string" ? v : Array.isArray(v) ? String(v[0] ?? "") : String(row2.tgt ?? row2.Tgt ?? row2.ID ?? row2.id ?? "");
-        if (!id2) continue;
-        const candidates = ids.get(`${world(r)}/${id2}`) ?? [];
-        if (!candidates.length) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5B58\u5728\u3002`, `${navBase}/road`);
-        else if (candidates.length !== 1) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/road`);
-        else if (!pathsMatch(nav.road.selectors.roads, rawClassification(candidates[0]))) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5728\u9053\u8DEF\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u8FDE\u63A5\u3002`, `${navBase}/road`, true);
-      }
-    }
-    if (isWarp) {
-      const key2 = String(r.WRPointI2D ?? r.wrPointI2D ?? "").trim();
-      if (!key2 || (warps.get(`${world(r)}/${key2}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C Warp \u5B9A\u4F4D\u952E\u7F3A\u5931\u6216\u91CD\u590D\u3002", `${navBase}/teleport`);
-    }
-    if (isTeleport) {
-      const key2 = String(r.TGTWarp ?? r.tgtWarp ?? "").trim();
-      const target = warps.get(`${world(r)}/${key2}`) ?? [];
-      const explicit = coordinate(r.TGTcoordinate) || finite(r.TGT_x) && finite(r.TGT_z);
-      const excluded = key2 && records.filter((other) => world(other) === world(r) && String(other.WRPointI2D ?? other.wrPointI2D ?? "") === key2);
-      if (key2 && target.length > 1) add(r, `Warp \u76EE\u6807 ${key2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/teleport`);
-      else if (!(key2 && target.length === 1) && !explicit) add(r, excluded && excluded.length === 1 ? `Warp \u76EE\u6807 ${key2} \u4E0D\u5728\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u4F20\u9001\u8FB9\u3002` : `\u4F20\u9001\u76EE\u6807\u65E0\u6CD5\u89E3\u6790${key2 ? `\uFF1A${key2}` : ""}\u3002`, `${navBase}/teleport`, Boolean(excluded && excluded.length === 1));
-      const hub = String(r.hub ?? r.tags?.hub ?? "").trim();
-      if (hub && !config.lookupTables?.find((t) => t.id === nav.teleport.hubTableId)?.rows.some((row2) => row2.value === hub && row2.functionValue && typeof row2.functionValue === "object" && "world" in row2.functionValue && world({ World: row2.functionValue.world }) === world(r))) add(r, `hub ${hub} \u4E0D\u5728\u5F53\u524D\u4E16\u754C\u7684\u7ED1\u5B9A\u67A2\u7EBD\u8868\u4E2D\u3002`, `${navBase}/teleport`);
-    }
-  }
+  outputs.set(output, result);
   return result;
+}
+var outputAcceptsClassification = (config, output, path2) => workflowClassificationGroup(config, output).paths.some((candidate) => same(candidate, path2));
+function workflowOutputFields(config, output) {
+  if (config.contractRevision < 15 && output.classification) return resolveEffectiveFields(config, output.classification);
+  const paths = workflowClassificationGroup(config, output).paths, sets = paths.map((path2) => new Map(resolveEffectiveFields(config, path2).map((field) => [field.key, field])));
+  return sets.length ? [...sets[0].values()].filter((field) => sets.every((set) => {
+    const other = set.get(field.key);
+    return other && other.type === field.type && other.cardinality === field.cardinality && other.coordinateFormat === field.coordinateFormat && other.format === field.format && JSON.stringify(other.reference) === JSON.stringify(field.reference) && JSON.stringify(other.valueSchema) === JSON.stringify(field.valueSchema);
+  })) : [];
+}
+function recordClassificationEligible(config, path2, geometry) {
+  return hasCategoryNode(config, path2) && (config.contractRevision >= 15 || !hasDescendants(config, path2)) && Boolean(resolveGeometryProfile(config, path2, geometry)?.enabled);
 }
 
 // src/configRuntime/configurationFingerprint.ts
@@ -25550,7 +25768,7 @@ function recordCategory(record) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-c14-production-1";
+var rulesVersion = "cairnmap-c15-production-1";
 var validateConfiguration = validateConfigPackage;
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));
@@ -25565,9 +25783,10 @@ function validatePublishedRecords(config, records) {
 }
 function validateRecordGeometry(config, record) {
   const raw = recordCategory(record), path2 = readableClassification(config, raw) ?? raw, node = config.nodes.find((node2) => JSON.stringify(node2.path) === JSON.stringify(path2));
-  if (!hasCategoryNode(config, path2) || hasDescendants(config, path2) || !node) return ["configuration-unknown-final-classification"];
+  if (!hasCategoryNode(config, path2) || !node) return ["configuration-unknown-final-classification"];
   const type = node.geometryType ?? geometryTypeFromFeatureType(record.Type);
   if (!type) return ["configuration-geometry-not-defined"];
+  if (!recordClassificationEligible(config, path2, type)) return ["configuration-unknown-final-classification"];
   if (geometryTypeFromFeatureType(record.Type) !== type) return ["configuration-record-type-mismatch"];
   const profile = resolveGeometryProfile(config, path2, type), read = readMultipartGeometry(record, type);
   const error = read.error ?? validateMultipartGeometry(read.geometry);
@@ -25582,7 +25801,7 @@ function validateIncomingRecord(config, record, expectedWorld) {
   const world = worldId(config, record.World);
   if (!world || expectedWorld && world !== expectedWorld) return ["configuration-record-world-mismatch"];
   const raw = recordCategory(record), classification = readableClassification(config, raw) ?? raw, geometry = config.nodes.find((node) => JSON.stringify(node.path) === JSON.stringify(classification)).geometryType ?? geometryTypeFromFeatureType(record.Type);
-  const output = { id: "incoming-record", classification, geometry: { selected: geometry }, assignments: [] };
+  const output = { id: "incoming-record", ...config.contractRevision >= 15 ? { classificationGroup: { selectors: [{ id: "record", mode: "self", path: classification }] } } : { classification }, geometry: { selected: geometry }, assignments: [] };
   return validateV3WorkflowRecords(config, { outputs: [output] }, [{ outputId: output.id, classification, geometry, record }]).map((issue2) => issue2.message);
 }
 function validateIncomingBatch(config, created, existing, deletes = []) {

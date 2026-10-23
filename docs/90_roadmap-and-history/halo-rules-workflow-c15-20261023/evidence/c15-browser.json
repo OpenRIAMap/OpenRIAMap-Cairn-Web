@@ -1,0 +1,24 @@
+{
+  "checks": [
+    "c13 restored unsaved category survives repeated read; migration is blocked until its region finishes",
+    "explicit c13 → c15 candidate, source-preserving migration notices and dismissal without validation bypass",
+    "actual c13 category and Class-tree file selection, automatic c15 migration and region/tree validation/save",
+    "actual c13 workflow import/validation/save into c15; workflow structure preserved",
+    "all five Halo color modes use the shared controls; a Halo color mapping row actually injects and renders its green sample",
+    "fresh fields/cards/rules folded; explicit field expansion; all basic-point shapes and three-point collection Halo actually rendered in verifier",
+    "Icon catalogue/configuration modal with live Halo preview, confirmation and actual SVG map symbol",
+    "four image sources, per-row size/Halo, real rectangle rendering, row deletion cleanup and independently rendered fallback Halo",
+    "actual line hit surface removed/restored by rule trigger independently of the Label switch",
+    "single/multipart line Halo uses identical projected geometry, responds to stroke changes and preserves dash pattern without extra event targets",
+    "line point-representation uses its own point Halo and removes the old geometry Halo",
+    "polygon inner switch overlays opaque fill and cleans up; outside-only transparent polygon retains its original fill",
+    "explicit cached-workspace continue restores c15 edits and the same stable rule fold ID",
+    "polygon point-representation uses its own point Halo and removes the old geometry Halo",
+    "c14 saved baseline with c13 current candidate migrates the candidate and preserves its saved c14 baseline",
+    "new page and control auto-open/focus; deleting temporary items preserves the original workflow",
+    "actual c15 classification group selector change, default closed folds, candidate validation/export/save",
+    "actual c15 new-category parent-template creation validates successfully and retains only rule-level anchors/triggers"
+  ],
+  "runtimeErrors": [],
+  "cloudWrites": 0
+}

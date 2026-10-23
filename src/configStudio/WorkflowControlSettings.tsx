@@ -14,7 +14,7 @@ export function WorkflowControlSettings({ value, onChange }: { value: Settings; 
     else if (structured) { try { next = JSON.parse(text); } catch { /* Invalid editable text remains visible and fails validation. */ } }
     patch({ defaultValue: next });
   };
-  return <section className="cm-subsection cm-workflow-settings"><h4>填写设置</h4><div className="cm-flags mb-3"><HelpLabel context="WorkflowControlSettings"><input type="checkbox" checked={Boolean(value.required)} onChange={event => patch({ required: event.target.checked })} /> 必填</HelpLabel></div><div className="cm-flex-grid cm-aligned-fields min-w-0 gap-2">
+  return <details className="cm-subsection cm-workflow-settings"><summary>填写设置</summary><div className="cm-flags mb-3"><HelpLabel context="WorkflowControlSettings"><input type="checkbox" checked={Boolean(value.required)} onChange={event => patch({ required: event.target.checked })} /> 必填</HelpLabel></div><div className="cm-flex-grid cm-aligned-fields min-w-0 gap-2">
     
     <HelpLabel context="WorkflowControlSettings"><input type="checkbox" checked={value.defaultValue !== undefined} onChange={event => patch({ defaultValue: event.target.checked ? value.kind === 'toggle' ? false : value.kind === 'group' ? [] : '' : undefined })} /> 使用默认值<input aria-label="输入默认值" disabled={value.defaultValue === undefined} className="mt-1 w-full rounded border px-2 py-1 disabled:bg-slate-100" value={defaultText} onChange={event => setDefault(event.target.value)} /></HelpLabel>
     <HelpLabel context="WorkflowControlSettings">英文显示名称<input className="mt-1 w-full rounded border px-2 py-1" value={value.label.en} onChange={event => patch({ label: { ...value.label, en: event.target.value } })} /></HelpLabel>
@@ -24,5 +24,5 @@ export function WorkflowControlSettings({ value, onChange }: { value: Settings; 
     {value.kind==='select'&&!value.optionTable&&!value.optionsFieldRef&&!value.optionsTableId?<HelpLabel context="WorkflowControlSettings">选项保存值类型<select className="mt-1 w-full rounded border" value={value.optionValueType??'string'} onChange={event=>patch({optionValueType:event.target.value as Settings['optionValueType']})}><option value="string">文本</option><option value="number">数字</option><option value="boolean">布尔</option></select></HelpLabel>:null}
     {!['number','toggle','json','group','runtimeValue','classificationPicker','tagsExtensions'].includes(value.kind) ? <HelpLabel context="WorkflowControlSettings">保存值处理<select className="mt-1 w-full rounded border px-2 py-1" value={value.valueNormalization ?? 'none'} onChange={event => onChange({ ...value, valueNormalization: event.target.value as WorkflowControl['valueNormalization'] })}><option value="none">保留输入</option><option value="trim">去首尾空白</option><option value="abbr">标识缩写</option><option value="number">数值</option></select></HelpLabel> : null}
     
-  </div>{'id' in value ? <WorkflowValueConditionEditor value={value.when} onChange={when => onChange({ ...value, when })} /> : null}</section>;
+  </div>{'id' in value ? <WorkflowValueConditionEditor value={value.when} onChange={when => onChange({ ...value, when })} /> : null}</details>;
 }

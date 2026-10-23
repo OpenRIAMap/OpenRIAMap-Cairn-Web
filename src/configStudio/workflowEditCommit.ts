@@ -6,7 +6,7 @@ import {evaluateV3WorkflowOutputs,validateV3WorkflowInputs,validateV3WorkflowRec
 import {coerceWorkflowValues} from './workflowValues';
 import {omitOptionalFieldValues} from './optionalFieldValues';
 import {featureTypeFromGeometryType,validateMultipartGeometry,withCanonicalMultipartGeometry,type MultipartGeometry} from '../core/geometry/multipartGeometry';
-import {hasDescendants,pathMatchesScope,resolveGeometryProfile} from './runtime';
+import {classificationPathKey} from './runtime';
 import {captureDrawingSnapshot,drawingKey} from './workflowDrawing';
 export function prepareNativeWorkflowEdit(config:ConfigPackageV3,workflow:WorkflowDefinition,original:Record<string,unknown>,draft:WorkflowEditDraft,geometry:MultipartGeometry,world:string,editor:string,others:Record<string,unknown>[],now=new Date()):Record<string,unknown> {
  workflow=resolveWorkflowFields(config,workflow);
@@ -24,8 +24,8 @@ export function prepareNativeWorkflowEdit(config:ConfigPackageV3,workflow:Workfl
 /** Conversion performs actual original-record hydration and a lossless patch. */
 export function testWorkflowEditConversion(config:ConfigPackageV3,workflow:WorkflowDefinition,records:Record<string,unknown>[]=[]) {
  workflow=resolveWorkflowFields(config,workflow);
- const plan=compileWorkflowEditPlan(workflow,config),output=workflow.outputs[0],matching=records.filter(r=>pathMatchesScope(recordClassification(r),plan.scope));
- const path=config.nodes.find(n=>pathMatchesScope(n.path,plan.scope)&&!hasDescendants(config,n.path)&&resolveGeometryProfile(config,n.path,output.geometry.selected)?.enabled)?.path;if(!path)throw Error('编辑范围没有最终可用分类。');
+ const plan=compileWorkflowEditPlan(workflow,config),output=workflow.outputs[0],matching=records.filter(r=>plan.classifications.some(path=>classificationPathKey(path)===classificationPathKey(recordClassification(r))));
+ const path=plan.classifications[0];if(!path)throw Error('编辑范围没有最终可用分类。');
  const slots:Record<string,unknown>={ID:'EDIT_SAMPLE',actor:'editing-test'};
  for(const control of workflow.steps.flatMap(s=>s.controls??[])){const scalar=(field:Pick<typeof control,'kind'|'options'|'optionValueType'>)=>field.kind==='number'?0:field.kind==='toggle'?false:field.kind==='select'?field.optionValueType==='number'?Number(field.options?.[0]?.value??0):field.optionValueType==='boolean'?field.options?.[0]?.value==='true':field.options?.[0]?.value??'':field.kind==='json'?{kept:0}: '样本';
  if(control.kind==='classificationPicker'){slots[control.slot??control.id]=JSON.stringify(path);continue;}if(control.kind==='tagsExtensions')continue;

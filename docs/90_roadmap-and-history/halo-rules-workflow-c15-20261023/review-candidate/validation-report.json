@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "cairnmap.config-validation-report.v3",
+  "valid": true,
+  "createdAt": "2026-10-23T11:19:32.777Z",
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-ConnectL-P",
+      "message": "[ROD/NOM] ConnectL 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Blacklist-Q",
+      "message": "[ROD/NOM] Blacklist 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-ConnectL-P",
+      "message": "[ROD/TUK] ConnectL 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Blacklist-Q",
+      "message": "[ROD/TUK] Blacklist 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-ConnectL-P",
+      "message": "[ROD/PRI] ConnectL 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Blacklist-Q",
+      "message": "[ROD/PRI] Blacklist 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-ConnectL-P",
+      "message": "[ROD/SEC] ConnectL 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Blacklist-Q",
+      "message": "[ROD/SEC] Blacklist 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-ConnectL-P",
+      "message": "[ROD/SED] ConnectL 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Blacklist-Q",
+      "message": "[ROD/SED] Blacklist 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-ConnectL-P",
+      "message": "[ROD/RES] ConnectL 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Blacklist-Q",
+      "message": "[ROD/RES] Blacklist 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-ConnectL-P",
+      "message": "[ROD/SVS] ConnectL 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Blacklist-Q",
+      "message": "[ROD/SVS] Blacklist 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-ConnectL-P",
+      "message": "[ROD/IDR] ConnectL 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Blacklist-Q",
+      "message": "[ROD/IDR] Blacklist 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-ConnectL-P",
+      "message": "[ROD/SPE] ConnectL 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    },
+    {
+      "severity": "warning",
+      "code": "workflow-value-schema-unknown",
+      "path": "workflows/v3-rod_road/outputs/rod_road-output-1/assignments/rod_road-assignment-Blacklist-Q",
+      "message": "[ROD/SPE] Blacklist 的动态结构需试运行核对；实际提交仍会检查具体值。"
+    }
+  ],
+  "summary": {
+    "configuration": 18,
+    "parity": 0,
+    "mountedData": 0,
+    "affectedFeatures": 0
+  }
+}

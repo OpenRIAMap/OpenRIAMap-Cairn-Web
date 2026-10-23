@@ -28,7 +28,7 @@ function IconDraft({ config, path, fields, value, onChange, onConfirm, onCancel 
   useSyncExternalStore(subscribeSymbolAssets, symbolAssetEpoch, symbolAssetEpoch);
   const scope=useRulePreviewScope();
   const color = usePreviewColor(), asset = pinheadPath(value.id);
-  const svg = asset.phase === 'success' ? composeIconSvg(value, asset.value!, color) : undefined;
+  const svg = asset.phase === 'success' ? composeIconSvg(value, asset.value!, color,config.contractRevision>=15) : undefined;
   const symbol={ kind:'icon' as const,icon:{mode:'single' as const,item:value},fallback:basePointFromLegacy({},config.contractRevision)};
   const canvas=iconCanvas(value),previewAnchor=placementAnchor(value.placement,value.sizePx,value.sizePx),left=Math.min(0,-previewAnchor[0]-canvas.padding),top=Math.min(0,-previewAnchor[1]-canvas.padding);
   const previewFrame={w:Math.max(0,value.sizePx-previewAnchor[0]+canvas.padding)-left+32,h:Math.max(0,value.sizePx-previewAnchor[1]+canvas.padding)-top+32,x:16-left,y:16-top};
@@ -52,7 +52,7 @@ export function IconItemEditor(props: SymbolEditorContext & { value: IconItem; o
   const [draft, setDraft] = useState<IconItem>();
   const [iconName,setIconName]=useState(props.value.id);
   useSyncExternalStore(subscribeSymbolAssets,symbolAssetEpoch,symbolAssetEpoch);
-  const previewColor=usePreviewColor(),thumbnailAsset=pinheadPath(props.value.id),thumbnail=thumbnailAsset.phase==='success'?composeIconSvg(props.value,thumbnailAsset.value!,previewColor):undefined;
+  const previewColor=usePreviewColor(),thumbnailAsset=pinheadPath(props.value.id),thumbnail=thumbnailAsset.phase==='success'?composeIconSvg(props.value,thumbnailAsset.value!,previewColor,props.config.contractRevision>=15):undefined;
   useEffect(()=>{let current=true;setIconName(props.value.id);void catalogue().then(rows=>{if(current)setIconName(rows.find(row=>row.id===props.value.id)?.name??props.value.id);},()=>undefined);return()=>{current=false;};},[props.value.id]);
   return <div className="space-y-2"><div className="flex flex-wrap items-center gap-3"><button type="button" className="rounded border border-violet-300 bg-violet-50 px-3 py-2 text-sm text-violet-800" onClick={() => setDraft(structuredClone(props.value))}>Icon 选择与配置 · {props.value.id || '未选择'}</button><span className="inline-flex min-w-0 items-center gap-2 text-xs text-slate-600" aria-label="当前图标摘要">{thumbnail?<img alt="当前图标缩略预览" src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(thumbnail)}`} width={28} height={28} className="shrink-0"/>:null}<span>{iconName} · {props.value.id} · {props.value.sizePx} × {props.value.sizePx} px</span></span></div><SymbolPlacementEditor value={props.value.placement} onChange={placement => props.onChange({ ...props.value, placement })} /><ConfigDialog open={Boolean(draft)} title="Icon 选择与配置" onClose={() => setDraft(undefined)}>{draft ? <PreviewDraftScope><IconDraft {...props} value={draft} onChange={setDraft} onCancel={() => setDraft(undefined)} onConfirm={() => { props.onChange(draft); setDraft(undefined); }} /></PreviewDraftScope> : null}</ConfigDialog></div>;
 }

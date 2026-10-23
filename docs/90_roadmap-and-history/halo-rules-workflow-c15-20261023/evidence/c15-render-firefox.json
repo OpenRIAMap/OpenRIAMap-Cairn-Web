@@ -1,0 +1,1116 @@
+{
+  "checks": [
+    "72 shape/opacity/zero-stroke pixel comparisons preserve original inner color",
+    "circle decimals 0/.5/1/1.5/8/8.5; zero suppresses shape and halo",
+    "dash/cap/join, hole/multipart, opaque inner layer, style/zoom/12 lifecycle cycles",
+    "image rectangle .5/1.5px Halo; fractional image size and anchor",
+    "actual SVG hit testing: polygon boundary/interior independent, no duplicate click",
+    "icons: no plate/circle/square/roundedRect/pin; stable cache key and 100 reuses"
+  ],
+  "device": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:158.0) Gecko/20100101 Firefox/158.0",
+    "dpr": 1,
+    "viewport": [
+      1440,
+      1000
+    ]
+  },
+  "samples": {
+    "lines600": [
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 11,
+          "updateMs": 11,
+          "updates": [
+            8,
+            8,
+            11,
+            9
+          ],
+          "masks": 0,
+          "paths": 1200
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 17,
+          "updateMs": 13,
+          "updates": [
+            10,
+            12,
+            11,
+            13
+          ],
+          "masks": 600,
+          "paths": 1800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 22,
+          "updateMs": 16,
+          "updates": [
+            11,
+            14,
+            9,
+            16
+          ],
+          "masks": 600,
+          "paths": 1800
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 12,
+          "updateMs": 9,
+          "updates": [
+            9,
+            8,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 1200
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 9,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 1200
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 20,
+          "updateMs": 11,
+          "updates": [
+            8,
+            11,
+            10,
+            10
+          ],
+          "masks": 600,
+          "paths": 1800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 19,
+          "updateMs": 10,
+          "updates": [
+            9,
+            8,
+            10,
+            9
+          ],
+          "masks": 600,
+          "paths": 1800
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 9,
+          "updateMs": 8,
+          "updates": [
+            8,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 1200
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 10,
+          "updateMs": 9,
+          "updates": [
+            7,
+            8,
+            9,
+            9
+          ],
+          "masks": 0,
+          "paths": 1200
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 20,
+          "updateMs": 16,
+          "updates": [
+            12,
+            9,
+            16,
+            14
+          ],
+          "masks": 600,
+          "paths": 1800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 17,
+          "updateMs": 12,
+          "updates": [
+            9,
+            9,
+            8,
+            12
+          ],
+          "masks": 600,
+          "paths": 1800
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 12,
+          "updateMs": 9,
+          "updates": [
+            9,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 1200
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 9,
+          "updateMs": 8,
+          "updates": [
+            8,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 1200
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 17,
+          "updateMs": 13,
+          "updates": [
+            9,
+            13,
+            13,
+            13
+          ],
+          "masks": 600,
+          "paths": 1800
+        }
+      }
+    ],
+    "symbols600": [
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 15,
+          "updateMs": 9,
+          "updates": [
+            9,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 17,
+          "updateMs": 8,
+          "updates": [
+            8,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 300
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            9,
+            8,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 300
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 24,
+          "updateMs": 9,
+          "updates": [
+            9,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 12,
+          "updateMs": 9,
+          "updates": [
+            9,
+            8,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 15,
+          "updateMs": 9,
+          "updates": [
+            9,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 300
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 14,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            9,
+            9
+          ],
+          "masks": 0,
+          "paths": 300
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 22,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 13,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            9,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 15,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 300
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 14,
+          "updateMs": 9,
+          "updates": [
+            9,
+            9,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 300
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 30,
+          "updateMs": 9,
+          "updates": [
+            9,
+            9,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 14,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 22,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 300
+        }
+      }
+    ],
+    "icons600": [
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 17,
+          "updateMs": 41,
+          "updates": [
+            41,
+            8,
+            7,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            6,
+            8,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            9,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 14,
+          "updateMs": 9,
+          "updates": [
+            6,
+            9,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 18,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 17,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 17,
+          "updateMs": 10,
+          "updates": [
+            8,
+            8,
+            8,
+            10
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            7
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 15,
+          "updateMs": 8,
+          "updates": [
+            8,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 17,
+          "updateMs": 10,
+          "updates": [
+            10,
+            8,
+            7,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 19,
+          "updateMs": 9,
+          "updates": [
+            9,
+            9,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 19,
+          "updateMs": 8,
+          "updates": [
+            8,
+            8,
+            7,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 18,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      }
+    ],
+    "polygons200": [
+      {
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 6,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 400
+        },
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 7,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            9,
+            8
+          ],
+          "masks": 200,
+          "paths": 700
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 6,
+          "updateMs": 9,
+          "updates": [
+            7,
+            8,
+            9,
+            8
+          ],
+          "masks": 200,
+          "paths": 700
+        },
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 4,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 400
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 4,
+          "updateMs": 9,
+          "updates": [
+            9,
+            8,
+            7,
+            8
+          ],
+          "masks": 0,
+          "paths": 400
+        },
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 7,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            9,
+            8
+          ],
+          "masks": 200,
+          "paths": 700
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 7,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            7
+          ],
+          "masks": 200,
+          "paths": 700
+        },
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 8,
+          "updateMs": 9,
+          "updates": [
+            7,
+            8,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 400
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 5,
+          "updateMs": 9,
+          "updates": [
+            9,
+            9,
+            7,
+            8
+          ],
+          "masks": 0,
+          "paths": 400
+        },
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 7,
+          "updateMs": 8,
+          "updates": [
+            8,
+            8,
+            8,
+            8
+          ],
+          "masks": 200,
+          "paths": 700
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 7,
+          "updateMs": 9,
+          "updates": [
+            9,
+            9,
+            8,
+            8
+          ],
+          "masks": 200,
+          "paths": 700
+        },
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 4,
+          "updateMs": 8,
+          "updates": [
+            8,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 400
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 4,
+          "updateMs": 9,
+          "updates": [
+            9,
+            7,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 400
+        },
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 6,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            8
+          ],
+          "masks": 200,
+          "paths": 700
+        }
+      }
+    ],
+    "mixed1200": [
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 37,
+          "updateMs": 15,
+          "updates": [
+            13,
+            14,
+            14,
+            15
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 67,
+          "updateMs": 23,
+          "updates": [
+            19,
+            19,
+            19,
+            23
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 67,
+          "updateMs": 32,
+          "updates": [
+            32,
+            21,
+            24,
+            24
+          ],
+          "masks": 800,
+          "paths": 2800
+        },
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 39,
+          "updateMs": 18,
+          "updates": [
+            10,
+            18,
+            11,
+            11
+          ],
+          "masks": 0,
+          "paths": 1600
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 39,
+          "updateMs": 12,
+          "updates": [
+            11,
+            12,
+            10,
+            12
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 53,
+          "updateMs": 24,
+          "updates": [
+            18,
+            19,
+            19,
+            24
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 53,
+          "updateMs": 24,
+          "updates": [
+            20,
+            19,
+            22,
+            24
+          ],
+          "masks": 800,
+          "paths": 2800
+        },
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 37,
+          "updateMs": 15,
+          "updates": [
+            11,
+            15,
+            10,
+            14
+          ],
+          "masks": 0,
+          "paths": 1600
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 45,
+          "updateMs": 13,
+          "updates": [
+            11,
+            13,
+            10,
+            12
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 54,
+          "updateMs": 30,
+          "updates": [
+            30,
+            20,
+            22,
+            25
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 63,
+          "updateMs": 24,
+          "updates": [
+            19,
+            24,
+            17,
+            19
+          ],
+          "masks": 800,
+          "paths": 2800
+        },
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 31,
+          "updateMs": 14,
+          "updates": [
+            14,
+            11,
+            8,
+            12
+          ],
+          "masks": 0,
+          "paths": 1600
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 33,
+          "updateMs": 14,
+          "updates": [
+            14,
+            10,
+            13,
+            9
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 66,
+          "updateMs": 27,
+          "updates": [
+            25,
+            19,
+            20,
+            27
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      }
+    ]
+  },
+  "summary": {
+    "lines600": {
+      "c14": {
+        "createMedian": 10,
+        "createP95": 12,
+        "updateP95": 9
+      },
+      "c15": {
+        "createMedian": 19,
+        "createP95": 22,
+        "updateP95": 16
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "symbols600": {
+      "c14": {
+        "createMedian": 15,
+        "createP95": 30,
+        "updateP95": 9
+      },
+      "c15": {
+        "createMedian": 15,
+        "createP95": 22,
+        "updateP95": 9
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "icons600": {
+      "c14": {
+        "createMedian": 16,
+        "createP95": 19,
+        "updateP95": 9
+      },
+      "c15": {
+        "createMedian": 17,
+        "createP95": 19,
+        "updateP95": 10
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "polygons200": {
+      "c14": {
+        "createMedian": 4,
+        "createP95": 8,
+        "updateP95": 9
+      },
+      "c15": {
+        "createMedian": 7,
+        "createP95": 7,
+        "updateP95": 9
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "mixed1200": {
+      "c14": {
+        "createMedian": 37,
+        "createP95": 45,
+        "updateP95": 15
+      },
+      "c15": {
+        "createMedian": 63,
+        "createP95": 67,
+        "updateP95": 30
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    }
+  },
+  "remaining": {
+    "masks": 0,
+    "rings": 0,
+    "activeObservers": 0
+  },
+  "longTasks": null,
+  "memory": null,
+  "dpr2": {
+    "checks": [
+      "72 shape/opacity/zero-stroke pixel comparisons preserve original inner color",
+      "circle decimals 0/.5/1/1.5/8/8.5; zero suppresses shape and halo",
+      "dash/cap/join, hole/multipart, opaque inner layer, style/zoom/12 lifecycle cycles",
+      "image rectangle .5/1.5px Halo; fractional image size and anchor",
+      "actual SVG hit testing: polygon boundary/interior independent, no duplicate click",
+      "icons: no plate/circle/square/roundedRect/pin; stable cache key and 100 reuses"
+    ],
+    "device": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:158.0) Gecko/20100101 Firefox/158.0",
+      "dpr": 2,
+      "viewport": [
+        1440,
+        1000
+      ]
+    },
+    "samples": {},
+    "summary": {},
+    "remaining": {
+      "masks": 0,
+      "rings": 0,
+      "activeObservers": 0
+    },
+    "longTasks": null,
+    "memory": null
+  }
+}

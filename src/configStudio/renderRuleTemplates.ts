@@ -1,4 +1,5 @@
 import {addC14ProfileDefaults} from './contractMigration';
+import {initializeC15Profile} from './c15Migration';
 import { r12RenderRule } from './r12Migration';
 import type { ConfigPackageV3, GeometryKind, GeometryProfile, ZoomPriorityRule } from './types';
 import { orderFactoryWorkflowForms } from './workflowFormMigration';
@@ -30,5 +31,13 @@ export function editableGeometryProfile(geometry: GeometryKind, revision: number
   const profile = createDefaultGeometryProfile(geometry);
   profile.zoomPriority.rules = profile.zoomPriority.rules.map(rule => normalizeEditedRenderRule(revision>=12?r12RenderRule(rule,geometry):rule, revision));
   if(revision>=14)addC14ProfileDefaults(profile,geometry);
+  if(revision>=15)initializeC15Profile(profile,geometry);
   return profile;
+}
+export function prepareRenderRule(rule:ZoomPriorityRule,geometry:GeometryKind,revision:number):ZoomPriorityRule{
+  const profile=createDefaultGeometryProfile(geometry);
+  profile.zoomPriority.rules=[revision>=12?r12RenderRule(rule,geometry):rule];
+  if(revision>=14)addC14ProfileDefaults(profile,geometry);
+  if(revision>=15)initializeC15Profile(profile,geometry);
+  return profile.zoomPriority.rules[0];
 }

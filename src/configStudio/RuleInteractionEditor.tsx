@@ -1,0 +1,8 @@
+import {HelpLabel} from './SettingHelp';
+import type {GeometryKind,GeometryInteractionTriggers,GeometryProfile,ZoomPriorityRule} from './types';
+export function RuleInteractionEditor({geometry,profile,rule,onChange}:{geometry:GeometryKind;profile:GeometryProfile;rule:ZoomPriorityRule;onChange:(rule:ZoomPriorityRule)=>void}){
+  const triggers=rule.interaction?.triggers??{};
+  const point=geometry==='Point'||rule.representation==='point';
+  const choices:Array<[keyof GeometryInteractionTriggers,string]>=point?[['point','点击点'],['label','点击 Label']]:geometry==='LineString'?[['line','点击线'],['label','点击 Label']]:[['boundary','点击边界'],['interior','点击内部'],['label','点击 Label']];
+  return <section className="cm-subsection" aria-label="规则多部件与交互触发"><h5 className="text-sm font-medium">多部件与交互触发</h5><div className="cm-flex-grid mt-2 gap-2"><HelpLabel context="RuleInteractionEditor" className="grid gap-1 text-xs">锚点<select aria-label="规则多部件锚点" disabled={!profile.allowMultipleParts} value={rule.multipartAnchor??'featureBbox'} onChange={e=>onChange({...rule,multipartAnchor:e.target.value as ZoomPriorityRule['multipartAnchor']})}><option value="featureBbox">完整要素 bbox 中心</option><option value="perPart">各部件中心</option></select></HelpLabel><div className="flex flex-wrap gap-3 pt-4 text-xs">{choices.map(([key,label])=><HelpLabel context="RuleInteractionEditor" key={key}><input type="checkbox" aria-label={'规则'+label} checked={Boolean(triggers[key])} onChange={e=>onChange({...rule,interaction:{triggers:{...triggers,[key]:e.target.checked}}})}/>{label}</HelpLabel>)}</div></div><p className="mt-1 text-xs text-slate-500">仅作用于本条命中规则；部件 Label 仍按碰撞与密度设置决定显示。允许多部件在总体设置中控制。</p></section>;
+}

@@ -5,7 +5,7 @@ import { isSafeWorkflowTarget } from './workflowExpression';
 import {isBlankFieldValue,omitOptionalFieldValues,recordFieldRequired} from './optionalFieldValues';
 
 /** Serialize authored V3 fields into the shared feature record contract. */
-export function finalizeV3WorkflowRecord(config: ConfigPackageV3, output: WorkflowOutput, raw: Record<string, unknown>, options: { coords: MultipartCoord[]; geometry?:MultipartGeometry; now: Date; preservePaths?:string[] }): Record<string, unknown> {
+export function finalizeV3WorkflowRecord(config: ConfigPackageV3, output: WorkflowOutput & {classification:NonNullable<WorkflowOutput['classification']>}, raw: Record<string, unknown>, options: { coords: MultipartCoord[]; geometry?:MultipartGeometry; now: Date; preservePaths?:string[] }): Record<string, unknown> {
   const fields = new Map(resolveEffectiveFields(config, output.classification).map((field) => [field.key, field]));
   const input = structuredClone(raw);
   for (const field of fields.values()) if (field.defaultValue !== undefined && isSafeWorkflowTarget(field.key)) {

@@ -1,3 +1,4 @@
+import {outputAcceptsClassification} from './workflowClassificationGroup';
 import type {ClassificationPath,ConfigPackageV3,FieldDefinition,ValueSchema} from './types';
 import {pathMatchesScope,readRecordPath,resolveEffectiveFields} from './runtime';
 
@@ -54,7 +55,7 @@ function cleanStructured(value:unknown,schemas:ValueSchema[],path:string,protect
 function groupSchemas(config:ConfigPackageV3,path:ClassificationPath):Map<string,ValueSchema[]> {
   const schemas=new Map<string,ValueSchema[]>();
   for(const workflow of config.workflows)for(const output of workflow.outputs){
-    if(!pathMatchesScope(path,output.classification))continue;
+    if(config.contractRevision>=15?!outputAcceptsClassification(config,output,path):!output.classification||!pathMatchesScope(path,output.classification))continue;
     for(const assignment of output.assignments){
       const control=workflow.steps.flatMap(step=>step.controls??[]).find(item=>item.kind==='group'&&item.slot===assignment.expression.trim());
       if(!control?.group||control.group.storage==='scalar')continue;

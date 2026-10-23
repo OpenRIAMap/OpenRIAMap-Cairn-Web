@@ -1,0 +1,1210 @@
+{
+  "checks": [
+    "72 shape/opacity/zero-stroke pixel comparisons preserve original inner color",
+    "circle decimals 0/.5/1/1.5/8/8.5; zero suppresses shape and halo",
+    "dash/cap/join, hole/multipart, opaque inner layer, style/zoom/12 lifecycle cycles",
+    "image rectangle .5/1.5px Halo; fractional image size and anchor",
+    "actual SVG hit testing: polygon boundary/interior independent, no duplicate click",
+    "icons: no plate/circle/square/roundedRect/pin; stable cache key and 100 reuses"
+  ],
+  "device": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+    "dpr": 1,
+    "viewport": [
+      1440,
+      1000
+    ]
+  },
+  "samples": {
+    "lines600": [
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 9.799999997019768,
+          "updateMs": 16.899999991059303,
+          "updates": [
+            16.400000005960464,
+            16.100000008940697,
+            16.899999991059303,
+            16.799999997019768
+          ],
+          "masks": 0,
+          "paths": 1200
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 22.299999997019768,
+          "updateMs": 21.200000002980232,
+          "updates": [
+            21.200000002980232,
+            16.600000008940697,
+            18.700000002980232,
+            14.900000005960464
+          ],
+          "masks": 600,
+          "paths": 1800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 16.299999997019768,
+          "updateMs": 16.299999997019768,
+          "updates": [
+            16,
+            16.200000002980232,
+            16.299999997019768,
+            16.099999994039536
+          ],
+          "masks": 600,
+          "paths": 1800
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 9.299999997019768,
+          "updateMs": 17.299999997019768,
+          "updates": [
+            17.299999997019768,
+            16.899999991059303,
+            16.80000001192093,
+            15.699999988079071
+          ],
+          "masks": 0,
+          "paths": 1200
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 9.599999994039536,
+          "updateMs": 16.900000005960464,
+          "updates": [
+            16.799999997019768,
+            16.400000005960464,
+            16.700000002980232,
+            16.900000005960464
+          ],
+          "masks": 0,
+          "paths": 1200
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 17.599999994039536,
+          "updateMs": 18,
+          "updates": [
+            18,
+            14,
+            16.600000008940697,
+            17.700000002980232
+          ],
+          "masks": 600,
+          "paths": 1800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 14.200000002980232,
+          "updateMs": 18,
+          "updates": [
+            16.799999997019768,
+            17.400000005960464,
+            18,
+            18
+          ],
+          "masks": 600,
+          "paths": 1800
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 10.200000002980232,
+          "updateMs": 16.299999997019768,
+          "updates": [
+            16.299999997019768,
+            15.799999997019768,
+            15.900000005960464,
+            16.100000008940697
+          ],
+          "masks": 0,
+          "paths": 1200
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 10.5,
+          "updateMs": 17.400000005960464,
+          "updates": [
+            17.400000005960464,
+            16.5,
+            16,
+            16.5
+          ],
+          "masks": 0,
+          "paths": 1200
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 15.400000005960464,
+          "updateMs": 18,
+          "updates": [
+            17.400000005960464,
+            17.100000008940697,
+            16.599999994039536,
+            18
+          ],
+          "masks": 600,
+          "paths": 1800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 16.899999991059303,
+          "updateMs": 19.700000002980232,
+          "updates": [
+            19.700000002980232,
+            17.299999997019768,
+            17,
+            16.099999994039536
+          ],
+          "masks": 600,
+          "paths": 1800
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 8.200000002980232,
+          "updateMs": 16.700000002980232,
+          "updates": [
+            16.600000008940697,
+            16.5,
+            16.100000008940697,
+            16.700000002980232
+          ],
+          "masks": 0,
+          "paths": 1200
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 8,
+          "updateMs": 16.599999994039536,
+          "updates": [
+            16.400000005960464,
+            16.5,
+            16.099999994039536,
+            16.599999994039536
+          ],
+          "masks": 0,
+          "paths": 1200
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 21.099999994039536,
+          "updateMs": 24.200000002980232,
+          "updates": [
+            24.200000002980232,
+            16.600000008940697,
+            17.80000001192093,
+            16
+          ],
+          "masks": 600,
+          "paths": 1800
+        }
+      }
+    ],
+    "symbols600": [
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 15.599999994039536,
+          "updateMs": 16.5,
+          "updates": [
+            14.100000008940697,
+            16.099999994039536,
+            16.5,
+            15.899999991059303
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 13.799999997019768,
+          "updateMs": 16.900000005960464,
+          "updates": [
+            16.900000005960464,
+            15.400000005960464,
+            16.099999994039536,
+            15.700000002980232
+          ],
+          "masks": 0,
+          "paths": 300
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 17.200000002980232,
+          "updateMs": 19.5,
+          "updates": [
+            19.5,
+            17.19999998807907,
+            17,
+            15.599999994039536
+          ],
+          "masks": 0,
+          "paths": 300
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 16.5,
+          "updateMs": 17.599999994039536,
+          "updates": [
+            16,
+            17,
+            17.599999994039536,
+            17.299999997019768
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 14.700000002980232,
+          "updateMs": 18.399999991059303,
+          "updates": [
+            18.399999991059303,
+            16.5,
+            14.799999997019768,
+            16.599999994039536
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 20,
+          "updateMs": 17.200000002980232,
+          "updates": [
+            17.200000002980232,
+            16.200000002980232,
+            16.099999994039536,
+            15.899999991059303
+          ],
+          "masks": 0,
+          "paths": 300
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 13.900000005960464,
+          "updateMs": 17.299999997019768,
+          "updates": [
+            16.400000005960464,
+            16.200000002980232,
+            16.900000005960464,
+            17.299999997019768
+          ],
+          "masks": 0,
+          "paths": 300
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 14,
+          "updateMs": 17.100000008940697,
+          "updates": [
+            17.100000008940697,
+            14,
+            16,
+            16.799999997019768
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 17.700000002980232,
+          "updateMs": 18.100000008940697,
+          "updates": [
+            18.100000008940697,
+            17,
+            16.399999991059303,
+            17
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 18.399999991059303,
+          "updateMs": 17.400000005960464,
+          "updates": [
+            17.400000005960464,
+            17,
+            16.400000005960464,
+            16.799999997019768
+          ],
+          "masks": 0,
+          "paths": 300
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 13.700000002980232,
+          "updateMs": 17,
+          "updates": [
+            16.399999991059303,
+            17,
+            15.899999991059303,
+            15.299999997019768
+          ],
+          "masks": 0,
+          "paths": 300
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 13,
+          "updateMs": 17.099999994039536,
+          "updates": [
+            16.80000001192093,
+            17.099999994039536,
+            16.399999991059303,
+            16.400000005960464
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 12.599999994039536,
+          "updateMs": 17.200000002980232,
+          "updates": [
+            17.200000002980232,
+            15.700000002980232,
+            16.900000005960464,
+            15.599999994039536
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 15.400000005960464,
+          "updateMs": 17,
+          "updates": [
+            16.700000002980232,
+            17,
+            16.299999997019768,
+            16.19999998807907
+          ],
+          "masks": 0,
+          "paths": 300
+        }
+      }
+    ],
+    "icons600": [
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 16.600000008940697,
+          "updateMs": 17.700000002980232,
+          "updates": [
+            16.799999997019768,
+            15.900000005960464,
+            17.099999994039536,
+            17.700000002980232
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 13.199999988079071,
+          "updateMs": 17.600000008940697,
+          "updates": [
+            17,
+            17.600000008940697,
+            16.799999997019768,
+            15.899999991059303
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 11.899999991059303,
+          "updateMs": 17.69999998807907,
+          "updates": [
+            17.19999998807907,
+            16.600000008940697,
+            17.399999991059303,
+            17.69999998807907
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 12.600000008940697,
+          "updateMs": 17.399999991059303,
+          "updates": [
+            16.400000005960464,
+            17.30000001192093,
+            17,
+            17.399999991059303
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 16.19999998807907,
+          "updateMs": 17.5,
+          "updates": [
+            17.5,
+            16.299999997019768,
+            16.900000005960464,
+            17.099999994039536
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 13.200000002980232,
+          "updateMs": 17.599999994039536,
+          "updates": [
+            17.299999997019768,
+            17.599999994039536,
+            17.400000005960464,
+            16.599999994039536
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 16.400000005960464,
+          "updateMs": 19.299999997019768,
+          "updates": [
+            19.299999997019768,
+            15.799999997019768,
+            16.5,
+            15.899999991059303
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 12.599999994039536,
+          "updateMs": 17.299999997019768,
+          "updates": [
+            16.899999991059303,
+            16.899999991059303,
+            17.299999997019768,
+            16.700000002980232
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 15.900000005960464,
+          "updateMs": 16.400000005960464,
+          "updates": [
+            14,
+            16.400000005960464,
+            16,
+            15.699999988079071
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 17.299999997019768,
+          "updateMs": 18,
+          "updates": [
+            15.099999994039536,
+            18,
+            16.899999991059303,
+            16.5
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 20,
+          "updateMs": 20.399999991059303,
+          "updates": [
+            20.399999991059303,
+            15.799999997019768,
+            15.799999997019768,
+            16.200000002980232
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 15.5,
+          "updateMs": 17.899999991059303,
+          "updates": [
+            17.899999991059303,
+            16.599999994039536,
+            16.299999997019768,
+            15.799999997019768
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "createMs": 15.299999997019768,
+          "updateMs": 16.900000005960464,
+          "updates": [
+            16.900000005960464,
+            16.099999994039536,
+            16.5,
+            16.299999997019768
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "createMs": 12.800000011920929,
+          "updateMs": 16.900000005960464,
+          "updates": [
+            16.599999994039536,
+            16.900000005960464,
+            16,
+            16.799999997019768
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      }
+    ],
+    "polygons200": [
+      {
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 7.0999999940395355,
+          "updateMs": 17.200000002980232,
+          "updates": [
+            16.100000008940697,
+            17.200000002980232,
+            16,
+            15.400000005960464
+          ],
+          "masks": 0,
+          "paths": 400
+        },
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 7.5,
+          "updateMs": 17,
+          "updates": [
+            17,
+            17,
+            16.5,
+            16.700000002980232
+          ],
+          "masks": 200,
+          "paths": 700
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 6.799999997019768,
+          "updateMs": 16.799999997019768,
+          "updates": [
+            16.799999997019768,
+            15.899999991059303,
+            15.899999991059303,
+            16.799999997019768
+          ],
+          "masks": 200,
+          "paths": 700
+        },
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 3.7000000029802322,
+          "updateMs": 16.900000005960464,
+          "updates": [
+            16.899999991059303,
+            16.900000005960464,
+            16.899999991059303,
+            16.600000008940697
+          ],
+          "masks": 0,
+          "paths": 400
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 4.799999997019768,
+          "updateMs": 16.900000005960464,
+          "updates": [
+            16.299999997019768,
+            16,
+            16.899999991059303,
+            16.900000005960464
+          ],
+          "masks": 0,
+          "paths": 400
+        },
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 6.899999991059303,
+          "updateMs": 17.299999997019768,
+          "updates": [
+            17.299999997019768,
+            16.100000008940697,
+            17,
+            16.200000002980232
+          ],
+          "masks": 200,
+          "paths": 700
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 6.5,
+          "updateMs": 17.599999994039536,
+          "updates": [
+            16,
+            14.900000005960464,
+            15.400000005960464,
+            17.599999994039536
+          ],
+          "masks": 200,
+          "paths": 700
+        },
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 5.299999997019768,
+          "updateMs": 17.600000008940697,
+          "updates": [
+            10.599999994039536,
+            15.900000005960464,
+            17.600000008940697,
+            16.399999991059303
+          ],
+          "masks": 0,
+          "paths": 400
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 3.0999999940395355,
+          "updateMs": 17.5,
+          "updates": [
+            17,
+            15.200000002980232,
+            15.700000002980232,
+            17.5
+          ],
+          "masks": 0,
+          "paths": 400
+        },
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 6,
+          "updateMs": 17.700000002980232,
+          "updates": [
+            15.599999994039536,
+            17.299999997019768,
+            17.700000002980232,
+            16.30000001192093
+          ],
+          "masks": 200,
+          "paths": 700
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 7,
+          "updateMs": 17.5,
+          "updates": [
+            17.5,
+            16.5,
+            17.100000008940697,
+            17.099999994039536
+          ],
+          "masks": 200,
+          "paths": 700
+        },
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 3.7999999970197678,
+          "updateMs": 16.799999997019768,
+          "updates": [
+            16.600000008940697,
+            16.799999997019768,
+            16.5,
+            15.899999991059303
+          ],
+          "masks": 0,
+          "paths": 400
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 200,
+          "createMs": 4.399999991059303,
+          "updateMs": 16.299999997019768,
+          "updates": [
+            16.299999997019768,
+            15.700000002980232,
+            15.200000002980232,
+            15.899999991059303
+          ],
+          "masks": 0,
+          "paths": 400
+        },
+        "c15": {
+          "paintedFeatures": 200,
+          "createMs": 7.5999999940395355,
+          "updateMs": 17,
+          "updates": [
+            17,
+            16.099999994039536,
+            16.899999991059303,
+            16.200000002980232
+          ],
+          "masks": 200,
+          "paths": 700
+        }
+      }
+    ],
+    "mixed1200": [
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 28.200000002980232,
+          "updateMs": 17.299999997019768,
+          "updates": [
+            17.299999997019768,
+            17.200000002980232,
+            17.200000002980232,
+            15.799999997019768
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 50.29999999701977,
+          "updateMs": 22.600000008940697,
+          "updates": [
+            22.600000008940697,
+            21.400000005960464,
+            20,
+            19.099999994039536
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 58.3999999910593,
+          "updateMs": 27.600000008940697,
+          "updates": [
+            21.599999994039536,
+            27.600000008940697,
+            18.100000008940697,
+            17.600000008940697
+          ],
+          "masks": 800,
+          "paths": 2800
+        },
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 27.600000008940697,
+          "updateMs": 17.599999994039536,
+          "updates": [
+            16.299999997019768,
+            17.400000005960464,
+            15.900000005960464,
+            17.599999994039536
+          ],
+          "masks": 0,
+          "paths": 1600
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 29.399999991059303,
+          "updateMs": 17.19999998807907,
+          "updates": [
+            17,
+            17.19999998807907,
+            15.799999997019768,
+            17
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 47.5,
+          "updateMs": 33.20000000298023,
+          "updates": [
+            21.599999994039536,
+            25.299999997019768,
+            24.400000005960464,
+            33.20000000298023
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 42.900000005960464,
+          "updateMs": 32.900000005960464,
+          "updates": [
+            20.600000008940697,
+            16.799999997019768,
+            32.400000005960464,
+            32.900000005960464
+          ],
+          "masks": 800,
+          "paths": 2800
+        },
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 30.400000005960464,
+          "updateMs": 18,
+          "updates": [
+            17.80000001192093,
+            17.400000005960464,
+            18,
+            17.600000008940697
+          ],
+          "masks": 0,
+          "paths": 1600
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 30.299999997019768,
+          "updateMs": 19.5,
+          "updates": [
+            15.799999997019768,
+            13.200000002980232,
+            19.5,
+            16.700000002980232
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 53,
+          "updateMs": 27.399999991059303,
+          "updates": [
+            27.399999991059303,
+            25.599999994039536,
+            17.299999997019768,
+            19.600000008940697
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 46.70000000298023,
+          "updateMs": 31.5,
+          "updates": [
+            23,
+            20.799999997019768,
+            21.899999991059303,
+            31.5
+          ],
+          "masks": 800,
+          "paths": 2800
+        },
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 29.200000002980232,
+          "updateMs": 17.899999991059303,
+          "updates": [
+            16.799999997019768,
+            17.099999994039536,
+            17.899999991059303,
+            17.200000002980232
+          ],
+          "masks": 0,
+          "paths": 1600
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "createMs": 37.900000005960464,
+          "updateMs": 17.19999998807907,
+          "updates": [
+            16.5,
+            17.19999998807907,
+            15.699999988079071,
+            17.100000008940697
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "createMs": 45.599999994039536,
+          "updateMs": 32.29999999701977,
+          "updates": [
+            19.900000005960464,
+            24.30000001192093,
+            16.299999997019768,
+            32.29999999701977
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      }
+    ]
+  },
+  "summary": {
+    "lines600": {
+      "c14": {
+        "createMedian": 9.599999994039536,
+        "createP95": 10.5,
+        "updateP95": 17.299999997019768
+      },
+      "c15": {
+        "createMedian": 16.899999991059303,
+        "createP95": 22.299999997019768,
+        "updateP95": 21.200000002980232
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "symbols600": {
+      "c14": {
+        "createMedian": 14.700000002980232,
+        "createP95": 17.700000002980232,
+        "updateP95": 18.100000008940697
+      },
+      "c15": {
+        "createMedian": 15.400000005960464,
+        "createP95": 20,
+        "updateP95": 17.400000005960464
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "icons600": {
+      "c14": {
+        "createMedian": 15.5,
+        "createP95": 16.600000008940697,
+        "updateP95": 17.700000002980232
+      },
+      "c15": {
+        "createMedian": 13.200000002980232,
+        "createP95": 20,
+        "updateP95": 19.299999997019768
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "polygons200": {
+      "c14": {
+        "createMedian": 4.399999991059303,
+        "createP95": 7.0999999940395355,
+        "updateP95": 17.5
+      },
+      "c15": {
+        "createMedian": 6.899999991059303,
+        "createP95": 7.5999999940395355,
+        "updateP95": 17.599999994039536
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "mixed1200": {
+      "c14": {
+        "createMedian": 29.399999991059303,
+        "createP95": 37.900000005960464,
+        "updateP95": 18
+      },
+      "c15": {
+        "createMedian": 47.5,
+        "createP95": 58.3999999910593,
+        "updateP95": 32.900000005960464
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    }
+  },
+  "remaining": {
+    "masks": 0,
+    "rings": 0,
+    "activeObservers": 0
+  },
+  "longTasks": [
+    {
+      "startTime": 189.1000000089407,
+      "duration": 84
+    },
+    {
+      "startTime": 606.6000000089407,
+      "duration": 54
+    },
+    {
+      "startTime": 1107.1000000089407,
+      "duration": 56
+    },
+    {
+      "startTime": 14023.800000011921,
+      "duration": 51
+    },
+    {
+      "startTime": 14257,
+      "duration": 82
+    },
+    {
+      "startTime": 14742.20000000298,
+      "duration": 89
+    },
+    {
+      "startTime": 15006.10000000894,
+      "duration": 95
+    },
+    {
+      "startTime": 15723.60000000894,
+      "duration": 94
+    },
+    {
+      "startTime": 16007,
+      "duration": 79
+    },
+    {
+      "startTime": 16723.10000000894,
+      "duration": 93
+    },
+    {
+      "startTime": 17040.80000001192,
+      "duration": 88
+    },
+    {
+      "startTime": 17540.40000000596,
+      "duration": 60
+    },
+    {
+      "startTime": 17774.80000001192,
+      "duration": 83
+    }
+  ],
+  "memory": 24754891,
+  "cleanupHeap": [
+    {
+      "heap": {
+        "usedSize": 2504916,
+        "totalSize": 3297280,
+        "embedderHeapUsedSize": 5846064,
+        "backingStorageSize": 945324
+      },
+      "dom": {
+        "documents": 75,
+        "nodes": 374,
+        "jsEventListeners": 25
+      }
+    },
+    {
+      "heap": {
+        "usedSize": 2512036,
+        "totalSize": 3035136,
+        "embedderHeapUsedSize": 5687216,
+        "backingStorageSize": 945324
+      },
+      "dom": {
+        "documents": 75,
+        "nodes": 374,
+        "jsEventListeners": 25
+      }
+    },
+    {
+      "heap": {
+        "usedSize": 2512328,
+        "totalSize": 3035136,
+        "embedderHeapUsedSize": 5658584,
+        "backingStorageSize": 945324
+      },
+      "dom": {
+        "documents": 75,
+        "nodes": 374,
+        "jsEventListeners": 25
+      }
+    }
+  ],
+  "dpr2": {
+    "checks": [
+      "72 shape/opacity/zero-stroke pixel comparisons preserve original inner color",
+      "circle decimals 0/.5/1/1.5/8/8.5; zero suppresses shape and halo",
+      "dash/cap/join, hole/multipart, opaque inner layer, style/zoom/12 lifecycle cycles",
+      "image rectangle .5/1.5px Halo; fractional image size and anchor",
+      "actual SVG hit testing: polygon boundary/interior independent, no duplicate click",
+      "icons: no plate/circle/square/roundedRect/pin; stable cache key and 100 reuses"
+    ],
+    "device": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+      "dpr": 2,
+      "viewport": [
+        1440,
+        1000
+      ]
+    },
+    "samples": {},
+    "summary": {},
+    "remaining": {
+      "masks": 0,
+      "rings": 0,
+      "activeObservers": 0
+    },
+    "longTasks": [],
+    "memory": 12562223
+  }
+}

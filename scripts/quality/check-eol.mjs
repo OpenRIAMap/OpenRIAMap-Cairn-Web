@@ -17,7 +17,7 @@ const invalid = records
       path: tab === -1 ? '' : record.slice(tab + 1),
     };
   })
-  .filter(({ metadata }) => /\bi\/(?:crlf|mixed)\b/.test(metadata));
+  .filter(({ metadata }) => /\bi\/(?:crlf|mixed)\b/.test(metadata) && !/\battr\/-text(?:\s|$)/.test(metadata));
 
 if (invalid.length > 0) {
   console.error('Tracked blobs with non-canonical EOL:');

@@ -14,7 +14,7 @@ export type ConfigurationIdentity = {
   contractRevision: number; configSha256: string; manifestSha256: string; configUrl: string;
 };
 export type FormalConfiguration = { config: ConfigPackageV3; identity: ConfigurationIdentity; warning?: string; availableIdentity?: ConfigurationIdentity };
-export const CONFIGURATION_RULES_VERSION = 'cairnmap-c14-production-1';
+export const CONFIGURATION_RULES_VERSION = 'cairnmap-c15-production-1';
 let snapshot: FormalConfiguration | undefined, pending: Promise<FormalConfiguration> | undefined;
 const subscribers = new Set<() => void>();
 export const subscribeFormalConfiguration = (listener: () => void) => { subscribers.add(listener); return () => { subscribers.delete(listener); }; };

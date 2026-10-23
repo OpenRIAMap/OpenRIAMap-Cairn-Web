@@ -10,6 +10,8 @@ export type LabelClickMode = 'normal' | 'labelOnly';
 
 export type LabelClickPlan = {
   enabled: boolean;
+  /** c15 keeps label clicks separate from geometry targets. */
+  labelEnabled?: boolean;
   mode: LabelClickMode;
   labelStyleKey?: LabelStyleKey;
   highlightStyleKey?: HighlightStyleKey;
@@ -44,6 +46,8 @@ export type LabelClickPlan = {
   geom?: {
     point?: boolean;
     path?: boolean;
+    boundary?:boolean;
+    interior?:boolean;
   };
 };
 

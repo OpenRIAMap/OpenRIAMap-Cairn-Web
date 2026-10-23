@@ -1,3 +1,4 @@
+import {workflowOutputFields} from './workflowClassificationGroup';
 import { useState } from 'react';
 import type { ClassificationPath, ConfigPackageV3, WorkflowDefinition, WorkflowControl } from './types';
 import {optionLabel} from './runtime';
@@ -8,11 +9,11 @@ export function WorkflowAnnotationsInput({config,workflow,control,value,onChange
   const output=workflow.outputs.find(output=>output.id===outputId)??workflow.outputs[0];
   const stored=(value??{}) as WorkflowAnnotations,current=stored[output.id]??{};
   const update=(patch:Partial<OutputAnnotations>)=>onChange({...stored,[output.id]:{...current,...patch}});
-  const fields=standardTagFields(config,classifications[output.id]??output.classification);
+  const selected=classifications[output.id]??output.classification;const fields=selected?standardTagFields(config,selected):workflowOutputFields(config,output).filter(field=>field.key.startsWith('tags.'));
   const automatic=output.assignments.filter(row=>/^(tags|extensions)\./.test(row.target));
   const showValue=(row:AnnotationRow,change:(patch:Partial<AnnotationRow>)=>void)=>row.type==='null'?<span>空值 null</span>:row.type==='bool'?<select aria-label="标签扩展值" value={String(row.value??'')} onChange={event=>change({value:event.target.value===''?undefined:event.target.value==='true'})}><option value="">选择是/否</option><option value="true">是</option><option value="false">否</option></select>:row.type==='json'?<pre aria-label="已有复杂标签扩展值（只读）" className="max-h-32 min-w-0 overflow-auto whitespace-pre-wrap rounded border bg-white p-2 text-xs">{typeof row.value==='string'?row.value:JSON.stringify(row.value,null,2)}</pre>:<input aria-label="标签扩展值" type={row.type==='number'?'number':'text'} value={String(row.value??'')} onChange={event=>change({value:event.target.value})}/>;
   return <section className="space-y-3 rounded border bg-slate-50 p-3 [&_input]:min-w-0 [&_input]:rounded [&_input]:border [&_input]:px-2 [&_input]:py-1 [&_select]:min-w-0 [&_select]:rounded [&_select]:border [&_select]:px-2 [&_select]:py-1 [&_textarea]:min-w-0 [&_textarea]:rounded [&_textarea]:border" aria-label="结构化标签与扩展">
-    {workflow.outputs.length>1?<label>所属输出<select aria-label="标签扩展所属输出" value={output.id} onChange={event=>setOutputId(event.target.value)}>{workflow.outputs.map((output,index)=><option key={output.id} value={output.id}>输出 {index+1} · {output.classification.class}</option>)}</select></label>:null}
+    {workflow.outputs.length>1?<label>所属输出<select aria-label="标签扩展所属输出" value={output.id} onChange={event=>setOutputId(event.target.value)}>{workflow.outputs.map((output,index)=><option key={output.id} value={output.id}>输出 {index+1} · {output.classification?.class??'分类组'}</option>)}</select></label>:null}
     {automatic.length?<details><summary className="text-xs">已有自动填写路径与来源</summary><ul className="text-xs">{automatic.map(row=><li key={row.id}>{row.target} ← {row.expression}</li>)}</ul><p className="text-xs">这些值来自上方输入。相同路径填写不同值会阻止保存，请直接修改已有输入。</p></details>:null}
     {(['tags','extensions'] as const).filter(namespace=>control.tagsExtensions?.[namespace==='tags'?'tagsEnabled':'extensionsEnabled']!==false).map(namespace=>{
       const extension=namespace==='extensions',rows=current[namespace]??[];

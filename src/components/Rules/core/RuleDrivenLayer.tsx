@@ -1,3 +1,6 @@
+import {createNativePathHitProxy} from '../rendering/nativePathHitProxy';
+import {pointSymbolMetrics} from '../rendering/pointSymbolMetrics';
+import {makeConfigShapeMarker} from '../rendering/configShapeMarker';
 import { isCjkGlyph } from '../rendering/label/lineScriptMetrics';
 import { usesScriptAwareGlyphs } from '../rendering/label/lineScriptMetrics';
 import {resolveNodeFieldSettings} from '@/configStudio/nodeFieldSettings';
@@ -830,28 +833,6 @@ function createNativePointHitProxy(latlngs: L.LatLng[], radius: number, iconPlan
   return latlngs.length === 1 ? make(latlngs[0]) : L.featureGroup(latlngs.map(make));
 }
 
-function createNativePathHitProxy(
-  type: FeatureRecord['type'],
-  lineLatLngs: L.LatLngExpression[],
-  polygonLatLngs: L.LatLngExpression[],
-  pane: string,
-  visibleWeight: number,
-  tolerance: number,
-): L.Layer {
-  const style: L.PathOptions = {
-    pane,
-    color: '#000000',
-    weight: Math.max(1, visibleWeight + tolerance * 2),
-    opacity: 0.001,
-    fillColor: '#000000',
-    fillOpacity: 0.001,
-    interactive: true,
-    className: 'ria-config-hit-proxy',
-  };
-  return type === 'Polyline'
-    ? L.polyline(lineLatLngs, style)
-    : L.polygon(polygonLatLngs, style);
-}
 
 function bindNativeHitProxy(
   layer: L.Layer,
@@ -942,54 +923,14 @@ function passesConfigRuntimeScreenGate(
   return true;
 }
 
-function safeSvgColor(value: unknown, fallback: string): string {
-  const color = String(value ?? '').trim();
-  // Colors in a local config still cross an HTML boundary here. Keep the
-  // generated SVG to a conservative CSS-color subset instead of interpolating
-  // arbitrary text into markup.
-  return /^(#[0-9a-f]{3,8}|(?:rgb|hsl)a?\([0-9.,%\s-]+\)|[a-z]+)$/i.test(color) ? color : fallback;
-}
-
 function configIconSignature(plan: any, url: string | undefined): string | undefined {
   return url ? JSON.stringify([url, plan?.iconSize ?? [24, 24], plan?.iconAnchor ?? [12, 12], plan?.zIndexOffset ?? 0,plan?.imageHalo??null]) : undefined;
 }
 
 function configShapeSignature(plan: any): string {
-  return `config-shape:${plan?.shape ?? 'square'}:${plan?.radius ?? 6}:${plan?.style?.color ?? ''}:${plan?.style?.fillColor ?? ''}:${plan?.style?.weight ?? ''}:${plan?.style?.opacity ?? ''}:${plan?.style?.fillOpacity ?? ''}:${JSON.stringify(plan?.halo??null)}`;
+  return `config-shape:${plan?.shape ?? 'square'}:${plan?.radius ?? 6}:${plan?.style?.color ?? ''}:${plan?.style?.fillColor ?? ''}:${plan?.style?.weight ?? ''}:${plan?.style?.opacity ?? ''}:${plan?.style?.fillOpacity ?? ''}:${JSON.stringify([plan?.halo??null,plan?.style?.lineCap,plan?.style?.lineJoin,plan?.zIndexOffset])}`;
 }
 
-function makeConfigShapeMarker(latlng: L.LatLng, plan: any, pane: string, interactive: boolean): L.Marker {
-  const radius = Math.max(2, Number(plan?.radius ?? 6));
-  const size = Math.ceil(radius * 2 + Math.max(0, Number(plan?.style?.weight ?? 0)) * 2 + 4 + 2*Number(plan?.halo?.widthPx??0));
-  const center = size / 2;
-  const outer = Math.max(1, radius - 1);
-  const stroke = safeSvgColor(plan?.style?.color, '#111827');
-  const fill = safeSvgColor(plan?.style?.fillColor ?? plan?.style?.color, '#f97316');
-  const strokeWidth = Math.max(0, Number(plan?.style?.weight ?? 1));
-  const opacity = Math.min(1, Math.max(0, Number(plan?.style?.opacity ?? 0.9)));
-  const fillOpacity = Math.min(1, Math.max(0, Number(plan?.style?.fillOpacity ?? 0.6)));
-  const pointsFor = (count: number, rotate = -90) => Array.from({ length: count }, (_, index) => {
-    const angle = ((rotate + index * 360 / count) * Math.PI) / 180;
-    return `${(center + outer * Math.cos(angle)).toFixed(2)},${(center + outer * Math.sin(angle)).toFixed(2)}`;
-  }).join(' ');
-  const shape = String(plan?.shape ?? 'square');
-  const figure = shape === 'circle' ? `<circle cx="${center}" cy="${center}" r="${radius}"/>` : shape === 'triangle'
-    ? `<polygon points="${pointsFor(3)}" />`
-    : shape === 'regular4'
-      ? `<polygon points="${pointsFor(4, -45)}" />`
-      : shape === 'regular5'
-        ? `<polygon points="${pointsFor(5)}" />`
-        : shape === 'regular6'
-          ? `<polygon points="${pointsFor(6, -90)}" />`
-          : `<rect x="${(center - outer).toFixed(2)}" y="${(center - outer).toFixed(2)}" width="${(outer * 2).toFixed(2)}" height="${(outer * 2).toFixed(2)}" />`;
-  const html = `<svg aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${plan?.halo?.widthPx>0?`<g fill="none" stroke="${safeSvgColor(plan.halo.color,'#ffffff')}" stroke-width="${strokeWidth+2*plan.halo.widthPx}" stroke-linecap="${plan?.style?.lineCap??'round'}" stroke-linejoin="${plan?.style?.lineJoin??'round'}">${figure}</g>`:''}<g stroke="${stroke}" fill="${fill}" stroke-width="${strokeWidth}" stroke-opacity="${opacity}" fill-opacity="${fillOpacity}">${figure}</g></svg>`;
-  return L.marker(latlng, {
-    pane,
-    icon: L.divIcon({ className: 'ria-config-shape-marker', html, iconSize: [size, size], iconAnchor: [center, center] }),
-    interactive,
-    zIndexOffset: Number(plan?.zIndexOffset ?? 0),
-  });
-}
 
 function pointRepresentationLatLng(r: FeatureRecord, projection: DynmapProjection): L.LatLng | null {
   const coordinates = r.multipartGeometry ? flattenMultipartCoordinates(r.multipartGeometry) : r.coords3 ?? [];
@@ -3356,7 +3297,7 @@ export default function RuleDrivenLayer(props: Props) {
           !pickModeActive &&
           !normalFeatureClickSuppressed &&
           clickPlan &&
-          (clickPlan as any).enabled
+          (clickPlan as any).enabled && clickPlan.labelEnabled!==false
             ? clickPlan
             : null;
 
@@ -3420,14 +3361,8 @@ export default function RuleDrivenLayer(props: Props) {
           let h = 28;
 
           // circleMarker：radius 是 CircleMarkerOptions 才有，类型上用 any 取值即可（不改类型定义）
-          if (pointPlan?.kind === "circle" || pointPlan?.kind === "shape" && Number((pointPlan as any)?.halo?.widthPx??0)>0) {
-            const radius = Number(
-              (pointPlan as any)?.radius ??
-                (pointPlan as any)?.style?.radius ??
-                6,
-            );
-            const weight = Number((pointPlan as any)?.style?.weight ?? 0);
-            const half = Math.max(4, radius + weight + 2 + Number((pointPlan as any)?.halo?.widthPx??0));
+          if (pointPlan?.kind === "circle" || pointPlan?.kind === "shape") {
+            const half = pointSymbolMetrics(pointPlan as any).extent;
             w = half * 2;
             h = half * 2;
           }
@@ -3703,7 +3638,7 @@ export default function RuleDrivenLayer(props: Props) {
             req.geometrySignature = configRuntime ? JSON.stringify(sourceRecord.multipartGeometry ?? sourceRecord.coords3 ?? sourceRecord.p3) : undefined;
             if (!req.symbolDensityBlocked && nativeBundle?.nativeSymbol?.visibility === 'withLabel' && (nativeSymbolPlan as any)?.assetStatus !== 'pending') {
               const offset=nativeBundle.nativeSymbol.screenOffsetPx??{x:0,y:0},plan=nativeSymbolPlan as any;
-              req.symbolBounds={radius:Number(plan?.radius??0)+Number(plan?.style?.weight??0)/2+Number(plan?.halo?.widthPx??0),offsetX:offset.x,offsetY:offset.y};
+              req.symbolBounds={radius:pointSymbolMetrics(plan).extent,offsetX:offset.x,offsetY:offset.y};
               if(plan?.kind==='icon'||plan?.assetStatus||symbolAnchors.length>1&&Number(plan?.halo?.widthPx??0)>0){
                 const reference=map.latLngToContainerPoint(req.anchorLatLng),parts=req.partIndex===undefined?(symbolAnchors.length?symbolAnchors:[req.anchorLatLng]):[symbolAnchors[req.partIndex]??req.anchorLatLng];
                 const boxes=parts.map(part=>{const p=map.latLngToContainerPoint(part),origin={x:p.x-reference.x+offset.x,y:p.y-reference.y+offset.y};return plan.kind==='icon'?iconBoundsAtAnchor(origin,plan.iconSize??[24,24],plan.iconAnchor??[12,12],plan.imageHalo?.widthPx??0):{x:origin.x-req.symbolBounds!.radius,y:origin.y-req.symbolBounds!.radius,w:2*req.symbolBounds!.radius,h:2*req.symbolBounds!.radius};});
@@ -4230,7 +4165,7 @@ export default function RuleDrivenLayer(props: Props) {
             : textPathMarker
               ? `textPath:${anchorCandidateId ?? anchorIndex}`
               : `simpleLine:${anchorCandidateId ?? anchorIndex}`;
-          const labelKey = `${p.text}|${req.placement}|${req.withDot ? 1 : 0}|${req.dotAnchorMode ?? "inline"}|${Number(req.offsetY ?? 0)}|${Number(req.offsetX ?? 0)}|${req.screenOffsets ? 1 : 0}|${styleKeyCache}|${plan ? 1 : 0}|${renderModeKey}`;
+          const labelKey = `${p.text}|${req.placement}|${req.withDot ? 1 : 0}|${req.dotAnchorMode ?? "inline"}|${Number(req.offsetY ?? 0)}|${Number(req.offsetX ?? 0)}|${req.screenOffsets ? 1 : 0}|${styleKeyCache}|${plan?JSON.stringify([plan.enabled,plan.labelEnabled,plan.mode,plan.geom,plan.nativeVisual]):0}|${renderModeKey}`;
 
           // RB_SLU_24: advanced line-text markers (glyphPath/textPath) are
           // viewport-container geometry. They must be rebuilt every refresh;
@@ -4551,7 +4486,8 @@ function createLayerBundle(
       ? rawClick(r, ctx, store)
       : rawClick
     : null;
-  const assetPending = (typeof symbol?.point === 'function' ? symbol.point(r,ctx,store) : symbol?.point)?.assetStatus === 'pending';
+  const inkPlan=typeof symbol?.point === 'function' ? symbol.point(r,ctx,store) : symbol?.point;
+  const assetPending=inkPlan?.assetStatus==='pending'||inkPlan?.kind==='shape'&&!pointSymbolMetrics(inkPlan as any).visible;
   const clickEnabled = !!(clickPlan && (clickPlan as any).enabled);
   const assistPickTarget = !!(!assetPending && assistPickActive && isAssistPickTargetFeature(r));
   const deletePickTarget = !!(!assetPending && deletePickActive && isDeletePickTargetFeature(r));
@@ -4571,7 +4507,7 @@ function createLayerBundle(
     (clickPlan as any)?.labelStyleKey ??
     "bubble-dark") as any;
   const onClick =
-    effectiveClickPlan && onLabelClick
+    effectiveClickPlan && effectiveClickPlan.labelEnabled!==false && onLabelClick
       ? () => onLabelClick(r, effectiveClickPlan as any)
       : undefined;
 
@@ -4595,7 +4531,7 @@ function createLayerBundle(
     // and the proxy, while legacy V1 keeps its original Leaflet event surface.
     const nativePointHitEnabled = (pointTolerance > 0 || (Number(plan?.haloInsetPx??0)>0||Number(plan?.halo?.widthPx??0)>0)) && (deletePickTarget || geomPointEnabled);
     const pointInteractive = nativePointHitEnabled ? false : (deletePickTarget ? true : geomPointEnabled);
-    const pointProxyRadius = Math.max(5, Number(plan?.radius ?? 5) + pointTolerance);
+    const pointProxyRadius = Math.max(5, pointSymbolMetrics(plan).baseRadius + pointTolerance);
 
     if (multipartPoints.length > 1) {
       const mainLayers = multipartPoints.map((point) => {
@@ -4787,7 +4723,7 @@ function createLayerBundle(
     const pointTolerance = nativeHitTolerance(displayPlan);
     const nativePointHitEnabled = (pointTolerance > 0 || (Number(plan?.haloInsetPx??0)>0||Number(plan?.halo?.widthPx??0)>0)) && (deletePickTarget || (geomPointEnabled || geomPathEnabled));
     const interactive = nativePointHitEnabled ? false : (deletePickTarget ? true : (geomPointEnabled || geomPathEnabled));
-    const pointProxyRadius = Math.max(5, Number(plan?.radius ?? 5) + pointTolerance);
+    const pointProxyRadius = Math.max(5, pointSymbolMetrics(plan).baseRadius + pointTolerance);
     const makeCenterMarker = (latlng: L.LatLng): L.Layer => plan?.kind === 'icon'
       ? (() => {
           const iconUrl = plan.iconUrl ?? (plan.iconUrlFrom ? String((r.featureInfo as any)?.[plan.iconUrlFrom] ?? '').trim() : undefined);
@@ -4850,7 +4786,7 @@ function createLayerBundle(
     // pane：symbol.pane > 默认 ria-overlay
     const mainPane = symbol?.pane ?? "ria-overlay";
     const pathTolerance = nativeHitTolerance(displayPlan);
-    const nativePathHitEnabled = pathTolerance > 0 && (deletePickTarget || assistPickTarget || geomPathEnabled);
+    const nativePathHitEnabled = (pathTolerance>0||r.type==='Polygon'&&(clickPlan?.geom?.boundary!==undefined||clickPlan?.geom?.interior!==undefined)) && (deletePickTarget || assistPickTarget || geomPathEnabled);
     const mainInteractive = nativePathHitEnabled
       ? false
       : (assistPickTarget || deletePickTarget ? true : geomPathEnabled ? true : (style as any)?.interactive);
@@ -4881,8 +4817,9 @@ function createLayerBundle(
         'ria-overlay-top',
         Number((style as any)?.weight ?? 0),
         pathTolerance,
+        pickModeActive?undefined:clickPlan?.geom,
       );
-      hitProxySignature = nativeHitProxySignature(`path-${r.type}`, pathTolerance, Number((style as any)?.weight ?? 0), true);
+      hitProxySignature = nativeHitProxySignature(`path-${r.type}:${pickModeActive?'pick':JSON.stringify([clickPlan?.geom?.boundary,clickPlan?.geom?.interior])}`, pathTolerance, Number((style as any)?.weight ?? 0), true);
       bindNativeHitProxy(hitProxy, r, {
         deletePickTarget,
         assistPickTarget,
@@ -4961,7 +4898,8 @@ function updateLayerBundle(
       ? rawClick(r, ctx, store)
       : rawClick
     : null;
-  const assetPending = (typeof symbol?.point === 'function' ? symbol.point(r,ctx,store) : symbol?.point)?.assetStatus === 'pending';
+  const inkPlan=typeof symbol?.point === 'function' ? symbol.point(r,ctx,store) : symbol?.point;
+  const assetPending=inkPlan?.assetStatus==='pending'||inkPlan?.kind==='shape'&&!pointSymbolMetrics(inkPlan as any).visible;
   const clickEnabled = !!(clickPlan && (clickPlan as any).enabled);
   const assistPickTarget = !!(!assetPending && assistPickActive && isAssistPickTargetFeature(r));
   const deletePickTarget = !!(!assetPending && deletePickActive && isDeletePickTargetFeature(r));
@@ -4979,7 +4917,7 @@ function updateLayerBundle(
     (clickPlan as any)?.labelStyleKey ??
     "bubble-dark") as any;
   const onClick =
-    effectiveClickPlan && onLabelClick
+    effectiveClickPlan && effectiveClickPlan.labelEnabled!==false && onLabelClick
       ? () => onLabelClick(r, effectiveClickPlan as any)
       : undefined;
 
@@ -5021,7 +4959,7 @@ function updateLayerBundle(
       const pointTolerance = nativeHitTolerance(displayPlan);
       const nativePointHitEnabled = (pointTolerance > 0 || (Number(plan?.haloInsetPx??0)>0||Number(plan?.halo?.widthPx??0)>0)) && (deletePickTarget || (geomPointEnabled || geomPathEnabled));
       const nextInteractive = nativePointHitEnabled ? false : (deletePickTarget || geomPointEnabled || geomPathEnabled);
-      const pointProxyRadius = Math.max(5, Number(plan?.radius ?? 5) + pointTolerance);
+      const pointProxyRadius = Math.max(5, pointSymbolMetrics(plan).baseRadius + pointTolerance);
       const expectedHitProxySignature = nativeHitProxySignature('point-representation', pointTolerance, pointProxyRadius, nativePointHitEnabled);
       if (!center || nativeSymbolParts(bundle).some(layer => Boolean((layer as any).options?.interactive) !== Boolean(nextInteractive)) || bundle.kind !== expectedKind || bundle.iconUrl !== expectedSignature || bundle.pointSignature !== centerSignature || bundle.hitProxySignature !== expectedHitProxySignature || (centers.length > 1 && !(bundle.main instanceof L.FeatureGroup))) {
         rebuildBundle();
@@ -5111,7 +5049,7 @@ function updateLayerBundle(
     // tolerance uses its transparent sibling instead of widening the marker.
     const pointTolerance = nativeHitTolerance(displayPlan);
     const nativePointHitEnabled = (pointTolerance > 0 || (Number(plan?.haloInsetPx??0)>0||Number(plan?.halo?.widthPx??0)>0)) && (deletePickTarget || geomPointEnabled);
-    const pointProxyRadius = Math.max(5, Number(plan?.radius ?? 5) + pointTolerance);
+    const pointProxyRadius = Math.max(5, pointSymbolMetrics(plan).baseRadius + pointTolerance);
     const nextHitProxySignature = nativeHitProxySignature('point', pointTolerance, pointProxyRadius, nativePointHitEnabled);
     const nextMarkerInteractive = nativePointHitEnabled ? false : (deletePickTarget ? true : geomPointEnabled);
     const curMarkerInteractive =
@@ -5233,12 +5171,12 @@ function updateLayerBundle(
       ? symbol.pathStyle(r, ctx, store)
       : symbol.pathStyle;
   const pathTolerance = nativeHitTolerance(displayPlan);
-  const nativePathHitEnabled = pathTolerance > 0 && (deletePickTarget || assistPickTarget || geomPathEnabled);
+  const nativePathHitEnabled = (pathTolerance>0||r.type==='Polygon'&&(clickPlan?.geom?.boundary!==undefined||clickPlan?.geom?.interior!==undefined)) && (deletePickTarget || assistPickTarget || geomPathEnabled);
   const nextPathInteractive = nativePathHitEnabled
     ? false
     : (assistPickTarget || deletePickTarget ? true : geomPathEnabled);
   const nextHitProxySignature = nativeHitProxySignature(
-    `path-${r.type}`,
+    `path-${r.type}:${pickModeActive?'pick':JSON.stringify([clickPlan?.geom?.boundary,clickPlan?.geom?.interior])}`,
     pathTolerance,
     Number((nextPathStyle as any)?.weight ?? 0),
     nativePathHitEnabled,

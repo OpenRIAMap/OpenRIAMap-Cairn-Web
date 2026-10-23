@@ -1,3 +1,4 @@
+import {workflowClassificationGroup,outputAcceptsClassification,recordClassificationEligible} from './workflowClassificationGroup';
 import { tagRecordErrors } from './standardTagFields';
 import { validateStructuredValue } from './valueSchema';
 import { applicationWorld } from '../core/project/applicationRuntime';
@@ -47,8 +48,8 @@ function setPath(target: Record<string, unknown>, path: string, value: unknown):
   cursor[parts[parts.length - 1]] = value;
 }
 
-export function resolvedClassification(output: WorkflowDefinition['outputs'][number], selections: Record<string, ClassificationPath | undefined>): ClassificationPath {
-  return selections[output.id] ?? output.classification;
+export function resolvedClassification(output: WorkflowDefinition['outputs'][number], selections: Record<string, ClassificationPath | undefined>, config?:ConfigPackageV3): ClassificationPath {
+  const paths=config&&config.contractRevision>=15?workflowClassificationGroup(config,output).paths:[];return selections[output.id] ?? output.classification ?? (paths.length===1?paths[0]:{class:''});
 }
 
 function parseStructuredOutput(target: string, value: unknown): unknown {
@@ -76,12 +77,12 @@ export function normalizeV3WorkflowSlots(workflow: WorkflowDefinition, raw: V3Wo
   return slots;
 }
 
-export function workflowOutputSystem(workflow: WorkflowDefinition, slots: V3WorkflowValueMap, options: { world?: string; classifications?: Record<string, ClassificationPath | undefined> }, outputId: string): V3WorkflowValueMap {
+export function workflowOutputSystem(workflow: WorkflowDefinition, slots: V3WorkflowValueMap, options: { world?: string; classifications?: Record<string, ClassificationPath | undefined>;config?:ConfigPackageV3 }, outputId: string): V3WorkflowValueMap {
   const world = normalizeV3WorldId(options.world ?? slots.World ?? 'zth');
   const values = (classification: ClassificationPath) => ({ World: world, WorldPrefix: resolveV3WorldPrefix(world), Class: classification.class, Kind: classification.kind ?? '', Skind: classification.skind ?? '', Skind2: classification.skind2 ?? '', Creator: slots.actor ?? '', ID: slots.ID ?? '' });
   const selected = workflow.outputs.find((output) => output.id === outputId) ?? workflow.outputs[0];
-  const system: V3WorkflowValueMap = selected ? values(resolvedClassification(selected, options.classifications ?? {})) : {};
-  workflow.outputs.forEach((output, index) => Object.entries(values(resolvedClassification(output, options.classifications ?? {}))).forEach(([key, value]) => { system[`${key}_${index + 1}`] = value; }));
+  const system: V3WorkflowValueMap = selected ? values(resolvedClassification(selected, options.classifications ?? {},options.config)) : {};
+  workflow.outputs.forEach((output, index) => Object.entries(values(resolvedClassification(output, options.classifications ?? {},options.config))).forEach(([key, value]) => { system[`${key}_${index + 1}`] = value; }));
   return system;
 }
 
@@ -97,10 +98,10 @@ export function evaluateV3WorkflowOutputs(workflow: WorkflowDefinition, slots: V
   for (const index of workflowOutputAssemblyOrder(workflow)) {
     const output = workflow.outputs[index];
     if(!active.has(output.id))continue;
-    const classification = resolvedClassification(output, options.classifications ?? {});
+    const classification = resolvedClassification(output, options.classifications ?? {},options.config);
     const system = workflowOutputSystem(workflow, slots, { ...options, world }, output.id);
     for (const [otherIndex, result] of assembled) system[`ID_${otherIndex + 1}`] = result.record.ID ?? '';
-    if (options.config && (!hasCategoryNode(options.config, classification) || hasDescendants(options.config, classification) || !pathMatchesScope(classification, output.classification) || !resolveGeometryProfile(options.config, classification, output.geometry.selected)?.enabled)) throw new Error(`输出 ${output.id} 必须选择最终分类与有效几何。`);
+    if (options.config && (!recordClassificationEligible(options.config,classification,output.geometry.selected)||!outputAcceptsClassification(options.config,output,classification))) throw new Error(`输出 ${output.id} 必须选择最终分类与有效几何。`);
     const record: Record<string, unknown> = { World: world, Class: classification.class, ...(classification.kind ? { Kind: classification.kind } : {}), ...(classification.skind ? { SKind: classification.skind } : {}), ...(classification.skind2 ? { SKind2: classification.skind2 } : {}) };
     const actor = String(slots.actor ?? '').trim(); if (actor) record.Creator = actor;
     for (const namespace of ['tags', 'extensions'] as const) {
@@ -196,7 +197,7 @@ export function validateV3WorkflowInputs(workflow: WorkflowDefinition, slots: V3
     const value = slots[control.slot ?? control.id];
     const report = (message: string) => issues.push({ stepId: step.id, controlId: control.id, message });
     if(control.kind==='classificationPicker' && config && !empty(value)){
-      const path=decodePath(String(value));if(!path||!hasCategoryNode(config,path)||hasDescendants(config,path)||!pathMatchesScope(path,control.classificationScope??{class:''}))report('请选择范围内最终子分类。');
+      const path=decodePath(String(value));if(!path||(config.contractRevision>=15?!workflow.outputs.some(output=>output.id===control.outputId&&outputAcceptsClassification(config,output,path)):!hasCategoryNode(config,path)||hasDescendants(config,path)||!pathMatchesScope(path,control.classificationScope??{class:''})))report('请选择范围内最终子分类。');
     }
     if(control.kind==='tagsExtensions'){
       try {for(const output of workflow.outputs)annotationsForOutput({...workflow,steps:[{...step,controls:[control]}]},slots,output.id);}catch(error){report(error instanceof Error?error.message:'标签/扩展无效。');}continue;
@@ -234,7 +235,7 @@ export function validateV3WorkflowRecords(config: ConfigPackageV3, workflow: Wor
   const issues: V3WorkflowInputIssue[] = [];
   for (const output of result) {
     const definition = workflow.outputs.find(item => item.id === output.outputId);
-    if (!definition || !hasCategoryNode(config, output.classification) || !pathMatchesScope(output.classification, definition.classification)) { issues.push({ message: `输出 ${output.outputId} 的分类无效。` }); continue; }
+    if (!definition || !recordClassificationEligible(config,output.classification,definition.geometry.selected)||!outputAcceptsClassification(config,definition,output.classification)) { issues.push({ message: `输出 ${output.outputId} 的分类无效。` }); continue; }
     for(const message of tagRecordErrors(config,output.classification,output.record))issues.push({message});
     const geometry=readMultipartGeometry(output.record,definition.geometry.selected).geometry;
     if(geometry&&geometry.parts.length>1&&resolveGeometryProfile(config,output.classification,definition.geometry.selected)?.allowMultipleParts===false)issues.push({message:`输出 ${output.outputId} 的分类只允许单部件几何。`});
