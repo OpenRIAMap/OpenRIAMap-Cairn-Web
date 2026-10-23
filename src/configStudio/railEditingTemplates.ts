@@ -1,3 +1,5 @@
+import {migrateC15Workflow} from './c15Migration';
+import {syncWorkflowClassification} from './systemClassification';
 import {RAIL_SCHEMAS,projectRegistryScene} from '../components/Common/workflowEditorRegistry';
 import {FORMAT_REGISTRY} from '../components/Common/featureFormats';
 import {resolveEffectiveFields,resolveGeometryProfile,hasDescendants} from './runtime';
@@ -23,7 +25,7 @@ export function createRailEditingWorkflows(config:ConfigPackageV3):WorkflowDefin
   if(hasDescendants(config,scope))controls.unshift({id:`edit-${code}-classification`,kind:'classificationPicker',columns:1,label:{zh:'分类',en:''},classificationScope:scope,outputId,systemManaged:true,required:true});
   controls.push({id:`edit-${code}-annotations`,kind:'tagsExtensions',columns:1,label:{zh:'标签与扩展',en:''},systemManaged:true,tagsExtensions:{tagsEnabled:true,extensionsEnabled:true}});
   const workflow:WorkflowDefinition={id:`v3-editor-${code.toLowerCase()}`,label:{zh:`${view.displayName}（专供编辑）`,en:''},mode:'composed',quickMapping:false,editor:{enabled:true,dedicated:true,scope},target:scope,actor:{required:true},steps:[{id:`edit-${code}-actor`,kind:'actor',label:{zh:'填写人',en:''}},{id:`edit-${code}-form`,kind:'form',label:{zh:'编辑信息',en:''},controls},{id:`edit-${code}-geometry`,kind:'geometry',outputId,geometry:[geometry],label:{zh:'编辑几何',en:''},drawing:{enabledFromThisPage:true,keepDrawingWhenBack:true,allowBack:true,multiple:resolveGeometryProfile(config,scope,geometry)?.allowMultipleParts??false}}],outputs:[{id:outputId,classification:scope,geometry:{selected:geometry},assignments}]};
-  testWorkflowEditConversion(config,workflow);return workflow;
+  if(config.contractRevision>=15)migrateC15Workflow(workflow,config,[]);const prepared=syncWorkflowClassification(config,workflow);testWorkflowEditConversion(config,prepared);return prepared;
  });
 }
 export function installRailEditingWorkflows(value:ConfigPackageV3):ConfigPackageV3 {

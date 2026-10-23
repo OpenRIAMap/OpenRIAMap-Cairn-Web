@@ -23,3 +23,14 @@
 `HaloEditor.tsx` 复用颜色控件；`halo.ts` 定义范围和默认值；`iconComposition.ts` 是图标合成入口；普通地图通过 `configPackageAdapter.ts` 和 `RuleDrivenLayer.tsx` 使用同样配置。`MigrationNotices.tsx` 展示可清除的来源提示，不授予保存／发布资格。
 
 折叠状态按字段／规则／信息卡的稳定 ID 保存，是编辑界面状态，不写入业务配置。
+
+## c15 结构与运行入口
+
+- 几何能力仅在 profile 保留 `allowMultipleParts`；每条完整规则必须保存 `multipartAnchor` 和 `interaction.triggers`。不得写回已废弃的 profile.anchor／interaction。
+- 面几何 Halo 使用 `{enabled,widthPx,color,showInner}`。内侧开关只适用于面几何；基础点、Icon、图片的 Halo 不接受该属性。`showInner:true` 在不透明填色上也可见。
+- 所有圆形走 SVG，输入小数直接使用。c14→c15 转换旧值为旧版实际半径并报告；新输入不再取整。零尺寸圆形不绘制符号、Halo 或几何点击面。
+- 基础形状使用 `configShapeMarker.ts`／`convexHaloRing.ts` 的直接空心环带，线面复用投影路径遮罩，图片使用独立 SVG 矩形；原内容不被 Halo 二次涂色。尺寸、占用和命中使用 `pointSymbolMetrics.ts`。
+- c15 output 使用 `classificationGroup.selectors[]`，每行 `{id,mode:'self'|'leafDescendants',path}`，整组仍只有一个固定 geometry.selected。`workflowClassificationGroup.ts` 是候选、共同字段和资格的公共入口；不能回退到组内第一条路径。
+- 采集、导入、再编辑和共享 Node 核验允许有有效几何的精确父节点；只有 leafDescendants 展开要求结构末端。历史契约保持原有资格。
+- 工作流设计折叠由 `WorkflowFold.tsx` 管理。业务 ID 优先；没有业务 ID 的行使用单独 UI 身份，随同一个显式检查点恢复，不写入配置或配置散列。实际运行器表单保持正常展开。
+- `migratePackageToC14()` 永远只到 c14；本轮新增 `migratePackageToC15()`。新建、复制、执行方式／显示类型切换同样必须产生完整目标结构，不能靠再次迁移掩盖工厂遗漏。

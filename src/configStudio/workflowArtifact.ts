@@ -23,7 +23,7 @@ export function prepareWorkflowArtifactImport(config:ConfigPackageV3,input:unkno
   const sourceShape=validateNativeStructure({...config,contractRevision:artifact.contractRevision,nodes:[],workflows:[artifact.workflow]});if(sourceShape.length)throw Error(sourceShape.map(i=>i.path+'：'+i.message).join('\n'));
   const tables:LookupTable[]=[];
   for(const table of artifact.lookupTables??[]){const existing=config.lookupTables?.find(row=>row.id===table.id)??tables.find(row=>row.id===table.id);if(existing&&canonical(existing)!==canonical(table))throw Error(`对照表 ${table.id} 与当前配置冲突，未覆盖共享表。`);if(!existing)tables.push(structuredClone(table));}
-  const migration=artifact.contractRevision>=13&&artifact.contractRevision<config.contractRevision?migrateContract(artifact,config.contractRevision,'workflow'):undefined;
+  const migration=artifact.contractRevision>=13&&artifact.contractRevision<config.contractRevision?migrateContract(artifact,config.contractRevision,'workflow',config):undefined;
   const imported=structuredClone(migration?.document.workflow??artifact.workflow);
   const candidate={...config,lookupTables:[...config.lookupTables??[],...tables],workflows:[imported]};
   if(artifact.contractRevision>=11)remapDictionaryDependencies(candidate,imported,structuredClone(artifact.fieldDependencies??[]));

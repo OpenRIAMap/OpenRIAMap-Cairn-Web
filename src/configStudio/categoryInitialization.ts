@@ -76,11 +76,11 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
   }
   const fields=originals.flatMap(field=>{const copied=copies.get(field.key);return copied?[config.contractRevision>=11?canonicalDictionaryOwner(rewriteCategoryReferences(copied,renamed)):rewriteCategoryReferences(copied,renamed)]:[];});
   const profile=editableGeometryProfile(geometry,config.contractRevision);
-  profile.allowMultipleParts=multiple;profile.anchor=anchor;
-  if(sync.geometry&&sourceCapability)profile.interaction=structuredClone(sourceCapability.interaction);
+  profile.allowMultipleParts=multiple;
+  if(config.contractRevision<15){profile.anchor=anchor;if(sync.geometry&&sourceCapability)profile.interaction=structuredClone(sourceCapability.interaction);}
   const display=source?resolveGeometryProfile(config,source.path,geometry):undefined;
   if(sync.display){
-    if(!display?.enabled||display.allowMultipleParts!==multiple||(multiple&&(display.anchor??'featureBbox')!==anchor))throw Error('显示模板与目标几何、多部件或部件显示模式不兼容。');
+    if(!display?.enabled||display.allowMultipleParts!==multiple||(config.contractRevision<15&&multiple&&(display.anchor??'featureBbox')!==anchor))throw Error('显示模板与目标几何、多部件或部件显示模式不兼容。');
     profile.zoomPriority=rewriteCategoryReferences(structuredClone(display.zoomPriority),renamed);profile.zoomPriority.rules=profile.zoomPriority.rules.map(rule=>({...rule,id:newConfigId('render')}));profile.renderState=profile.zoomPriority.rules.length?'enabled':'unconfigured';actions.push(`复制显示规则 ${profile.zoomPriority.rules.length} 条。`);
   }else {profile.zoomPriority.rules=[];profile.renderState='unconfigured';actions.push('显示未配置：不会隐式继承或渲染。');}
   const card=sync.card&&source?rewriteCategoryReferences(structuredClone(resolveCardConfiguration(config,source.path,false)??{mode:'fields' as const,items:[]}),renamed):{mode:'fields' as const,items:[]};

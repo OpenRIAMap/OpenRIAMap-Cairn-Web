@@ -95,7 +95,7 @@ function fieldShape(field?: FieldDefinition): Shape {
 
 /** Pure AST analysis shared by module, package, export and activation validation.
  * Unknown JSON remains a warning; known incompatible values cannot be enabled. */
-export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (path: ClassificationPath) => FieldDefinition[]): ConfigValidationIssue[] {
+export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (path: ClassificationPath) => FieldDefinition[], candidate?:{outputId:string;classification:ClassificationPath}): ConfigValidationIssue[] {
   const issues: ConfigValidationIssue[] = [];
   const base = `workflows/${workflow.id}`;
   const add = (code: string, path: string, message: string, severity: 'error' | 'warning' = 'error') => issues.push({ severity, code, path, message });
@@ -138,12 +138,15 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
     return shape('number');
   };
   for (const output of workflow.outputs) {
+    if(candidate&&output.id!==candidate.outputId)continue;
+    const constraint=candidate?workflowCandidateConstraint(candidate.classification,workflow.outputs.indexOf(output)):undefined;
     type Writer = { target: string; path: string; conditions: Array<WorkflowValueCondition | undefined> };
     const writers: Writer[] = [];
-    const targetFields = fields(output.classification);
+    const targetFields = fields(candidate?.classification??output.classification??{class:''});
     for (const assignment of output.assignments) {
       const path = `${base}/outputs/${output.id}/assignments/${assignment.id}`;
-      writers.push({ target: assignment.target, path, conditions: [output.when, assignment.when] });
+      if(constraint&&workflowConditionsDisjoint([constraint],[output.when,assignment.when])===true)continue;
+      writers.push({ target: assignment.target, path, conditions: [constraint,output.when, assignment.when] });
       const field = targetFields.find(field => field.key === assignment.target);
       try {
         const ast = parseWorkflowExpression(assignment.expression);
@@ -169,7 +172,7 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
         try { parseWorkflowExpression(assignment.expression); add('workflow-expression-result-invalid', path, error instanceof Error ? error.message : '表达式无法产生有效结果。'); } catch { /* syntax diagnostic already present */ }
       }
     }
-    for (const step of workflow.steps) for (const [index, binding] of (step.drawing?.bindings ?? []).entries()) if (binding.outputId === output.id) writers.push({ target: binding.target, path: `${base}/steps/${step.id}/drawing/bindings/${index}`, conditions: [output.when, step.when, workflow.outputs.find(item => item.id === step.outputId)?.when] });
+    for (const step of workflow.steps) for (const [index, binding] of (step.drawing?.bindings ?? []).entries()) if (binding.outputId === output.id) writers.push({ target: binding.target, path: `${base}/steps/${step.id}/drawing/bindings/${index}`, conditions: [constraint,output.when, step.when, workflow.outputs.find(item => item.id === step.outputId)?.when] });
     const indexed=new Map<string,Writer[]>();
     for(const writer of writers)indexed.set(writer.target,[...(indexed.get(writer.target)??[]),writer]);
     for(const group of indexed.values()){
@@ -187,4 +190,10 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
     for(const writer of writers){const parts=writer.target.split('.');for(let at=1;at<parts.length;at++){const parent=parts.slice(0,at).join('.');if(indexed.has(parent))add('workflow-target-path-overlap',writer.path,`父子路径 ${parent} / ${writer.target} 可能发生覆盖，请核对组装意图。`,'warning');}}
   }
   return issues;
+}
+
+/** Constant classification guards narrow candidate-specific assembly without changing output order. */
+export function workflowCandidateConstraint(path:ClassificationPath,index:number):WorkflowValueCondition {
+ const values={Class:path.class,Kind:path.kind??'',Skind:path.skind??'',Skind2:path.skind2??''};
+ return {token:'',operator:'present',all:Object.entries(values).flatMap(([token,value])=>[token,`${token}_${index+1}`].map(token=>({token,operator:'equals' as const,value})))};
 }

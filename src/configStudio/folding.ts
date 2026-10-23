@@ -11,6 +11,6 @@ export function studioFoldKey(item:HTMLDetailsElement,scope:string):string{
 export function openAddedSetting(key:string):void{
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     const item=Array.from(document.querySelectorAll<HTMLDetailsElement>('details[data-fold-key]')).find(item=>item.dataset.foldKey===key);
-    if(item){item.open=true;item.scrollIntoView({block:'nearest'});item.querySelector<HTMLElement>('input,select,textarea,button')?.focus();}
+    if(item){for(let parent:HTMLElement|null=item;parent;parent=parent.parentElement)if(parent instanceof HTMLDetailsElement)parent.open=true;item.scrollIntoView({block:'nearest'});item.querySelector<HTMLElement>('input,select,textarea,button')?.focus();}
   }));
 }

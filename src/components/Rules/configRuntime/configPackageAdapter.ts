@@ -61,7 +61,7 @@ function runtimeBinding(config: ConfigPackageV3, record: FeatureRecord, ctx: Ren
   if (prior?.key === key && (storeIndependent || prior.store === store) && prior.floors === ctx.activeBuildingFloorRefSet) return prior.binding;
   const geometry = geometryFor(record);
   const profile = resolveGeometryProfile(config, pathFor(record), geometry);
-  const resolved = profile ? activeRuleFor(profile, record, ctx) : undefined;
+  const resolved = profile ? activeRuleFor(profile, record, ctx,config.contractRevision) : undefined;
   const active = resolved ? { ...resolved, extensions: resolveRenderExtensions(config, geometry, resolved.extensions) } : undefined;
   const binding: RuntimeBinding = { geometry, profile, active, visuals: {} };
   if (compiled) {
@@ -379,7 +379,7 @@ function mergeExtensions(base: RenderRuleExtensions | undefined, override: Rende
 /** Resolve typed field conditions after selecting the one inclusive Zoom rule.
  * This keeps Zoom intervals single and non-overlapping while retaining V1's
  * small number of real field-dependent visual branches. */
-function activeRuleFor(profile: NonNullable<ReturnType<typeof resolveGeometryProfile>>, record: FeatureRecord, ctx: RenderContext): ZoomPriorityRule | undefined {
+function activeRuleFor(profile: NonNullable<ReturnType<typeof resolveGeometryProfile>>, record: FeatureRecord, ctx: RenderContext,revision:number): ZoomPriorityRule | undefined {
   const selected = resolveZoomRule(profile, ctx.zoomLevel, field => featureValue(record, field));
   const base = selected?.when ? { ...selected, minZoom: selected.when.zoom.min, maxZoom: selected.when.zoom.max } : selected;
   if (!base) return undefined;
@@ -389,7 +389,7 @@ function activeRuleFor(profile: NonNullable<ReturnType<typeof resolveGeometryPro
     active = {
       ...active,
       ...(override.representation !== undefined ? { representation: override.representation } : {}),
-      ...(override.style ? { style: override.style } : {}),
+      ...(override.style ? { style: revision>=15?{...active.style,...override.style}:override.style } : {}),
       ...(override.label ? { label: override.label } : {}),
       ...(override.geometryStack ? { geometryStack: override.geometryStack } : {}),
       ...(override.priority ? { priority: override.priority } : {}),
@@ -636,10 +636,12 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
   };
   const nativeLabelStyle = label.style ?? { family: 'gm-outline' as const, size: 14 };
   const pane = active.geometryStack.pane || paneFor(config, geometry, active.extensions?.pane);
-  const triggers = profile.interaction?.triggers ?? {};
-  const pathInteractive = (active.representation === 'point' && Boolean(triggers.point)) || (active.representation === 'point' && style.symbolVisibility === 'withLabel' && Boolean(triggers.label)) || (geometry === 'Polygon'
+  const triggers = (config.contractRevision>=15?active.interaction:profile.interaction)?.triggers ?? {};
+  const historicalPathInteractive = (active.representation === 'point' && Boolean(triggers.point)) || (active.representation === 'point' && style.symbolVisibility === 'withLabel' && Boolean(triggers.label)) || (geometry === 'Polygon'
     ? Boolean(triggers.boundary || triggers.interior)
     : geometry === 'LineString' ? Boolean(triggers.line) : Boolean(triggers.point));
+  const pointLike=geometry==='Point'||active.representation==='point';
+  const pathInteractive=config.contractRevision<15?historicalPathInteractive:active.representation==='labelOnly'?false:pointLike?Boolean(triggers.point):geometry==='Polygon'?Boolean(triggers.boundary||triggers.interior):Boolean(triggers.line);
   const stroke = resolveColor(record, style.stroke, '#334155', store);
   const fill = resolveColor(record, style.fill, stroke, store);
   const hitTolerancePx = active.extensions?.hitTolerancePx ?? config.engine.interactionBaselines[geometry].hitTolerancePx;
@@ -654,7 +656,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
     lineJoin: style.lineJoin ?? 'round',
     pane,
     interactive: pathInteractive,
-    halo:haloWidth(style.halo)>0?{widthPx:haloWidth(style.halo),color:resolveColor(record,style.halo!.color,'#ffffff',store)}:undefined,
+    halo:haloWidth(style.halo)>0?{widthPx:haloWidth(style.halo),color:resolveColor(record,style.halo!.color,'#ffffff',store),cutout:config.contractRevision>=15,showInner:geometry==='Polygon'&&'showInner' in style.halo!&&style.halo!.showInner===true}:undefined,
   };
   const labelKey = labelStyleKey(nativeLabelStyle, record, store);
   const screenGate = active.extensions?.screenGate;
@@ -685,7 +687,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
       : { kind: 'shape' as const, shape: style.pointShape, radius: style.size ?? Math.max(4, Number(style.weight ?? 2) * 3), style: pathStyle, pane, zIndexOffset: active.geometryStack.zLevel + (active.geometryStack.zIndexOffset ?? 0) + ruleDisplayPriority };
   const selectedVisual = resolveConfigInteractionVisual(config, record, ctx, 'selected', store);
   let nativePointPlan: Record<string, unknown> = { ...pointPlan, screenOffsetPx: style.symbolOffsetPx, followLabelAnchor: style.symbolAnchor === 'label', visibility: style.symbolVisibility };
-  if(pathStyle.halo&&nativePointPlan.kind==='circle')nativePointPlan={...nativePointPlan,kind:'shape',shape:'circle',halo:pathStyle.halo};
+  if(nativePointPlan.kind==='circle'){const authored=Number(nativePointPlan.radius);const radius=config.contractRevision>=15?Math.max(0,authored):pathStyle.halo?Math.max(2,authored):Math.max(1,Math.round(authored));nativePointPlan={...nativePointPlan,kind:'shape',shape:'circle',radius,halo:pathStyle.halo};}
   else if(pathStyle.halo)nativePointPlan={...nativePointPlan,halo:pathStyle.halo};
   if (pointSymbol && pointSymbol.kind !== 'shape') {
     let url: string | undefined, size: [number, number] | undefined, anchor: [number, number] | undefined;
@@ -697,7 +699,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
       if (item) {
         const asset = pinheadPath(item.id); status = asset.phase;
         if (asset.phase === 'success' && asset.value) {
-          url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(composeIconSvg(item, asset.value, (binding, fallback) => resolveColor(record, binding, fallback, store)));
+          url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(composeIconSvg(item, asset.value, (binding, fallback) => resolveColor(record, binding, fallback, store),config.contractRevision>=15));
           const canvas=iconCanvas(item);hitIconSize=[item.sizePx,item.sizePx];hitIconAnchor=placementAnchor(item.placement,...hitIconSize);
           size=[canvas.size,canvas.size];anchor=[hitIconAnchor[0]+canvas.padding,hitIconAnchor[1]+canvas.padding];haloInsetPx=canvas.padding;
         }
@@ -718,10 +720,10 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
       }
       if (acceptableImageUrl(candidate) && presentation) {
         const asset = externalImageAsset(candidate); status = asset.phase;
-        if (status === 'success') { imageHalo=haloWidth(presentation.halo)>0?{widthPx:haloWidth(presentation.halo),color:resolveColor(record,presentation.halo!.color,'#ffffff',store)}:undefined; url = candidate; size = [presentation.sizePx.width, presentation.sizePx.height]; anchor = placementAnchor(presentation.placement, ...size); }
+        if (status === 'success') { imageHalo=haloWidth(presentation.halo)>0?{widthPx:haloWidth(presentation.halo),color:resolveColor(record,presentation.halo!.color,'#ffffff',store),cutout:config.contractRevision>=15}:undefined; url = candidate; size = [presentation.sizePx.width, presentation.sizePx.height]; anchor = placementAnchor(presentation.placement, ...size); }
       }
     }
-    if (status === 'pending') nativePointPlan = { ...nativePointPlan, kind: 'circle', radius: 0, style: { ...pathStyle, opacity: 0, fillOpacity: 0, weight: 0, interactive: false }, assetStatus: status };
+    if (status === 'pending') nativePointPlan = { ...nativePointPlan, kind: 'shape',shape:'circle', radius: 0,halo:undefined,imageHalo:undefined, style: { ...pathStyle, opacity: 0, fillOpacity: 0, weight: 0, interactive: false }, assetStatus: status };
     else if (status === 'success' && url && size && anchor) nativePointPlan = { ...nativePointPlan, kind: 'icon', halo:undefined,iconUrl: url, iconUrlFrom: undefined, iconSize: size, iconAnchor: anchor, imageHalo,hitIconSize,hitIconAnchor,haloInsetPx,assetStatus: status };
     else nativePointPlan = { ...nativePointPlan, assetStatus: 'failure' };
   }
@@ -767,6 +769,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
       },
       labelClick: {
         enabled: Boolean(triggers.label || pathInteractive),
+        ...(config.contractRevision>=15?{labelEnabled:Boolean(triggers.label)}:{}),
         mode: active.representation === 'labelOnly' ? 'labelOnly' : 'normal',
         labelStyleKey: labelKey as any,
         highlightStyleKey: 'dash',
@@ -775,7 +778,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
         pointPinStyleKey: 'pin-blue',
         nativeVisual: selectedVisual,
         openCard: true,
-        geom: { point: (geometry === 'Point' || active.representation === 'point') && pathInteractive, path: geometry !== 'Point' && active.representation !== 'point' && pathInteractive },
+        geom: { ...(config.contractRevision>=15&&geometry==='Polygon'&&!pointLike?{boundary:Boolean(triggers.boundary),interior:Boolean(triggers.interior)}:{}),point: (geometry === 'Point' || active.representation === 'point') && pathInteractive, path: geometry !== 'Point' && active.representation !== 'point' && pathInteractive },
       },
     },
     display: {
@@ -824,7 +827,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
           ? (anchor?.strategy === 'lineCandidates' ? 'polylineStableCandidates' : 'polylineCenter')
           : anchor?.strategy === 'visibleInterior' ? 'visibleInteriorLargeOnly'
             : anchor?.strategy === 'interior' ? 'fixedInterior' : 'stableGeoCandidates',
-        multipartMode: profile.anchor ?? 'featureBbox',
+        multipartMode: (config.contractRevision>=15?active.multipartAnchor:profile.anchor) ?? 'featureBbox',
         ...(anchor?.candidates ? { candidates: anchor.candidates } : {}),
         ...(anchor?.offsetPx ? { offsetPx: anchor.offsetPx } : {}),
         ...(anchor?.candidateOffsetsPx ? { candidateOffsetsPx: anchor.candidateOffsetsPx } : {}),

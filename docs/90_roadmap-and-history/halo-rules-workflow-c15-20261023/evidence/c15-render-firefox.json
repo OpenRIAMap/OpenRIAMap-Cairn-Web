@@ -1,0 +1,2672 @@
+{
+  "checks": [
+    "72 shape/opacity/zero-stroke pixel comparisons preserve original inner color",
+    "circle decimals 0/.5/1/1.5/8/8.5; zero suppresses shape and halo",
+    "dash/cap/join/miter envelope, hole/multipart, opaque inner layer, style/zoom/12 lifecycle cycles",
+    "image rectangle .5/1.5px Halo; fractional image size and anchor",
+    "actual SVG hit testing: polygon boundary/interior independent, no duplicate click",
+    "icons: no plate/circle/square/roundedRect/pin; stable cache key and 100 reuses"
+  ],
+  "device": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:158.0) Gecko/20100101 Firefox/158.0",
+    "dpr": 1,
+    "viewport": [
+      1440,
+      1000
+    ]
+  },
+  "samples": {
+    "lines600": [
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 14,
+          "createMs": 25,
+          "updateMs": 9,
+          "updates": [
+            9,
+            9,
+            8,
+            8,
+            8,
+            8,
+            9,
+            8,
+            8,
+            7,
+            7,
+            8
+          ],
+          "masks": 0,
+          "paths": 1200
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 18,
+          "createMs": 42,
+          "updateMs": 11,
+          "updates": [
+            7,
+            8,
+            8,
+            8,
+            9,
+            10,
+            9,
+            11,
+            9,
+            11,
+            8,
+            10
+          ],
+          "masks": 600,
+          "paths": 1800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 19,
+          "createMs": 42,
+          "updateMs": 22,
+          "updates": [
+            8,
+            10,
+            22,
+            8,
+            13,
+            8,
+            12,
+            8,
+            9,
+            8,
+            13,
+            11
+          ],
+          "masks": 600,
+          "paths": 1800
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 11,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            8,
+            9,
+            8,
+            8,
+            9,
+            9,
+            8,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 1200
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 10,
+          "createMs": 17,
+          "updateMs": 14,
+          "updates": [
+            9,
+            7,
+            8,
+            8,
+            8,
+            9,
+            9,
+            9,
+            8,
+            9,
+            9,
+            14
+          ],
+          "masks": 0,
+          "paths": 1200
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 17,
+          "createMs": 33,
+          "updateMs": 14,
+          "updates": [
+            8,
+            7,
+            14,
+            9,
+            10,
+            9,
+            9,
+            9,
+            10,
+            9,
+            13,
+            9
+          ],
+          "masks": 600,
+          "paths": 1800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 17,
+          "createMs": 32,
+          "updateMs": 11,
+          "updates": [
+            8,
+            8,
+            8,
+            10,
+            11,
+            9,
+            9,
+            9,
+            10,
+            9,
+            9,
+            9
+          ],
+          "masks": 600,
+          "paths": 1800
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 9,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            8,
+            7,
+            7,
+            7,
+            8,
+            9,
+            9,
+            9,
+            9,
+            8,
+            9,
+            9
+          ],
+          "masks": 0,
+          "paths": 1200
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 14,
+          "createMs": 26,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            9,
+            8,
+            9,
+            9,
+            8,
+            7,
+            7,
+            8,
+            7,
+            8
+          ],
+          "masks": 0,
+          "paths": 1200
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 18,
+          "createMs": 41,
+          "updateMs": 13,
+          "updates": [
+            8,
+            9,
+            8,
+            8,
+            8,
+            13,
+            8,
+            8,
+            8,
+            10,
+            9,
+            9
+          ],
+          "masks": 600,
+          "paths": 1800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 16,
+          "createMs": 33,
+          "updateMs": 13,
+          "updates": [
+            8,
+            8,
+            7,
+            10,
+            8,
+            10,
+            8,
+            13,
+            10,
+            8,
+            9,
+            9
+          ],
+          "masks": 600,
+          "paths": 1800
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 15,
+          "createMs": 26,
+          "updateMs": 9,
+          "updates": [
+            9,
+            8,
+            8,
+            8,
+            7,
+            7,
+            7,
+            8,
+            8,
+            8,
+            8,
+            7
+          ],
+          "masks": 0,
+          "paths": 1200
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 16,
+          "createMs": 24,
+          "updateMs": 10,
+          "updates": [
+            8,
+            8,
+            7,
+            8,
+            8,
+            8,
+            10,
+            9,
+            9,
+            8,
+            9,
+            9
+          ],
+          "masks": 0,
+          "paths": 1200
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 23,
+          "createMs": 50,
+          "updateMs": 11,
+          "updates": [
+            7,
+            11,
+            9,
+            9,
+            9,
+            9,
+            9,
+            11,
+            8,
+            8,
+            9,
+            9
+          ],
+          "masks": 600,
+          "paths": 1800
+        }
+      }
+    ],
+    "symbols600": [
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 23,
+          "createMs": 41,
+          "updateMs": 10,
+          "updates": [
+            8,
+            7,
+            8,
+            8,
+            8,
+            10,
+            9,
+            9,
+            8,
+            8,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 14,
+          "createMs": 33,
+          "updateMs": 9,
+          "updates": [
+            7,
+            7,
+            7,
+            8,
+            8,
+            8,
+            8,
+            9,
+            9,
+            9,
+            9,
+            9
+          ],
+          "masks": 0,
+          "paths": 300
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 14,
+          "createMs": 34,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            8,
+            7,
+            7,
+            9,
+            9,
+            8,
+            9,
+            9,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 300
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 12,
+          "createMs": 25,
+          "updateMs": 9,
+          "updates": [
+            9,
+            9,
+            8,
+            8,
+            8,
+            9,
+            9,
+            8,
+            8,
+            7,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 14,
+          "createMs": 33,
+          "updateMs": 9,
+          "updates": [
+            9,
+            8,
+            9,
+            8,
+            9,
+            9,
+            8,
+            8,
+            8,
+            8,
+            7,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 12,
+          "createMs": 33,
+          "updateMs": 10,
+          "updates": [
+            8,
+            8,
+            9,
+            9,
+            10,
+            8,
+            7,
+            8,
+            7,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 300
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 14,
+          "createMs": 33,
+          "updateMs": 9,
+          "updates": [
+            9,
+            9,
+            9,
+            9,
+            8,
+            9,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 300
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 15,
+          "createMs": 33,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            9,
+            9,
+            8,
+            9,
+            8,
+            7,
+            9,
+            8,
+            7,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 11,
+          "createMs": 24,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            9,
+            8,
+            9,
+            9,
+            9,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 14,
+          "createMs": 34,
+          "updateMs": 9,
+          "updates": [
+            7,
+            8,
+            8,
+            7,
+            9,
+            8,
+            9,
+            9,
+            9,
+            9,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 300
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 18,
+          "createMs": 33,
+          "updateMs": 9,
+          "updates": [
+            8,
+            7,
+            8,
+            8,
+            8,
+            7,
+            8,
+            8,
+            8,
+            9,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 300
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 11,
+          "createMs": 34,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            9,
+            9,
+            9,
+            8,
+            9,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 12,
+          "createMs": 34,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            8,
+            7,
+            8,
+            8,
+            9,
+            8,
+            9,
+            9,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 12,
+          "createMs": 25,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            9,
+            9,
+            8,
+            8,
+            6,
+            8,
+            8,
+            7,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 300
+        }
+      }
+    ],
+    "icons600": [
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 15,
+          "createMs": 33,
+          "updateMs": 10,
+          "updates": [
+            10,
+            8,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            8,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 15,
+          "createMs": 26,
+          "updateMs": 10,
+          "updates": [
+            7,
+            8,
+            8,
+            8,
+            8,
+            8,
+            7,
+            8,
+            8,
+            8,
+            10,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 16,
+          "createMs": 33,
+          "updateMs": 9,
+          "updates": [
+            8,
+            7,
+            8,
+            8,
+            8,
+            8,
+            9,
+            7,
+            8,
+            8,
+            9,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 17,
+          "createMs": 28,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            9,
+            9,
+            9,
+            9,
+            9,
+            8,
+            8,
+            7,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 14,
+          "createMs": 27,
+          "updateMs": 9,
+          "updates": [
+            8,
+            7,
+            8,
+            6,
+            7,
+            7,
+            8,
+            8,
+            8,
+            9,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 15,
+          "createMs": 28,
+          "updateMs": 9,
+          "updates": [
+            9,
+            9,
+            9,
+            8,
+            9,
+            8,
+            9,
+            8,
+            8,
+            9,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 15,
+          "createMs": 28,
+          "updateMs": 8,
+          "updates": [
+            8,
+            8,
+            8,
+            8,
+            7,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 19,
+          "createMs": 34,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            7,
+            8,
+            8,
+            9,
+            7,
+            9,
+            7,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 15,
+          "createMs": 34,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            7,
+            9,
+            8,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 14,
+          "createMs": 28,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            9,
+            8,
+            8,
+            8,
+            9,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 19,
+          "createMs": 34,
+          "updateMs": 9,
+          "updates": [
+            9,
+            9,
+            8,
+            9,
+            9,
+            9,
+            8,
+            9,
+            8,
+            7,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 17,
+          "createMs": 34,
+          "updateMs": 9,
+          "updates": [
+            9,
+            8,
+            9,
+            9,
+            8,
+            9,
+            9,
+            8,
+            9,
+            8,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 17,
+          "createMs": 33,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            8,
+            9,
+            8,
+            7,
+            7,
+            8,
+            7,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 0
+        },
+        "c15": {
+          "paintedFeatures": 600,
+          "decodedImages": 600,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 22,
+          "createMs": 35,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            8,
+            8,
+            7,
+            8,
+            8,
+            8,
+            8,
+            7,
+            8
+          ],
+          "masks": 0,
+          "paths": 0
+        }
+      }
+    ],
+    "polygons200": [
+      {
+        "c14": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 4,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            9,
+            9,
+            8,
+            8,
+            9,
+            8,
+            8,
+            9,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 400
+        },
+        "c15": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 8,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            8,
+            9,
+            9,
+            8,
+            9,
+            9,
+            8,
+            9,
+            9
+          ],
+          "masks": 200,
+          "paths": 700
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 10,
+          "createMs": 17,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            8,
+            9,
+            8,
+            8,
+            8,
+            9,
+            8,
+            9,
+            9
+          ],
+          "masks": 200,
+          "paths": 700
+        },
+        "c14": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 5,
+          "createMs": 17,
+          "updateMs": 9,
+          "updates": [
+            7,
+            8,
+            8,
+            8,
+            7,
+            8,
+            9,
+            9,
+            9,
+            9,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 400
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 5,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            8,
+            9,
+            8,
+            7,
+            8,
+            8,
+            7,
+            9,
+            9,
+            9,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 400
+        },
+        "c15": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 8,
+          "createMs": 17,
+          "updateMs": 9,
+          "updates": [
+            8,
+            7,
+            9,
+            9,
+            8,
+            8,
+            9,
+            8,
+            8,
+            9,
+            9,
+            8
+          ],
+          "masks": 200,
+          "paths": 700
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 6,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            9,
+            9,
+            9,
+            8,
+            9,
+            8,
+            9
+          ],
+          "masks": 200,
+          "paths": 700
+        },
+        "c14": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 7,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            8,
+            8,
+            7,
+            7,
+            8,
+            9,
+            8,
+            8,
+            8,
+            9,
+            8,
+            9
+          ],
+          "masks": 0,
+          "paths": 400
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 5,
+          "createMs": 18,
+          "updateMs": 10,
+          "updates": [
+            8,
+            7,
+            9,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            9,
+            9,
+            10
+          ],
+          "masks": 0,
+          "paths": 400
+        },
+        "c15": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 7,
+          "createMs": 17,
+          "updateMs": 9,
+          "updates": [
+            9,
+            7,
+            8,
+            8,
+            9,
+            9,
+            8,
+            8,
+            9,
+            9,
+            7,
+            8
+          ],
+          "masks": 200,
+          "paths": 700
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 7,
+          "createMs": 17,
+          "updateMs": 9,
+          "updates": [
+            7,
+            9,
+            8,
+            8,
+            8,
+            9,
+            7,
+            8,
+            9,
+            9,
+            9,
+            8
+          ],
+          "masks": 200,
+          "paths": 700
+        },
+        "c14": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 5,
+          "createMs": 17,
+          "updateMs": 9,
+          "updates": [
+            8,
+            7,
+            8,
+            8,
+            9,
+            8,
+            8,
+            8,
+            8,
+            8,
+            9,
+            8
+          ],
+          "masks": 0,
+          "paths": 400
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 3,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            7,
+            7,
+            8,
+            8,
+            8,
+            9,
+            8,
+            8,
+            9,
+            8,
+            7,
+            8
+          ],
+          "masks": 0,
+          "paths": 400
+        },
+        "c15": {
+          "paintedFeatures": 200,
+          "decodedImages": 0,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 9,
+          "createMs": 16,
+          "updateMs": 9,
+          "updates": [
+            8,
+            7,
+            8,
+            8,
+            9,
+            9,
+            9,
+            8,
+            8,
+            9,
+            8,
+            9
+          ],
+          "masks": 200,
+          "paths": 700
+        }
+      }
+    ],
+    "mixed1200": [
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 34,
+          "createMs": 66,
+          "updateMs": 15,
+          "updates": [
+            13,
+            9,
+            11,
+            10,
+            10,
+            8,
+            12,
+            15,
+            12,
+            7,
+            9,
+            9
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 52,
+          "createMs": 116,
+          "updateMs": 27,
+          "updates": [
+            19,
+            16,
+            18,
+            14,
+            27,
+            19,
+            16,
+            15,
+            20,
+            16,
+            19,
+            19
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 57,
+          "createMs": 112,
+          "updateMs": 20,
+          "updates": [
+            16,
+            15,
+            18,
+            14,
+            19,
+            17,
+            15,
+            20,
+            16,
+            16,
+            16,
+            18
+          ],
+          "masks": 800,
+          "paths": 2800
+        },
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 31,
+          "createMs": 61,
+          "updateMs": 17,
+          "updates": [
+            10,
+            12,
+            8,
+            11,
+            17,
+            8,
+            15,
+            8,
+            12,
+            8,
+            12,
+            9
+          ],
+          "masks": 0,
+          "paths": 1600
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 32,
+          "createMs": 64,
+          "updateMs": 13,
+          "updates": [
+            9,
+            12,
+            9,
+            12,
+            8,
+            11,
+            9,
+            13,
+            9,
+            12,
+            9,
+            11
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 52,
+          "createMs": 107,
+          "updateMs": 20,
+          "updates": [
+            15,
+            17,
+            14,
+            15,
+            15,
+            20,
+            17,
+            15,
+            14,
+            15,
+            16,
+            16
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 47,
+          "createMs": 102,
+          "updateMs": 29,
+          "updates": [
+            19,
+            14,
+            29,
+            19,
+            15,
+            20,
+            18,
+            17,
+            14,
+            23,
+            16,
+            16
+          ],
+          "masks": 800,
+          "paths": 2800
+        },
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 37,
+          "createMs": 69,
+          "updateMs": 13,
+          "updates": [
+            8,
+            10,
+            10,
+            11,
+            8,
+            9,
+            9,
+            12,
+            9,
+            10,
+            13,
+            10
+          ],
+          "masks": 0,
+          "paths": 1600
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 49,
+          "createMs": 86,
+          "updateMs": 37,
+          "updates": [
+            14,
+            10,
+            37,
+            9,
+            10,
+            10,
+            9,
+            14,
+            16,
+            12,
+            14,
+            12
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 52,
+          "createMs": 114,
+          "updateMs": 21,
+          "updates": [
+            20,
+            16,
+            20,
+            19,
+            15,
+            21,
+            18,
+            15,
+            17,
+            20,
+            20,
+            17
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 54,
+          "createMs": 114,
+          "updateMs": 22,
+          "updates": [
+            14,
+            17,
+            22,
+            19,
+            18,
+            15,
+            18,
+            14,
+            18,
+            14,
+            14,
+            21
+          ],
+          "masks": 800,
+          "paths": 2800
+        },
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 32,
+          "createMs": 68,
+          "updateMs": 17,
+          "updates": [
+            9,
+            14,
+            17,
+            11,
+            8,
+            16,
+            11,
+            14,
+            12,
+            15,
+            9,
+            16
+          ],
+          "masks": 0,
+          "paths": 1600
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 35,
+          "createMs": 70,
+          "updateMs": 15,
+          "updates": [
+            10,
+            11,
+            9,
+            15,
+            11,
+            14,
+            10,
+            13,
+            10,
+            13,
+            12,
+            13
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 0,
+          "labelStats": {
+            "requests": 0,
+            "visible": 0,
+            "hidden": 0
+          },
+          "jsCreateMs": 54,
+          "createMs": 115,
+          "updateMs": 23,
+          "updates": [
+            14,
+            22,
+            20,
+            15,
+            23,
+            18,
+            16,
+            20,
+            19,
+            14,
+            20,
+            18
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      }
+    ],
+    "labelsMixed1200": [
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 53,
+          "createMs": 85,
+          "updateMs": 48,
+          "updates": [
+            24,
+            36,
+            27,
+            47,
+            32,
+            48,
+            29,
+            26,
+            29,
+            25,
+            29,
+            25
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 95,
+          "createMs": 160,
+          "updateMs": 41,
+          "updates": [
+            38,
+            35,
+            36,
+            39,
+            38,
+            30,
+            34,
+            37,
+            34,
+            41,
+            35,
+            37
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 64,
+          "createMs": 134,
+          "updateMs": 39,
+          "updates": [
+            39,
+            39,
+            38,
+            38,
+            33,
+            36,
+            39,
+            37,
+            37,
+            32,
+            34,
+            32
+          ],
+          "masks": 800,
+          "paths": 2800
+        },
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 54,
+          "createMs": 87,
+          "updateMs": 33,
+          "updates": [
+            26,
+            32,
+            28,
+            28,
+            33,
+            28,
+            32,
+            27,
+            32,
+            28,
+            27,
+            30
+          ],
+          "masks": 0,
+          "paths": 1600
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 47,
+          "createMs": 86,
+          "updateMs": 54,
+          "updates": [
+            33,
+            24,
+            36,
+            24,
+            29,
+            26,
+            33,
+            30,
+            41,
+            28,
+            54,
+            35
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 67,
+          "createMs": 133,
+          "updateMs": 44,
+          "updates": [
+            38,
+            35,
+            42,
+            36,
+            44,
+            37,
+            35,
+            37,
+            35,
+            37,
+            32,
+            41
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 63,
+          "createMs": 124,
+          "updateMs": 42,
+          "updates": [
+            33,
+            41,
+            34,
+            36,
+            34,
+            34,
+            42,
+            34,
+            37,
+            33,
+            33,
+            37
+          ],
+          "masks": 800,
+          "paths": 2800
+        },
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 49,
+          "createMs": 82,
+          "updateMs": 43,
+          "updates": [
+            34,
+            26,
+            34,
+            29,
+            32,
+            43,
+            26,
+            36,
+            36,
+            33,
+            32,
+            41
+          ],
+          "masks": 0,
+          "paths": 1600
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 57,
+          "createMs": 100,
+          "updateMs": 35,
+          "updates": [
+            35,
+            25,
+            27,
+            31,
+            27,
+            33,
+            26,
+            28,
+            26,
+            27,
+            32,
+            28
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 77,
+          "createMs": 163,
+          "updateMs": 40,
+          "updates": [
+            32,
+            39,
+            31,
+            32,
+            40,
+            37,
+            39,
+            32,
+            35,
+            40,
+            35,
+            37
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      },
+      {
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 64,
+          "createMs": 124,
+          "updateMs": 44,
+          "updates": [
+            39,
+            34,
+            40,
+            37,
+            34,
+            39,
+            36,
+            44,
+            33,
+            31,
+            42,
+            38
+          ],
+          "masks": 800,
+          "paths": 2800
+        },
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 57,
+          "createMs": 90,
+          "updateMs": 49,
+          "updates": [
+            29,
+            31,
+            30,
+            37,
+            32,
+            49,
+            26,
+            26,
+            30,
+            24,
+            29,
+            25
+          ],
+          "masks": 0,
+          "paths": 1600
+        }
+      },
+      {
+        "c14": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 57,
+          "createMs": 102,
+          "updateMs": 36,
+          "updates": [
+            27,
+            26,
+            36,
+            27,
+            32,
+            26,
+            26,
+            31,
+            28,
+            32,
+            27,
+            32
+          ],
+          "masks": 0,
+          "paths": 1600
+        },
+        "c15": {
+          "paintedFeatures": 1200,
+          "decodedImages": 200,
+          "collisionChecks": 13,
+          "labelStats": {
+            "requests": 1200,
+            "visible": 98,
+            "hidden": 1102
+          },
+          "jsCreateMs": 77,
+          "createMs": 145,
+          "updateMs": 42,
+          "updates": [
+            42,
+            35,
+            34,
+            40,
+            39,
+            36,
+            35,
+            36,
+            39,
+            40,
+            37,
+            36
+          ],
+          "masks": 800,
+          "paths": 2800
+        }
+      }
+    ]
+  },
+  "summary": {
+    "lines600": {
+      "c14": {
+        "createMedian": 24,
+        "createP95": 26,
+        "updateP95": 9
+      },
+      "c15": {
+        "createMedian": 41,
+        "createP95": 50,
+        "updateP95": 13
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "symbols600": {
+      "c14": {
+        "createMedian": 33,
+        "createP95": 41,
+        "updateP95": 9
+      },
+      "c15": {
+        "createMedian": 33,
+        "createP95": 34,
+        "updateP95": 9
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "icons600": {
+      "c14": {
+        "createMedian": 33,
+        "createP95": 34,
+        "updateP95": 9
+      },
+      "c15": {
+        "createMedian": 28,
+        "createP95": 35,
+        "updateP95": 9
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "polygons200": {
+      "c14": {
+        "createMedian": 16,
+        "createP95": 18,
+        "updateP95": 9
+      },
+      "c15": {
+        "createMedian": 17,
+        "createP95": 17,
+        "updateP95": 9
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "mixed1200": {
+      "c14": {
+        "createMedian": 68,
+        "createP95": 86,
+        "updateP95": 16
+      },
+      "c15": {
+        "createMedian": 114,
+        "createP95": 116,
+        "updateP95": 22
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    },
+    "labelsMixed1200": {
+      "c14": {
+        "createMedian": 87,
+        "createP95": 102,
+        "updateP95": 43
+      },
+      "c15": {
+        "createMedian": 134,
+        "createP95": 163,
+        "updateP95": 42
+      },
+      "creationTarget": true,
+      "interactionTarget": true
+    }
+  },
+  "remaining": {
+    "masks": 0,
+    "rings": 0,
+    "activeObservers": 0
+  },
+  "longTasks": null,
+  "memory": null,
+  "dpr2": {
+    "checks": [
+      "72 shape/opacity/zero-stroke pixel comparisons preserve original inner color",
+      "circle decimals 0/.5/1/1.5/8/8.5; zero suppresses shape and halo",
+      "dash/cap/join/miter envelope, hole/multipart, opaque inner layer, style/zoom/12 lifecycle cycles",
+      "image rectangle .5/1.5px Halo; fractional image size and anchor",
+      "actual SVG hit testing: polygon boundary/interior independent, no duplicate click",
+      "icons: no plate/circle/square/roundedRect/pin; stable cache key and 100 reuses"
+    ],
+    "device": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:158.0) Gecko/20100101 Firefox/158.0",
+      "dpr": 2,
+      "viewport": [
+        1440,
+        1000
+      ]
+    },
+    "samples": {},
+    "summary": {},
+    "remaining": {
+      "masks": 0,
+      "rings": 0,
+      "activeObservers": 0
+    },
+    "longTasks": null,
+    "memory": null
+  }
+}

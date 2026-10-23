@@ -23,7 +23,7 @@ const config=JSON.parse(await fs.readFile('src/configStudio/defaults/r11-r7.conf
 const issues:Array<{id:unknown;path:unknown;message:string}>=[];
 for(const record of records){
   const category=readableClassification(config,recordCategory(record))??recordCategory(record);
-  if(!hasCategoryNode(config,category)||hasDescendants(config,category)){issues.push({id:record.ID,path:category,message:'Unknown final classification'});continue;}
+  if(!hasCategoryNode(config,category)||config.contractRevision<15&&hasDescendants(config,category)){issues.push({id:record.ID,path:category,message:'Unknown final classification'});continue;}
   const node=config.nodes.find((node:any)=>JSON.stringify(node.path)===JSON.stringify(category));
   const type=node?.geometryType??(['Point','LineString','Polygon'] as const).find(type=>resolveGeometryProfile(config,category,type)?.enabled);
   const geometry=type?readMultipartGeometry(record,type):undefined;

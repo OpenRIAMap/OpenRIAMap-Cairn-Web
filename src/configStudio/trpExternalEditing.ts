@@ -3,8 +3,9 @@ import {parseFeatureInfoByRegistry,mergeEditorDraftIntoFeatureInfo,CLASSIFICATIO
 import {annotationEqual,type WorkflowAnnotations} from './workflowAnnotations';
 import {residualAnnotations,buildWorkflowEditRecord,recordClassification,assertEditIdentity,type WorkflowEditPlan} from './workflowEditing';
 import {validateExternalEditBinding} from './externalEditRegistry';
+import {recordClassificationEligible} from './workflowClassificationGroup';
 import type {ConfigPackageV3,WorkflowDefinition} from './types';
-import {hasCategoryNode,hasDescendants,pathMatchesScope,resolveGeometryProfile} from './runtime';
+import {hasCategoryNode,pathMatchesScope} from './runtime';
 import {validateV3WorkflowRecords} from './workflowKernel';
 import {isBlankFieldValue,omitOptionalFieldValues} from './optionalFieldValues';
 import {readMultipartGeometry,validateMultipartGeometry,withCanonicalMultipartGeometry,type MultipartGeometry} from '../core/geometry/multipartGeometry';
@@ -15,7 +16,7 @@ export function createTrpExternalEditSession(config:ConfigPackageV3,workflow:Wor
  const geometry=readMultipartGeometry(initialRecord,'Point');if(geometry.error||!geometry.geometry)throw Error(geometry.error??'TRP 缺少点几何。');
  const view=projectRegistryScene(SCHEMA_TRP_TRADE,'editor'),original=structuredClone(initialRecord),parsed=parseFeatureInfoByRegistry(original,view),annotationControl={id:'trp-external-edit-annotations',kind:'tagsExtensions' as const,columns:1 as const,systemManaged:true,label:{zh:'标签与扩展',en:''},tagsExtensions:{tagsEnabled:true,extensionsEnabled:true}};
  const container:WorkflowDefinition={id:'trp-edit-annotations',label:{zh:'标签与扩展',en:''},mode:'composed',steps:[{id:'annotations',kind:'form',label:{zh:'',en:''},controls:[annotationControl]}],outputs:[{id:'trp-edit-output',classification:scope,geometry:{selected:'Point'},assignments:view.fields.map(field=>({id:field.path,target:field.path,expression:'null'}))}]};
- const annotationPlan:WorkflowEditPlan={workflow:container,scope,controls:[annotationControl],removed:[],bindings:[]},annotations=residualAnnotations(annotationPlan,original);
+ const annotationPlan:WorkflowEditPlan={workflow:container,scope,classifications:[path],controls:[annotationControl],removed:[],bindings:[]},annotations=residualAnnotations(annotationPlan,original);
  return {original,view,values:parsed.values,initialValues:structuredClone(parsed.values),unparsed:parsed.unparsedEntries.filter(entry=>!entry.path.startsWith('tags.')&&!entry.path.startsWith('extensions.')),initialUnparsed:structuredClone(parsed.unparsedEntries),annotations,initialAnnotations:structuredClone(annotations),annotationPlan,originalGeometry:geometry.geometry};
 }
 /** Registered finished editor: no standard three-page conversion occurs. */
@@ -29,8 +30,8 @@ export function prepareTrpExternalEdit(config:ConfigPackageV3,workflow:WorkflowD
  const control=session.annotationPlan.controls[0],annotationDraft={slots:{EDIT_ID:record.ID,[control.id]:session.annotations},initialSlots:{EDIT_ID:record.ID,[control.id]:session.initialAnnotations},classification:recordClassification(record)};
  record=buildWorkflowEditRecord(session.annotationPlan,record,annotationDraft);
  const path=recordClassification(record),scope=workflow.editor!.scope??workflow.target!;
- if(!pathMatchesScope(path,scope)||!hasCategoryNode(config,path)||hasDescendants(config,path)||!resolveGeometryProfile(config,path,'Point')?.enabled)throw Error('请选择编辑范围内的最终 TRP 分类。');
+ if(!pathMatchesScope(path,scope)||!recordClassificationEligible(config,path,'Point'))throw Error('请选择编辑范围内的最终 TRP 分类。');
  assertEditIdentity(record,session.original,world,others);record=withCanonicalMultipartGeometry(omitOptionalFieldValues(config,path,record),geometry);
- const output={id:'external-trp-edit',classification:scope,geometry:{selected:'Point' as const},assignments:[]};const issues=validateV3WorkflowRecords(config,{...workflow,mode:'composed',outputs:[output]},[{outputId:output.id,classification:path,geometry:'Point',record}]);if(issues.length)throw Error(issues.map(i=>i.message).join('\n'));
+ const output={id:'external-trp-edit',...(config.contractRevision>=15?{classificationGroup:{selectors:[{id:'edit',mode:'self' as const,path}]}}:{classification:scope}),geometry:{selected:'Point' as const},assignments:[]};const issues=validateV3WorkflowRecords(config,{...workflow,mode:'composed',outputs:[output]},[{outputId:output.id,classification:path,geometry:'Point',record}]);if(issues.length)throw Error(issues.map(i=>i.message).join('\n'));
  if(!editor.trim())throw Error('编辑人不能为空。');record.ModifityBy=editor.trim();record.ModifityTime=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;return record;
 }

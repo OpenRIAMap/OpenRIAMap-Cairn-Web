@@ -13,7 +13,7 @@ export function migrateWorkflowForms(value:WorkflowDefinition):WorkflowDefinitio
 }
 export function orderFactoryWorkflowForms(value:WorkflowDefinition):WorkflowDefinition {
   const workflow=structuredClone(value);
-  const classCode=workflow.outputs[0]?.classification.class;
+  const classCode=workflow.outputs[0]?.classification?.class;
   const common=['@classification','Name','@catAbbr','@abbr','tags.nomenclator'];
   const order=classCode==='ROD'?['@classification','Level','Oneway','Enter','Exit','SelfJunction','Name','@catAbbr','@abbr','ConnectL','Blacklist','Mode','Speed','tags.nomenclator','tags.Land','tags.UAdm','tags.UAdmG','extensions.link.wiki']
     :classCode==='TPP'?['@classification','Name','@abbr','hub','tags.Land','tags.UAdm','tags.UAdmG','extensions.link.wiki','TGTWarp']

@@ -8,7 +8,7 @@ export function migrateWorkflowDrawings(value:WorkflowDefinition):WorkflowDefini
     const {auxiliaryPoints:points,...drawing}=original.drawing??{};
     const main={...original,geometryRole:original.geometryRole??'output' as const,drawing:{...drawing}};
     if(main.geometryRole==='output'&&main.drawing.pointSlot){main.drawing.captureSlot??=`${main.drawing.pointSlot}_GEOMETRY`;main.drawing.returnFormat??=main.geometry?.[0]==='Point'?'coordP':main.geometry?.[0]==='LineString'?'coordL':'coordG';}
-    if(workflow.outputs.find(output=>output.id===main.outputId)?.classification.class==='TPP' && main.label.zh==='绘制')main.label={...main.label,zh:'起点坐标'};
+    if(workflow.outputs.find(output=>output.id===main.outputId)?.classification?.class==='TPP' && main.label.zh==='绘制')main.label={...main.label,zh:'起点坐标'};
     steps.push(main);
     for(const point of points??[]){
       const moved=(main.controls??[]).filter(control=>point.when && JSON.stringify(control.when)===JSON.stringify(point.when));
@@ -16,14 +16,14 @@ export function migrateWorkflowDrawings(value:WorkflowDefinition):WorkflowDefini
       const extra:WorkflowStep={id:`extra-${point.id}`,kind:'geometry',geometryRole:'auxiliary',label:point.label,when:point.when,geometry:['Point'],controls:moved.map(control=>{const{when:_when,...next}=control;return next;}),drawing:{enabledFromThisPage:true,allowBack:true,keepDrawingWhenBack:true,captureSlot:point.slot,returnFormat:'pointObject',multiple:false,heightSlot:moved.find(control=>control.kind==='number')?.slot,bindings:[]}};
       steps.push(extra);
       const output=workflow.outputs.find(output=>output.id===original.outputId);
-      if(output?.classification.class==='TPP'){
+      if(output?.classification?.class==='TPP'){
         const known=output.assignments.filter(assignment=>['TGTcoordinate.x','TGTcoordinate.y','TGTcoordinate.z','TGTelevation'].includes(assignment.target));
         const recognized=known.every(assignment=>['-64',`${point.slot}_X`,`${point.slot}_Y`,`${point.slot}_Z`,extra.drawing?.heightSlot].includes(assignment.expression));
         if(recognized){output.assignments=output.assignments.filter(assignment=>!known.includes(assignment));extra.drawing!.bindings=[{outputId:output.id,target:'TGTcoordinate',value:'geometry'},{outputId:output.id,target:'TGTelevation',value:'height'}];}
       }
     }
     const output=workflow.outputs.find(output=>output.id===main.outputId);
-    if(output&&['TPP','WRP'].includes(output.classification.class)&&main.drawing.pointSlot){
+    if(output&&['TPP','WRP'].includes(output.classification?.class??'')&&main.drawing.pointSlot){
       const elevation=(main.controls??[]).find(control=>control.slot==='SOURCE_ELEVATION');
       const rows=output.assignments.filter(assignment=>assignment.target==='elevation');
       if(elevation&&rows.length&&rows.every(assignment=>['SOURCE_ELEVATION','SOURCE_POINT_Y'].includes(assignment.expression))){

@@ -42,6 +42,30 @@ export function validateNativeStructure(value: unknown): NativeStructureIssue[] 
   const issues=inspect(value, generated.root, 'config', 0);
   if(issues.length)return issues;
   const config=value as ConfigPackageV3;
+  const c15=config.contractRevision>=15;
+  for(const node of config.nodes)for(const [geometry,profile]of Object.entries(node.geometryProfiles))if(profile){
+    const at='config/nodes/'+node.nodeId+'/geometryProfiles/'+geometry;
+    if(c15&&(profile.anchor!==undefined||profile.interaction!==undefined))issues.push({path:at,message:'c15 锚点与交互必须位于每条渲染规则，不能残留几何级权威设置。'});
+    for(const rule of profile.zoomPriority.rules){
+      if(c15&&(!['featureBbox','perPart'].includes(rule.multipartAnchor??'')||!rule.interaction?.triggers))issues.push({path:at+'/rules/'+rule.id,message:'缺少 c15 规则级多部件锚点或交互触发。'});
+      if(!c15&&rule.multipartAnchor!==undefined)issues.push({path:at+'/rules/'+rule.id,message:'规则级多部件锚点最低要求 c15。'});
+      for(const [style,representation]of [[rule.style,rule.representation],...(rule.conditionalOverrides??[]).map(branch=>[branch.style,branch.representation??rule.representation] as const)] as const)if(style?.halo){
+        const point=geometry==='Point'||representation==='point';
+        const inner='showInner' in style.halo;
+        if(inner&&(!c15||geometry!=='Polygon'||point))issues.push({path:at+'/rules/'+rule.id+'/halo',message:'内侧 Halo 仅用于 c15 面几何。'});
+        if(c15&&geometry==='Polygon'&&!point&&!inner)issues.push({path:at+'/rules/'+rule.id+'/halo',message:'缺少面内侧 Halo 的明确布尔设置。'});
+      }
+    }
+  }
+  for(const workflow of config.workflows){
+    if(c15&&workflow.mode==='composed'&&workflow.target)issues.push({path:'config/workflows/'+workflow.id+'/target',message:'c15 分类组不能保留旧 target 副本。'});
+    if(c15)for(const step of workflow.steps)for(const control of step.controls??[])if(control.kind==='classificationPicker'&&control.classificationScope)issues.push({path:'config/workflows/'+workflow.id+'/controls/'+control.id,message:'c15 分类控件由 outputId 解析分类组，不能保留旧范围副本。'});
+  }
+  for(const workflow of config.workflows)for(const output of workflow.outputs){
+    const at='config/workflows/'+workflow.id+'/outputs/'+output.id;
+    if(c15&&(!output.classificationGroup||output.classification!==undefined))issues.push({path:at,message:'c15 输出必须使用分类组，不得保留单路径输出副本。'});
+    if(!c15&&(!output.classification||output.classificationGroup))issues.push({path:at,message:'此历史契约必须使用单路径输出，分类组最低要求 c15。'});
+  }
   const check=(style:RenderStyle|undefined,path:string,required:boolean)=>{
     const halos=[{path:path+'/halo',value:style?.halo,required},...symbolHalos(style?.pointSymbol).map(row=>({path:path+'/pointSymbol/'+row.path,value:row.value,required:config.contractRevision>=14}))];
     for(const row of halos){

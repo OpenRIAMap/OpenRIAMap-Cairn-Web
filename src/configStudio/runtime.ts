@@ -1,5 +1,6 @@
+import {workflowClassificationGroup,workflowOutputFields} from './workflowClassificationGroup';
 import { isWorldGroups } from '../core/project/applicationResources';
-import { validateWorkflowWrites } from './workflowPreflight';
+import { validateWorkflowWrites,workflowConditionsDisjoint,workflowCandidateConstraint } from './workflowPreflight';
 import { migrateWorkflowDrawings } from './workflowDrawingMigration';
 import { validCssColor } from './cssColor';
 import { customPillErrors, pillColorBindings } from './customPill';
@@ -694,16 +695,26 @@ function validateProfile(profile: GeometryProfile, geometry: GeometryKind, path:
   if (isNativeConfigRevision(config.contractRevision) && (profile.color !== undefined || profile.style !== undefined || profile.geometryStack !== undefined || profile.label !== undefined || profile.legacyDisplay !== undefined)) {
     issue(issues, 'error', 'legacy-profile-field-forbidden', path, 'V3.2 的显示值必须位于各 Zoom 渲染规则内，不能使用旧几何层级或 label 配置字段。');
   }
-  if (!profile.allowMultipleParts && profile.anchor === 'perPart') issue(issues, 'error', 'anchor-requires-multipart', path, '仅允许多部件时才能选择“各部件”锚点。');
+  if (config.contractRevision<15 && !profile.allowMultipleParts && profile.anchor === 'perPart') issue(issues, 'error', 'anchor-requires-multipart', path, '仅允许多部件时才能选择“各部件”锚点。');
   const allowed = new Set(allowedTriggerKeys(geometry));
-  const triggers = profile.interaction?.triggers ?? {};
-  for (const [key, enabled] of Object.entries(triggers)) if (enabled && !allowed.has(key)) issue(issues, 'error', 'interaction-trigger-geometry-invalid', path, `${key} 不适用于 ${geometry}。`);
-  if (profile.enabled && !Object.values(triggers).some(Boolean)) issue(issues, 'warning', 'interaction-trigger-none', path, '已启用的几何类型没有交互触发器，将不能通过地图打开信息卡。');
+  if(config.contractRevision<15){
+    const triggers=profile.interaction?.triggers??{};
+    for(const [key,enabled]of Object.entries(triggers))if(enabled&&!allowed.has(key))issue(issues,'error','interaction-trigger-geometry-invalid',path,`${key} 不适用于 ${geometry}。`);
+    if(profile.enabled&&!Object.values(triggers).some(Boolean))issue(issues,'warning','interaction-trigger-none',path,'已启用的几何类型没有交互触发器，将不能通过地图打开信息卡。');
+  }
   if (!profile.zoomPriority.rules.length && !(config.contractRevision>=9&&profile.renderState==='unconfigured')) issue(issues, 'error', 'render-rule-missing', path, '每种已启用几何至少需要一个渲染规则。');
   if(config.contractRevision>=9&&profile.renderState==='unconfigured'&&profile.zoomPriority.rules.length)issue(issues,'error','unconfigured-render-has-rules',path,'未配置显示状态不能含有活动规则。');
   const intervals: Array<{ id: string; min: number; max: number }> = [];
   for (const [index, rule] of profile.zoomPriority.rules.entries()) {
     const rulePath = `${path}/renderRules/${rule.id || index + 1}`;
+    if(config.contractRevision>=15){
+      // Keep inactive source-geometry flags when switching representation; only
+      // the final visible representation determines the active click surface.
+      const triggers=rule.interaction?.triggers??{},permitted=new Set([...allowed,'point']);
+      for(const [key,enabled]of Object.entries(triggers))if(enabled&&!permitted.has(key))issue(issues,'error','interaction-trigger-geometry-invalid',rulePath,`${key} 不适用于 ${geometry}。`);
+      const active=rule.representation==='labelOnly'?['label']:geometry==='Point'||rule.representation==='point'?['point','label']:[...allowed];
+      if(profile.enabled&&rule.representation!=='hidden'&&!active.some(key=>triggers[key as keyof typeof triggers]))issue(issues,'warning','interaction-trigger-none',rulePath,'本规则未启用当前显示种类的交互触发器。');
+    }
     const min = rule.when?.zoom.min ?? rule.minZoom;
     const max = rule.when?.zoom.max ?? rule.maxZoom;
     if (config.contractRevision >= 7) {
@@ -906,14 +917,25 @@ function targetSupportsClassificationPicker(config: ConfigPackageV3, target: Cla
   return hasDescendants(config, target);
 }
 
-export function validateWorkflowOutput(output: WorkflowOutput, _outputIndex: number, workflow: WorkflowDefinition, config: ConfigPackageV3, slots: Set<string>, issues: ConfigValidationIssue[]): void {
+export function validateWorkflowOutput(output: WorkflowOutput, _outputIndex: number, workflow: WorkflowDefinition, config: ConfigPackageV3, slots: Set<string>, issues: ConfigValidationIssue[], concrete?:ClassificationPath): void {
   const base = `workflows/${workflow.id}/outputs/${output.id}`;
-  if (!isContinuousPath(output.classification) || !hasCategoryNode(config, output.classification)) issue(issues, 'error', 'workflow-output-classification-invalid', base, '工作流输出必须选择存在且连续的目标分类。');
+  if(config.contractRevision>=15&&!concrete){
+    const group=workflowClassificationGroup(config,output),ids=new Set<string>();
+    if(!output.classificationGroup?.selectors.length)issue(issues,'error','workflow-classification-group-empty',base,'分类组至少需要一条分类设置。');
+    for(const row of output.classificationGroup?.selectors??[]){if(!row.id||ids.has(row.id))issue(issues,'error','workflow-selector-id-invalid',base,'分类设置 ID 为空或重复。');ids.add(row.id);}
+    for(const row of group.rows)if(row.error)issue(issues,'error','workflow-classification-selector-invalid',base+'/selectors/'+row.id,row.error);
+    if(!group.paths.length)issue(issues,'error','workflow-classification-group-empty',base,'分类组没有符合固定类型的有效候选。');
+    for(const path of group.paths){const local:ConfigValidationIssue[]=[];validateWorkflowOutput({...output,classification:path},_outputIndex,workflow,config,slots,local,path);issues.push(...local.map(item=>({...item,message:'['+classificationPathKey(path)+'] '+item.message})));}
+    return;
+  }
+  const classification=concrete??output.classification??{class:''};
+  if (!isContinuousPath(classification) || !hasCategoryNode(config, classification)) issue(issues, 'error', 'workflow-output-classification-invalid', base, '工作流输出必须选择存在且连续的目标分类。');
   if (!output.geometry.selected) issue(issues, 'error', 'workflow-output-geometry-required', base, '每个工作流输出必须选择固定绘制类型。');
-  else if (!listCategoryPaths(config, output.classification).some(path => !hasDescendants(config,path) && resolveGeometryProfile(config,path,output.geometry.selected)?.enabled)) issue(issues, 'error', 'workflow-output-geometry-disabled', base, `输出范围没有最终分类启用 ${output.geometry.selected} 绘制类型。`);
-  const fields = new Set(resolveEffectiveFields(config, output.classification).map((field) => field.key));
+  else if (!(config.contractRevision>=15?resolveGeometryProfile(config,classification,output.geometry.selected)?.enabled:listCategoryPaths(config,classification).some(path=>!hasDescendants(config,path)&&resolveGeometryProfile(config,path,output.geometry.selected)?.enabled))) issue(issues, 'error', 'workflow-output-geometry-disabled', base, `输出范围没有最终分类启用 ${output.geometry.selected} 绘制类型。`);
+  const fields = new Set(resolveEffectiveFields(config, classification).map((field) => field.key));
   const tokens = new Set([...WORKFLOW_SYSTEM_TOKENS, ...workflow.outputs.flatMap((_, index) => WORKFLOW_SYSTEM_TOKENS.map((item) => `${item}_${index + 1}`)), ...slots, ...workflowDerivedPointTokens(workflow)]);
   const assignmentIds = new Set<string>();
+  const constraint=concrete?workflowCandidateConstraint(concrete,_outputIndex):undefined;
   for (const assignment of output.assignments) {
     const assignmentPath = `${base}/assignments/${assignment.id}`;
     validateWorkflowValueCondition(assignment.when, tokens, assignmentPath, issues);
@@ -922,11 +944,12 @@ export function validateWorkflowOutput(output: WorkflowOutput, _outputIndex: num
       if (assignment.expression.trim() !== token || !WORKFLOW_SYSTEM_TOKENS.includes(token as typeof WORKFLOW_SYSTEM_TOKENS[number])) issue(issues, 'error', 'workflow-system-target-protected', assignmentPath, `系统字段 ${assignment.target} 不能由字段组装覆盖。`);
     }
     if (!assignment.target.trim() || !assignment.expression.trim()) issue(issues, 'error', 'workflow-assignment-invalid', assignmentPath, '字段组装必须同时指定目标和表达式。');
-    if (!isSafeWorkflowTarget(assignment.target) || (!fields.has(assignment.target) && !/^tags\.[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/.test(assignment.target) && !/^extensions\.[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/.test(assignment.target) && !SYSTEM_FIELD_KEYS.has(assignment.target))) issue(issues, 'error', 'workflow-assignment-target-invalid', assignmentPath, `字段组装目标 ${assignment.target} 不是有效字段、tags 或 extensions 路径。`);
+    const reachable=!constraint||workflowConditionsDisjoint([constraint],[output.when,assignment.when])!==true;
+    if (reachable&&(!isSafeWorkflowTarget(assignment.target) || (!fields.has(assignment.target) && !/^tags\.[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/.test(assignment.target) && !/^extensions\.[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/.test(assignment.target) && !SYSTEM_FIELD_KEYS.has(assignment.target)))) issue(issues, 'error', 'workflow-assignment-target-invalid', assignmentPath, `字段组装目标 ${assignment.target} 不是有效字段、tags 或 extensions 路径。`);
     if (!assignment.id || assignmentIds.has(assignment.id)) issue(issues, 'error', 'workflow-assignment-id-invalid', assignmentPath, '组装行标识必须存在且不能重复。');
-    const field=resolveEffectiveFields(config,output.classification).find(field=>field.key===assignment.target);
+    const field=resolveEffectiveFields(config,classification).find(field=>field.key===assignment.target);
     const control=controlsFor(workflow).find(control=>control.slot===assignment.expression.trim());
-    if (control && field && (control.fieldSource||config.contractRevision>=8)) {
+    if (reachable&&control && field && (control.fieldSource||config.contractRevision>=8)) {
       const leaf=control.kind==='group'?control.group?.itemFields[0]:control;
       const returned=leaf&&(leaf.kind==='featureSearch'||leaf.kind==='coarseSearch')&&leaf.search?resolveSelectableFields(config,leaf.search.target).find(field=>field.key===leaf.search!.returnField):undefined;
       const actualType=control.kind==='group'&&control.group?.storage==='object'?'json':leaf?.kind==='select'?leaf.optionValueType??'string':leaf?.kind==='json'?'json':leaf?.valueNormalization==='trim'||leaf?.valueNormalization==='abbr'?'string':leaf?.kind==='number'||leaf?.valueNormalization==='number'?'number':leaf?.kind==='toggle'?'boolean':returned?returned.type==='enum'?returned.optionValueType??'string':returned.type==='reference'?'string':returned.type:'string';
@@ -1035,7 +1058,7 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
       if(drawing?.returnFormat==='pointObject'&&drawing.multiple)issue(issues,'error','workflow-drawing-format-invalid',path,'坐标对象只能选择单点。');
       for(const binding of drawing?.bindings??[]) {
         const output=workflow.outputs.find(output=>output.id===binding.outputId);
-        const field=output&&resolveEffectiveFields(config,output.classification).find(field=>field.key===binding.target);
+        const field=output&&workflowOutputFields(config,output).find(field=>field.key===binding.target);
         if(!output||!isSafeWorkflowTarget(binding.target)||PROTECTED_WORKFLOW_TARGETS.has(binding.target.split('.')[0])||!field&&!/^(tags|extensions)\./.test(binding.target))issue(issues,'error','workflow-drawing-target-invalid',path,`绘制绑定 ${binding.target} 必须选择对应输出的有效字段。`);
         if(field&&binding.value==='geometry'&&(field.type!=='json'||field.coordinateFormat&&field.coordinateFormat!==drawing?.returnFormat))issue(issues,'error','workflow-drawing-target-format-invalid',path,'坐标返回格式与目标字段结构不一致。');
         if(field&&binding.value==='height'&&field.type!=='number')issue(issues,'error','workflow-drawing-target-format-invalid',path,'高度目标必须为数值字段。');
@@ -1078,7 +1101,7 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
     if (control.kind === 'featureSearch' || control.kind === 'coarseSearch') validateSearch(control, config, controlPath, issues);
     if (control.kind === 'classificationPicker') {
       if (!control.outputId || !workflow.outputs.some((output) => output.id === control.outputId)) issue(issues, 'error', 'workflow-classification-output-invalid', controlPath, '系统 Classification 控件必须精确绑定一个工作流输出。');
-      if (!control.classificationScope || !isContinuousPath(control.classificationScope) || !hasCategoryNode(config, control.classificationScope)) issue(issues, 'error', 'workflow-classification-scope-invalid', controlPath, '系统 Classification 控件必须选择有效的分类范围。');
+      if (config.contractRevision<15&&(!control.classificationScope || !isContinuousPath(control.classificationScope) || !hasCategoryNode(config, control.classificationScope))) issue(issues, 'error', 'workflow-classification-scope-invalid', controlPath, '系统 Classification 控件必须选择有效的分类范围。');
     }
     if (control.kind === 'group') {
       const group = control.group;
@@ -1100,13 +1123,14 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
     }
   };
   for (const [outputIndex, output] of workflow.outputs.entries()) {
-    const managed = controlList.filter((control) => control.kind === 'classificationPicker' && control.systemManaged && (control.outputId === output.id || (!control.outputId && control.classificationScope && classificationPathKey(control.classificationScope) === classificationPathKey(output.classification))));
-    if (targetSupportsClassificationPicker(config, output.classification) !== Boolean(managed.length)) issue(issues, 'error', 'workflow-classification-picker-stale', `${base}/outputs/${output.id}`, '工作流输出分类的子分类状态已变化；请打开工作流以刷新系统 Classification 控件。');
+    const managed = controlList.filter((control) => control.kind === 'classificationPicker' && control.systemManaged && (control.outputId === output.id || (!control.outputId && control.classificationScope && classificationPathKey(control.classificationScope) === classificationPathKey(output.classification??{class:''}))));
+    if ((config.contractRevision>=15?workflowClassificationGroup(config,output).paths.length>1:Boolean(output.classification&&targetSupportsClassificationPicker(config,output.classification))) !== Boolean(managed.length)) issue(issues, 'error', 'workflow-classification-picker-stale', `${base}/outputs/${output.id}`, '工作流输出分类的子分类状态已变化；请打开工作流以刷新系统 Classification 控件。');
     validateWorkflowOutput(output, outputIndex, workflow, config, slots, issues);
   }
   // r6/r7 factory capture overrides are an explicitly recognised old drawing
   // representation. Analyse its lossless r8 view, without editing the source.
-  issues.push(...validateWorkflowWrites(config.contractRevision<8?migrateWorkflowDrawings(workflow):workflow, path => resolveSelectableFields(config,path)));
+  if(config.contractRevision>=15){for(const output of workflow.outputs)for(const path of workflowClassificationGroup(config,output).paths)issues.push(...validateWorkflowWrites(workflow,target=>resolveEffectiveFields(config,target),{outputId:output.id,classification:path}).map(item=>({...item,message:'['+classificationPathKey(path)+'] '+item.message})));}
+  else issues.push(...validateWorkflowWrites(config.contractRevision<8?migrateWorkflowDrawings(workflow):workflow, path => resolveSelectableFields(config,path)));
 }
 
 /** Standalone workflow workbench validation. It deliberately validates only
@@ -1375,7 +1399,19 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
     validateWorkflow(workflow, config, issues);
   }
   const editorScopes=new Set<string>();
-  for(const workflow of config.workflows.filter(w=>w.editor?.enabled)){const scope=workflow.editor?.scope??workflow.outputs[0]?.classification??workflow.target;if(!scope){issue(issues,'error','workflow-editor-scope-required',`workflows/${workflow.id}`,'编辑工作流缺少作用范围。');continue;}const key=classificationPathKey(scope);if(editorScopes.has(key))issue(issues,'error','workflow-editor-route-duplicate',`workflows/${workflow.id}`,'同一分类范围存在多个编辑工作流。');editorScopes.add(key);}
+  for(const workflow of config.workflows.filter(w=>w.editor?.enabled)){
+    const scope=workflow.editor?.scope??workflow.outputs[0]?.classification??workflow.target;
+    if(config.contractRevision<15){
+      if(!scope){issue(issues,'error','workflow-editor-scope-required',`workflows/${workflow.id}`,'编辑工作流缺少作用范围。');continue;}
+      const key=classificationPathKey(scope);if(editorScopes.has(key))issue(issues,'error','workflow-editor-route-duplicate',`workflows/${workflow.id}`,'同一分类范围存在多个编辑工作流。');editorScopes.add(key);
+    }else{
+      const rank=Object.values(scope??{}).filter(Boolean).length;
+      const candidates=workflow.mode==='external'&&scope?listCategoryPaths(config,scope).filter(path=>resolveGeometryProfile(config,path,'Point')?.enabled):workflow.outputs.flatMap(output=>workflowClassificationGroup(config,output).paths);
+      for(const path of [...new Map(candidates.filter(path=>!scope||pathMatchesScope(path,scope)).map(path=>[classificationPathKey(path),path])).values()]){
+        const key=rank+':'+classificationPathKey(path);if(editorScopes.has(key))issue(issues,'error','workflow-editor-route-duplicate',`workflows/${workflow.id}`,'分类 '+classificationPathKey(path)+' 存在同优先级编辑路由。');editorScopes.add(key);
+      }
+    }
+  }
   validateContextBindings(config, issues);
   for (const node of config.nodes) {
     const hasChildren = node.children.length > 0;

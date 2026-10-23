@@ -115,6 +115,7 @@ export type RenderColorBinding =
 export type RenderPointShape = 'circle' | 'square' | 'triangle' | 'regular4' | 'regular5' | 'regular6';
 /** Optional in historical contracts; c14 requires it on complete symbol styles. */
 export type HaloSettings = { enabled: boolean; widthPx: number; color: RenderColorBinding };
+export type PolygonHaloSettings = HaloSettings & { showInner: boolean };
 export type RenderDashPreset = 'solid' | 'dash' | 'dotDash' | 'dotDotDash';
 export type RenderPointIcon = {
   source: string;
@@ -184,7 +185,7 @@ export type RenderLabelVisualStyle = {
 export type RenderFont = 'whiteBlackOutline' | 'blue' | 'capsule';
 export type RenderStyle = {
   /** Geometry halo; partial conditional styles omit it to inherit the main style. */
-  halo?: HaloSettings;
+  halo?: HaloSettings | PolygonHaloSettings;
   /** Screen pixels; does not modify source/world geometry. */
   symbolOffsetPx?: { x: number; y: number };
   /** True symbols may follow their label's visibility, without decorating text. */
@@ -537,6 +538,8 @@ export type RenderRuleConditionalOverride = {
 /** 区块 C：zoom windows and metric based display priority only. */
 export type ZoomPriorityRule = {
   id: string;
+  /** c15: grouping and hit triggers are selected with this complete rule. */
+  multipartAnchor?: LabelAnchor;
   /** r7: the only authored match range; fields exclude classification identity. */
   when?: RenderRuleMatch;
   /** V3.2 uses inclusive Leaflet zoom boundaries. */
@@ -899,12 +902,15 @@ export type WorkflowAssignment = { id: string; target: string; expression: strin
 export type WorkflowOutput = {
   id: string;
   /** Default category scope. The system creates Classification N controls if it has descendants. */
-  classification: ClassificationPath;
+  classification?: ClassificationPath;
+  /** c15: union of explicit nodes or terminal descendants, filtered by geometry. */
+  classificationGroup?: { selectors: WorkflowClassificationSelector[] };
   assignments: WorkflowAssignment[];
   when?: WorkflowValueCondition;
   /** A V3.2 output has one fixed drawing type. `allowed` is r2 import data. */
   geometry: { selected: GeometryKind; allowed?: GeometryKind[] };
 };
+export type WorkflowClassificationSelector = { id: string; mode: 'self' | 'leafDescendants'; path: ClassificationPath };
 export type WorkflowDefinition = {
   id: string;
   label: LocalizedText;
@@ -952,7 +958,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */

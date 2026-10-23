@@ -130,3 +130,7 @@ docs/90_roadmap-and-history/runtime-v32-production-promotion-20261017/*.log text
 /src/configStudio/pinhead-*.generated.json text eol=lf
 /docs/20_config-reference/runtime-v32-json-handbook-r12-20261020/* text eol=lf
 /docs/90_roadmap-and-history/point-label-startup-v12-20261020/* text eol=lf
+
+# Review checksums cover these exact UTF-8 bytes on every checkout platform.
+/docs/90_roadmap-and-history/halo-rules-workflow-c15-20261023/review-candidate/*.json text eol=lf
+/docs/90_roadmap-and-history/halo-rules-workflow-c15-20261023/review-candidate/SHA256SUMS.txt text eol=lf

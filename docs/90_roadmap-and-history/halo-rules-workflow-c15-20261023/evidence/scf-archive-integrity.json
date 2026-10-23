@@ -1,0 +1,33 @@
+{
+  "kernelSha256": "6a734d0d0cb1f6633fd8182c769bfe59d8e21516cbb5a17d1eae24ad2bbc2f69",
+  "packages": [
+    {
+      "name": "cairn-pipeline-dispatcher",
+      "sha256": "62e9d807deca9965f41559d560af76d6fecb783ff654f2a26affcf60d9661a4d",
+      "files": 1181,
+      "bytes": 2253145,
+      "handler": "scf-dispatcher.js"
+    },
+    {
+      "name": "cairn-pipeline-worker",
+      "sha256": "d1e39fdec63ea1a1d26a159ea8c8a1f50669abf8dc32193756d13663c9595014",
+      "files": 1181,
+      "bytes": 2253135,
+      "handler": "scf-worker.js"
+    },
+    {
+      "name": "cairn-github-mirror-worker",
+      "sha256": "8410dd5f608a3b492b93d72efeceb8cd5714ad783d2bd9f9ae6ee7392d18dd9d",
+      "files": 1181,
+      "bytes": 2253134,
+      "handler": "scf-mirror.js"
+    },
+    {
+      "name": "cairn-review-archive-worker",
+      "sha256": "643737e1bdcde3d343031f1dceb314b5121e80581fa5499589866bffc7312eb5",
+      "files": 1181,
+      "bytes": 2253138,
+      "handler": "scf-archive.js"
+    }
+  ]
+}

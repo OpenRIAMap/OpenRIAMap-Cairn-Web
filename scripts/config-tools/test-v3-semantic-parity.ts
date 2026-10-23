@@ -106,7 +106,7 @@ expect(budRules.map((rule) => `${rule.minZoom}-${rule.maxZoom}-${rule.representa
 const budAtHiddenZoom = resolveConfigRuntimeRule(config, recordFor(bud, 'Polygon'), runtimeContext(2), null);
 const budAtPointZoom = resolveConfigRuntimeRule(config, recordFor(bud, 'Polygon'), runtimeContext(3), null) as any;
 expect(budAtHiddenZoom === null, 'BUD is still visible in its authored 0–2 hidden interval.');
-expect(budAtPointZoom?.symbol?.point?.kind === 'circle' && Number(budAtPointZoom.symbol.point.radius) > 0, 'BUD low-Zoom rendering is not a real authored point symbol.');
+expect(budAtPointZoom?.symbol?.point?.kind === 'shape' && budAtPointZoom.symbol.point.shape==='circle' && Number(budAtPointZoom.symbol.point.radius) > 0, 'BUD low-Zoom rendering is not a real authored point symbol.');
 expect(!Object.prototype.hasOwnProperty.call(budAtPointZoom.symbol.label, 'withDot'), 'BUD still relies on the deprecated label-decoration dot compatibility path.');
 const budWithPrefixWorld = probe(bud, 'Polygon', { World: 'Z' });
 budWithPrefixWorld.meta = { ...budWithPrefixWorld.meta, World: 'Z', sig: { ...budWithPrefixWorld.meta.sig, World: 'Z' } };

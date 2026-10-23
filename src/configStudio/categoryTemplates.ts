@@ -2,12 +2,12 @@ import type { CategoryNode, ConfigPackageV3, GeometryKind, GeometryProfile, Labe
 import { classificationPathKey, inheritanceControls, parentClassificationPath, pathDepth, resolveCategoryNodes, resolveGeometryProfile } from './runtime';
 import { editableGeometryProfile, newConfigId } from './renderRuleTemplates';
 export type CategoryTemplateRequest = { parentId?: string; code: string; name?: string; geometry: GeometryKind; allowMultipleParts: boolean; anchor: LabelAnchor; sourceId?: string };
-const equalCapabilities = (profile: GeometryProfile, request: Pick<CategoryTemplateRequest, 'allowMultipleParts' | 'anchor'>) => profile.allowMultipleParts === request.allowMultipleParts && (!request.allowMultipleParts || (profile.anchor ?? 'featureBbox') === request.anchor);
+const equalCapabilities = (profile: GeometryProfile, request: Pick<CategoryTemplateRequest, 'allowMultipleParts' | 'anchor'>,revision:number) => profile.allowMultipleParts === request.allowMultipleParts && (revision>=15 || !request.allowMultipleParts || (profile.anchor ?? 'featureBbox') === request.anchor);
 export function compatibleCategoryTemplates(config: ConfigPackageV3, request: CategoryTemplateRequest) {
   const parent = config.nodes.find(node => node.nodeId === request.parentId);
   return config.nodes.flatMap(node => {
     const profile = resolveGeometryProfile(config, node.path, request.geometry);
-    if (!profile?.enabled || !equalCapabilities(profile, request)) return [];
+    if (!profile?.enabled || !equalCapabilities(profile, request, config.contractRevision)) return [];
     const peerParent = parentClassificationPath(node.path);
     const sibling = parent ? pathDepth(node.path) === pathDepth(parent.path) + 1 && peerParent && classificationPathKey(peerParent) === classificationPathKey(parent.path) : pathDepth(node.path) === 1;
     return [{ node, profile, rank: sibling ? 0 : node.nodeId === parent?.nodeId ? 1 : 2 }];
@@ -26,14 +26,17 @@ export function createCategoryFromTemplate(config: ConfigPackageV3, request: Cat
   const parentProfile = parent ? resolveGeometryProfile(config, parent.path, request.geometry) : undefined;
   const template = request.sourceId ? compatibleCategoryTemplates(config, request).find(item => item.node.nodeId === request.sourceId) : undefined;
   if (request.sourceId && !template) throw new Error('模板几何、多部件或锚点与目标不兼容。');
-  const inherit = !template && parent && inheritanceControls(parent).display && parentProfile?.enabled && equalCapabilities(parentProfile, request);
+  const inherit = !template && parent && inheritanceControls(parent).display && parentProfile?.enabled && equalCapabilities(parentProfile, request, config.contractRevision);
   const node: CategoryNode = { nodeId: newConfigId('node'), path, classificationLabels: { ...parent?.classificationLabels, [level]: { zh: request.name?.trim() || code, en: '' } }, children: [], inheritDown: { fields: true, display: true, card: true }, fields: [], geometryProfiles: {} };
   if (!inherit) {
     const defaultProfile = editableGeometryProfile(request.geometry, config.contractRevision);
     const base = template?.profile ?? (parent && inheritanceControls(parent).display ? parentProfile : undefined) ?? defaultProfile;
     const profile = structuredClone(base);
-    profile.enabled = true; profile.allowMultipleParts = request.allowMultipleParts; profile.anchor = request.allowMultipleParts ? request.anchor : 'featureBbox';
-    profile.interaction = structuredClone(parent && inheritanceControls(parent).display ? parentProfile?.interaction ?? defaultProfile.interaction : defaultProfile.interaction);
+    profile.enabled = true; profile.allowMultipleParts = request.allowMultipleParts;
+    if(config.contractRevision<15){
+      profile.anchor=request.allowMultipleParts?request.anchor:'featureBbox';
+      profile.interaction=structuredClone(parent&&inheritanceControls(parent).display?parentProfile?.interaction??defaultProfile.interaction:defaultProfile.interaction);
+    }
     profile.zoomPriority.rules = profile.zoomPriority.rules.map(rule => ({ ...rule, id: newConfigId('render') }));
     node.geometryType = request.geometry; node.geometryProfiles[request.geometry] = profile;
   }
