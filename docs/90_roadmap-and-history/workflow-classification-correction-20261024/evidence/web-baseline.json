@@ -1,0 +1,9 @@
+{
+  "repository": "OpenRIAMap/OpenRIAMap-Cairn-Web",
+  "remote": "https://github.com/OpenRIAMap/OpenRIAMap-Cairn-Web.git",
+  "fetchedAtUtc": "2026-10-23T19:31:14.4458920Z",
+  "baseSha": "467b2fe5feafc30ac6ef705baa0d4a8ad05efe57",
+  "subject": "Mirror active configuration config-8a759973-b2fb-49f8-a491-359c21235b2a (config-8a759973-b2fb-49f8-a491-359c21235b2a)",
+  "createdFrom": "467b2fe5feafc30ac6ef705baa0d4a8ad05efe57",
+  "branch": "codex/fix-workflow-classification-c15-20261024"
+}

@@ -9778,192 +9778,6 @@ function isNativeConfigRevision(value) {
   return supportsContract("native", value);
 }
 
-// src/core/project/applicationResources.ts
-var DYNMAP_FLAT_PRESET = { id: "dynmap-flat", worldToMap: [4, 0, 0, 0, 0, -4, 0, 1, 0], mapToWorld: [0.25, 0, 0, 0, 0, 1, 0, -0.25, 0], mapzoomin: 2, mapzoomout: 3, tileSize: 128, tilescale: 0 };
-var DEFAULT_TILE_SETTINGS = { prefix: "flat", imageFormat: "jpg", extraZoomLevels: 2, minNativeZoom: -2, maxNativeZoom: 3, maxRetries: 3, retryDelay: 1e3 };
-var REGISTERED_TILE_PROXIES = [{ id: "ria-satellite", name: "RIA Satellite \u540C\u6E90\u4EE3\u7406", target: "https://satellite.ria.red/map/", path: "/api/dynmap/" }];
-var isWorldGroups = (sources) => "kind" in sources && sources.kind === "world-groups";
-var escape = (value) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-function attributionMarkup(value) {
-  const name = escape(value.name || value.legacyText || "");
-  return value.url ? `&copy; <a href="${escape(value.url)}">${name}</a>` : name;
-}
-function expandWorldTemplate(template, worldKey) {
-  if (!/^[A-Za-z0-9_.-]+$/.test(worldKey) || worldKey === "." || worldKey === "..") throw Error("\u8FDC\u7AEF\u4E16\u754C\u952E\u5FC5\u987B\u662F\u5408\u6CD5\u8DEF\u5F84\u6BB5\u3002");
-  if (/[{}]/.test(template.split("{world}").join("")) || template.includes("..") || template.includes("\\")) throw Error("\u4E16\u754C\u8DEF\u5F84\u6A21\u677F\u5305\u542B\u672A\u77E5 token \u6216\u975E\u6CD5\u8DEF\u5F84\u3002");
-  return template.split("{world}").join(encodeURIComponent(worldKey));
-}
-function resourceGroupForWorld(application, worldId2) {
-  if (!isWorldGroups(application.sources)) return void 0;
-  const id2 = application.sources.bindings[worldId2] ?? application.sources.defaultGroupId;
-  const group = application.sources.groups.find((group2) => group2.id === id2);
-  if (!group || !group.enabled) throw Error(`\u4E16\u754C ${worldId2} \u7684\u6765\u6E90\u914D\u7F6E\u7EC4 ${id2} \u4E0D\u5B58\u5728\u6216\u672A\u542F\u7528\u3002`);
-  return group;
-}
-function defaultSourceSettings(application) {
-  const sources = application.sources;
-  if (!isWorldGroups(sources)) return sources;
-  const group = sources.groups.find((group2) => group2.id === sources.defaultGroupId);
-  if (!group || !group.enabled) throw Error("\u9ED8\u8BA4\u6765\u6E90\u914D\u7F6E\u7EC4\u4E0D\u5B58\u5728\u6216\u672A\u542F\u7528\u3002");
-  return group.sources;
-}
-function resolveGroupTiles(profile, worldKey) {
-  const baseUrl = expandWorldTemplate(profile.baseUrlTemplate, worldKey);
-  let filteredBaseUrl = baseUrl;
-  if (profile.filteredAccess === "registered-proxy") {
-    const proxy = REGISTERED_TILE_PROXIES.find((proxy2) => proxy2.id === profile.proxyId);
-    if (!proxy || !baseUrl.startsWith(proxy.target)) throw Error("\u74E6\u7247\u4EE3\u7406\u672A\u6CE8\u518C\u6216\u4E0E\u5B9E\u9645\u539F\u56FE\u76EE\u6807\u4E0D\u4E00\u81F4\uFF0C\u8BF7\u90E8\u7F72\u5BF9\u5E94\u4EE3\u7406\u6216\u4F7F\u7528\u652F\u6301 CORS \u7684\u76F4\u8FDE\u3002");
-    filteredBaseUrl = proxy.path + baseUrl.slice(proxy.target.length);
-  }
-  if (profile.legacyFilteredTemplate) throw Error("\u5386\u53F2\u6EE4\u955C\u4EE3\u7406\u5730\u5740\u5C1A\u672A\u786E\u8BA4\u90E8\u7F72\u6620\u5C04\uFF0C\u5DF2\u4FDD\u7559\uFF0C\u8BF7\u9009\u62E9\u5DF2\u6CE8\u518C\u4EE3\u7406\u6216\u660E\u786E\u4F7F\u7528\u76F4\u8FDE\u3002");
-  return { ...DEFAULT_TILE_SETTINGS, ...Object.fromEntries(Object.entries(profile).filter(([key2, value]) => key2 in DEFAULT_TILE_SETTINGS && value !== void 0)), baseUrl, filteredBaseUrl, attribution: attributionMarkup(profile.attribution) };
-}
-function resolveApplicationWorld(application, world) {
-  const group = resourceGroupForWorld(application, world.id);
-  if (!group) {
-    if (!world.tiles || !world.projection || !world.dataSourceId) throw Error(`\u65E7\u4E16\u754C ${world.id} \u7684\u6765\u6E90\uFF0F\u6295\u5F71\uFF0F\u74E6\u7247\u914D\u7F6E\u4E0D\u5B8C\u6574\u3002`);
-    return world;
-  }
-  return { ...world, dataSourceId: group.sources.defaultSourceId, projection: world.projectionOverride ?? DYNMAP_FLAT_PRESET, tiles: resolveGroupTiles(group.tiles, world.remoteWorldId ?? world.id) };
-}
-function resolveApplicationSettings(application) {
-  return { ...application, sources: defaultSourceSettings(application), worlds: application.worlds.map((world) => resolveApplicationWorld(application, world)) };
-}
-function validateResourceGroups(application) {
-  if (!isWorldGroups(application.sources)) return [];
-  const issues = [], fail = (path2, message) => issues.push({ path: path2, message });
-  const config = application.sources, ids = /* @__PURE__ */ new Set(), storage = /* @__PURE__ */ new Set(), worlds = new Set(application.worlds.map((world) => world.id));
-  for (const group of config.groups) {
-    const path2 = `sources/groups/${group.id}`;
-    if (!/^[A-Za-z0-9_-]+$/.test(group.id) || ["__proto__", "constructor", "prototype"].includes(group.id) || ids.has(group.id)) fail(path2, "\u6765\u6E90\u7EC4 ID \u975E\u6CD5\u6216\u91CD\u590D\u3002");
-    ids.add(group.id);
-    if (!(group.label.zh.trim() || group.label.en.trim())) fail(path2, "\u6765\u6E90\u7EC4\u81F3\u5C11\u9700\u8981\u4E00\u79CD\u8BED\u8A00\u7684\u540D\u79F0\u3002");
-    if (!group.sources.storageKey.trim() || storage.has(group.sources.storageKey)) fail(path2, "\u5404\u6765\u6E90\u7EC4\u987B\u4F7F\u7528\u4E0D\u540C\u4E14\u975E\u7A7A\u7684\u9009\u6E90\u72B6\u6001\u5B58\u50A8\u952E\u3002");
-    storage.add(group.sources.storageKey);
-    if (!group.sources.linkModes.storageKey.trim() || storage.has(group.sources.linkModes.storageKey)) fail(path2, "\u6765\u6E90\u7EC4\u94FE\u63A5\u6A21\u5F0F\u5B58\u50A8\u952E\u987B\u72EC\u7ACB\u4E14\u975E\u7A7A\u3002");
-    storage.add(group.sources.linkModes.storageKey);
-    if (!["fixed", "user-select", "user-select-on-failure"].includes(group.sources.selectionMode)) fail(path2, "\u672A\u77E5\u6765\u6E90\u9009\u62E9\u65B9\u5F0F\u3002");
-    const sourceIds = /* @__PURE__ */ new Set();
-    for (const source of group.sources.items) {
-      if (!/^[A-Za-z0-9_-]+$/.test(source.id) || sourceIds.has(source.id)) fail(path2, "\u7EC4\u5185\u6570\u636E\u6E90 ID \u975E\u6CD5\u6216\u91CD\u590D\u3002");
-      sourceIds.add(source.id);
-      for (const [key2, url] of [["rootUrl", source.rootUrl], ["mediaRootUrl", source.mediaRootUrl]]) if (url || key2 === "rootUrl") try {
-        const value = new URL(url);
-        if (!["http:", "https:"].includes(value.protocol) || value.username || value.password) throw Error();
-      } catch {
-        fail(path2 + "/" + key2, "\u6570\u636E\uFF0F\u5A92\u4F53\u6765\u6E90\u987B\u4E3A\u65E0\u51ED\u636E\u7684 HTTP(S) \u5730\u5740\u3002");
-      }
-      if (source.readerKind !== "formal-release-v2" || source.readerSchemaVersion !== "openriamap.formal-release-reader.v2") fail(path2, "\u672A\u77E5\u8BFB\u53D6\u534F\u8BAE\uFF1B\u5F53\u524D\u53EA\u652F\u6301 formal-release-v2\u3002");
-      if (!["direct", "github-raw-compatible"].includes(source.transport)) fail(path2, "\u672A\u77E5\u6570\u636E\u8BBF\u95EE\u65B9\u5F0F\u3002");
-      if (source.transport === "github-raw-compatible" && !group.sources.github.sourceIds.includes(source.id)) fail(path2, "GitHub \u8BBF\u95EE\u65B9\u5F0F\u672A\u7ED1\u5B9A\u8BE5\u7EC4\u6570\u636E\u6E90\u3002");
-    }
-    if (!group.sources.items.some((source) => source.id === group.sources.defaultSourceId && source.enabled)) fail(path2, "\u7EC4\u5185\u9ED8\u8BA4\u6570\u636E\u6E90\u4E0D\u5B58\u5728\u6216\u672A\u542F\u7528\u3002");
-    if (group.sources.github.sourceIds.some((id2) => !sourceIds.has(id2))) fail(path2, "\u7EC4\u5185 GitHub \u6765\u6E90\u5F15\u7528\u4E0D\u5B58\u5728\u3002");
-    if (group.sources.linkModes.items.filter((mode) => mode.default).length !== 1) fail(path2, "\u7EC4\u5185\u987B\u6709\u4E00\u4E2A\u9ED8\u8BA4\u94FE\u63A5\u6A21\u5F0F\u3002");
-    const modeIds = /* @__PURE__ */ new Set();
-    for (const mode of group.sources.linkModes.items) {
-      if (!/^[A-Za-z0-9_-]+$/.test(mode.id) || modeIds.has(mode.id)) fail(path2, "\u94FE\u63A5\u6A21\u5F0F ID \u975E\u6CD5\u6216\u91CD\u590D\u3002");
-      modeIds.add(mode.id);
-      try {
-        const url = new URL(mode.baseUrl);
-        if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw Error();
-      } catch {
-        fail(path2, "\u94FE\u63A5\u6A21\u5F0F\u6839\u5730\u5740\u987B\u4E3A\u65E0\u51ED\u636E\u7684 HTTP(S) \u5730\u5740\u3002");
-      }
-    }
-    for (const part of [group.sources.github.owner, group.sources.github.repo, group.sources.github.branch]) if (!part || !/^[A-Za-z0-9_.\/-]+$/.test(part) || part.includes("..")) fail(path2, "\u7EC4\u5185 GitHub \u4ED3\u5E93\u53C2\u6570\u975E\u6CD5\u3002");
-    try {
-      for (const template of [group.dataPathTemplate, group.mediaPathTemplate]) {
-        expandWorldTemplate(template, "world");
-        if (template.startsWith("/") || /^[a-z]+:/i.test(template)) throw Error("\u6570\u636E\uFF0F\u5A92\u4F53\u5B50\u8DEF\u5F84\u6A21\u677F\u987B\u4E3A\u6839\u5730\u5740\u4E0B\u7684\u76F8\u5BF9\u8DEF\u5F84\u3002");
-      }
-      const tile = resolveGroupTiles(group.tiles, "world"), url = new URL(tile.baseUrl);
-      if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw Error("\u74E6\u7247\u6765\u6E90\u987B\u4E3A\u65E0\u51ED\u636E\u7684 HTTP(S) \u5730\u5740\u3002");
-      if (![tile.extraZoomLevels, tile.maxRetries].every(Number.isSafeInteger) || tile.extraZoomLevels < 0 || tile.extraZoomLevels > 16 || tile.maxRetries < 0 || tile.maxRetries > 10 || !Number.isFinite(tile.retryDelay) || tile.retryDelay < 0) throw Error("\u74E6\u7247\u989D\u5916\u7EA7\u522B\uFF0F\u91CD\u8BD5\u53C2\u6570\u975E\u6CD5\u3002");
-      if (!Number.isInteger(tile.minNativeZoom) || !Number.isInteger(tile.maxNativeZoom) || tile.minNativeZoom > tile.maxNativeZoom || tile.minNativeZoom < application.preferences.map.leafletOffset || tile.maxNativeZoom > 8 + application.preferences.map.leafletOffset) throw Error("\u539F\u751F\u74E6\u7247\u8303\u56F4\u4E0D\u5728\u5171\u4EAB Zoom \u6620\u5C04\u4E2D\u3002");
-      if (group.tiles.attribution.url) {
-        const link = new URL(group.tiles.attribution.url);
-        if (!["http:", "https:"].includes(link.protocol) || link.username || link.password) throw Error("\u7F72\u540D\u94FE\u63A5\u975E\u6CD5\u3002");
-      }
-    } catch (error) {
-      fail(path2, error instanceof Error ? error.message : String(error));
-    }
-  }
-  if (!config.groups.some((group) => group.id === config.defaultGroupId && group.enabled)) fail("sources/defaultGroupId", "\u9ED8\u8BA4\u6765\u6E90\u7EC4\u5FC5\u987B\u5B58\u5728\u4E14\u542F\u7528\u3002");
-  if (config.sharedInterfaceGroupId && !ids.has(config.sharedInterfaceGroupId)) fail("sources/sharedInterfaceGroupId", "\u5F53\u524D\u5E94\u7528\u5BA1\u6838\uFF0F\u73A9\u5BB6\u670D\u52A1\u7684\u6765\u6E90\u7EC4\u5F15\u7528\u4E0D\u5B58\u5728\u3002");
-  for (const [world, id2] of Object.entries(config.bindings)) if (!worlds.has(world) || !config.groups.some((group) => group.id === id2 && group.enabled)) fail("sources/bindings/" + world, "\u7ED1\u5B9A\u7684\u4E16\u754C\u6216\u542F\u7528\u6765\u6E90\u7EC4\u4E0D\u5B58\u5728\u3002");
-  const normalizedWorlds = /* @__PURE__ */ new Set();
-  for (const world of application.worlds) {
-    const normalized = world.id.toLowerCase();
-    if (normalizedWorlds.has(normalized) || ["__proto__", "constructor", "prototype"].includes(normalized)) fail("worlds/" + world.id, "\u4E16\u754C ID \u4E0D\u80FD\u4E0E\u53E6\u4E00\u4E16\u754C\u4EC5\u5927\u5C0F\u5199\u4E0D\u540C\u6216\u4F7F\u7528\u4FDD\u7559\u540D\u79F0\u3002");
-    normalizedWorlds.add(normalized);
-    if (world.dataSourceId !== void 0 || world.tiles !== void 0 || world.projection !== void 0) fail("worlds/" + world.id, "\u6765\u6E90\u7EC4\u4E16\u754C\u4E0D\u80FD\u540C\u65F6\u4FDD\u5B58\u65E7\u7684\u96F6\u6563\u6570\u636E\u6E90\uFF0F\u6295\u5F71\uFF0F\u74E6\u7247\u8BBE\u7F6E\u3002");
-    try {
-      expandWorldTemplate("{world}", world.remoteWorldId ?? world.id);
-    } catch (error) {
-      fail("worlds/" + world.id, String(error));
-    }
-  }
-  return issues;
-}
-
-// src/configStudio/valueSchema.ts
-var text = { type: "string" };
-var number = { type: "number" };
-var bool = { type: "boolean" };
-var object = (properties, required = []) => ({ type: "object", properties, required });
-var array = (items) => ({ type: "array", items });
-var id = { anyOf: [text, object({ ID: text }, ["ID"])] };
-var roadId = { anyOf: [text, { type: "array", items: text, minItems: 1 }, ...["tgt", "ID", "id"].map((key2) => object({ [key2]: text }, [key2]))] };
-var VALUE_SCHEMA_TEMPLATES = {
-  "rail-lines": { label: "\u7AD9\u53F0\u7EBF\u8DEF\u5F15\u7528", schema: array({ anyOf: [text, object({ ID: text, Avaliable: bool, Available: bool, NotAvaliable: bool, getin: bool, getout: bool, Overtaking: bool, NextOT: bool, stationDistance: number, bureau: text, line: text }, ["ID"])] }) },
-  "rail-platforms": { label: "\u7AD9\u573A\u7AD9\u53F0\u5F15\u7528", schema: array(id) },
-  "rail-stations": { label: "\u8F66\u7AD9\u7AD9\u573A\u5F15\u7528", schema: array(id) },
-  "road-modes": { label: "\u9053\u8DEF\u51FA\u884C\u65B9\u5F0F", schema: array({ anyOf: [text, { type: "array", items: text, minItems: 1 }, ...["code", "tgt", "ID", "id"].map((key2) => object({ [key2]: text }, [key2]))] }) },
-  "road-connections": { label: "\u9053\u8DEF\u8FDE\u63A5\u5173\u7CFB", schema: array({ anyOf: [...["mode", "Lot"].flatMap((mode) => ["tgt", "Tgt"].map((target) => object({ [mode]: { type: "string", enum: ["endpoint", "middle"] }, [target]: text }, [mode, target])))] }) },
-  "road-blacklist": { label: "\u9053\u8DEF\u8FDE\u63A5\u6392\u9664", schema: array(roadId) },
-  "target-point": { label: "\u4F20\u9001\u76EE\u6807\u5750\u6807", schema: object({ x: number, y: number, z: number }, ["x", "z"]) }
-};
-function validateValueSchema(schema) {
-  let budget = 512;
-  const visit = (s, depth) => {
-    if (--budget < 0 || depth > 12) return ["\u503C\u7ED3\u6784\u8D85\u8FC7\u6DF1\u5EA6\u6216\u89C4\u6A21\u9650\u5236\u3002"];
-    if (!s || typeof s !== "object" || Array.isArray(s)) return ["\u503C\u7ED3\u6784\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002"];
-    if (Object.keys(s).some((key2) => !["type", "anyOf", "properties", "required", "items", "enum", "minItems", "maxItems", "minimum", "exclusiveMinimum"].includes(key2))) return ["\u503C\u7ED3\u6784\u5305\u542B\u4E0D\u652F\u6301\u7684\u5C5E\u6027\u3002"];
-    if (!s.type && !s.anyOf?.length) return ["\u503C\u7ED3\u6784\u5FC5\u987B\u6307\u5B9A\u7C7B\u578B\u6216\u517C\u5BB9\u5206\u652F\u3002"];
-    if (s.anyOf && (!s.anyOf.length || s.anyOf.length > 16)) return ["\u503C\u7ED3\u6784\u517C\u5BB9\u5206\u652F\u6570\u91CF\u65E0\u6548\u3002"];
-    if (s.required?.some((key2) => !s.properties?.[key2] || ["__proto__", "prototype", "constructor"].includes(key2))) return ["\u5FC5\u9700\u5C5E\u6027\u672A\u5B9A\u4E49\u6216\u540D\u79F0\u4E0D\u5B89\u5168\u3002"];
-    if (s.properties && Object.keys(s.properties).some((key2) => ["__proto__", "prototype", "constructor"].includes(key2))) return ["\u503C\u7ED3\u6784\u5C5E\u6027\u540D\u79F0\u4E0D\u5B89\u5168\u3002"];
-    if (s.enum && (!s.enum.length || s.enum.length > 512 || s.enum.some((v) => !["string", "number", "boolean"].includes(typeof v) || typeof v === "number" && !Number.isFinite(v)))) return ["\u503C\u7ED3\u6784\u679A\u4E3E\u65E0\u6548\u3002"];
-    if ([s.minimum, s.exclusiveMinimum].some((v) => v !== void 0 && !Number.isFinite(v))) return ["\u503C\u7ED3\u6784\u6570\u503C\u8FB9\u754C\u65E0\u6548\u3002"];
-    if ([s.minItems, s.maxItems].some((v) => v !== void 0 && (!Number.isSafeInteger(v) || v < 0 || v > 1e5)) || s.minItems !== void 0 && s.maxItems !== void 0 && s.minItems > s.maxItems) return ["\u503C\u7ED3\u6784\u6570\u7EC4\u957F\u5EA6\u8FB9\u754C\u65E0\u6548\u3002"];
-    return [...s.anyOf ?? [], ...Object.values(s.properties ?? {}), ...s.items ? [s.items] : []].flatMap((child) => visit(child, depth + 1));
-  };
-  return visit(schema, 0).slice(0, 20);
-}
-function validateStructuredValue(value, schema, path2 = "value") {
-  if (validateValueSchema(schema).length) return [`${path2}\uFF1A\u5B57\u6BB5\u503C\u7ED3\u6784\u58F0\u660E\u65E0\u6548\u3002`];
-  let budget = 2e4;
-  const visit = (v, s, p, depth) => {
-    if (--budget < 0 || depth > 24) return [`${p}\uFF1A\u503C\u68C0\u67E5\u8D85\u8FC7\u89C4\u6A21\u9650\u5236\u3002`];
-    if (s.anyOf && !s.anyOf.some((branch) => visit(v, branch, p, depth + 1).length === 0)) return [`${p}\uFF1A\u4E0D\u7B26\u5408\u4EFB\u4F55\u5141\u8BB8\u7684\u7ED3\u6784\u3002`];
-    if (s.type && (s.type === "array" ? !Array.isArray(v) : s.type === "object" ? !v || typeof v !== "object" || Array.isArray(v) : typeof v !== s.type)) return [`${p}\uFF1A\u9700\u8981 ${s.type}\u3002`];
-    if (typeof v === "number" && (!Number.isFinite(v) || s.minimum !== void 0 && v < s.minimum || s.exclusiveMinimum !== void 0 && v <= s.exclusiveMinimum)) return [`${p}\uFF1A\u6570\u503C\u65E0\u6548\u6216\u8D8A\u754C\u3002`];
-    if (s.enum && !s.enum.includes(v)) return [`${p}\uFF1A\u503C\u4E0D\u5728\u5141\u8BB8\u679A\u4E3E\u4E2D\u3002`];
-    if (Array.isArray(v)) {
-      if (s.minItems !== void 0 && v.length < s.minItems || s.maxItems !== void 0 && v.length > s.maxItems) return [`${p}\uFF1A\u6570\u7EC4\u957F\u5EA6\u4E0D\u7B26\u5408\u8981\u6C42\u3002`];
-      if (v.length > 1e5) return [`${p}\uFF1A\u6570\u7EC4\u8FC7\u5927\u3002`];
-      return s.items ? v.flatMap((item, i) => visit(item, s.items, `${p}/${i}`, depth + 1)).slice(0, 20) : [];
-    }
-    if (v && typeof v === "object") {
-      const row2 = v;
-      return [...(s.required ?? []).filter((key2) => row2[key2] === void 0).map((key2) => `${p}/${key2}\uFF1A\u7F3A\u5C11\u5FC5\u9700\u5C5E\u6027\u3002`), ...Object.entries(s.properties ?? {}).flatMap(([key2, child]) => row2[key2] === void 0 ? [] : visit(row2[key2], child, `${p}/${key2}`, depth + 1))].slice(0, 20);
-    }
-    return [];
-  };
-  return visit(value, schema, path2, 0);
-}
-
 // src/configStudio/workflowExpression.ts
 var WORKFLOW_FUNCTIONS = [
   { name: "join", label: "\u53EF\u9009\u6BB5\u62FC\u63A5", signature: 'join("_",A,B)', description: "\u4EE5\u5206\u9694\u7B26\u8FDE\u63A5\u975E\u7A7A\u7247\u6BB5\uFF0C\u4FDD\u7559 0 \u548C false\u3002", min: 2, max: 4096 },
@@ -9991,9 +9805,9 @@ function workflowConditionMatches(condition, slots, system = {}) {
   if (condition.all) return condition.all.every((item) => workflowConditionMatches(item, slots, system));
   if (condition.any) return condition.any.some((item) => workflowConditionMatches(item, slots, system));
   const value = Object.prototype.hasOwnProperty.call(system, condition.token) ? system[condition.token] : slots[condition.token];
-  const empty3 = value == null || typeof value === "string" && !value.trim();
-  if (condition.operator === "empty") return empty3;
-  if (condition.operator === "present") return !empty3;
+  const empty4 = value == null || typeof value === "string" && !value.trim();
+  if (condition.operator === "empty") return empty4;
+  if (condition.operator === "present") return !empty4;
   if (condition.operator === "in") return condition.values?.includes(value) ?? false;
   return value === condition.value;
 }
@@ -10197,6 +10011,398 @@ function evaluateWorkflowExpression(source, slots, system) {
   return run(parseWorkflowExpression(source));
 }
 
+// src/configStudio/workflowConditionCoverage.ts
+var empty = (value) => value == null || typeof value === "string" && !value.trim();
+function satisfiable(clause) {
+  const domains = /* @__PURE__ */ new Map();
+  for (const atom of clause) {
+    const domain = domains.get(atom.token) ?? { deny: /* @__PURE__ */ new Set() };
+    if (atom.presence !== void 0) {
+      if (domain.presence !== void 0 && domain.presence !== atom.presence) return false;
+      domain.presence = atom.presence;
+    }
+    if (atom.values) domain.allow = domain.allow ? domain.allow.filter((value) => atom.values.includes(value)) : atom.values;
+    for (const value of atom.deny ?? []) domain.deny.add(value);
+    if (domain.allow && !domain.allow.some((value) => !domain.deny.has(value) && (domain.presence === void 0 || !empty(value) === domain.presence))) return false;
+    domains.set(atom.token, domain);
+  }
+  return true;
+}
+function workflowConditionsCover(context, ways) {
+  let budget = 12e3;
+  const limit = (rows) => {
+    if ((budget -= rows.length + rows.reduce((n, row2) => n + row2.length, 0)) < 0 || rows.length > 128) throw Error("coverage budget");
+    return rows.filter(satisfiable);
+  };
+  const cross = (left, right) => limit(left.flatMap((a) => right.map((b) => [...a, ...b])));
+  const dnf = (condition, depth = 0) => {
+    if (--budget < 0 || depth > 24) throw Error("coverage budget");
+    if (!condition) return [[]];
+    if (condition.all) return condition.all.reduce((result, child) => cross(result, dnf(child, depth + 1)), [[]]);
+    if (condition.any) return limit(condition.any.flatMap((child) => dnf(child, depth + 1)));
+    const atom = { token: condition.token };
+    if (condition.operator === "empty" || condition.operator === "present") atom.presence = condition.operator === "present";
+    else if (condition.operator === "equals" && condition.value !== void 0) atom.values = [condition.value];
+    else if (condition.operator === "in" && condition.values) atom.values = condition.values;
+    else throw Error("unsupported condition");
+    return [[atom]];
+  };
+  try {
+    let remaining = context.reduce((result, condition) => cross(result, dnf(condition)), [[]]);
+    for (const way of ways) {
+      const regions = way.reduce((result, condition) => cross(result, dnf(condition)), [[]]);
+      for (const region of regions) {
+        const inverse = region.map((atom) => [{ token: atom.token, ...atom.presence !== void 0 ? { presence: !atom.presence } : { deny: atom.values } }]);
+        remaining = cross(remaining, inverse);
+        if (!remaining.length) return true;
+      }
+    }
+    return !remaining.length;
+  } catch {
+    return void 0;
+  }
+}
+
+// src/configStudio/valueSchema.ts
+var text = { type: "string" };
+var number = { type: "number" };
+var bool = { type: "boolean" };
+var object = (properties, required = []) => ({ type: "object", properties, required });
+var array = (items) => ({ type: "array", items });
+var id = { anyOf: [text, object({ ID: text }, ["ID"])] };
+var roadId = { anyOf: [text, { type: "array", items: text, minItems: 1 }, ...["tgt", "ID", "id"].map((key2) => object({ [key2]: text }, [key2]))] };
+var VALUE_SCHEMA_TEMPLATES = {
+  "rail-lines": { label: "\u7AD9\u53F0\u7EBF\u8DEF\u5F15\u7528", schema: array({ anyOf: [text, object({ ID: text, Avaliable: bool, Available: bool, NotAvaliable: bool, getin: bool, getout: bool, Overtaking: bool, NextOT: bool, stationDistance: number, bureau: text, line: text }, ["ID"])] }) },
+  "rail-platforms": { label: "\u7AD9\u573A\u7AD9\u53F0\u5F15\u7528", schema: array(id) },
+  "rail-stations": { label: "\u8F66\u7AD9\u7AD9\u573A\u5F15\u7528", schema: array(id) },
+  "road-modes": { label: "\u9053\u8DEF\u51FA\u884C\u65B9\u5F0F", schema: array({ anyOf: [text, { type: "array", items: text, minItems: 1 }, ...["code", "tgt", "ID", "id"].map((key2) => object({ [key2]: text }, [key2]))] }) },
+  "road-connections": { label: "\u9053\u8DEF\u8FDE\u63A5\u5173\u7CFB", schema: array({ anyOf: [...["mode", "Lot"].flatMap((mode) => ["tgt", "Tgt"].map((target) => object({ [mode]: { type: "string", enum: ["endpoint", "middle"] }, [target]: text }, [mode, target])))] }) },
+  "road-blacklist": { label: "\u9053\u8DEF\u8FDE\u63A5\u6392\u9664", schema: array(roadId) },
+  "target-point": { label: "\u4F20\u9001\u76EE\u6807\u5750\u6807", schema: object({ x: number, y: number, z: number }, ["x", "z"]) }
+};
+function validateValueSchema(schema) {
+  let budget = 512;
+  const visit = (s, depth) => {
+    if (--budget < 0 || depth > 12) return ["\u503C\u7ED3\u6784\u8D85\u8FC7\u6DF1\u5EA6\u6216\u89C4\u6A21\u9650\u5236\u3002"];
+    if (!s || typeof s !== "object" || Array.isArray(s)) return ["\u503C\u7ED3\u6784\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002"];
+    if (Object.keys(s).some((key2) => !["type", "anyOf", "properties", "required", "items", "enum", "minItems", "maxItems", "minimum", "exclusiveMinimum"].includes(key2))) return ["\u503C\u7ED3\u6784\u5305\u542B\u4E0D\u652F\u6301\u7684\u5C5E\u6027\u3002"];
+    if (!s.type && !s.anyOf?.length) return ["\u503C\u7ED3\u6784\u5FC5\u987B\u6307\u5B9A\u7C7B\u578B\u6216\u517C\u5BB9\u5206\u652F\u3002"];
+    if (s.anyOf && (!s.anyOf.length || s.anyOf.length > 16)) return ["\u503C\u7ED3\u6784\u517C\u5BB9\u5206\u652F\u6570\u91CF\u65E0\u6548\u3002"];
+    if (s.required?.some((key2) => !s.properties?.[key2] || ["__proto__", "prototype", "constructor"].includes(key2))) return ["\u5FC5\u9700\u5C5E\u6027\u672A\u5B9A\u4E49\u6216\u540D\u79F0\u4E0D\u5B89\u5168\u3002"];
+    if (s.properties && Object.keys(s.properties).some((key2) => ["__proto__", "prototype", "constructor"].includes(key2))) return ["\u503C\u7ED3\u6784\u5C5E\u6027\u540D\u79F0\u4E0D\u5B89\u5168\u3002"];
+    if (s.enum && (!s.enum.length || s.enum.length > 512 || s.enum.some((v) => !["string", "number", "boolean"].includes(typeof v) || typeof v === "number" && !Number.isFinite(v)))) return ["\u503C\u7ED3\u6784\u679A\u4E3E\u65E0\u6548\u3002"];
+    if ([s.minimum, s.exclusiveMinimum].some((v) => v !== void 0 && !Number.isFinite(v))) return ["\u503C\u7ED3\u6784\u6570\u503C\u8FB9\u754C\u65E0\u6548\u3002"];
+    if ([s.minItems, s.maxItems].some((v) => v !== void 0 && (!Number.isSafeInteger(v) || v < 0 || v > 1e5)) || s.minItems !== void 0 && s.maxItems !== void 0 && s.minItems > s.maxItems) return ["\u503C\u7ED3\u6784\u6570\u7EC4\u957F\u5EA6\u8FB9\u754C\u65E0\u6548\u3002"];
+    return [...s.anyOf ?? [], ...Object.values(s.properties ?? {}), ...s.items ? [s.items] : []].flatMap((child) => visit(child, depth + 1));
+  };
+  return visit(schema, 0).slice(0, 20);
+}
+function validateStructuredValue(value, schema, path2 = "value") {
+  if (validateValueSchema(schema).length) return [`${path2}\uFF1A\u5B57\u6BB5\u503C\u7ED3\u6784\u58F0\u660E\u65E0\u6548\u3002`];
+  let budget = 2e4;
+  const visit = (v, s, p, depth) => {
+    if (--budget < 0 || depth > 24) return [`${p}\uFF1A\u503C\u68C0\u67E5\u8D85\u8FC7\u89C4\u6A21\u9650\u5236\u3002`];
+    if (s.anyOf && !s.anyOf.some((branch) => visit(v, branch, p, depth + 1).length === 0)) return [`${p}\uFF1A\u4E0D\u7B26\u5408\u4EFB\u4F55\u5141\u8BB8\u7684\u7ED3\u6784\u3002`];
+    if (s.type && (s.type === "array" ? !Array.isArray(v) : s.type === "object" ? !v || typeof v !== "object" || Array.isArray(v) : typeof v !== s.type)) return [`${p}\uFF1A\u9700\u8981 ${s.type}\u3002`];
+    if (typeof v === "number" && (!Number.isFinite(v) || s.minimum !== void 0 && v < s.minimum || s.exclusiveMinimum !== void 0 && v <= s.exclusiveMinimum)) return [`${p}\uFF1A\u6570\u503C\u65E0\u6548\u6216\u8D8A\u754C\u3002`];
+    if (s.enum && !s.enum.includes(v)) return [`${p}\uFF1A\u503C\u4E0D\u5728\u5141\u8BB8\u679A\u4E3E\u4E2D\u3002`];
+    if (Array.isArray(v)) {
+      if (s.minItems !== void 0 && v.length < s.minItems || s.maxItems !== void 0 && v.length > s.maxItems) return [`${p}\uFF1A\u6570\u7EC4\u957F\u5EA6\u4E0D\u7B26\u5408\u8981\u6C42\u3002`];
+      if (v.length > 1e5) return [`${p}\uFF1A\u6570\u7EC4\u8FC7\u5927\u3002`];
+      return s.items ? v.flatMap((item, i) => visit(item, s.items, `${p}/${i}`, depth + 1)).slice(0, 20) : [];
+    }
+    if (v && typeof v === "object") {
+      const row2 = v;
+      return [...(s.required ?? []).filter((key2) => row2[key2] === void 0).map((key2) => `${p}/${key2}\uFF1A\u7F3A\u5C11\u5FC5\u9700\u5C5E\u6027\u3002`), ...Object.entries(s.properties ?? {}).flatMap(([key2, child]) => row2[key2] === void 0 ? [] : visit(row2[key2], child, `${p}/${key2}`, depth + 1))].slice(0, 20);
+    }
+    return [];
+  };
+  return visit(value, schema, path2, 0);
+}
+
+// src/core/geometry/multipartGeometry.ts
+var DEFAULT_GEOMETRY_Y = -64;
+var isObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+var numberOrNull = (value) => {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+};
+function canonicalGeometryField(type) {
+  if (type === "Point") return "CoordP";
+  if (type === "LineString") return "CoordL";
+  return "CoordG";
+}
+function geometryTypeFromFeatureType(value) {
+  const type = String(value ?? "").trim();
+  if (type === "Points") return "Point";
+  if (type === "Polyline") return "LineString";
+  if (type === "Polygon") return "Polygon";
+  return null;
+}
+function featureTypeFromGeometryType(type) {
+  return type === "Point" ? "Points" : type === "LineString" ? "Polyline" : "Polygon";
+}
+function tupleToCoord(value) {
+  if (!Array.isArray(value) || value.length !== 3) return null;
+  const x = numberOrNull(value[0]);
+  const y = numberOrNull(value[1]);
+  const z = numberOrNull(value[2]);
+  return x === null || y === null || z === null ? null : { x, y, z };
+}
+function legacyTupleToCoord(value) {
+  if (Array.isArray(value)) {
+    const x2 = numberOrNull(value[0]);
+    const y2 = value.length >= 3 ? numberOrNull(value[1]) : DEFAULT_GEOMETRY_Y;
+    const z2 = value.length >= 3 ? numberOrNull(value[2]) : numberOrNull(value[1]);
+    return x2 === null || y2 === null || z2 === null ? null : { x: x2, y: y2, z: z2 };
+  }
+  if (!isObject(value)) return null;
+  const x = numberOrNull(value.x);
+  const z = numberOrNull(value.z);
+  const y = numberOrNull(value.y);
+  return x === null || z === null ? null : { x, y: y ?? DEFAULT_GEOMETRY_Y, z };
+}
+function coordinatesEqual(a, b) {
+  return a.x === b.x && a.y === b.y && a.z === b.z;
+}
+function removeClosingCoordinate(ring) {
+  if (ring.length >= 2 && coordinatesEqual(ring[0], ring[ring.length - 1])) return ring.slice(0, -1);
+  return ring;
+}
+function normalizeRingCoordinates(ring) {
+  const withoutConsecutiveDuplicates = ring.filter((coordinate, index) => index === 0 || !coordinatesEqual(ring[index - 1], coordinate));
+  return removeClosingCoordinate(withoutConsecutiveDuplicates);
+}
+function parseCanonical(value, type) {
+  if (!Array.isArray(value)) return null;
+  if (type === "Point") {
+    const parts2 = value.map(tupleToCoord);
+    return parts2.every(Boolean) ? { type, parts: parts2 } : null;
+  }
+  if (type === "LineString") {
+    const parts2 = value.map((part) => Array.isArray(part) ? part.map(tupleToCoord) : null);
+    return parts2.every((part) => Array.isArray(part) && part.every(Boolean)) ? { type, parts: parts2 } : null;
+  }
+  const parts = value.map((part) => Array.isArray(part) ? part.map((ring) => Array.isArray(ring) ? normalizeRingCoordinates(ring.map(tupleToCoord).filter((coord) => Boolean(coord))) : null) : null);
+  if (!parts.every((part) => Array.isArray(part) && part.length > 0 && part.every((ring) => Array.isArray(ring)))) return null;
+  for (const component of value) {
+    if (!Array.isArray(component)) return null;
+    for (const ring of component) {
+      if (!Array.isArray(ring) || ring.some((tuple) => !tupleToCoord(tuple))) return null;
+    }
+  }
+  return { type, parts };
+}
+function parseLegacy(value, type) {
+  if (type === "Point") {
+    const coord = legacyTupleToCoord(value);
+    return coord ? { type, parts: [coord] } : null;
+  }
+  if (!Array.isArray(value)) return null;
+  const path2 = value.map(legacyTupleToCoord);
+  if (!path2.every(Boolean)) return null;
+  if (type === "LineString") return { type, parts: [path2] };
+  return { type, parts: [[normalizeRingCoordinates(path2)]] };
+}
+function stableGeometry(geometry) {
+  return JSON.stringify(serializeMultipartGeometry(geometry));
+}
+function readMultipartGeometry(featureInfo, type, legacySourceField) {
+  const info = isObject(featureInfo) ? featureInfo : {};
+  const canonicalField = canonicalGeometryField(type);
+  const hasCanonical = Object.prototype.hasOwnProperty.call(info, canonicalField);
+  const canonical2 = hasCanonical ? parseCanonical(info[canonicalField], type) : null;
+  if (hasCanonical && !canonical2) return { geometry: null, source: "canonical", error: `${canonicalField} \u683C\u5F0F\u65E0\u6548` };
+  const legacyCandidates = Array.from(new Set([
+    legacySourceField,
+    type === "Point" ? "coordinate" : void 0,
+    type === "LineString" ? "PLpoints" : void 0,
+    type === "LineString" ? "Linepoints" : void 0,
+    type === "Polygon" ? "Conpoints" : void 0,
+    type === "Polygon" ? "Flrpoints" : void 0
+  ].filter((field) => Boolean(field))));
+  const legacyEntries = legacyCandidates.filter((field) => Object.prototype.hasOwnProperty.call(info, field));
+  const parsedLegacy = legacyEntries.map((field) => ({ field, geometry: parseLegacy(info[field], type) }));
+  const invalidLegacy = parsedLegacy.find((entry) => !entry.geometry);
+  if (invalidLegacy) return { geometry: null, source: "legacy", error: `${invalidLegacy.field} \u683C\u5F0F\u65E0\u6548` };
+  const legacy = parsedLegacy[0]?.geometry ?? null;
+  if (legacy && parsedLegacy.some((entry) => stableGeometry(entry.geometry) !== stableGeometry(legacy))) {
+    return { geometry: null, source: "legacy", error: "geometry-field-conflict" };
+  }
+  if (canonical2 && legacy && stableGeometry(canonical2) !== stableGeometry(legacy)) {
+    return { geometry: null, source: "canonical", error: "geometry-field-conflict" };
+  }
+  if (canonical2) return { geometry: canonical2, source: "canonical" };
+  if (legacy) return { geometry: legacy, source: "legacy" };
+  return { geometry: null, source: "none" };
+}
+function serializeMultipartGeometry(geometry) {
+  const tuple = (coord) => [coord.x, coord.y, coord.z];
+  if (geometry.type === "Point") return geometry.parts.map(tuple);
+  if (geometry.type === "LineString") return geometry.parts.map((part) => part.map(tuple));
+  return geometry.parts.map((part) => part.map((ring) => normalizeRingCoordinates(ring).map(tuple)));
+}
+function withCanonicalMultipartGeometry(featureInfo, geometry) {
+  const out = { ...featureInfo };
+  out[canonicalGeometryField(geometry.type)] = serializeMultipartGeometry(geometry);
+  const legacyFields = geometry.type === "Point" ? ["coordinate"] : geometry.type === "LineString" ? ["PLpoints", "Linepoints"] : ["Conpoints", "Flrpoints"];
+  for (const field of legacyFields) delete out[field];
+  return out;
+}
+function multipartGeometryFromSinglePath(type, coords) {
+  const normalized = coords.map((coord) => ({
+    x: Number(coord.x),
+    y: Number.isFinite(Number(coord.y)) ? Number(coord.y) : DEFAULT_GEOMETRY_Y,
+    z: Number(coord.z)
+  }));
+  if (type === "Point") return { type, parts: normalized };
+  if (type === "LineString") return { type, parts: [normalized] };
+  return { type, parts: [[normalized]] };
+}
+function flattenMultipartCoordinates(geometry) {
+  if (!geometry) return [];
+  if (geometry.type === "Point") return geometry.parts;
+  if (geometry.type === "LineString") return geometry.parts.flat();
+  return geometry.parts.flat(2);
+}
+function signedArea(ring) {
+  let area = 0;
+  for (let index = 0; index < ring.length; index += 1) {
+    const a = ring[index];
+    const b = ring[(index + 1) % ring.length];
+    area += a.x * b.z - b.x * a.z;
+  }
+  return area / 2;
+}
+function orientation(a, b, c) {
+  const result = (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x);
+  return Math.abs(result) < 1e-9 ? 0 : result > 0 ? 1 : -1;
+}
+function onSegment(a, b, c) {
+  return Math.min(a.x, c.x) <= b.x && b.x <= Math.max(a.x, c.x) && Math.min(a.z, c.z) <= b.z && b.z <= Math.max(a.z, c.z);
+}
+function segmentsIntersect(a, b, c, d) {
+  const o1 = orientation(a, b, c);
+  const o2 = orientation(a, b, d);
+  const o3 = orientation(c, d, a);
+  const o4 = orientation(c, d, b);
+  if (o1 !== o2 && o3 !== o4) return true;
+  return o1 === 0 && onSegment(a, c, b) || o2 === 0 && onSegment(a, d, b) || o3 === 0 && onSegment(c, a, d) || o4 === 0 && onSegment(c, b, d);
+}
+function ringSelfIntersects(ring) {
+  for (let i = 0; i < ring.length; i += 1) {
+    const a = ring[i];
+    const b = ring[(i + 1) % ring.length];
+    for (let j = i + 1; j < ring.length; j += 1) {
+      if (j === i || (j + 1) % ring.length === i || (i + 1) % ring.length === j) continue;
+      const c = ring[j];
+      const d = ring[(j + 1) % ring.length];
+      if (segmentsIntersect(a, b, c, d)) return true;
+    }
+  }
+  return false;
+}
+function pointInRing(point, ring) {
+  for (let index = 0; index < ring.length; index += 1) {
+    const a = ring[index];
+    const b = ring[(index + 1) % ring.length];
+    if (orientation(a, point, b) === 0 && onSegment(a, point, b)) return false;
+  }
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i];
+    const b = ring[j];
+    const intersects = a.z > point.z !== b.z > point.z && point.x < (b.x - a.x) * (point.z - a.z) / (b.z - a.z) + a.x;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+function ringsIntersect(a, b) {
+  for (let ai = 0; ai < a.length; ai += 1) {
+    const aNext = a[(ai + 1) % a.length];
+    for (let bi = 0; bi < b.length; bi += 1) {
+      if (segmentsIntersect(a[ai], aNext, b[bi], b[(bi + 1) % b.length])) return true;
+    }
+  }
+  return false;
+}
+function validateMultipartGeometry(geometry) {
+  if (!geometry) return "\u7F3A\u5C11\u51E0\u4F55\u5750\u6807";
+  const invalidCoordinate = flattenMultipartCoordinates(geometry).find((coord) => !Number.isFinite(coord.x) || !Number.isFinite(coord.y) || !Number.isFinite(coord.z));
+  if (invalidCoordinate) return "\u5750\u6807\u5FC5\u987B\u4E3A\u6709\u9650\u7684 [x, y, z] \u6570\u5B57";
+  if (geometry.type === "Point") return geometry.parts.length > 0 ? void 0 : "CoordP \u81F3\u5C11\u9700\u8981 1 \u4E2A\u5750\u6807";
+  if (geometry.type === "LineString") {
+    const invalidPart = geometry.parts.findIndex((part) => part.length < 2);
+    return invalidPart >= 0 ? `CoordL \u7B2C ${invalidPart + 1} \u4E2A\u90E8\u4EF6\u81F3\u5C11\u9700\u8981 2 \u4E2A\u5750\u6807` : void 0;
+  }
+  for (let partIndex = 0; partIndex < geometry.parts.length; partIndex += 1) {
+    const [outer, ...holes] = geometry.parts[partIndex];
+    if (!outer || outer.length < 3) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5916\u8FB9\u754C\u81F3\u5C11\u9700\u8981 3 \u4E2A\u5750\u6807`;
+    if (Math.abs(signedArea(outer)) < 1e-9 || ringSelfIntersects(outer)) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5916\u8FB9\u754C\u62D3\u6251\u65E0\u6548`;
+    for (let holeIndex = 0; holeIndex < holes.length; holeIndex += 1) {
+      const hole = holes[holeIndex];
+      if (hole.length < 3 || Math.abs(signedArea(hole)) < 1e-9 || ringSelfIntersects(hole)) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5185\u90E8\u6D1E ${holeIndex + 1} \u62D3\u6251\u65E0\u6548`;
+      if (!pointInRing(hole[0], outer) || ringsIntersect(hole, outer)) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5185\u90E8\u6D1E ${holeIndex + 1} \u5FC5\u987B\u5B8C\u5168\u4F4D\u4E8E\u5916\u8FB9\u754C\u5185`;
+      for (let prior = 0; prior < holeIndex; prior += 1) {
+        if (ringsIntersect(hole, holes[prior]) || pointInRing(hole[0], holes[prior])) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5185\u90E8\u6D1E\u4E0D\u80FD\u91CD\u53E0`;
+      }
+    }
+  }
+  return void 0;
+}
+
+// src/configStudio/fieldValueValidation.ts
+var emptyFieldValue = (value) => value == null || typeof value === "string" && !value.trim() || Array.isArray(value) && !value.length;
+function fieldFormatErrors(field, value) {
+  const error = (message) => [`${field.key} ${message}`];
+  if (emptyFieldValue(value)) return [];
+  const values2 = field.cardinality === "multiple" && Array.isArray(value) ? value : [value];
+  if (field.format === "externalLink" && values2.some((item) => {
+    if (typeof item !== "string" || !/^https?:\/\//i.test(item)) return true;
+    try {
+      const url = new URL(item);
+      return !["https:", "http:"].includes(url.protocol) || !url.hostname;
+    } catch {
+      return true;
+    }
+  })) return error("\u5FC5\u987B\u662F\u6709\u6548\u7684 HTTP\uFF0FHTTPS \u94FE\u63A5\u3002");
+  if (field.format === "date" && values2.some((item) => {
+    if (typeof item !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(item)) return true;
+    const date = /* @__PURE__ */ new Date(item + "T00:00:00Z");
+    return !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== item;
+  })) return error("\u5FC5\u987B\u662F\u6709\u6548\u7684 YYYY-MM-DD \u65E5\u671F\u3002");
+  if (field.coordinateFormat) {
+    if (field.coordinateFormat === "pointObject") {
+      if (!value || typeof value !== "object" || Array.isArray(value)) return error("\u9700\u8981\u5750\u6807\u5BF9\u8C61 {x,y,z}\u3002");
+      const point = value;
+      return ["x", "z"].some((axis) => typeof point[axis] !== "number" || !Number.isFinite(point[axis])) || point.y !== void 0 && (typeof point.y !== "number" || !Number.isFinite(point.y)) ? error("\u5750\u6807\u5FC5\u987B\u4E3A\u6709\u9650\u6570\u503C\u3002") : [];
+    }
+    const type = field.coordinateFormat === "coordP" ? "Point" : field.coordinateFormat === "coordL" ? "LineString" : "Polygon";
+    const key2 = type === "Point" ? "CoordP" : type === "LineString" ? "CoordL" : "CoordG";
+    const read = readMultipartGeometry({ [key2]: value }, type), invalid = read.error ?? validateMultipartGeometry(read.geometry);
+    if (invalid) return error(`\u5750\u6807\u683C\u5F0F\u4E0D\u7B26\uFF1A${invalid}`);
+  }
+  return [];
+}
+function fieldValueErrors(field, value) {
+  if (emptyFieldValue(value)) return [];
+  const errors = [];
+  if (field.valueSchema) errors.push(...validateStructuredValue(value, field.valueSchema, field.key));
+  if (field.cardinality === "multiple" && !Array.isArray(value)) errors.push(`${field.key} \u5FC5\u987B\u662F\u6570\u7EC4\u3002`);
+  const values2 = field.cardinality === "multiple" && Array.isArray(value) ? value : [value];
+  if (["string", "reference"].includes(field.type) && values2.some((item) => typeof item !== "string")) errors.push(`${field.key} \u5FC5\u987B\u662F\u6587\u672C\u503C\u3002`);
+  if (field.type === "number" && values2.some((item) => typeof item !== "number" || !Number.isFinite(item))) errors.push(`${field.key} \u5FC5\u987B\u662F\u6709\u9650\u6570\u503C\u3002`);
+  if (field.type === "boolean" && values2.some((item) => typeof item !== "boolean")) errors.push(`${field.key} \u5FC5\u987B\u662F\u5E03\u5C14\u503C\u3002`);
+  if (field.type === "enum") {
+    const type = field.optionValueType ?? "string";
+    if (values2.some((item) => typeof item !== type)) errors.push(`${field.key} \u7684\u9009\u9879\u4FDD\u5B58\u503C\u7C7B\u578B\u4E0D\u7B26\u3002`);
+    if (field.options?.length && values2.some((item) => !field.options.some((option) => option.value === String(item)))) errors.push(`${field.key} \u4E0D\u662F\u6709\u6548\u9009\u9879\u503C\u3002`);
+  }
+  if (field.type === "json" && !field.coordinateFormat && values2.some((item) => item === void 0 || typeof item === "function" || typeof item === "symbol" || typeof item === "bigint")) errors.push(`${field.key} \u5FC5\u987B\u4E3A\u53EF\u4FDD\u5B58\u7684 JSON \u503C\u3002`);
+  errors.push(...fieldFormatErrors(field, value));
+  return errors;
+}
+
 // src/configStudio/workflowPreflight.ts
 var CONDITION_BUDGET = 128;
 function clauses(condition, depth = 0, budget = { remaining: 2048 }, unstable = /* @__PURE__ */ new Set()) {
@@ -10268,18 +10474,21 @@ function shapeFitsSchema(actual, schema, depth = 0) {
     return branches2.includes(true) ? true : branches2.includes(void 0) ? void 0 : false;
   }
   if (schema.type && actual.kinds.some((kind) => kind !== schema.type)) return false;
-  if (schema.type === "array" && schema.items && actual.item) return shapeFitsSchema(actual.item, schema.items, depth + 1);
+  if (schema.type === "array" && schema.items && actual.item) {
+    const items = shapeFitsSchema(actual.item, schema.items, depth + 1);
+    return items === false ? false : schema.minItems !== void 0 || schema.maxItems !== void 0 ? void 0 : items;
+  }
   if (schema.type === "object") {
     if (!actual.properties) return void 0;
     if (schema.required?.some((key2) => !actual.properties?.[key2])) return false;
     const matches = Object.entries(schema.properties ?? {}).flatMap(([key2, child]) => actual.properties?.[key2] ? [shapeFitsSchema(actual.properties[key2], child, depth + 1)] : []);
-    return matches.includes(false) ? false : matches.includes(void 0) ? void 0 : true;
+    return matches.includes(false) ? false : schema.required?.some((key2) => !actual.requiredProperties?.includes(key2)) || matches.includes(void 0) ? void 0 : true;
   }
-  return true;
+  return schema.enum || schema.minimum !== void 0 || schema.exclusiveMinimum !== void 0 || schema.minItems !== void 0 || schema.maxItems !== void 0 ? void 0 : true;
 }
 function schemaShape(schema) {
   if (schema.anyOf) return union(schema.anyOf.map(schemaShape));
-  return { kinds: [schema.type ?? "unknown"], ...schema.items ? { item: schemaShape(schema.items) } : {}, ...schema.properties ? { properties: Object.fromEntries(Object.entries(schema.properties).map(([key2, value]) => [key2, schemaShape(value)])) } : {} };
+  return { kinds: [schema.type ?? "unknown"], ...schema.items ? { item: schemaShape(schema.items) } : {}, ...schema.properties ? { properties: Object.fromEntries(Object.entries(schema.properties).map(([key2, value]) => [key2, schemaShape(value)])), requiredProperties: schema.required ?? [] } : {} };
 }
 function fieldShape(field) {
   if (!field) return shape("unknown");
@@ -10298,7 +10507,7 @@ function validateWorkflowWrites(workflow, fields, candidate) {
     workflow.outputs.forEach((_, index) => tokens.set(`${token}_${index + 1}`, shape("string")));
   }
   const controlShape = (control) => {
-    if (control.kind === "group" && "group" in control) return { kinds: ["array"], item: control.group?.storage === "scalar" ? controlShape(control.group.itemFields[0]) : { kinds: ["object"], properties: Object.fromEntries((control.group?.itemFields ?? []).map((f) => [f.key, controlShape(f)])) } };
+    if (control.kind === "group" && "group" in control) return { kinds: ["array"], item: control.group?.storage === "scalar" ? controlShape(control.group.itemFields[0]) : { kinds: ["object"], properties: Object.fromEntries((control.group?.itemFields ?? []).map((f) => [f.key, controlShape(f)])), requiredProperties: control.group?.itemFields.filter((field) => field.required && !field.requiredWhen?.length).map((field) => field.key) } };
     if (control.kind === "json" || control.kind === "runtimeValue" || control.kind === "component") return shape("unknown");
     if (control.kind === "select") {
       const type = control.optionValueType ?? "string";
@@ -10345,8 +10554,14 @@ function validateWorkflowWrites(workflow, fields, candidate) {
       const field = targetFields.find((field2) => field2.key === assignment.target);
       try {
         const ast = parseWorkflowExpression(assignment.expression);
-        const actual = workflowExpressionTokens(ast).length ? infer(ast) : constant(evaluateWorkflowExpression(assignment.expression, {}, {}));
+        let actual = workflowExpressionTokens(ast).length ? infer(ast) : constant(evaluateWorkflowExpression(assignment.expression, {}, {}));
+        if (candidate && ast.kind === "token" && actual.constants) actual = { ...actual, constants: actual.constants.filter((value) => !["string", "number", "boolean"].includes(typeof value) || workflowConditionsDisjoint([constraint, output.when, assignment.when], [{ token: ast.name, operator: "equals", value }]) !== true) };
         if (!field || field.type === "json" && field.cardinality === "single" && !field.coordinateFormat && !field.valueSchema) continue;
+        if (candidate) {
+          if (actual.constants) {
+            for (const value of actual.constants) for (const message of fieldFormatErrors(field, value)) add("workflow-expression-format-conflict", path2, message);
+          } else if (field.coordinateFormat || field.format === "date" || field.format === "externalLink") add("workflow-expression-format-unknown", path2, `${field.key} \u7684\u52A8\u6001${field.coordinateFormat ? "\u5750\u6807\u7ED3\u6784" : "\u683C\u5F0F"}\u9700\u8BD5\u8FD0\u884C\u6838\u5BF9\uFF1B\u5B9E\u9645\u4FDD\u5B58\u4ECD\u4F1A\u4E25\u683C\u68C0\u67E5\u3002`, "warning");
+        }
         if (field.valueSchema) {
           const match = shapeFitsSchema(actual, field.valueSchema);
           if (match === false) add("workflow-value-schema-conflict", path2, `${field.key} \u7684\u8F93\u51FA\u7ED3\u6784\u4E0E\u5B57\u6BB5\u7ED3\u6784\u6A21\u677F\u51B2\u7A81\u3002`);
@@ -10371,7 +10586,19 @@ function validateWorkflowWrites(workflow, fields, candidate) {
         }
       }
     }
-    for (const step of workflow.steps) for (const [index, binding] of (step.drawing?.bindings ?? []).entries()) if (binding.outputId === output.id) writers.push({ target: binding.target, path: `${base}/steps/${step.id}/drawing/bindings/${index}`, conditions: [constraint, output.when, step.when, workflow.outputs.find((item) => item.id === step.outputId)?.when] });
+    for (const step of workflow.steps) for (const [index, binding] of (step.drawing?.bindings ?? []).entries()) if (binding.outputId === output.id) {
+      const path2 = `${base}/steps/${step.id}/drawing/bindings/${index}`, conditions = [constraint, output.when, step.when, workflow.outputs.find((item) => item.id === step.outputId)?.when];
+      if (constraint && workflowConditionsDisjoint([constraint], conditions) === true) continue;
+      writers.push({ target: binding.target, path: path2, conditions });
+      const field = targetFields.find((field2) => field2.key === binding.target);
+      if (candidate && field?.valueSchema) {
+        const number3 = shape("number"), point = { kinds: ["array"], item: number3 };
+        const actual = binding.value === "height" ? number3 : step.drawing?.returnFormat === "pointObject" ? { kinds: ["object"], properties: { x: number3, y: number3, z: number3 }, requiredProperties: ["x", "y", "z"] } : { kinds: ["array"], item: step.geometry?.[0] === "Point" ? point : step.geometry?.[0] === "LineString" ? { kinds: ["array"], item: point } : { kinds: ["array"], item: { kinds: ["array"], item: point } } };
+        const match = shapeFitsSchema(actual, field.valueSchema);
+        if (match === false) add("workflow-drawing-value-schema-conflict", path2, `${field.key} \u7684\u7ED8\u5236\u8FD4\u56DE\u7ED3\u6784\u4E0E\u5B57\u6BB5\u7ED3\u6784\u6A21\u677F\u51B2\u7A81\u3002`);
+        else if (match === void 0) add("workflow-drawing-value-schema-unknown", path2, `${field.key} \u7684\u7ED8\u5236\u5177\u4F53\u503C\u9700\u8BD5\u8FD0\u884C\u6838\u5BF9\uFF1B\u5B9E\u9645\u4FDD\u5B58\u4ECD\u4F1A\u68C0\u67E5\u5B57\u6BB5\u7ED3\u6784\u7EA6\u675F\u3002`, "warning");
+      }
+    }
     const indexed = /* @__PURE__ */ new Map();
     for (const writer of writers) indexed.set(writer.target, [...indexed.get(writer.target) ?? [], writer]);
     for (const group of indexed.values()) {
@@ -10400,6 +10627,319 @@ function validateWorkflowWrites(workflow, fields, candidate) {
 function workflowCandidateConstraint(path2, index) {
   const values2 = { Class: path2.class, Kind: path2.kind ?? "", Skind: path2.skind ?? "", Skind2: path2.skind2 ?? "" };
   return { token: "", operator: "present", all: Object.entries(values2).flatMap(([token, value]) => [token, `${token}_${index + 1}`].map((token2) => ({ token: token2, operator: "equals", value }))) };
+}
+
+// src/configStudio/workflowSupplyValidation.ts
+function validateWorkflowSupplies(workflow, fields, candidate) {
+  const output = workflow.outputs.find((output2) => output2.id === candidate.outputId);
+  if (workflow.mode !== "composed" || workflow.editor?.dedicated) return [];
+  if (!fields.some((field) => field.key === "ID")) fields = [...fields, { fieldId: "system-ID", key: "ID", type: "string", cardinality: "single", input: "text", labels: { zh: "ID", en: "" }, description: { zh: "", en: "" }, required: true }];
+  const issues = [], base = `workflows/${workflow.id}/outputs/${output.id}`;
+  const add = (code, path2, message, severity = "error") => issues.push({ code, path: path2, message, severity });
+  const constraint = workflowCandidateConstraint(candidate.classification, workflow.outputs.indexOf(output));
+  const constants = { Class: candidate.classification.class, Kind: candidate.classification.kind ?? "", Skind: candidate.classification.skind ?? "", Skind2: candidate.classification.skind2 ?? "" };
+  for (const [key2, value] of Object.entries({ ...constants })) constants[`${key2}_${workflow.outputs.indexOf(output) + 1}`] = value;
+  const controls = workflow.steps.flatMap((step) => (step.controls ?? []).map((control) => ({ step, control })));
+  const drawings = workflow.steps.filter((step) => step.kind === "geometry");
+  const inputConditionKnown = (condition) => !condition || !/^(?:ID|Class|Kind|Skind|Skind2|Creator|WorldPrefix)(?:_\d+)?$/.test(condition.token) && (condition.all ?? condition.any ?? []).every(inputConditionKnown);
+  const source = (node) => {
+    const tokens = workflowExpressionTokens(node);
+    if (tokens.every((token) => Object.prototype.hasOwnProperty.call(constants, token))) {
+      try {
+        const value = evaluateWorkflowExpressionNode(node, constants);
+        return { possible: !emptyFieldValue(value), guaranteed: emptyFieldValue(value) ? [] : [[]], known: true, constant: value, mayEmptyArray: Array.isArray(value) && !value.length };
+      } catch {
+        return { possible: false, guaranteed: [] };
+      }
+    }
+    if (node.kind === "token") {
+      const own = controls.find((item) => item.control.slot === node.name);
+      if (own) {
+        const { step, control } = own, conditions = [step.when, control.when, ...control.requiredWhen ?? []];
+        return { possible: true, token: node.name, guaranteed: control.required && conditions.every(inputConditionKnown) ? [conditions] : [], mayEmptyArray: ["group", "json"].includes(control.kind) };
+      }
+      for (const step of drawings) {
+        const parent = workflow.outputs.find((item) => item.id === step.outputId)?.when;
+        const slots = [step.drawing?.captureSlot, step.drawing?.pointSlot].filter(Boolean);
+        if (slots.some((slot) => [slot, `${slot}_X`, `${slot}_Y`, `${slot}_Z`].includes(node.name))) return { possible: true, guaranteed: [[step.when, parent]] };
+      }
+      return { possible: true, token: node.name, guaranteed: ["World", "WorldPrefix"].includes(node.name) ? [[]] : node.name === "Creator" && workflow.steps.some((step) => step.kind === "actor") && workflow.actor?.required !== false ? [[]] : [] };
+    }
+    if (node.kind === "concat" || node.kind === "join") {
+      const parts = node.kind === "concat" ? node.parts : node.args.slice(1), sources = parts.map(source);
+      return { possible: sources.some((item) => item.possible), guaranteed: sources.flatMap((item) => item.guaranteed) };
+    }
+    if (node.kind === "call") {
+      if (node.name === "coalesce") {
+        const sources = node.args.map(source), guaranteed = [];
+        let blocked = false;
+        for (const item of sources) {
+          if (!blocked) guaranteed.push(...item.guaranteed);
+          if (item.mayEmptyArray) blocked = true;
+        }
+        return { possible: sources.some((item) => item.possible), guaranteed, mayEmptyArray: blocked };
+      }
+      if (["trim", "text", "upper", "lower"].includes(node.name)) {
+        const inner = source(node.args[0]);
+        return { possible: inner.possible, guaranteed: inner.guaranteed };
+      }
+      return { possible: true, guaranteed: [[]], ...node.name === "point" ? { properties: Object.fromEntries(["x", "y", "z"].map((axis) => [axis, { possible: true, guaranteed: [[]] }])) } : {} };
+    }
+    return { possible: true, guaranteed: [] };
+  };
+  const supplies = [];
+  for (const row2 of output.assignments) {
+    try {
+      supplies.push({ ...source(parseWorkflowExpression(row2.expression)), target: row2.target, path: base + "/assignments/" + row2.id, when: [row2.when] });
+    } catch {
+    }
+  }
+  for (const step of drawings) {
+    const when = [step.when, workflow.outputs.find((item) => item.id === step.outputId)?.when];
+    for (const [index, binding] of (step.drawing?.bindings ?? []).entries()) if (binding.outputId === output.id) {
+      const height = step.drawing?.heightSlot && controls.find((item) => item.control.slot === step.drawing.heightSlot)?.control;
+      supplies.push({ target: binding.target, path: `workflows/${workflow.id}/steps/${step.id}/drawing/bindings/${index}`, when, possible: true, guaranteed: binding.value === "geometry" ? [[]] : height && height.required ? [[...height.requiredWhen ?? []]] : [], ...binding.value === "geometry" && step.drawing?.returnFormat === "pointObject" ? { properties: Object.fromEntries(["x", "y", "z"].map((axis) => [axis, { possible: true, guaranteed: [[]] }])) } : {} });
+    }
+    if (step.outputId === output.id && step.geometryRole !== "auxiliary") supplies.push({ target: output.geometry.selected === "Point" ? "CoordP" : output.geometry.selected === "LineString" ? "CoordL" : "CoordG", path: `workflows/${workflow.id}/steps/${step.id}`, when, possible: true, guaranteed: [[]] });
+  }
+  const generated = { Class: candidate.classification.class, Kind: candidate.classification.kind, SKind: candidate.classification.skind, SKind2: candidate.classification.skind2, Type: output.geometry.selected === "Point" ? "Points" : output.geometry.selected === "LineString" ? "Polyline" : "Polygon" };
+  for (const [target, value] of Object.entries(generated)) supplies.push({ target, path: base, when: [], known: true, constant: value, possible: !emptyFieldValue(value), guaranteed: emptyFieldValue(value) ? [] : [[]] });
+  for (const target of ["World", "CreateTime"]) supplies.push({ target, path: base, when: [], possible: true, guaranteed: [[]] });
+  supplies.push({ target: "CreateBy", path: base, when: [], possible: true, guaranteed: workflow.steps.some((step) => step.kind === "actor") && workflow.actor?.required !== false ? [[]] : [] });
+  const domains = [];
+  for (const { step, control } of controls) if (control.slot && control.required && !control.requiredWhen?.length && !step.when && !control.when && control.kind === "select" && control.options?.length) {
+    const values2 = control.options.map((item) => control.optionValueType === "number" ? Number(item.value) : control.optionValueType === "boolean" ? item.value === "true" : item.value);
+    domains.push({ token: control.slot, operator: "in", values: values2 });
+  }
+  const context = [constraint, output.when, ...domains];
+  const suppliesFor = (target) => supplies.flatMap((item) => {
+    if (workflowConditionsDisjoint(context, item.when) === true) return [];
+    if (item.target === target) return [item];
+    if (!target.startsWith(item.target + ".")) return [];
+    let child = item;
+    for (const key2 of target.slice(item.target.length + 1).split(".")) {
+      if (child.known) {
+        const value = child.constant && typeof child.constant === "object" ? child.constant[key2] : void 0;
+        child = { known: true, constant: value, possible: !emptyFieldValue(value), guaranteed: emptyFieldValue(value) ? [] : [[]] };
+      } else child = child.properties?.[key2] ?? { possible: true, guaranteed: [] };
+    }
+    return [{ ...item, ...child, target }];
+  });
+  for (const field of fields) {
+    const writes = suppliesFor(field.key);
+    const namespace = field.key.startsWith("tags.") ? "tags" : field.key.startsWith("extensions.") ? "extensions" : void 0;
+    if (namespace) for (const { step, control } of controls.filter((item) => item.control.kind === "tagsExtensions" && item.control.tagsExtensions?.[namespace === "tags" ? "tagsEnabled" : "extensionsEnabled"] !== false)) writes.push({ target: field.key, path: `workflows/${workflow.id}/steps/${step.id}/controls/${control.id}`, when: [step.when, control.when], possible: true, guaranteed: [] });
+    const possible = writes.filter((item) => item.possible).map((item) => item.when);
+    const guaranteed = writes.flatMap((item) => item.guaranteed.map((way) => [...item.when, ...way]));
+    let defaultValue = field.defaultValue;
+    if (defaultValue === void 0) {
+      const parent = fields.filter((parent2) => field.key.startsWith(parent2.key + ".") && parent2.defaultValue !== void 0).sort((a, b) => b.key.length - a.key.length)[0];
+      if (parent) {
+        defaultValue = parent.defaultValue;
+        for (const key2 of field.key.slice(parent.key.length + 1).split(".")) defaultValue = defaultValue && typeof defaultValue === "object" ? defaultValue[key2] : void 0;
+      }
+    }
+    if (defaultValue !== void 0 && !emptyFieldValue(defaultValue) && !fieldValueErrors(field, defaultValue).length) {
+      if (!writes.length) {
+        possible.push([]);
+        guaranteed.push([]);
+      } else if (!writes.some((item) => item.known && !item.possible)) possible.push([]);
+    }
+    const requirements = field.required ? [{ when: [] }] : [];
+    for (const condition of field.requiredWhen ?? []) {
+      if (condition.kind === "always") {
+        requirements.push({ when: [] });
+        continue;
+      }
+      if (!("field" in condition)) continue;
+      const driver = suppliesFor(condition.field);
+      let token, value, known = false;
+      if (driver.length === 1 && workflowConditionsCover(context, [driver[0].when]) === true) {
+        token = driver[0].token;
+        known = Boolean(driver[0].known);
+        value = driver[0].constant;
+      } else if (!driver.length) {
+        known = true;
+        value = fields.find((item) => item.key === condition.field)?.defaultValue;
+      }
+      if (known) {
+        const active = condition.kind === "fieldPresent" ? !emptyFieldValue(value) === condition.present : condition.kind === "fieldEquals" ? String(value ?? "") === condition.value : condition.kind === "fieldIn" ? condition.values.includes(String(value ?? "")) : false;
+        if (active) requirements.push({ when: [] });
+        continue;
+      }
+      if (token) {
+        const control = controls.find((item) => item.control.slot === token)?.control;
+        if (control && ["group", "json"].includes(control.kind)) {
+          requirements.push({ when: [], unknown: true });
+          continue;
+        }
+        const typed = (value2) => {
+          const parsed = control?.kind === "number" || control?.optionValueType === "number" ? Number(value2) : control?.kind === "toggle" || control?.optionValueType === "boolean" ? value2 === "true" : value2;
+          return String(parsed) === value2 ? parsed : void 0;
+        };
+        if (condition.kind === "fieldPresent") requirements.push({ when: [{ token, operator: condition.present ? "present" : "empty" }] });
+        else if (condition.kind === "fieldEquals") {
+          const driverField = fields.find((item) => item.key === condition.field);
+          if (condition.value === "" && driverField?.emptyValue !== "preserve") requirements.push({ when: [{ token, operator: "empty" }] });
+          else {
+            const value2 = typed(condition.value);
+            if (value2 !== void 0) requirements.push({ when: [{ token, operator: "equals", value: value2 }] });
+          }
+        } else if (condition.kind === "fieldIn") {
+          const values2 = condition.values.map(typed).filter((value2) => value2 !== void 0);
+          const driverField = fields.find((item) => item.key === condition.field);
+          const choices = [];
+          if (values2.length) choices.push({ token, operator: "in", values: values2 });
+          if (condition.values.includes("") && driverField?.emptyValue !== "preserve") choices.push({ token, operator: "empty" });
+          if (choices.length) requirements.push({ when: [{ token: "", operator: "present", any: choices }] });
+        }
+      } else requirements.push({ when: [], unknown: true });
+    }
+    for (const requirement of requirements) {
+      const requiredContext = [...context, ...requirement.when];
+      if (workflowConditionsCover(requiredContext, guaranteed) === true) continue;
+      const possibleCoverage = workflowConditionsCover(requiredContext, possible);
+      const mutableCondition = (condition) => Boolean(condition && (/^ID(?:_\d+)?$/.test(condition.token) || (condition.all ?? condition.any ?? []).some(mutableCondition)));
+      const mutable = field.key !== "ID" && writes.some((write) => write.when.some(mutableCondition));
+      if (possibleCoverage === false && !requirement.unknown && !mutable) add("workflow-required-field-unsupplied", base + "/required/" + field.key, `${field.key} \u5728\u6B64\u5206\u7C7B\u7684\u53EF\u8FBE\u8F93\u51FA\u4E2D\u5B58\u5728\u5FC5\u586B\u4F46\u6CA1\u6709\u6709\u6548\u4F9B\u503C\u7684\u60C5\u51B5\u3002\u8BF7\u8865\u5145\u7EC4\u88C5\u3001\u7ED8\u5236\u7ED1\u5B9A\u6216\u5408\u6CD5\u9ED8\u8BA4\u503C\u3002`);
+      else add("workflow-required-field-coverage-unknown", base + "/required/" + field.key, `${field.key} \u7684\u5FC5\u586B\u4F9B\u503C\u65E0\u6CD5\u9759\u6001\u786E\u8BA4${requirement.unknown ? "\uFF08\u6761\u4EF6\u4F9D\u8D56\u52A8\u6001\u7EC4\u88C5\u7ED3\u679C\uFF09" : mutable ? "\uFF08\u6761\u4EF6\u4F9D\u8D56\u7EC4\u88C5\u4E2D\u7684 ID\uFF09" : ""}\uFF1B\u8BF7\u8BD5\u8FD0\u884C\u6838\u5BF9\uFF0C\u5B9E\u9645\u4FDD\u5B58\u4ECD\u4F1A\u4E25\u683C\u68C0\u67E5\u3002`, "warning");
+      break;
+    }
+  }
+  return issues;
+}
+function evaluateWorkflowExpressionNode(node, system) {
+  const text2 = (value) => value.kind === "literal" ? JSON.stringify(value.value) : value.kind === "token" ? value.name : value.kind === "concat" ? value.parts.map(text2).join("+") : value.kind === "join" ? `join(${value.args.map(text2).join(",")})` : `${value.name}(${value.args.map(text2).join(",")})`;
+  return evaluateWorkflowExpression(text2(node), {}, system);
+}
+
+// src/core/project/applicationResources.ts
+var DYNMAP_FLAT_PRESET = { id: "dynmap-flat", worldToMap: [4, 0, 0, 0, 0, -4, 0, 1, 0], mapToWorld: [0.25, 0, 0, 0, 0, 1, 0, -0.25, 0], mapzoomin: 2, mapzoomout: 3, tileSize: 128, tilescale: 0 };
+var DEFAULT_TILE_SETTINGS = { prefix: "flat", imageFormat: "jpg", extraZoomLevels: 2, minNativeZoom: -2, maxNativeZoom: 3, maxRetries: 3, retryDelay: 1e3 };
+var REGISTERED_TILE_PROXIES = [{ id: "ria-satellite", name: "RIA Satellite \u540C\u6E90\u4EE3\u7406", target: "https://satellite.ria.red/map/", path: "/api/dynmap/" }];
+var isWorldGroups = (sources) => "kind" in sources && sources.kind === "world-groups";
+var escape = (value) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+function attributionMarkup(value) {
+  const name = escape(value.name || value.legacyText || "");
+  return value.url ? `&copy; <a href="${escape(value.url)}">${name}</a>` : name;
+}
+function expandWorldTemplate(template, worldKey) {
+  if (!/^[A-Za-z0-9_.-]+$/.test(worldKey) || worldKey === "." || worldKey === "..") throw Error("\u8FDC\u7AEF\u4E16\u754C\u952E\u5FC5\u987B\u662F\u5408\u6CD5\u8DEF\u5F84\u6BB5\u3002");
+  if (/[{}]/.test(template.split("{world}").join("")) || template.includes("..") || template.includes("\\")) throw Error("\u4E16\u754C\u8DEF\u5F84\u6A21\u677F\u5305\u542B\u672A\u77E5 token \u6216\u975E\u6CD5\u8DEF\u5F84\u3002");
+  return template.split("{world}").join(encodeURIComponent(worldKey));
+}
+function resourceGroupForWorld(application, worldId2) {
+  if (!isWorldGroups(application.sources)) return void 0;
+  const id2 = application.sources.bindings[worldId2] ?? application.sources.defaultGroupId;
+  const group = application.sources.groups.find((group2) => group2.id === id2);
+  if (!group || !group.enabled) throw Error(`\u4E16\u754C ${worldId2} \u7684\u6765\u6E90\u914D\u7F6E\u7EC4 ${id2} \u4E0D\u5B58\u5728\u6216\u672A\u542F\u7528\u3002`);
+  return group;
+}
+function defaultSourceSettings(application) {
+  const sources = application.sources;
+  if (!isWorldGroups(sources)) return sources;
+  const group = sources.groups.find((group2) => group2.id === sources.defaultGroupId);
+  if (!group || !group.enabled) throw Error("\u9ED8\u8BA4\u6765\u6E90\u914D\u7F6E\u7EC4\u4E0D\u5B58\u5728\u6216\u672A\u542F\u7528\u3002");
+  return group.sources;
+}
+function resolveGroupTiles(profile, worldKey) {
+  const baseUrl = expandWorldTemplate(profile.baseUrlTemplate, worldKey);
+  let filteredBaseUrl = baseUrl;
+  if (profile.filteredAccess === "registered-proxy") {
+    const proxy = REGISTERED_TILE_PROXIES.find((proxy2) => proxy2.id === profile.proxyId);
+    if (!proxy || !baseUrl.startsWith(proxy.target)) throw Error("\u74E6\u7247\u4EE3\u7406\u672A\u6CE8\u518C\u6216\u4E0E\u5B9E\u9645\u539F\u56FE\u76EE\u6807\u4E0D\u4E00\u81F4\uFF0C\u8BF7\u90E8\u7F72\u5BF9\u5E94\u4EE3\u7406\u6216\u4F7F\u7528\u652F\u6301 CORS \u7684\u76F4\u8FDE\u3002");
+    filteredBaseUrl = proxy.path + baseUrl.slice(proxy.target.length);
+  }
+  if (profile.legacyFilteredTemplate) throw Error("\u5386\u53F2\u6EE4\u955C\u4EE3\u7406\u5730\u5740\u5C1A\u672A\u786E\u8BA4\u90E8\u7F72\u6620\u5C04\uFF0C\u5DF2\u4FDD\u7559\uFF0C\u8BF7\u9009\u62E9\u5DF2\u6CE8\u518C\u4EE3\u7406\u6216\u660E\u786E\u4F7F\u7528\u76F4\u8FDE\u3002");
+  return { ...DEFAULT_TILE_SETTINGS, ...Object.fromEntries(Object.entries(profile).filter(([key2, value]) => key2 in DEFAULT_TILE_SETTINGS && value !== void 0)), baseUrl, filteredBaseUrl, attribution: attributionMarkup(profile.attribution) };
+}
+function resolveApplicationWorld(application, world) {
+  const group = resourceGroupForWorld(application, world.id);
+  if (!group) {
+    if (!world.tiles || !world.projection || !world.dataSourceId) throw Error(`\u65E7\u4E16\u754C ${world.id} \u7684\u6765\u6E90\uFF0F\u6295\u5F71\uFF0F\u74E6\u7247\u914D\u7F6E\u4E0D\u5B8C\u6574\u3002`);
+    return world;
+  }
+  return { ...world, dataSourceId: group.sources.defaultSourceId, projection: world.projectionOverride ?? DYNMAP_FLAT_PRESET, tiles: resolveGroupTiles(group.tiles, world.remoteWorldId ?? world.id) };
+}
+function resolveApplicationSettings(application) {
+  return { ...application, sources: defaultSourceSettings(application), worlds: application.worlds.map((world) => resolveApplicationWorld(application, world)) };
+}
+function validateResourceGroups(application) {
+  if (!isWorldGroups(application.sources)) return [];
+  const issues = [], fail = (path2, message) => issues.push({ path: path2, message });
+  const config = application.sources, ids = /* @__PURE__ */ new Set(), storage = /* @__PURE__ */ new Set(), worlds = new Set(application.worlds.map((world) => world.id));
+  for (const group of config.groups) {
+    const path2 = `sources/groups/${group.id}`;
+    if (!/^[A-Za-z0-9_-]+$/.test(group.id) || ["__proto__", "constructor", "prototype"].includes(group.id) || ids.has(group.id)) fail(path2, "\u6765\u6E90\u7EC4 ID \u975E\u6CD5\u6216\u91CD\u590D\u3002");
+    ids.add(group.id);
+    if (!(group.label.zh.trim() || group.label.en.trim())) fail(path2, "\u6765\u6E90\u7EC4\u81F3\u5C11\u9700\u8981\u4E00\u79CD\u8BED\u8A00\u7684\u540D\u79F0\u3002");
+    if (!group.sources.storageKey.trim() || storage.has(group.sources.storageKey)) fail(path2, "\u5404\u6765\u6E90\u7EC4\u987B\u4F7F\u7528\u4E0D\u540C\u4E14\u975E\u7A7A\u7684\u9009\u6E90\u72B6\u6001\u5B58\u50A8\u952E\u3002");
+    storage.add(group.sources.storageKey);
+    if (!group.sources.linkModes.storageKey.trim() || storage.has(group.sources.linkModes.storageKey)) fail(path2, "\u6765\u6E90\u7EC4\u94FE\u63A5\u6A21\u5F0F\u5B58\u50A8\u952E\u987B\u72EC\u7ACB\u4E14\u975E\u7A7A\u3002");
+    storage.add(group.sources.linkModes.storageKey);
+    if (!["fixed", "user-select", "user-select-on-failure"].includes(group.sources.selectionMode)) fail(path2, "\u672A\u77E5\u6765\u6E90\u9009\u62E9\u65B9\u5F0F\u3002");
+    const sourceIds = /* @__PURE__ */ new Set();
+    for (const source of group.sources.items) {
+      if (!/^[A-Za-z0-9_-]+$/.test(source.id) || sourceIds.has(source.id)) fail(path2, "\u7EC4\u5185\u6570\u636E\u6E90 ID \u975E\u6CD5\u6216\u91CD\u590D\u3002");
+      sourceIds.add(source.id);
+      for (const [key2, url] of [["rootUrl", source.rootUrl], ["mediaRootUrl", source.mediaRootUrl]]) if (url || key2 === "rootUrl") try {
+        const value = new URL(url);
+        if (!["http:", "https:"].includes(value.protocol) || value.username || value.password) throw Error();
+      } catch {
+        fail(path2 + "/" + key2, "\u6570\u636E\uFF0F\u5A92\u4F53\u6765\u6E90\u987B\u4E3A\u65E0\u51ED\u636E\u7684 HTTP(S) \u5730\u5740\u3002");
+      }
+      if (source.readerKind !== "formal-release-v2" || source.readerSchemaVersion !== "openriamap.formal-release-reader.v2") fail(path2, "\u672A\u77E5\u8BFB\u53D6\u534F\u8BAE\uFF1B\u5F53\u524D\u53EA\u652F\u6301 formal-release-v2\u3002");
+      if (!["direct", "github-raw-compatible"].includes(source.transport)) fail(path2, "\u672A\u77E5\u6570\u636E\u8BBF\u95EE\u65B9\u5F0F\u3002");
+      if (source.transport === "github-raw-compatible" && !group.sources.github.sourceIds.includes(source.id)) fail(path2, "GitHub \u8BBF\u95EE\u65B9\u5F0F\u672A\u7ED1\u5B9A\u8BE5\u7EC4\u6570\u636E\u6E90\u3002");
+    }
+    if (!group.sources.items.some((source) => source.id === group.sources.defaultSourceId && source.enabled)) fail(path2, "\u7EC4\u5185\u9ED8\u8BA4\u6570\u636E\u6E90\u4E0D\u5B58\u5728\u6216\u672A\u542F\u7528\u3002");
+    if (group.sources.github.sourceIds.some((id2) => !sourceIds.has(id2))) fail(path2, "\u7EC4\u5185 GitHub \u6765\u6E90\u5F15\u7528\u4E0D\u5B58\u5728\u3002");
+    if (group.sources.linkModes.items.filter((mode) => mode.default).length !== 1) fail(path2, "\u7EC4\u5185\u987B\u6709\u4E00\u4E2A\u9ED8\u8BA4\u94FE\u63A5\u6A21\u5F0F\u3002");
+    const modeIds = /* @__PURE__ */ new Set();
+    for (const mode of group.sources.linkModes.items) {
+      if (!/^[A-Za-z0-9_-]+$/.test(mode.id) || modeIds.has(mode.id)) fail(path2, "\u94FE\u63A5\u6A21\u5F0F ID \u975E\u6CD5\u6216\u91CD\u590D\u3002");
+      modeIds.add(mode.id);
+      try {
+        const url = new URL(mode.baseUrl);
+        if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw Error();
+      } catch {
+        fail(path2, "\u94FE\u63A5\u6A21\u5F0F\u6839\u5730\u5740\u987B\u4E3A\u65E0\u51ED\u636E\u7684 HTTP(S) \u5730\u5740\u3002");
+      }
+    }
+    for (const part of [group.sources.github.owner, group.sources.github.repo, group.sources.github.branch]) if (!part || !/^[A-Za-z0-9_.\/-]+$/.test(part) || part.includes("..")) fail(path2, "\u7EC4\u5185 GitHub \u4ED3\u5E93\u53C2\u6570\u975E\u6CD5\u3002");
+    try {
+      for (const template of [group.dataPathTemplate, group.mediaPathTemplate]) {
+        expandWorldTemplate(template, "world");
+        if (template.startsWith("/") || /^[a-z]+:/i.test(template)) throw Error("\u6570\u636E\uFF0F\u5A92\u4F53\u5B50\u8DEF\u5F84\u6A21\u677F\u987B\u4E3A\u6839\u5730\u5740\u4E0B\u7684\u76F8\u5BF9\u8DEF\u5F84\u3002");
+      }
+      const tile = resolveGroupTiles(group.tiles, "world"), url = new URL(tile.baseUrl);
+      if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw Error("\u74E6\u7247\u6765\u6E90\u987B\u4E3A\u65E0\u51ED\u636E\u7684 HTTP(S) \u5730\u5740\u3002");
+      if (![tile.extraZoomLevels, tile.maxRetries].every(Number.isSafeInteger) || tile.extraZoomLevels < 0 || tile.extraZoomLevels > 16 || tile.maxRetries < 0 || tile.maxRetries > 10 || !Number.isFinite(tile.retryDelay) || tile.retryDelay < 0) throw Error("\u74E6\u7247\u989D\u5916\u7EA7\u522B\uFF0F\u91CD\u8BD5\u53C2\u6570\u975E\u6CD5\u3002");
+      if (!Number.isInteger(tile.minNativeZoom) || !Number.isInteger(tile.maxNativeZoom) || tile.minNativeZoom > tile.maxNativeZoom || tile.minNativeZoom < application.preferences.map.leafletOffset || tile.maxNativeZoom > 8 + application.preferences.map.leafletOffset) throw Error("\u539F\u751F\u74E6\u7247\u8303\u56F4\u4E0D\u5728\u5171\u4EAB Zoom \u6620\u5C04\u4E2D\u3002");
+      if (group.tiles.attribution.url) {
+        const link = new URL(group.tiles.attribution.url);
+        if (!["http:", "https:"].includes(link.protocol) || link.username || link.password) throw Error("\u7F72\u540D\u94FE\u63A5\u975E\u6CD5\u3002");
+      }
+    } catch (error) {
+      fail(path2, error instanceof Error ? error.message : String(error));
+    }
+  }
+  if (!config.groups.some((group) => group.id === config.defaultGroupId && group.enabled)) fail("sources/defaultGroupId", "\u9ED8\u8BA4\u6765\u6E90\u7EC4\u5FC5\u987B\u5B58\u5728\u4E14\u542F\u7528\u3002");
+  if (config.sharedInterfaceGroupId && !ids.has(config.sharedInterfaceGroupId)) fail("sources/sharedInterfaceGroupId", "\u5F53\u524D\u5E94\u7528\u5BA1\u6838\uFF0F\u73A9\u5BB6\u670D\u52A1\u7684\u6765\u6E90\u7EC4\u5F15\u7528\u4E0D\u5B58\u5728\u3002");
+  for (const [world, id2] of Object.entries(config.bindings)) if (!worlds.has(world) || !config.groups.some((group) => group.id === id2 && group.enabled)) fail("sources/bindings/" + world, "\u7ED1\u5B9A\u7684\u4E16\u754C\u6216\u542F\u7528\u6765\u6E90\u7EC4\u4E0D\u5B58\u5728\u3002");
+  const normalizedWorlds = /* @__PURE__ */ new Set();
+  for (const world of application.worlds) {
+    const normalized = world.id.toLowerCase();
+    if (normalizedWorlds.has(normalized) || ["__proto__", "constructor", "prototype"].includes(normalized)) fail("worlds/" + world.id, "\u4E16\u754C ID \u4E0D\u80FD\u4E0E\u53E6\u4E00\u4E16\u754C\u4EC5\u5927\u5C0F\u5199\u4E0D\u540C\u6216\u4F7F\u7528\u4FDD\u7559\u540D\u79F0\u3002");
+    normalizedWorlds.add(normalized);
+    if (world.dataSourceId !== void 0 || world.tiles !== void 0 || world.projection !== void 0) fail("worlds/" + world.id, "\u6765\u6E90\u7EC4\u4E16\u754C\u4E0D\u80FD\u540C\u65F6\u4FDD\u5B58\u65E7\u7684\u96F6\u6563\u6570\u636E\u6E90\uFF0F\u6295\u5F71\uFF0F\u74E6\u7247\u8BBE\u7F6E\u3002");
+    try {
+      expandWorldTemplate("{world}", world.remoteWorldId ?? world.id);
+    } catch (error) {
+      fail("worlds/" + world.id, String(error));
+    }
+  }
+  return issues;
 }
 
 // src/configStudio/workflowDrawingMigration.ts
@@ -10744,8 +11284,8 @@ function matchesAtomicCondition(condition, read) {
     const value = String(raw ?? "").trim();
     return condition.kind === "fieldEquals" ? value === condition.value : condition.kind === "fieldIn" ? condition.values.includes(value) : condition.present ? value.length > 0 : value.length === 0;
   }
-  const empty3 = raw == null || typeof raw === "string" && !raw.trim() || Array.isArray(raw) && !raw.length;
-  if (condition.operator === "present" || condition.operator === "empty") return condition.operator === "empty" ? empty3 : !empty3;
+  const empty4 = raw == null || typeof raw === "string" && !raw.trim() || Array.isArray(raw) && !raw.length;
+  if (condition.operator === "present" || condition.operator === "empty") return condition.operator === "empty" ? empty4 : !empty4;
   if (condition.operator === "in" || condition.operator === "notIn") {
     const hit = condition.values?.some((value) => value === raw) ?? false;
     return condition.operator === "in" ? hit : !hit;
@@ -11042,8 +11582,8 @@ function validateApplication(input, classCodes) {
     }
     return ids;
   };
-  const url = (value2, path2, empty3 = false) => {
-    if (empty3 && !value2) return;
+  const url = (value2, path2, empty4 = false) => {
+    if (empty4 && !value2) return;
     try {
       const parsed = new URL(value2);
       if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) throw Error();
@@ -12073,237 +12613,6 @@ function normalizeRuleSourceWorldId(worldId2) {
   return worlds.find((world) => world.id.toLowerCase() === raw.toLowerCase() || world.prefix.toLowerCase() === raw.toLowerCase() || String(world.numericCode) === raw || world.label.zh === raw || world.label.en && world.label.en === raw)?.id ?? (raw || applicationWorld("").id);
 }
 
-// src/core/geometry/multipartGeometry.ts
-var DEFAULT_GEOMETRY_Y = -64;
-var isObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
-var numberOrNull = (value) => {
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) ? numberValue : null;
-};
-function canonicalGeometryField(type) {
-  if (type === "Point") return "CoordP";
-  if (type === "LineString") return "CoordL";
-  return "CoordG";
-}
-function geometryTypeFromFeatureType(value) {
-  const type = String(value ?? "").trim();
-  if (type === "Points") return "Point";
-  if (type === "Polyline") return "LineString";
-  if (type === "Polygon") return "Polygon";
-  return null;
-}
-function featureTypeFromGeometryType(type) {
-  return type === "Point" ? "Points" : type === "LineString" ? "Polyline" : "Polygon";
-}
-function tupleToCoord(value) {
-  if (!Array.isArray(value) || value.length !== 3) return null;
-  const x = numberOrNull(value[0]);
-  const y = numberOrNull(value[1]);
-  const z = numberOrNull(value[2]);
-  return x === null || y === null || z === null ? null : { x, y, z };
-}
-function legacyTupleToCoord(value) {
-  if (Array.isArray(value)) {
-    const x2 = numberOrNull(value[0]);
-    const y2 = value.length >= 3 ? numberOrNull(value[1]) : DEFAULT_GEOMETRY_Y;
-    const z2 = value.length >= 3 ? numberOrNull(value[2]) : numberOrNull(value[1]);
-    return x2 === null || y2 === null || z2 === null ? null : { x: x2, y: y2, z: z2 };
-  }
-  if (!isObject(value)) return null;
-  const x = numberOrNull(value.x);
-  const z = numberOrNull(value.z);
-  const y = numberOrNull(value.y);
-  return x === null || z === null ? null : { x, y: y ?? DEFAULT_GEOMETRY_Y, z };
-}
-function coordinatesEqual(a, b) {
-  return a.x === b.x && a.y === b.y && a.z === b.z;
-}
-function removeClosingCoordinate(ring) {
-  if (ring.length >= 2 && coordinatesEqual(ring[0], ring[ring.length - 1])) return ring.slice(0, -1);
-  return ring;
-}
-function normalizeRingCoordinates(ring) {
-  const withoutConsecutiveDuplicates = ring.filter((coordinate, index) => index === 0 || !coordinatesEqual(ring[index - 1], coordinate));
-  return removeClosingCoordinate(withoutConsecutiveDuplicates);
-}
-function parseCanonical(value, type) {
-  if (!Array.isArray(value)) return null;
-  if (type === "Point") {
-    const parts2 = value.map(tupleToCoord);
-    return parts2.every(Boolean) ? { type, parts: parts2 } : null;
-  }
-  if (type === "LineString") {
-    const parts2 = value.map((part) => Array.isArray(part) ? part.map(tupleToCoord) : null);
-    return parts2.every((part) => Array.isArray(part) && part.every(Boolean)) ? { type, parts: parts2 } : null;
-  }
-  const parts = value.map((part) => Array.isArray(part) ? part.map((ring) => Array.isArray(ring) ? normalizeRingCoordinates(ring.map(tupleToCoord).filter((coord) => Boolean(coord))) : null) : null);
-  if (!parts.every((part) => Array.isArray(part) && part.length > 0 && part.every((ring) => Array.isArray(ring)))) return null;
-  for (const component of value) {
-    if (!Array.isArray(component)) return null;
-    for (const ring of component) {
-      if (!Array.isArray(ring) || ring.some((tuple) => !tupleToCoord(tuple))) return null;
-    }
-  }
-  return { type, parts };
-}
-function parseLegacy(value, type) {
-  if (type === "Point") {
-    const coord = legacyTupleToCoord(value);
-    return coord ? { type, parts: [coord] } : null;
-  }
-  if (!Array.isArray(value)) return null;
-  const path2 = value.map(legacyTupleToCoord);
-  if (!path2.every(Boolean)) return null;
-  if (type === "LineString") return { type, parts: [path2] };
-  return { type, parts: [[normalizeRingCoordinates(path2)]] };
-}
-function stableGeometry(geometry) {
-  return JSON.stringify(serializeMultipartGeometry(geometry));
-}
-function readMultipartGeometry(featureInfo, type, legacySourceField) {
-  const info = isObject(featureInfo) ? featureInfo : {};
-  const canonicalField = canonicalGeometryField(type);
-  const hasCanonical = Object.prototype.hasOwnProperty.call(info, canonicalField);
-  const canonical2 = hasCanonical ? parseCanonical(info[canonicalField], type) : null;
-  if (hasCanonical && !canonical2) return { geometry: null, source: "canonical", error: `${canonicalField} \u683C\u5F0F\u65E0\u6548` };
-  const legacyCandidates = Array.from(new Set([
-    legacySourceField,
-    type === "Point" ? "coordinate" : void 0,
-    type === "LineString" ? "PLpoints" : void 0,
-    type === "LineString" ? "Linepoints" : void 0,
-    type === "Polygon" ? "Conpoints" : void 0,
-    type === "Polygon" ? "Flrpoints" : void 0
-  ].filter((field) => Boolean(field))));
-  const legacyEntries = legacyCandidates.filter((field) => Object.prototype.hasOwnProperty.call(info, field));
-  const parsedLegacy = legacyEntries.map((field) => ({ field, geometry: parseLegacy(info[field], type) }));
-  const invalidLegacy = parsedLegacy.find((entry) => !entry.geometry);
-  if (invalidLegacy) return { geometry: null, source: "legacy", error: `${invalidLegacy.field} \u683C\u5F0F\u65E0\u6548` };
-  const legacy = parsedLegacy[0]?.geometry ?? null;
-  if (legacy && parsedLegacy.some((entry) => stableGeometry(entry.geometry) !== stableGeometry(legacy))) {
-    return { geometry: null, source: "legacy", error: "geometry-field-conflict" };
-  }
-  if (canonical2 && legacy && stableGeometry(canonical2) !== stableGeometry(legacy)) {
-    return { geometry: null, source: "canonical", error: "geometry-field-conflict" };
-  }
-  if (canonical2) return { geometry: canonical2, source: "canonical" };
-  if (legacy) return { geometry: legacy, source: "legacy" };
-  return { geometry: null, source: "none" };
-}
-function serializeMultipartGeometry(geometry) {
-  const tuple = (coord) => [coord.x, coord.y, coord.z];
-  if (geometry.type === "Point") return geometry.parts.map(tuple);
-  if (geometry.type === "LineString") return geometry.parts.map((part) => part.map(tuple));
-  return geometry.parts.map((part) => part.map((ring) => normalizeRingCoordinates(ring).map(tuple)));
-}
-function withCanonicalMultipartGeometry(featureInfo, geometry) {
-  const out = { ...featureInfo };
-  out[canonicalGeometryField(geometry.type)] = serializeMultipartGeometry(geometry);
-  const legacyFields = geometry.type === "Point" ? ["coordinate"] : geometry.type === "LineString" ? ["PLpoints", "Linepoints"] : ["Conpoints", "Flrpoints"];
-  for (const field of legacyFields) delete out[field];
-  return out;
-}
-function multipartGeometryFromSinglePath(type, coords) {
-  const normalized = coords.map((coord) => ({
-    x: Number(coord.x),
-    y: Number.isFinite(Number(coord.y)) ? Number(coord.y) : DEFAULT_GEOMETRY_Y,
-    z: Number(coord.z)
-  }));
-  if (type === "Point") return { type, parts: normalized };
-  if (type === "LineString") return { type, parts: [normalized] };
-  return { type, parts: [[normalized]] };
-}
-function flattenMultipartCoordinates(geometry) {
-  if (!geometry) return [];
-  if (geometry.type === "Point") return geometry.parts;
-  if (geometry.type === "LineString") return geometry.parts.flat();
-  return geometry.parts.flat(2);
-}
-function signedArea(ring) {
-  let area = 0;
-  for (let index = 0; index < ring.length; index += 1) {
-    const a = ring[index];
-    const b = ring[(index + 1) % ring.length];
-    area += a.x * b.z - b.x * a.z;
-  }
-  return area / 2;
-}
-function orientation(a, b, c) {
-  const result = (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x);
-  return Math.abs(result) < 1e-9 ? 0 : result > 0 ? 1 : -1;
-}
-function onSegment(a, b, c) {
-  return Math.min(a.x, c.x) <= b.x && b.x <= Math.max(a.x, c.x) && Math.min(a.z, c.z) <= b.z && b.z <= Math.max(a.z, c.z);
-}
-function segmentsIntersect(a, b, c, d) {
-  const o1 = orientation(a, b, c);
-  const o2 = orientation(a, b, d);
-  const o3 = orientation(c, d, a);
-  const o4 = orientation(c, d, b);
-  if (o1 !== o2 && o3 !== o4) return true;
-  return o1 === 0 && onSegment(a, c, b) || o2 === 0 && onSegment(a, d, b) || o3 === 0 && onSegment(c, a, d) || o4 === 0 && onSegment(c, b, d);
-}
-function ringSelfIntersects(ring) {
-  for (let i = 0; i < ring.length; i += 1) {
-    const a = ring[i];
-    const b = ring[(i + 1) % ring.length];
-    for (let j = i + 1; j < ring.length; j += 1) {
-      if (j === i || (j + 1) % ring.length === i || (i + 1) % ring.length === j) continue;
-      const c = ring[j];
-      const d = ring[(j + 1) % ring.length];
-      if (segmentsIntersect(a, b, c, d)) return true;
-    }
-  }
-  return false;
-}
-function pointInRing(point, ring) {
-  for (let index = 0; index < ring.length; index += 1) {
-    const a = ring[index];
-    const b = ring[(index + 1) % ring.length];
-    if (orientation(a, point, b) === 0 && onSegment(a, point, b)) return false;
-  }
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const a = ring[i];
-    const b = ring[j];
-    const intersects = a.z > point.z !== b.z > point.z && point.x < (b.x - a.x) * (point.z - a.z) / (b.z - a.z) + a.x;
-    if (intersects) inside = !inside;
-  }
-  return inside;
-}
-function ringsIntersect(a, b) {
-  for (let ai = 0; ai < a.length; ai += 1) {
-    const aNext = a[(ai + 1) % a.length];
-    for (let bi = 0; bi < b.length; bi += 1) {
-      if (segmentsIntersect(a[ai], aNext, b[bi], b[(bi + 1) % b.length])) return true;
-    }
-  }
-  return false;
-}
-function validateMultipartGeometry(geometry) {
-  if (!geometry) return "\u7F3A\u5C11\u51E0\u4F55\u5750\u6807";
-  const invalidCoordinate = flattenMultipartCoordinates(geometry).find((coord) => !Number.isFinite(coord.x) || !Number.isFinite(coord.y) || !Number.isFinite(coord.z));
-  if (invalidCoordinate) return "\u5750\u6807\u5FC5\u987B\u4E3A\u6709\u9650\u7684 [x, y, z] \u6570\u5B57";
-  if (geometry.type === "Point") return geometry.parts.length > 0 ? void 0 : "CoordP \u81F3\u5C11\u9700\u8981 1 \u4E2A\u5750\u6807";
-  if (geometry.type === "LineString") {
-    const invalidPart = geometry.parts.findIndex((part) => part.length < 2);
-    return invalidPart >= 0 ? `CoordL \u7B2C ${invalidPart + 1} \u4E2A\u90E8\u4EF6\u81F3\u5C11\u9700\u8981 2 \u4E2A\u5750\u6807` : void 0;
-  }
-  for (let partIndex = 0; partIndex < geometry.parts.length; partIndex += 1) {
-    const [outer, ...holes] = geometry.parts[partIndex];
-    if (!outer || outer.length < 3) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5916\u8FB9\u754C\u81F3\u5C11\u9700\u8981 3 \u4E2A\u5750\u6807`;
-    if (Math.abs(signedArea(outer)) < 1e-9 || ringSelfIntersects(outer)) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5916\u8FB9\u754C\u62D3\u6251\u65E0\u6548`;
-    for (let holeIndex = 0; holeIndex < holes.length; holeIndex += 1) {
-      const hole = holes[holeIndex];
-      if (hole.length < 3 || Math.abs(signedArea(hole)) < 1e-9 || ringSelfIntersects(hole)) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5185\u90E8\u6D1E ${holeIndex + 1} \u62D3\u6251\u65E0\u6548`;
-      if (!pointInRing(hole[0], outer) || ringsIntersect(hole, outer)) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5185\u90E8\u6D1E ${holeIndex + 1} \u5FC5\u987B\u5B8C\u5168\u4F4D\u4E8E\u5916\u8FB9\u754C\u5185`;
-      for (let prior = 0; prior < holeIndex; prior += 1) {
-        if (ringsIntersect(hole, holes[prior]) || pointInRing(hole[0], holes[prior])) return `CoordG \u7B2C ${partIndex + 1} \u4E2A\u90E8\u4EF6\u5185\u90E8\u6D1E\u4E0D\u80FD\u91CD\u53E0`;
-      }
-    }
-  }
-  return void 0;
-}
-
 // src/configStudio/workflowDrawing.ts
 var drawingKey = (step) => step.geometryRole === "auxiliary" ? step.id : step.outputId;
 function enabledDrawing(step, workflow, slots) {
@@ -12392,8 +12701,13 @@ function compileWorkflowEditPlan(workflow, config) {
   for (const control of controls) for (const condition of control.requiredWhen ?? []) for (const token of conditionTokens(condition)) if (tokens.has(token)) needed.add(token);
   const explicit = workflow.editor?.backfill ?? [];
   for (const binding of explicit) {
-    if (!tokens.has(binding.slot) || !isSafeWorkflowTarget(binding.target) || !workflowOutputFields(config, output).some((f) => f.key === binding.target) || ["World", "Class", "Kind", "SKind", "SKind2", "Creator", "CreateBy", "CreateTime"].includes(binding.target)) errors.push(`\u56DE\u586B\u6620\u5C04 ${binding.slot} \u2192 ${binding.target} \u65E0\u6548\u3002`);
+    if (!tokens.has(binding.slot) || !isSafeWorkflowTarget(binding.target) || !classifications.every((path2) => resolveEffectiveFields(config, path2).some((f) => f.key === binding.target)) || ["World", "Class", "Kind", "SKind", "SKind2", "Creator", "CreateBy", "CreateTime"].includes(binding.target)) errors.push(`\u56DE\u586B\u6620\u5C04 ${binding.slot} \u2192 ${binding.target} \u65E0\u6548\u3002`);
     else bindings.push({ ...binding });
+  }
+  if (config.contractRevision >= 15) for (const [index, binding] of explicit.entries()) {
+    const id2 = "explicit-backfill-" + index;
+    const proposed = { ...workflow, outputs: workflow.outputs.map((item) => item.id === output.id ? { ...item, assignments: [{ id: id2, target: binding.target, expression: binding.slot }] } : item) };
+    for (const classification of classifications) for (const issue2 of validateWorkflowWrites(proposed, (path2) => resolveEffectiveFields(config, path2), { outputId: output.id, classification })) if (issue2.severity === "error" && issue2.path.endsWith("/assignments/" + id2)) errors.push("[" + classificationPathKey(classification) + "] \u56DE\u586B\u6620\u5C04\uFF1A" + issue2.message);
   }
   const removed = controls.filter((c) => c.slot && idOnly.has(c.slot) && !needed.has(c.slot)), kept = controls.filter((c) => !removed.includes(c));
   for (const control of kept) if (control.slot && !bindings.some((b) => b.slot === control.slot) && !["classificationPicker", "tagsExtensions"].includes(control.kind)) errors.push(`\u63A7\u4EF6 ${control.slot}\uFF08${control.label.zh}\uFF09\u7F3A\u5C11\u53EF\u9006\u76F4\u63A5\u8D4B\u503C\u6216\u660E\u786E\u56DE\u586B\u6620\u5C04\u3002`);
@@ -12579,8 +12893,8 @@ function isBlankFieldValue(value) {
   return value == null || typeof value === "string" && value.trim() === "";
 }
 function recordFieldRequired(field, record) {
-  const empty3 = (value) => isBlankFieldValue(value) || Array.isArray(value) && value.length === 0;
-  return Boolean(field.required || field.requiredWhen?.some((condition) => condition.kind === "always" || condition.kind === "fieldPresent" && !empty3(readRecordPath(record, condition.field)) === condition.present || condition.kind === "fieldEquals" && String(readRecordPath(record, condition.field) ?? "") === condition.value || condition.kind === "fieldIn" && condition.values.includes(String(readRecordPath(record, condition.field) ?? ""))));
+  const empty4 = (value) => isBlankFieldValue(value) || Array.isArray(value) && value.length === 0;
+  return Boolean(field.required || field.requiredWhen?.some((condition) => condition.kind === "always" || condition.kind === "fieldPresent" && !empty4(readRecordPath(record, condition.field)) === condition.present || condition.kind === "fieldEquals" && String(readRecordPath(record, condition.field) ?? "") === condition.value || condition.kind === "fieldIn" && condition.values.includes(String(readRecordPath(record, condition.field) ?? ""))));
 }
 var plain2 = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 var safePath = (path2) => path2.split(".").every((key2) => key2 && !["__proto__", "prototype", "constructor"].includes(key2));
@@ -12828,7 +13142,7 @@ function evaluateV3WorkflowOutputs(workflow, slots, options = {}) {
   Object.defineProperty(results, "executionSlots", { value: structuredClone(slots), enumerable: false });
   return results;
 }
-function empty(value) {
+function empty2(value) {
   return value === void 0 || value === null || typeof value === "string" && !value.trim() || Array.isArray(value) && value.length === 0;
 }
 function validateV3WorkflowRecords(config, workflow, result) {
@@ -12854,8 +13168,12 @@ function validateV3WorkflowRecords(config, workflow, result) {
     for (const field of resolveEffectiveFields(config, output.classification)) {
       const value = readRecordPath(output.record, field.key);
       const required = recordFieldRequired(field, output.record);
-      if (required && empty(value)) issues.push({ message: `\u8F93\u51FA ${output.outputId} \u7684 ${field.key} \u4E3A\u5FC5\u586B\u9879\u3002` });
-      if (empty(value)) continue;
+      if (required && empty2(value)) issues.push({ message: `\u8F93\u51FA ${output.outputId} \u7684 ${field.key} \u4E3A\u5FC5\u586B\u9879\u3002` });
+      if (empty2(value)) continue;
+      if (config.contractRevision >= 15) {
+        for (const message of fieldValueErrors(field, value)) issues.push({ message });
+        continue;
+      }
       if (field.valueSchema) for (const message of validateStructuredValue(value, field.valueSchema, field.key)) issues.push({ message });
       const values2 = field.cardinality === "multiple" ? Array.isArray(value) ? value : [value] : [value];
       if (field.cardinality === "multiple" && !Array.isArray(value)) issues.push({ message: `${field.key} \u5FC5\u987B\u662F\u6570\u7EC4\u3002` });
@@ -25109,7 +25427,7 @@ function validateWorkflowOutput(output, _outputIndex, workflow, config, slots, i
     if (!assignment.id || assignmentIds.has(assignment.id)) issue(issues, "error", "workflow-assignment-id-invalid", assignmentPath, "\u7EC4\u88C5\u884C\u6807\u8BC6\u5FC5\u987B\u5B58\u5728\u4E14\u4E0D\u80FD\u91CD\u590D\u3002");
     const field = resolveEffectiveFields(config, classification).find((field2) => field2.key === assignment.target);
     const control = controlsFor(workflow).find((control2) => control2.slot === assignment.expression.trim());
-    if (reachable && control && field && (control.fieldSource || config.contractRevision >= 8)) {
+    if (config.contractRevision < 15 && reachable && control && field && (control.fieldSource || config.contractRevision >= 8)) {
       const leaf = control.kind === "group" ? control.group?.itemFields[0] : control;
       const returned = leaf && (leaf.kind === "featureSearch" || leaf.kind === "coarseSearch") && leaf.search ? resolveSelectableFields(config, leaf.search.target).find((field2) => field2.key === leaf.search.returnField) : void 0;
       const actualType = control.kind === "group" && control.group?.storage === "object" ? "json" : leaf?.kind === "select" ? leaf.optionValueType ?? "string" : leaf?.kind === "json" ? "json" : leaf?.valueNormalization === "trim" || leaf?.valueNormalization === "abbr" ? "string" : leaf?.kind === "number" || leaf?.valueNormalization === "number" ? "number" : leaf?.kind === "toggle" ? "boolean" : returned ? returned.type === "enum" ? returned.optionValueType ?? "string" : returned.type === "reference" ? "string" : returned.type : "string";
@@ -25232,10 +25550,19 @@ function validateWorkflow(workflow, config, issues) {
       if (drawing?.returnFormat === "pointObject" && drawing.multiple) issue(issues, "error", "workflow-drawing-format-invalid", path2, "\u5750\u6807\u5BF9\u8C61\u53EA\u80FD\u9009\u62E9\u5355\u70B9\u3002");
       for (const binding of drawing?.bindings ?? []) {
         const output = workflow.outputs.find((output2) => output2.id === binding.outputId);
-        const field = output && workflowOutputFields(config, output).find((field2) => field2.key === binding.target);
-        if (!output || !isSafeWorkflowTarget(binding.target) || PROTECTED_WORKFLOW_TARGETS.has(binding.target.split(".")[0]) || !field && !/^(tags|extensions)\./.test(binding.target)) issue(issues, "error", "workflow-drawing-target-invalid", path2, `\u7ED8\u5236\u7ED1\u5B9A ${binding.target} \u5FC5\u987B\u9009\u62E9\u5BF9\u5E94\u8F93\u51FA\u7684\u6709\u6548\u5B57\u6BB5\u3002`);
-        if (field && binding.value === "geometry" && (field.type !== "json" || field.coordinateFormat && field.coordinateFormat !== drawing?.returnFormat)) issue(issues, "error", "workflow-drawing-target-format-invalid", path2, "\u5750\u6807\u8FD4\u56DE\u683C\u5F0F\u4E0E\u76EE\u6807\u5B57\u6BB5\u7ED3\u6784\u4E0D\u4E00\u81F4\u3002");
-        if (field && binding.value === "height" && field.type !== "number") issue(issues, "error", "workflow-drawing-target-format-invalid", path2, "\u9AD8\u5EA6\u76EE\u6807\u5FC5\u987B\u4E3A\u6570\u503C\u5B57\u6BB5\u3002");
+        const candidates = output ? config.contractRevision >= 15 ? workflowClassificationGroup(config, output).paths : [output.classification] : [];
+        if (!output) issue(issues, "error", "workflow-drawing-target-invalid", path2, `\u7ED8\u5236\u7ED1\u5B9A ${binding.target} \u5FC5\u987B\u9009\u62E9\u5BF9\u5E94\u8F93\u51FA\u3002`);
+        if (config.contractRevision >= 15 && (binding.value === "geometry" ? !drawing?.captureSlot : !drawing?.captureSlot && !drawing?.heightSlot)) issue(issues, "error", "workflow-drawing-slot-required", path2, "\u7ED8\u5236\u7ED1\u5B9A\u6CA1\u6709\u53EF\u8BFB\u53D6\u7684\u5750\u6807\uFF0F\u9AD8\u5EA6\u8FD4\u56DE\u69FD\u4F4D\u3002");
+        for (const target of candidates) {
+          const constraint = config.contractRevision >= 15 ? workflowCandidateConstraint(target, workflow.outputs.indexOf(output)) : void 0;
+          if (constraint && workflowConditionsDisjoint([constraint], [output?.when, step.when, workflow.outputs.find((item) => item.id === step.outputId)?.when]) === true) continue;
+          const field = resolveEffectiveFields(config, target).find((field2) => field2.key === binding.target);
+          const detail = config.contractRevision >= 15 ? "[" + classificationPathKey(target) + "] " : "";
+          if (!isSafeWorkflowTarget(binding.target) || PROTECTED_WORKFLOW_TARGETS.has(binding.target.split(".")[0]) || !field && !/^(tags|extensions)\./.test(binding.target)) issue(issues, "error", "workflow-drawing-target-invalid", path2, detail + `\u7ED8\u5236\u7ED1\u5B9A ${binding.target} \u5FC5\u987B\u9009\u62E9\u5BF9\u5E94\u8F93\u51FA\u7684\u6709\u6548\u5B57\u6BB5\u3002`);
+          const format = config.contractRevision >= 15 ? drawing?.returnFormat ?? (step.geometry?.[0] === "Point" ? "coordP" : step.geometry?.[0] === "LineString" ? "coordL" : "coordG") : drawing?.returnFormat;
+          if (field && binding.value === "geometry" && (field.type !== "json" || config.contractRevision >= 15 && field.cardinality !== "single" || field.coordinateFormat && field.coordinateFormat !== format)) issue(issues, "error", "workflow-drawing-target-format-invalid", path2, detail + "\u5750\u6807\u8FD4\u56DE\u683C\u5F0F\u4E0E\u76EE\u6807\u5B57\u6BB5\u7ED3\u6784\u4E0D\u4E00\u81F4\u3002");
+          if (field && binding.value === "height" && (field.type !== "number" || config.contractRevision >= 15 && field.cardinality !== "single")) issue(issues, "error", "workflow-drawing-target-format-invalid", path2, detail + "\u9AD8\u5EA6\u76EE\u6807\u5FC5\u987B\u4E3A\u5355\u503C\u6570\u503C\u5B57\u6BB5\u3002");
+        }
       }
       for (const slot of [drawing?.captureSlot, drawing?.pointSlot]) if (slot) for (const token of [slot, `${slot}_X`, `${slot}_Y`, `${slot}_Z`, `${slot}_HEIGHT`]) earlierTokens.add(token);
     }
@@ -25306,7 +25633,10 @@ function validateWorkflow(workflow, config, issues) {
     validateWorkflowOutput(output, outputIndex, workflow, config, slots, issues);
   }
   if (config.contractRevision >= 15) {
-    for (const output of workflow.outputs) for (const path2 of workflowClassificationGroup(config, output).paths) issues.push(...validateWorkflowWrites(workflow, (target) => resolveEffectiveFields(config, target), { outputId: output.id, classification: path2 }).map((item) => ({ ...item, message: "[" + classificationPathKey(path2) + "] " + item.message })));
+    for (const output of workflow.outputs) for (const path2 of workflowClassificationGroup(config, output).paths) {
+      const candidate = { outputId: output.id, classification: path2 };
+      issues.push(...[...validateWorkflowWrites(workflow, (target) => resolveEffectiveFields(config, target), candidate), ...validateWorkflowSupplies(workflow, resolveEffectiveFields(config, path2), candidate)].map((item) => ({ ...item, message: "[" + classificationPathKey(path2) + "] " + item.message })));
+    }
   } else issues.push(...validateWorkflowWrites(config.contractRevision < 8 ? migrateWorkflowDrawings(workflow) : workflow, (path2) => resolveSelectableFields(config, path2)));
 }
 function conditionMatches(record, conditions) {
@@ -25317,10 +25647,10 @@ function conditionMatches(record, conditions) {
     const value = String(raw ?? "").trim();
     if (condition.kind === "fieldEquals") return value === condition.value;
     if (condition.kind === "fieldIn") return condition.values.includes(value);
-    return condition.present ? !empty2(raw) : empty2(raw);
+    return condition.present ? !empty3(raw) : empty3(raw);
   });
 }
-function empty2(value) {
+function empty3(value) {
   return value == null || typeof value === "string" && !value.trim() || Array.isArray(value) && !value.length;
 }
 function recordId2(record, index) {
@@ -25334,7 +25664,7 @@ function aggregateMountedIssues(records, config) {
   records.forEach((record, index) => {
     const path2 = { class: String(record.Class ?? ""), ...record.Kind ? { kind: String(record.Kind) } : {}, ...record.Skind ?? record.SKind ? { skind: String(record.Skind ?? record.SKind) } : {}, ...record.Skind2 ?? record.SKind2 ? { skind2: String(record.Skind2 ?? record.SKind2) } : {} };
     for (const field of resolveEffectiveFields(config, path2).filter((item) => item.required && item.validateExistingData && conditionMatches(record, item.requiredWhen))) {
-      if (!empty2(readRecordPath(record, field.key))) continue;
+      if (!empty3(readRecordPath(record, field.key))) continue;
       const key2 = `mounted-data-required-field-missing|${field.key}|${classificationPathKey(path2)}`;
       const prior = grouped.get(key2) ?? { severity: "error", code: "mounted-data-required-field-missing", path: `mounted/${classificationPathKey(path2)}/${field.key}`, field: field.key, expected: "required", message: `\u7F3A\u5C11\u5FC5\u586B\u5B57\u6BB5 ${field.key}\uFF08${classificationPathKey(path2)}\uFF09\u3002`, affectedFeatures: [], count: 0 };
       prior.affectedFeatures?.push({ id: recordId2(record, index), name: recordName(record) });
@@ -25622,14 +25952,6 @@ function workflowClassificationGroup(config, output) {
   return result;
 }
 var outputAcceptsClassification = (config, output, path2) => workflowClassificationGroup(config, output).paths.some((candidate) => same(candidate, path2));
-function workflowOutputFields(config, output) {
-  if (config.contractRevision < 15 && output.classification) return resolveEffectiveFields(config, output.classification);
-  const paths = workflowClassificationGroup(config, output).paths, sets = paths.map((path2) => new Map(resolveEffectiveFields(config, path2).map((field) => [field.key, field])));
-  return sets.length ? [...sets[0].values()].filter((field) => sets.every((set) => {
-    const other = set.get(field.key);
-    return other && other.type === field.type && other.cardinality === field.cardinality && other.coordinateFormat === field.coordinateFormat && other.format === field.format && JSON.stringify(other.reference) === JSON.stringify(field.reference) && JSON.stringify(other.valueSchema) === JSON.stringify(field.valueSchema);
-  })) : [];
-}
 function recordClassificationEligible(config, path2, geometry) {
   return hasCategoryNode(config, path2) && (config.contractRevision >= 15 || !hasDescendants(config, path2)) && Boolean(resolveGeometryProfile(config, path2, geometry)?.enabled);
 }
@@ -25768,7 +26090,7 @@ function recordCategory(record) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-c15-production-1";
+var rulesVersion = "cairnmap-c15-production-2";
 var validateConfiguration = validateConfigPackage;
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));

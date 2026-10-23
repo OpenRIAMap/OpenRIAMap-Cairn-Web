@@ -4,7 +4,7 @@ from urllib.request import build_opener,ProxyHandler,Request
 from pathlib import Path
 from browser_check import Browser,APP_URL,OUT
 assert APP_URL.startswith('http://127.0.0.1:')
-assert os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514')
+assert os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514','9524')
 
 class C14Browser(Browser):
     def call(self,method,params=None):

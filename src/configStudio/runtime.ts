@@ -1,4 +1,5 @@
-import {workflowClassificationGroup,workflowOutputFields} from './workflowClassificationGroup';
+import {validateWorkflowSupplies} from './workflowSupplyValidation';
+import {workflowClassificationGroup} from './workflowClassificationGroup';
 import { isWorldGroups } from '../core/project/applicationResources';
 import { validateWorkflowWrites,workflowConditionsDisjoint,workflowCandidateConstraint } from './workflowPreflight';
 import { migrateWorkflowDrawings } from './workflowDrawingMigration';
@@ -949,7 +950,7 @@ export function validateWorkflowOutput(output: WorkflowOutput, _outputIndex: num
     if (!assignment.id || assignmentIds.has(assignment.id)) issue(issues, 'error', 'workflow-assignment-id-invalid', assignmentPath, '组装行标识必须存在且不能重复。');
     const field=resolveEffectiveFields(config,classification).find(field=>field.key===assignment.target);
     const control=controlsFor(workflow).find(control=>control.slot===assignment.expression.trim());
-    if (reachable&&control && field && (control.fieldSource||config.contractRevision>=8)) {
+    if (config.contractRevision<15&&reachable&&control && field && (control.fieldSource||config.contractRevision>=8)) {
       const leaf=control.kind==='group'?control.group?.itemFields[0]:control;
       const returned=leaf&&(leaf.kind==='featureSearch'||leaf.kind==='coarseSearch')&&leaf.search?resolveSelectableFields(config,leaf.search.target).find(field=>field.key===leaf.search!.returnField):undefined;
       const actualType=control.kind==='group'&&control.group?.storage==='object'?'json':leaf?.kind==='select'?leaf.optionValueType??'string':leaf?.kind==='json'?'json':leaf?.valueNormalization==='trim'||leaf?.valueNormalization==='abbr'?'string':leaf?.kind==='number'||leaf?.valueNormalization==='number'?'number':leaf?.kind==='toggle'?'boolean':returned?returned.type==='enum'?returned.optionValueType??'string':returned.type==='reference'?'string':returned.type:'string';
@@ -1058,10 +1059,19 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
       if(drawing?.returnFormat==='pointObject'&&drawing.multiple)issue(issues,'error','workflow-drawing-format-invalid',path,'坐标对象只能选择单点。');
       for(const binding of drawing?.bindings??[]) {
         const output=workflow.outputs.find(output=>output.id===binding.outputId);
-        const field=output&&workflowOutputFields(config,output).find(field=>field.key===binding.target);
-        if(!output||!isSafeWorkflowTarget(binding.target)||PROTECTED_WORKFLOW_TARGETS.has(binding.target.split('.')[0])||!field&&!/^(tags|extensions)\./.test(binding.target))issue(issues,'error','workflow-drawing-target-invalid',path,`绘制绑定 ${binding.target} 必须选择对应输出的有效字段。`);
-        if(field&&binding.value==='geometry'&&(field.type!=='json'||field.coordinateFormat&&field.coordinateFormat!==drawing?.returnFormat))issue(issues,'error','workflow-drawing-target-format-invalid',path,'坐标返回格式与目标字段结构不一致。');
-        if(field&&binding.value==='height'&&field.type!=='number')issue(issues,'error','workflow-drawing-target-format-invalid',path,'高度目标必须为数值字段。');
+        const candidates=output?(config.contractRevision>=15?workflowClassificationGroup(config,output).paths:[output.classification!]):[];
+        if(!output)issue(issues,'error','workflow-drawing-target-invalid',path,`绘制绑定 ${binding.target} 必须选择对应输出。`);
+        if(config.contractRevision>=15&&(binding.value==='geometry'?!drawing?.captureSlot:!drawing?.captureSlot&&!drawing?.heightSlot))issue(issues,'error','workflow-drawing-slot-required',path,'绘制绑定没有可读取的坐标／高度返回槽位。');
+        for(const target of candidates){
+          const constraint=config.contractRevision>=15?workflowCandidateConstraint(target,workflow.outputs.indexOf(output!)):undefined;
+          if(constraint&&workflowConditionsDisjoint([constraint],[output?.when,step.when,workflow.outputs.find(item=>item.id===step.outputId)?.when])===true)continue;
+          const field=resolveEffectiveFields(config,target).find(field=>field.key===binding.target);
+          const detail=config.contractRevision>=15?'['+classificationPathKey(target)+'] ':'';
+          if(!isSafeWorkflowTarget(binding.target)||PROTECTED_WORKFLOW_TARGETS.has(binding.target.split('.')[0])||!field&&!/^(tags|extensions)\./.test(binding.target))issue(issues,'error','workflow-drawing-target-invalid',path,detail+`绘制绑定 ${binding.target} 必须选择对应输出的有效字段。`);
+          const format=config.contractRevision>=15?drawing?.returnFormat??(step.geometry?.[0]==='Point'?'coordP':step.geometry?.[0]==='LineString'?'coordL':'coordG'):drawing?.returnFormat;
+          if(field&&binding.value==='geometry'&&(field.type!=='json'||config.contractRevision>=15&&field.cardinality!=='single'||field.coordinateFormat&&field.coordinateFormat!==format))issue(issues,'error','workflow-drawing-target-format-invalid',path,detail+'坐标返回格式与目标字段结构不一致。');
+          if(field&&binding.value==='height'&&(field.type!=='number'||config.contractRevision>=15&&field.cardinality!=='single'))issue(issues,'error','workflow-drawing-target-format-invalid',path,detail+'高度目标必须为单值数值字段。');
+        }
       }
       for(const slot of [drawing?.captureSlot,drawing?.pointSlot])if(slot)for(const token of [slot,`${slot}_X`,`${slot}_Y`,`${slot}_Z`,`${slot}_HEIGHT`])earlierTokens.add(token);
     }
@@ -1129,7 +1139,7 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
   }
   // r6/r7 factory capture overrides are an explicitly recognised old drawing
   // representation. Analyse its lossless r8 view, without editing the source.
-  if(config.contractRevision>=15){for(const output of workflow.outputs)for(const path of workflowClassificationGroup(config,output).paths)issues.push(...validateWorkflowWrites(workflow,target=>resolveEffectiveFields(config,target),{outputId:output.id,classification:path}).map(item=>({...item,message:'['+classificationPathKey(path)+'] '+item.message})));}
+  if(config.contractRevision>=15){for(const output of workflow.outputs)for(const path of workflowClassificationGroup(config,output).paths){const candidate={outputId:output.id,classification:path};issues.push(...[...validateWorkflowWrites(workflow,target=>resolveEffectiveFields(config,target),candidate),...validateWorkflowSupplies(workflow,resolveEffectiveFields(config,path),candidate)].map(item=>({...item,message:'['+classificationPathKey(path)+'] '+item.message})));}}
   else issues.push(...validateWorkflowWrites(config.contractRevision<8?migrateWorkflowDrawings(workflow):workflow, path => resolveSelectableFields(config,path)));
 }
 

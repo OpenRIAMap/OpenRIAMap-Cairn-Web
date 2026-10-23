@@ -4,6 +4,7 @@ import { validateStructuredValue } from './valueSchema';
 import { applicationWorld } from '../core/project/applicationRuntime';
 import { coerceWorkflowValues } from './workflowValues';
 import {recordFieldRequired} from './optionalFieldValues';
+import {fieldValueErrors} from './fieldValueValidation';
 import { resolveNodeFieldSettings } from './nodeFieldSettings';
 import { annotationsForOutput, mergeAnnotations, annotationPaths } from './workflowAnnotations';
 import { normalizeRuleSourceWorldId } from '../core/project/worldIdentity';
@@ -250,6 +251,7 @@ export function validateV3WorkflowRecords(config: ConfigPackageV3, workflow: Wor
       const required = recordFieldRequired(field,output.record);
       if (required && empty(value)) issues.push({ message: `输出 ${output.outputId} 的 ${field.key} 为必填项。` });
       if (empty(value)) continue;
+      if(config.contractRevision>=15){for(const message of fieldValueErrors(field,value))issues.push({message});continue;}
       if(field.valueSchema)for(const message of validateStructuredValue(value,field.valueSchema,field.key))issues.push({message});
       const values = field.cardinality === 'multiple' ? Array.isArray(value) ? value : [value] : [value];
       if (field.cardinality === 'multiple' && !Array.isArray(value)) issues.push({ message: `${field.key} 必须是数组。` });

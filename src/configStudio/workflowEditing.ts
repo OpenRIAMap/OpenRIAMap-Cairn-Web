@@ -1,13 +1,14 @@
-import {workflowClassificationGroup,workflowOutputFields,outputAcceptsClassification} from './workflowClassificationGroup';
+import {workflowClassificationGroup,outputAcceptsClassification} from './workflowClassificationGroup';
 import {resolveWorkflowFields} from './fieldReuse';
 import type {ClassificationPath,ConfigPackageV3,WorkflowControl,WorkflowDefinition} from './types';
 import {annotationEqual,annotationsForOutput,type AnnotationRow,type WorkflowAnnotations} from './workflowAnnotations';
 import {parseWorkflowExpression,workflowExpressionTokens,evaluateWorkflowExpression,isSafeWorkflowTarget} from './workflowExpression';
-import {pathMatchesScope,classificationPathKey,readRecordPath,hasCategoryNode} from './runtime';
+import {pathMatchesScope,classificationPathKey,readRecordPath,hasCategoryNode,resolveEffectiveFields} from './runtime';
 import {coerceWorkflowValues} from './workflowValues';
 import {normalizeRuleSourceWorldId} from '../core/project/worldIdentity';
 import {readMultipartGeometry,type MultipartGeometry} from '../core/geometry/multipartGeometry';
 import {captureDrawingSnapshot,drawingKey} from './workflowDrawing';
+import {validateWorkflowWrites} from './workflowPreflight';
 export type WorkflowEditPlan={workflow:WorkflowDefinition;scope:ClassificationPath;classifications:ClassificationPath[];controls:WorkflowControl[];removed:WorkflowControl[];bindings:Array<{slot:string;target:string}>};
 export type WorkflowEditDraft={slots:Record<string,unknown>;classification:ClassificationPath;initialSlots:Record<string,unknown>};
 export const recordClassification=(record:Record<string,unknown>):ClassificationPath=>({class:String(record.Class??''),...(record.Kind?{kind:String(record.Kind)}:{}),...(record.SKind??record.Skind?{skind:String(record.SKind??record.Skind)}:{}),...(record.SKind2??record.Skind2?{skind2:String(record.SKind2??record.Skind2)}:{})});
@@ -28,7 +29,13 @@ export function compileWorkflowEditPlan(workflow:WorkflowDefinition,config:Confi
  for(const assignment of output.assignments){const ast=parseWorkflowExpression(assignment.expression),used=workflowExpressionTokens(ast).filter(t=>tokens.has(t));if(assignment.target==='ID')used.forEach(t=>idOnly.add(t));else {used.forEach(t=>needed.add(t));if(ast.kind==='token'&&tokens.has(ast.name))bindings.push({slot:ast.name,target:assignment.target});}}
  for(const step of drawings){if(step.drawing?.heightSlot)needed.add(step.drawing.heightSlot);for(const binding of step.drawing?.bindings??[])if(binding.value==='height'&&step.drawing?.heightSlot)bindings.push({slot:step.drawing.heightSlot,target:binding.target});}
  for(const control of controls)for(const condition of control.requiredWhen??[])for(const token of conditionTokens(condition))if(tokens.has(token))needed.add(token);
- const explicit=workflow.editor?.backfill??[];for(const binding of explicit){if(!tokens.has(binding.slot)||!isSafeWorkflowTarget(binding.target)||!workflowOutputFields(config,output).some(f=>f.key===binding.target)||['World','Class','Kind','SKind','SKind2','Creator','CreateBy','CreateTime'].includes(binding.target))errors.push(`回填映射 ${binding.slot} → ${binding.target} 无效。`);else bindings.push({...binding});}
+ const explicit=workflow.editor?.backfill??[];for(const binding of explicit){if(!tokens.has(binding.slot)||!isSafeWorkflowTarget(binding.target)||!classifications.every(path=>resolveEffectiveFields(config,path).some(f=>f.key===binding.target))||['World','Class','Kind','SKind','SKind2','Creator','CreateBy','CreateTime'].includes(binding.target))errors.push(`回填映射 ${binding.slot} → ${binding.target} 无效。`);else bindings.push({...binding});}
+ if(config.contractRevision>=15)for(const [index,binding]of explicit.entries()){
+   const id='explicit-backfill-'+index;
+   // Analyse an actual slot-to-target write without adding a second live writer.
+   const proposed={...workflow,outputs:workflow.outputs.map(item=>item.id===output.id?{...item,assignments:[{id,target:binding.target,expression:binding.slot}]}:item)};
+   for(const classification of classifications)for(const issue of validateWorkflowWrites(proposed,path=>resolveEffectiveFields(config,path),{outputId:output.id,classification}))if(issue.severity==='error'&&issue.path.endsWith('/assignments/'+id))errors.push('['+classificationPathKey(classification)+'] 回填映射：'+issue.message);
+ }
  const removed=controls.filter(c=>c.slot&&idOnly.has(c.slot)&&!needed.has(c.slot)),kept=controls.filter(c=>!removed.includes(c));
  for(const control of kept)if(control.slot&&!bindings.some(b=>b.slot===control.slot)&&!['classificationPicker','tagsExtensions'].includes(control.kind))errors.push(`控件 ${control.slot}（${control.label.zh}）缺少可逆直接赋值或明确回填映射。`);
  if(errors.length)throw Error(errors.join('\n'));

@@ -79,3 +79,4 @@ jobs:
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c15_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c14_render_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c15_render_acceptance.py
+          "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/workflow_classification_acceptance.py

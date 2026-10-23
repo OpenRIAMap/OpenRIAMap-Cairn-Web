@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
+import {readC14MigrationSource} from './fixtures/c14-migration-source';
 import {migratePackageToC15} from '../../src/configStudio/contractMigration';
 import {initializeCategory} from '../../src/configStudio/categoryInitialization';
 import {createCategoryFromTemplate,compatibleCategoryTemplates} from '../../src/configStudio/categoryTemplates';
 import {resolveGeometryProfile,validateConfigPackage} from '../../src/configStudio/runtime';
 import {validateNativeStructure} from '../../src/configStudio/nativeContractValidation';
 
-const index=JSON.parse(fs.readFileSync('public/configuration/current.json','utf8'));
-const config=migratePackageToC15(JSON.parse(fs.readFileSync('public'+index.configUrl,'utf8'))).config;
+const config=migratePackageToC15(readC14MigrationSource().config).config;
 const parent=config.nodes.find(node=>node.path.class==='ROD'&&!node.path.kind)!;
 const source=resolveGeometryProfile(config,parent.path,'LineString')!;
 source.zoomPriority.rules.forEach((rule,index)=>{rule.multipartAnchor=index%2?'perPart':'featureBbox';rule.interaction={triggers:{line:true,label:false}};});

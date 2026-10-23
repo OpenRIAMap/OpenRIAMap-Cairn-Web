@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
+import {readC14MigrationSource} from './fixtures/c14-migration-source';
 import {createHash} from 'node:crypto';
 import {migratePackageToC15,migratePackageToC14,migrateContract} from '../../src/configStudio/contractMigration';
 import {validateConfigPackage} from '../../src/configStudio/runtime';
@@ -9,8 +9,7 @@ import {workflowClassificationGroup,outputAcceptsClassification,recordClassifica
 import {buildWorkflowArtifact,prepareWorkflowArtifactImport} from '../../src/configStudio/workflowArtifact';
 import type {ConfigPackageV3,WorkflowOutput,CategoryNode} from '../../src/configStudio/types';
 
-const index=JSON.parse(fs.readFileSync('public/configuration/current.json','utf8'));
-const bytes=fs.readFileSync('public'+index.configUrl),source=JSON.parse(bytes.toString('utf8')) as ConfigPackageV3;
+const {identity:index,bytes,config:source}=readC14MigrationSource();
 assert.equal(source.contractRevision,14);
 assert.equal(createHash('sha256').update(bytes).digest('hex'),index.configSha256);
 const original=JSON.stringify(source),result=migratePackageToC15(source),config=result.config;

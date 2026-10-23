@@ -1,0 +1,21 @@
+{
+  "checks": [
+    "fresh current formal document; no legacy backup panel, meaningless cache or prevalidated outputs",
+    "unfinished engine edit: cache-and-exit, no silent activation, unchosen close, exact restore and discard without resurrection",
+    "real failed global validation → temporary download → import historical report → repair/stage → formal download without temporary report",
+    "new-category and new-workflow forms restore unsaved input; native leave confirmation is handled without interpreting cancel as clear",
+    "legacy backups/history removed, latest document retained behind chooser, high-water and unrelated state preserved; stale writer rejected",
+    "quota failure preserves editable memory and download-only escape; BFCache admission requires a new explicit choice without changing the pending checkpoint",
+    "legacy session mirrors survive missing old database: candidate is migrated before mirror cleanup and remains isolated until selected"
+  ],
+  "runtimeErrors": [],
+  "nativeDialogs": [
+    "confirm",
+    "beforeunload",
+    "beforeunload",
+    "beforeunload"
+  ],
+  "temporaryFile": "C:\\Users\\Octintis639\\.codex\\visualizations\\2026\\10\\07\\01a1164f-1707-7b11-8455-84074466ffa0\\workflow-classification-fix-20261024\\downloads\\cairnmap-config-v32-semantic.r14.contract-c15.temporary.1792783623896.zip",
+  "formalFile": "C:\\Users\\Octintis639\\.codex\\visualizations\\2026\\10\\07\\01a1164f-1707-7b11-8455-84074466ffa0\\workflow-classification-fix-20261024\\downloads\\cairnmap-config-v32-semantic-r15.cairn-config-v3.zip",
+  "cloudWrites": 0
+}

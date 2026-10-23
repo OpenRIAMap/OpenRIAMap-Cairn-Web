@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
+import {readC14MigrationSource} from './fixtures/c14-migration-source';
 import {migratePackageToC15} from '../../src/configStudio/contractMigration';
 import {resolveConfigRuntimeRule} from '../../src/components/Rules/configRuntime/configPackageAdapter';
 import {editableGeometryProfile,prepareRenderRule} from '../../src/configStudio/renderRuleTemplates';
@@ -7,7 +7,7 @@ import {pointSymbolMetrics} from '../../src/components/Rules/rendering/pointSymb
 import {workflowRowIdentities,restoreWorkflowRows,workflowItemKey,keepWorkflowItemKey} from '../../src/configStudio/WorkflowFold';
 import {canonicalizeWorkflow} from '../../src/configStudio/V3WorkflowEditor';
 import {validateNativeStructure} from '../../src/configStudio/nativeContractValidation';
-const index=JSON.parse(fs.readFileSync('public/configuration/current.json','utf8')),config=migratePackageToC15(JSON.parse(fs.readFileSync('public'+index.configUrl,'utf8'))).config;
+const config=migratePackageToC15(readC14MigrationSource().config).config;
 const record=(code:string,type='Polyline'):any=>({uid:'c15-'+code,type,featureInfo:{ID:'c15-'+code,Class:code,World:'zth',Name:'Test'},coords3:[{x:0,y:-64,z:0},{x:200,y:-64,z:100}],p3:{x:0,y:-64,z:0},meta:{Class:code,idValue:'c15-'+code,sig:{},groups:{}}});
 const context=(zoom:number):any=>({worldId:'zth',zoomLevel:zoom,leafletZoom:zoom-3,inFloorView:false,activeBuildingUid:null,activeFloorSelector:null,activeBuildingFloorRefSet:null});
 const rod=config.nodes.find(node=>node.path.class==='ROD'&&!node.path.kind)!,profile=rod.geometryProfiles.LineString!;
