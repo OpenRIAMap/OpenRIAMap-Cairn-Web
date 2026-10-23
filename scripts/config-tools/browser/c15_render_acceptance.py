@@ -24,6 +24,7 @@ def chrome():
   result['dpr2']=b.evaluate('window.runC15RenderChecks(false)')
   assert not b.errors,b.errors
   (OUT/'c15-render-chrome.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')
+  if not all(value['creationTarget'] and value['interactionTarget'] for value in result['summary'].values()):print(json.dumps({'device':result['device'],'failedPerformanceSamples':result['samples']},ensure_ascii=False))
   assert all(value['creationTarget'] and value['interactionTarget'] for value in result['summary'].values()),result['summary']
   b.screenshot('c15-render-chrome.png')
   print(json.dumps({'browser':'chrome','checks':result['checks'],'performance':result['summary']},ensure_ascii=False))
@@ -64,6 +65,7 @@ def firefox():
    assert time.time()<deadline;time.sleep(.15)
   result['dpr2']=json.loads(b.eval('window.runC15RenderChecks(false).then(value=>JSON.stringify(value))'))
   (OUT/'c15-render-firefox.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')
+  if not all(value['creationTarget'] and value['interactionTarget'] for value in result['summary'].values()):print(json.dumps({'device':result['device'],'failedPerformanceSamples':result['samples']},ensure_ascii=False))
   assert all(value['creationTarget'] and value['interactionTarget'] for value in result['summary'].values()),result['summary']
   print(json.dumps({'browser':'firefox','checks':result['checks'],'performance':result['summary']},ensure_ascii=False))
  finally:b.close()

@@ -6,7 +6,7 @@ const ns='http://www.w3.org/2000/svg';
 let sequence=0;
 const attr=(node:Element,key:string,value:string)=>{if(node.getAttribute(key)!==value)node.setAttribute(key,value);};
 const nonInteractive=(node:SVGElement)=>{node.classList.remove('leaflet-interactive');node.setAttribute('aria-hidden','true');node.style.pointerEvents='none';};
-const geometryAttributes=['d','stroke-linecap','stroke-linejoin','stroke-dasharray','stroke-dashoffset','fill-rule','transform'];
+const geometryAttributes=['d','stroke-linecap','stroke-linejoin','stroke-miterlimit','stroke-dasharray','stroke-dashoffset','fill-rule','transform'];
 function copyGeometry(source:Element,target:Element){for(const name of geometryAttributes){const value=source.getAttribute(name);if(value===null)target.removeAttribute(name);else attr(target,name,value);}}
 
 /** Paint and cutout reuse the projected path, without another geometry pass. */
@@ -37,13 +37,21 @@ export function bindGeometryHalo(path:L.Path,halo?:ResolvedHalo):void{
         copyGeometry(original,cut);attr(cut,'stroke','black');attr(cut,'stroke-opacity','1');attr(cut,'stroke-width',String(width));attr(cut,'fill',polygon&&!inner?'black':'none');attr(cut,'fill-opacity','1');
         const bounds=(path as L.Path&{_pxBounds?:L.Bounds})._pxBounds;
         const box=bounds?.min&&bounds.max?{x:bounds.min.x,y:bounds.min.y,width:bounds.max.x-bounds.min.x,height:bounds.max.y-bounds.min.y}:original.getBBox();
-        const margin=(width+2*halo.widthPx)*6+4;
+        // Restrict each offscreen mask to the actual outer stroke envelope.
+        // Round/bevel joins need one radius; square caps can reach sqrt(2),
+        // and a miter is bounded by the SVG miter limit (default 4).
+        const radius=width/2+halo.widthPx,join=original.getAttribute('stroke-linejoin')??'miter',cap=original.getAttribute('stroke-linecap')??'butt';
+        const authoredMiter=Number(original.getAttribute('stroke-miterlimit')??4),miter=Number.isFinite(authoredMiter)&&authoredMiter>=1?authoredMiter:4;
+        const margin=radius*Math.max(cap==='square'?Math.SQRT2:1,join==='miter'?miter:1)+2;
         for(const [name,value]of Object.entries({x:box.x-margin,y:box.y-margin,width:Math.max(1,box.width+2*margin),height:Math.max(1,box.height+2*margin)})){attr(mask,name,String(value));attr(white,name,String(value));}
       }
       if(fill){copyGeometry(original,fill);attr(fill,'stroke','none');attr(fill,'fill',path.options.fill===false?'none':original.getAttribute('fill')??'none');attr(fill,'fill-opacity',String(path.options.fillOpacity??.2));attr(original,'fill-opacity','0');}
     };
     sync();parent.insertBefore(node,original);
-    observer=new MutationObserver(sync);observer.observe(original,{attributes:true,attributeFilter:[...geometryAttributes,'stroke-width','fill','fill-opacity']});
+    // Leaflet reassigns identical d/style attributes while panning. Do not
+    // rescan and synchronize every mask for those no-op notifications.
+    observer=new MutationObserver(records=>{if(records.some(record=>record.attributeName&&original.getAttribute(record.attributeName)!==record.oldValue))sync();});
+    observer.observe(original,{attributes:true,attributeOldValue:true,attributeFilter:[...geometryAttributes,'stroke-width','stroke','fill','fill-opacity']});
   };
   bindings.set(path,{key,start,remove});path.on('add',start);path.on('remove',remove);if(path.getElement())start();
 }
