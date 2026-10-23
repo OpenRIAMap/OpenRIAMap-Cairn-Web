@@ -1,3 +1,5 @@
+import type {MigrationAttachment} from './migrationAttachment';
+import {readMigrationReport} from './migrationAttachment';
 import { stableConfigText } from '../configRuntime/configurationFingerprint';
 import { setRuntimeConfiguration } from '../configRuntime/runtimeDataView';
 import { applyApplicationSettings, checkApplicationTransition } from '../core/project/applicationRuntime';
@@ -12,20 +14,20 @@ import {readTemporaryDiagnostic,type TemporaryDiagnostic} from './temporaryDiagn
 import { validateNativeStructure } from './nativeContractValidation';
 
 export { stableConfigText } from '../configRuntime/configurationFingerprint';
-type WorkspaceView={generation:number;validation?:WorkspaceValidation;importedDiagnostic?:TemporaryDiagnostic;modified:boolean;hasDraft:boolean;savedAt?:string;writeError:string};
-type State={active?:ConfigPackageV3;session?:StudioEditingSession;validation?:WorkspaceValidation;importedDiagnostic?:TemporaryDiagnostic;generation:number;modified:boolean;signature:string;token:number;enabled:boolean;initial?:Promise<StoredWorkspace>;defaultPromise?:Promise<ConfigPackageV3>;writes:Promise<unknown>;timer?:ReturnType<typeof setTimeout>;savedAt?:string;writeError:string;view?:WorkspaceView;listeners?:Set<()=>void>};
+type WorkspaceView={generation:number;validation?:WorkspaceValidation;importedDiagnostic?:TemporaryDiagnostic;migration?:MigrationAttachment;modified:boolean;hasDraft:boolean;savedAt?:string;writeError:string};
+type State={active?:ConfigPackageV3;session?:StudioEditingSession;validation?:WorkspaceValidation;importedDiagnostic?:TemporaryDiagnostic;migration?:MigrationAttachment;generation:number;modified:boolean;signature:string;token:number;enabled:boolean;initial?:Promise<StoredWorkspace>;defaultPromise?:Promise<ConfigPackageV3>;writes:Promise<unknown>;timer?:ReturnType<typeof setTimeout>;savedAt?:string;writeError:string;view?:WorkspaceView;listeners?:Set<()=>void>};
 const slot=Symbol.for('cairnmap.studio.workspace.v1'),global=globalThis as unknown as Record<symbol,State>;
 const state=global[slot]??={generation:0,modified:false,signature:'',token:0,enabled:false,writes:Promise.resolve(),writeError:''};
 const listeners=state.listeners??=new Set<()=>void>();
 let allowUnload=false;
 export const permitWorkspaceUnload=()=>{allowUnload=true;};
 export const subscribeWorkspace=(listener:()=>void)=>{listeners.add(listener);return()=>{listeners.delete(listener);};};
-export const getWorkspaceState=():WorkspaceView=>state.view??=( {generation:state.generation,validation:state.validation,importedDiagnostic:state.importedDiagnostic,modified:state.modified,hasDraft:hasStudioDraft(state.session),savedAt:state.savedAt,writeError:state.writeError} );
+export const getWorkspaceState=():WorkspaceView=>state.view??=( {generation:state.generation,validation:state.validation,importedDiagnostic:state.importedDiagnostic,migration:state.migration,modified:state.modified,hasDraft:hasStudioDraft(state.session),savedAt:state.savedAt,writeError:state.writeError} );
 function notify(){state.view=undefined;getWorkspaceState();for(const listener of listeners)listener();}
 function signature(config:ConfigPackageV3,session?:StudioEditingSession):string{return stableConfigText({config:session?.packageCandidate?.config??config,draft:session?.draft??null,tree:session?.tree?.staged??null,lookup:session?.lookupDraft??null,engine:session?.engineDraft??null,general:session?.generalDrafts??{},workflow:session?.workflowSession?.draft||session?.workflowSession?.creation?{draft:session.workflowSession.draft,tables:session.workflowSession.tables,creation:session.workflowSession.creation}:null,categoryCreation:session?.categoryCreation??null});}
 function changed(){if(!state.active)return;const next=signature(state.active,state.session);if(state.signature!==next){state.signature=next;state.generation++;state.modified=true;allowUnload=false;}notify();schedule();}
 function activate(config:ConfigPackageV3){state.active=config;setRuntimeConfiguration(config);applyApplicationSettings(config.application);}
-function checkpoint():WorkspaceCheckpoint {if(!state.active)throw Error('编辑工作区尚未打开。');return {schemaVersion:'cairnmap.studio-workspace.v1',config:state.active,session:state.session,validation:state.validation,importedDiagnostic:state.importedDiagnostic,generation:state.generation,updatedAt:new Date().toISOString()};}
+function checkpoint():WorkspaceCheckpoint {if(!state.active)throw Error('编辑工作区尚未打开。');return {schemaVersion:'cairnmap.studio-workspace.v1',config:state.active,session:state.session,validation:state.validation,importedDiagnostic:state.importedDiagnostic,migration:state.migration,generation:state.generation,updatedAt:new Date().toISOString()};}
 function schedule(){if(!state.enabled||!state.modified)return;if(state.timer)clearTimeout(state.timer);state.timer=setTimeout(()=>{state.timer=undefined;void flushWorkspace().catch(()=>undefined);},500);}
 export async function initializeWorkspace():Promise<StoredWorkspace>{
   return state.initial??=(async()=>{
@@ -40,7 +42,7 @@ export async function initializeWorkspace():Promise<StoredWorkspace>{
 export function loadDefaultConfig():Promise<ConfigPackageV3>{if(state.defaultPromise)return state.defaultPromise;const task=fetchFormalDefaultConfig().catch(error=>{if(state.defaultPromise===task)state.defaultPromise=undefined;throw error;});return state.defaultPromise=task;}
 export async function startDefaultWorkspace():Promise<ConfigPackageV3>{
   await initializeWorkspace();const next=await fetchFormalDefaultConfig();if(next.application)await checkApplicationTransition(next.application);
-  await clearWorkspace();state.session=undefined;state.validation=undefined;state.importedDiagnostic=undefined;state.generation=0;state.modified=false;state.defaultPromise=Promise.resolve(next);activate(next);state.signature=signature(next);state.enabled=true;notify();return next;
+  await clearWorkspace();state.session=undefined;state.validation=undefined;state.importedDiagnostic=undefined;state.migration=undefined;state.generation=0;state.modified=false;state.defaultPromise=Promise.resolve(next);activate(next);state.signature=signature(next);state.enabled=true;notify();return next;
 }
 export async function reopenWorkspaceAdmission():Promise<StoredWorkspace>{
   state.enabled=false;if(state.timer){clearTimeout(state.timer);state.timer=undefined;}
@@ -56,7 +58,7 @@ export async function resumeWorkspace(value:WorkspaceCheckpoint):Promise<ConfigP
   }
   if(session){if(!session.baseline||typeof session.editing!=='boolean')throw Error('缓存区域状态无法安全读取。');if(session.draft)safeDocument(session.draft);if(session.packageCandidate)safeDocument(session.packageCandidate.config);if(session.tree)safeDocument(session.tree.staged);}
   if(config.application)await checkApplicationTransition(config.application);
-  activate(config);state.session=session;state.validation=value.validation;state.importedDiagnostic=readTemporaryDiagnostic(value.importedDiagnostic);state.generation=value.generation;state.modified=true;state.signature=signature(config,session);state.enabled=true;state.savedAt=value.updatedAt;notify();return config;
+  activate(config);state.session=session;state.validation=value.validation;state.importedDiagnostic=readTemporaryDiagnostic(value.importedDiagnostic);state.migration=value.migration?{original:value.migration.original,report:readMigrationReport(value.migration.report),...(/^[a-f0-9]{64}$/.test(value.migration.resultSha256??'')?{resultSha256:value.migration.resultSha256}:{})}:undefined;state.generation=value.generation;state.modified=true;state.signature=signature(config,session);state.enabled=true;state.savedAt=value.updatedAt;notify();return config;
 }
 export async function loadActiveConfig():Promise<ConfigPackageV3>{if(state.active)return state.active;const saved=await initializeWorkspace();if(saved.checkpoint)throw Error('存在本机工作区缓存，请先选择继续编辑或恢复默认。');return startDefaultWorkspace();}
 export function getActiveConfigSnapshot():ConfigPackageV3{if(!state.active)throw Error('编辑工作区尚未打开。');return state.active;}
@@ -64,6 +66,14 @@ export const getStudioSessionSnapshot=()=>state.session;
 export async function persistStudioEditingSession(session:StudioEditingSession|null):Promise<void>{if(!state.enabled)return;state.session=session??undefined;changed();}
 export function recordWorkspaceValidation(run:WorkspaceValidation){if(run.generation!==state.generation)throw Error('核验期间编辑内容已变化，请重新核验。');state.validation=run;notify();schedule();}
 export function invalidateWorkspaceValidation(){if(state.validation?.generation===state.generation){state.generation++;notify();schedule();}}
+let migrationStamp=0;
+export function setMigrationAttachment(value?:MigrationAttachment,result?:unknown,source?:unknown){
+  if(result===undefined&&value?.original&&!value.report)migrationStamp++;
+  state.migration=value;if(value?.report&&value.original)value.report={...value.report,sourceSha256:value.original.sha256};notify();schedule();
+  if(result!==undefined&&value){const stamp=++migrationStamp;const hash=async(value:unknown)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(stableConfigText(value)))),n=>n.toString(16).padStart(2,'0')).join('');
+    void Promise.all([hash(result),source===undefined?Promise.resolve(value.original?.sha256):hash(source)]).then(([resultSha256,sourceSha256])=>{if(stamp!==migrationStamp||!state.migration)return;state.migration={...state.migration,resultSha256,...(state.migration.report?{report:{...state.migration.report,resultSha256,sourceSha256}}:{})};notify();schedule();}).catch(error=>{state.writeError='迁移结果摘要计算失败：'+String(error);notify();});
+  }else if(!value)migrationStamp++;
+}
 export function setImportedDiagnostic(value?:TemporaryDiagnostic){state.importedDiagnostic=value;notify();schedule();}
 export const needsWorkspaceExitPrompt=()=>!allowUnload&&state.modified&&(!currentValidation(state.validation,state.generation)||state.validation?.report.valid!==true||hasStudioDraft(state.session));
 export async function flushWorkspace():Promise<void>{

@@ -1,0 +1,22 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import {gzipSync} from 'node:zlib';
+import JSZip from 'jszip';
+import {migratePackageToC14} from '../../src/configStudio/contractMigration';
+import {validateConfigPackage} from '../../src/configStudio/runtime';
+import {buildConfigPackageArchive} from '../../src/configStudio/package';
+const arg=(name:string)=>{const at=process.argv.indexOf(name);return at<0?undefined:process.argv[at+1];};
+const out=path.resolve(arg('--out')??'dist/c14-review'),identity=JSON.parse(await fs.readFile('public/configuration/current.json','utf8'));
+const original=await fs.readFile('public'+identity.configUrl),source=JSON.parse(original.toString('utf8'));
+const migration=migratePackageToC14(source),report=validateConfigPackage(migration.config);
+if(!report.valid)throw Error(JSON.stringify(report.issues));
+const blob=await buildConfigPackageArchive(migration.config,report),bytes=Buffer.from(await blob.arrayBuffer()),zip=await JSZip.loadAsync(bytes),config=await zip.file('config.json')!.async('nodebuffer');
+const sha=(value:Uint8Array)=>createHash('sha256').update(value).digest('hex');
+const evidence={...migration.report,sourceSha256:sha(original),resultSha256:sha(config)};
+await fs.mkdir(out,{recursive:true});
+await fs.writeFile(path.join(out,'c14-review-candidate.zip'),bytes);await fs.writeFile(path.join(out,'config.c14.json'),config);
+await fs.writeFile(path.join(out,'migration-report.json'),JSON.stringify(evidence,null,2)+'\n');
+await fs.writeFile(path.join(out,'checksums.json'),JSON.stringify({configurationRevision:migration.config.revision,contractRevision:migration.config.contractRevision,sourceIdentity:identity,configSha256:sha(config),zipSha256:sha(bytes),generatedAt:new Date().toISOString(),sourceChanged:false},null,2)+'\n');
+const fixture=arg('--fixture');if(fixture){await fs.mkdir(path.dirname(path.resolve(fixture)),{recursive:true});await fs.writeFile(fixture,gzipSync(config));}
+console.log(JSON.stringify({out,contract:'c14',revision:migration.config.revision,changes:evidence.changes.length,configSha256:sha(config),zipSha256:sha(bytes),formalPointerChanged:false}));

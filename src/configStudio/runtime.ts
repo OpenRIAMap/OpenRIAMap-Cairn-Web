@@ -3,6 +3,7 @@ import { validateWorkflowWrites } from './workflowPreflight';
 import { migrateWorkflowDrawings } from './workflowDrawingMigration';
 import { validCssColor } from './cssColor';
 import { customPillErrors, pillColorBindings } from './customPill';
+import {haloProblems,haloColorBindings} from './halo';
 import { pointSymbolProblems, pointSymbolBindings, ICON_LIBRARY } from './pointSymbol';
 import { unreachableLocalMappingRows } from './localMappingConstraints';
 let packageValidationRuns=0,workflowValidationRuns=0;
@@ -15,7 +16,7 @@ import {testWorkflowEditConversion} from './workflowEditCommit';
 import {compileRenderFormula} from './renderBooleanFormula';
 import {resolveMappedColor} from './renderScalar';
 import {scalarValueErrors, validMappedColor} from './renderScalar';
-import { isNativeConfigRevision } from './contract';
+import { CONTRACT_CAPABILITIES,isNativeConfigRevision } from './contract';
 import { effectiveOptionsOwner, effectiveOptions, resolveBoundCard, validateLookupTables } from './lookupTables';
 import {standardTagTableErrors} from './standardTagFields';
 import { mergeInheritedCard } from './cardInheritance';
@@ -121,7 +122,7 @@ export function compileConfigRuntime(value: ConfigPackageV3, validated = false):
   for(const node of config.nodes)for(const profile of Object.values(node.geometryProfiles))for(const rule of profile?.zoomPriority.rules??[]) {
     if(rule.label?.sourceMode==='combined')labelTemplateTokens(rule.label);
     if(rule.when?.fields?.formula)compileRenderFormula(rule.when.fields.formula);
-    for(const binding of [rule.style?.stroke,rule.style?.fill,...pointSymbolBindings(rule.style?.pointSymbol).map(row=>row.value),rule.label?.style?.color,...pillColorBindings(rule.label?.style?.pill),...Object.values(rule.extensions?.interaction??{}).map(state=>state?.strokeColorBinding)])if(binding?.mode==='valueMap')resolveMappedColor(binding,undefined);
+    for(const binding of [rule.style?.stroke,rule.style?.fill,...haloColorBindings(rule.style).map(row=>row.value),...pointSymbolBindings(rule.style?.pointSymbol).map(row=>row.value),rule.label?.style?.color,...pillColorBindings(rule.label?.style?.pill),...Object.values(rule.extensions?.interaction??{}).map(state=>state?.strokeColorBinding)])if(binding?.mode==='valueMap')resolveMappedColor(binding,undefined);
   }
   return config;
 }
@@ -476,7 +477,7 @@ export function validateRenderColorBinding(binding: unknown, config: ConfigPacka
   const sourceFields = new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key));
   if(value.mode==='valueMap') {
     const mapping=binding as Extract<import('./types').RenderColorBinding,{mode:'valueMap'}>, field=resolveSelectableFields(config,sourcePath).find(f=>f.key===mapping.field);
-    if(config.contractRevision<9)issue(issues,'error','render-color-r9-required',path,'按值设色需要 r9。');
+    if(config.contractRevision<9)issue(issues,'error','render-color-r9-required',path,'按值设色需要 c9。');
     if(!field)issue(issues,'error','render-color-map-field-invalid',path,'设色字段不存在。');
     if(!validMappedColor(mapping.fallbackColor))issue(issues,'error','render-color-map-fallback-invalid',path,'回退颜色必须为六位十六进制颜色。');
     if(!Array.isArray(mapping.entries)||!mapping.entries.length){issue(issues,'error','render-color-map-empty',path,'至少需要一个设色值。');return;}
@@ -549,7 +550,7 @@ function validateRuleLabel(
   }
   const fields = new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key));
   if (label.sourceMode === 'combined') {
-    if (config.contractRevision < 10) issue(issues, 'error', 'label-template-revision', rulePath, '组合 Label 来源需要 r10 契约。');
+    if (config.contractRevision < 10) issue(issues, 'error', 'label-template-revision', rulePath, '组合 Label 来源需要 c10 契约。');
     try { for (const token of parseLabelTemplate(label.template ?? '')) if (token.kind === 'field' && !sourceExists(token.value, fields)) issue(issues, 'error', 'label-template-field', rulePath, `组合来源字段不存在：${token.value}`); }
     catch (error) { issue(issues, 'error', 'label-template-invalid', rulePath, (error as Error).message); }
   }
@@ -574,7 +575,7 @@ function validateRuleLabel(
   if ((visual.modifiers?.italic || visual.modifiers?.underline) && !supportsModifiers.has(visual.family)) issue(issues, 'error', 'label-style-modifier-invalid', rulePath, '斜体和下划线仅适用于无背景容器的文字样式。');
   const needsColor = visual.family === 'rle-line-color' || visual.family === 'rle-pill-color';
   if (visual.family === 'custom_pill_1') {
-    if (config.contractRevision < 12) issue(issues, 'error', 'custom-pill-revision', rulePath, '自定义胶囊1需要 r12 契约。');
+    if (config.contractRevision < 12) issue(issues, 'error', 'custom-pill-revision', rulePath, '自定义胶囊1需要 c12 契约。');
     for (const error of customPillErrors(visual.size, visual.pill)) issue(issues, 'error', 'custom-pill-invalid', `${rulePath}/label/style/pill/${error.key}`, error.message);
     if (visual.color || Object.values(visual.modifiers ?? {}).some(Boolean)) issue(issues, 'error', 'custom-pill-conflicting-style', rulePath, '自定义胶囊不能混用旧颜色或字体修饰。');
     if (visual.pill) for (const key of ['textColor', 'backgroundColor', 'strokeColor'] as const)
@@ -642,7 +643,7 @@ function validateRuleExtensions(rule: ZoomPriorityRule, geometry: GeometryKind, 
     }
   }
   const line = extensions.lineLabel;
-  if (line && (line.orientationPolicy === 'scriptAware' || line.textPathLengthMode !== undefined) && config.contractRevision < 12) issue(issues,'error','line-script-revision',rulePath,'中英分流和实际文字路径长度需要契约 r12。');
+  if (line && (line.orientationPolicy === 'scriptAware' || line.textPathLengthMode !== undefined) && config.contractRevision < 12) issue(issues,'error','line-script-revision',rulePath,'中英分流和实际文字路径长度需要契约 c12。');
   if (line && config.contractRevision>=12) {
     for(const [key,value] of Object.entries(line))if(typeof value==='number'&&(!Number.isFinite(value)||value<0))issue(issues,'error','line-setting-number-invalid',rulePath+'/lineLabel/'+key,'贴线数值必须是有限非负数。');
     for(const key of ['maxTurnAngleDeg','textPathMaxAngleDeltaDeg','textPathVerticalAngleThresholdDeg','cjkGlyphUprightAngleThresholdDeg','cjkGlyphMaxAngleDeltaDeg'] as const)if(line[key]!==undefined&&line[key]!>180)issue(issues,'error','line-angle-invalid',rulePath+'/lineLabel/'+key,'局部角度必须介于 0–180°。');
@@ -706,22 +707,24 @@ function validateProfile(profile: GeometryProfile, geometry: GeometryKind, path:
     const min = rule.when?.zoom.min ?? rule.minZoom;
     const max = rule.when?.zoom.max ?? rule.maxZoom;
     if (config.contractRevision >= 7) {
-      if (!rule.when || !Number.isInteger(min) || !Number.isInteger(max) || min! < 0 || max! > 8 || min! > max!) issue(issues, 'error', 'render-match-zoom-required', rulePath, 'r7 必须填写 0–8 的闭区间整数 Zoom，允许单级区间。');
+      if (!rule.when || !Number.isInteger(min) || !Number.isInteger(max) || min! < 0 || max! > 8 || min! > max!) issue(issues, 'error', 'render-match-zoom-required', rulePath, 'c7 必须填写 0–8 的闭区间整数 Zoom，允许单级区间。');
       if (rule.minZoom !== undefined || rule.maxZoom !== undefined || rule.minExclusive !== undefined || rule.maxExclusive !== undefined || rule.conditionalOverrides !== undefined) issue(issues, 'error', 'render-legacy-match-forbidden', rulePath, 'r7 只使用 when.zoom 和非分类字段组合，不能保留旧匹配或分支。');
       for (const message of validateRenderFields(rule.when?.fields, resolveSelectableFields(config, sourcePath), resolveSelectableFields(config, sourcePath).map(field => field.key), config.contractRevision)) issue(issues, 'error', 'render-field-condition-invalid', `${rulePath}/when/fields`, message);
-    } else if (rule.when) issue(issues, 'error', 'render-match-revision-invalid', rulePath, '组合规则需要原生 r7；旧包请先无损迁移。');
+    } else if (rule.when) issue(issues, 'error', 'render-match-revision-invalid', rulePath, '组合规则需要原生 c7；旧包请先无损迁移。');
     if (!rule.representation) issue(issues, 'error', 'render-representation-required', rulePath, '渲染规则必须选择显示种类。');
     else if (!['hidden', 'geometry', 'point', 'labelOnly'].includes(rule.representation)) issue(issues, 'error', 'render-representation-invalid', rulePath, '未知显示种类。');
-    if (rule.representation === 'labelOnly' && config.contractRevision < 6) issue(issues, 'error', 'render-contract-capability-invalid', rulePath, '仅标签显示需要原生契约 revision 6 或更新版本。');
+    if (rule.representation === 'labelOnly' && config.contractRevision < 6) issue(issues, 'error', 'render-contract-capability-invalid', rulePath, '仅标签显示需要最低原生契约 c6 或更新版本。');
     if (min !== undefined && max !== undefined && min > max) issue(issues, 'error', 'zoom-interval-invalid', rulePath, '显示区间必须符合下界 ≤ Zoom ≤ 上界。');
     intervals.push({ id: rule.id, min: min ?? -Infinity, max: max ?? Infinity });
     const stack = rule.geometryStack;
     if (!stack || !Number.isInteger(stack.zLevel) || stack.zLevel < 0 || stack.zLevel > 9999) issue(issues, 'error', 'geometry-zlevel-invalid', rulePath, '每个渲染规则的几何 zLevel 必须是 0 到 9999 之间的整数。');
     const style = rule.style;
+    for(const message of haloProblems(style?.halo))issue(issues,'error','halo-invalid',rulePath+'/style/halo',message);
+    if(style?.halo)validateRenderColorBinding(style.halo.color,config,sourcePath,rulePath+'/style/halo/color',issues);
     if (style?.symbolOffsetPx && (!Number.isFinite(style.symbolOffsetPx.x) || !Number.isFinite(style.symbolOffsetPx.y))) issue(issues, 'error', 'render-symbol-offset-invalid', rulePath, '符号偏移必须为有限像素值。');
     if (style?.symbolAnchor && !['geometry', 'label'].includes(style.symbolAnchor) || style?.symbolVisibility && !['independent', 'withLabel'].includes(style.symbolVisibility)) issue(issues, 'error', 'render-symbol-policy-invalid', rulePath, '符号锚点或可见性策略无效。');
     if (rule.representation !== 'hidden' && !style) issue(issues, 'error', 'render-style-required', rulePath, '非隐藏渲染规则必须定义显示效果。');
-    if (config.contractRevision >= 12 && rule.representation !== 'hidden' && (geometry === 'Point' || rule.representation === 'point') && !style?.pointSymbol) issue(issues,'error','point-symbol-required',rulePath,'r12 点状显示必须使用单一 pointSymbol；旧 hide 图片需要明确确认回退。');
+    if (config.contractRevision >= 12 && rule.representation !== 'hidden' && (geometry === 'Point' || rule.representation === 'point') && !style?.pointSymbol) issue(issues,'error','point-symbol-required',rulePath,'c12 点状显示必须使用单一 pointSymbol；旧 hide 图片需要明确确认回退。');
     if (style && !style.pointSymbol) {
       if (style.size !== undefined && (!Number.isFinite(style.size) || style.size <= 0)) issue(issues, 'error', 'render-size-invalid', rulePath, '点符号大小必须为正数。');
       if (style.weight !== undefined && (!Number.isFinite(style.weight) || style.weight < 0)) issue(issues, 'error', 'render-stroke-width-invalid', rulePath, '描边粗细必须为非负数。');
@@ -739,7 +742,7 @@ function validateProfile(profile: GeometryProfile, geometry: GeometryKind, path:
       }
     }
     if (style?.pointSymbol) {
-      if (config.contractRevision < 12) issue(issues, 'error', 'point-symbol-revision', rulePath, '新点符号来源需要 r12 契约。');
+      if (config.contractRevision < 12) issue(issues, 'error', 'point-symbol-revision', rulePath, '新点符号来源需要 c12 契约。');
       if (geometry !== 'Point' && rule.representation !== 'point') issue(issues, 'error', 'point-symbol-geometry', rulePath, '点符号仅用于点或明确的点状表示。');
       for (const key of ['icon','pointShape','size','weight','stroke','fill','strokeOpacity','fillOpacity','lineCap','lineJoin'] as const)
         if (style[key] !== undefined) issue(issues, 'error', 'point-symbol-conflicting-style', `${rulePath}/style/${key}`, '点符号不能同时保留旧外观来源。');
@@ -766,8 +769,10 @@ function validateProfile(profile: GeometryProfile, geometry: GeometryKind, path:
         validateCondition(condition, `${overridePath}/when/${conditionIndex}`, issues);
         if ((condition.kind === 'fieldEquals' || condition.kind === 'fieldIn' || condition.kind === 'fieldPresent') && !sourceExists(condition.field, new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key)))) issue(issues, 'error', 'render-conditional-override-field-invalid', `${overridePath}/when/${conditionIndex}`, '字段条件必须使用当前分类的有效字段。', { field: condition.field });
       }
+      for(const message of haloProblems(override.style?.halo))issue(issues,'error','halo-invalid',overridePath+'/style/halo',message);
+      if(override.style?.halo)validateRenderColorBinding(override.style.halo.color,config,sourcePath,overridePath+'/style/halo/color',issues);
       if (override.style?.pointSymbol) {
-        if(config.contractRevision<12) issue(issues,'error','point-symbol-revision',overridePath,'点符号需要契约 r12。');
+        if(config.contractRevision<12) issue(issues,'error','point-symbol-revision',overridePath,'点符号需要契约 c12。');
         for(const row of pointSymbolProblems(override.style.pointSymbol,resolveSelectableFields(config,sourcePath),config))issue(issues,'error','point-symbol-invalid',overridePath+'/style/pointSymbol/'+row.path,row.message);
         for(const row of pointSymbolBindings(override.style.pointSymbol))validateRenderColorBinding(row.value,config,sourcePath,overridePath+'/style/pointSymbol/'+row.path,issues);
         for(const key of ['icon','pointShape','size','weight','stroke','fill','strokeOpacity','fillOpacity','lineCap','lineJoin'] as const)if(override.style[key]!==undefined)issue(issues,'error','point-symbol-conflicting-style',overridePath+'/style/'+key,'条件覆盖不可同时保存旧点外观。');
@@ -820,7 +825,7 @@ function validateCard(node: CategoryNode, config: ConfigPackageV3, issues: Confi
     const origins=new Set<string>(),ancestors=resolveCategoryNodes(config,node.path).filter(parent=>parent.nodeId!==node.nodeId);
     for(const item of node.card.items)if(item.inheritFrom){const key=`${item.inheritFrom.nodeId}/${item.inheritFrom.itemId}`;if(origins.has(key)||!ancestors.some(parent=>parent.nodeId===item.inheritFrom!.nodeId))issue(issues,'error','card-inheritance-origin-invalid',`${path}/${item.id}`,'硬继承条目来源必须是同分支祖先且不能重复。');origins.add(key);}
   }
-  if(config.contractRevision>=9&&node.card?.mode==='fields'&&node.card.items.some(item=>item.labelMode||item.valueMode))issue(issues,'error','live-card-source-forbidden',path,'r9 信息卡不保留跟随/覆写状态，请先迁移。');
+  if(config.contractRevision>=9&&node.card?.mode==='fields'&&node.card.items.some(item=>item.labelMode||item.valueMode))issue(issues,'error','live-card-source-forbidden',path,'c9 信息卡不保留跟随/覆写状态，请先迁移。');
   const card = resolveCardConfiguration(config, node.path);
   checkItemIds(card,'effective');
   if (!card) {
@@ -854,7 +859,7 @@ function validateCard(node: CategoryNode, config: ConfigPackageV3, issues: Confi
     const definition=resolveEffectiveFields(config,node.path).find(field=>field.key===item.source);
     if(config.contractRevision>=8&&item.valueMode==='override'&&definition?.type==='enum'&&mapped.some(option=>!definition.options?.some(value=>value.value===option.value)))issue(issues,'error','card-field-map-conflict',itemPath,`信息卡 ${item.source} 覆写对照使用了来源字段已删除的选项，请调整覆写或恢复跟随。`);
     if (item.options?.format && !['plain','externalLink','boolean','json','classification','enum','date','world'].includes(item.options.format)) issue(issues, 'error', 'card-format-invalid', itemPath, '未知的信息卡格式。');
-    if (config.contractRevision === 5 && item.options?.format && ['classification','enum','date','world'].includes(item.options.format)) issue(issues, 'error', 'card-format-revision-invalid', itemPath, '该信息卡格式要求原生 r6。');
+    if (config.contractRevision === 5 && item.options?.format && ['classification','enum','date','world'].includes(item.options.format)) issue(issues, 'error', 'card-format-revision-invalid', itemPath, '该信息卡格式要求原生 c6。');
     if (item.renderer === 'lineChips' && !item.options?.lineChipSource) issue(issues, 'error', 'card-line-chips-source-required', itemPath, '关联线路胶囊必须选择平台、车站或车站建筑来源。');
     if (item.renderer !== 'relationLink') continue;
     const relation = item.relation;
@@ -884,7 +889,7 @@ function validateSearch(control: Pick<WorkflowControl, 'kind' | 'search'>, confi
     return;
   }
   const targets=search.targetRole==='main'?config.nodes.filter(node=>{const role=resolveNodeFieldSettings(config,node.path).value.structure;return role?.enabled&&role.role==='main';}):[];
-  if(search.targetRole&&(config.contractRevision<10||!targets.length))issue(issues,'error','workflow-search-role-invalid',path,'通用搜索需要 r10 且至少有一个启用的主结构分类。');
+  if(search.targetRole&&(config.contractRevision<10||!targets.length))issue(issues,'error','workflow-search-role-invalid',path,'通用搜索需要 c10 且至少有一个启用的主结构分类。');
   const selectable = new Set(search.targetRole?targets.flatMap(node=>resolveSelectableFields(config,node.path).map(field=>field.key)).filter(key=>targets.every(node=>resolveSelectableFields(config,node.path).some(field=>field.key===key))):resolveSelectableFields(config, search.target).map((field) => field.key));
   if (!search.queryFields?.length) issue(issues, 'error', 'workflow-search-fields-required', path, '搜索控件至少需要选择一个可匹配字段。');
   for (const field of search.queryFields ?? []) if (!selectable.has(field)) issue(issues, 'error', 'workflow-search-field-invalid', path, `搜索字段 ${field} 不在目标分类的有效字段集中。`, { field });
@@ -962,8 +967,8 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
   const base = `workflows/${workflow.id}`;
   if(workflow.editor?.dedicated&&workflow.quickMapping!==false)issue(issues,'error','workflow-editor-dedicated-visible',base,'专供编辑工作流必须关闭便捷测绘。');
   if(workflow.editor?.enabled&&workflow.mode==='composed')try {testWorkflowEditConversion(config,workflow);}catch(error){issue(issues,'error','workflow-editor-conversion-invalid',base,error instanceof Error?error.message:'编辑资格或回填失败。');}
-  if(config.contractRevision<9&&(workflow.editor||workflow.quickMapping!==undefined||workflow.external?.purpose))issue(issues,'error','workflow-editor-r9-required',base,'工作流编辑用途需要 r9。');
-  if(config.contractRevision>=9)for(const step of workflow.steps)for(const control of step.controls??[])if([control,...(control.group?.itemFields??[])].some(item=>item.fieldSource))issue(issues,'error','live-field-source-forbidden',base,'r9 预填不保留来源关系，请迁移展开旧控件。');
+  if(config.contractRevision<9&&(workflow.editor||workflow.quickMapping!==undefined||workflow.external?.purpose))issue(issues,'error','workflow-editor-r9-required',base,'工作流编辑用途需要 c9。');
+  if(config.contractRevision>=9)for(const step of workflow.steps)for(const control of step.controls??[])if([control,...(control.group?.itemFields??[])].some(item=>item.fieldSource))issue(issues,'error','live-field-source-forbidden',base,'c9 及以上的预填不保留来源关系，请迁移展开旧控件。');
   try { workflowOutputAssemblyOrder(workflow); } catch (error) { issue(issues, 'error', 'workflow-output-dependency-invalid', base, error instanceof Error ? error.message : '输出依赖无效。'); }
   const checkIds = (items: Array<{ id: string }>, kind: string) => {
     const ids = new Set<string>();
@@ -1015,7 +1020,7 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
   const captured = workflowCaptureSlots(workflow);
   const derivedTokens = workflowDerivedPointTokens(workflow);
   for (const token of derivedTokens) if (!/^[A-Z][A-Z0-9_]*$/.test(token) || controlList.some(control => control.slot === token) || derivedTokens.filter(item => item === token).length > 1 || WORKFLOW_SYSTEM_TOKENS.some(system => token === system || new RegExp(`^${system}_\\d+$`).test(token))) issue(issues, 'error', 'workflow-capture-slot-invalid', base, `坐标槽位 ${token} 无效、重复或占用系统 token。`);
-  if (config.contractRevision === 5 && captured.length) issue(issues, 'error', 'workflow-capture-revision-invalid', base, '坐标槽位要求原生 r6。');
+  if (config.contractRevision === 5 && captured.length) issue(issues, 'error', 'workflow-capture-revision-invalid', base, '坐标槽位要求原生 c6。');
   const earlierTokens=new Set<string>(['World','Creator']);
   for(const step of workflow.steps) {
     if(step.kind==='geometry') {
@@ -1276,10 +1281,10 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: false, createdAt: new Date().toISOString(), issues: structure.map(item => ({ severity: 'error', code: 'native-contract-structure-invalid', ...item })) };
   if(config.resources){
-    if(config.contractRevision<12)issue(issues,'error','icon-resources-revision','resources','图标资源能力需要契约 r12。');
+    if(config.contractRevision<12)issue(issues,'error','icon-resources-revision','resources','图标资源能力需要契约 c12。');
     const seen=new Set<string>();for(const item of config.resources.iconLibraries){if(seen.has(item.library))issue(issues,'error','icon-resource-duplicate','resources','同一图库只能声明一次。');seen.add(item.library);if(item.library!==ICON_LIBRARY.library||item.version!==ICON_LIBRARY.version||item.manifestSha256!==ICON_LIBRARY.manifestSha256)issue(issues,'error','icon-resource-unsupported','resources','图库版本或资源摘要不在当前支持的固定清单中。');}
   }
-  if(config.contractRevision>=11)for(const button of config.application?.buttons.items??[]){const rows=button.criteria.paths;if(!rows)issue(issues,'error','button-path-migration-required',`application/buttons/${button.id}`,'r11 按钮需要完整分类路径。');else for(const [index,row] of rows.entries()){if(!hasCategoryNode(config,row))issue(issues,'error','button-path-invalid',`application/buttons/${button.id}/${index}`,'按钮显示内容不是有效分类路径。');if(rows.some((other,at)=>at!==index&&Object.entries(other).every(([key,value])=>!value||row[key as keyof ClassificationPath]===value)))issue(issues,'warning','button-path-redundant',`application/buttons/${button.id}/${index}`,'该范围已被另一条上级或重复范围包含，可删除冗余行。');}}
+  if(config.contractRevision>=11)for(const button of config.application?.buttons.items??[]){const rows=button.criteria.paths;if(!rows)issue(issues,'error','button-path-migration-required',`application/buttons/${button.id}`,'c11 及以上的按钮需要完整分类路径。');else for(const [index,row] of rows.entries()){if(!hasCategoryNode(config,row))issue(issues,'error','button-path-invalid',`application/buttons/${button.id}/${index}`,'按钮显示内容不是有效分类路径。');if(rows.some((other,at)=>at!==index&&Object.entries(other).every(([key,value])=>!value||row[key as keyof ClassificationPath]===value)))issue(issues,'warning','button-path-redundant',`application/buttons/${button.id}/${index}`,'该范围已被另一条上级或重复范围包含，可删除冗余行。');}}
   if(config.contractRevision<11&&config.application&&isWorldGroups(config.application.sources))issue(issues,'error','resource-groups-revision','application/sources','World resource groups require contract r11.');
   if(config.contractRevision>=10&&!config.application)issue(issues,'error','application-required','application','r10 完整应用包必须包含总体规则。');
   if (config.contractRevision >= 10 && config.application) for (const row of validateApplication(config.application, new Set(config.nodes.map(node=>node.path.class)))) issue(issues,'error','application-invalid','application/'+row.path,row.message);
@@ -1288,9 +1293,9 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   for(const error of standardTagTableErrors(config))issue(issues,'error','standard-tag-table-invalid',error.path,error.message);
   issues.push(...validatePrefillCopies(config,resolveEffectiveFields));
   issues.push(...validateNodeFieldSettings(config,resolveEffectiveFields));
-  if (config.contractRevision>=8 && (config.registries.optionSets || config.nodes.some(node=>node.fields.some(field=>field.optionSource)) || config.workflows.some(workflow=>controlsFor(workflow).some(control=>control.optionSource)))) issue(issues,'error','legacy-option-source-forbidden','registries','r8 使用字段内对照；旧全局选项来源必须先迁移。');
+  if (config.contractRevision>=8 && (config.registries.optionSets || config.nodes.some(node=>node.fields.some(field=>field.optionSource)) || config.workflows.some(workflow=>controlsFor(workflow).some(control=>control.optionSource)))) issue(issues,'error','legacy-option-source-forbidden','registries','c8 及以上使用字段内对照；旧全局选项来源必须先迁移。');
   if (config.schemaVersion !== 'cairnmap.config-package.v3') issue(issues, 'error', 'schema-version-invalid', 'manifest', '配置包不是 cairnmap.config-package.v3。');
-  if (!isNativeConfigRevision(config.contractRevision)) issue(issues, 'error', 'contract-revision-invalid', 'manifest', '配置包必须使用 V3.2 原生契约 revision 5/6。');
+  if (!isNativeConfigRevision(config.contractRevision)) issue(issues, 'error', 'contract-revision-invalid', 'manifest', '配置包必须使用受支持的原生契约：'+CONTRACT_CAPABILITIES.native.map(v=>'c'+v).join('、')+'。');
   validateEngine(config, issues);
   if (!/^[a-z][a-z0-9-]{2,80}$/.test(config.packageId)) issue(issues, 'error', 'package-id-invalid', 'manifest', '配置包 ID 格式无效。');
   if (!Number.isSafeInteger(config.revision) || config.revision < 1) issue(issues, 'error', 'revision-invalid', 'manifest', '包 revision 必须是正整数。');

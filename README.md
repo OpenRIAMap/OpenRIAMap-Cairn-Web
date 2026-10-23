@@ -29,3 +29,7 @@ See:
 ## Boundary note
 
 CairnMap Core should eventually provide reusable map, feature, display, card, workflow, data-source, and preset infrastructure. OpenRIAMap RIA should become one project package/profile running on top of CairnMap rather than the framework identity itself.
+
+## Configuration contract maintenance
+
+Before editing the configuration workbench, read [the core module instructions](src/configStudio/README.md) and [contract update requirements](docs/20_config-reference/ContractUpdates.md). Contract changes must include adjacent-version component migrations, compatibility checks, runtime support and browser regressions.

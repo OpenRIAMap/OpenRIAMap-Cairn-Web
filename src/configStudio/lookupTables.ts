@@ -103,7 +103,7 @@ export function lookupFunctionValue(config:Pick<ConfigPackageV3,'lookupTables'>,
 export function validateLookupTables(config:ConfigPackageV3,includeNodes=true):ConfigValidationIssue[] {
   const issues:ConfigValidationIssue[]=[];
   const error=(path:string,message:string,code='lookup-table-invalid')=>issues.push({severity:'error',code,path,message});
-  if(config.contractRevision<10&&(config.lookupTables?.length||config.nodes.some(n=>n.fields.some(f=>f.optionsTableId))||config.workflows.some(w=>w.steps.some(s=>s.controls?.some(c=>c.optionsTableId||c.group?.itemFields.some(f=>f.optionsTableId))))))error('lookupTables','对照表需要 r10 契约。');
+  if(config.contractRevision<10&&(config.lookupTables?.length||config.nodes.some(n=>n.fields.some(f=>f.optionsTableId))||config.workflows.some(w=>w.steps.some(s=>s.controls?.some(c=>c.optionsTableId||c.group?.itemFields.some(f=>f.optionsTableId))))))error('lookupTables','对照表需要 c10 契约。');
   const ids=new Set<string>();
   for(const table of config.lookupTables??[]){
     const path=`lookupTables/${table.id}`;

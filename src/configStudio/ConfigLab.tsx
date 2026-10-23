@@ -21,7 +21,7 @@ export function ConfigLab({onClose}:{onClose:()=>void}){
   }catch(error){setMessage(String(error));}finally{setBusy(false);if(input.current)input.current.value='';}};
   if(workspace.hasDraft||getStudioSessionSnapshot()?.packageCandidate)return <div className="flex h-screen items-center justify-center bg-slate-100"><div className="space-y-3 rounded border bg-white p-5"><p>当前工作区仍有未完成草稿或隔离候选，不能在运行实验室启用。</p><button className="rounded border p-2" onClick={openEditor}>打开工作台继续编辑</button><button className="ml-2 rounded border p-2" onClick={onClose}>返回主地图</button></div></div>;
   return <div {...(busy?{inert:''}:{})} aria-busy={busy} className="app-root h-screen w-screen"><MapContainer configRuntime={config} configLab/><header className="fixed bottom-12 left-1/2 z-[2700] flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-xl border bg-white/95 p-3 shadow-lg">
-    <strong className="text-sm">配置运行实验室 · 本机 r{config.revision}／契约 r{config.contractRevision}</strong><button className="rounded border px-3 py-2" onClick={openEditor}>编辑</button>
+    <strong className="text-sm">配置运行实验室 · 本机 r{config.revision}／契约 c{config.contractRevision}</strong><button className="rounded border px-3 py-2" onClick={openEditor}>编辑</button>
     <button className="rounded border px-3 py-2" onClick={()=>void persistActiveConfig(config).then(setConfig).catch(error=>setMessage(String(error)))}>保存本地</button>
     <button className="rounded border px-3 py-2" disabled={workspace.hasDraft} onClick={()=>void restore()}>恢复当前正式配置</button>
     <button className="rounded border px-3 py-2" onClick={()=>input.current?.click()}>导入本地配置</button><GlobalPackageControls config={config} hasDraft={busy} onSaved={setConfig} onMessage={setMessage}/>

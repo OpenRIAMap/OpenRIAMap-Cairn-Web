@@ -1,9 +1,10 @@
-"""Real local UI + IndexedDB acceptance. Only use the disposable 9502 profile."""
+"""Real local UI + IndexedDB acceptance. Use an explicitly disposable profile."""
 import json, os, time, base64
 from pathlib import Path
 from browser_check import Browser, APP_URL, OUT
 
-assert os.environ.get('CAIRNMAP_CDP_PORT')=='9502'
+assert APP_URL.startswith('http://127.0.0.1:')
+assert os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514')
 class AcceptanceBrowser(Browser):
     def __init__(self):
         self.dialogs=[]

@@ -9762,6 +9762,22 @@ var require_lib3 = __commonJS({
   }
 });
 
+// src/configStudio/contract.ts
+var NATIVE_CONFIG_REVISION = 14;
+var CONTRACT_CAPABILITIES = {
+  latest: NATIVE_CONFIG_REVISION,
+  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14],
+  category: [9, 10, 11, 12, 13, 14],
+  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+  publication: [11, 12, 13, 14],
+  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14]] }
+};
+var supportsContract = (capability, value) => typeof value === "number" && CONTRACT_CAPABILITIES[capability].includes(value);
+function isNativeConfigRevision(value) {
+  return supportsContract("native", value);
+}
+
 // src/core/project/navigationDefinition.ts
 var RAILWAY_ROLES = ["lines", "platforms", "stationAreas", "stations"];
 function pathCovers(scope, path2) {
@@ -10484,6 +10500,28 @@ function customPillErrors(size, value) {
   return errors;
 }
 
+// src/configStudio/halo.ts
+var HALO_WIDTH_LIMIT = 72;
+function haloProblems(value, required = false) {
+  if (!value) return required ? ["\u7F3A\u5C11 c14 Halo \u8BBE\u7F6E\uFF1B\u8BF7\u4F7F\u7528\u660E\u786E\u8FC1\u79FB\u5165\u53E3\u5347\u7EA7\u6765\u6E90\u914D\u7F6E\u3002"] : [];
+  return [
+    ...typeof value.enabled !== "boolean" ? ["Halo \u5F00\u5173\u5FC5\u987B\u4E3A\u5E03\u5C14\u503C\u3002"] : [],
+    ...!Number.isFinite(value.widthPx) || value.widthPx < 0 || value.widthPx > HALO_WIDTH_LIMIT ? [`Halo \u7C97\u7EC6\u5FC5\u987B\u662F 0\uFF5E${HALO_WIDTH_LIMIT}px \u7684\u6709\u9650\u6570\u5B57\u3002`] : [],
+    ...!value.color ? ["Halo \u7F3A\u5C11\u989C\u8272\u8BBE\u7F6E\u3002"] : []
+  ];
+}
+function symbolHalos(symbol) {
+  if (!symbol) return [];
+  if (symbol.kind === "shape") return [{ path: "shape/halo", value: symbol.shape.halo }];
+  const rows = [{ path: "fallback/halo", value: symbol.fallback.halo }];
+  if (symbol.kind === "icon") {
+    if (symbol.icon.mode === "single") rows.push({ path: "icon/item/halo", value: symbol.icon.item.halo });
+    else symbol.icon.entries.forEach((row2, i) => rows.push({ path: `icon/entries/${i}/item/halo`, value: row2.item.halo }));
+  } else if (symbol.image.mode === "valueMap") symbol.image.entries.forEach((row2, i) => rows.push({ path: `image/entries/${i}/presentation/halo`, value: row2.presentation.halo }));
+  else rows.push({ path: "image/presentation/halo", value: symbol.image.presentation.halo });
+  return rows;
+}
+
 // src/configStudio/pinhead-capabilities.generated.json
 var pinhead_capabilities_generated_default = { library: "pinhead", version: "25", manifestSha256: "c77abb1e97bbb5cf3976d79757e45baecbb922c3ab80fa5ad5b48bca1d0f61fe", ids: ["a", "a_frame_sidewall_tent", "a_frame_sidewall_tents", "a_frame_signboard", "a_frame_tent", "a_frame_tents", "activity_panel", "adit_profile", "adit_profile_with_rocks", "aerial_cargo_lift", "aerial_cargo_lift_with_crates", "aerial_drag_lift", "aerial_gondola", "aerial_j_bar_lift", "aerial_platter_lift", "aerial_t_bar_lift", "aerial_tram", "aerialway_pole", "africa", "africa_and_madagascar", "ahimsa_hand_outline", "airboat_on_water", "airport_terminal", "airport_terminal_with_plane_takeoff", "alabama", "alabama_with_capital_star", "alaska", "american_football", "ampersand", "analog_tv_with_rabbitears", "analog_watch", "anchor", "angel_moroni", "angelfish", "angelfish_under_water", "angry_face", "angry_face_in_circle", "angry_face_in_circle_outline", "anguished_face", "anguished_face_in_circle", "anguished_face_in_circle_outline", "anguished_face_with_spots", "anguished_face_with_spots_in_circle", "anguished_face_with_spots_in_circle_outline", "anime_eye_and_eyebrow", "ankh", "antenna_array", "antibody", "antler", "anus", "anvil", "anvil_and_mallet", "apple", "apple_core", "arch", "archery_arrow", "archery_bow", "archery_bow_and_archery_arrow", "arizona", "arizona_with_capital_star", "arkansas", "arkansas_with_capital_star", "arm", "army_tent", "arrow_bottom_left", "arrow_bottom_right", "arrow_bottom_right_to_eight_point_asterisk", "arrow_down", "arrow_down_from_banknote_in_slot", "arrow_down_from_book_with_bookmark_in_slot", "arrow_down_from_envelope_in_slot", "arrow_down_from_payment_card_in_slot", "arrow_down_from_rectangle_outline", "arrow_down_from_ticket_in_slot", "arrow_down_from_up_bracket", "arrow_down_to_down_bracket", "arrow_down_to_rectangle_outline", "arrow_left", "arrow_left_from_rectangle_tall_outline", "arrow_left_from_right_bracket", "arrow_left_to_left_bracket", "arrow_left_to_rectangle_tall_outline", "arrow_right", "arrow_right_from_left_bracket", "arrow_right_from_rectangle_tall_outline", "arrow_right_to_rectangle_tall_outline", "arrow_right_to_right_bracket", "arrow_top_left", "arrow_top_right", "arrow_top_right_from_square_outline", "arrow_up", "arrow_up_from_down_bracket", "arrow_up_from_rectangle_outline", "arrow_up_to_banknote_in_slot", "arrow_up_to_book_with_bookmark_in_slot", "arrow_up_to_envelope_in_slot", "arrow_up_to_payment_card_in_slot", "arrow_up_to_rectangle_outline", "arrow_up_to_ticket_in_slot", "arrow_up_to_up_bracket", "arrows_left_right", "arrows_left_right_above_water", "arrows_left_right_above_waters", "arrows_recirculating", "arrows_up_down_in_left_right_brackets", "art_text", "art_text_above_swash_line", "astrologers_hat", "at_sign", "atm_text", "atv", "axe", "axe_and_chipped_log", "axe_and_firewood_pile", "axial_reflecting_dish_with_monopod_antenna_and_beams", "axial_reflecting_dish_with_tripod_antenna", "b", "baby", "baby_crawling", "baby_in_swaddle", "bacteria", "badge_shield", "badge_shield_with_fire", "badge_shield_with_star", "badminton_racket_and_shuttlecock", "bag", "bag_of_trash", "bag_of_trash_with_stink", "bag_with_greek_cross", "bagel", "bagel_seeded", "baguette", "baht", "balance_scales", "balloon", "banana", "banana_and_apple", "banana_hand", "banknote", "banknote_in_hand", "banknote_in_slot", "barbecue_grill_wheeled_with_steam", "barbecue_grill_with_steam", "barbed_hook", "barbell", "barn", "barn_and_silo", "barrel_with_bunghole", "barricade", "baseball_bat_and_baseball", "basket_swing", "basketball_in_basketball_net", "bathroom_scale", "beach_umbrella_in_ground", "bear", "bear_spray_can", "bear_spray_can_with_spray", "bear_spray_can_with_spray_and_arrow_right_above_arrow_left", "bear_spray_can_with_spray_and_baht", "bear_spray_can_with_spray_and_dollar", "bear_spray_can_with_spray_and_euro", "bear_spray_can_with_spray_and_peso", "bear_spray_can_with_spray_and_pound", "bear_spray_can_with_spray_and_recycling_symbol", "bear_spray_can_with_spray_and_ruble", "bear_spray_can_with_spray_and_rupee", "bear_spray_can_with_spray_and_shekel", "bear_spray_can_with_spray_and_yen_yuan", "beaver_in_water", "bed", "bee", "bee_skep", "beer_bottle_and_drink_bottle", "beer_bottles_row", "beer_mug_with_foam", "belgium", "belgium_with_capital_star", "bell", "bell_in_tall_gable_roofed_building", "bench", "bench_with_armrests", "bench_with_armrests_and_backrest", "bench_with_armrests_and_backrest_with_plaque", "bench_with_backrest", "bench_with_backrest_in_rectangular_shelter", "bench_with_backrest_with_plaque", "bench_with_plaque", "bench_with_plaque_and_armrests", "bicycle", "bicycle_and_arrow_right_above_arrow_left", "bicycle_and_baht", "bicycle_and_dollar", "bicycle_and_euro", "bicycle_and_key", "bicycle_and_locked_lock_with_keyhole", "bicycle_and_peso", "bicycle_and_pound", "bicycle_and_ruble", "bicycle_and_rupee", "bicycle_and_shekel", "bicycle_and_tag", "bicycle_and_taxi_checkerboard", "bicycle_and_wrench", "bicycle_and_yen_yuan", "bicycle_barrier", "bicycle_in_garage", "bicycle_in_locker", "bicycle_in_parking_structure", "bicycle_in_rectangle_outline", "bicycle_on_parking_line", "bicycle_under_list_beside_checkmark", "bicycle_under_shower_spray", "bicycle_with_staple_stand", "bifold_map_with_dotted_line_to_x", "bifold_pamphlet", "big_top_tent_with_pennant", "billboard", "binoculars", "biohazard_symbol", "bird", "bird_flying", "bishops_miter_with_latin_cross_beside_crozier_head", "bison", "bladder", "bleachers", "blood_cells", "boat_on_trailer", "boat_on_trailer_on_ramp_on_water", "bohr_atomic_model", "bollard", "bollard_row", "bolt", "bone", "book", "book_with_arrows_recirculating", "book_with_balance_scales", "book_with_bookmark", "book_with_bookmark_in_slot", "book_with_dna", "book_with_info_i", "book_with_molar_tooth", "book_with_music_notes_eighth", "book_with_pawprint", "book_with_pencil_and_apple", "book_with_raised_cover", "book_with_rocketship", "book_with_square_academic_cap", "bookmark", "bookmark_outline", "boombox", "border_officer_with_open_suitcase", "border_officer_with_stop_arm_with_passport", "bowling_ball", "bowling_pin", "bowling_pin_and_bowling_ball", "bowling_pins", "box_truck", "boxes_on_pallet", "boxing_glove_up", "brick_trowel", "bridge", "bridge_tied_arch", "briefcase", "briefcase_with_bolt", "briefcase_with_greek_cross", "briefcase_with_heavy_six_point_asterisk", "briefcase_with_info_i", "briefcase_with_shield", "broadleaved_tree", "broadleaved_tree_in_water", "bucket", "budded_latin_cross", "buffer_stop", "bulbed_star", "bull", "bulldozer", "bullet_train", "bullet_train_on_railway_track", "bulletin_board", "bunker", "bunker_silo", "buoy_on_water", "burger", "burger_and_drink_cup_with_straw", "bus", "bus_with_destination_display", "bus_with_destination_display_and_pantograph", "bus_with_destination_display_within_guideway", "bus_with_pantograph", "bus_within_guideway", "bust_on_plinth", "butterfly", "butterfly_with_stars_and_dots", "button", "c", "cabin", "cabin_with_chimney", "cable", "cairn", "calculator", "calendar", "calendar_with_wheelie_bin", "california", "california_with_capital_star", "calm_face", "calm_face_in_circle", "calm_face_in_circle_outline", "camera", "camper_trailer", "camper_trailer_with_waste_dump", "campfire", "campfire_in_arch", "campsite", "campsite_above_water", "campsite_above_waters", "campsite_and_droplet", "campsite_and_wifi", "campsite_beside_campsite_above_campsite_beside_campsite", "campsite_beside_conifer_tree", "campsite_beside_conifer_tree_above_water", "campsite_beside_oval_broadleaved_tree", "campsite_beside_oval_broadleaved_tree_above_water", "campsite_on_pier_in_water", "campsite_on_platform", "campsite_under_list_beside_checkmark", "campsite_under_paragraph", "campsite_with_baht", "campsite_with_canoe", "campsite_with_dollar", "campsite_with_euro", "campsite_with_peso", "campsite_with_pound", "campsite_with_ruble", "campsite_with_rupee", "campsite_with_shekel", "campsite_with_yen_yuan", "campsites", "can", "candle_with_flame", "candlepin_with_ball", "candlepins", "canister_vacuum_cleaner", "cannon", "canoe", "canoe_and_arrow_right_above_arrow_left", "canoe_and_key", "canoe_and_locked_lock_with_keyhole", "canoe_and_tag", "canoe_and_taxi_checkerboard", "canoe_on_pickup_truck", "canoe_on_ramp_on_water", "canoe_on_sedan", "canoe_on_station_wagon", "canoe_on_trailer_on_ramp_on_water", "canoe_on_water", "canoe_under_list_beside_checkmark", "cape_landform", "car", "car_and_arrow_right_above_arrow_left", "car_and_key", "car_and_locked_lock_with_keyhole", "car_and_tag", "car_and_wrench", "car_battery", "car_beside_car", "car_beside_car_above_car_beside_car", "car_beside_person_sleeping_in_bed", "car_between_roller_brushes", "car_in_gable_roofed_building", "car_in_parking_structure", "car_on_parking_line", "car_under_height_restrictor", "car_under_list_beside_checkmark", "car_under_shower_spray", "car_under_toll_gantry", "car_wheel_with_tire", "car_with_baht", "car_with_checkmark", "car_with_dollar", "car_with_emphasis_marks", "car_with_euro", "car_with_peso", "car_with_pound", "car_with_ruble", "car_with_rupee", "car_with_shekel", "car_with_taxi_checkerboard", "car_with_yen_yuan", "cargobike", "cargobike_and_arrow_right_above_arrow_left", "cargobike_and_baht", "cargobike_and_dollar", "cargobike_and_euro", "cargobike_and_key", "cargobike_and_locked_lock_with_keyhole", "cargobike_and_peso", "cargobike_and_pound", "cargobike_and_ruble", "cargobike_and_rupee", "cargobike_and_shekel", "cargobike_and_tag", "cargobike_and_taxi_checkerboard", "cargobike_and_wrench", "cargobike_and_yen_yuan", "cargobike_in_parking_structure", "cargobike_on_parking_line", "cargobike_under_list_beside_checkmark", "carousel", "carpet", "cars_on_barge_on_water", "cartoon_bomb_with_lit_fuse", "cartoon_cannon_with_lit_fuse", "cast_iron_key_with_heart_shaped_handle", "castle", "castle_gate_with_battlements", "castle_gate_with_battlements_and_spires", "castle_keep", "castle_tower_with_battlement_and_spire_and_pennon", "castle_with_battlements", "castle_with_battlements_and_spires", "castle_with_battlements_and_turret", "castle_with_spires", "cat_sitting", "cattle_grid", "cave", "cc_text", "cell_nuclei", "celtic_cross", "chainsaw", "champagne_bottle_and_champagne_glass", "chapel", "charging_station", "charging_station_with_bolt", "checkmark", "cheese_wedge", "chefs_knife", "chess_knight", "chest_of_drawers", "chevron_up_tall", "chevron_up_tall_outline", "chicane_arrow", "chimney_with_smoke", "chip_bag", "chip_bag_with_chip", "chocolate_drop", "chopsticks", "chopsticks_crossed", "cigarette", "cigarette_with_smoke_curl", "cindercone_volcano_erupting", "circle", "circle_a", "circle_outline", "circle_outline_with_dot", "circle_outline_with_dot_outline", "circle_outline_with_star", "circle_outline_with_top_left_quarter_and_bottom_right_quarter", "circle_with_dot", "circle_with_dot_outline", "circle_with_fallout_shelter_symbol", "circular_labyrinth", "city_buildings", "city_gate", "clapperboard", "classical_building", "classical_building_with_clock", "classical_building_with_dome_and_flag", "classical_building_with_flag", "classical_statue", "cleaver", "cliff_with_rocks", "climbing_wall", "clock_face", "cloth", "clothes_hanger", "clothes_hanger_holding_cloth", "club", "club_chair", "cocktail", "cocktail_with_straw", "coconut_palm_tree", "coconut_palm_tree_on_hill_in_water", "coffee_bean", "coffee_mug_with_steam", "coffin", "coffin_with_latin_cross", "colorado", "colorado_with_capital_star", "column_shrine", "comb", "comb_and_dog_wearing_collar", "comedy_mask", "comedy_mask_and_tragedy_mask", "commercial_building", "compact_box_truck", "compact_box_truck_with_box_peak", "compact_box_truck_with_greek_cross", "compact_box_truck_with_heavy_six_point_asterisk", "compass", "compass_rose", "compass_rose_in_circle_outline", "condom", "condom_and_mars", "condom_and_venus", "confetti_ball", "confucian_bell", "confused_face", "confused_face_in_circle", "confused_face_in_circle_outline", "conifer_tree", "conifer_tree_and_bench_on_ground", "conifer_tree_and_flower_and_mountain_snowcapped", "conifer_tree_and_oval_broadleaved_tree", "conifer_tree_beside_conifer_tree", "conifer_tree_with_antenna_array", "conifer_tree_with_star_and_ornaments", "connecticut", "connecticut_with_capital_star", "contiguous_united_states", "contiguous_united_states_with_capital_star", "conveyor_with_chevrons_right", "cooling_tower", "cooling_tower_with_radiation_symbol", "coral", "coral_and_angelfish", "corn_cob", "cot_campsite", "cot_campsite_with_eyes", "couch", "coughing_face", "coughing_face_in_circle", "coughing_face_in_circle_outline", "coughing_face_with_phlegm", "coughing_face_with_phlegm_in_circle", "coughing_face_with_phlegm_in_circle_outline", "coughing_face_with_spittle", "coughing_face_with_spittle_in_circle", "coughing_face_with_spittle_in_circle_outline", "crab", "crane", "crates_under_roof", "crescent", "croissant", "crosshair", "crosswalk_markings_dashes", "crosswalk_markings_dots", "crosswalk_markings_ladder", "crosswalk_markings_ladder_paired", "crosswalk_markings_ladder_skewed", "crosswalk_markings_lines", "crosswalk_markings_lines_paired", "crosswalk_markings_surface", "crosswalk_markings_zebra", "crosswalk_markings_zebra_double", "crosswalk_markings_zebra_paired", "crowd_of_people", "crown", "crystal_ball_on_sphere_stand", "cube", "cup_and_saucer", "cup_and_saucer_and_pawprint", "cup_and_saucer_and_wifi", "cupcake_with_cherry", "curtains", "cylinder", "d", "dagger", "daisy", "dam", "deer_head", "deer_head_with_antlers", "deer_with_antlers", "delaware", "delaware_with_capital_star", "delicate_arch", "desk_lamp", "detergent_bottle", "dharma_wheel", "dharma_wheel_on_square", "diamond", "diamond_outline", "diamond_tall", "diamond_tall_outline", "diaper", "dice", "die_face_with_five_pips", "die_face_with_four_pips", "die_face_with_one_pip", "die_face_with_six_pips", "die_face_with_three_pips", "die_face_with_two_pips", "diesel_train", "diesel_train_on_railway_track", "digital_totem", "digital_totem_with_apps", "digital_totem_with_info_i", "digital_totem_with_wifi", "disc_golf_basket", "district_of_columbia", "district_of_columbia_with_capital_star", "dna", "dog", "dog_sitting", "dog_sitting_and_exclamation_point", "dog_sitting_wearing_collar", "dog_sitting_wearing_collar_and_exclamation_point", "dog_sitting_wearing_collar_and_heart", "dog_sitting_wearing_collar_and_whistle", "dog_sitting_wearing_collar_on_leash", "dog_sitting_wearing_harness", "dog_sitting_wearing_harness_and_whistle", "dog_sitting_wearing_harness_on_leash", "dog_wearing_collar", "dog_wearing_collar_in_shelter", "dog_wearing_collar_on_leash", "dog_wearing_harness", "dog_wearing_harness_on_leash", "dollar", "dollar_swap_to_euro", "dome_with_crescent_moon_and_star_and_planet", "dome_with_flag", "domed_tower", "donut", "dot", "dot_outline", "dot_with_rays_right", "dot_with_rays_up", "double_diamond_tall", "double_mars", "double_venus", "dove", "dove_and_laurel", "dress", "drink_bottle_and_drink_cup_with_straw", "drink_bottle_and_milk_carton_and_can", "drink_can", "drink_can_and_drink_bottle", "drink_cup_with_straw", "drink_cup_with_straw_and_boba", "droplet", "droplet_from_pipes", "droplet_with_greek_cross", "duck", "duck_in_water", "dumbbell", "dumping_ash_in_bin", "dvd_case", "e", "e_wide", "e_wide_in_parking_structure", "e_wide_on_parking_line", "e_wide_under_roof", "e_wide_with_arrow_bottom_right", "e_wide_with_arrow_right", "e_wide_with_bicycle", "e_wide_with_parking_meter", "ear", "ear_atop_slash", "ear_atop_slash_with_t", "ear_with_hearing_aid", "egg", "eight", "electrical_circuit_and_bolt", "electrical_current_transformer_and_bolt", "electrical_curved_circuit_breaker_and_bolt", "electrical_isolator_and_bolt", "electrical_lightning_arrestor_and_bolt", "electrical_square_circuit_breaker_and_bolt", "electrical_switch_and_bolt", "electrical_transformer_and_bolt", "elephant", "elevator_rider", "elevator_three_riders", "eleven", "entrance_station", "envelope", "envelope_in_slot", "enzyme", "escalator", "ethernet_port", "ethernet_port_in_square", "euro", "exclamation_point", "exclamation_point_above_water", "exclamation_point_beside_exclamation_point", "exclamation_point_beside_question_mark", "eye", "eye_outline", "eyebrow", "eyebrow_and_eyelashes", "eyeglasses", "eyelashes", "f", "f22_raptor_fighter_jet", "face_mask", "face_with_tongue_out", "face_with_tongue_out_in_circle", "face_with_tongue_out_in_circle_outline", "fallout_shelter_symbol", "family_restroom_symbol", "fancy_mirror_with_reflection_and_stars", "faravahar", "female_groin", "female_reproductive_system", "fence", "ferris_wheel", "ferryboat", "fetus", "fetus_in_circle", "fetus_in_circle_outline", "field_hockey_stick", "field_hockey_stick_with_ball", "fighter_jet_plane", "file_box", "file_box_and_tag", "fillet_knife", "film", "film_and_optical_disc", "film_movie_projector", "fingernail_polished", "fire", "fire_extinguisher", "fish", "fish_head", "fish_head_beside_barbed_hook_on_line", "fish_head_beside_barbed_hook_on_line_under_ice", "fish_head_beside_barbed_hook_on_line_under_water", "fish_head_beside_barbed_hook_under_paragraph", "fish_jumping_up_cascade", "fish_under_barbed_hook", "fish_under_fillet_knife", "fish_under_list_beside_checkmark", "fish_under_paragraph", "fish_under_water", "fishes", "five", "five_above_water", "five_minus", "five_minus_above_water", "five_plus", "five_plus_above_water", "flag", "flag_above_railway_track", "flag_checkered", "flagpole_with_flag", "flagstick_with_flag", "flagstick_with_flag_in_hole", "flagstick_with_pennant", "flagstick_with_pennant_in_hole", "flagstick_with_pennant_on_square", "flaming_chalice", "flaming_chalice_on_square", "flash_camera", "flat_coin", "flat_head_thumb_tack", "flatbed_truck", "flintlock_pistol", "floor_lamp", "florida", "flower_bouquet", "flush_curb", "flush_curb_under_shoe", "flush_curb_with_arrow_right", "flush_curb_with_question_mark", "flying_saucer", "foot", "fork", "fork_and_knife", "fork_and_sausage", "fork_and_spoon", "fork_crossing_knife", "fort", "fortress", "fountain", "fountain_from_fountain_basin", "fountain_from_water", "four", "four_above_water", "four_legged_octopus", "four_legged_octopus_with_cartoon_eyes", "four_legged_squid", "four_legged_squid_with_cartoon_eyes", "four_minus", "four_minus_above_water", "four_plus", "four_plus_above_water", "four_square_court", "four_square_court_with_ball", "freight_car", "frog_with_cartoon_eyes_and_open_mouth", "frowning_face_with_head_bandage", "frowning_face_with_head_bandage_in_circle", "frowning_face_with_head_bandage_in_circle_outline", "g", "gable_roofed_building", "gable_roofed_shelter", "gable_roofed_shelter_with_fireplace_and_chimney", "gable_roofed_shelter_with_spoon_and_knife", "gallbladder", "game_controller_with_wire", "garage", "garage_and_key", "garage_and_wrench", "gas_flame", "gasoline_pump", "gasoline_pump_with_d", "gasoline_pump_with_e", "gate", "gate_tall", "gavel_with_sound_block", "gazebo", "genie_lamp_with_stardust", "georgia_us", "georgia_us_with_capital_star", "geyser", "geyser_from_ground", "giftwrapped_box", "giftwrapped_box_and_tag", "giraffe", "globe", "globe_gasoline_pump", "globe_gasoline_pump_with_d", "globe_gasoline_pump_with_e", "goggles", "golf_cart", "golf_green", "gown", "grapes", "grass", "grass_in_water", "graticule_globe", "gravestone", "grecian_vase", "greek_cross", "greenhouse", "guidepost", "gull", "gull_and_exclamation_point", "gumdrop_head_and_shoulders", "guyed_mast", "guyed_mast_with_antenna_array", "h", "hair_dryer", "hairy_caterpillar", "hairy_caterpillar_and_exclamation_point", "hammer", "hammer_and_inverted_shoe", "hammer_and_nail", "hand", "hand_dropping_circles", "hand_dropping_circles_into_container", "hand_grenade", "hand_holding_heart", "hand_holding_service_tray", "hand_reaching_down", "hand_reaching_down_toward_rough_surface", "hand_with_eye", "handled_bowl_with_steam", "hands_sign_language_interpretation", "handshake", "handwheel", "hangar", "hanging_rail_transit_vehicle_with_destination_display", "hanging_sign_with_house", "happy_face", "happy_face_in_circle", "happy_face_in_circle_outline", "happy_face_with_face_mask", "happy_face_with_face_mask_in_circle", "happy_face_with_face_mask_in_circle_outline", "hard_candy_in_wrapper", "hash", "hawaii", "hazmat_suit", "head_and_shoulders", "headphones_with_info_i", "heart", "heart_organ", "heart_outine_with_top_left_quarter", "heart_outline", "heart_outline_with_left_half", "heart_outline_with_left_half_and_bottom_right_quarter", "heart_shaped_carriage", "heart_with_bolt", "heart_with_crack", "heart_with_ecg_line", "heart_with_greek_cross", "heavy_six_point_asterisk", "hedge", "height_restrictor", "helicopter", "honeycomb", "hook", "horizontal_storage_tank_on_supports", "horn_cleat", "horse_head_wearing_bridle", "horse_in_shelter", "horseshoe", "horseshoe_with_stake", "hospital_h", "hot_dog", "hot_dog_with_mustard", "house_and_industrial_building_and_lowrise_building", "house_and_trees_on_hill_in_water", "house_with_chimney", "house_with_flag", "house_with_flag_and_info_i", "houseboat_on_water", "human_head", "hunting_stand", "hydrant", "i", "ice_cream_on_cone", "ice_skate", "ice_text", "ice_text_above_icicles", "ichthys", "icicles", "id_card", "idaho", "idaho_with_capital_star", "illinois", "illinois_with_capital_star", "inclined_information_panel", "indiana", "indiana_with_capital_star", "industrial_building", "info_i", "inline_skate", "international_wheelchair_symbol", "intestine", "iowa", "iowa_with_capital_star", "isosceles_trapezoid_tall_down", "isosceles_trapezoid_tall_up", "j", "jack_o_lantern", "jai_alai_cesta_and_ball", "jail_door", "japanese_teacup_with_steam", "jar", "jeep", "jet_plane_front", "jewel", "joint", "jp_castle", "jp_cemetery", "jp_college", "jp_ferry", "jp_fire_station", "jp_hospital", "jp_hot_spring", "jp_landmark", "jp_lighthouse", "jp_monument", "jp_police", "jp_post", "jug_and_apple", "junk_car", "k", "kansas", "kansas_with_capital_star", "kayak_beside_kayak_paddle", "kayak_paddle_crossing_kayak", "kentucky", "kentucky_with_capital_star", "key", "key_and_arrow_right_above_arrow_left", "key_with_house_keychain", "keyhole", "keystone", "khanda", "khanda_on_square", "kidneys", "kids_train", "kids_train_on_railway_track", "kids_train_with_tires", "kitchen_sink", "knife", "l", "ladder", "lantern", "lantern_lamppost", "laptop", "latin_cross", "latin_cross_on_square", "latrine", "lattice_power_tower", "lattice_tower_with_ball_tip_antenna_on_ground_with_beams", "lattice_tower_with_lookout_deck", "lattice_tower_with_observation_deck_on_ground", "laughing_face", "laughing_face_in_circle", "laughing_face_in_circle_outline", "leaf", "leafless_tree", "left_bracket_and_cube", "leg", "leg_with_varicose_veins", "letter_box_us", "life_jacket", "life_ring", "lift_gate", "lift_gate_lowered", "lightbulb", "lighthouse", "lion", "lips", "lips_and_lipstick", "lipstick", "liver", "liver_with_bile_duct", "loaf_of_bread", "loaf_of_bread_with_steam", "loaf_of_pan_bread", "loaf_of_pan_bread_with_steam", "locked_lock", "locked_lock_with_keyhole", "lockers_terminal", "lotus_flower", "louisiana", "louisiana_with_capital_star", "lounger", "low_mounted_beam", "low_shrub", "lowered_curb", "lowered_curb_under_shoe", "lowered_curb_with_arrow_bottom_right", "lowered_curb_with_question_mark", "lowrise_apartment_building_on_ground", "lowrise_building", "lowrise_building_and_tree_on_ground", "lu_zi_symbol", "lucha_libre_mask", "lungs", "lungs_with_right_side_spots", "m", "madagascar", "madagascar_with_capital_star", "madison_cross", "magic_wand_and_sparkles", "magnifying_glass", "magnifying_glass_for_search_ui", "maine", "maine_with_capital_star", "male_genitalia", "male_genitalia_with_testicles", "male_genitalia_with_urethra", "male_groin", "manhole_cover", "manhole_cover_with_bolt", "manhole_cover_with_cable", "manhole_cover_with_droplet", "manhole_cover_with_gas_flame", "manhole_cover_with_hydrant", "manhole_cover_with_sewage_pipe_cross_section", "manicured_grass", "manor", "manufactured_home", "map_outline", "map_outline_with_info_i", "map_outline_with_swap_arrows", "map_pin", "map_pin_outline", "map_pin_outline_with_dot", "map_pin_with_dot", "maple_leaf", "marae", "market_stall", "mars", "martini_glass_and_wine_bottle", "maryland", "massachusetts", "massachusetts_with_capital_star", "maze", "meat", "medal_ribbon", "medal_ribbon_with_anchor", "medal_ribbon_with_star", "megalith", "megaphone", "memorial_stone", "memorial_stone_with_inscription", "memorial_stone_with_latin_cross", "mens_restroom_symbol", "mesoamerican_pyramid", "michigan", "michigan_lower_peninsula", "michigan_upper_peninsula", "michigan_with_capital_star", "microphone", "microscope", "milestone", "military_police_officer", "military_police_officer_with_stop_arm", "milk_carton_and_apple", "milk_carton_and_apple_and_baht", "milk_carton_and_apple_and_dollar", "milk_carton_and_apple_and_euro", "milk_carton_and_apple_and_peso", "milk_carton_and_apple_and_pound", "milk_carton_and_apple_and_ruble", "milk_carton_and_apple_and_rupee", "milk_carton_and_apple_and_shekel", "milk_carton_and_apple_and_yen_yuan", "milk_carton_and_cheese", "milk_churn", "mineshaft_cage", "mineshaft_profile", "minnesota", "minnesota_with_capital_star", "mississippi", "mississippi_with_capital_star", "missouri", "missouri_with_capital_star", "mobile_phone_with_keypad_and_antenna", "mobile_phone_with_keypad_and_antenna_and_bolt", "mobile_phone_with_keypad_and_antenna_and_wifi", "mobile_phone_with_keypad_and_antenna_beside_mobile_phone_with_touchscreen_and_antenna", "mobile_phone_with_touchscreen_and_antenna", "mobile_phone_with_touchscreen_and_antenna_and_bolt", "mobile_phone_with_touchscreen_and_antenna_and_wifi", "molar_tooth", "monopod_antenna_with_beams", "monorail_transit_vehicle_with_destination_display", "montana", "montana_with_capital_star", "mortar_and_pestle_with_greek_cross", "mosquito", "motor_scooter", "motorboat", "motorboat_and_arrow_right_above_arrow_left", "motorboat_and_baht", "motorboat_and_dollar", "motorboat_and_euro", "motorboat_and_key", "motorboat_and_locked_lock_with_keyhole", "motorboat_and_peso", "motorboat_and_pound", "motorboat_and_ruble", "motorboat_and_rupee", "motorboat_and_shekel", "motorboat_and_tag", "motorboat_and_taxi_checkerboard", "motorboat_and_wrench", "motorboat_and_yen_yuan", "motorboat_in_parking_structure", "motorboat_on_parking_line", "motorboat_on_ramp", "motorboat_on_water", "motorboat_under_list_beside_checkmark", "motorcycle", "motorcycle_and_arrow_right_above_arrow_left", "motorcycle_and_baht", "motorcycle_and_dollar", "motorcycle_and_euro", "motorcycle_and_key", "motorcycle_and_locked_lock_with_keyhole", "motorcycle_and_peso", "motorcycle_and_pound", "motorcycle_and_ruble", "motorcycle_and_rupee", "motorcycle_and_shekel", "motorcycle_and_tag", "motorcycle_and_taxi_checkerboard", "motorcycle_and_wrench", "motorcycle_and_yen_yuan", "motorcycle_in_parking_structure", "motorcycle_on_parking_line", "motorcycle_under_list_beside_checkmark", "mountain", "mountain_with_greek_cross", "mountain_with_heavy_six_point_asterisk", "mountains_and_lake", "mounted_scope", "mounted_slotted_dispenser", "mounted_slotted_dispenser_with_dog_wearing_collar", "mounted_slotted_dispenser_with_poo_pile", "music_note_with_optical_disc", "music_notes_eighth", "music_notes_sixteenth", "n", "nauseous_face", "nauseous_face_in_circle", "nauseous_face_in_circle_outline", "navigation_arrow_top_right", "navigation_arrow_up", "nebraska", "nebraska_with_capital_star", "needle", "needle_and_spool_of_thread", "nervous_face", "nervous_face_in_circle", "nervous_face_in_circle_outline", "netherlands", "netherlands_with_capital_star", "neutral_face", "neutral_face_in_circle", "neutral_face_in_circle_outline", "nevada", "nevada_with_capital_star", "new_hampshire", "new_hampshire_with_capital_star", "new_jersey", "new_jersey_with_capital_star", "new_mexico", "new_mexico_with_capital_star", "new_york", "new_york_with_capital_star", "newspaper", "newspaper_box_with_newspaper", "nine", "nine_one_one", "nine_point_star", "nine_point_star_outline", "no_entry", "noodle_bowl_and_chopsticks_with_noodles", "noodle_bowl_with_steam", "nordic_cross", "north_carolina", "north_carolina_with_capital_star", "north_dakota", "north_dakota_with_capital_star", "nose_outline", "o", "oak_leaf", "obelisk", "obelisk_on_plinth", "observatory_dome", "oc_text", "octagon", "octagon_outline", "office_building_with_flag", "officer", "officer_with_stop_arm", "ohio", "ohio_with_capital_star", "oklahoma", "oklahoma_with_capital_star", "om", "om_on_square", "one", "one_above_water", "one_minus", "one_minus_above_water", "one_plus", "one_plus_above_water", "open_book", "open_book_under_roof", "open_chest_with_treasure_and_sparkles", "open_envelope_right", "open_envelope_right_with_baht", "open_envelope_right_with_dollar", "open_envelope_right_with_euro", "open_envelope_right_with_peso", "open_envelope_right_with_pound", "open_envelope_right_with_ruble", "open_envelope_right_with_rupee", "open_envelope_right_with_shekel", "open_envelope_right_with_yen_yuan", "open_scissors", "open_scissors_crossing_handled_comb", "ordnance_survey_benchmark", "oregon", "oregon_with_capital_star", "oval_broadleaved_tree", "oval_broadleaved_tree_beside_oval_broadleaved_tree", "overweight_person", "p", "p_wide", "p_wide_in_parking_structure", "p_wide_on_parking_line", "p_wide_under_roof", "p_wide_with_arrow_bottom_right", "p_wide_with_arrow_right", "p_wide_with_bicycle", "p_wide_with_parking_meter", "paifang", "paint_roller", "paintbrush", "palace", "palette", "palette_with_music_note", "palm_tree", "pancreas", "papal_cross", "paper_and_pencil", "paperclip", "parachute", "parallelogram_tall_left", "parallelogram_tall_right", "parking_line", "parking_stall_markings", "parking_stall_markings_with_e_wide", "parking_stall_markings_with_p_wide", "parking_stall_markings_with_person_in_wheelchair", "parking_structure", "parrot", "party_popper", "passport_with_belgium", "passport_with_bundesadler", "passport_with_graticule_globe", "passport_with_netherlands", "patriarchal_cross", "pawprint", "pawprint_and_whistle", "pawprint_with_greek_cross", "pawprints_and_heart", "payment_card", "payment_card_in_slot", "peace_sign", "pen_nib", "pencil_and_apple", "pencil_bottom_left_to_square_outline", "pennsylvania", "pennsylvania_with_capital_star", "pentagram_in_circle_outline", "people_above_car", "people_and_person_pointing", "people_in_car", "people_sitting_in_theater", "people_sitting_on_seesaw", "people_sleeping_in_bunkbeds", "people_sleeping_in_opposing_bunkbeds", "people_wearing_traditional_festive_latin_clothes", "perfume_bottle_with_spray", "person_aiming_archery_bow", "person_aiming_rifle", "person_balancing", "person_balancing_on_low_mounted_beam", "person_baseball_batting", "person_behind_barred_window", "person_behind_desk", "person_bicycle_racing", "person_boarding", "person_boarding_aerial_gondola", "person_boarding_bullet_train_on_railway_track", "person_boarding_bus_with_destination_display", "person_boarding_bus_with_destination_display_and_pantograph", "person_boarding_car", "person_boarding_diesel_train_on_railway_track", "person_boarding_ferryboat", "person_boarding_hanging_rail_transit_vehicle_with_destination_display", "person_boarding_kids_train_on_railway_track", "person_boarding_monorail_transit_vehicle_with_destination_display", "person_boarding_school_bus", "person_boarding_steam_train_on_railway_track", "person_boarding_taxi", "person_boarding_tram_with_destination_display_and_pantograph_on_tram_track", "person_boarding_transit_vehicle_on_railway_track", "person_boarding_transit_vehicle_with_destination_display", "person_boarding_transit_vehicle_with_destination_display_and_pantograph_on_tram_track", "person_boarding_transit_vehicle_with_destination_display_on_railway_track", "person_boarding_transit_vehicle_with_destination_display_on_railway_track_under_ground", "person_boat_racing_in_waves", "person_carrying_canoe", "person_carrying_ski", "person_carrying_ski_and_ski_poles", "person_carrying_skis", "person_carrying_skis_and_ski_poles", "person_climbing", "person_climbing_on_climbing_frame", "person_climbing_with_climbing_rope", "person_cricket_batting_at_cricket_ball", "person_cross_country_skiing", "person_dancing_with_person_wearing_dress", "person_dancing_with_sparkles", "person_diving_into_water", "person_driving_motorboat_on_water", "person_driving_motorboat_on_water_under_paragraph", "person_dropping_trash_into_wheelie_bin", "person_falling_on_rough_surface", "person_fishing_from_pier_above_water", "person_hanging_from_horizontal_bar", "person_holding_barbell", "person_holding_branches", "person_holding_cane", "person_holding_chestfeeding_baby", "person_holding_open_book", "person_holding_open_book_profile", "person_holding_shopping_bags_walking", "person_ice_skating", "person_in_water", "person_in_water_wearing_swim_briefs_holding_bucket", "person_in_water_with_steam", "person_in_wheelchair", "person_inline_skating", "person_jockeying_racehorse", "person_jumping_in_puddle_with_splashes", "person_jumping_on_bouncy_cushion", "person_jumping_on_trampoline", "person_kneeling_and_praying", "person_leaping_over_hurdle", "person_lounging_on_lounger", "person_lying_on_front_in_sun_on_surface", "person_massaging_person_lying_on_front", "person_on_escalator", "person_on_ground_dragging_raft_to_water", "person_on_inclined_swing", "person_on_swing", "person_paddling_canoe_on_water", "person_piloting_hang_glider", "person_playing_soccer", "person_playing_tennis", "person_reaching_into_bins", "person_reaching_up", "person_riding_bicycle", "person_riding_bicycle_down_uneven_slope", "person_riding_bicycle_on_crosswalk", "person_riding_bicycle_up_uneven_slope", "person_riding_dog_sled", "person_riding_horse", "person_riding_in_stroller", "person_riding_jetski_on_water", "person_riding_pedal_boat_on_water", "person_riding_skateboard", "person_riding_snowmobile", "person_riding_surfboard", "person_riding_tube_on_water", "person_rowing_rowboat_on_water", "person_running", "person_running_after_person", "person_shoveling_dirt", "person_showering_with_soap_under_shower_spray", "person_shushing", "person_sitting_in_seat", "person_sitting_in_steam_sauna", "person_sitting_on_bench", "person_sitting_on_bench_with_armrests", "person_sitting_on_bench_with_armrests_and_backrest", "person_sitting_on_bench_with_backrest", "person_sitting_on_lifeguard_stand_above_water", "person_ski_jumping", "person_skiing_downhill", "person_sledding_downhill", "person_sleeping", "person_sleeping_in_bed", "person_sleeping_in_bed_above_car", "person_sleeping_in_bed_between_floor_and_ceiling", "person_sleeping_in_shelter", "person_sliding_down_cliff", "person_sliding_down_cliff_into_water", "person_slipping_down_cliff", "person_slipping_down_cliff_into_water", "person_slipping_down_ramp", "person_slipping_down_steps", "person_snowboarding_downhill", "person_snowshoeing", "person_speaking_to_amphitheater", "person_spiking_volleyball", "person_squatting", "person_squatting_and_person_reaching_up", "person_standing", "person_swimming_in_water", "person_swimming_in_waters", "person_swinging_golf_club", "person_swinging_golf_club_beside_flagstick_with_pennant", "person_swinging_golf_club_beside_windmill", "person_tow_skiing_on_water", "person_using_mounted_binoculars", "person_using_terminal_kiosk", "person_using_terminal_kiosk_with_baht", "person_using_terminal_kiosk_with_dollar", "person_using_terminal_kiosk_with_euro", "person_using_terminal_kiosk_with_peso", "person_using_terminal_kiosk_with_pound", "person_using_terminal_kiosk_with_ruble", "person_using_terminal_kiosk_with_rupee", "person_using_terminal_kiosk_with_shekel", "person_using_terminal_kiosk_with_yen_yuan", "person_vomiting", "person_walking", "person_walking_and_person_riding_bicycle", "person_walking_and_person_riding_bicycle_on_crosswalk", "person_walking_between_walls", "person_walking_bicycle", "person_walking_holding_railing", "person_walking_in_water", "person_walking_in_waters", "person_walking_on_crosswalk", "person_walking_under_icy_eave", "person_walking_with_hiking_pole", "person_walking_with_white_cane", "person_wearing_backpack_and_headlamp_crouching", "person_wearing_backpack_scrambling_up_cliff", "person_wearing_backpack_walking_with_hiking_pole", "person_wearing_backpack_walking_with_hiking_pole_in_gable_roofed_shelter", "person_wearing_cheese_wedge_hat", "person_wearing_cowboy_hat_holding_coiled_rope", "person_wearing_dress_holding_cane", "person_wearing_helmet_padding_raft_on_water", "person_wearing_helmet_paddling_kayak_on_water", "person_wearing_helmet_riding_atv", "person_wearing_martial_arts_belt_front_kicking", "person_wearing_racing_helmet_driving_go_kart", "person_wearing_racing_helmet_driving_racecar", "person_wearing_scuba_gear_diving", "person_wearing_scuba_gear_diving_under_water", "person_wearing_seatbelt", "person_wearing_skis_riding_chairlift", "person_wearing_waiters_attire_holding_tray_with_wine_glass", "person_wind_surfing_on_water", "person_with_droplets", "person_with_open_arms", "person_with_ponytail_riding_zip_line", "peso", "petrine_cross", "phone_bars", "phone_bars_no_signal", "phone_bars_no_signal_with_x", "phone_bars_weak_signal", "phone_bars_weaker_signal", "phone_bars_weakest_signal", "phone_bottom_right", "phone_down", "phone_down_above_eight_one_one", "phone_down_above_five_one_one", "phone_down_above_four_one_one", "phone_down_above_keyboard", "phone_down_above_nine_eight_eight", "phone_down_above_nine_nine_nine", "phone_down_above_nine_one_one", "phone_down_above_one_one_one", "phone_down_above_one_one_two", "phone_down_above_one_two_three", "phone_down_above_seven_one_one", "phone_down_above_six_one_one", "phone_down_above_sos_text", "phone_down_above_three_one_one", "phone_down_above_two_one_one", "phone_right", "phone_right_with_beams_from_receiver", "phone_right_with_exclamation_point", "phone_top_right", "phone_top_right_with_greek_cross", "phone_top_right_with_plus", "piano_keys", "pick_hammer", "pick_hammer_with_rocks", "picket_fence", "pickleball_paddle_with_ball", "pickup_truck", "pickup_truck_and_tag", "pickup_truck_with_crates", "pickup_truck_with_raised_hood", "pickup_truck_with_slidein_camper", "pickup_truck_with_truck_cap", "picnic_table", "picnic_table_in_shelter", "pier_mounted_in_water", "pier_on_water", "pill", "pill_bottle_with_greek_cross", "pin", "pin_pad_with_baht", "pin_pad_with_dollar", "pin_pad_with_euro", "pin_pad_with_peso", "pin_pad_with_pound", "pin_pad_with_ruble", "pin_pad_with_rupee", "pin_pad_with_shekel", "pin_pad_with_yen_yuan", "pint_glass", "pipe", "pixel_anchor", "pixel_ape_face", "pixel_ape_face_with_eye_patch", "pixel_apple", "pixel_arrows_left_right_above_water", "pixel_baht", "pixel_bell", "pixel_bicycle", "pixel_bowling_ball", "pixel_broadleaved_tree", "pixel_burger_on_bun", "pixel_burger_on_bun_with_seeds", "pixel_burger_with_cheese_on_bun", "pixel_burger_with_cheese_on_bun_with_seeds", "pixel_bus", "pixel_car", "pixel_circle", "pixel_circle_outline", "pixel_circle_with_dot", "pixel_circle_with_star", "pixel_classical_building", "pixel_classical_building_with_dome_and_flag", "pixel_classical_building_with_flag", "pixel_conifer_tree", "pixel_dollar", "pixel_dome_with_flag", "pixel_droplet", "pixel_droplet_with_shine", "pixel_envelope", "pixel_euro", "pixel_exclamation_point", "pixel_fork_and_knife", "pixel_gasoline_pump", "pixel_ghost", "pixel_head_and_shoulders", "pixel_house_with_chimney", "pixel_house_with_flag", "pixel_invader", "pixel_map_pin", "pixel_map_pin_with_dot", "pixel_megalith", "pixel_peso", "pixel_plane", "pixel_pound", "pixel_question_mark", "pixel_ruble", "pixel_rupee", "pixel_shekel", "pixel_skull", "pixel_star", "pixel_taxi", "pixel_three_inch_floppy_disk", "pixel_transit_vehicle_on_railway_track", "pixel_water", "pixel_waters", "pixel_yen_yuan", "pizza_slice", "place_of_worship_building", "plane_right", "plane_takeoff_above_ground", "plane_taxiing", "plane_top_right", "plane_up", "planes", "planes_bidirectional", "plant", "plant_in_raised_planter", "plaque", "play_shelter", "play_structure_with_slide", "plug", "plug_with_bolt", "plus", "plus_squat", "pointy_rock", "pole_with_antenna_array", "pole_with_floodlights", "police_officer", "police_officer_with_stop_arm", "poo_pile", "portable_fence", "portable_radio", "post_box", "postage_stamp", "poster_box", "pot", "potted_flower", "poultry_drumstick", "pound", "pregnant_person", "pretzel_with_salt", "profile_of_person_in_hat", "profile_of_person_in_hat_in_frame", "propane_tank", "propane_tank_with_gas_flame", "propane_tank_with_recycling_symbol", "propeller_plane", "prostate", "pumpjack", "pumpkin", "pumpkin_shaped_carriage", "pumpkin_under_stardust", "purse", "puzzle_piece", "q", "quadcopter_drone", "quaker_star", "quaker_star_on_square", "quay", "question_mark", "question_mark_above_water", "r", "racetrack_eight_with_dashes", "racetrack_oval", "racetrack_oval_with_dashes", "racquet", "radiation_symbol", "ragged_flag_with_skull", "rail_profile", "railway_cable_track", "railway_track", "railway_track_askew", "railway_track_crossing_dashed_line", "railway_track_crossing_railway_track", "railway_track_crossing_solid_line", "railway_track_crossing_striped_line", "railway_track_mini", "railway_track_narrow_gauge", "railway_track_partial", "raised_curb", "raised_curb_under_shoe", "raised_curb_with_arrow_down", "raised_curb_with_question_mark", "ranger_hat", "rattlesnake", "rays_outward", "rectangle", "rectangle_outline", "rectangle_tall", "rectangle_tall_outline", "recycling_symbol", "rememberance_ribbon", "respirator", "rhode_island", "rhode_island_with_capital_star", "rigging", "ring_linked_to_ring_with_jewel", "ring_with_jewel", "rocket_firework", "rocketship", "rocking_horse", "rolled_curb", "rolled_curb_under_shoe", "rolled_curb_with_arrow_bottom_right", "rolled_curb_with_question_mark", "rolled_paper_in_bottle", "rolled_paper_in_bottle_in_water", "roller_brushes", "roller_coaster", "roman_numeral_i", "roman_numeral_i_above_water", "roman_numeral_ii", "roman_numeral_ii_above_water", "roman_numeral_iii", "roman_numeral_iii_above_water", "roman_numeral_iv", "roman_numeral_iv_above_water", "roman_numeral_ix", "roman_numeral_v", "roman_numeral_v_above_water", "roman_numeral_vi", "roman_numeral_vi_above_water", "roman_numeral_vii", "roman_numeral_viii", "roman_numeral_x", "roman_numeral_xi", "roman_numeral_xii", "roman_numeral_xx", "roofed_information_board", "room", "rooster_fighting", "rope_fence", "round_bottomed_flask", "round_rock", "round_rock_with_inscription", "round_structure_with_flag", "row_houses", "rss", "ruble", "rumble_strip", "rupee", "russian_cross", "russian_orthodox_cross", "s", "sad_face", "sad_face_in_circle", "sad_face_in_circle_outline", "sad_face_with_tear", "sad_face_with_tear_in_circle", "sad_face_with_tear_in_circle_outline", "saddle_shape", "saguaro", "sail", "sailboat", "sailboat_on_water", "sailing_ship", "sailing_ship_in_water", "saint_georges_cross", "sandbox", "sandbox_with_sand_trowel", "sausage", "sauvastika", "sauvastika_with_dots", "sayana_press", "scaffold", "school_bus", "scissors_and_comb", "screw_beside_nail", "sculpture", "sea_lion", "sea_star", "seaplane_takeoff", "seaplane_takeoff_above_water", "sedan", "sedan_and_tag", "sedan_with_raised_hood", "semi_trailer", "semi_trailer_with_bolt", "seven", "sewage_pipe_cross_section", "shaker_pint_glass", "shark_dorsal_fin_in_water", "shark_dorsal_fin_in_waters", "shed", "shekel", "shelter", "shield", "ships_wheel", "shipwreck_in_water", "shoe", "shoe_under_shower_spray", "shooting_stars", "shopping_bag", "shopping_bag_and_tag", "shopping_bag_with_ampersand", "shopping_bag_with_anime_eye_and_eyebrow", "shopping_bag_with_arrows_recirculating", "shopping_bag_with_baht", "shopping_bag_with_dollar", "shopping_bag_with_euro", "shopping_bag_with_heart", "shopping_bag_with_pawprint", "shopping_bag_with_peso", "shopping_bag_with_pound", "shopping_bag_with_ruble", "shopping_bag_with_rupee", "shopping_bag_with_shekel", "shopping_bag_with_tag", "shopping_bag_with_yen_yuan", "shopping_basket", "shopping_cart", "shore", "showerhead_with_spray", "shrub", "shuffleboard_court_with_pucks", "sign", "sign_beside_bench_with_backrest", "sign_beside_car", "sign_beside_person_walking", "sign_beside_taxi", "signboard", "silo", "sitting_tank_toilet", "sitting_tank_toilet_with_droplet", "six", "six_above_water", "six_minus", "six_minus_above_water", "six_plus", "six_plus_above_water", "skateboard", "skull", "skull_above_crossed_bones", "skull_above_crossed_cutlasses", "skull_above_water", "skull_rock", "skull_rock_outline", "skull_with_x_oblique", "skyscraper_on_ground", "slice_of_pan_bread", "slice_of_pan_bread_outline", "slide", "slot", "slot_machine", "smiling_face", "smiling_face_in_circle", "smiling_face_in_circle_outline", "smiling_face_with_eyeglasses", "smiling_face_with_eyeglasses_in_circle", "smiling_face_with_eyeglasses_in_circle_outline", "smoke_curl", "snorkel_and_diving_mask", "snowcapped_mountain", "snowcapped_mountain_range", "snowcapped_mountain_saddle", "snowcapped_mountain_valley", "snowflake", "snowflake_above_icicles", "snowmobile", "sobbing_face", "sobbing_face_in_circle", "sobbing_face_in_circle_outline", "soccer_ball", "sos_text", "south_carolina", "south_carolina_with_capital_star", "south_dakota", "south_dakota_with_capital_star", "spade", "speaker", "speech_bubble", "speech_bubbles", "speed_bump", "speed_dip", "speed_dip_double", "speed_hump", "speed_table", "sperm", "spherical_virus", "spherical_virus_with_exclamation_point", "spice_bottle", "spike_strip", "spiky_fish", "spiky_fish_under_list_beside_checkmark", "spiky_fish_under_paragraph", "spiky_fish_under_water", "spiky_fish_with_x", "spinal_vertebrae", "spiral_labyrinth", "spleen", "spooky_ghost", "spoon", "spoon_and_chefs_knife_and_pot", "spoon_and_chopsticks", "spoon_and_fork", "spring_rider", "spyglass", "square", "square_academic_cap", "square_dot", "square_outline", "square_with_dot", "square_with_square_dot", "squat_rock", "squeeze_stile", "stagecoach", "star", "star_and_crescent", "star_and_crescent_on_square", "star_of_david", "star_of_david_filled", "star_of_david_filled_outline", "star_of_david_on_square", "star_of_david_with_dot", "star_outline", "star_wand_with_stardust", "station_wagon", "station_wagon_and_tag", "station_wagon_with_raised_hood", "statue", "steam_train", "steam_train_on_railway_track", "steam_train_with_tires", "steel_square_and_drafting_compass", "step_ladder", "step_ladder_doubled_sided", "stethoscope", "stomach", "stone_arrowhead_down", "stone_arrowhead_right", "stone_arrowhead_top_right", "stone_arrowhead_up", "stone_wall", "storage_drum", "storage_fermenter", "storage_tank", "street_lamp_arm", "striped_zone", "stroller", "sub_sandwich", "sub_sandwich_with_steam", "sugar_cubes", "sugarcane_stalk_with_leaves", "sugarcane_stalk_with_top_leaves", "sugarcane_stalks_with_top_leaves", "suitcase", "suitcase_and_arrow_right_above_arrow_left", "suitcase_and_key", "suitcase_and_locked_lock_with_keyhole", "suitcase_in_rectangle_outline_and_key", "suitcase_under_list_beside_checkmark", "suitcase_xray", "sun", "surprised_face", "surprised_face_in_circle", "surprised_face_in_circle_outline", "surprised_face_with_x_eyes", "surprised_face_with_x_eyes_in_circle", "surprised_face_with_x_eyes_in_circle_outline", "survey_triangulation_disk", "sushi", "swastika", "swastika_with_dots", "swim_bra_and_swim_briefs", "swing", "swinging_doors", "syringe", "syrup_jug", "syrup_jug_and_droplet", "syrup_jug_with_maple_leaf", "syrup_jug_with_maple_leaf_and_droplet", "syrup_jug_with_sugarcane_stalk_with_leaves", "syrup_jug_with_sugarcane_stalk_with_leaves_and_droplet", "t", "table_soccer_players_with_ball", "table_tennis_paddle", "table_with_chairs", "table_with_umbrella", "table_with_umbrella_and_chairs", "tabletop_microphone", "tabletop_microphone_in_gable_roofed_building", "taco", "tag", "tag_with_baht", "tag_with_dollar", "tag_with_euro", "tag_with_peso", "tag_with_pound", "tag_with_ruble", "tag_with_rupee", "tag_with_shekel", "tag_with_yen_yuan", "tags", "target", "target_with_archery_arrow_at_bullseye", "tattoo_machine", "taxi", "taxi_and_arrow_right_above_arrow_left", "taxi_and_taxi_checkerboard", "taxi_checkerboard", "tea_bag", "teapot", "telegraph_key", "telescope", "telescope_with_sparkles", "temaki", "ten", "tennessee", "tennessee_with_capital_star", "terminal_screen_with_dollar_prompt", "terminal_screen_with_greater_than_prompt", "terminal_screen_with_hash_prompt", "terminal_screen_with_percent_prompt", "texas", "texas_with_capital_star", "thatched_roof_hut", "three", "three_above_water", "three_books_stacked", "three_dot_horizontal_line", "three_dot_horizontal_line_in_rectangle", "three_dot_vertical_line", "three_dot_vertical_line_in_rectangle", "three_inch_floppy_disk", "three_minus", "three_minus_above_water", "three_plus", "three_plus_above_water", "thumbs_up_hand_with_sleeve", "thyroid", "ticket", "ticket_in_slot", "tiling", "tipi_campsite", "tipi_campsite_and_droplet", "tipi_campsite_with_baht", "tipi_campsite_with_dollar", "tipi_campsite_with_euro", "tipi_campsite_with_peso", "tipi_campsite_with_pound", "tipi_campsite_with_ruble", "tipi_campsite_with_rupee", "tipi_campsite_with_shekel", "tipi_campsite_with_yen_yuan", "tipi_campsites", "tire", "tire_course", "tired_face", "tired_face_in_circle", "tired_face_in_circle_outline", "tired_face_with_oral_thermometer_and_brow_sweat", "tired_face_with_oral_thermometer_and_brow_sweat_in_circle", "tired_face_with_oral_thermometer_and_brow_sweat_in_circle_outline", "tired_face_with_sweat", "tired_face_with_sweat_in_circle", "tired_face_with_sweat_in_circle_outline", "tired_face_with_z", "tired_face_with_z_in_circle", "tired_face_with_z_in_circle_outline", "tissue", "to_go_cup_with_cup_sleeve", "toilet_paper_roll", "toll_booth", "toll_gantry", "toolbox", "toothbrush", "torii", "torii_on_square", "tornado", "tornado_beside_shelter", "tour_van", "tourboat_on_water", "tow_truck", "tower_with_observation_deck", "town_buildings", "traditional_storage_jars", "traffic_cone", "traffic_cone_and_exclamation_point", "tram_on_tram_track", "tram_profile", "tram_track_crossing_dashed_line", "tram_track_crossing_solid_line", "tram_track_crossing_striped_line", "tram_with_destination_display_and_pantograph_on_tram_track", "tram_with_destination_display_on_tram_track", "tram_with_pantograph_on_tram_track", "transit_vehicle", "transit_vehicle_on_railway_track", "transit_vehicle_on_railway_track_between_roller_brushes", "transit_vehicle_on_railway_track_in_tunnel", "transit_vehicle_with_destination_display", "transit_vehicle_with_destination_display_and_pantograph_on_tram_track", "transit_vehicle_with_destination_display_on_railway_track", "transit_vehicle_with_destination_display_on_railway_track_in_tunnel", "transit_vehicle_with_pantograph_on_railway_track", "trapezoidal_rock", "trash_can", "trash_truck", "treasure_map", "treasure_map_x", "tree_and_bench_with_backrest", "tree_on_hill_in_water", "tree_row", "tree_stump", "trench", "triangle_down", "triangle_down_outline", "triangle_down_squat", "triangle_up", "triangle_up_outline", "triangle_up_with_exclamation_point", "triangle_up_with_skull", "triangles_left_right", "triangles_left_right_in_rectangle", "triangles_left_right_in_rectangle_outline", "triangles_up_down", "triangles_up_down_in_rectangle", "triangles_up_down_in_rectangle_outline", "tricorne_hat_with_skull", "trifold_brochure", "trophy", "trophy_with_star", "truck", "trumpet", "tshirt", "tshirt_on_clothes_hanger_and_folded_linens", "tube", "tube_and_toothbrush", "tulip", "tumor", "tunnel", "tunnel_entrance", "turnstile", "turntable", "turtle_shell_top", "turtle_top", "twelve", "two", "two_above_water", "two_button_computer_mouse_with_scroll_wheel", "two_dot_horizontal_line_in_rectangle", "two_dot_vertical_line_in_rectangle", "two_minus", "two_minus_above_water", "two_plus", "two_plus_above_water", "typha_and_duck_in_water", "typha_in_water", "u", "underweight_person", "unicorn_head", "unicorn_rearing", "utah", "utah_with_capital_star", "utility_device", "utility_device_with_bolt", "utility_device_with_cable", "utility_device_with_droplet", "utility_device_with_gas_flame", "utility_device_with_sewage_pipe_cross_section", "utility_meter", "utility_meter_with_bolt", "utility_meter_with_cable", "utility_meter_with_droplet", "utility_meter_with_gas_flame", "utility_pole", "utility_pole_with_bolt", "utility_shutoff", "utility_shutoff_with_bolt", "utility_shutoff_with_cable", "utility_valve", "utility_valve_with_droplet", "utility_valve_with_gas_flame", "utv", "v", "vacuum_cleaner", "vacuum_station", "vase", "veiled_hennin_with_star", "vending_machine", "vending_machine_with_baguette", "vending_machine_with_cigarette_with_smoke_curl", "vending_machine_with_drink_can", "vending_machine_with_drink_cup_with_steam", "vending_machine_with_egg", "vending_machine_with_greek_cross", "vending_machine_with_heart", "vending_machine_with_ice_cream_on_cone", "vending_machine_with_postage_stamp", "vending_machine_with_shelves", "vending_machine_with_ticket", "vending_machine_with_venus", "venus", "venus_mars", "venus_with_mars", "vermont", "vermont_with_capital_star", "vertical_rotisserie", "vertical_slot", "video_camera_symbol", "village_buildings", "vinyl_record", "virginia", "virginia_with_capital_star", "vneck_tshirt", "vneck_tshirt_and_tag", "volleyball", "vomiting_face", "vomiting_face_in_circle", "vomiting_face_in_circle_outline", "w", "wall_hanging_with_mountains_and_sun", "wall_tent", "wall_tents", "wallmounted_surveillance_camera", "washing_machine", "washington", "washington_with_capital_star", "water", "water_bottle", "water_glass", "water_pipe_return_bend_with_handle", "water_pipe_return_bend_with_motor_and_handle", "water_standpipe_with_handle", "water_standpipe_with_handle_and_drinking_glass", "water_standpipe_with_handle_and_droplet", "water_standpipe_with_motor_and_handle", "water_standpipe_with_motor_and_handle_and_drinking_glass", "water_standpipe_with_motor_and_handle_and_droplet", "water_standpipe_with_pump_handle", "water_standpipe_with_pump_handle_and_drinking_glass", "water_standpipe_with_pump_handle_and_droplet", "water_tap", "water_tap_with_drinking_glass", "water_tap_with_droplet", "water_tap_with_handle", "water_tap_with_handle_and_drinking_glass", "water_tap_with_handle_and_droplet", "water_tower", "waterfall", "waterfall_into_water", "waterfall_with_froth", "waterfowl", "watering_can", "watermill_on_water", "waters", "wc_text", "webcam", "west_virginia", "west_virginia_with_capital_star", "whale_tail", "whale_tail_in_water", "wheelchair", "wheelie_bin", "wheelie_bin_and_apple_core", "wheelie_bin_and_bag_of_trash", "wheelie_bin_and_drink_bottle_and_can", "wheelie_bin_and_leaf", "whistle", "wifi", "wifi_no_signal", "wifi_no_signal_with_x", "wifi_weak_signal", "wifi_weakest_signal", "wind_turbine", "winding_way", "winding_way_narrow", "winding_way_wide", "windmill", "window", "windpump", "windsock", "wine_bottle", "wine_bottle_and_wine_glass", "wine_glass", "winged_horse_rearing", "wisconsin", "wisconsin_with_capital_star", "wizards_hat_with_star", "wolf_head", "wolf_head_and_exclamation_point", "womens_and_mens_restroom_symbol", "womens_and_mens_separate_restrooms_symbol", "womens_restroom_symbol", "woozy_face", "woozy_face_in_circle", "woozy_face_in_circle_outline", "wrench", "wrench_and_hammer", "wyoming", "wyoming_with_capital_star", "x", "x_above_water", "x_cross", "x_oblique", "y", "y_junction", "yen_yuan", "yin_yang", "yin_yang_on_square", "z", "zero", "zero_above_water"] };
 
@@ -10594,6 +10632,7 @@ function pointSymbolProblems(value, fields, config) {
       }
     }
   }
+  for (const row2 of symbolHalos(value)) for (const message of haloProblems(row2.value, config.contractRevision >= 14)) fail(row2.path, message);
   return issues;
 }
 function pointSymbolBindings(value) {
@@ -10614,6 +10653,7 @@ function pointSymbolBindings(value) {
       else value.icon.entries.forEach((row2, i) => item(row2.item, `icon/entries/${i}/item`));
     }
   }
+  for (const row2 of symbolHalos(value)) if (row2.value) result.push({ path: row2.path + "/color", value: row2.value.color });
   return result;
 }
 
@@ -10895,6 +10935,7 @@ function localMappingConstraints(rule) {
   };
   const icon = (item, path2, parents) => {
     colors(item.foreground, path2 + "/foreground", parents);
+    colors(item.halo?.color, path2 + "/halo/color", parents);
     colors(item.plate?.fill, path2 + "/plate/fill", parents);
     colors(item.plate?.stroke, path2 + "/plate/stroke", parents);
   };
@@ -10903,6 +10944,7 @@ function localMappingConstraints(rule) {
     const base = symbol.kind === "shape" ? symbol.shape : symbol.fallback;
     colors(base.stroke, "style/pointSymbol/" + (symbol.kind === "shape" ? "shape" : "fallback") + "/stroke");
     colors(base.fill, "style/pointSymbol/" + (symbol.kind === "shape" ? "shape" : "fallback") + "/fill");
+    colors(base.halo?.color, "style/pointSymbol/" + (symbol.kind === "shape" ? "shape" : "fallback") + "/halo/color");
     if (symbol.kind === "icon") {
       if (symbol.icon.mode === "single") icon(symbol.icon.item, "style/pointSymbol/icon/item", []);
       else {
@@ -10915,12 +10957,19 @@ function localMappingConstraints(rule) {
       }
     } else if (symbol.kind === "externalImage" && symbol.image.mode === "valueMap") {
       const source = symbol.image;
-      source.entries.forEach((row2, i) => rows.push({ path: `style/pointSymbol/image/entries/${i}`, pins: [{ field: source.field, value: row2.value }] }));
+      source.entries.forEach((row2, i) => {
+        const path2 = `style/pointSymbol/image/entries/${i}`, pins = [{ field: source.field, value: row2.value }];
+        rows.push({ path: path2, pins });
+        colors(row2.presentation.halo?.color, path2 + "/presentation/halo/color", pins);
+      });
+    } else if (symbol.kind === "externalImage" && symbol.image.mode !== "valueMap") {
+      colors(symbol.image.presentation.halo?.color, "style/pointSymbol/image/presentation/halo/color");
     }
   } else {
     colors(rule.style?.stroke, "style/stroke");
     colors(rule.style?.fill, "style/fill");
   }
+  colors(rule.style?.halo?.color, "style/halo/color");
   colors(rule.label?.style?.color, "label/style/color");
   const pill = rule.label?.style?.pill;
   if (pill) for (const key2 of ["textColor", "backgroundColor", "strokeColor"]) colors(pill[key2], "label/style/pill/" + key2);
@@ -11328,7 +11377,7 @@ function validateNodeFieldSettings(config, resolveFields) {
   const issues = [];
   const error = (path2, message) => issues.push({ severity: "error", code: "field-settings-invalid", path: path2, message });
   if (config.contractRevision < 10) {
-    if (config.nodes.some((node) => node.fieldSettings)) error("nodes", "\u901A\u7528\u5305\u542B\u5173\u7CFB\u4E0E\u641C\u7D22\u63A7\u5236\u9700\u8981 r10\u3002");
+    if (config.nodes.some((node) => node.fieldSettings)) error("nodes", "\u901A\u7528\u5305\u542B\u5173\u7CFB\u4E0E\u641C\u7D22\u63A7\u5236\u9700\u8981 c10\u3002");
     return issues;
   }
   if (config.contextBindings?.length) error("contextBindings", "r10 \u4EE5\u5206\u7C7B\u81EA\u8EAB\u89D2\u8272\u5B9A\u4E49\u5305\u542B\u5173\u7CFB\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u7684\u5206\u7C7B\u5BF9\u7ED1\u5B9A\u3002");
@@ -12732,11 +12781,6 @@ function testWorkflowEditConversion(config, workflow, records = []) {
     if (JSON.stringify(result) !== JSON.stringify(record)) throw Error(`\u8BB0\u5F55 ${record.ID} \u65E0\u4FEE\u6539\u56DE\u586B\u8F93\u51FA\u53D1\u751F\u53D8\u5316\u3002`);
   }
   return { plan, report: [`\u4E09\u9875/\u5355\u8F93\u51FA/\u65E0\u989D\u5916\u7ED8\u5236/\u65E0\u542F\u7528\u6761\u4EF6\u901A\u8FC7`, `\u4FDD\u7559 ${plan.controls.length} \u4E2A\u6A21\u5757\uFF0C\u79FB\u9664 ${plan.removed.length} \u4E2A\u4EC5\u7528\u4E8E ID \u7684\u6A21\u5757`, `\u6837\u672C\u4E0E ${matching.length} \u6761\u73B0\u6709\u8BB0\u5F55\u5B9E\u9645\u56DE\u586B\u53CA\u65E0\u4FEE\u6539\u8F93\u51FA\u4E00\u81F4`] };
-}
-
-// src/configStudio/contract.ts
-function isNativeConfigRevision(value) {
-  return typeof value === "number" && Number.isInteger(value) && value >= 5 && value <= 13;
 }
 
 // src/configStudio/cardInheritance.ts
@@ -19159,6 +19203,41 @@ var native_contract_schema_generated_default = {
     t137: {
       type: "object",
       properties: {
+        enabled: {
+          type: "boolean"
+        },
+        widthPx: {
+          type: "number"
+        },
+        color: {
+          anyOf: [
+            {
+              ref: "t11"
+            },
+            {
+              ref: "t13"
+            },
+            {
+              ref: "t14"
+            },
+            {
+              ref: "t15"
+            },
+            {
+              ref: "t17"
+            }
+          ]
+        }
+      },
+      required: [
+        "enabled",
+        "widthPx",
+        "color"
+      ]
+    },
+    t138: {
+      type: "object",
+      properties: {
         x: {
           type: "number"
         },
@@ -19171,9 +19250,16 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t139: {
+    t140: {
       type: "object",
       properties: {
+        halo: {
+          anyOf: [
+            {
+              ref: "t137"
+            }
+          ]
+        },
         pointShape: {
           anyOf: [
             {
@@ -19285,14 +19371,14 @@ var native_contract_schema_generated_default = {
         "fillOpacity"
       ]
     },
-    t138: {
+    t139: {
       type: "object",
       properties: {
         kind: {
           const: "shape"
         },
         shape: {
-          ref: "t139"
+          ref: "t140"
         }
       },
       required: [
@@ -19300,7 +19386,7 @@ var native_contract_schema_generated_default = {
         "shape"
       ]
     },
-    t143: {
+    t144: {
       type: "object",
       properties: {
         shape: {
@@ -19387,7 +19473,7 @@ var native_contract_schema_generated_default = {
         "strokeOpacity"
       ]
     },
-    t145: {
+    t146: {
       type: "object",
       properties: {
         mode: {
@@ -19443,7 +19529,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t146: {
+    t147: {
       type: "object",
       properties: {
         x: {
@@ -19458,14 +19544,14 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t144: {
+    t145: {
       type: "object",
       properties: {
         anchor: {
-          ref: "t145"
+          ref: "t146"
         },
         offsetPx: {
-          ref: "t146"
+          ref: "t147"
         }
       },
       required: [
@@ -19473,9 +19559,16 @@ var native_contract_schema_generated_default = {
         "offsetPx"
       ]
     },
-    t142: {
+    t143: {
       type: "object",
       properties: {
+        halo: {
+          anyOf: [
+            {
+              ref: "t137"
+            }
+          ]
+        },
         library: {
           const: "pinhead"
         },
@@ -19510,12 +19603,12 @@ var native_contract_schema_generated_default = {
         plate: {
           anyOf: [
             {
-              ref: "t143"
+              ref: "t144"
             }
           ]
         },
         placement: {
-          ref: "t144"
+          ref: "t145"
         }
       },
       required: [
@@ -19527,14 +19620,14 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t141: {
+    t142: {
       type: "object",
       properties: {
         mode: {
           const: "single"
         },
         item: {
-          ref: "t142"
+          ref: "t143"
         }
       },
       required: [
@@ -19542,7 +19635,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t148: {
+    t149: {
       type: "object",
       properties: {
         value: {
@@ -19562,7 +19655,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         item: {
-          ref: "t142"
+          ref: "t143"
         }
       },
       required: [
@@ -19570,7 +19663,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t147: {
+    t148: {
       type: "object",
       properties: {
         mode: {
@@ -19582,7 +19675,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t148"
+            ref: "t149"
           }
         }
       },
@@ -19592,7 +19685,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t140: {
+    t141: {
       type: "object",
       properties: {
         kind: {
@@ -19601,15 +19694,15 @@ var native_contract_schema_generated_default = {
         icon: {
           anyOf: [
             {
-              ref: "t141"
+              ref: "t142"
             },
             {
-              ref: "t147"
+              ref: "t148"
             }
           ]
         },
         fallback: {
-          ref: "t139"
+          ref: "t140"
         }
       },
       required: [
@@ -19618,7 +19711,7 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t152: {
+    t153: {
       type: "object",
       properties: {
         width: {
@@ -19633,14 +19726,21 @@ var native_contract_schema_generated_default = {
         "height"
       ]
     },
-    t151: {
+    t152: {
       type: "object",
       properties: {
         sizePx: {
-          ref: "t152"
+          ref: "t153"
         },
         placement: {
-          ref: "t144"
+          ref: "t145"
+        },
+        halo: {
+          anyOf: [
+            {
+              ref: "t137"
+            }
+          ]
         }
       },
       required: [
@@ -19648,7 +19748,7 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t150: {
+    t151: {
       type: "object",
       properties: {
         mode: {
@@ -19658,7 +19758,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t151"
+          ref: "t152"
         }
       },
       required: [
@@ -19667,7 +19767,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t153: {
+    t154: {
       type: "object",
       properties: {
         mode: {
@@ -19677,7 +19777,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t151"
+          ref: "t152"
         }
       },
       required: [
@@ -19686,7 +19786,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t154: {
+    t155: {
       type: "object",
       properties: {
         mode: {
@@ -19699,7 +19799,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t151"
+          ref: "t152"
         }
       },
       required: [
@@ -19709,7 +19809,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t156: {
+    t157: {
       type: "object",
       properties: {
         value: {
@@ -19732,7 +19832,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t151"
+          ref: "t152"
         }
       },
       required: [
@@ -19741,7 +19841,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t155: {
+    t156: {
       type: "object",
       properties: {
         mode: {
@@ -19753,7 +19853,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t156"
+            ref: "t157"
           }
         }
       },
@@ -19763,7 +19863,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t149: {
+    t150: {
       type: "object",
       properties: {
         kind: {
@@ -19772,21 +19872,21 @@ var native_contract_schema_generated_default = {
         image: {
           anyOf: [
             {
-              ref: "t150"
-            },
-            {
-              ref: "t153"
+              ref: "t151"
             },
             {
               ref: "t154"
             },
             {
               ref: "t155"
+            },
+            {
+              ref: "t156"
             }
           ]
         },
         fallback: {
-          ref: "t139"
+          ref: "t140"
         }
       },
       required: [
@@ -19795,7 +19895,7 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t157: {
+    t158: {
       type: "object",
       properties: {
         source: {
@@ -19844,10 +19944,17 @@ var native_contract_schema_generated_default = {
     t136: {
       type: "object",
       properties: {
-        symbolOffsetPx: {
+        halo: {
           anyOf: [
             {
               ref: "t137"
+            }
+          ]
+        },
+        symbolOffsetPx: {
+          anyOf: [
+            {
+              ref: "t138"
             }
           ]
         },
@@ -19896,20 +20003,20 @@ var native_contract_schema_generated_default = {
         pointSymbol: {
           anyOf: [
             {
-              ref: "t138"
+              ref: "t139"
             },
             {
-              ref: "t140"
+              ref: "t141"
             },
             {
-              ref: "t149"
+              ref: "t150"
             }
           ]
         },
         icon: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t158"
             }
           ]
         },
@@ -20024,7 +20131,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t160: {
+    t161: {
       type: "object",
       properties: {
         italic: {
@@ -20060,7 +20167,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t161: {
+    t162: {
       type: "object",
       properties: {
         lineHeightRatio: {
@@ -20147,7 +20254,7 @@ var native_contract_schema_generated_default = {
         "strokeWidth"
       ]
     },
-    t159: {
+    t160: {
       type: "object",
       properties: {
         family: {
@@ -20184,7 +20291,7 @@ var native_contract_schema_generated_default = {
         modifiers: {
           anyOf: [
             {
-              ref: "t160"
+              ref: "t161"
             }
           ]
         },
@@ -20210,7 +20317,7 @@ var native_contract_schema_generated_default = {
         pill: {
           anyOf: [
             {
-              ref: "t161"
+              ref: "t162"
             }
           ]
         }
@@ -20220,7 +20327,7 @@ var native_contract_schema_generated_default = {
         "size"
       ]
     },
-    t162: {
+    t163: {
       type: "object",
       properties: {},
       required: [],
@@ -20235,7 +20342,7 @@ var native_contract_schema_generated_default = {
         ]
       }
     },
-    t158: {
+    t159: {
       type: "object",
       properties: {
         visible: {
@@ -20244,7 +20351,7 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t159"
+              ref: "t160"
             }
           ]
         },
@@ -20335,7 +20442,7 @@ var native_contract_schema_generated_default = {
         fallbackValueFormats: {
           anyOf: [
             {
-              ref: "t162"
+              ref: "t163"
             }
           ]
         },
@@ -20422,7 +20529,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t164: {
+    t165: {
       type: "object",
       properties: {
         point: {
@@ -20478,18 +20585,18 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t163: {
+    t164: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t164"
+          ref: "t165"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t166: {
+    t167: {
       type: "object",
       properties: {
         mode: {
@@ -20521,7 +20628,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t165: {
+    t166: {
       type: "object",
       properties: {
         id: {
@@ -20578,7 +20685,7 @@ var native_contract_schema_generated_default = {
         label: {
           anyOf: [
             {
-              ref: "t158"
+              ref: "t159"
             }
           ]
         },
@@ -20592,7 +20699,7 @@ var native_contract_schema_generated_default = {
         priority: {
           anyOf: [
             {
-              ref: "t166"
+              ref: "t167"
             }
           ]
         },
@@ -20609,13 +20716,13 @@ var native_contract_schema_generated_default = {
         "when"
       ]
     },
-    t168: {
+    t169: {
       type: "object",
       properties: {},
       required: [],
       additionalProperties: {}
     },
-    t169: {
+    t170: {
       type: "object",
       properties: {
         preserveFallback: {
@@ -20638,55 +20745,55 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t167: {
+    t168: {
       type: "object",
       properties: {
         predicates: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         },
         visibility: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         },
         geometry: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         },
         symbol: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         },
         collision: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         },
         selection: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         },
@@ -20703,7 +20810,7 @@ var native_contract_schema_generated_default = {
         legacyRuntime: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t170"
             }
           ]
         }
@@ -20763,14 +20870,14 @@ var native_contract_schema_generated_default = {
         label: {
           anyOf: [
             {
-              ref: "t158"
+              ref: "t159"
             }
           ]
         },
         interaction: {
           anyOf: [
             {
-              ref: "t163"
+              ref: "t164"
             }
           ]
         },
@@ -20793,7 +20900,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t165"
+                ref: "t166"
               }
             }
           ]
@@ -20801,7 +20908,7 @@ var native_contract_schema_generated_default = {
         advanced: {
           anyOf: [
             {
-              ref: "t167"
+              ref: "t168"
             }
           ]
         },
@@ -20841,7 +20948,7 @@ var native_contract_schema_generated_default = {
         priority: {
           anyOf: [
             {
-              ref: "t166"
+              ref: "t167"
             }
           ]
         }
@@ -20864,18 +20971,18 @@ var native_contract_schema_generated_default = {
         "rules"
       ]
     },
-    t170: {
+    t171: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t164"
+          ref: "t165"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t171: {
+    t172: {
       type: "object",
       properties: {
         ruleIds: {
@@ -20966,14 +21073,14 @@ var native_contract_schema_generated_default = {
         interaction: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t171"
             }
           ]
         },
         legacyDisplay: {
           anyOf: [
             {
-              ref: "t171"
+              ref: "t172"
             }
           ]
         }
@@ -21011,7 +21118,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t172: {
+    t173: {
       type: "object",
       properties: {
         enabled: {
@@ -21046,7 +21153,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t175: {
+    t176: {
       type: "object",
       properties: {
         nodeId: {
@@ -21061,7 +21168,7 @@ var native_contract_schema_generated_default = {
         "fieldId"
       ]
     },
-    t176: {
+    t177: {
       type: "object",
       properties: {
         nodeId: {
@@ -21076,7 +21183,7 @@ var native_contract_schema_generated_default = {
         "itemId"
       ]
     },
-    t177: {
+    t178: {
       type: "object",
       properties: {
         colorSource: {
@@ -21171,7 +21278,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t178: {
+    t179: {
       type: "object",
       properties: {
         targetRole: {
@@ -21242,7 +21349,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t174: {
+    t175: {
       type: "object",
       properties: {
         id: {
@@ -21251,14 +21358,14 @@ var native_contract_schema_generated_default = {
         fieldBinding: {
           anyOf: [
             {
-              ref: "t175"
+              ref: "t176"
             }
           ]
         },
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t175"
+              ref: "t176"
             }
           ]
         },
@@ -21292,7 +21399,7 @@ var native_contract_schema_generated_default = {
         inheritFrom: {
           anyOf: [
             {
-              ref: "t176"
+              ref: "t177"
             }
           ]
         },
@@ -21414,14 +21521,14 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t177"
+              ref: "t178"
             }
           ]
         },
         relation: {
           anyOf: [
             {
-              ref: "t178"
+              ref: "t179"
             }
           ]
         }
@@ -21433,7 +21540,7 @@ var native_contract_schema_generated_default = {
         "renderer"
       ]
     },
-    t179: {
+    t180: {
       type: "object",
       properties: {
         enabled: {
@@ -21503,7 +21610,7 @@ var native_contract_schema_generated_default = {
         "includeSystem"
       ]
     },
-    t173: {
+    t174: {
       type: "object",
       properties: {
         mode: {
@@ -21512,13 +21619,13 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t174"
+            ref: "t175"
           }
         },
         remaining: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t180"
             }
           ]
         }
@@ -21528,7 +21635,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t180: {
+    t181: {
       type: "object",
       properties: {
         mode: {
@@ -21540,7 +21647,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         }
@@ -21550,7 +21657,7 @@ var native_contract_schema_generated_default = {
         "layoutId"
       ]
     },
-    t181: {
+    t182: {
       type: "object",
       properties: {
         mode: {
@@ -21562,7 +21669,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         }
@@ -21572,7 +21679,7 @@ var native_contract_schema_generated_default = {
         "componentKey"
       ]
     },
-    t182: {
+    t183: {
       type: "object",
       properties: {
         classCode: {
@@ -21601,7 +21708,7 @@ var native_contract_schema_generated_default = {
         source: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         }
@@ -21686,27 +21793,27 @@ var native_contract_schema_generated_default = {
         containment: {
           anyOf: [
             {
-              ref: "t172"
+              ref: "t173"
             }
           ]
         },
         card: {
           anyOf: [
             {
-              ref: "t173"
-            },
-            {
-              ref: "t180"
+              ref: "t174"
             },
             {
               ref: "t181"
+            },
+            {
+              ref: "t182"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t182"
+              ref: "t183"
             }
           ]
         }
@@ -21719,7 +21826,7 @@ var native_contract_schema_generated_default = {
         "geometryProfiles"
       ]
     },
-    t184: {
+    t185: {
       type: "object",
       properties: {
         classification: {
@@ -21734,7 +21841,7 @@ var native_contract_schema_generated_default = {
         "referenceField"
       ]
     },
-    t183: {
+    t184: {
       type: "object",
       properties: {
         id: {
@@ -21744,10 +21851,10 @@ var native_contract_schema_generated_default = {
           ref: "t1"
         },
         host: {
-          ref: "t184"
+          ref: "t185"
         },
         member: {
-          ref: "t184"
+          ref: "t185"
         },
         memberSelectorField: {
           anyOf: [
@@ -21782,7 +21889,7 @@ var native_contract_schema_generated_default = {
         "profile"
       ]
     },
-    t187: {
+    t188: {
       type: "object",
       properties: {
         slot: {
@@ -21797,7 +21904,7 @@ var native_contract_schema_generated_default = {
         "target"
       ]
     },
-    t186: {
+    t187: {
       type: "object",
       properties: {
         enabled: {
@@ -21825,7 +21932,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t187"
+                ref: "t188"
               }
             }
           ]
@@ -21835,7 +21942,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t188: {
+    t189: {
       type: "object",
       properties: {
         required: {
@@ -21846,7 +21953,7 @@ var native_contract_schema_generated_default = {
         "required"
       ]
     },
-    t192: {
+    t193: {
       type: "object",
       properties: {
         placeholder: {
@@ -22014,7 +22121,7 @@ var native_contract_schema_generated_default = {
         "input"
       ]
     },
-    t191: {
+    t192: {
       type: "object",
       properties: {
         nodeId: {
@@ -22024,7 +22131,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         snapshot: {
-          ref: "t192"
+          ref: "t193"
         },
         overrides: {
           type: "array",
@@ -22040,7 +22147,7 @@ var native_contract_schema_generated_default = {
         "overrides"
       ]
     },
-    t193: {
+    t194: {
       type: "object",
       properties: {
         token: {
@@ -22106,7 +22213,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t193"
+                ref: "t194"
               }
             }
           ]
@@ -22116,7 +22223,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t193"
+                ref: "t194"
               }
             }
           ]
@@ -22127,7 +22234,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t194: {
+    t195: {
       type: "object",
       properties: {
         registryKey: {
@@ -22138,7 +22245,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t196: {
+    t197: {
       type: "object",
       properties: {
         matcher: {
@@ -22177,7 +22284,7 @@ var native_contract_schema_generated_default = {
         "maxResults"
       ]
     },
-    t195: {
+    t196: {
       type: "object",
       properties: {
         target: {
@@ -22304,7 +22411,7 @@ var native_contract_schema_generated_default = {
         coarse: {
           anyOf: [
             {
-              ref: "t196"
+              ref: "t197"
             }
           ]
         }
@@ -22314,7 +22421,7 @@ var native_contract_schema_generated_default = {
         "cacheScope"
       ]
     },
-    t198: {
+    t199: {
       type: "object",
       properties: {
         optionTable: {
@@ -22327,7 +22434,7 @@ var native_contract_schema_generated_default = {
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t175"
+              ref: "t176"
             }
           ]
         },
@@ -22424,7 +22531,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t195"
+              ref: "t196"
             }
           ]
         },
@@ -22463,7 +22570,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t191"
+              ref: "t192"
             }
           ]
         },
@@ -22472,7 +22579,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t193"
+                ref: "t194"
               }
             }
           ]
@@ -22500,13 +22607,13 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t197: {
+    t198: {
       type: "object",
       properties: {
         itemFields: {
           type: "array",
           items: {
-            ref: "t198"
+            ref: "t199"
           }
         },
         storage: {
@@ -22548,7 +22655,7 @@ var native_contract_schema_generated_default = {
         "itemFields"
       ]
     },
-    t199: {
+    t200: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -22563,7 +22670,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t190: {
+    t191: {
       type: "object",
       properties: {
         optionTable: {
@@ -22576,7 +22683,7 @@ var native_contract_schema_generated_default = {
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t175"
+              ref: "t176"
             }
           ]
         },
@@ -22685,7 +22792,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t191"
+              ref: "t192"
             }
           ]
         },
@@ -22726,7 +22833,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t193"
+                ref: "t194"
               }
             }
           ]
@@ -22751,7 +22858,7 @@ var native_contract_schema_generated_default = {
         optionSource: {
           anyOf: [
             {
-              ref: "t194"
+              ref: "t195"
             }
           ]
         },
@@ -22773,7 +22880,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t195"
+              ref: "t196"
             }
           ]
         },
@@ -22804,7 +22911,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t193"
+              ref: "t194"
             }
           ]
         },
@@ -22821,14 +22928,14 @@ var native_contract_schema_generated_default = {
         group: {
           anyOf: [
             {
-              ref: "t197"
+              ref: "t198"
             }
           ]
         },
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t199"
+              ref: "t200"
             }
           ]
         },
@@ -22842,7 +22949,7 @@ var native_contract_schema_generated_default = {
         legacyBlock: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         }
@@ -22854,7 +22961,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t200: {
+    t201: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -22869,7 +22976,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t202: {
+    t203: {
       type: "object",
       properties: {
         id: {
@@ -22894,7 +23001,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t193"
+              ref: "t194"
             }
           ]
         }
@@ -22905,7 +23012,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t203: {
+    t204: {
       type: "object",
       properties: {
         outputId: {
@@ -22931,7 +23038,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t201: {
+    t202: {
       type: "object",
       properties: {
         enabledFromThisPage: {
@@ -22983,7 +23090,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t202"
+                ref: "t203"
               }
             }
           ]
@@ -23033,7 +23140,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t203"
+                ref: "t204"
               }
             }
           ]
@@ -23041,7 +23148,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t189: {
+    t190: {
       type: "object",
       properties: {
         id: {
@@ -23081,7 +23188,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t190"
+                ref: "t191"
               }
             }
           ]
@@ -23126,7 +23233,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t193"
+              ref: "t194"
             }
           ]
         },
@@ -23140,21 +23247,21 @@ var native_contract_schema_generated_default = {
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t200"
+              ref: "t201"
             }
           ]
         },
         drawing: {
           anyOf: [
             {
-              ref: "t201"
+              ref: "t202"
             }
           ]
         },
         legacyPage: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         }
@@ -23165,7 +23272,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t205: {
+    t206: {
       type: "object",
       properties: {
         id: {
@@ -23180,7 +23287,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t193"
+              ref: "t194"
             }
           ]
         }
@@ -23191,7 +23298,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t206: {
+    t207: {
       type: "object",
       properties: {
         selected: {
@@ -23232,7 +23339,7 @@ var native_contract_schema_generated_default = {
         "selected"
       ]
     },
-    t204: {
+    t205: {
       type: "object",
       properties: {
         id: {
@@ -23244,18 +23351,18 @@ var native_contract_schema_generated_default = {
         assignments: {
           type: "array",
           items: {
-            ref: "t205"
+            ref: "t206"
           }
         },
         when: {
           anyOf: [
             {
-              ref: "t193"
+              ref: "t194"
             }
           ]
         },
         geometry: {
-          ref: "t206"
+          ref: "t207"
         }
       },
       required: [
@@ -23265,7 +23372,7 @@ var native_contract_schema_generated_default = {
         "geometry"
       ]
     },
-    t207: {
+    t208: {
       type: "object",
       properties: {
         componentKey: {
@@ -23317,7 +23424,7 @@ var native_contract_schema_generated_default = {
         "reason"
       ]
     },
-    t208: {
+    t209: {
       type: "object",
       properties: {
         runtimeMode: {
@@ -23337,21 +23444,21 @@ var native_contract_schema_generated_default = {
         output: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         },
         source: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         }
       },
       required: []
     },
-    t185: {
+    t186: {
       type: "object",
       properties: {
         id: {
@@ -23383,14 +23490,14 @@ var native_contract_schema_generated_default = {
         editor: {
           anyOf: [
             {
-              ref: "t186"
+              ref: "t187"
             }
           ]
         },
         actor: {
           anyOf: [
             {
-              ref: "t188"
+              ref: "t189"
             }
           ]
         },
@@ -23404,13 +23511,13 @@ var native_contract_schema_generated_default = {
         steps: {
           type: "array",
           items: {
-            ref: "t189"
+            ref: "t190"
           }
         },
         outputs: {
           type: "array",
           items: {
-            ref: "t204"
+            ref: "t205"
           }
         },
         assignments: {
@@ -23418,7 +23525,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t205"
+                ref: "t206"
               }
             }
           ]
@@ -23426,14 +23533,14 @@ var native_contract_schema_generated_default = {
         external: {
           anyOf: [
             {
-              ref: "t207"
+              ref: "t208"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t208"
+              ref: "t209"
             }
           ]
         }
@@ -23446,7 +23553,7 @@ var native_contract_schema_generated_default = {
         "outputs"
       ]
     },
-    t210: {
+    t211: {
       type: "object",
       properties: {
         kind: {
@@ -23503,7 +23610,7 @@ var native_contract_schema_generated_default = {
         "status"
       ]
     },
-    t209: {
+    t210: {
       type: "object",
       properties: {
         schemaVersion: {
@@ -23519,7 +23626,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t210"
+            ref: "t211"
           }
         },
         generatedAt: {
@@ -23572,6 +23679,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: 13
+            },
+            {
+              const: 14
             }
           ]
         },
@@ -23639,7 +23749,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t183"
+                ref: "t184"
               }
             }
           ]
@@ -23647,13 +23757,13 @@ var native_contract_schema_generated_default = {
         workflows: {
           type: "array",
           items: {
-            ref: "t185"
+            ref: "t186"
           }
         },
         parity: {
           anyOf: [
             {
-              ref: "t209"
+              ref: "t210"
             }
           ]
         }
@@ -23681,7 +23791,7 @@ function validateNativeStructure(value) {
     const schema = input.ref ? definitions[input.ref] : input;
     if (schema.anyOf) {
       const choices = schema.anyOf.map((branch) => inspect(value2, branch, path2, depth + 1));
-      if (choices.some((issues) => !issues.length)) return [];
+      if (choices.some((issues2) => !issues2.length)) return [];
       return choices.sort((a, b) => a.length - b.length)[0] ?? [{ path: path2, message: "\u914D\u7F6E\u503C\u7C7B\u578B\u65E0\u6548\u3002" }];
     }
     if ("const" in schema) return value2 === schema.const ? [] : [{ path: path2, message: `\u914D\u7F6E\u503C\u5FC5\u987B\u4E3A ${JSON.stringify(schema.const)}\u3002` }];
@@ -23695,19 +23805,35 @@ function validateNativeStructure(value) {
     if (schema.type === "object") {
       if (!value2 || typeof value2 !== "object" || Array.isArray(value2)) return [{ path: path2, message: "\u914D\u7F6E\u503C\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002" }];
       const record = value2;
-      const issues = (schema.required ?? []).filter((key2) => record[key2] === void 0).map((key2) => ({ path: `${path2}/${key2}`, message: "\u7F3A\u5C11\u5FC5\u9700\u7684\u914D\u7F6E\u5C5E\u6027\u3002" }));
+      const issues2 = (schema.required ?? []).filter((key2) => record[key2] === void 0).map((key2) => ({ path: `${path2}/${key2}`, message: "\u7F3A\u5C11\u5FC5\u9700\u7684\u914D\u7F6E\u5C5E\u6027\u3002" }));
       for (const [key2, item] of Object.entries(record)) {
         if (item === void 0) continue;
         const shape2 = schema.properties?.[key2] ?? schema.additionalProperties;
-        if (!shape2 || ["__proto__", "constructor", "prototype"].includes(key2)) issues.push({ path: `${path2}/${key2}`, message: `\u672A\u77E5\u6216\u4E0D\u5B89\u5168\u7684\u914D\u7F6E\u5C5E\u6027 ${key2}\u3002` });
-        else issues.push(...inspect(item, shape2, `${path2}/${key2}`, depth + 1));
-        if (issues.length >= 100) break;
+        if (!shape2 || ["__proto__", "constructor", "prototype"].includes(key2)) issues2.push({ path: `${path2}/${key2}`, message: `\u672A\u77E5\u6216\u4E0D\u5B89\u5168\u7684\u914D\u7F6E\u5C5E\u6027 ${key2}\u3002` });
+        else issues2.push(...inspect(item, shape2, `${path2}/${key2}`, depth + 1));
+        if (issues2.length >= 100) break;
       }
-      return issues.slice(0, 100);
+      return issues2.slice(0, 100);
     }
     return typeof value2 === schema.type && (schema.type !== "number" || Number.isFinite(value2)) ? [] : [{ path: path2, message: `\u914D\u7F6E\u503C\u5FC5\u987B\u4E3A\u6709\u6548\u7684 ${schema.type}\u3002` }];
   };
-  return inspect(value, native_contract_schema_generated_default.root, "config", 0);
+  const issues = inspect(value, native_contract_schema_generated_default.root, "config", 0);
+  if (issues.length) return issues;
+  const config = value;
+  const check = (style, path2, required) => {
+    const halos = [{ path: path2 + "/halo", value: style?.halo, required }, ...symbolHalos(style?.pointSymbol).map((row2) => ({ path: path2 + "/pointSymbol/" + row2.path, value: row2.value, required: config.contractRevision >= 14 }))];
+    for (const row2 of halos) {
+      if (config.contractRevision < 14 && row2.value !== void 0) issues.push({ path: row2.path, message: "Halo \u6700\u4F4E\u8981\u6C42\u5951\u7EA6 c14\uFF0C\u4E0D\u80FD\u5728\u65E7\u5951\u7EA6\u4E2D\u52A0\u5165\u65B0\u5C5E\u6027\u3002" });
+      if (config.contractRevision >= 14 && row2.required && !row2.value) issues.push({ path: row2.path, message: "\u7F3A\u5C11 c14 \u5FC5\u9700 Halo \u8BBE\u7F6E\uFF0C\u8BF7\u660E\u786E\u8FC1\u79FB\u6765\u6E90\u914D\u7F6E\u3002" });
+    }
+    if (style?.pointSymbol && style.halo) issues.push({ path: path2 + "/halo", message: "\u70B9\u72B6\u663E\u793A\u7684 Halo \u5FC5\u987B\u653E\u5728\u5177\u4F53\u5F62\u72B6\uFF0F\u56FE\u6807\uFF0F\u56FE\u7247\u5B9A\u4E49\u4E2D\uFF0C\u4E0D\u80FD\u540C\u65F6\u8BBE\u7F6E\u9876\u5C42 Halo\u3002" });
+  };
+  for (const node of config.nodes) for (const [geometry, profile] of Object.entries(node.geometryProfiles)) if (profile) for (const rule of profile.zoomPriority.rules) {
+    const path2 = `config/nodes/${node.nodeId}/geometryProfiles/${geometry}/rules/${rule.id}/style`;
+    check(rule.style, path2, config.contractRevision >= 14 && geometry !== "Point" && rule.representation !== "point" && rule.representation !== "hidden" && rule.representation !== "labelOnly");
+    for (const branch of rule.conditionalOverrides ?? []) check(branch.style, `${path2}/conditionalOverrides/${branch.id}`, false);
+  }
+  return issues;
 }
 
 // src/configStudio/runtime.ts
@@ -24028,7 +24154,7 @@ function validateRenderColorBinding(binding, config, sourcePath, path2, issues) 
   const sourceFields = new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key));
   if (value.mode === "valueMap") {
     const mapping = binding, field = resolveSelectableFields(config, sourcePath).find((f) => f.key === mapping.field);
-    if (config.contractRevision < 9) issue(issues, "error", "render-color-r9-required", path2, "\u6309\u503C\u8BBE\u8272\u9700\u8981 r9\u3002");
+    if (config.contractRevision < 9) issue(issues, "error", "render-color-r9-required", path2, "\u6309\u503C\u8BBE\u8272\u9700\u8981 c9\u3002");
     if (!field) issue(issues, "error", "render-color-map-field-invalid", path2, "\u8BBE\u8272\u5B57\u6BB5\u4E0D\u5B58\u5728\u3002");
     if (!validMappedColor(mapping.fallbackColor)) issue(issues, "error", "render-color-map-fallback-invalid", path2, "\u56DE\u9000\u989C\u8272\u5FC5\u987B\u4E3A\u516D\u4F4D\u5341\u516D\u8FDB\u5236\u989C\u8272\u3002");
     if (!Array.isArray(mapping.entries) || !mapping.entries.length) {
@@ -24095,7 +24221,7 @@ function validateRuleLabel(rule, rulePath, config, sourcePath, issues) {
   }
   const fields = new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key));
   if (label.sourceMode === "combined") {
-    if (config.contractRevision < 10) issue(issues, "error", "label-template-revision", rulePath, "\u7EC4\u5408 Label \u6765\u6E90\u9700\u8981 r10 \u5951\u7EA6\u3002");
+    if (config.contractRevision < 10) issue(issues, "error", "label-template-revision", rulePath, "\u7EC4\u5408 Label \u6765\u6E90\u9700\u8981 c10 \u5951\u7EA6\u3002");
     try {
       for (const token of parseLabelTemplate(label.template ?? "")) if (token.kind === "field" && !sourceExists(token.value, fields)) issue(issues, "error", "label-template-field", rulePath, `\u7EC4\u5408\u6765\u6E90\u5B57\u6BB5\u4E0D\u5B58\u5728\uFF1A${token.value}`);
     } catch (error) {
@@ -24135,7 +24261,7 @@ function validateRuleLabel(rule, rulePath, config, sourcePath, issues) {
   if ((visual.modifiers?.italic || visual.modifiers?.underline) && !supportsModifiers.has(visual.family)) issue(issues, "error", "label-style-modifier-invalid", rulePath, "\u659C\u4F53\u548C\u4E0B\u5212\u7EBF\u4EC5\u9002\u7528\u4E8E\u65E0\u80CC\u666F\u5BB9\u5668\u7684\u6587\u5B57\u6837\u5F0F\u3002");
   const needsColor = visual.family === "rle-line-color" || visual.family === "rle-pill-color";
   if (visual.family === "custom_pill_1") {
-    if (config.contractRevision < 12) issue(issues, "error", "custom-pill-revision", rulePath, "\u81EA\u5B9A\u4E49\u80F6\u56CA1\u9700\u8981 r12 \u5951\u7EA6\u3002");
+    if (config.contractRevision < 12) issue(issues, "error", "custom-pill-revision", rulePath, "\u81EA\u5B9A\u4E49\u80F6\u56CA1\u9700\u8981 c12 \u5951\u7EA6\u3002");
     for (const error of customPillErrors(visual.size, visual.pill)) issue(issues, "error", "custom-pill-invalid", `${rulePath}/label/style/pill/${error.key}`, error.message);
     if (visual.color || Object.values(visual.modifiers ?? {}).some(Boolean)) issue(issues, "error", "custom-pill-conflicting-style", rulePath, "\u81EA\u5B9A\u4E49\u80F6\u56CA\u4E0D\u80FD\u6DF7\u7528\u65E7\u989C\u8272\u6216\u5B57\u4F53\u4FEE\u9970\u3002");
     if (visual.pill) for (const key2 of ["textColor", "backgroundColor", "strokeColor"])
@@ -24201,7 +24327,7 @@ function validateRuleExtensions(rule, geometry, rulePath, config, sourcePath, is
     }
   }
   const line = extensions.lineLabel;
-  if (line && (line.orientationPolicy === "scriptAware" || line.textPathLengthMode !== void 0) && config.contractRevision < 12) issue(issues, "error", "line-script-revision", rulePath, "\u4E2D\u82F1\u5206\u6D41\u548C\u5B9E\u9645\u6587\u5B57\u8DEF\u5F84\u957F\u5EA6\u9700\u8981\u5951\u7EA6 r12\u3002");
+  if (line && (line.orientationPolicy === "scriptAware" || line.textPathLengthMode !== void 0) && config.contractRevision < 12) issue(issues, "error", "line-script-revision", rulePath, "\u4E2D\u82F1\u5206\u6D41\u548C\u5B9E\u9645\u6587\u5B57\u8DEF\u5F84\u957F\u5EA6\u9700\u8981\u5951\u7EA6 c12\u3002");
   if (line && config.contractRevision >= 12) {
     for (const [key2, value] of Object.entries(line)) if (typeof value === "number" && (!Number.isFinite(value) || value < 0)) issue(issues, "error", "line-setting-number-invalid", rulePath + "/lineLabel/" + key2, "\u8D34\u7EBF\u6570\u503C\u5FC5\u987B\u662F\u6709\u9650\u975E\u8D1F\u6570\u3002");
     for (const key2 of ["maxTurnAngleDeg", "textPathMaxAngleDeltaDeg", "textPathVerticalAngleThresholdDeg", "cjkGlyphUprightAngleThresholdDeg", "cjkGlyphMaxAngleDeltaDeg"]) if (line[key2] !== void 0 && line[key2] > 180) issue(issues, "error", "line-angle-invalid", rulePath + "/lineLabel/" + key2, "\u5C40\u90E8\u89D2\u5EA6\u5FC5\u987B\u4ECB\u4E8E 0\u2013180\xB0\u3002");
@@ -24267,22 +24393,24 @@ function validateProfile(profile, geometry, path2, config, sourcePath, issues) {
     const min = rule.when?.zoom.min ?? rule.minZoom;
     const max = rule.when?.zoom.max ?? rule.maxZoom;
     if (config.contractRevision >= 7) {
-      if (!rule.when || !Number.isInteger(min) || !Number.isInteger(max) || min < 0 || max > 8 || min > max) issue(issues, "error", "render-match-zoom-required", rulePath, "r7 \u5FC5\u987B\u586B\u5199 0\u20138 \u7684\u95ED\u533A\u95F4\u6574\u6570 Zoom\uFF0C\u5141\u8BB8\u5355\u7EA7\u533A\u95F4\u3002");
+      if (!rule.when || !Number.isInteger(min) || !Number.isInteger(max) || min < 0 || max > 8 || min > max) issue(issues, "error", "render-match-zoom-required", rulePath, "c7 \u5FC5\u987B\u586B\u5199 0\u20138 \u7684\u95ED\u533A\u95F4\u6574\u6570 Zoom\uFF0C\u5141\u8BB8\u5355\u7EA7\u533A\u95F4\u3002");
       if (rule.minZoom !== void 0 || rule.maxZoom !== void 0 || rule.minExclusive !== void 0 || rule.maxExclusive !== void 0 || rule.conditionalOverrides !== void 0) issue(issues, "error", "render-legacy-match-forbidden", rulePath, "r7 \u53EA\u4F7F\u7528 when.zoom \u548C\u975E\u5206\u7C7B\u5B57\u6BB5\u7EC4\u5408\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u5339\u914D\u6216\u5206\u652F\u3002");
       for (const message of validateRenderFields(rule.when?.fields, resolveSelectableFields(config, sourcePath), resolveSelectableFields(config, sourcePath).map((field) => field.key), config.contractRevision)) issue(issues, "error", "render-field-condition-invalid", `${rulePath}/when/fields`, message);
-    } else if (rule.when) issue(issues, "error", "render-match-revision-invalid", rulePath, "\u7EC4\u5408\u89C4\u5219\u9700\u8981\u539F\u751F r7\uFF1B\u65E7\u5305\u8BF7\u5148\u65E0\u635F\u8FC1\u79FB\u3002");
+    } else if (rule.when) issue(issues, "error", "render-match-revision-invalid", rulePath, "\u7EC4\u5408\u89C4\u5219\u9700\u8981\u539F\u751F c7\uFF1B\u65E7\u5305\u8BF7\u5148\u65E0\u635F\u8FC1\u79FB\u3002");
     if (!rule.representation) issue(issues, "error", "render-representation-required", rulePath, "\u6E32\u67D3\u89C4\u5219\u5FC5\u987B\u9009\u62E9\u663E\u793A\u79CD\u7C7B\u3002");
     else if (!["hidden", "geometry", "point", "labelOnly"].includes(rule.representation)) issue(issues, "error", "render-representation-invalid", rulePath, "\u672A\u77E5\u663E\u793A\u79CD\u7C7B\u3002");
-    if (rule.representation === "labelOnly" && config.contractRevision < 6) issue(issues, "error", "render-contract-capability-invalid", rulePath, "\u4EC5\u6807\u7B7E\u663E\u793A\u9700\u8981\u539F\u751F\u5951\u7EA6 revision 6 \u6216\u66F4\u65B0\u7248\u672C\u3002");
+    if (rule.representation === "labelOnly" && config.contractRevision < 6) issue(issues, "error", "render-contract-capability-invalid", rulePath, "\u4EC5\u6807\u7B7E\u663E\u793A\u9700\u8981\u6700\u4F4E\u539F\u751F\u5951\u7EA6 c6 \u6216\u66F4\u65B0\u7248\u672C\u3002");
     if (min !== void 0 && max !== void 0 && min > max) issue(issues, "error", "zoom-interval-invalid", rulePath, "\u663E\u793A\u533A\u95F4\u5FC5\u987B\u7B26\u5408\u4E0B\u754C \u2264 Zoom \u2264 \u4E0A\u754C\u3002");
     intervals.push({ id: rule.id, min: min ?? -Infinity, max: max ?? Infinity });
     const stack = rule.geometryStack;
     if (!stack || !Number.isInteger(stack.zLevel) || stack.zLevel < 0 || stack.zLevel > 9999) issue(issues, "error", "geometry-zlevel-invalid", rulePath, "\u6BCF\u4E2A\u6E32\u67D3\u89C4\u5219\u7684\u51E0\u4F55 zLevel \u5FC5\u987B\u662F 0 \u5230 9999 \u4E4B\u95F4\u7684\u6574\u6570\u3002");
     const style = rule.style;
+    for (const message of haloProblems(style?.halo)) issue(issues, "error", "halo-invalid", rulePath + "/style/halo", message);
+    if (style?.halo) validateRenderColorBinding(style.halo.color, config, sourcePath, rulePath + "/style/halo/color", issues);
     if (style?.symbolOffsetPx && (!Number.isFinite(style.symbolOffsetPx.x) || !Number.isFinite(style.symbolOffsetPx.y))) issue(issues, "error", "render-symbol-offset-invalid", rulePath, "\u7B26\u53F7\u504F\u79FB\u5FC5\u987B\u4E3A\u6709\u9650\u50CF\u7D20\u503C\u3002");
     if (style?.symbolAnchor && !["geometry", "label"].includes(style.symbolAnchor) || style?.symbolVisibility && !["independent", "withLabel"].includes(style.symbolVisibility)) issue(issues, "error", "render-symbol-policy-invalid", rulePath, "\u7B26\u53F7\u951A\u70B9\u6216\u53EF\u89C1\u6027\u7B56\u7565\u65E0\u6548\u3002");
     if (rule.representation !== "hidden" && !style) issue(issues, "error", "render-style-required", rulePath, "\u975E\u9690\u85CF\u6E32\u67D3\u89C4\u5219\u5FC5\u987B\u5B9A\u4E49\u663E\u793A\u6548\u679C\u3002");
-    if (config.contractRevision >= 12 && rule.representation !== "hidden" && (geometry === "Point" || rule.representation === "point") && !style?.pointSymbol) issue(issues, "error", "point-symbol-required", rulePath, "r12 \u70B9\u72B6\u663E\u793A\u5FC5\u987B\u4F7F\u7528\u5355\u4E00 pointSymbol\uFF1B\u65E7 hide \u56FE\u7247\u9700\u8981\u660E\u786E\u786E\u8BA4\u56DE\u9000\u3002");
+    if (config.contractRevision >= 12 && rule.representation !== "hidden" && (geometry === "Point" || rule.representation === "point") && !style?.pointSymbol) issue(issues, "error", "point-symbol-required", rulePath, "c12 \u70B9\u72B6\u663E\u793A\u5FC5\u987B\u4F7F\u7528\u5355\u4E00 pointSymbol\uFF1B\u65E7 hide \u56FE\u7247\u9700\u8981\u660E\u786E\u786E\u8BA4\u56DE\u9000\u3002");
     if (style && !style.pointSymbol) {
       if (style.size !== void 0 && (!Number.isFinite(style.size) || style.size <= 0)) issue(issues, "error", "render-size-invalid", rulePath, "\u70B9\u7B26\u53F7\u5927\u5C0F\u5FC5\u987B\u4E3A\u6B63\u6570\u3002");
       if (style.weight !== void 0 && (!Number.isFinite(style.weight) || style.weight < 0)) issue(issues, "error", "render-stroke-width-invalid", rulePath, "\u63CF\u8FB9\u7C97\u7EC6\u5FC5\u987B\u4E3A\u975E\u8D1F\u6570\u3002");
@@ -24300,7 +24428,7 @@ function validateProfile(profile, geometry, path2, config, sourcePath, issues) {
       }
     }
     if (style?.pointSymbol) {
-      if (config.contractRevision < 12) issue(issues, "error", "point-symbol-revision", rulePath, "\u65B0\u70B9\u7B26\u53F7\u6765\u6E90\u9700\u8981 r12 \u5951\u7EA6\u3002");
+      if (config.contractRevision < 12) issue(issues, "error", "point-symbol-revision", rulePath, "\u65B0\u70B9\u7B26\u53F7\u6765\u6E90\u9700\u8981 c12 \u5951\u7EA6\u3002");
       if (geometry !== "Point" && rule.representation !== "point") issue(issues, "error", "point-symbol-geometry", rulePath, "\u70B9\u7B26\u53F7\u4EC5\u7528\u4E8E\u70B9\u6216\u660E\u786E\u7684\u70B9\u72B6\u8868\u793A\u3002");
       for (const key2 of ["icon", "pointShape", "size", "weight", "stroke", "fill", "strokeOpacity", "fillOpacity", "lineCap", "lineJoin"])
         if (style[key2] !== void 0) issue(issues, "error", "point-symbol-conflicting-style", `${rulePath}/style/${key2}`, "\u70B9\u7B26\u53F7\u4E0D\u80FD\u540C\u65F6\u4FDD\u7559\u65E7\u5916\u89C2\u6765\u6E90\u3002");
@@ -24327,8 +24455,10 @@ function validateProfile(profile, geometry, path2, config, sourcePath, issues) {
         validateCondition(condition, `${overridePath}/when/${conditionIndex}`, issues);
         if ((condition.kind === "fieldEquals" || condition.kind === "fieldIn" || condition.kind === "fieldPresent") && !sourceExists(condition.field, new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key)))) issue(issues, "error", "render-conditional-override-field-invalid", `${overridePath}/when/${conditionIndex}`, "\u5B57\u6BB5\u6761\u4EF6\u5FC5\u987B\u4F7F\u7528\u5F53\u524D\u5206\u7C7B\u7684\u6709\u6548\u5B57\u6BB5\u3002", { field: condition.field });
       }
+      for (const message of haloProblems(override.style?.halo)) issue(issues, "error", "halo-invalid", overridePath + "/style/halo", message);
+      if (override.style?.halo) validateRenderColorBinding(override.style.halo.color, config, sourcePath, overridePath + "/style/halo/color", issues);
       if (override.style?.pointSymbol) {
-        if (config.contractRevision < 12) issue(issues, "error", "point-symbol-revision", overridePath, "\u70B9\u7B26\u53F7\u9700\u8981\u5951\u7EA6 r12\u3002");
+        if (config.contractRevision < 12) issue(issues, "error", "point-symbol-revision", overridePath, "\u70B9\u7B26\u53F7\u9700\u8981\u5951\u7EA6 c12\u3002");
         for (const row2 of pointSymbolProblems(override.style.pointSymbol, resolveSelectableFields(config, sourcePath), config)) issue(issues, "error", "point-symbol-invalid", overridePath + "/style/pointSymbol/" + row2.path, row2.message);
         for (const row2 of pointSymbolBindings(override.style.pointSymbol)) validateRenderColorBinding(row2.value, config, sourcePath, overridePath + "/style/pointSymbol/" + row2.path, issues);
         for (const key2 of ["icon", "pointShape", "size", "weight", "stroke", "fill", "strokeOpacity", "fillOpacity", "lineCap", "lineJoin"]) if (override.style[key2] !== void 0) issue(issues, "error", "point-symbol-conflicting-style", overridePath + "/style/" + key2, "\u6761\u4EF6\u8986\u76D6\u4E0D\u53EF\u540C\u65F6\u4FDD\u5B58\u65E7\u70B9\u5916\u89C2\u3002");
@@ -24383,7 +24513,7 @@ function validateCard(node, config, issues) {
       origins.add(key2);
     }
   }
-  if (config.contractRevision >= 9 && node.card?.mode === "fields" && node.card.items.some((item) => item.labelMode || item.valueMode)) issue(issues, "error", "live-card-source-forbidden", path2, "r9 \u4FE1\u606F\u5361\u4E0D\u4FDD\u7559\u8DDF\u968F/\u8986\u5199\u72B6\u6001\uFF0C\u8BF7\u5148\u8FC1\u79FB\u3002");
+  if (config.contractRevision >= 9 && node.card?.mode === "fields" && node.card.items.some((item) => item.labelMode || item.valueMode)) issue(issues, "error", "live-card-source-forbidden", path2, "c9 \u4FE1\u606F\u5361\u4E0D\u4FDD\u7559\u8DDF\u968F/\u8986\u5199\u72B6\u6001\uFF0C\u8BF7\u5148\u8FC1\u79FB\u3002");
   const card = resolveCardConfiguration(config, node.path);
   checkItemIds(card, "effective");
   if (!card) {
@@ -24414,7 +24544,7 @@ function validateCard(node, config, issues) {
     const definition = resolveEffectiveFields(config, node.path).find((field) => field.key === item.source);
     if (config.contractRevision >= 8 && item.valueMode === "override" && definition?.type === "enum" && mapped.some((option) => !definition.options?.some((value) => value.value === option.value))) issue(issues, "error", "card-field-map-conflict", itemPath, `\u4FE1\u606F\u5361 ${item.source} \u8986\u5199\u5BF9\u7167\u4F7F\u7528\u4E86\u6765\u6E90\u5B57\u6BB5\u5DF2\u5220\u9664\u7684\u9009\u9879\uFF0C\u8BF7\u8C03\u6574\u8986\u5199\u6216\u6062\u590D\u8DDF\u968F\u3002`);
     if (item.options?.format && !["plain", "externalLink", "boolean", "json", "classification", "enum", "date", "world"].includes(item.options.format)) issue(issues, "error", "card-format-invalid", itemPath, "\u672A\u77E5\u7684\u4FE1\u606F\u5361\u683C\u5F0F\u3002");
-    if (config.contractRevision === 5 && item.options?.format && ["classification", "enum", "date", "world"].includes(item.options.format)) issue(issues, "error", "card-format-revision-invalid", itemPath, "\u8BE5\u4FE1\u606F\u5361\u683C\u5F0F\u8981\u6C42\u539F\u751F r6\u3002");
+    if (config.contractRevision === 5 && item.options?.format && ["classification", "enum", "date", "world"].includes(item.options.format)) issue(issues, "error", "card-format-revision-invalid", itemPath, "\u8BE5\u4FE1\u606F\u5361\u683C\u5F0F\u8981\u6C42\u539F\u751F c6\u3002");
     if (item.renderer === "lineChips" && !item.options?.lineChipSource) issue(issues, "error", "card-line-chips-source-required", itemPath, "\u5173\u8054\u7EBF\u8DEF\u80F6\u56CA\u5FC5\u987B\u9009\u62E9\u5E73\u53F0\u3001\u8F66\u7AD9\u6216\u8F66\u7AD9\u5EFA\u7B51\u6765\u6E90\u3002");
     if (item.renderer !== "relationLink") continue;
     const relation = item.relation;
@@ -24445,7 +24575,7 @@ function validateSearch(control, config, path2, issues) {
     const role = resolveNodeFieldSettings(config, node.path).value.structure;
     return role?.enabled && role.role === "main";
   }) : [];
-  if (search.targetRole && (config.contractRevision < 10 || !targets.length)) issue(issues, "error", "workflow-search-role-invalid", path2, "\u901A\u7528\u641C\u7D22\u9700\u8981 r10 \u4E14\u81F3\u5C11\u6709\u4E00\u4E2A\u542F\u7528\u7684\u4E3B\u7ED3\u6784\u5206\u7C7B\u3002");
+  if (search.targetRole && (config.contractRevision < 10 || !targets.length)) issue(issues, "error", "workflow-search-role-invalid", path2, "\u901A\u7528\u641C\u7D22\u9700\u8981 c10 \u4E14\u81F3\u5C11\u6709\u4E00\u4E2A\u542F\u7528\u7684\u4E3B\u7ED3\u6784\u5206\u7C7B\u3002");
   const selectable = new Set(search.targetRole ? targets.flatMap((node) => resolveSelectableFields(config, node.path).map((field) => field.key)).filter((key2) => targets.every((node) => resolveSelectableFields(config, node.path).some((field) => field.key === key2))) : resolveSelectableFields(config, search.target).map((field) => field.key));
   if (!search.queryFields?.length) issue(issues, "error", "workflow-search-fields-required", path2, "\u641C\u7D22\u63A7\u4EF6\u81F3\u5C11\u9700\u8981\u9009\u62E9\u4E00\u4E2A\u53EF\u5339\u914D\u5B57\u6BB5\u3002");
   for (const field of search.queryFields ?? []) if (!selectable.has(field)) issue(issues, "error", "workflow-search-field-invalid", path2, `\u641C\u7D22\u5B57\u6BB5 ${field} \u4E0D\u5728\u76EE\u6807\u5206\u7C7B\u7684\u6709\u6548\u5B57\u6BB5\u96C6\u4E2D\u3002`, { field });
@@ -24525,9 +24655,9 @@ function validateWorkflow(workflow, config, issues) {
   } catch (error) {
     issue(issues, "error", "workflow-editor-conversion-invalid", base, error instanceof Error ? error.message : "\u7F16\u8F91\u8D44\u683C\u6216\u56DE\u586B\u5931\u8D25\u3002");
   }
-  if (config.contractRevision < 9 && (workflow.editor || workflow.quickMapping !== void 0 || workflow.external?.purpose)) issue(issues, "error", "workflow-editor-r9-required", base, "\u5DE5\u4F5C\u6D41\u7F16\u8F91\u7528\u9014\u9700\u8981 r9\u3002");
+  if (config.contractRevision < 9 && (workflow.editor || workflow.quickMapping !== void 0 || workflow.external?.purpose)) issue(issues, "error", "workflow-editor-r9-required", base, "\u5DE5\u4F5C\u6D41\u7F16\u8F91\u7528\u9014\u9700\u8981 c9\u3002");
   if (config.contractRevision >= 9) {
-    for (const step of workflow.steps) for (const control of step.controls ?? []) if ([control, ...control.group?.itemFields ?? []].some((item) => item.fieldSource)) issue(issues, "error", "live-field-source-forbidden", base, "r9 \u9884\u586B\u4E0D\u4FDD\u7559\u6765\u6E90\u5173\u7CFB\uFF0C\u8BF7\u8FC1\u79FB\u5C55\u5F00\u65E7\u63A7\u4EF6\u3002");
+    for (const step of workflow.steps) for (const control of step.controls ?? []) if ([control, ...control.group?.itemFields ?? []].some((item) => item.fieldSource)) issue(issues, "error", "live-field-source-forbidden", base, "c9 \u53CA\u4EE5\u4E0A\u7684\u9884\u586B\u4E0D\u4FDD\u7559\u6765\u6E90\u5173\u7CFB\uFF0C\u8BF7\u8FC1\u79FB\u5C55\u5F00\u65E7\u63A7\u4EF6\u3002");
   }
   try {
     workflowOutputAssemblyOrder(workflow);
@@ -24588,7 +24718,7 @@ function validateWorkflow(workflow, config, issues) {
   const captured = workflowCaptureSlots(workflow);
   const derivedTokens = workflowDerivedPointTokens(workflow);
   for (const token of derivedTokens) if (!/^[A-Z][A-Z0-9_]*$/.test(token) || controlList.some((control) => control.slot === token) || derivedTokens.filter((item) => item === token).length > 1 || WORKFLOW_SYSTEM_TOKENS.some((system) => token === system || new RegExp(`^${system}_\\d+$`).test(token))) issue(issues, "error", "workflow-capture-slot-invalid", base, `\u5750\u6807\u69FD\u4F4D ${token} \u65E0\u6548\u3001\u91CD\u590D\u6216\u5360\u7528\u7CFB\u7EDF token\u3002`);
-  if (config.contractRevision === 5 && captured.length) issue(issues, "error", "workflow-capture-revision-invalid", base, "\u5750\u6807\u69FD\u4F4D\u8981\u6C42\u539F\u751F r6\u3002");
+  if (config.contractRevision === 5 && captured.length) issue(issues, "error", "workflow-capture-revision-invalid", base, "\u5750\u6807\u69FD\u4F4D\u8981\u6C42\u539F\u751F c6\u3002");
   const earlierTokens = /* @__PURE__ */ new Set(["World", "Creator"]);
   for (const step of workflow.steps) {
     if (step.kind === "geometry") {
@@ -24816,7 +24946,7 @@ function validateConfigPackage(config, mountedRecords = []) {
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: "cairnmap.config-validation-report.v3", valid: false, createdAt: (/* @__PURE__ */ new Date()).toISOString(), issues: structure.map((item) => ({ severity: "error", code: "native-contract-structure-invalid", ...item })) };
   if (config.resources) {
-    if (config.contractRevision < 12) issue(issues, "error", "icon-resources-revision", "resources", "\u56FE\u6807\u8D44\u6E90\u80FD\u529B\u9700\u8981\u5951\u7EA6 r12\u3002");
+    if (config.contractRevision < 12) issue(issues, "error", "icon-resources-revision", "resources", "\u56FE\u6807\u8D44\u6E90\u80FD\u529B\u9700\u8981\u5951\u7EA6 c12\u3002");
     const seen = /* @__PURE__ */ new Set();
     for (const item of config.resources.iconLibraries) {
       if (seen.has(item.library)) issue(issues, "error", "icon-resource-duplicate", "resources", "\u540C\u4E00\u56FE\u5E93\u53EA\u80FD\u58F0\u660E\u4E00\u6B21\u3002");
@@ -24826,7 +24956,7 @@ function validateConfigPackage(config, mountedRecords = []) {
   }
   if (config.contractRevision >= 11) for (const button of config.application?.buttons.items ?? []) {
     const rows = button.criteria.paths;
-    if (!rows) issue(issues, "error", "button-path-migration-required", `application/buttons/${button.id}`, "r11 \u6309\u94AE\u9700\u8981\u5B8C\u6574\u5206\u7C7B\u8DEF\u5F84\u3002");
+    if (!rows) issue(issues, "error", "button-path-migration-required", `application/buttons/${button.id}`, "c11 \u53CA\u4EE5\u4E0A\u7684\u6309\u94AE\u9700\u8981\u5B8C\u6574\u5206\u7C7B\u8DEF\u5F84\u3002");
     else for (const [index, row2] of rows.entries()) {
       if (!hasCategoryNode(config, row2)) issue(issues, "error", "button-path-invalid", `application/buttons/${button.id}/${index}`, "\u6309\u94AE\u663E\u793A\u5185\u5BB9\u4E0D\u662F\u6709\u6548\u5206\u7C7B\u8DEF\u5F84\u3002");
       if (rows.some((other, at) => at !== index && Object.entries(other).every(([key2, value]) => !value || row2[key2] === value))) issue(issues, "warning", "button-path-redundant", `application/buttons/${button.id}/${index}`, "\u8BE5\u8303\u56F4\u5DF2\u88AB\u53E6\u4E00\u6761\u4E0A\u7EA7\u6216\u91CD\u590D\u8303\u56F4\u5305\u542B\uFF0C\u53EF\u5220\u9664\u5197\u4F59\u884C\u3002");
@@ -24840,9 +24970,9 @@ function validateConfigPackage(config, mountedRecords = []) {
   for (const error of standardTagTableErrors(config)) issue(issues, "error", "standard-tag-table-invalid", error.path, error.message);
   issues.push(...validatePrefillCopies(config, resolveEffectiveFields));
   issues.push(...validateNodeFieldSettings(config, resolveEffectiveFields));
-  if (config.contractRevision >= 8 && (config.registries.optionSets || config.nodes.some((node) => node.fields.some((field) => field.optionSource)) || config.workflows.some((workflow) => controlsFor(workflow).some((control) => control.optionSource)))) issue(issues, "error", "legacy-option-source-forbidden", "registries", "r8 \u4F7F\u7528\u5B57\u6BB5\u5185\u5BF9\u7167\uFF1B\u65E7\u5168\u5C40\u9009\u9879\u6765\u6E90\u5FC5\u987B\u5148\u8FC1\u79FB\u3002");
+  if (config.contractRevision >= 8 && (config.registries.optionSets || config.nodes.some((node) => node.fields.some((field) => field.optionSource)) || config.workflows.some((workflow) => controlsFor(workflow).some((control) => control.optionSource)))) issue(issues, "error", "legacy-option-source-forbidden", "registries", "c8 \u53CA\u4EE5\u4E0A\u4F7F\u7528\u5B57\u6BB5\u5185\u5BF9\u7167\uFF1B\u65E7\u5168\u5C40\u9009\u9879\u6765\u6E90\u5FC5\u987B\u5148\u8FC1\u79FB\u3002");
   if (config.schemaVersion !== "cairnmap.config-package.v3") issue(issues, "error", "schema-version-invalid", "manifest", "\u914D\u7F6E\u5305\u4E0D\u662F cairnmap.config-package.v3\u3002");
-  if (!isNativeConfigRevision(config.contractRevision)) issue(issues, "error", "contract-revision-invalid", "manifest", "\u914D\u7F6E\u5305\u5FC5\u987B\u4F7F\u7528 V3.2 \u539F\u751F\u5951\u7EA6 revision 5/6\u3002");
+  if (!isNativeConfigRevision(config.contractRevision)) issue(issues, "error", "contract-revision-invalid", "manifest", "\u914D\u7F6E\u5305\u5FC5\u987B\u4F7F\u7528\u53D7\u652F\u6301\u7684\u539F\u751F\u5951\u7EA6\uFF1A" + CONTRACT_CAPABILITIES.native.map((v) => "c" + v).join("\u3001") + "\u3002");
   validateEngine(config, issues);
   if (!/^[a-z][a-z0-9-]{2,80}$/.test(config.packageId)) issue(issues, "error", "package-id-invalid", "manifest", "\u914D\u7F6E\u5305 ID \u683C\u5F0F\u65E0\u6548\u3002");
   if (!Number.isSafeInteger(config.revision) || config.revision < 1) issue(issues, "error", "revision-invalid", "manifest", "\u5305 revision \u5FC5\u987B\u662F\u6B63\u6574\u6570\u3002");
@@ -24991,7 +25121,7 @@ function resolveBoundCard(config, item) {
 function validateLookupTables(config, includeNodes = true) {
   const issues = [];
   const error = (path2, message, code = "lookup-table-invalid") => issues.push({ severity: "error", code, path: path2, message });
-  if (config.contractRevision < 10 && (config.lookupTables?.length || config.nodes.some((n) => n.fields.some((f) => f.optionsTableId)) || config.workflows.some((w) => w.steps.some((s) => s.controls?.some((c) => c.optionsTableId || c.group?.itemFields.some((f) => f.optionsTableId)))))) error("lookupTables", "\u5BF9\u7167\u8868\u9700\u8981 r10 \u5951\u7EA6\u3002");
+  if (config.contractRevision < 10 && (config.lookupTables?.length || config.nodes.some((n) => n.fields.some((f) => f.optionsTableId)) || config.workflows.some((w) => w.steps.some((s) => s.controls?.some((c) => c.optionsTableId || c.group?.itemFields.some((f) => f.optionsTableId)))))) error("lookupTables", "\u5BF9\u7167\u8868\u9700\u8981 c10 \u5951\u7EA6\u3002");
   const ids = /* @__PURE__ */ new Set();
   for (const table of config.lookupTables ?? []) {
     const path2 = `lookupTables/${table.id}`;
@@ -25078,11 +25208,11 @@ function validateNavigationConfiguration(config, fields) {
   const issues = [], app = config.application;
   const add = (path2, message, relatedPaths = [], severity = "error") => issues.push({ severity, code: "navigation-configuration-invalid", path: path2, message, relatedPaths });
   if (config.contractRevision < 13) {
-    if (app?.navigation || app?.preferences.railwayRoles || config.nodes.some((n) => n.fields.some((f) => f.valueSchema))) add(navBase, "\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u3001\u5BFC\u822A\u8BBE\u7F6E\u53CA\u503C\u7ED3\u6784\u58F0\u660E\u9700\u8981\u5951\u7EA6 r13\u3002");
+    if (app?.navigation || app?.preferences.railwayRoles || config.nodes.some((n) => n.fields.some((f) => f.valueSchema))) add(navBase, "\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u3001\u5BFC\u822A\u8BBE\u7F6E\u53CA\u503C\u7ED3\u6784\u58F0\u660E\u9700\u8981\u5951\u7EA6 c13\u3002");
     return issues;
   }
   if (!app?.navigation || !app.preferences.railwayRoles) {
-    add(navBase, "r13 \u5FC5\u987B\u5305\u542B\u8DEF\u5F84\u89C4\u5212\u8BBE\u7F6E\u548C\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u5B9A\u4E49\u3002", [sharedBase]);
+    add(navBase, "c13 \u5FC5\u987B\u5305\u542B\u8DEF\u5F84\u89C4\u5212\u8BBE\u7F6E\u548C\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u5B9A\u4E49\u3002", [sharedBase]);
     return issues;
   }
   if (app.preferences.navigation) add(navBase, "\u65E7\u5BFC\u822A\u53C2\u6570\u4E0E r13 \u8BBE\u7F6E\u4E0D\u80FD\u5E76\u5B58\u3002", ["application/preferences/navigation"]);
@@ -25420,11 +25550,11 @@ function recordCategory(record) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-r13-production-1";
+var rulesVersion = "cairnmap-c14-production-1";
 var validateConfiguration = validateConfigPackage;
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));
-  if (![11, 12, 13].includes(config.contractRevision)) throw Error("Publication requires native contract r11, r12 or r13; historical imports remain editable.");
+  if (!supportsContract("publication", config.contractRevision)) throw Error("Publication requires supported contracts " + CONTRACT_CAPABILITIES.publication.map((v) => "c" + v).join(", ") + ".");
   const report = validateConfigPackage(config);
   if (!report.valid) throw Object.assign(Error("configuration-semantic-validation-failed"), { report });
   const zip = await import_jszip2.default.loadAsync(bytes), configBody = await zip.file("config.json").async("uint8array"), manifestBody = await zip.file("manifest.json").async("uint8array");
@@ -25473,6 +25603,7 @@ function validateIncomingBatch(config, created, existing, deletes = []) {
   if (navigationIssues.length) throw Object.assign(Error("configuration-navigation-relations-invalid"), { issues: navigationIssues });
 }
 export {
+  CONTRACT_CAPABILITIES,
   stableConfigText as configurationSnapshotText,
   rulesVersion,
   validateConfiguration,

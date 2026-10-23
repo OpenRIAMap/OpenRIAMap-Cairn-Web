@@ -1,4 +1,5 @@
 import { migrateButtonClassification } from '../core/project/buttonClassification';
+import {assertKnownMigrationInput} from './contract';
 import type { ConfigPackageV3 } from './types';
 import { migrateConfigToR10 } from './r10Migration';
 import { migrateApplicationResources } from '../core/project/applicationResources';
@@ -6,6 +7,7 @@ import { canonicalDictionaries } from './dictionaryContract';
 import {createStandardTagTable} from './standardTagFields';
 
 export function migrateConfigToR11(value:ConfigPackageV3):{config:ConfigPackageV3;changes:string[]} {
+  assertKnownMigrationInput(value.contractRevision);
   if(value.contractRevision>=11)return {config:structuredClone(value),changes:[]};
   const previous=value.contractRevision<10?migrateConfigToR10(value).config:structuredClone(value);
   if(!previous.application)throw Error('缺少可迁移的应用总体规则。');

@@ -40,8 +40,8 @@ export function ConfigBootstrap({children,onClose}:{children:ReactNode;onClose:(
   const status=currentValidation(pending?.validation,pending?.generation??-1)?pending?.validation?.report.valid?'已核验，尚未发布':'全局核验未通过':pending?.validation?'核验已失效':'尚未核验／有未保存内容';
   if(!ready)return <div className="flex h-screen items-center justify-center bg-slate-100">
     {pending?<ConfigDialog open title="检测到本机编辑缓存" onClose={onClose} busy={busy}>
-      <p>本机：{metadataText(pending.config?.packageId,'未知配置')} · 配置 r{metadataText(pending.config?.revision,'?')} · 契约 r{metadataText(pending.config?.contractRevision,'?')}</p>
-      <p>最后缓存：{metadataText(pending.updatedAt)} · {status}</p><p>当前 Web 正式配置：{formal?`配置 r${formal.revision} · 契约 r${formal.contractRevision}`:'暂未取得，可继续恢复本机稿。'}</p>
+      <p>本机：{metadataText(pending.config?.packageId,'未知配置')} · 配置 r{metadataText(pending.config?.revision,'?')} · 契约 c{metadataText(pending.config?.contractRevision,'?')}</p>
+      <p>最后缓存：{metadataText(pending.updatedAt)} · {status}</p><p>当前 Web 正式配置：{formal?`配置 r${formal.revision} · 契约 c${formal.contractRevision}`:'暂未取得，可继续恢复本机稿。'}</p>
       <p className="text-sm text-slate-600">选择前不会启用或改写缓存。恢复默认将清除这一工作区，并读取当前正式配置。</p>
       <div className="flex flex-wrap gap-2"><button disabled={busy} className="rounded bg-violet-600 px-3 py-2 text-white" onClick={()=>void choose(true)}>继续编辑</button><button disabled={busy} className="rounded border px-3 py-2" onClick={()=>void choose(false)}>恢复默认</button></div>{error?<p role="alert" className="break-words text-rose-700">{error}</p>:null}
     </ConfigDialog>:<div role="status" className="rounded border bg-white p-5">{error||'正在加载当前正式配置…'}{error?<button className="ml-3 rounded border px-3 py-2" onClick={()=>location.reload()}>重新加载</button>:null}</div>}

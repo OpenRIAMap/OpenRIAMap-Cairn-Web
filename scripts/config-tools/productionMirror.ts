@@ -1,3 +1,4 @@
+import {supportsContract} from '../../src/configStudio/contract';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
@@ -13,7 +14,7 @@ export async function verifyPublishedMirror(publicRoot=path.resolve('public')){
   return verifyPublishedRelease(publicRoot,identity);
 }
 export async function verifyPublishedRelease(publicRoot:string, identity:Record<string,any>){
-  if(![11,12,13].includes(identity.contractRevision)||identity.packageId!=='cairnmap-config-v32-semantic'||identity.projectId!=='openriamap-ria'||!Number.isSafeInteger(identity.revision)||identity.revision<1||!/^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$/.test(identity.releaseId??'')||!/^[a-f0-9]{64}$/.test(identity.configSha256??'')||!/^[a-f0-9]{64}$/.test(identity.manifestSha256??'')||identity.configUrl!==`/configuration/releases/${identity.configSha256}/config.json`)throw Error('Published mirror identity invalid');
+  if(!supportsContract('publication',identity.contractRevision)||identity.packageId!=='cairnmap-config-v32-semantic'||identity.projectId!=='openriamap-ria'||!Number.isSafeInteger(identity.revision)||identity.revision<1||!/^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$/.test(identity.releaseId??'')||!/^[a-f0-9]{64}$/.test(identity.configSha256??'')||!/^[a-f0-9]{64}$/.test(identity.manifestSha256??'')||identity.configUrl!==`/configuration/releases/${identity.configSha256}/config.json`)throw Error('Published mirror identity invalid');
   const folder=path.join(publicRoot,'configuration/releases',identity.configSha256);
   const read=async(name:string,max:number)=>{const file=path.join(folder,name);if((await fs.stat(file)).size>max)throw Error('Published mirror byte budget');return fs.readFile(file);};
   const [raw,manifest,archive,releaseBody]=await Promise.all([read('config.json',64*1024*1024),read('manifest.json',1024*1024),read('package.zip',64*1024*1024),read('release.json',1024*1024)]);

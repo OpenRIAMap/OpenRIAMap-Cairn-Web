@@ -81,7 +81,7 @@ export function GlobalPackageControls({ config, records = [], hasDraft, formalBl
       const blob=await buildTemporaryConfigArchive(config,gate.run,getWorkspaceState().generation);
       if(!downloadOnly)try{await flushWorkspace();}catch(error){setCacheFailure(String(error));return;}
       if(live.current.snapshot!==snapshot||live.current.hasDraft||live.current.recordText!==recordText||!currentValidation(gate.run,getWorkspaceState().generation))throw Error('内容已改变，请重新全局核验。');
-      const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`${config.packageId}.r${config.revision}.contract-r${config.contractRevision}.temporary.${Date.now()}.zip`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`${config.packageId}.r${config.revision}.contract-c${config.contractRevision}.temporary.${Date.now()}.zip`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
       setTemporaryOpen(false);inform('已发起临时诊断包下载；仅用于继续编辑与排查，不代表正式核验通过。');
     }catch(error){inform(String(error));}finally{setBusy(false);}
   };
@@ -145,7 +145,7 @@ export function GlobalPackageControls({ config, records = [], hasDraft, formalBl
   const warning=server?.report?.issues.some(issue=>issue.severity==='warning');
   return <><button type="button" className="rounded border px-3 py-1.5 text-sm disabled:opacity-40" disabled={busy||hasDraft} onClick={()=>void validate()}>全局核验</button><button type="button" className="rounded border border-violet-300 px-3 py-1.5 text-sm disabled:opacity-40" disabled={!checked||busy} onClick={()=>{setCacheFailure('');setTemporaryOpen(true);}}>临时保存和下载</button><button type="button" className="rounded bg-emerald-600 px-3 py-1.5 text-sm text-white disabled:bg-slate-300" disabled={!valid||busy} onClick={()=>setOpen(true)}>整包下载/上传</button>
     <ConfigDialog open={temporaryOpen} title="临时保存和下载" onClose={()=>setTemporaryOpen(false)} busy={busy}>
-      <p>{config.packageId} · 配置 r{config.revision} · 契约 r{config.contractRevision}</p>
+      <p>{config.packageId} · 配置 r{config.revision} · 契约 c{config.contractRevision}</p>
       <p>错误 {gate?.run.report.issues.filter(item=>item.severity==='error').length??0} 项，警告 {gate?.run.report.issues.filter(item=>item.severity==='warning').length??0} 项。</p>
       <p className="text-sm">此文件保留配置和本次诊断报告，仅用于继续编辑或排查。临时下载不代表正式核验通过，不会上传或发布。</p>
       {!checked?<p role="alert" className="text-rose-700">内容已改变，请关闭并重新全局核验。</p>:null}
@@ -153,7 +153,7 @@ export function GlobalPackageControls({ config, records = [], hasDraft, formalBl
       {cacheFailure?<div role="alert" className="text-rose-700">本地缓存失败：{cacheFailure}<button type="button" className="ml-2 rounded border px-3 py-2" disabled={!checked||busy} onClick={()=>void temporaryDownload(true)}>仅下载副本</button></div>:null}
     </ConfigDialog>
     <ConfigDialog open={open} title="整包下载/上传" onClose={()=>setOpen(false)} busy={busy}>
-      <p className="text-sm">正式基线：{base?.packageId} r{base?.revision} · 契约 r{base?.contractRevision}</p><p className="break-all text-xs">SHA-256：{base?.configSha256}</p>
+      <p className="text-sm">正式基线：{base?.packageId} r{base?.revision} · 契约 c{base?.contractRevision}</p><p className="break-all text-xs">SHA-256：{base?.configSha256}</p>
       <p className="text-sm">下载将自动分配高于已保存、已导出及已知正式版本的修订号。在线发布由服务端最终分配。</p>
       {!valid?<p role="alert" className="text-rose-700">全局核验已失效，请关闭并重新核验。</p>:null}
       <div className="flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-2" disabled={busy||!valid} onClick={()=>void download()}>下载配置整包</button><button type="button" className="rounded bg-violet-600 px-3 py-2 text-white" disabled={busy||!valid} onClick={()=>void login()}>重新登录并准备上传</button>{authenticated?<button type="button" className="rounded border px-3 py-2" disabled={busy||!valid} onClick={()=>void preflight()}>再次核验</button>:null}</div>

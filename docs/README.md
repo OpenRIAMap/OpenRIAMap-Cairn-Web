@@ -51,4 +51,7 @@
 
 ## 路线与历史
 
+- [契约与逐级迁移更新要求](20_config-reference/ContractUpdates.md)：修改配置工作台、升级契约及生成 SCF 核验器前必读。
+- [c14 交付、验证与部署说明](20_config-reference/ContractC14Delivery.md)：本轮逐级迁移、Halo、编辑折叠及部署后验收顺序。
+
 - `90_roadmap-and-history/FrameworkExtractionRoadmap.md`：CairnMap 配置抽出路线与阶段记录。

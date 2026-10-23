@@ -116,6 +116,10 @@ export type PointSymbolPlan =
       iconUrlFrom?: string;
       iconSize?: [number, number];
       iconAnchor?: [number, number];
+      imageHalo?: {widthPx:number;color:string};
+      hitIconSize?: [number,number];
+      hitIconAnchor?: [number,number];
+      haloInsetPx?: number;
 
       /** 可选：指定点所在 pane */
       pane?: string;
@@ -126,7 +130,7 @@ export type PointSymbolPlan =
   | {
       /** Config V3.2 的规则化点符号。圆形仍使用 circleMarker；其余形状使用 SVG marker。 */
       kind: 'shape';
-      shape: 'square' | 'triangle' | 'regular4' | 'regular5' | 'regular6';
+      shape: 'circle' | 'square' | 'triangle' | 'regular4' | 'regular5' | 'regular6';
       radius?: number;
       style?: L.CircleMarkerOptions;
 

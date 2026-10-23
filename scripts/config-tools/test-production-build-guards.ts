@@ -1,3 +1,4 @@
+import {CONTRACT_CAPABILITIES} from '../../src/configStudio/contract';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -39,7 +40,7 @@ try{
   assert.equal((await validateProductionBuild(root)).verifiedReleases,3,'unactivated r12/r13 candidates are verified beside r11 current');
   const renamed=JSON.parse(JSON.stringify(r13).replaceAll('class-sbp','legitimate-building-node'));renamed.revision=55;assert(validateConfigPackage(renamed).valid);
   const changed=await release(renamed);await fs.writeFile(path.join(root,'configuration/current.json'),JSON.stringify(changed.identity));assert.equal((await validateProductionBuild(root)).current.revision,55,'legal internal-ID changes cannot block production builds');
-  await fs.writeFile(path.join(root,'configuration/current.json'),JSON.stringify({...changed.identity,contractRevision:14}));await assert.rejects(()=>validateProductionBuild(root),/identity/);
+  await fs.writeFile(path.join(root,'configuration/current.json'),JSON.stringify({...changed.identity,contractRevision:CONTRACT_CAPABILITIES.latest+1}));await assert.rejects(()=>validateProductionBuild(root),/identity/);
   await fs.writeFile(path.join(root,'configuration/current.json'),JSON.stringify(changed.identity));
   const original=await fs.readFile(path.join(changed.dir,'config.json'));await fs.appendFile(path.join(changed.dir,'config.json'),' ');await assert.rejects(()=>validateProductionBuild(root),/digest/);await fs.writeFile(path.join(changed.dir,'config.json'),original);
   const archive=await fs.readFile(path.join(changed.dir,'package.zip'));await fs.writeFile(path.join(changed.dir,'package.zip'),archive.subarray(0,100));await assert.rejects(()=>validateProductionBuild(root));await fs.writeFile(path.join(changed.dir,'package.zip'),archive);
