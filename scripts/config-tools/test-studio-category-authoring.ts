@@ -57,6 +57,38 @@ for (const code of kinds) {
   assert.equal(resolveCardConfiguration(result.config, result.node.path)?.mode, resolveCardConfiguration(baseline, source.path)?.mode);
 }
 
+// Borrow ROD's display under a natural line parent without copying its
+// navigation schema, card or search settings. Real fallback colors survive.
+const naturalLineParent=baseline.nodes.find(node=>classificationPathKey(node.path)==='ISL/NGF/BOD')!;
+const roadTemplate=baseline.nodes.find(node=>classificationPathKey(node.path)==='ROD')!;
+const displayOnlyRequest:CategoryInitialization={...request,parentId:naturalLineParent.nodeId,code:'STYLE_ONLY',mode:'template',sourceId:roadTemplate.nodeId,sync:{fields:false,geometry:true,display:true,card:false}};
+const displayOnly=initializeCategory(baseline,displayOnlyRequest);
+assert(validateConfigPackage(displayOnly.config).valid);
+assert.deepEqual(displayOnly.node.fields,[]);
+assert(!displayOnly.node.fieldSettings,'display-only copy must not import road search/structure settings');
+const borrowed=resolveGeometryProfile(displayOnly.config,displayOnly.node.path,'LineString')!;
+const roadRules=resolveGeometryProfile(baseline,roadTemplate.path,'LineString')!.zoomPriority.rules;
+let fallbackCount=0;
+function checkBorrowed(source:unknown,copied:unknown):void{
+  if(Array.isArray(source)){source.forEach((item,index)=>checkBorrowed(item,(copied as unknown[])[index]));return;}
+  if(!source||typeof source!=='object')return;
+  const binding=source as Record<string,unknown>;
+  if(binding.mode==='field'&&binding.field==='color'){
+    assert.deepEqual(copied,{mode:'fixed',color:binding.fallbackColor});fallbackCount++;return;
+  }
+  for(const [key,value] of Object.entries(binding))if(key!=='id')checkBorrowed(value,(copied as Record<string,unknown>)[key]);
+}
+roadRules.forEach((rule,index)=>checkBorrowed(rule,borrowed.zoomPriority.rules[index]));
+assert(fallbackCount>0);
+assert.equal(displayOnly.report.actions.filter(action=>action.startsWith('显示取色回退')).length,fallbackCount);
+assert(!resolveEffectiveFields(displayOnly.config,displayOnly.node.path).some(field=>['Speed','ConnectL','Blacklist','Mode','color'].includes(field.key)));
+const brokenDisplay=structuredClone(baseline);
+brokenDisplay.nodes.find(node=>node.nodeId===roadTemplate.nodeId)!.geometryProfiles.LineString!.zoomPriority.rules[0].label!.source='MissingLabel';
+assert.throws(()=>initializeCategory(brokenDisplay,displayOnlyRequest),/未同步依赖字段 MissingLabel/,'missing labels cannot be silently replaced');
+const noFallback=structuredClone(baseline);
+for(const rule of noFallback.nodes.find(node=>node.nodeId===roadTemplate.nodeId)!.geometryProfiles.LineString!.zoomPriority.rules)if(rule.style?.stroke?.mode==='field')delete rule.style.stroke.fallbackColor;
+assert.throws(()=>initializeCategory(noFallback,displayOnlyRequest),/未同步依赖字段 color/,'a missing explicit fallback must still block');
+
 const leafDeletion = prepareCategoryDeletion(line.config, point.node.nodeId);
 assert.deepEqual(leafDeletion.nodes.map(node => node.nodeId), [point.node.nodeId]);
 assert(leafDeletion.report.valid);
