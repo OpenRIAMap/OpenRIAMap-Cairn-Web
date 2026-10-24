@@ -28,6 +28,16 @@ export function workflowOutputFields(config:ConfigPackageV3,output:WorkflowOutpu
   const paths=workflowClassificationGroup(config,output).paths,sets=paths.map(path=>new Map(resolveEffectiveFields(config,path).map(field=>[field.key,field])));
   return sets.length?[...sets[0].values()].filter(field=>sets.every(set=>{const other=set.get(field.key);return other&&other.type===field.type&&other.cardinality===field.cardinality&&other.coordinateFormat===field.coordinateFormat&&other.format===field.format&&JSON.stringify(other.reference)===JSON.stringify(field.reference)&&JSON.stringify(other.valueSchema)===JSON.stringify(field.valueSchema);})):[];
 }
+/** Suggestions are a union with explicit coverage, never a binding permission. */
+export function workflowOutputFieldCatalog(config:ConfigPackageV3,output:WorkflowOutput,paths=workflowClassificationGroup(config,output).paths){
+  if(config.contractRevision<15&&output.classification)return resolveEffectiveFields(config,output.classification).map(field=>({field,variants:[{path:output.classification!,field}],total:1}));
+  const entries=new Map<string,{field:FieldDefinition;variants:Array<{path:ClassificationPath;field:FieldDefinition}>;total:number}>();
+  for(const path of paths)for(const field of resolveEffectiveFields(config,path)){
+    const entry=entries.get(field.key)??{field,variants:[],total:paths.length};
+    entry.variants.push({path,field});entries.set(field.key,entry);
+  }
+  return [...entries.values()].sort((a,b)=>Number(b.variants.length===b.total)-Number(a.variants.length===a.total));
+}
 export function recordClassificationEligible(config:ConfigPackageV3,path:ClassificationPath,geometry:GeometryKind):boolean{
   return hasCategoryNode(config,path)&&(config.contractRevision>=15||!hasDescendants(config,path))&&Boolean(resolveGeometryProfile(config,path,geometry)?.enabled);
 }

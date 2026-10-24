@@ -5,10 +5,12 @@ import ts from 'typescript';
 import {CONTRACT_CAPABILITIES,supportsContract,NATIVE_CONFIG_REVISION} from '../../src/configStudio/contract';
 import {migrationChain} from '../../src/configStudio/contractMigration';
 import {CONFIGURATION_RULES_VERSION} from '../../src/configRuntime/formalConfiguration';
+import {rulesVersion} from '../../vendor/configuration-r11/r11-validation.mjs';
 import type {ConfigPackageV3} from '../../src/configStudio/types';
 const latest:ConfigPackageV3['contractRevision']=NATIVE_CONFIG_REVISION;
 for(const capability of ['native','activation','category','workflow','publication'] as const){assert(supportsContract(capability,latest));assert(!supportsContract(capability,latest+1));}
-assert.equal(CONFIGURATION_RULES_VERSION,`cairnmap-c${latest}-production-1`);
+assert.match(CONFIGURATION_RULES_VERSION,new RegExp(`^cairnmap-c${latest}-production-[1-9][0-9]*$`));
+assert.equal(rulesVersion,CONFIGURATION_RULES_VERSION,'same-contract kernel fixes must have the same Web and Node rules identity');
 assert.equal(JSON.parse(fs.readFileSync('vendor/configuration-r11/manifest.json','utf8')).rulesVersion,CONFIGURATION_RULES_VERSION);
 for(let source=Math.max(13,latest-5);source<=latest;source++)for(const kind of ['package','node','classTree','workflow'] as const)assert.equal(migrationChain(source,latest,kind).length,latest-source);
 const violations:string[]=[],inventory:Array<{file:string;line:number;text:string;category:string}>=[],gates:Array<{file:string;line:number;text:string}>=[];

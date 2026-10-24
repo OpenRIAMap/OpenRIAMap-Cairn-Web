@@ -1,0 +1,9 @@
+{
+  "repository": "OpenRIAMap/OpenRIAMap-Cairn-Pipeline",
+  "remote": "https://github.com/OpenRIAMap/OpenRIAMap-Cairn-Pipeline.git",
+  "fetchedAtUtc": "2026-10-23T19:31:14.9561426Z",
+  "baseSha": "34077fc839b87d21392b1d6321bd3c36fad4fe26",
+  "subject": "Merge pull request #57 from OpenRIAMap/codex/halo-rules-workflow-c15-20261023",
+  "createdFrom": "34077fc839b87d21392b1d6321bd3c36fad4fe26",
+  "branch": "codex/fix-workflow-classification-c15-20261024"
+}

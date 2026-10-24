@@ -34,3 +34,12 @@
 - 采集、导入、再编辑和共享 Node 核验允许有有效几何的精确父节点；只有 leafDescendants 展开要求结构末端。历史契约保持原有资格。
 - 工作流设计折叠由 `WorkflowFold.tsx` 管理。业务 ID 优先；没有业务 ID 的行使用单独 UI 身份，随同一个显式检查点恢复，不写入配置或配置散列。实际运行器表单保持正常展开。
 - `migratePackageToC14()` 永远只到 c14；本轮新增 `migratePackageToC15()`。新建、复制、执行方式／显示类型切换同样必须产生完整目标结构，不能靠再次迁移掩盖工厂遗漏。
+
+## c15 工作流分类修正维护要求
+
+- 四级 Class／Kind／SKind／SKind2 选框只用于工作台设计端指定分类组范围。实际填写、试运行和工作流式编辑统一用一个类型下拉框，列出最后一级代号（名称），内部仍绑定完整路径。不要根据候选深度再生成四级填写表单。
+- `workflowCategoryOptions.ts` 负责稳定顺序和同名消歧；`WorkflowClassificationSelect.tsx` 复用实际表单样式。编辑端必须传入编辑计划的真实候选集合，不能只在保存时拒绝范围外选项。
+- `workflowOutputFields()` 只是共同字段建议。绑定资格分析实际供值及各候选字段约束，不能用类型／format／schema 的 JSON 相等或字段交集代替值兼容性检查。
+- `workflowSupplyValidation.ts` 按实际条件检查必填供值，包括系统值、组装、绘制对象的子字段、默认值和人工标签。`workflowConditionCoverage.ts` 做有界符号覆盖分析；超出预算返回未知警告，不用几个试填样本伪造证明。
+- `fieldValueValidation.ts` 是 c15 实际提交和纯 Node 入站共用的字段值／格式检查；历史契约保留旧行为。明确非法值阻断，动态未知的配置结果警告并在实际保存时核验。
+- 回归必须包含真实运行器中 Kind／SKind／SKind2 末端混合的单下拉框，实际填写、地图采集和再编辑；只测试设计器或者内核不能证明填写交互符合要求。

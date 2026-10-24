@@ -1,0 +1,22 @@
+[
+  {
+    "function": "cairn-pipeline-worker",
+    "sha256": "a8a6688f04b346ec1d9213f24dc478d895701dbbe06e8e91078f509af4883d94",
+    "bytes": 2258570,
+    "entries": 1181,
+    "kernel": "fd83cd831b3a5d421780695053c92251fc063d9148b3682ac1c63e8f321962f1",
+    "handler": "scf-worker.js",
+    "actualSdkFiles": true,
+    "noSymlinks": true
+  },
+  {
+    "function": "cairn-pipeline-dispatcher",
+    "sha256": "2f906be35c3893a1ab73acce26e2d2998837f281f350ad32db1e3e3196b998ca",
+    "bytes": 2258580,
+    "entries": 1181,
+    "kernel": "fd83cd831b3a5d421780695053c92251fc063d9148b3682ac1c63e8f321962f1",
+    "handler": "scf-dispatcher.js",
+    "actualSdkFiles": true,
+    "noSymlinks": true
+  }
+]

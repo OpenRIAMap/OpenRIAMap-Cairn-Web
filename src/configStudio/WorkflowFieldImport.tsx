@@ -1,4 +1,4 @@
-import {workflowOutputFields} from './workflowClassificationGroup';
+import {assertWorkflowFieldBinding} from './workflowBinding';
 import {HelpLabel,HelpControl} from './SettingHelp';
 import { useState } from 'react';
 import type { ClassificationPath, ConfigPackageV3, FieldDefinition, WorkflowControl, WorkflowDefinition, WorkflowGroupField } from './types';
@@ -17,7 +17,7 @@ export function WorkflowFieldImport({config,workflow,value,onChange,onImport,gro
   const apply=()=>{if(!selected)return;try{
     const original='id' in value?value:{...value,id:value.key,slot:'GROUP_VALUE',columns:1} as WorkflowControl;
     const imported=importFieldIntoControl(config,workflow,original,selected.node.nodeId,selected.field);
-    if(bind){const output=workflow.outputs.find(item=>item.id===outputId);if(!output||!workflowOutputFields(config,output).some(field=>field.key===selected.field.key))throw new Error('当前输出没有对应有效字段，请选择兼容输出或仅导入配置。');if(output.assignments.some(item=>item.target===selected.field.key))throw new Error('目标字段已绑定，请编辑原组装行，避免重复写入。');}
+    if(bind){const output=workflow.outputs.find(item=>item.id===outputId);assertWorkflowFieldBinding(config,workflow,imported,selected.field.key,outputId);if(!output)throw Error('所选输出不存在。');if(output.assignments.some(item=>item.target===selected.field.key))throw new Error('目标字段已绑定，请编辑原组装行，避免重复写入。');}
     if(groupField){const {id:_id,slot:_slot,columns:_columns,...group}=imported;onChange({...value,...group,key:(value as WorkflowGroupField).key} as WorkflowGroupField);}
     else if(onImport)onImport(imported,selected.field.key,bind?outputId:undefined);else onChange(imported);
     setOpen(false);setError('');

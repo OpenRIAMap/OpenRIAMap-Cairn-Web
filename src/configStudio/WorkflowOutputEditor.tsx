@@ -1,6 +1,6 @@
 import {WorkflowFold} from './WorkflowFold';
 import {openAddedSetting} from './folding';
-import {workflowOutputFields} from './workflowClassificationGroup';
+import {workflowOutputFieldCatalog} from './workflowClassificationGroup';
 import {HelpLabel} from './SettingHelp';
 import { resolveWorkflowFields } from './fieldReuse';
 import { WorkflowExpressionEditor } from './WorkflowExpressionEditor';
@@ -15,7 +15,7 @@ import { WORKFLOW_SYSTEM_TOKENS, workflowDerivedPointTokens } from './workflowEx
 const uid = () => `assignment-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 function AssignmentRow({ value, outputId, index, targets, tokens, tokenInfo, system, slots, errors, onChange, onDelete, onCopy, onDragStart, onDragEnd, onDrop }: {
-  value: WorkflowAssignment; outputId:string; index: number; targets: string[]; tokens: string[]; tokenInfo:Array<{token:string;label:string;type?:string}>; system: V3WorkflowValueMap; slots: V3WorkflowValueMap; errors: string[];
+  value: WorkflowAssignment; outputId:string; index: number; targets: Array<{key:string;label:string}>; tokens: string[]; tokenInfo:Array<{token:string;label:string;type?:string}>; system: V3WorkflowValueMap; slots: V3WorkflowValueMap; errors: string[];
   onChange: (next: WorkflowAssignment) => void; onDelete: () => void; onCopy: () => void; onDragStart: () => void; onDragEnd: () => void; onDrop: () => void;
 }) {
   const expression = (next: string) => onChange({ ...value, expression: next });
@@ -27,7 +27,7 @@ function AssignmentRow({ value, outputId, index, targets, tokens, tokenInfo, sys
     <div className="flex min-w-0 items-start gap-2">
       <span draggable onDragStart={(event) => { event.stopPropagation(); onDragStart(); }} onDragEnd={onDragEnd} className="mt-2 cursor-grab text-slate-400" title="拖动手柄排序组装行"><GripVertical className="h-4 w-4" /></span>
       <div className="cm-flex-grid min-w-0 flex-1 gap-2">
-        <HelpLabel context="WorkflowOutputEditor" className="grid min-w-0 gap-1 text-xs">目标字段／tags 或 extensions 路径<input aria-label={`组装目标 ${index + 1}`} list={`targets-${value.id}`} className="min-w-0 rounded border px-2 py-1" value={value.target} onChange={(event) => onChange({ ...value, target: event.target.value })} placeholder="Name、tags.zone、extensions.custom" /><datalist id={`targets-${value.id}`}>{targets.map((target) => <option key={target} value={target} />)}</datalist></HelpLabel>
+        <HelpLabel context="WorkflowOutputEditor" className="grid min-w-0 gap-1 text-xs">目标字段／tags 或 extensions 路径<input aria-label={`组装目标 ${index + 1}`} list={`targets-${value.id}`} className="min-w-0 rounded border px-2 py-1" value={value.target} onChange={(event) => onChange({ ...value, target: event.target.value })} placeholder="Name、tags.zone、extensions.custom" /><datalist id={`targets-${value.id}`}>{targets.map((target) => <option key={target.key} value={target.key}>{target.label}</option>)}</datalist></HelpLabel>
         <HelpLabel context="WorkflowOutputEditor" className="grid min-w-0 gap-1 text-xs">来源／受控表达式<textarea aria-label={`组装表达式 ${index + 1}`} className="min-h-10 min-w-0 resize-y rounded border px-2 py-1 font-mono" rows={1} value={value.expression} onChange={(event) => expression(event.target.value)} placeholder={'A 或 join("_",WorldPrefix+Class,A)'} /></HelpLabel>
       </div>
     </div>
@@ -40,7 +40,7 @@ function AssignmentRow({ value, outputId, index, targets, tokens, tokenInfo, sys
 
 export function WorkflowOutputEditor({ config, workflow, output, slots, world, onChange }: { config: ConfigPackageV3; workflow: WorkflowDefinition; output: WorkflowOutput; slots: V3WorkflowValueMap; world?: string; onChange: (next: WorkflowOutput) => void }) {
   const [dragId, setDragId] = useState<string>();
-  const targets = workflowOutputFields(config, output).map((field) => field.key);
+  const targets = workflowOutputFieldCatalog(config, output).map(({field,variants,total}) => ({key:field.key,label:field.labels.zh+` · 字段覆盖 ${variants.length}/${total} 类`}));
   workflow=resolveWorkflowFields(config,workflow);
   const controlSlots = workflow.steps.flatMap((step) => step.controls ?? []).flatMap((control) => control.slot ? [control.slot] : []);
   const tokens = [...new Set([...controlSlots, ...workflowDerivedPointTokens(workflow), ...WORKFLOW_SYSTEM_TOKENS, ...workflow.outputs.flatMap((_, index) => WORKFLOW_SYSTEM_TOKENS.map((token) => `${token}_${index + 1}`))])];

@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import {gzipSync} from 'node:zlib';
+import {createHash} from 'node:crypto';
+import {classificationFixture} from './fixtures/workflow-classification-c15';
+const {config}=classificationFixture();
+const bytes=gzipSync(JSON.stringify(config),{level:9});
+fs.writeFileSync('scripts/browser/fixtures/workflow-classification.config.json.gz',bytes);
+const pointer=JSON.parse(fs.readFileSync('public/configuration/current.json','utf8'));
+const formal=fs.readFileSync('public'+pointer.configUrl);
+if(createHash('sha256').update(formal).digest('hex')!==pointer.configSha256)throw Error('Formal fixture source digest mismatch.');
+fs.writeFileSync('scripts/browser/fixtures/workflow-classification-water.config.json.gz',gzipSync(formal,{level:9}));
+fs.writeFileSync('scripts/browser/fixtures/workflow-classification-source.json',JSON.stringify(pointer,null,2)+'\n');
+if(process.argv[2])fs.writeFileSync(process.argv[2],bytes);
+console.log(`Wrote classification fixture: ${bytes.length} bytes.`);

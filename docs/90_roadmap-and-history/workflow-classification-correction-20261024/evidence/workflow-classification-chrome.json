@@ -1,0 +1,168 @@
+{
+  "browser": "chrome",
+  "checks": [
+    "formal water flow: one styled selector with compact terminal names",
+    "formal water flow: real form input, polygon map capture, generated identity and local save",
+    "all five candidates: mixed depths, exact parent, duplicate names; real map capture and local commit",
+    "deep-to-shallow switch clears lower classification and generated ID segments",
+    "candidate invalidation preserves typed draft and requires explicit reselection",
+    "single exact category auto-resolves without redundant confirmation",
+    "mixed point/line/area tree with fixed Polygon only offers the area and saves canonical CoordG",
+    "scoped edit: compact choices, final URL validation, save, and removal of stale lower levels"
+  ],
+  "waterStyle": {
+    "height": 30,
+    "border": "1px",
+    "radius": "4px",
+    "padding": "8px",
+    "options": [
+      "请选择类型",
+      "SEA（海洋）",
+      "LKE（湖泊）",
+      "STR（海峡）",
+      "EST（河口）"
+    ]
+  },
+  "captured": [
+    {
+      "World": "zth",
+      "Class": "WFTEST",
+      "Kind": "A",
+      "ID": "WFTEST_A_record",
+      "Name": "TestName",
+      "URL": "https://example.org/item",
+      "Num": 0,
+      "Flag": false,
+      "CreateBy": "tester",
+      "CreateTime": "20261024",
+      "Type": "Points",
+      "CoordP": [
+        [
+          -27,
+          64,
+          -17
+        ]
+      ]
+    },
+    {
+      "World": "zth",
+      "Class": "WFTEST",
+      "Kind": "GROUP",
+      "SKind": "B",
+      "ID": "WFTEST_GROUP_B_record",
+      "Name": "TestName",
+      "URL": "https://example.org/item",
+      "Num": 0,
+      "Flag": false,
+      "CreateBy": "tester",
+      "CreateTime": "20261024",
+      "Type": "Points",
+      "CoordP": [
+        [
+          -27,
+          64,
+          -17
+        ]
+      ]
+    },
+    {
+      "World": "zth",
+      "Class": "WFTEST",
+      "Kind": "DEEP",
+      "SKind": "MID",
+      "SKind2": "C",
+      "ID": "WFTEST_DEEP_MID_C_record",
+      "Name": "TestName",
+      "URL": "https://example.org/item",
+      "Num": 0,
+      "Flag": false,
+      "CreateBy": "tester",
+      "CreateTime": "20261024",
+      "Type": "Points",
+      "CoordP": [
+        [
+          -27,
+          64,
+          -17
+        ]
+      ]
+    },
+    {
+      "World": "zth",
+      "Class": "WFTEST",
+      "ID": "WFTEST_record",
+      "Name": "TestName",
+      "URL": "https://example.org/item",
+      "Num": 0,
+      "Flag": false,
+      "CreateBy": "tester",
+      "CreateTime": "20261024",
+      "Type": "Points",
+      "CoordP": [
+        [
+          -27,
+          64,
+          -17
+        ]
+      ]
+    },
+    {
+      "World": "zth",
+      "Class": "OTHER",
+      "Kind": "A",
+      "ID": "OTHER_A_record",
+      "Name": "TestName",
+      "URL": "https://example.org/item",
+      "Num": 0,
+      "Flag": false,
+      "CreateBy": "tester",
+      "CreateTime": "20261024",
+      "Type": "Points",
+      "CoordP": [
+        [
+          -27,
+          64,
+          -17
+        ]
+      ]
+    }
+  ],
+  "finalRecord": {
+    "World": "zth",
+    "Class": "WFTEST",
+    "ID": "WFTEST_DEEP_MID_C_record",
+    "Name": "EditedName",
+    "URL": "https://example.org/edited",
+    "Num": 0,
+    "Flag": false,
+    "CreateBy": "tester",
+    "CreateTime": "20261024",
+    "Type": "Points",
+    "CoordP": [
+      [
+        -27,
+        64,
+        -17
+      ]
+    ],
+    "ModifityBy": "tester",
+    "ModifityTime": "20261024"
+  },
+  "cloudWrites": 0,
+  "metrics": {
+    "unexpectedRequests": [],
+    "trustedChanges": 58,
+    "trustedClicks": 96
+  },
+  "kernel": "fd83cd831b3a5d421780695053c92251fc063d9148b3682ac1c63e8f321962f1",
+  "formalIdentity": {
+    "releaseId": "config-8a759973-b2fb-49f8-a491-359c21235b2a",
+    "packageId": "cairnmap-config-v32-semantic",
+    "projectId": "openriamap-ria",
+    "revision": 14,
+    "contractRevision": 15,
+    "configSha256": "2d17beba0a943386405e9b536e6897309ca64d4c232d0c88a2afaab2fbccbce7",
+    "manifestSha256": "94de911b039f7dff087a4454587877f40250be1dc5457e43d0be8fc24fbe4b69",
+    "configUrl": "/configuration/releases/2d17beba0a943386405e9b536e6897309ca64d4c232d0c88a2afaab2fbccbce7/config.json"
+  }
+}

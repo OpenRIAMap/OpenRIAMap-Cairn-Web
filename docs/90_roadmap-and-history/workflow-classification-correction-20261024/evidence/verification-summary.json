@@ -1,0 +1,33 @@
+{
+  "generatedAtUtc": "2026-10-23T19:44:31.371339+00:00",
+  "contractRevision": 15,
+  "rulesVersion": "cairnmap-c15-production-2",
+  "kernelSha256": "fd83cd831b3a5d421780695053c92251fc063d9148b3682ac1c63e8f321962f1",
+  "formalConfiguration": {
+    "releaseId": "config-8a759973-b2fb-49f8-a491-359c21235b2a",
+    "packageId": "cairnmap-config-v32-semantic",
+    "projectId": "openriamap-ria",
+    "revision": 14,
+    "contractRevision": 15,
+    "configSha256": "2d17beba0a943386405e9b536e6897309ca64d4c232d0c88a2afaab2fbccbce7",
+    "manifestSha256": "94de911b039f7dff087a4454587877f40250be1dc5457e43d0be8fc24fbe4b69",
+    "configUrl": "/configuration/releases/2d17beba0a943386405e9b536e6897309ca64d4c232d0c88a2afaab2fbccbce7/config.json"
+  },
+  "checks": {
+    "webVerifyCi": "passed",
+    "productionBuild": "passed, Vite 9.98s; existing chunk-size warning",
+    "pipelineTests": 208,
+    "deploymentValidation": "passed",
+    "scfPackageValidation": "passed",
+    "classificationActualChrome": 8,
+    "classificationActualFirefox": 8,
+    "workspaceActualChrome": 7,
+    "c15ActualChrome": 18
+  },
+  "productionLoginScfCosPublicationExecuted": false,
+  "sourceConfigurationBytesChanged": false,
+  "inheritedLimits": [
+    "Existing Vite chunk-size warning retained.",
+    "Local UI checks use trusted input and production workflow components, with fixture data and isolated local stores. Production authentication and SCF/COS writes require deployment acceptance."
+  ]
+}

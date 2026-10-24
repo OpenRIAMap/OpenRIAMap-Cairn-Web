@@ -1,4 +1,5 @@
 import { validateStructuredValue } from './valueSchema';
+import {fieldFormatErrors} from './fieldValueValidation';
 import type { ValueSchema } from './types';
 import type { ClassificationPath, ConfigValidationIssue, FieldDefinition, WorkflowControl, WorkflowDefinition, WorkflowGroupField, WorkflowValueCondition } from './types';
 import { evaluateWorkflowExpression, parseWorkflowExpression, workflowExpressionTokens, WORKFLOW_SYSTEM_TOKENS, type WorkflowExpression } from './workflowExpression';
@@ -53,7 +54,7 @@ export function workflowConditionsDisjoint(left: Array<WorkflowValueCondition | 
 }
 
 type Kind = 'string' | 'number' | 'boolean' | 'object' | 'array' | 'null' | 'unknown';
-type Shape = { kinds: Kind[]; item?: Shape; constants?: unknown[]; properties?:Record<string,Shape> };
+type Shape = { kinds: Kind[]; item?: Shape; constants?: unknown[]; properties?:Record<string,Shape>;requiredProperties?:string[] };
 const shape = (...kinds: Kind[]): Shape => ({ kinds });
 function constant(value: unknown): Shape {
   const result = shape(value == null ? 'null' : Array.isArray(value) ? 'array' : typeof value as Kind);
@@ -72,18 +73,18 @@ function shapeFitsSchema(actual:Shape,schema:ValueSchema,depth=0):boolean|undefi
   if(actual.constants)return actual.constants.every(value=>validateStructuredValue(value,schema).length===0);
   if(schema.anyOf){const branches=schema.anyOf.map(branch=>shapeFitsSchema(actual,branch,depth+1));return branches.includes(true)?true:branches.includes(undefined)?undefined:false;}
   if(schema.type&&actual.kinds.some(kind=>kind!==schema.type))return false;
-  if(schema.type==='array'&&schema.items&&actual.item)return shapeFitsSchema(actual.item,schema.items,depth+1);
+  if(schema.type==='array'&&schema.items&&actual.item){const items=shapeFitsSchema(actual.item,schema.items,depth+1);return items===false?false:schema.minItems!==undefined||schema.maxItems!==undefined?undefined:items;}
   if(schema.type==='object'){
     if(!actual.properties)return undefined;
     if(schema.required?.some(key=>!actual.properties?.[key]))return false;
     const matches=Object.entries(schema.properties??{}).flatMap(([key,child])=>actual.properties?.[key]?[shapeFitsSchema(actual.properties[key],child,depth+1)]:[]);
-    return matches.includes(false)?false:matches.includes(undefined)?undefined:true;
+    return matches.includes(false)?false:schema.required?.some(key=>!actual.requiredProperties?.includes(key))||matches.includes(undefined)?undefined:true;
   }
-  return true;
+  return schema.enum||schema.minimum!==undefined||schema.exclusiveMinimum!==undefined||schema.minItems!==undefined||schema.maxItems!==undefined?undefined:true;
 }
 function schemaShape(schema:ValueSchema):Shape {
   if(schema.anyOf)return union(schema.anyOf.map(schemaShape));
-  return {kinds:[schema.type??'unknown'],...(schema.items?{item:schemaShape(schema.items)}:{}),...(schema.properties?{properties:Object.fromEntries(Object.entries(schema.properties).map(([key,value])=>[key,schemaShape(value)]))}:{})};
+  return {kinds:[schema.type??'unknown'],...(schema.items?{item:schemaShape(schema.items)}:{}),...(schema.properties?{properties:Object.fromEntries(Object.entries(schema.properties).map(([key,value])=>[key,schemaShape(value)])),requiredProperties:schema.required??[]}:{})};
 }
 function fieldShape(field?: FieldDefinition): Shape {
   if (!field) return shape('unknown');
@@ -105,7 +106,7 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
     workflow.outputs.forEach((_, index) => tokens.set(`${token}_${index + 1}`, shape('string')));
   }
   const controlShape = (control: WorkflowControl | WorkflowGroupField): Shape => {
-    if (control.kind === 'group' && 'group' in control) return { kinds: ['array'], item: control.group?.storage === 'scalar' ? controlShape(control.group.itemFields[0]) : {kinds:['object'],properties:Object.fromEntries((control.group?.itemFields??[]).map(f=>[f.key,controlShape(f)]))} };
+    if (control.kind === 'group' && 'group' in control) return { kinds: ['array'], item: control.group?.storage === 'scalar' ? controlShape(control.group.itemFields[0]) : {kinds:['object'],properties:Object.fromEntries((control.group?.itemFields??[]).map(f=>[f.key,controlShape(f)])),requiredProperties:control.group?.itemFields.filter(field=>field.required&&!field.requiredWhen?.length).map(field=>field.key)} };
     if (control.kind === 'json' || control.kind === 'runtimeValue' || control.kind === 'component') return shape('unknown');
     if (control.kind === 'select') {
       const type = control.optionValueType ?? 'string';
@@ -150,8 +151,13 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
       const field = targetFields.find(field => field.key === assignment.target);
       try {
         const ast = parseWorkflowExpression(assignment.expression);
-        const actual = workflowExpressionTokens(ast).length ? infer(ast) : constant(evaluateWorkflowExpression(assignment.expression, {}, {}));
+        let actual = workflowExpressionTokens(ast).length ? infer(ast) : constant(evaluateWorkflowExpression(assignment.expression, {}, {}));
+        if(candidate&&ast.kind==='token'&&actual.constants)actual={...actual,constants:actual.constants.filter(value=>!['string','number','boolean'].includes(typeof value)||workflowConditionsDisjoint([constraint,output.when,assignment.when],[{token:ast.name,operator:'equals',value:value as Scalar}])!==true)};
         if (!field || field.type === 'json' && field.cardinality==='single' && !field.coordinateFormat&&!field.valueSchema) continue;
+        if(candidate){
+          if(actual.constants){for(const value of actual.constants)for(const message of fieldFormatErrors(field,value))add('workflow-expression-format-conflict',path,message);}
+          else if(field.coordinateFormat||field.format==='date'||field.format==='externalLink')add('workflow-expression-format-unknown',path,`${field.key} 的动态${field.coordinateFormat?'坐标结构':'格式'}需试运行核对；实际保存仍会严格检查。`,'warning');
+        }
         if(field.valueSchema){const match=shapeFitsSchema(actual,field.valueSchema);if(match===false)add('workflow-value-schema-conflict',path,`${field.key} 的输出结构与字段结构模板冲突。`);else if(match===undefined)add('workflow-value-schema-unknown',path,`${field.key} 的动态结构需试运行核对；实际提交仍会检查具体值。`,'warning');}
         // Optional empties retain the existing finalizer's omit/preserve rules.
         if (actual.constants?.every(isEmpty)) continue;
@@ -172,7 +178,19 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
         try { parseWorkflowExpression(assignment.expression); add('workflow-expression-result-invalid', path, error instanceof Error ? error.message : '表达式无法产生有效结果。'); } catch { /* syntax diagnostic already present */ }
       }
     }
-    for (const step of workflow.steps) for (const [index, binding] of (step.drawing?.bindings ?? []).entries()) if (binding.outputId === output.id) writers.push({ target: binding.target, path: `${base}/steps/${step.id}/drawing/bindings/${index}`, conditions: [constraint,output.when, step.when, workflow.outputs.find(item => item.id === step.outputId)?.when] });
+    for (const step of workflow.steps) for (const [index, binding] of (step.drawing?.bindings ?? []).entries()) if (binding.outputId === output.id){
+      const path=`${base}/steps/${step.id}/drawing/bindings/${index}`,conditions=[constraint,output.when,step.when,workflow.outputs.find(item=>item.id===step.outputId)?.when];
+      if(constraint&&workflowConditionsDisjoint([constraint],conditions)===true)continue;
+      writers.push({target:binding.target,path,conditions});
+      const field=targetFields.find(field=>field.key===binding.target);
+      if(candidate&&field?.valueSchema){
+        const number=shape('number'),point={kinds:['array'] as Kind[],item:number};
+        const actual=binding.value==='height'?number:step.drawing?.returnFormat==='pointObject'?{kinds:['object'] as Kind[],properties:{x:number,y:number,z:number},requiredProperties:['x','y','z']}:{kinds:['array'] as Kind[],item:step.geometry?.[0]==='Point'?point:step.geometry?.[0]==='LineString'?{kinds:['array'] as Kind[],item:point}:{kinds:['array'] as Kind[],item:{kinds:['array'] as Kind[],item:point}}};
+        const match=shapeFitsSchema(actual,field.valueSchema);
+        if(match===false)add('workflow-drawing-value-schema-conflict',path,`${field.key} 的绘制返回结构与字段结构模板冲突。`);
+        else if(match===undefined)add('workflow-drawing-value-schema-unknown',path,`${field.key} 的绘制具体值需试运行核对；实际保存仍会检查字段结构约束。`,'warning');
+      }
+    }
     const indexed=new Map<string,Writer[]>();
     for(const writer of writers)indexed.set(writer.target,[...(indexed.get(writer.target)??[]),writer]);
     for(const group of indexed.values()){
