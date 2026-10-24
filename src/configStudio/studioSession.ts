@@ -3,7 +3,7 @@ import type { ConfigPackageV3 } from './types';
 import type { EngineDraft } from './engineTransaction';
 import type { WorkflowEditingSession } from './WorkflowWorkbench';
 export type ClassTreeSession={classCode:string;baseline:ConfigPackageV3;staged:ConfigPackageV3;changes:string[]};
-export type PackageCandidate = { baseline: ConfigPackageV3; config: ConfigPackageV3; source: 'migration' | 'import' | 'recovery' };
+export type PackageCandidate = { baseline: ConfigPackageV3; config: ConfigPackageV3; source: 'migration' | 'import' | 'recovery' | 'editing' };
 export type FeatureDraftScope = 'package' | 'category';
 export type StudioEditingSession={draft:ConfigPackageV3|null;draftScope?:FeatureDraftScope;tree:ClassTreeSession|null;selectedId:string;editing:boolean;baseline:ConfigPackageV3;generalDrafts?:import('./GeneralRulesEditor').GeneralDrafts;lookupDraft?:import('./lookupTableTransaction').LookupTableDraft|null;engineDraft?:EngineDraft|null;packageCandidate?:PackageCandidate|null;activeTab?:StudioTab;workflowSession?:WorkflowEditingSession|null;detailsByTab?:Partial<Record<StudioTab,string[]|number[]>>;categoryCreation?:import('./CategoryCreationPanel').CategoryCreationDraft|null;editorExpanded?:boolean;scenario?:import('./types').PreviewScenario};
 

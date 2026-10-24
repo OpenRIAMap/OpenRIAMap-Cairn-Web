@@ -19,6 +19,7 @@ export interface WorkflowWorkbenchProps {
   /** Called only after a workflow has passed its own validation and is saved. */
   onChange: (config: ConfigPackageV3) => boolean | void | Promise<boolean | void>;
   onDraftStateChange?: (active: boolean) => void;
+  onDelete?: (id:string) => void;
   records?: MountedFeatureRecord[];
   isolated?: boolean;
   initialSession?: WorkflowEditingSession | null;
@@ -35,7 +36,7 @@ function downloadArtifact(artifact: WorkflowArtifact): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-export function WorkflowWorkbench({ config, onChange, onDraftStateChange, records = [], isolated = false, initialSession, onSessionChange }: WorkflowWorkbenchProps) {
+export function WorkflowWorkbench({ config, onChange, onDraftStateChange, records = [], isolated = false, initialSession, onSessionChange, onDelete }: WorkflowWorkbenchProps) {
   const [selectedId, setSelectedId] = useState(initialSession?.selectedId ?? config.workflows[0]?.id ?? '');
   const [draftTables,setDraftTables]=useState<LookupTable[]>(initialSession?.tables ?? []);
   const draftConfig=useMemo(()=>draftTables.length?{...config,lookupTables:[...config.lookupTables??[],...draftTables]}:config,[config,draftTables]);
@@ -135,6 +136,7 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
       <button type="button" className="inline-flex items-center gap-1 rounded border px-2 py-1 text-sm" disabled={!draft} onClick={exportDraft}><Download className="h-4 w-4" />导出</button>
       <button type="button" className="rounded border px-2 py-1 text-sm disabled:opacity-40" disabled={!draft} onClick={() => { if (confirmDiscardDraft('放弃编辑')) clearDraft(); }}>放弃草稿</button>
       <button type="button" className="inline-flex items-center gap-1 rounded border px-2 py-1 text-sm" onClick={() => fileRef.current?.click()}><FileUp className="h-4 w-4" />导入</button>
+      {onDelete?<button type="button" className="rounded border px-2 py-1 text-sm text-rose-700 disabled:text-slate-400" disabled={!selected||Boolean(draft)||creating} onClick={()=>{if(selected&&window.confirm(`将工作流“${selected.label.zh}”暂存删除到整包草稿；不会删除分类或数据，核验保存后才生效。确定继续吗？`))onDelete(selected.id);}}>删除工作流</button>:null}
     </div>
     <p className="mt-2 text-sm text-slate-500">先选择后读取，或新建/导入为独立草稿；核验通过后才能保存到当前配置包。保存或放弃草稿后，才能切换设计标签。{isolated ? ' 当前为整包候选，工作流保存只暂存到候选；其他模块的问题仍须在顶部整包核验时处理。' : ''}</p>
     {report ? <section className={`mt-3 rounded border p-3 text-sm ${report.valid ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}`}>
