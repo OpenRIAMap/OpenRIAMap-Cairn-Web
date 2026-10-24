@@ -25,7 +25,7 @@ async function command(operation: string, body: Record<string, unknown> = {}): P
   return result;
 }
 
-export function GlobalPackageControls({ config, records = [], hasDraft, formalBlocked=false, onValidated, onSaved, onMessage }: { config:ConfigPackageV3; records?:MountedFeatureRecord[]; hasDraft:boolean; formalBlocked?:boolean; onValidated?:(run:WorkspaceValidation)=>void; onSaved:(value:ConfigPackageV3)=>void; onMessage:(value:string)=>void }) {
+export function GlobalPackageControls({ config, validationBaseline, records = [], hasDraft, formalBlocked=false, onValidated, onSaved, onMessage }: { config:ConfigPackageV3; validationBaseline?:ConfigPackageV3; records?:MountedFeatureRecord[]; hasDraft:boolean; formalBlocked?:boolean; onValidated?:(run:WorkspaceValidation)=>void; onSaved:(value:ConfigPackageV3)=>void; onMessage:(value:string)=>void }) {
   const workspace=useWorkspaceState();
   const [temporaryOpen,setTemporaryOpen]=useState(false),[cacheFailure,setCacheFailure]=useState('');
   const [base,setBase] = useState<ConfigurationIdentity>();
@@ -69,7 +69,7 @@ export function GlobalPackageControls({ config, records = [], hasDraft, formalBl
   const validate = async()=>{
     if(hasDraft){inform('请先保存或放弃所有区域、工作流和 Class 树草稿。');return;}
     setBusy(true);try{
-      const run=await validateWorkspace(config,records,getWorkspaceState().generation);
+      const run=await validateWorkspace(config,records,getWorkspaceState().generation,validationBaseline);
       if(live.current.snapshot!==snapshot||live.current.hasDraft||live.current.recordText!==recordText)throw Error('核验期间内容已改变，请重新核验。');
       recordWorkspaceValidation(run);setGate({snapshot,records:recordText,base:baseKey,rules:CONFIGURATION_RULES_VERSION,run});onValidated?.(run);
       inform(run.report.valid?`全局核验通过：${run.report.issues.length} 项提示。`:`全局核验未通过：${run.report.issues.filter(item=>item.severity==='error').length} 项阻断。可以临时保存和下载以继续修复。`);

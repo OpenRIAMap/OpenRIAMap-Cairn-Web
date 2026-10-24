@@ -296,7 +296,7 @@ try:
     assert not b.evaluate("Boolean(document.querySelector('[aria-label=\"新分类部件显示模式\"]'))")
     input_value('[aria-label="新分类代码"]','C15_UI_COPY')
     inside('[aria-label="新增要素分类"]','创建分类草稿')
-    b.wait("document.body.innerText.includes('新分类草稿已完成完整核验')",40)
+    b.wait("document.querySelector('select[aria-label=\"编辑分类 Kind\"]')?.value==='C15_UI_COPY'",40)
     b.wait("!document.querySelector('[aria-label=\"新增要素分类\"]')")
     assert document("nodes.some(n=>n.path.class==='ROD'&&n.path.kind==='C15_UI_COPY')")
     assert document("nodes.filter(n=>n.path.kind==='C15_UI_COPY').every(n=>Object.values(n.geometryProfiles).every(p=>!p.anchor&&!p.interaction&&p.zoomPriority.rules.every(r=>r.multipartAnchor&&r.interaction)))")
