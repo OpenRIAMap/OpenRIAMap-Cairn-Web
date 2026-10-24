@@ -138,6 +138,17 @@ try:
     assert len(payload['nodes']) == 4
     upload(artifact)
     assert state()['active'] == saved
+    new_node('IMPORTED_GROUP', geometry='')
+    b.click('核验')
+    b.click('保存')
+    b.wait("Array.from(document.querySelectorAll('button')).some(x=>x.textContent.trim()==='读取分类')")
+    assert state()['session']['editing'] is False
+    assert len([node for node in state()['session']['tree']['staged']['nodes'] if node['path']['class']=='P0_ACCEPT']) == 5
+    new_node('IMPORTED_POINT', geometry='Point')
+    b.click('核验')
+    b.click('保存')
+    assert state()['active'] == saved
+    b.click('核验整棵 Class 树')
     b.click('放弃导入 Class 树')
     assert state()['active'] == saved
     upload(artifact)
@@ -145,7 +156,7 @@ try:
     b.click('保存 Class 树到总配置')
     b.wait("!document.querySelector('[aria-label=\"Class 树导入总控\"]')")
     assert state()['active'] == saved
-    checks.append('actual ZIP download/file selection; imported tree stays isolated; discard and commit preserve saved design')
+    checks.append('actual ZIP download/file selection; imported-tree intermediate nodes stage without activation; discard and commit preserve saved design')
     value('编辑分类 Class', 'P0_ACCEPT')
     b.click('删除当前分类及其子分类')
     b.wait("Boolean(document.querySelector('[aria-label=\"删除分类及其全部子分类\"]'))")
