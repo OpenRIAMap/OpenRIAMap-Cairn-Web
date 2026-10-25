@@ -1,5 +1,6 @@
 import {createNativePathHitProxy} from '../rendering/nativePathHitProxy';
 import {pointSymbolMetrics} from '../rendering/pointSymbolMetrics';
+import {matchesClassificationReadScope} from '@/configRuntime/classificationReadScopes';
 import {makeConfigShapeMarker} from '../rendering/configShapeMarker';
 import { isCjkGlyph } from '../rendering/label/lineScriptMetrics';
 import { usesScriptAwareGlyphs } from '../rendering/label/lineScriptMetrics';
@@ -2264,7 +2265,7 @@ export default function RuleDrivenLayer(props: Props) {
     const filtered = bypassButtonFilter ? all : filterRecordsByRuleButtons(all, activeButtonIds);
 
     recordsRef.current = filtered;
-    const store = new FeatureStore(filtered);
+    const store = new FeatureStore(filtered,{configuration:configRuntime,railwaySelectors:configRuntime?.application?.preferences.railwayRoles?.selectors,railwayRecords:all});
     storeRef.current = store;
 
     // 重复 key 排查：Class|idField=idValue（仅对“进入渲染池”的集合做报告）
@@ -2473,17 +2474,17 @@ export default function RuleDrivenLayer(props: Props) {
     const skind = String(linkTarget?.skind ?? "").trim();
     const skind2 = String(linkTarget?.skind2 ?? "").trim();
 
-    const candidates: FeatureRecord[] = targetClass
+    const candidates: FeatureRecord[] = configRuntime?store.all:targetClass
       ? Object.values(store.byClassId?.[targetClass] ?? {}).flat()
       : store.all;
 
     const matchRecord = (r: FeatureRecord): boolean => {
-      if (targetClass && String(r?.meta?.Class ?? "").trim() !== targetClass)
-        return false;
+      if(configRuntime){if(!matchesClassificationReadScope(configRuntime,recordPath(r),{class:targetClass,kind,skind,skind2}))return false;}
+      else if (targetClass && String(r?.meta?.Class ?? "").trim() !== targetClass)return false;
       const fi: any = r?.featureInfo ?? {};
-      if (kind && String(fi?.Kind ?? "").trim() !== kind) return false;
-      if (skind && String(fi?.SKind ?? "").trim() !== skind) return false;
-      if (skind2 && String(fi?.SKind2 ?? "").trim() !== skind2) return false;
+      if (!configRuntime&&kind && String(fi?.Kind ?? "").trim() !== kind) return false;
+      if (!configRuntime&&skind && String(fi?.SKind ?? "").trim() !== skind) return false;
+      if (!configRuntime&&skind2 && String(fi?.SKind2 ?? "").trim() !== skind2) return false;
       const value = getFeatureValueByPath(r, matchField);
       return String(value ?? "").trim() === key;
     };

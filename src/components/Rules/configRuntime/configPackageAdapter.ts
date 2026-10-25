@@ -305,7 +305,7 @@ function relatedLineColorById(id: string | undefined, store?: FeatureStore): str
   if (!id || !store) return undefined;
   const direct = store.lineColorIndex[id];
   if (direct) return normalizeColor(direct, '');
-  const line = store.all.find((candidate) => String(featureValue(candidate, 'ID') ?? candidate.meta?.idValue ?? '').trim() === id);
+  const line = store.railwayById('lines',id);
   return line ? normalizeColor(featureValue(line, 'color') ?? featureValue(line, 'Color'), '') || undefined : undefined;
 }
 
@@ -317,7 +317,7 @@ function resolveRelatedLineColor(record: FeatureRecord, strategy: Extract<Render
   if (!Array.isArray(platforms) || !platforms.length || !platforms[0] || typeof platforms[0] !== 'object') return undefined;
   const first = platforms[0] as Record<string, unknown>;
   const platformId = String(first.ID ?? first.platformID ?? '').trim();
-  const platform = platformId ? store.byClassId.PLF?.[platformId]?.[0] ?? store.all.find((candidate) => pathFor(candidate).class === 'PLF' && String(featureValue(candidate, 'ID') ?? candidate.meta?.idValue ?? '').trim() === platformId) : undefined;
+  const platform = platformId ? store.railwayById('platforms',platformId) : undefined;
   return platform ? relatedLineColorById(firstPlatformLineId(platform), store) : undefined;
 }
 
@@ -336,7 +336,7 @@ export function resolveColor(record: FeatureRecord, binding: RenderColorBinding 
       && String((item as Record<string, unknown>).ID ?? '') === targetId) as Record<string, unknown> | undefined;
     if (hit?.[binding.targetColorField] !== undefined) return normalizeColor(hit[binding.targetColorField] ?? binding.fallbackColor, fallback);
   }
-  const indexed = store?.all.find((candidate) => matchesTargetPath(candidate, binding.target)
+  const indexed = store?.all.find((candidate) => store.matchesReadScope(candidate, binding.target)
     && String(featureValue(candidate, 'ID') ?? candidate.meta?.idValue ?? '') === targetId);
   if (indexed) return normalizeColor(featureValue(indexed, binding.targetColorField) ?? binding.fallbackColor, fallback);
   return normalizeColor(binding.fallbackColor, fallback);
@@ -467,7 +467,7 @@ function passesVisibilityExtension(config: ConfigPackageV3, record: FeatureRecor
     if (!spec || !store) return true;
     const source = String(featureValue(record, spec.sourceField ?? 'ID') ?? '').trim();
     const found = Boolean(source) && store.all.some((candidate) => candidate.uid !== record.uid
-      && matchesTargetPath(candidate, spec.target)
+      && store.matchesReadScope(candidate, spec.target)
       && String(featureValue(candidate, spec.targetField ?? 'ID') ?? '').trim() === source);
     return spec.behavior === 'hideIfExists' ? !found : found;
   }
@@ -476,7 +476,7 @@ function passesVisibilityExtension(config: ConfigPackageV3, record: FeatureRecor
     if (!spec || !store) return true;
     const key = pointCoordinateKey(record, spec.precision ?? 1000);
     const found = Boolean(key) && store.all.some((candidate) => {
-      if (candidate.uid === record.uid || !matchesTargetPath(candidate, spec.target) || pointCoordinateKey(candidate, spec.precision ?? 1000) !== key) return false;
+      if (candidate.uid === record.uid || !store.matchesReadScope(candidate, spec.target) || pointCoordinateKey(candidate, spec.precision ?? 1000) !== key) return false;
       const candidateValue = String(featureValue(candidate, spec.targetField ?? '') ?? '').trim().toLowerCase();
       if (spec.targetEquals !== undefined && candidateValue !== String(spec.targetEquals).toLowerCase()) return false;
       if (spec.targetNotEquals !== undefined && candidateValue === String(spec.targetNotEquals).toLowerCase()) return false;

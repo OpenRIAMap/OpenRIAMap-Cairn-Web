@@ -294,7 +294,7 @@ export default function TradePointWorkflow(props: WorkflowComponentProps) {
   const landUnitSearchCfg: SearchSelectConfig = useMemo(
     () => ({
       cacheKey: 'trp_land',
-      filter: (fi) =>
+      filter: (fi) => fi?.Class==='NGF'&&(fi.Kind==='LAD'||fi.Kind==='WTR'&&(fi.SKind??fi.Skind)==='LWB'||fi.Kind==='LIS'&&(fi.SKind??fi.Skind)==='LAG'&&['PEN','IST'].includes(fi.SKind2??fi.Skind2))||
         fi?.Class === 'ISG' &&
         matchAllowed(fi, ['Kind'], ['NGF']) &&
         matchAllowed(fi, ['SKind'], ['LAD', 'WTB']),
@@ -310,7 +310,7 @@ export default function TradePointWorkflow(props: WorkflowComponentProps) {
   const uadmLandmarkSearchCfg: SearchSelectConfig = useMemo(
     () => ({
       cacheKey: 'trp_uadm',
-      filter: (fi) =>
+      filter: (fi) => fi?.Class==='ADM'&&fi.Kind==='DBP'&&(fi.SKind??fi.Skind)==='SHR'||
         fi?.Class === 'ISP' &&
         matchAllowed(fi, ['Kind'], ['ADM']) &&
         matchAllowed(fi, ['SKind'], ['DBP']) &&
@@ -326,10 +326,10 @@ export default function TradePointWorkflow(props: WorkflowComponentProps) {
   const uadmGSearchCfg: SearchSelectConfig = useMemo(
     () => ({
       cacheKey: 'trp_uadmg',
-      filter: (fi) =>
+      filter: (fi) => fi?.Class==='ADM'&&fi.Kind==='DBZ'||
         fi?.Class === 'ISG' &&
         matchAllowed(fi, ['Kind'], ['ADM']) &&
-        matchAllowed(fi, ['SKind'], ['DBP', 'PLZ']),
+        matchAllowed(fi, ['SKind','Skind'], ['DBZ', 'PLZ']),
       getId: (fi) => readFirst(fi, ['ID']),
       getName: (fi) => readFirst(fi, ['Name']),
       formatOption: (name, id) => `${name}(${id})`,

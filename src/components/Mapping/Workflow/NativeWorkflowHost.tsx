@@ -1,4 +1,5 @@
 import { NativeDrawingSession } from './nativeDrawingSession';
+import {bindExternalCaptureBridge} from './externalCaptureBridge';
 import {assertStructureTargets} from '@/configStudio/structureCommit';
 import {isQuickMappingWorkflow} from '@/configStudio/workflowEditing';
 import { drawingKey, enabledDrawing } from '@/configStudio/workflowDrawing';
@@ -40,7 +41,9 @@ export function NativeWorkflowHost({ config, workflow, bridge, registry, onCommi
   if(!isQuickMappingWorkflow(snapshot.workflow))return <p role="alert">此方案专供编辑或已关闭便捷测绘，不能从采集入口执行。</p>;
   if (snapshot.workflow.mode === 'external') {
     const key = { railwayWorkflow: 'railway', stationWorkflow: 'station', tradePointWorkflow: 'trp_point' }[snapshot.workflow.external?.componentKey ?? ''] as WorkflowKey | undefined;
-    return key ? <div>{worldMismatch ? <p role="alert">请返回 {snapshot.world} 后继续此工作流。<button type="button" onClick={exit}>退出工作流</button></p> : null}<fieldset disabled={worldMismatch}><WorkflowHost workflowKey={key} bridge={bridge} registry={registry} onExit={exit} /></fieldset></div> : <p role="alert">外部工作流未获得受控绑定。</p>;
+    let captureBridge:WorkflowBridge;
+    try{captureBridge=bindExternalCaptureBridge(bridge,snapshot.config,snapshot.workflow);}catch(error){return <p role="alert">整体采集绑定无效：{error instanceof Error?error.message:String(error)}<button type="button" onClick={exit}>退出工作流</button></p>;}
+    return key ? <div>{worldMismatch ? <p role="alert">请返回 {snapshot.world} 后继续此工作流。<button type="button" onClick={exit}>退出工作流</button></p> : null}<fieldset disabled={worldMismatch}><WorkflowHost workflowKey={key} bridge={captureBridge} registry={registry} onExit={exit} /></fieldset></div> : <p role="alert">外部工作流未获得受控绑定。</p>;
   }
   return <div>{worldMismatch ? <p role="alert" className="mb-2 rounded border border-amber-300 bg-amber-50 p-2 text-sm">此工作流属于 {snapshot.world}。请返回原世界继续，或退出后重新开始。</p> : null}<button type="button" className="mb-2 rounded border px-2 py-1 text-xs" onClick={exit}>退出工作流</button><fieldset disabled={worldMismatch}><V3WorkflowRunner config={snapshot.config} workflow={snapshot.workflow} records={records} worldId={snapshot.world} initialActor={bridge.getEditorId()} activeDrawingKey={session.active} drawingRevision={drawingRevision} drawingPaused={session.paused}
     onInvalidateGeometry={id=>bridgeRef.current.clearWorkflowPreview(`native:${id}`)}
