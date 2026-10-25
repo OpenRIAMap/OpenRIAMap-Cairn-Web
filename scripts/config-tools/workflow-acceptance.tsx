@@ -19,8 +19,9 @@ import { DynmapProjection, createDynmapCRS, ZTH_FLAT_CONFIG } from '../../src/li
 import { MAP_ZOOM_BOUNDS } from '../../src/lib/mapZoom';
 import {preferredExternalCapturePaths} from '../../src/configStudio/externalCapturePaths';
 const classificationSeed:ConfigPackageV3|undefined=location.search.includes('classification=1')?await (async()=>{
-  const identity=await fetch('/configuration/current.json').then(r=>r.json());
-  const config:ConfigPackageV3=await fetch(identity.configUrl).then(r=>r.json());
+  // Immutable actual UI-authored A snapshot; future active configs cannot
+  // silently change this regression's classification fixture.
+  const config:ConfigPackageV3=await fetch('/configuration/releases/fdf0b20f0b1a8efef813b3525b4d95232c9bf372ca8c9800aec67c143282db5b/config.json').then(r=>r.json());
   for(const workflow of config.workflows){
     if(workflow.external&&['railwayWorkflow','stationWorkflow'].includes(workflow.external.componentKey))workflow.external.coveredClassifications=preferredExternalCapturePaths(config,workflow.external.componentKey);
     const role=/^v3-editor-(rle|sta|plf|pfb|stb|sbp|stf)$/.exec(workflow.id)?.[1].toUpperCase();

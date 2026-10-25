@@ -1,4 +1,5 @@
 import {categoryAllowsParts,recordCategory} from '@/configStudio/multipartPolicy';
+import {declaredRailFormatPath} from '@/configStudio/externalCapturePaths';
 import {getOpenRIAMapClassConfigs} from '@/core/project/openriamapRiaClasses';
 import {ExternalFeatureEditHost} from '../Workflow/ExternalFeatureEditHost';
 import {createTrpExternalEditSession,prepareTrpExternalEdit,type TrpExternalEditSession} from '@/configStudio/trpExternalEditing';
@@ -551,10 +552,13 @@ const renderSelectedMultipartCoords = (geometry: MultipartGeometry | null, color
 
 const partsPermission = () => {
   if(workflowDrawingTargetRef.current)return workflowDrawingTargetRef.current.allowParts===true;
+  if(specialDraftMode==='merge-point-platform-station')return false;
   if (!configRuntime) return true;
   const definition=getOpenRIAMapClassConfigs().find(item=>item.sourceFeatureKey===subType);
   const record={Class:definition?.classCode,...(nativeEdit?.original??externalEdit?.session.original??{}),...featureInfo};
-  return drawModeRef.current !== 'none' && categoryAllowsParts(configRuntime,recordCategory(record),geometryKindForDrawMode(drawModeRef.current));
+  let path=recordCategory(record);
+  try{if(!nativeEdit&&!externalEdit)path=declaredRailFormatPath(configRuntime,subType)??path;}catch{return false;}
+  return drawModeRef.current !== 'none' && categoryAllowsParts(configRuntime,path,geometryKindForDrawMode(drawModeRef.current));
 };
 const partsLocked = () => multipartStructureLocked || !partsPermission();
 
@@ -2168,6 +2172,7 @@ const finishLayer = () => {
       alert('“多点合一”仅支持点要素。');
       return;
     }
+    if(multipartEnabledRef.current&&(multipartDraftRef.current?.parts.length??0)>1){alert('多点合一在同一个位置生成各角色，不能截断现有多部件草稿；请先处理部件。');return;}
 
     const p0 = finalCoords[finalCoords.length - 1];
     const pointCoords = [{ x: p0.x, z: p0.z, y: p0.y }];
@@ -2202,7 +2207,7 @@ const finishLayer = () => {
         }),
         multipartGeometryFromSinglePath('Point', pointCoords),
       );
-      try {if(configRuntime)featureInfoOut=omitOptionalFieldValues(configRuntime,recordCategory(featureInfoOut),featureInfoOut);}
+      try {if(configRuntime)featureInfoOut=prepareExternalCaptureRecord(featureInfoOut,multipartGeometryFromSinglePath('Point',pointCoords),configRuntime,declaredRailFormatPath(configRuntime,k));}
       catch(error){alert(error instanceof Error?error.message:'要素字段无效。');return false;}
 
       const id = nextLayerId.current++;
@@ -2273,6 +2278,9 @@ const finishLayer = () => {
     }
 
     const outputs: LayerType[] = [];
+    const sharedGeometry=buildCurrentMultipartGeometry('polygon',finalCoords);
+    const sharedGeometryError=validateMultipartGeometry(sharedGeometry);
+    if(sharedGeometryError){alert(sharedGeometryError);return;}
 
     const addOnePolygon = (k: string, values: any, groups: any) => {
       const def: any = (FORMAT_REGISTRY as any)[k];
@@ -2300,13 +2308,13 @@ const finishLayer = () => {
           prevFeatureInfo: undefined,
           now: new Date(),
         }),
-        multipartGeometryFromSinglePath('Polygon', finalCoords),
+        sharedGeometry,
       );
-      try {if(configRuntime)featureInfoOut=omitOptionalFieldValues(configRuntime,recordCategory(featureInfoOut),featureInfoOut);}
+      try {if(configRuntime)featureInfoOut=prepareExternalCaptureRecord(featureInfoOut,sharedGeometry,configRuntime,declaredRailFormatPath(configRuntime,k));}
       catch(error){alert(error instanceof Error?error.message:'要素字段无效。');return false;}
 
       const id = nextLayerId.current++;
-      const newGroup = makeLeafletGroup('polygon', finalCoords, drawColor);
+      const newGroup = makeLeafletGroup('polygon', finalCoords, drawColor,sharedGeometry);
 
       outputs.push({
         id,
@@ -2438,8 +2446,14 @@ const finishLayer = () => {
     });
   }
 
-  if(configRuntime&&finalGeometry.parts.length>1&&!categoryAllowsParts(configRuntime,recordCategory(finalFeatureInfo),finalGeometry.type)){alert('此分类仅允许一个部件，无法保存多部件要素。完整草稿已保留，请先处理部件数量。');return;}
-  try {finalFeatureInfo = withCanonicalMultipartGeometry(configRuntime?omitOptionalFieldValues(configRuntime,recordCategory(finalFeatureInfo),finalFeatureInfo):finalFeatureInfo, finalGeometry);}
+  try {
+    if(configRuntime&&op==='create'){
+      const target=declaredRailFormatPath(configRuntime,subType);
+      if(target)finalFeatureInfo=prepareExternalCaptureRecord(finalFeatureInfo,finalGeometry,configRuntime,target);
+    }
+    if(configRuntime&&finalGeometry.parts.length>1&&!categoryAllowsParts(configRuntime,recordCategory(finalFeatureInfo),finalGeometry.type))throw Error('此分类仅允许一个部件，无法保存多部件要素。完整草稿已保留，请先处理部件数量。');
+    finalFeatureInfo = withCanonicalMultipartGeometry(configRuntime?omitOptionalFieldValues(configRuntime,recordCategory(finalFeatureInfo),finalFeatureInfo):finalFeatureInfo, finalGeometry);
+  }
   catch(error){alert(error instanceof Error?error.message:'要素字段无效。');return;}
 
   const newLayerId = editingLayerId ?? nextLayerId.current++;

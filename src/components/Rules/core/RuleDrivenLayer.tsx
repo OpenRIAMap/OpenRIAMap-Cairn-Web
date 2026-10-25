@@ -2474,7 +2474,7 @@ export default function RuleDrivenLayer(props: Props) {
     const skind = String(linkTarget?.skind ?? "").trim();
     const skind2 = String(linkTarget?.skind2 ?? "").trim();
 
-    const candidates: FeatureRecord[] = configRuntime?allRecordsRef.current:targetClass
+    const candidates: FeatureRecord[] = configRuntime?store.all:targetClass
       ? Object.values(store.byClassId?.[targetClass] ?? {}).flat()
       : store.all;
 

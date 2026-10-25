@@ -70,9 +70,14 @@ export class FeatureStore {
     // of the narrower navigation participation selectors.
     const selectors=options?.railwaySelectors??defaultRailwaySelectors();
     for(const r of options?.railwayRecords??records){
-      for(const role of ['lines','platforms','stationAreas','stations'] as const){
-        if(matchesRaw(selectors[role],r.featureInfo)||!options?.railwaySelectors&&role==='lines'&&['LINE','LIN','RMP_LINE'].includes(r.meta.Class))this.railway[role].push(r);
-      }
+      const roles=(['lines','platforms','stationAreas','stations'] as const).filter(role=>selectors[role].some(path=>path.class===r.meta.Class));
+      const legacyLine=!options?.railwaySelectors&&['LINE','LIN','RMP_LINE'].includes(r.meta.Class);
+      if(!roles.length&&!legacyLine)continue;
+      // Read classification once, and never touch subtype fields on unrelated
+      // geometry records. Repeated roles may share Class (RIL) but not Kind.
+      const fi=r.featureInfo,path={Class:r.meta.Class,Kind:fi.Kind,SKind:fi.SKind??fi.Skind,SKind2:fi.SKind2??fi.Skind2};
+      for(const role of roles)if(matchesRaw(selectors[role],path))this.railway[role].push(r);
+      if(legacyLine)this.railway.lines.push(r);
       if (this.railway.lines[this.railway.lines.length-1]===r) {
         const lineId = String((r.featureInfo as any)?.ID ?? (r.featureInfo as any)?.lineID ?? (r.featureInfo as any)?.ID ?? '').trim();
         const color = String((r.featureInfo as any)?.color ?? (r.featureInfo as any)?.Color ?? '').trim();
