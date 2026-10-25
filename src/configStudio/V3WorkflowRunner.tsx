@@ -1,6 +1,7 @@
 import {outputAcceptsClassification} from './workflowClassificationGroup';
 import {workflowClassificationCaption} from './workflowCategoryOptions';
 import {WorkflowGroupCategoryInput} from './WorkflowGroupCategoryInput';
+import {findCompatibleSearchCandidates} from '../configRuntime/classificationReadScopes';
 import {drawingAllowsParts} from './multipartPolicy';
 
 
@@ -23,7 +24,7 @@ import { workflowConditionMatches } from './workflowExpression';
 
 export {resolveV3WorldPrefix,normalizeV3WorldId,evaluateV3Expression,normalizeV3WorkflowSlots,workflowOutputSystem,evaluateV3WorkflowOutputs,findV3SearchCandidates,validateV3WorkflowInputs,validateV3WorkflowRecords} from './workflowKernel';
 export type {V3WorkflowValueMap,V3WorkflowRunResult,V3WorkflowInputIssue,V3SearchCandidate,V3GeometryCapture} from './workflowKernel';
-import { normalizeV3WorldId, normalizeV3WorkflowSlots, evaluateV3WorkflowOutputs, findV3SearchCandidates, validateV3WorkflowInputs, validateV3WorkflowRecords, decodePath, displaySearchTemplate, type V3WorkflowValueMap, type V3WorkflowRunResult, type V3SearchCandidate, type V3GeometryCapture, type V3WorkflowInputIssue } from './workflowKernel';
+import { normalizeV3WorldId, normalizeV3WorkflowSlots, evaluateV3WorkflowOutputs, validateV3WorkflowInputs, validateV3WorkflowRecords, decodePath, displaySearchTemplate, type V3WorkflowValueMap, type V3WorkflowRunResult, type V3SearchCandidate, type V3GeometryCapture, type V3WorkflowInputIssue } from './workflowKernel';
 
 function ToggleInput({ value, onChange }: { value: unknown; onChange: (value: boolean | undefined) => void }) {
   return <span className="grid w-full grid-cols-2 self-start overflow-hidden rounded border text-sm" role="group" aria-label="是否选择">{([true,false] as const).map(choice => <button type="button" key={String(choice)} aria-pressed={value===choice} className={`min-w-0 px-3 py-1 ${!choice?'border-l ':''}${value===choice?'bg-blue-600 text-white':'bg-white'}`} onClick={()=>onChange(value===choice?undefined:choice)}>{choice?'是':'否'}</button>)}</span>;
@@ -35,7 +36,7 @@ function FeatureSearchInput({ config, profile, records, value, onChange, placeho
   const [open, setOpen] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   useEffect(() => { const timer = window.setTimeout(() => setSettledQuery(query), profile?.debounceMs ?? 180); return () => window.clearTimeout(timer); }, [query, profile?.debounceMs]);
-  const candidates = useMemo(() => findV3SearchCandidates(records, profile, settledQuery, world ?? String((records[0] as MountedFeatureRecord | undefined)?.World ?? ''),config), [records, profile, settledQuery, world,config]);
+  const candidates = useMemo(() => findCompatibleSearchCandidates(records, profile, settledQuery, world ?? String((records[0] as MountedFeatureRecord | undefined)?.World ?? ''),config), [records, profile, settledQuery, world,config]);
   const search = normalizeSearchProfile(profile);
   useEffect(()=>{if(open)return;const selected=search?records.find(record=>Object.is(readRecordPath(record,search.returnField??'ID'),value)):undefined;setQuery(selected?displaySearchTemplate(search?.displayTemplate??'{{ID}} ({{Name}})',selected):String(value??''));},[records,value,profile,open]);
   const choose=(candidate:V3SearchCandidate)=>{onChange(candidate.returned);setQuery(candidate.display);setOpen(false);};

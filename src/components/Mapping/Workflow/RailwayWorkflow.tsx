@@ -181,6 +181,7 @@ export default function RailwayWorkflow(props: WorkflowComponentProps) {
   useEffect(() => {
     bridgeRef.current = bridge;
   }, [bridge]);
+  useEffect(()=>{bridgeRef.current.setCaptureRole?.('RLE');return()=>bridgeRef.current.setCaptureRole?.(undefined);},[]);
 
 
   const [step, setStep] = useState<Step>('creator');

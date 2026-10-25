@@ -1,4 +1,9 @@
 import type { FeatureRecord, SignatureEntry } from '@/components/Rules/rendering/renderRules';
+import type {RailwayRole,RailwaySelectors} from '@/core/project/navigationTypes';
+import {defaultRailwaySelectors,matchesRaw} from '@/core/project/navigationDefinition';
+import type {ClassificationPath,ConfigPackageV3} from '@/configStudio/types';
+import {matchesClassificationReadScope} from '@/configRuntime/classificationReadScopes';
+import {recordCategory} from '@/configStudio/multipartPolicy';
 
 /**
  * 为“可读性优先”的规则表提供查询能力。
@@ -34,9 +39,12 @@ export class FeatureStore {
 
   /** 线颜色索引（按可用的 lineId 字段） */
   public readonly lineColorIndex: Record<string, string> = {};
+  private readonly railway:Record<RailwayRole,FeatureRecord[]>={lines:[],platforms:[],stationAreas:[],stations:[]};
+  private readonly configuration?:ConfigPackageV3;
 
-  constructor(records: FeatureRecord[]) {
+  constructor(records: FeatureRecord[], options?:{configuration?:ConfigPackageV3;railwaySelectors?:RailwaySelectors;railwayRecords?:FeatureRecord[]}) {
     this.all = records;
+    this.configuration=options?.configuration;
 
     for (const r of records) {
       const cls = r.meta.Class || 'UNKNOWN';
@@ -57,13 +65,27 @@ export class FeatureStore {
         source: r.meta.source,
       });
 
-      // line color index (用于 PFB / 站台轮廓按线路色)
-      if (cls === 'RLE' || cls === 'LINE' || cls === 'LIN' || cls === 'RMP_LINE') {
+    }
+    // Shared relationships include hidden map-button records and are independent
+    // of the narrower navigation participation selectors.
+    const selectors=options?.railwaySelectors??defaultRailwaySelectors();
+    for(const r of options?.railwayRecords??records){
+      for(const role of ['lines','platforms','stationAreas','stations'] as const){
+        if(matchesRaw(selectors[role],r.featureInfo)||!options?.railwaySelectors&&role==='lines'&&['LINE','LIN','RMP_LINE'].includes(r.meta.Class))this.railway[role].push(r);
+      }
+      if (this.railway.lines[this.railway.lines.length-1]===r) {
         const lineId = String((r.featureInfo as any)?.ID ?? (r.featureInfo as any)?.lineID ?? (r.featureInfo as any)?.ID ?? '').trim();
         const color = String((r.featureInfo as any)?.color ?? (r.featureInfo as any)?.Color ?? '').trim();
         if (lineId && color) this.lineColorIndex[lineId] = color;
       }
     }
+  }
+
+  railwayRecords(role:RailwayRole):readonly FeatureRecord[]{return this.railway[role];}
+  matchesReadScope(record:FeatureRecord,scope:ClassificationPath):boolean{return matchesClassificationReadScope(this.configuration,recordCategory(record.featureInfo),scope);}
+  railwayById(role:RailwayRole,id:string):FeatureRecord|undefined {
+    const matches=this.railway[role].filter(r=>String(r.featureInfo?.ID??r.meta.idValue??'')===id);
+    return matches.length===1?matches[0]:undefined;
   }
 
   hasClass(cls: string) {
@@ -93,7 +115,7 @@ export class FeatureStore {
 
     // 兜底：在全量里线性扫一次（可读性优先）
     if (fid) {
-      for (const x of this.all) {
+      for (const x of this.railway.lines) {
         const id = String((x.featureInfo as any)?.ID ?? (x.featureInfo as any)?.lineID ?? (x.featureInfo as any)?.ID ?? '').trim();
         if (id === fid) {
           const c = String((x.featureInfo as any)?.color ?? (x.featureInfo as any)?.Color ?? '').trim();

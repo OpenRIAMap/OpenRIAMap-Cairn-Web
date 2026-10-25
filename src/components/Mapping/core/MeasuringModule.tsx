@@ -10,10 +10,11 @@ import {omitOptionalFieldValues} from '@/configStudio/optionalFieldValues';
 import {normalizeV3WorldId} from '@/configStudio/V3WorkflowRunner';
 import {useRuleDataStore} from '@/store/ruleDataStore';
 import { NativeWorkflowHost } from '../Workflow/NativeWorkflowHost';
+import {prepareExternalCaptureRecord} from '../Workflow/externalCaptureRecord';
 import { prepareNativeWorkflowCommit } from '@/configStudio/nativeWorkflowCommit';
 import { validateConfigPackage } from '@/configStudio/runtime';
 import { getClassConfigByCode } from '@/core/project/classMetadata';
-import type { ConfigPackageV3, WorkflowDefinition } from '@/configStudio/types';
+import type { ClassificationPath,ConfigPackageV3, WorkflowDefinition } from '@/configStudio/types';
 import type { V3WorkflowRunResult } from '@/configStudio/V3WorkflowRunner';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type ChangeEvent, type RefObject, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -404,6 +405,7 @@ type EditorCoord = { x: number; z: number; y?: number };
  * control points and undo/redo scoped to the visible selected part.
  */
 const multipartDraftRef = useRef<MultipartGeometry | null>(null);
+const workflowDrawingTargetRef=useRef<{path:ClassificationPath;allowParts?:boolean}|null>(null);
 const [multipartEnabled, setMultipartEnabled] = useState(false);
 const [multipartPanelOpen,setMultipartPanelOpen]=useState(true);
 // Leaflet listeners do not participate in React's render cycle. Keep the
@@ -548,6 +550,7 @@ const renderSelectedMultipartCoords = (geometry: MultipartGeometry | null, color
 };
 
 const partsPermission = () => {
+  if(workflowDrawingTargetRef.current)return workflowDrawingTargetRef.current.allowParts===true;
   if (!configRuntime) return true;
   const definition=getOpenRIAMapClassConfigs().find(item=>item.sourceFeatureKey===subType);
   const record={Class:definition?.classCode,...(nativeEdit?.original??externalEdit?.session.original??{}),...featureInfo};
@@ -4684,6 +4687,8 @@ const stopWorkflowToSelector = () => {
   // a full-editor component or hole selection when entering this mode.
   resetMultipartEditor();
 
+  workflowDrawingTargetRef.current=null;
+
   setTempPoints([]);
   setRedoStack([]);
   setDrawing(false);
@@ -4723,11 +4728,16 @@ const startWorkflow = () => {
 };
 
 // 从 coords 生成 Leaflet 图形组（用于 fixed 图层保存）
-const makeLeafletGroupForCoords = (mode: DrawMode, coords: { x: number; z: number }[], color: string) => {
+const makeLeafletGroupForCoords = (mode: DrawMode, coords: { x: number; z: number }[], color: string, geometry?:MultipartGeometry) => {
   const proj = projectionRef.current;
   if (!proj) return L.layerGroup();
 
   const g = L.layerGroup();
+  if(geometry){
+    const project=(point:{x:number;z:number})=>proj.locationToLatLng(point.x,64,point.z);
+    const layers=geometry.type==='Point'?geometry.parts.map(point=>L.circleMarker(project(point),{color,fillColor:color,radius:6})):geometry.type==='LineString'?geometry.parts.map(part=>L.polyline(part.map(project),{color})):geometry.parts.map(part=>L.polygon(part.map(ring=>ring.map(project)),{color}));
+    layers.forEach(layer=>layer.addTo(g));return g;
+  }
   const latlngs = coords.map(p => proj.locationToLatLng(p.x, 64, p.z));
 
   if (mode === 'point') {
@@ -4813,10 +4823,12 @@ const commitFeatureFromWorkflow = (args: WorkflowCommitArgs) => {
 
   const now = new Date();
   const editorId = (args.editorId ?? editorIdInput ?? '').trim();
-  // A point workflow is intrinsically one feature coordinate.  Line and
-  // polygon workflows still receive their complete flat path, which is then
-  // wrapped as exactly one component (and one outer ring for polygons).
-  const workflowCoords = args.mode === 'point' ? args.coords.slice(0, 1) : args.coords;
+  const geometry=args.geometry??multipartGeometryFromSinglePath(geometryKindForDrawMode(args.mode),args.mode==='point'?args.coords.slice(0,1):args.coords);
+  const geometryError=validateMultipartGeometry(geometry);
+  if(geometryError||geometry.type!==geometryKindForDrawMode(args.mode))return {ok:false as const,error:geometryError??'工作流几何类型与绘制类型不一致。'};
+  // A legacy executor needs one projection to calculate its non-geometry fields;
+  // the complete geometry remains authoritative for storage and rendering.
+  const workflowCoords=geometry.type==='Point'?geometry.parts:geometry.type==='LineString'?geometry.parts[0]:geometry.parts[0]?.[0]??[];
   if (workflowCoords.length === 0) return { ok: false as const, error: '无法保存：工作流缺少坐标。' };
 
   const formatFeatureInfo = def.buildFeatureInfo({
@@ -4830,18 +4842,16 @@ const commitFeatureFromWorkflow = (args: WorkflowCommitArgs) => {
     prevFeatureInfo: undefined,
     now,
   });
+  const config=args.configuration??configRuntime;
   // The bridge is shared by every registered workflow.  Applying canonical
   // geometry here, after a format executor, prevents an old executor from
   // reintroducing coordinate / PLpoints / Conpoints aliases.
   let finalFeatureInfo:Record<string,unknown>;
-  try {finalFeatureInfo = withCanonicalMultipartGeometry(
-    configRuntime?omitOptionalFieldValues(configRuntime,recordCategory(formatFeatureInfo),formatFeatureInfo):formatFeatureInfo,
-    multipartGeometryFromSinglePath(geometryKindForDrawMode(args.mode as DrawMode), workflowCoords),
-  );}catch(error){return {ok:false as const,error:error instanceof Error?error.message:'要素字段无效。'};}
+  try {finalFeatureInfo = prepareExternalCaptureRecord(formatFeatureInfo,geometry,config,args.classification);}catch(error){return {ok:false as const,error:error instanceof Error?error.message:'要素字段无效。'};}
 
   const id = nextLayerId.current++;
   const color = args.color ?? drawColor;
-  const newGroup = makeLeafletGroupForCoords(args.mode as DrawMode, workflowCoords, color);
+  const newGroup = makeLeafletGroupForCoords(args.mode as DrawMode, workflowCoords, color,geometry);
 
   const layerObj: LayerType = {
     id,
@@ -4935,7 +4945,17 @@ const workflowBridge: WorkflowBridge = {
   },
   clearTempPoints: () => {
     setTempPoints([]);
+    resetMultipartEditor();
     clearDraftOverlays();
+  },
+  setDrawingTarget:(path,allowParts)=>{workflowDrawingTargetRef.current=path?{path,allowParts}:null;},
+  getDrawingGeometry:()=>drawModeRef.current==='none'?null:structuredClone(buildCurrentMultipartGeometry(drawModeRef.current,tempPointsRef.current)),
+  setDrawingGeometry:geometry=>{
+    if(drawModeRef.current==='none'||geometry.type!==geometryKindForDrawMode(drawModeRef.current))throw Error('草稿几何类型与当前绘制页不一致。');
+    if(geometry.parts.length>1&&workflowDrawingTargetRef.current?.allowParts===false)throw Error('当前绘制分类禁止多部件，不能截断导入几何。');
+    resetMultipartEditor();multipartDraftRef.current=structuredClone(geometry);multipartEnabledRef.current=true;setMultipartEnabled(true);activeMultipartPartRef.current=0;editSelectedInnerSpaceRef.current=false;activeInnerSpaceRef.current=0;
+    const holes=geometry.type==='Polygon'&&(geometry.parts[0]?.length??0)>1;innerSpaceEnabledRef.current=holes;setInnerSpaceEnabled(holes);
+    renderSelectedMultipartCoords(multipartDraftRef.current,drawColorRef.current);
   },
 
   requestUndo: () => handleUndo(),

@@ -17,10 +17,21 @@ import { createEditableConfigPackageFromCurrentProject as createConfigPackageFro
 import { compileConfigRuntime } from '../../src/configStudio/runtime';
 import { DynmapProjection, createDynmapCRS, ZTH_FLAT_CONFIG } from '../../src/lib/DynmapProjection';
 import { MAP_ZOOM_BOUNDS } from '../../src/lib/mapZoom';
+import {preferredExternalCapturePaths} from '../../src/configStudio/externalCapturePaths';
+const classificationSeed:ConfigPackageV3|undefined=location.search.includes('classification=1')?await (async()=>{
+  const identity=await fetch('/configuration/current.json').then(r=>r.json());
+  const config:ConfigPackageV3=await fetch(identity.configUrl).then(r=>r.json());
+  for(const workflow of config.workflows){
+    if(workflow.external&&['railwayWorkflow','stationWorkflow'].includes(workflow.external.componentKey))workflow.external.coveredClassifications=preferredExternalCapturePaths(config,workflow.external.componentKey);
+    const role=/^v3-editor-(rle|sta|plf|pfb|stb|sbp|stf)$/.exec(workflow.id)?.[1].toUpperCase();
+    if(role){const path={class:'RIL',kind:role};workflow.editor={...workflow.editor,enabled:true,scope:path};for(const output of workflow.outputs)output.classificationGroup={selectors:[{id:output.id+'-test-path',path,mode:'self'}]};}
+  }
+  return config;
+})():undefined;
 function Ready({ onReady }: { onReady: (map: L.Map) => void }) { const map = useMap(); useEffect(() => onReady(map), [map, onReady]); return null; }
 function Harness() {
   const [world, setWorld] = useState('zth');
-  const [config, setConfig] = useState(()=>{if(location.search.includes('subject=1'))return structuredClone(subjectSeed) as ConfigPackageV3;if(location.search.includes('final=1'))return structuredClone(finalSeed) as ConfigPackageV3;const config=createConfigPackageFromCurrentProject();if(!location.search.includes('edit=1'))return config;const edited=migrateConfigToR9(config);for(const workflow of edited.workflows)if(workflow.mode==='composed'&&workflow.id!=='v3-tpp_teleport')workflow.editor={enabled:true};const withRail=installRailEditingWorkflows(edited);withRail.workflows.push(createTrpEditingWorkflow());return withRail;});
+  const [config, setConfig] = useState(()=>{if(classificationSeed)return classificationSeed;if(location.search.includes('subject=1'))return structuredClone(subjectSeed) as ConfigPackageV3;if(location.search.includes('final=1'))return structuredClone(finalSeed) as ConfigPackageV3;const config=createConfigPackageFromCurrentProject();if(!location.search.includes('edit=1'))return config;const edited=migrateConfigToR9(config);for(const workflow of edited.workflows)if(workflow.mode==='composed'&&workflow.id!=='v3-tpp_teleport')workflow.editor={enabled:true};const withRail=installRailEditingWorkflows(edited);withRail.workflows.push(createTrpEditingWorkflow());return withRail;});
   const runtimeConfig = useMemo(() => compileConfigRuntime(config), [config]);
   const [map, setMap] = useState<L.Map | null>(null);
   const mapRef = useRef<L.Map | null>(null); mapRef.current = map;

@@ -4,6 +4,9 @@ import * as L from 'leaflet';
 
 import type { FeatureKey, DrawMode } from '@/components/Common/featureFormats';
 import AppButton from '@/components/ui/AppButton';
+import type {ClassificationPath,ConfigPackageV3} from '@/configStudio/types';
+import type {MultipartGeometry} from '@/core/geometry/multipartGeometry';
+import type {RailCaptureRole} from '@/configStudio/externalCapturePaths';
 
 /** 与 MeasuringModule 内部一致的世界坐标点 */
 export type WorldPoint = { x: number; z: number; y?: number };
@@ -45,6 +48,10 @@ export type WorkflowCommitArgs = {
   values?: Record<string, any>;
   groupInfo?: Record<string, any[]>;
   editorId?: string;
+  /** Complete geometry; coords remains the legacy single-path projection. */
+  geometry?: MultipartGeometry;
+  classification?: ClassificationPath;
+  configuration?: ConfigPackageV3;
 };
 
 export type WorkflowCommitResult =
@@ -74,6 +81,10 @@ export type WorkflowBridge = {
   subscribeDrawingChanges?: (listener: () => void) => () => void;
   setTempPoints: (pts: WorldPoint[]) => void;
   clearTempPoints: () => void;
+  getDrawingGeometry?: () => MultipartGeometry | null;
+  setDrawingGeometry?: (geometry: MultipartGeometry) => void;
+  setDrawingTarget?: (path:ClassificationPath|undefined,allowParts?:boolean) => void;
+  setCaptureRole?: (role:RailCaptureRole|undefined) => void;
 
   /** undo/redo（若 MeasuringModule 侧实现了） */
   requestUndo?: () => void;

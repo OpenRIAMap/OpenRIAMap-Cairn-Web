@@ -213,6 +213,7 @@ export default function FloorUnitWorkflow(props: WorkflowComponentProps) {
       cacheKey: 'ISG_NGF_LAD_WTB',
       filter: (fi: any) => {
         const cls = String(fi.Class ?? fi.class ?? '').trim();
+        if(cls==='NGF')return fi.Kind==='LAD'||fi.Kind==='WTR'&&(fi.SKind??fi.Skind)==='LWB'||fi.Kind==='LIS'&&(fi.SKind??fi.Skind)==='LAG'&&['PEN','IST'].includes(fi.SKind2??fi.Skind2);
         if (cls !== 'ISG') return false;
         const kind = String(fi.Kind ?? fi.Kind ?? fi?.tags?.Kind ?? fi?.tags?.Kind ?? '').trim();
         const skind = String(fi.SKind ?? fi.SKind ?? fi?.tags?.SKind ?? fi?.tags?.SKind ?? '').trim();
@@ -236,7 +237,7 @@ export default function FloorUnitWorkflow(props: WorkflowComponentProps) {
       cacheKey: 'BUD_STB_BUILDING',
       filter: (fi: any) => {
         const cls = String(fi.Class ?? fi.class ?? '').trim();
-        return cls === 'BUD' || cls === 'STB';
+        return cls === 'BUD' || cls === 'STB'||cls==='RIL'&&fi.Kind==='STB'||cls==='PTA'&&['AIR','POT'].includes(fi.Kind);
       },
       getId: (fi: any) => String(
         fi.ID ??

@@ -3,6 +3,7 @@ import { applicationWorldCodeMap, applicationWorldPrefixMap, subscribeApplicatio
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { WorkflowComponentProps, WorldPoint } from './WorkflowHost';
 import AppButton from '@/components/ui/AppButton';
+import {multipartGeometryFromSinglePath,validateMultipartGeometry,type MultipartGeometry} from '@/core/geometry/multipartGeometry';
 
 /**
  * StationWorkflow（工作流：车站和站台）
@@ -201,9 +202,11 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
   const [stbSkipped, setStbSkipped] = useState(false);
   const [stbId, setStbId] = useState('');
   const [stbPolygon, setStbPolygon] = useState<WorldPoint[]>([]);
+  const [stbGeometry,setStbGeometry]=useState<MultipartGeometry|null>(null);
 
   // PFB page
   const [pfbPolygon, setPfbPolygon] = useState<WorldPoint[]>([]);
+  const [pfbGeometry,setPfbGeometry]=useState<MultipartGeometry|null>(null);
   const [pfbId, setPfbId] = useState('');
 
   // PLF down
@@ -296,39 +299,45 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
 
     if (step === 'creator' || step === 'base') {
       b.setDrawMode('none');
+      b.setCaptureRole?.(undefined);
       b.clearTempPoints();
       return;
     }
 
     if (step === 'stb') {
       b.setDrawMode('polygon');
-      b.setTempPoints(stbPolygon);
+      b.setCaptureRole?.('STB');
+      if(stbGeometry&&b.setDrawingGeometry)b.setDrawingGeometry(stbGeometry);else b.setTempPoints(stbPolygon);
       return;
     }
 
     if (step === 'pfb') {
       b.setDrawMode('polygon');
-      b.setTempPoints(pfbPolygon);
+      b.setCaptureRole?.('PFB');
+      if(pfbGeometry&&b.setDrawingGeometry)b.setDrawingGeometry(pfbGeometry);else b.setTempPoints(pfbPolygon);
       return;
     }
 
     if (step === 'plfDown') {
       b.setDrawMode('point');
+      b.setCaptureRole?.('PLF');
       b.setTempPoints(plfDownPoint);
       return;
     }
 
     if (step === 'plfUp') {
       b.setDrawMode('point');
+      b.setCaptureRole?.('PLF');
       b.setTempPoints(plfUpPoint);
       return;
     }
 
     if (step === 'sta') {
       b.setDrawMode('point');
+      b.setCaptureRole?.('STA');
       b.clearTempPoints();
     }
-  }, [step, stbPolygon, pfbPolygon, plfDownPoint, plfUpPoint]);
+  }, [step, stbPolygon, pfbPolygon, stbGeometry,pfbGeometry,plfDownPoint, plfUpPoint]);
 
   // ---------- handlers ----------
   const goCreatorNext = () => {
@@ -364,6 +373,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     setStbSkipped(true);
     setStbId('');
     setStbPolygon([]);
+    setStbGeometry(null);
     b.clearTempPoints();
     setStep('pfb');
   };
@@ -372,7 +382,9 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     if (stbFinalized) return;
     const b = bridgeRef.current;
     const pts = b.getTempPoints() ?? [];
-    if (pts.length < 3) return;
+    const geometry=b.getDrawingGeometry?.()??multipartGeometryFromSinglePath('Polygon',pts);
+    const error=validateMultipartGeometry(geometry);
+    if(error||geometry.parts.length!==1){alert(error??'车站建筑只允许一个面部件。');return;}
 
     const abbr = String(stbAbbrA ?? '').trim();
     if (!abbr) {
@@ -388,6 +400,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
       subType: '车站建筑',
       mode: 'polygon',
       coords: pts,
+      geometry,
       values: {
         ID: buildingId,
         Name: buildingName,
@@ -405,15 +418,18 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     setStbSkipped(false);
     setStbId(buildingId);
     setStbPolygon(pts);
+    setStbGeometry(structuredClone(geometry));
     b.clearTempPoints();
     setStep('pfb');
   };
 
-  const goPrevFromPfb = () => setStep('base');
+  const goPrevFromPfb = () => {const geometry=bridgeRef.current.getDrawingGeometry?.();if(geometry)setPfbGeometry(structuredClone(geometry));setStep('base');};
   const finalizePfbNext = () => {
     const b = bridgeRef.current;
     const pts = b.getTempPoints() ?? [];
-    if (pts.length < 3) return;
+    const geometry=b.getDrawingGeometry?.()??multipartGeometryFromSinglePath('Polygon',pts);
+    const error=validateMultipartGeometry(geometry);
+    if(error){alert(error);return;}
 
     if (!nonEmpty(base.bureau) || !nonEmpty(base.lineNo) || !nonEmpty(base.stationNo) || !nonEmpty(base.Name)) {
       alert('基础信息不完整。');
@@ -431,6 +447,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
       subType: '站台轮廓',
       mode: 'polygon',
       coords: pts,
+      geometry,
       values: {
         ID: id,
         Name: name,
@@ -447,6 +464,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
 
     setPfbId(id);
     setPfbPolygon(pts);
+    setPfbGeometry(structuredClone(geometry));
     b.clearTempPoints();
     setStep('plfDown');
   };
@@ -752,7 +770,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
             <AppButton
               className="px-3 py-2 rounded text-sm border border-gray-300 bg-white text-gray-900 hover:bg-gray-100"
               type="button"
-              onClick={() => bridgeRef.current.setTempPoints(stbPolygon)}
+              onClick={() => {if(stbGeometry&&bridgeRef.current.setDrawingGeometry)bridgeRef.current.setDrawingGeometry(stbGeometry);else bridgeRef.current.setTempPoints(stbPolygon);}}
             >
               从车站总建筑导入坐标
             </AppButton>
