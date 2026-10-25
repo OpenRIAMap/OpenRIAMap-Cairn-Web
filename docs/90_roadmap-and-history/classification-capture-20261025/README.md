@@ -17,3 +17,8 @@
 共享核验内核没有修改，生成物检查仍应通过；本变更不要求部署 SCF，也不增加契约版本。
 
 新原生分类的图层身份使用已启用几何分类中的标准 ID/Name，不再依赖旧格式登记。JSON 导入使用默认执行器时仍显示原生编辑表单，允许临时挂载与标准分类 CSV；真正无类型草图保持原有阻断。十项浏览器场景同时覆盖直接采集、导入后编辑、实际 CSV 下载与无类型负例。
+
+
+## Atomic migration local review precheck
+
+Real production package D exposed an obsolete blanket blocker for a delete and upsert sharing an ID. The browser now validates the precise old world/Class/ID against its read-only snapshot and evaluates ID collisions after those deletions. Cross-Class and same-Class replacements remain one atomic package; duplicate upserts/deletes, missing or ambiguous old targets and undeleted conflicting Classes still block. Server release precheck and execution are unchanged and remain authoritative. Findings retain their concrete messages rather than replacing each with a generic code caption. Eleven positive/negative regression cases are part of verify:ci. No contract, shared kernel, SCF or algorithm changes.

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { checkLocalReviewDelta, type LocalFeatureIdentity } from './localDeltaPrecheck';
 import { materializeRiaReviewPackageForWorkspace } from '@/components/Mapping/core/relayPackageParser';
 import { loadRuleItemsForWorld, normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
 import { pickIdFieldValue } from '@/components/Rules/rendering/renderRules';
@@ -60,7 +61,7 @@ function itemId(value: unknown): string {
 
 function itemWorld(value: unknown, fallbackWorldId: string): string {
   const item = value && typeof value === 'object' ? value as Record<string, unknown> : null;
-  return normalizeRuleSourceWorldId(String(item?.World ?? item?.world ?? fallbackWorldId).trim() || fallbackWorldId);
+  return normalizeRuleSourceWorldId(String(item?.worldId ?? item?.World ?? item?.world ?? fallbackWorldId).trim() || fallbackWorldId);
 }
 
 async function localPrecheck(submission: ReviewSubmissionSnapshot, revision: ReviewPackageRevision, parsed: ParsedRelayPackage, activeWorldId: string): Promise<ReviewPackagePrecheckReport> {
@@ -68,21 +69,6 @@ async function localPrecheck(submission: ReviewSubmissionSnapshot, revision: Rev
   for (const issue of parsed.validation.errors) findings.push({ code: 'PACKAGE_INVALID', severity: 'blocker', message: issue.message });
   for (const issue of parsed.validation.warnings) findings.push({ code: 'PACKAGE_INVALID', severity: 'warning', message: issue.message });
 
-  const featureIds = new Set<string>();
-  for (const feature of parsed.jsonItems) {
-    const id = itemId(feature);
-    if (!id) continue;
-    if (featureIds.has(id)) findings.push({ code: 'UPSERT_DUPLICATE', severity: 'blocker', message: `审核包内存在重复要素 ID：${id}` });
-    featureIds.add(id);
-  }
-  const deleted = new Set<string>();
-  for (const entry of parsed.draft.deleteMarks) {
-    const id = itemId(entry);
-    if (!id) continue;
-    if (deleted.has(id)) findings.push({ code: 'UPSERT_DUPLICATE', severity: 'blocker', message: `审核包内存在重复删除目标：${id}` });
-    if (featureIds.has(id)) findings.push({ code: 'PACKAGE_INVALID', severity: 'blocker', message: `同一要素同时被新增/修改和删除：${id}` });
-    deleted.add(id);
-  }
   // A local precheck has no authority to advance a state machine.  It may,
   // however, read the browser's formal-data source/cache and give the reviewer
   // actionable deletion/overwrite feedback before the workspace is opened.
@@ -92,7 +78,7 @@ async function localPrecheck(submission: ReviewSubmissionSnapshot, revision: Rev
     ...parsed.jsonItems.map((item) => itemWorld(item, activeWorldId)),
     ...parsed.draft.deleteMarks.map((item) => itemWorld(item, activeWorldId)),
   ]);
-  const officialByWorld = new Map<string, Map<string, number>>();
+  const officialByWorld = new Map<string, LocalFeatureIdentity[]>();
   let snapshotReadable = true;
   for (const worldId of packageWorlds) {
     try {
@@ -101,12 +87,7 @@ async function localPrecheck(submission: ReviewSubmissionSnapshot, revision: Rev
         snapshotReadable = false;
         continue;
       }
-      const index = new Map<string, number>();
-      for (const record of records) {
-        const id = itemId(record);
-        if (id) index.set(id, (index.get(id) ?? 0) + 1);
-      }
-      officialByWorld.set(worldId, index);
+      officialByWorld.set(worldId, records.map(record => ({ worldId, classCode: String(record.Class ?? ''), featureId: itemId(record) })));
     } catch {
       snapshotReadable = false;
     }
@@ -118,23 +99,11 @@ async function localPrecheck(submission: ReviewSubmissionSnapshot, revision: Rev
       message: '本地正式数据快照缺失或读取失败；无法完整确认删除目标和当前要素冲突。发布前检查仍会使用服务端权威快照。',
     });
   }
-  for (const feature of parsed.jsonItems) {
-    const id = itemId(feature);
-    const worldId = itemWorld(feature, activeWorldId);
-    const count = officialByWorld.get(worldId)?.get(id) ?? 0;
-    if (id && count > 0) findings.push({
-      code: 'UPSERT_OVERWRITES_CURRENT', severity: count === 1 ? 'warning' : 'blocker',
-      message: count === 1 ? `本地快照显示要素 ${id} 已存在；本次发布会覆盖当前要素。` : `本地快照显示要素 ${id} 存在 ${count} 个同 ID 目标，无法安全判断覆盖对象。`,
-    });
-  }
-  for (const entry of parsed.draft.deleteMarks) {
-    const id = itemId(entry);
-    const worldId = itemWorld(entry, activeWorldId);
-    const count = officialByWorld.get(worldId)?.get(id) ?? 0;
-    if (!id || !officialByWorld.has(worldId)) continue;
-    if (count === 0) findings.push({ code: 'DELETE_TARGET_MISSING', severity: 'blocker', message: `本地快照中不存在待删除要素 ${id}。` });
-    if (count > 1) findings.push({ code: 'DELETE_TARGET_AMBIGUOUS', severity: 'blocker', message: `本地快照中有 ${count} 个要素使用待删除 ID ${id}。` });
-  }
+  const identity = (record: unknown): LocalFeatureIdentity => {
+    const item = record as Record<string, unknown>;
+    return { worldId: itemWorld(item, activeWorldId), classCode: String(item.classCode ?? item.Class ?? ''), featureId: itemId(item) };
+  };
+  findings.push(...checkLocalReviewDelta(parsed.jsonItems.map(identity), parsed.draft.deleteMarks.map(identity), officialByWorld));
   const blockers = findings.filter((item) => item.severity === 'blocker').length;
   const warnings = findings.filter((item) => item.severity === 'warning').length;
   return {

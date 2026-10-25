@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import { checkLocalReviewDelta, type LocalFeatureIdentity } from '../../src/components/Review/localDeltaPrecheck';
+const old = { worldId: 'zth', classCode: 'STB', featureId: 'station-1' };
+const next = { ...old, classCode: 'RIL' };
+const source = new Map([['zth', [old]]]);
+const blockers = (upserts: LocalFeatureIdentity[], deletes: LocalFeatureIdentity[], snapshots = source) => checkLocalReviewDelta(upserts, deletes, snapshots).filter(item => item.severity === 'blocker');
+assert.equal(blockers([next], [old]).length, 0, 'exact cross-Class replacement must be atomic');
+assert.equal(blockers([old], [old]).length, 0, 'same-Class delete/recreate must also work');
+assert(blockers([next], []).length, 'undeleted old Class must block');
+assert(blockers([next], [next]).some(item => item.code === 'DELETE_TARGET_MISSING'), 'wrong old Class cannot authorize a replacement');
+assert(blockers([next, next], [old]).some(item => item.code === 'UPSERT_DUPLICATE'));
+assert(blockers([next], [old, old]).some(item => item.code === 'UPSERT_DUPLICATE'));
+assert(blockers([next], [old], new Map([['zth', [old, old]]])).some(item => item.code === 'DELETE_TARGET_AMBIGUOUS'));
+assert.equal(blockers([next, { ...next, worldId: 'other' }], [old]).length, 0, 'IDs in distinct worlds are independent');
+assert(blockers([{ ...next, worldId: 'other' }], [{ ...old, worldId: 'other' }], new Map([['other', []]])).length);
+assert(checkLocalReviewDelta([old], [], source).some(item => item.severity === 'warning'), 'ordinary overwrite remains a warning');
+assert.equal(blockers([], [{ ...old, classCode: '' }, old]).length, 1, 'legacy and exact delete cannot remove a record twice');
+console.log('local review atomic delta: 11 scenarios passed');
