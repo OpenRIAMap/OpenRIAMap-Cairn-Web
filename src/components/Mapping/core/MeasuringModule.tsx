@@ -6098,7 +6098,7 @@ onChange={(e) => {
   ) : null
 ) : (
   /* 临时输出：默认关闭；仅“默认” subtype 启用 */
-  drawMode !== 'none' && subType === '默认' && (
+  drawMode !== 'none' && subType === '默认' && !isWorkflowStyleEditing && (
     <div className="mb-2">
       <div className="flex items-center justify-between">
         <label className="text-sm font-bold">临时输出</label>
@@ -6123,7 +6123,7 @@ onChange={(e) => {
 
 
                 {/* JSON 输入区 */}
-{measuringVariant === 'full' && subType !== '默认' && (
+{measuringVariant === 'full' && (subType !== '默认' || isWorkflowStyleEditing) && (
   <div className="mb-2 border-t pt-2">
     <div className="flex items-center justify-between gap-2">
       <label className="text-sm font-bold">
@@ -6415,7 +6415,7 @@ onChange={(e) => {
   ) : null
 ) : (
   /* 临时输出：默认关闭；仅“默认” subtype 启用 */
-  drawMode !== 'none' && subType === '默认' && (
+  drawMode !== 'none' && subType === '默认' && !isWorkflowStyleEditing && (
     <div className="mb-2">
       <div className="flex items-center justify-between">
         <label className="text-sm font-bold">临时输出</label>
@@ -6439,7 +6439,7 @@ onChange={(e) => {
 
 
 
-{subType !== '默认' && (
+{(subType !== '默认' || isWorkflowStyleEditing) && (
   <div className="mb-2 border-t pt-2">
     <div className="flex items-center justify-between gap-2">
       <label className="text-sm font-bold">
