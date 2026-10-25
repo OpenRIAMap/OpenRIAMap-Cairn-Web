@@ -139,6 +139,7 @@ function reviewDecisionLabel(decision: string | undefined): string {
 }
 
 function reviewFindingLabel(code: string, fallback?: string): string {
+  if (fallback?.trim()) return fallback.trim();
   return ({
     PACKAGE_INVALID: '审核包包含无效的要素或删除标识。',
     UPSERT_DUPLICATE: '审核包中存在重复的要素更新或删除目标。',
