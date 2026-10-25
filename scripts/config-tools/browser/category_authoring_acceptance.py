@@ -213,6 +213,21 @@ try:
     b.click('放弃草稿')
     assert state()['active']==baseline
     checks.append('actual display-only ROD template borrows explicit fallback colors under natural line schema, without road fields; report and validation pass; source unchanged')
+    b.click('工作流设计')
+    value('已保存工作流','v3-isg_ngf_lad')
+    b.click('读取')
+    for level,code in [('Class','ISG'),('Kind','NGF'),('SKind','LIS')]:
+        value('分类 1 '+level,code)
+    b.click('核验')
+    assert '编辑作用范围' in b.evaluate('document.body.innerText')
+    for level,code in [('Class','ISG'),('Kind','NGF'),('SKind','LIS')]:
+        value('编辑作用范围 '+level,code)
+    b.click('核验')
+    assert '工作流核验通过' in b.evaluate('document.body.innerText')
+    b.screenshot('workflow-edit-scope-retarget.png')
+    b.click('放弃草稿')
+    assert state()['active']==baseline
+    checks.append('actual classification group retarget blocks stale edit scope; four-level edit scope repair restores workflow validation; discard preserves active package')
     assert not b.errors, b.errors
     (OUT / 'category-authoring-acceptance.json').write_text(json.dumps({'checks': checks, 'dialogs': b.dialogs, 'runtimeErrors': b.errors, 'download': str(artifact)}, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps({'checks': checks, 'runtimeErrors': b.errors}, ensure_ascii=False))

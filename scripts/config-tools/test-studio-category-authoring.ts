@@ -9,6 +9,8 @@ import { classificationPathKey, resolveCardConfiguration, resolveEffectiveFields
 import { hasStudioDraft, recoverPackageCandidate, type StudioEditingSession } from '../../src/configStudio/studioSession';
 import { validateNativeStructure } from '../../src/configStudio/nativeContractValidation';
 import { validateWorkspace } from '../../src/configStudio/workspaceValidation';
+import {proposedWorkflowEditorScope} from '../../src/configStudio/WorkflowEditorScope';
+import {validateWorkflowDefinition} from '../../src/configStudio/runtime';
 
 const baseline = migratePackageToC15(readC14MigrationSource().config).config;
 const original = JSON.stringify(baseline);
@@ -88,6 +90,18 @@ assert.throws(()=>initializeCategory(brokenDisplay,displayOnlyRequest),/未同�
 const noFallback=structuredClone(baseline);
 for(const rule of noFallback.nodes.find(node=>node.nodeId===roadTemplate.nodeId)!.geometryProfiles.LineString!.zoomPriority.rules)if(rule.style?.stroke?.mode==='field')delete rule.style.stroke.fallbackColor;
 assert.throws(()=>initializeCategory(noFallback,displayOnlyRequest),/未同步依赖字段 color/,'a missing explicit fallback must still block');
+
+const land=structuredClone(baseline.workflows.find(flow=>flow.id==='v3-isg_ngf_lad')!);
+assert.deepEqual(proposedWorkflowEditorScope(baseline,land),land.editor!.scope);
+const surfaceScope={class:'ISG',kind:'NGF',skind:'LIS'};
+land.outputs[0].classificationGroup!.selectors[0].path=surfaceScope;
+assert.deepEqual(proposedWorkflowEditorScope(baseline,land),land.editor!.scope,'changing output must not silently replace an explicit edit scope');
+assert(!validateWorkflowDefinition(land,baseline).valid,'stale scope must block a migrated output');
+delete land.editor!.scope;
+assert.deepEqual(proposedWorkflowEditorScope(baseline,land),surfaceScope,'a missing scope defaults to the common ancestor of actual c15 candidates');
+land.editor!.scope=proposedWorkflowEditorScope(baseline,land);
+assert(validateWorkflowDefinition(land,baseline).valid,'coordinated output and edit scope must validate');
+assert.deepEqual(proposedWorkflowEditorScope(baseline,baseline.workflows.find(flow=>flow.id==='v3-tpp_teleport')!),{class:'TPP'});
 
 const leafDeletion = prepareCategoryDeletion(line.config, point.node.nodeId);
 assert.deepEqual(leafDeletion.nodes.map(node => node.nodeId), [point.node.nodeId]);
