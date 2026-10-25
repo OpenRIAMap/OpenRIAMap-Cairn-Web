@@ -467,7 +467,7 @@ function passesVisibilityExtension(config: ConfigPackageV3, record: FeatureRecor
     if (!spec || !store) return true;
     const source = String(featureValue(record, spec.sourceField ?? 'ID') ?? '').trim();
     const found = Boolean(source) && store.all.some((candidate) => candidate.uid !== record.uid
-      && matchesTargetPath(candidate, spec.target)
+      && store.matchesReadScope(candidate, spec.target)
       && String(featureValue(candidate, spec.targetField ?? 'ID') ?? '').trim() === source);
     return spec.behavior === 'hideIfExists' ? !found : found;
   }
@@ -476,7 +476,7 @@ function passesVisibilityExtension(config: ConfigPackageV3, record: FeatureRecor
     if (!spec || !store) return true;
     const key = pointCoordinateKey(record, spec.precision ?? 1000);
     const found = Boolean(key) && store.all.some((candidate) => {
-      if (candidate.uid === record.uid || !matchesTargetPath(candidate, spec.target) || pointCoordinateKey(candidate, spec.precision ?? 1000) !== key) return false;
+      if (candidate.uid === record.uid || !store.matchesReadScope(candidate, spec.target) || pointCoordinateKey(candidate, spec.precision ?? 1000) !== key) return false;
       const candidateValue = String(featureValue(candidate, spec.targetField ?? '') ?? '').trim().toLowerCase();
       if (spec.targetEquals !== undefined && candidateValue !== String(spec.targetEquals).toLowerCase()) return false;
       if (spec.targetNotEquals !== undefined && candidateValue === String(spec.targetNotEquals).toLowerCase()) return false;

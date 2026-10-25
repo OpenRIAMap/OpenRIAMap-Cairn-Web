@@ -8,7 +8,8 @@ import {prepareDownstreamNativeImport} from '../../src/components/Mapping/Workfl
 import {bindExternalCaptureBridge} from '../../src/components/Mapping/Workflow/externalCaptureBridge';
 import {FeatureStore} from '../../src/components/Rules/data/featureStore';
 import {buildFeatureMeta,type FeatureRecord} from '../../src/components/Rules/rendering/renderRules';
-import {resolveColor} from '../../src/components/Rules/configRuntime/configPackageAdapter';
+import {resolveColor,resolveConfigRuntimeRule} from '../../src/components/Rules/configRuntime/configPackageAdapter';
+import {createDefaultGeometryProfile} from '../../src/configStudio/v32Defaults';
 import {matchesClassificationReadScope,findCompatibleSearchCandidates} from '../../src/configRuntime/classificationReadScopes';
 import type {ConfigPackageV3,WorkflowDefinition,ClassificationPath} from '../../src/configStudio/types';
 import type {WorkflowBridge,WorkflowCommitArgs} from '../../src/components/Mapping/Workflow/WorkflowHost';
@@ -55,4 +56,13 @@ const search={target:{class:'ISG',kind:'NGF'},queryFields:['Name'],returnField:'
 const record={Class:'NGF',Kind:'LAD',SKind:'CON',ID:'land-a',Name:'test',World:'zth'},wrong={Class:'NGF',Kind:'LIS',SKind:'LAL',SKind2:'BDY',ID:'line-b',Name:'test',World:'zth'},anotherWorld={...record,ID:'elsewhere',World:'other'};
 const result=findCompatibleSearchCandidates([record,wrong,anotherWorld],search,'test','zth',scopes);assert.equal(result.length,1);assert.equal(result[0].record,record);assert.equal(result[0].returned,'NGF');assert.equal(record.Class,'NGF');
 const final={...scopes,nodes:scopes.nodes.filter(n=>!['ISG','ISL','ISP','PLF'].includes(n.path.class))};assert(!matchesClassificationReadScope(final,{class:'RIL',kind:'PLF'},{class:'PLF'}));
+const visibilityConfig=structuredClone(config),pointProfile=createDefaultGeometryProfile('Point');
+visibilityConfig.nodes.find(n=>n.path.class==='RIL'&&n.path.kind==='SBP')!.geometryProfiles.Point=pointProfile;
+pointProfile.zoomPriority.rules[0].extensions={visibility:{mode:'sameId',sameId:{target:{class:'STB'},sourceField:'ID',targetField:'ID',behavior:'hideIfExists'}}};
+const sbp={...feature({Class:'RIL',Kind:'SBP',ID:'shared-station',World:'zth',Name:'station point'}),uid:'sbp',type:'Points',p3:{x:0,y:64,z:0}} as FeatureRecord;
+const stb={...feature({Class:'RIL',Kind:'STB',ID:'shared-station',World:'zth'}),uid:'stb'} as FeatureRecord;
+const context={worldId:'zth',zoomLevel:4,leafletZoom:1,inFloorView:false,activeBuildingUid:null,activeFloorSelector:null,activeBuildingFloorRefSet:null} as any;
+const alone=new FeatureStore([sbp],{configuration:visibilityConfig}),together=new FeatureStore([sbp,stb],{configuration:visibilityConfig});
+assert(resolveConfigRuntimeRule(visibilityConfig,sbp,context,null,alone)?.visible?.(sbp,context,alone));
+assert.equal(resolveConfigRuntimeRule(visibilityConfig,sbp,context,null,together)?.visible?.(sbp,context,together),false,'same-ID visibility also follows the exact migrated role');
 console.log('classification capture: old/new declarations, full PFB parts/holes, strict STB rejection, shared role colors and read-only scope compatibility passed');
