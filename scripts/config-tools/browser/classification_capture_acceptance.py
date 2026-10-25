@@ -122,6 +122,26 @@ try:
   upsert=json.loads(archive.read(next(n for n in archive.namelist() if (n.startswith('Data_Spilt/') or '/Data_Spilt/' in n) and n.endswith('.json'))))
   assert upsert==replacement
  checks.append('actual delete selector, classification-only import and standard ZIP retain old delete Class, new upsert Class, exact ID, raw optional blanks and complete geometry in one candidate')
+ for workflow,path,name_control,abbr_control,geometry in [
+  ('v3-isg_ngf_lad','NGF/LAD/CON','isg_ngf_lad-Name-A','isg_ngf_lad-abbr-E','Polygon'),
+  ('v3-ngf_lis_lal','NGF/LIS/LAL/MTL','isg_ngf_lis-Name-A','isg_ngf_lis-abbr-G','LineString'),
+  ('v3-ngf_lis_lap','NGF/LIS/LAP/PEK','isg_ngf_lis-Name-A','isg_ngf_lis-abbr-G','Point'),
+  ('v3-isl_adm_dbl','ADM/DBL/LBD','isl_adm_dbl-Name-A','isl_adm_dbl-abbr-I','LineString'),
+  ('v3-pta_air','PTA/AIR/NOM','bud_building-Name-A','bud_building-abbr-I','Polygon')]:
+  navigate();click('测绘');click('开始测绘(快捷)')
+  b.evaluate('(()=>{const e=[...document.querySelectorAll("select")].find(e=>[...e.options].some(o=>o.value==='+json.dumps(workflow)+'));e.value='+json.dumps(workflow)+';e.dispatchEvent(new Event("change",{bubbles:true}));})()');click('开始')
+  value('input[aria-label="填写人"]','capture-author');click('下一页')
+  if b.evaluate('Boolean(document.querySelector(\'select[aria-label="工作流分类"]\'))'):value('select[aria-label="工作流分类"]',path)
+  value('[data-workflow-control='+json.dumps(name_control)+'] input','New native category');value('[data-workflow-control='+json.dumps(abbr_control)+'] input','NATIVE_TEST')
+  click('下一页');draw([(700,600)] if geometry=='Point' else [(700,600),(900,600)] if geometry=='LineString' else [(700,600),(900,600),(900,750),(700,750)])
+  click('确认保存输出');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===1');original=records()[0]
+  click('切换到完整模式');row='[...document.querySelectorAll("div")].find(e=>e.classList.contains("whitespace-nowrap")&&e.getBoundingClientRect().height)'
+  b.evaluate('('+row+').querySelector(\'button[title="展开工具栏"]\').click()');time.sleep(.15)
+  b.evaluate('[...('+row+').querySelectorAll("button")].find(e=>e.textContent==="编辑"&&!e.disabled).click()');b.wait('Boolean(document.querySelector(\'section[aria-label="V3 工作流式编辑"]\'))')
+  value('input[aria-label="工作流编辑人"]','native-editor');click('保存编辑图层');b.wait('!document.querySelector(\'section[aria-label="V3 工作流式编辑"]\')')
+  edited=records()[0];assert edited['ID']==original['ID'] and edited['Name']==original['Name']
+  assert edited.get('CoordP')==original.get('CoordP') and edited.get('CoordL')==original.get('CoordL') and edited.get('CoordG')==original.get('CoordG')
+ checks.append('new NGF point/line/polygon, ADM and PTA captures reopen and save through native editors without relying on the legacy format registry or changing ID/geometry')
  assert not b.evaluate('window.alerts.length'),b.evaluate('window.alerts');assert not b.errors,b.errors
  (OUT/'classification-capture-browser-result.json').write_text(json.dumps({'checks':checks,'runtimeErrors':b.errors},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'checks':checks,'runtimeErrors':b.errors},ensure_ascii=False),flush=True)
 except Exception:

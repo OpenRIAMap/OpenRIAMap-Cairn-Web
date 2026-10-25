@@ -3995,7 +3995,7 @@ const handleImportFileSelected = async (e: ChangeEvent<HTMLInputElement>) => {
     : getSubTypeOptions(drawMode as DrawMode).filter(k => k !== '默认');
 
 // ========= 动态附加信息渲染（由 FORMAT_REGISTRY[subType].fields/groups 驱动） =========
-const activeDef = FORMAT_REGISTRY[subType];
+const activeDef = FORMAT_REGISTRY[subType] ?? FORMAT_REGISTRY['默认'];
 const isWorkflowStyleEditing =
   editingLayerId !== null &&
   (editUiMode === 'workflow-style' && activeEditorView !== null || editUiMode==='native-workflow'&&nativeEdit!==null||editUiMode==='external-workflow'&&externalEdit!==null);
@@ -6132,7 +6132,7 @@ onChange={(e) => {
           ? '多点合一-站台车站'
           : specialDraftMode === 'merge-polygon-outline-building'
           ? '多面合一-站台建筑与轮廓'
-          : FORMAT_REGISTRY[subType].label}
+          : nativeEdit?.plan.workflow.label.zh ?? FORMAT_REGISTRY[subType]?.label ?? subType}
         )
       </label>
 
@@ -6448,7 +6448,7 @@ onChange={(e) => {
           ? '多点合一-站台车站'
           : specialDraftMode === 'merge-polygon-outline-building'
           ? '多面合一-站台建筑与轮廓'
-          : FORMAT_REGISTRY[subType].label}
+          : nativeEdit?.plan.workflow.label.zh ?? FORMAT_REGISTRY[subType]?.label ?? subType}
         )
       </label>
 
