@@ -1,5 +1,5 @@
 """Actual production MeasuringModule controls; isolated localhost, no uploads."""
-import json,os,time,traceback,urllib.request
+import json,os,time,traceback,urllib.request,zipfile
 from pathlib import Path
 from browser_check import Browser,APP_URL,OUT
 assert APP_URL.startswith('http://127.0.0.1:') and os.environ['CAIRNMAP_CDP_PORT']=='9502'
@@ -98,6 +98,30 @@ try:
   draw([(700,600),(900,600),(900,750),(700,750)] if shape=='面' else [(800,680)]);click('完成当前图层')
   b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===1');record=records()[0];assert record['Class']=='RIL' and record['Kind']==role and record['ID']==fields['ID']
  checks.append('actual full-mode STF and SBP creation use declared RIL roles; manual IDs and field formats remain unchanged')
+ navigate();click('测绘');click('开始测绘(完整)')
+ historical={**pfb,'Class':'PFB','elevation':'','height':None};historical.pop('Kind',None)
+ replacement={**historical,'Class':'RIL','Kind':'PFB'}
+ # Isolated fixture setup only. All migration actions use production controls.
+ b.evaluate('window.workflowAcceptance.setRecords('+json.dumps([historical])+')');time.sleep(.3)
+ click('删除要素')
+ candidate='[...document.querySelectorAll("div.flex.items-center.gap-2.rounded.border.bg-white.p-2")].find(e=>e.textContent.includes('+json.dumps(historical['ID'])+'))'
+ b.wait('Boolean('+candidate+')');b.evaluate('('+candidate+').querySelector("button").click()');click('确认')
+ click('导入数据');value('textarea[placeholder^="批量 JSON"]',json.dumps([replacement]));click('导入')
+ b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===1');assert records()[0]==replacement
+ download_dir=OUT/'downloads'/str(time.time_ns());download_dir.mkdir(parents=True)
+ b.call('Browser.setDownloadBehavior',{'behavior':'allow','downloadPath':str(download_dir.resolve())})
+ click('导出标准包')
+ value('input.w-full.border.rounded.px-3.py-2.text-sm','capture-migration-test');click('生成标准包');click('点击下载标准包')
+ for _ in range(100):
+  archives=list(download_dir.glob('*.zip'))
+  if archives and zipfile.is_zipfile(archives[0]):break
+  time.sleep(.1)
+ with zipfile.ZipFile(archives[0]) as archive:
+  deletion=json.loads(archive.read(next(n for n in archive.namelist() if n.endswith('/Delete.json') or n=='Delete.json')))
+  assert deletion['items'][0]['classCode']=='PFB' and deletion['items'][0]['ID']==historical['ID']
+  upsert=json.loads(archive.read(next(n for n in archive.namelist() if (n.startswith('Data_Spilt/') or '/Data_Spilt/' in n) and n.endswith('.json'))))
+  assert upsert==replacement
+ checks.append('actual delete selector, classification-only import and standard ZIP retain old delete Class, new upsert Class, exact ID, raw optional blanks and complete geometry in one candidate')
  assert not b.evaluate('window.alerts.length'),b.evaluate('window.alerts');assert not b.errors,b.errors
  (OUT/'classification-capture-browser-result.json').write_text(json.dumps({'checks':checks,'runtimeErrors':b.errors},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'checks':checks,'runtimeErrors':b.errors},ensure_ascii=False),flush=True)
 except Exception:

@@ -33,6 +33,9 @@ function aliases(config:ConfigPackageV3):Map<string,ClassificationPath[]>{
 export function matchesClassificationReadScope(config:ConfigPackageV3|undefined,path:ClassificationPath,scope:ClassificationPath):boolean {
  return pathMatchesScope(path,scope)||Boolean(config&&aliases(config).get(classificationPathKey(path))?.some(alias=>pathMatchesScope(alias,scope)));
 }
+export function isExactClassificationMigrationAlias(config:ConfigPackageV3,from:ClassificationPath,to:ClassificationPath):boolean {
+ return Boolean(aliases(config).get(classificationPathKey(from))?.some(path=>classificationPathKey(path)===classificationPathKey(to)));
+}
 /** Filter to the exact compatible set first, then reuse the existing matcher,
  * world restriction, order, limit and value extraction on original records. */
 export function findCompatibleSearchCandidates(records:MountedFeatureRecord[],profile:SearchProfile|undefined,query:string,world?:string,config?:ConfigPackageV3){
