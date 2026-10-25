@@ -13,7 +13,7 @@ import {useRuleDataStore} from '@/store/ruleDataStore';
 import { NativeWorkflowHost } from '../Workflow/NativeWorkflowHost';
 import {prepareExternalCaptureRecord} from '../Workflow/externalCaptureRecord';
 import { prepareNativeWorkflowCommit } from '@/configStudio/nativeWorkflowCommit';
-import { validateConfigPackage } from '@/configStudio/runtime';
+import { validateConfigPackage,resolveGeometryProfile } from '@/configStudio/runtime';
 import { getClassConfigByCode } from '@/core/project/classMetadata';
 import type { ClassificationPath,ConfigPackageV3, WorkflowDefinition } from '@/configStudio/types';
 import type { V3WorkflowRunResult } from '@/configStudio/V3WorkflowRunner';
@@ -2623,7 +2623,14 @@ const getLayersJSONOutputByWorkflowCatalogKey = (key: WorkflowCatalogExportKey):
 };
 
 
+const nativeLayerRecord = (layer: LayerType) => {
+  const record=layer.jsonInfo?.featureInfo;
+  if(!configRuntime||!record||!String(record.ID??'').trim()||!String(record.Class??'').trim())return undefined;
+  return resolveGeometryProfile(configRuntime,recordCategory(record),geometryKindForDrawMode(layer.mode))?.enabled?record:undefined;
+};
 const getLayerDisplayTitle = (l: LayerType) => {
+  const native=nativeLayerRecord(l);
+  if(native)return `${String(native.ID).trim()}${String(native.Name??'').trim()?' '+String(native.Name).trim():''}`;
   const fi = l?.jsonInfo?.featureInfo;
   const st = l?.jsonInfo?.subType as FeatureKey | undefined;
   if (!fi || !st || !(FORMAT_REGISTRY as any)[st]) {
@@ -2689,6 +2696,7 @@ const getLayerDisplayTitle = (l: LayerType) => {
 
 // 图层主 ID（用于全局重复性检查/提示）：尽量与 getLayerDisplayTitle 保持一致的取值策略
 const getLayerPrimaryIdValue = (l: LayerType): string => {
+  const native=nativeLayerRecord(l);if(native)return String(native.ID).trim();
   const fi = l?.jsonInfo?.featureInfo;
   const st = l?.jsonInfo?.subType as FeatureKey | undefined;
   if (!fi || !st || !(FORMAT_REGISTRY as any)[st]) return '';
@@ -2718,6 +2726,7 @@ const getLayerPrimaryIdValue = (l: LayerType): string => {
 
 // 图层主 Name（用于简略CSV）：尽量与 getLayerDisplayTitle 保持一致的取值策略
 const getLayerPrimaryNameValue = (l: LayerType): string => {
+  const native=nativeLayerRecord(l);if(native)return String(native.Name??'').trim();
   const fi = l?.jsonInfo?.featureInfo;
   const st = l?.jsonInfo?.subType as FeatureKey | undefined;
   if (!fi || !st || !(FORMAT_REGISTRY as any)[st]) return '';
@@ -2759,7 +2768,7 @@ const buildBriefCsvFromLayers = (list: LayerType[], worldIdFallback: string) => 
 
   const rows = list.map((l) => {
     const fi: any = l?.jsonInfo?.featureInfo ?? {};
-    const cls = String((l?.jsonInfo?.subType ?? '默认') as any);
+    const cls = String(nativeLayerRecord(l)?.Class ?? l?.jsonInfo?.subType ?? '默认');
 
     const type =
       (fi?.Type ?? fi?.type) ??
@@ -5335,7 +5344,7 @@ const workflowBridge: WorkflowBridge = {
         // 该限制不依赖 measuringActive（因为图层栏可在多种状态下被打开）。
         const quickMeasuringActive = measuringVariant === 'workflow';
         const visibleList = layers.filter((l) => l.id !== editingLayerId);
-        const hasDefaultLayer = visibleList.some((l) => (l?.jsonInfo?.subType ?? '默认') === '默认');
+        const hasDefaultLayer = visibleList.some((l) => (l?.jsonInfo?.subType ?? '默认') === '默认'&&!nativeLayerRecord(l));
         const hasRelayExportContent = visibleList.length > 0 || relayPackageDraft.deleteMarks.length > 0;
         const relayExportTitle = busy
           ? '当前有要素正在编辑/绘制，请先保存'

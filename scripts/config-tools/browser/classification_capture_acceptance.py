@@ -150,7 +150,19 @@ try:
   value('input[aria-label="工作流编辑人"]','native-import-editor');click('保存编辑图层');b.wait('!document.querySelector(\'section[aria-label="V3 工作流式编辑"]\')')
   edited=records()[0];assert edited['ID']==original['ID'] and edited['Name']==original['Name']
   assert edited.get('CoordP')==original.get('CoordP') and edited.get('CoordL')==original.get('CoordL') and edited.get('CoordG')==original.get('CoordG')
- checks.append('new NGF point/line/polygon, ADM and PTA captures and JSON imports reopen/save through native editors without legacy registrations or ID/geometry changes')
+  assert original['ID'] in b.evaluate('('+row+').innerText') and original['Name'] in b.evaluate('('+row+').innerText')
+  assert b.evaluate('[...document.querySelectorAll("button")].some(e=>e.textContent==="临时挂载"&&!e.disabled)')
+  csv_dir=OUT/'downloads'/str(time.time_ns());csv_dir.mkdir(parents=True);b.call('Browser.setDownloadBehavior',{'behavior':'allow','downloadPath':str(csv_dir.resolve())});click('简略CSV文件')
+  for _ in range(80):
+   csvs=list(csv_dir.glob('*.csv'))
+   if csvs:break
+   time.sleep(.1)
+  assert csvs;csv_text=csvs[0].read_text(encoding='utf-8-sig');assert original['ID'] in csv_text and original['Name'] in csv_text and original['Class'] in csv_text
+ checks.append('new NGF point/line/polygon, ADM and PTA capture/import edit, layer identity, temporary mount eligibility and actual CSV download work without legacy registrations or ID/geometry changes')
+ navigate();click('测绘');click('开始测绘(完整)');click('点');draw([(700,600)]);click('完成当前图层')
+ assert b.evaluate('[...document.querySelectorAll("button")].some(e=>e.textContent==="临时挂载"&&e.disabled)')
+ assert b.evaluate('[...document.querySelectorAll("button")].some(e=>e.textContent==="简略CSV文件"&&e.disabled)')
+ checks.append('untyped default geometry remains excluded from temporary mounting and typed CSV export')
  assert not b.evaluate('window.alerts.length'),b.evaluate('window.alerts');assert not b.errors,b.errors
  (OUT/'classification-capture-browser-result.json').write_text(json.dumps({'checks':checks,'runtimeErrors':b.errors},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'checks':checks,'runtimeErrors':b.errors},ensure_ascii=False),flush=True)
 except Exception:
