@@ -191,6 +191,43 @@ try:
     b.click('放弃整包草稿')
     assert state()['active'] == baseline
     checks.append('referenced-class deletion cannot pass final save; workflow deletion is isolated and reversible')
+    b.click('要素设计')
+    for level,code in [('Class','ISL'),('Kind','NGF'),('SKind','BOD')]:
+        value('编辑分类 '+level,code)
+    b.click('新增分类')
+    value('新分类代码','STYLE_ONLY')
+    value('新分类名称 zh','显示模板回退测试')
+    value('初始化状态','template')
+    value('分类模板来源 Class','ROD')
+    for title in ['同步字段设计','同步信息卡设置']:
+        b.evaluate('(()=>{const e=[...document.querySelectorAll(\'section[aria-label="新增要素分类"] label\')].find(e=>e.textContent.trim().startsWith('+json.dumps(title)+')).querySelector(\'input[type="checkbox"]\');if(e.checked)e.click();})()')
+    b.click('创建分类草稿')
+    b.wait('!document.querySelector(\'section[aria-label="新增要素分类"]\')')
+    copied=next(node for node in state()['session']['draft']['nodes'] if node['path'].get('skind2')=='STYLE_ONLY')
+    assert copied['fields']==[] and not copied.get('fieldSettings')
+    assert '#111827' in json.dumps(copied['geometryProfiles'])
+    assert '显示取色回退' in b.evaluate('Array.from(document.querySelectorAll("details")).find(e=>e.querySelector("summary")?.textContent==="分类创建报告")?.textContent')
+    b.click('核验')
+    assert not b.evaluate('Array.from(document.querySelectorAll("button")).find(e=>e.textContent.trim()==="保存")?.disabled')
+    b.screenshot('display-only-template-fallback.png')
+    b.click('放弃草稿')
+    assert state()['active']==baseline
+    checks.append('actual display-only ROD template borrows explicit fallback colors under natural line schema, without road fields; report and validation pass; source unchanged')
+    b.click('工作流设计')
+    value('已保存工作流','v3-isg_ngf_lad')
+    b.click('读取')
+    for level,code in [('Class','ISG'),('Kind','NGF'),('SKind','LIS')]:
+        value('分类 1 '+level,code)
+    b.click('核验')
+    assert '编辑作用范围' in b.evaluate('document.body.innerText')
+    for level,code in [('Class','ISG'),('Kind','NGF'),('SKind','LIS')]:
+        value('编辑作用范围 '+level,code)
+    b.click('核验')
+    assert '工作流核验通过' in b.evaluate('document.body.innerText')
+    b.screenshot('workflow-edit-scope-retarget.png')
+    b.click('放弃草稿')
+    assert state()['active']==baseline
+    checks.append('actual classification group retarget blocks stale edit scope; four-level edit scope repair restores workflow validation; discard preserves active package')
     assert not b.errors, b.errors
     (OUT / 'category-authoring-acceptance.json').write_text(json.dumps({'checks': checks, 'dialogs': b.dialogs, 'runtimeErrors': b.errors, 'download': str(artifact)}, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps({'checks': checks, 'runtimeErrors': b.errors}, ensure_ascii=False))

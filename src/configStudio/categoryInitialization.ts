@@ -48,6 +48,19 @@ function localDependencies(value:unknown,includeFallbackSources=true):Set<string
   };visit(value);return result;
 }
 
+/** Display-only copies retain explicit color fallbacks rather than adding
+ * unrelated business fields. Other unresolved dependencies stay strict. */
+function missingColorFallbacks<T>(value:T,available:Set<string>,actions:string[],path='显示'):T {
+  if(Array.isArray(value))return value.map((item,index)=>missingColorFallbacks(item,available,actions,`${path}/${index}`)) as T;
+  if(!value||typeof value!=='object')return value;
+  const item=value as Record<string,unknown>;
+  if(item.mode==='field'&&typeof item.field==='string'&&!available.has(item.field)&&typeof item.fallbackColor==='string'&&item.fallbackColor.trim()){
+    actions.push(`显示取色回退：${path} 的 ${item.field} 未同步，使用原回退色 ${item.fallbackColor}。`);
+    return {mode:'fixed',color:item.fallbackColor} as T;
+  }
+  return Object.fromEntries(Object.entries(item).map(([key,child])=>[key,missingColorFallbacks(child,available,actions,`${path}/${key}`)])) as T;
+}
+
 export function initializeCategory(input:ConfigPackageV3,request:CategoryInitialization,options:{allowUnfinishedGeometry?:boolean}={}):{config:ConfigPackageV3;node:CategoryNode;report:CategoryInitializationReport} {
   const config=input.contractRevision<9?migrateConfigToR9(input):structuredClone(input),actions:string[]=[],renamed:Record<string,string>={};
   const parent=config.nodes.find(node=>node.nodeId===request.parentId);
@@ -95,6 +108,10 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
   if(config.contractRevision>=10&&parent&&inheritanceControls(parent).card)linkCardInheritance(node,resolveCardConfiguration(config,parent.path),parent.nodeId);
   const next=structuredClone(config);next.nodes.push(node);if(parent)next.nodes.find(item=>item.nodeId===parent.nodeId)!.children.push(node.nodeId);
   const available=new Set(resolveSelectableFields(next,path).map(field=>field.key));
+  if(profile&&geometry&&sync.display&&!sync.fields){
+    profile.zoomPriority=missingColorFallbacks(profile.zoomPriority,available,actions);
+    next.nodes.find(item=>item.nodeId===node.nodeId)!.geometryProfiles[geometry]=profile;
+  }
   // Card fallbackSources may intentionally read legacy raw aliases (e.g.
   // height -> Height). Preserve them exactly as the card validator permits;
   // primary card fields and render fallbacks still receive strict checks.
