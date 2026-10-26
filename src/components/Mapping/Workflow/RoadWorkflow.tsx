@@ -9,7 +9,7 @@ import {
   type ExtValueType,
   EXT_VALUE_TYPE_OPTIONS,
   listCatalogClassOptions,
-} from '@/components/Common/featureFormats';
+} from '@/legacy/formats/featureFormats';
 import WorkflowFeatureSearchSelect, { type SearchSelectConfig } from './WorkflowFeatureSearchSelect';
 import { ROAD_TRAVEL_PROFILES } from '@/components/Navigation/Navigation_Road';
 

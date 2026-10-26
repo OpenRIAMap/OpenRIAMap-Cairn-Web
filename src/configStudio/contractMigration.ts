@@ -2,6 +2,7 @@ import {CONTRACT_CAPABILITIES,formatContractRevision,isNativeConfigRevision} fro
 import {defaultHalo} from './halo';
 import {validateNativeStructure} from './nativeContractValidation';
 import {migrateC15Nodes,migrateC15Workflow} from './c15Migration';
+import {migrateC16Nodes,migrateC16Workflow} from './c16Migration';
 import {syncWorkflowClassification} from './systemClassification';
 import type {CategoryNode,ConfigPackageV3,GeometryKind,GeometryProfile,RenderStyle,WorkflowDefinition} from './types';
 
@@ -58,6 +59,14 @@ export const MIGRATION_STEPS:readonly MigrationStep[]=[{
     for(const workflow of document.workflow?[document.workflow]:document.workflows??[])migrateC15Workflow(workflow,config,changes);
     if(config){const target={...config,contractRevision:15 as const};if(document.workflow)document.workflow=syncWorkflowClassification(target,document.workflow);if(document.workflows)document.workflows=document.workflows.map(workflow=>syncWorkflowClassification(target,workflow));}
   },
+},{
+  from:15,to:16,kinds:['package','node','classTree','workflow'],
+  apply(document,changes,context){
+    const config='schemaVersion' in document&&document.schemaVersion==='cairnmap.config-package.v3'?document as ConfigPackageV3:context;
+    for(const workflow of document.workflow?[document.workflow]:document.workflows??[])migrateC16Workflow(workflow,config,changes);
+    if(document.nodes)migrateC16Nodes(document.nodes,config,changes);
+    changes.push({id:'c15-c16:identity',kind:'converted',component:'contract',path:'contractRevision',message:'c15 → c16；新增专用绑定，普通内容保持。',before:15,after:16});
+  },
 }];
 
 /** Injected registries are for window/chain tests; production always uses known capabilities. */
@@ -85,7 +94,7 @@ export function migrateContract<T extends Document>(input:T,target:number,kind:M
   };
   check(document);
   for(const step of chain){step.apply(document,changes,context);document.contractRevision=step.to;check(document);}
-  return {document,report:{schemaVersion:'cairnmap.contract-migration.v1',source:input.contractRevision,target,steps:chain.map(step=>`c${step.from} → c${step.to}`),migratorVersion:'c15-1',changes,dismissed:[]}};
+  return {document,report:{schemaVersion:'cairnmap.contract-migration.v1',source:input.contractRevision,target,steps:chain.map(step=>`c${step.from} → c${step.to}`),migratorVersion:'c16-1',changes,dismissed:[]}};
 }
 export function migratePackageToContract(input:ConfigPackageV3,target:number=CONTRACT_CAPABILITIES.latest){
   if(!isNativeConfigRevision(input.contractRevision))throw Error('未知契约，不能升级。');
@@ -95,3 +104,4 @@ export function migratePackageToContract(input:ConfigPackageV3,target:number=CON
 /** Stable historical entrypoint: adding c15 must not change what "to c14" means. */
 export const migratePackageToC14=(input:ConfigPackageV3)=>migratePackageToContract(input,14);
 export const migratePackageToC15=(input:ConfigPackageV3)=>migratePackageToContract(input,15);
+export const migratePackageToC16=(input:ConfigPackageV3)=>migratePackageToContract(input,16);

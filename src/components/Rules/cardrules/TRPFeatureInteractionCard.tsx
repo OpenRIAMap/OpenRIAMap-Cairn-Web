@@ -10,7 +10,7 @@ export default function TRPFeatureInteractionCard(props: FeatureCardCommonProps)
   // 其余字段全部归入“其他信息”下拉栏，避免主信息过长。
   const infoSectionsOverride = (() => {
     if (!feature) return undefined;
-    const { mainRows, otherRows } = buildInfoSectionsForFeature(feature, null, { disableFieldRules: true });
+    const { mainRows, otherRows } = buildInfoSectionsForFeature(feature, null, { disableFieldRules: true,configuration:props.configuration });
     const all = [...mainRows, ...otherRows];
     const hidePrefixes = new Set([
       'Trade',
@@ -39,7 +39,7 @@ export default function TRPFeatureInteractionCard(props: FeatureCardCommonProps)
       '交易列表',
     ]);
     const filtered = all.filter((r) => {
-      const label = String((r as any)?.label ?? '').trim();
+      const label = String(r.usedPaths?.[0]??r.label??'').trim();
       if (!label) return true;
       if (hideExact.has(label)) return false;
       for (const p of hidePrefixes) {
@@ -57,6 +57,8 @@ export default function TRPFeatureInteractionCard(props: FeatureCardCommonProps)
       midSection={
         feature ? (
           <TRPTradeSection
+            configuration={props.configuration}
+            componentOptions={props.componentOptions}
             feature={feature}
             resolveFeatureById={props.resolveFeatureById}
             onTryTriggerLabelClickById={props.onTryTriggerLabelClickById}

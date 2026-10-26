@@ -1,4 +1,4 @@
-import type {FeatureRecord} from '../Rules/rendering/renderRules';
+import type {FeatureRecord} from '../Rules/rendering/renderPrimitives';
 import {passLineBooleanFilters,type RailNewIndex} from '../Navigation/railNewIndex';
 import {recordId} from '../../configStudio/structureRoleIndex';
 

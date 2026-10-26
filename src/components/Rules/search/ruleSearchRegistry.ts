@@ -1,4 +1,4 @@
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
 
 /**

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { WORKFLOW_EDITOR_SCHEMAS, projectRegistryScene } from '../../src/components/Common/workflowEditorRegistry';
+import { WORKFLOW_EDITOR_SCHEMAS, projectRegistryScene } from '@/legacy/editorSchemas/index';
 import { getOpenRIAMapWorkflowConfigs } from '../../src/core/project/openriamapRiaWorkflows';
 import { listWorkflowOutputPaths } from '../../src/core/project/workflowOutputAssembler';
 import { createConfigPackageFromCurrentProject } from '../../src/configStudio/legacyProjectAdapter';

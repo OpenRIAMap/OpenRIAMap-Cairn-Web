@@ -11,7 +11,7 @@
  * - 若当前 world 未启用 dat 图片源，则仍沿用旧 public/pictures 目录探测逻辑
  */
 
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import { resolveWorldDirName } from '@/components/Rules/data/sourceResolver';
 import { loadFormalMediaAssets, formalMediaUrl } from '@/components/Rules/data/formalMediaReader';
 import { getRuleDataSourceSnapshot } from '@/components/Rules/data/formalDataSourceRuntime';

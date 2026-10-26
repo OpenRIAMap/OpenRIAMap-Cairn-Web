@@ -12,7 +12,7 @@ import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import type { DynmapProjection } from '@/lib/DynmapProjection';
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import { DraggablePanel } from '@/components/DraggablePanel/DraggablePanel';
 import { Link, X } from 'lucide-react';
 import AppButton from '@/components/ui/AppButton';

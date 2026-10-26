@@ -1,13 +1,19 @@
 import React from 'react';
 import { useMemo, useRef, type WheelEvent } from 'react';
 
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import type { CardFeatureLinkTarget, ResolveFeatureById } from './cardInteractions';
 // 仅作为 TRP 专用展示模块，不依赖 FIELD_RULES。
-import { WORKFLOW_FEATURE_CATALOG } from '@/components/Common/featureFormats';
+import {classificationDisplayName} from '@/configStudio/classificationPresentation';
+import {recordCategory} from '@/configStudio/multipartPolicy';
+import {resolveExternalReferenceSource} from '@/configStudio/externalBindings';
+import {migrationReferenceBindings} from '@/configStudio/c16Migration';
+import type {ConfigPackageV3,ExternalReferenceSource} from '@/configStudio/types';
 import { pickFeatureDisplayName } from './fieldRules';
 
 type Props = {
+  configuration?: ConfigPackageV3;
+  componentOptions?: Record<string,unknown>;
   feature: FeatureRecord;
   /** 可选：用于解析内链目标显示文本。 */
   resolveFeatureById?: ResolveFeatureById;
@@ -39,16 +45,6 @@ function resolveImgSrc(raw: any): string {
   if (!s) return '/logo.png';
   if (/^https?:\/\//i.test(s)) return s;
   return '/logo.png';
-}
-
-function buildTrpTypeLabel(fi: any): string {
-  const kind = String(fi?.Kind ?? fi?.Kind ?? fi?.Kind ?? fi?.kind ?? '').trim();
-  const skind = String(fi?.SKind ?? fi?.SKind ?? fi?.SKind ?? fi?.skind ?? '').trim();
-  const skind2 = String(fi?.SKind2 ?? fi?.SKind2 ?? fi?.SKind2 ?? fi?.skind2 ?? '').trim();
-  const hit = WORKFLOW_FEATURE_CATALOG.find(
-    (e) => e.classCode === 'TRP' && e.kind === kind && e.skind === skind && String(e.skind2 ?? '') === skind2,
-  );
-  return hit?.name ?? '';
 }
 
 function normalizeTradeList(raw: any): Array<{ key: string; note: string; offers: TradeItem[]; receives: TradeItem[] }> {
@@ -107,19 +103,26 @@ function TrpItemLine({ item }: { item: TradeItem }) {
   );
 }
 
-export default function TRPTradeSection({ feature, resolveFeatureById, onTryTriggerLabelClickById }: Props) {
+export default function TRPTradeSection({ feature, resolveFeatureById, onTryTriggerLabelClickById,configuration,componentOptions }: Props) {
   const fi: any = feature?.featureInfo ?? {};
 
-  const typeLabel = useMemo(() => buildTrpTypeLabel(fi), [fi]);
+  const typeLabel = useMemo(() => classificationDisplayName(configuration,recordCategory(fi)), [configuration,fi]);
   const interaction = String(fi?.Interaction ?? fi?.interaction ?? '').trim();
   const situation = String(fi?.Situation ?? fi?.situation ?? '').trim();
   const landId = String(fi?.tags?.Land ?? fi?.tags?.land ?? '').trim();
-  const landLinkTarget: CardFeatureLinkTarget = useMemo(
-    () => ({ classCode: 'ISG', kind: 'NGF', matchField: 'ID', displayField: 'Name', fallbackDisplay: 'raw' }),
-    [],
-  );
+  const reference=useMemo(()=>{
+    try{
+      if(!configuration)throw Error('交易卡片缺少当前配置。');
+      const sources=componentOptions?.referenceBindings as Record<string,ExternalReferenceSource>|undefined;
+      const binding=sources?.landUnit?resolveExternalReferenceSource(configuration,sources.landUnit):configuration.contractRevision<16?migrationReferenceBindings(configuration).find(binding=>binding.bindingId==='landUnit'):undefined;
+      if(!binding||!binding.classificationGroup?.selectors.length)throw Error('交易卡片缺少明确的地理单元引用范围。');
+      return {target:{classificationGroup:binding.classificationGroup,matchField:binding.search?.returnField??'ID',displayField:'Name',fallbackDisplay:'raw'} as CardFeatureLinkTarget,error:''};
+    }catch(error){return {target:undefined,error:error instanceof Error?error.message:String(error)};}
+  },[configuration,componentOptions]);
+  const landLinkTarget=reference.target;
   const landDisplay = useMemo(() => {
     if (!landId) return '';
+    if(!landLinkTarget)return landId;
     const target = resolveFeatureById?.(landId, landLinkTarget);
     const displayFromTarget = String((target?.featureInfo as any)?.Name ?? '').trim();
     return displayFromTarget || pickFeatureDisplayName(target) || landId;
@@ -170,12 +173,12 @@ export default function TRPTradeSection({ feature, resolveFeatureById, onTryTrig
             <div className="text-[11px] text-gray-500 shrink-0">所属地理单元</div>
             <div className="text-[11px] text-right">
               <span
-                style={{ color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                style={landLinkTarget?{color:'#2563eb',textDecoration:'underline',cursor:'pointer'}:{}}
                 title={landId}
                 onClick={(e) => {
                   e.stopPropagation();
                   try {
-                    onTryTriggerLabelClickById?.(landId, landLinkTarget);
+                    landLinkTarget&&onTryTriggerLabelClickById?.(landId, landLinkTarget);
                   } catch {
                     // 静默失败
                   }
@@ -288,6 +291,7 @@ export default function TRPTradeSection({ feature, resolveFeatureById, onTryTrig
                             <tr key={`${t.key}-${idx}-line-${li}`} className={li === 0 ? 'border-t border-black/10' : ''}>
                               <td className="px-2 py-2 align-middle">
                                 <div className="min-w-0" style={{ maxWidth: 'calc(42px + 10ch + 24px)' }}>
+      {reference.error?<p role="alert" className="text-xs text-rose-700">{reference.error}</p>:null}
                                   {o ? <TrpItemLine item={o} /> : renderEmptyItem()}
                                 </div>
                               </td>

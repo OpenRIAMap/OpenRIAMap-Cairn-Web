@@ -1,8 +1,8 @@
 /** Independent oracle: V1 registry paths plus the real V1 production formatter.
  * Never reads V3 assignments or calls the V3 expression evaluator.
  */
-import { getFormatDef, TAG_KEY_OTHER, TAG_REGISTRY, type FeatureKey } from '../../src/components/Common/featureFormats';
-import { projectRegistryScene, setByPath, type WorkflowEditorSchema } from '../../src/components/Common/workflowEditorRegistry';
+import { getFormatDef, TAG_KEY_OTHER, TAG_REGISTRY, type FeatureKey } from '@/legacy/formats/featureFormats';
+import { projectRegistryScene, setByPath, type WorkflowEditorSchema } from '@/legacy/editorSchemas/index';
 import type { ClassificationPath } from '../../src/configStudio/types';
 import type { MultipartCoord } from '../../src/core/geometry/multipartGeometry';
 

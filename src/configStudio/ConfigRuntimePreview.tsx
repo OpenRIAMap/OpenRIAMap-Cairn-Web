@@ -8,7 +8,7 @@ import { createDynmapCRS, DynmapProjection, getWorldConfig } from '@/lib/DynmapP
 import { createDynmapTileLayer } from '@/lib/DynmapTileLayer';
 import RuleDrivenLayer from '@/components/Rules/core/RuleDrivenLayer';
 import { compileConfigRuntime, resolveGeometryProfile, validateConfigPackage } from './runtime';
-import { toLeafletZoom, toZoomLevel } from '@/components/Rules/rendering/renderRules';
+import { toLeafletZoom, toZoomLevel } from '@/components/Rules/rendering/renderPrimitives';
 import type { CategoryNode, ConfigPackageV3, GeometryKind, PreviewScenario } from './types';
 
 export const PREVIEW_SCENARIOS: Array<{ id: PreviewScenario; label: string; geometry: GeometryKind; multipart: boolean; zoom: number }> = [

@@ -1,4 +1,4 @@
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import {
   getByPath,
   projectRegistryScene,
@@ -8,7 +8,7 @@ import {
   type ProjectedRegistryGroup,
   type ProjectedRegistryScene,
   type WorkflowEditorSchema,
-} from '../../Common/workflowEditorRegistry';
+} from '@/legacy/editorSchemas/index';
 import { makeExternalLink } from './cardInteractions';
 import type { CardRow } from './fieldRules';
 

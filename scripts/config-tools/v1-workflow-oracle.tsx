@@ -8,7 +8,7 @@ import 'leaflet/dist/leaflet.css';
 import { getWorkflowExecutorComponent } from '../../src/components/Mapping/Workflow/workflowComponentExecutorRegistry';
 import TeleportPointWorkflow from '../../src/components/Mapping/Workflow/TeleportPointWorkflow';
 import WarpPointWorkflow from '../../src/components/Mapping/Workflow/WarpPointWorkflow';
-import { getFormatDef } from '../../src/components/Common/featureFormats';
+import { getFormatDef } from '@/legacy/formats/featureFormats';
 import { DynmapProjection, createDynmapCRS, ZTH_FLAT_CONFIG } from '../../src/lib/DynmapProjection';
 import type { WorldPoint, WorkflowBridge, WorkflowCommitArgs } from '../../src/components/Mapping/Workflow/WorkflowHost';
 const projection = new DynmapProjection(ZTH_FLAT_CONFIG);

@@ -1,3 +1,5 @@
+import {getRuleDataSourceSnapshot} from '../../src/components/Rules/data/formalDataSourceRuntime';
+import {c16AcceptanceConfig} from './fixtures/c16-acceptance-config';
 import subjectSeed from '../../src/configStudio/defaults/r11-r7.config.json';
 import {createTrpEditingWorkflow} from '../../src/configStudio/externalEditRegistry';
 import {installRailEditingWorkflows} from '../../src/configStudio/railEditingTemplates';
@@ -18,7 +20,7 @@ import { compileConfigRuntime } from '../../src/configStudio/runtime';
 import { DynmapProjection, createDynmapCRS, ZTH_FLAT_CONFIG } from '../../src/lib/DynmapProjection';
 import { MAP_ZOOM_BOUNDS } from '../../src/lib/mapZoom';
 import {preferredExternalCapturePaths} from '../../src/configStudio/externalCapturePaths';
-const classificationSeed:ConfigPackageV3|undefined=location.search.includes('classification=1')?await (async()=>{
+const classificationSeed:ConfigPackageV3|undefined=location.search.includes('c16=1')?await fetch('/configuration/current.json').then(r=>r.json()).then(identity=>fetch(identity.configUrl)).then(r=>r.json()).then(c16AcceptanceConfig):location.search.includes('classification=1')?await (async()=>{
   // Immutable actual UI-authored A snapshot; future active configs cannot
   // silently change this regression's classification fixture.
   const config:ConfigPackageV3=await fetch('/configuration/releases/fdf0b20f0b1a8efef813b3525b4d95232c9bf372ca8c9800aec67c143282db5b/config.json').then(r=>r.json());
@@ -34,6 +36,7 @@ function Harness() {
   const [world, setWorld] = useState('zth');
   const [config, setConfig] = useState(()=>{if(classificationSeed)return classificationSeed;if(location.search.includes('subject=1'))return structuredClone(subjectSeed) as ConfigPackageV3;if(location.search.includes('final=1'))return structuredClone(finalSeed) as ConfigPackageV3;const config=createConfigPackageFromCurrentProject();if(!location.search.includes('edit=1'))return config;const edited=migrateConfigToR9(config);for(const workflow of edited.workflows)if(workflow.mode==='composed'&&workflow.id!=='v3-tpp_teleport')workflow.editor={enabled:true};const withRail=installRailEditingWorkflows(edited);withRail.workflows.push(createTrpEditingWorkflow());return withRail;});
   const runtimeConfig = useMemo(() => compileConfigRuntime(config), [config]);
+  useEffect(()=>{if(!location.search.includes('c16=1'))return;const source=getRuleDataSourceSnapshot('zth');useRuleDataStore.setState({datasets:{zth:{worldId:'zth',remoteWorldId:source.remoteWorldId,resourceGroupId:source.resourceGroupId,sourceId:source.sourceId,transportId:source.transportId,readerSchemaVersion:source.readerSchemaVersion,sourceGeneration:source.generation,mergeVersion:'c16-local-fixture',releaseId:'c16-local-fixture',loadedAt:Date.now(),features:[{ID:'C16_LAND',Name:'C16Land',Class:'NGF',Kind:'LAD',SKind:'SBC',World:'zth'},{ID:'C16_WRONG',Name:'C16Land wrong classification',Class:'BUD',Kind:'NOM',World:'zth'},{ID:'C16_FOREIGN',Name:'C16Land foreign world',Class:'NGF',Kind:'LAD',SKind:'SBC',World:'eden'}]}}});},[]);
   const [map, setMap] = useState<L.Map | null>(null);
   const mapRef = useRef<L.Map | null>(null); mapRef.current = map;
   const projection = useMemo(() => new DynmapProjection(ZTH_FLAT_CONFIG), []);

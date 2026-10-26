@@ -56,7 +56,7 @@ import {ConfigSearchExtension} from '@/components/Search/ConfigSearchExtension';
 import {getRuleSearchPoolVersion,subscribeRuleSearchPool} from '@/components/Rules/search/ruleSearchRegistry';
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { hasEnabledTemporaryRuleSources } from '@/components/Rules/data/temporaryRuleSession';
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import { formatGridNumber, snapWorldPointByMode } from '@/lib/gridSnapUtils';
 import {
   isRuleBlacklisted,
@@ -64,7 +64,7 @@ import {
   getRuleDisplayName,
   buildBuildingNameIndex,
   getRuleCategoryLabelWithParent,
-} from '@/components/Search/searchRuleTables';
+} from '@/components/Search/searchPresentation';
 import { loadRailNewIndex, passLineBooleanFilters, type RailNewIndex } from '@/components/Navigation/railNewIndex';
 
 

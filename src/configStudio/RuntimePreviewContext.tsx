@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { CategoryNode, ConfigPackageV3, GeometryKind, PreviewScenario, RenderColorBinding } from './types';
 import { resolveColor } from '../components/Rules/configRuntime/configPackageAdapter';
-import type { FeatureRecord } from '../components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '../components/Rules/rendering/renderPrimitives';
 import type { PreviewPin } from './conditionWitness';
 import { solveConditionWitness } from './conditionWitness';
 import { resolveGeometryProfile } from './runtime';

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getFormatDef, type FeatureKey, type DrawMode } from '../../src/components/Common/featureFormats';
+import { getFormatDef, type FeatureKey, type DrawMode } from '@/legacy/formats/featureFormats';
 import { createConfigPackageFromCurrentProject } from '../../src/configStudio/legacyProjectAdapter';
 import { getOpenRIAMapWorkflowConfigs } from '../../src/core/project/openriamapRiaWorkflows';
 import { validateWorkflowDefinition } from '../../src/configStudio/runtime';

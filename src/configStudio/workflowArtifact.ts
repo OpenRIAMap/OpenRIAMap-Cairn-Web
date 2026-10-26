@@ -25,7 +25,7 @@ export function prepareWorkflowArtifactImport(config:ConfigPackageV3,input:unkno
   for(const table of artifact.lookupTables??[]){const existing=config.lookupTables?.find(row=>row.id===table.id)??tables.find(row=>row.id===table.id);if(existing&&canonical(existing)!==canonical(table))throw Error(`对照表 ${table.id} 与当前配置冲突，未覆盖共享表。`);if(!existing)tables.push(structuredClone(table));}
   const migration=artifact.contractRevision>=13&&artifact.contractRevision<config.contractRevision?migrateContract(artifact,config.contractRevision,'workflow',config):undefined;
   const imported=structuredClone(migration?.document.workflow??artifact.workflow);
-  const candidate={...config,lookupTables:[...config.lookupTables??[],...tables],workflows:[imported]};
+  const candidate={...config,lookupTables:[...config.lookupTables??[],...tables],workflows:[...config.workflows.filter(workflow=>workflow.id!==imported.id),imported]};
   if(artifact.contractRevision>=11)remapDictionaryDependencies(candidate,imported,structuredClone(artifact.fieldDependencies??[]));
   const structure=validateNativeStructure(candidate);if(structure.length)throw Error(structure.map(i=>`${i.path}：${i.message}`).join('\n'));
   const ids=dictionaryTableIds(candidate,imported);if(tables.some(table=>!ids.has(table.id)))throw Error('工作流文件包含未引用的额外表格。');

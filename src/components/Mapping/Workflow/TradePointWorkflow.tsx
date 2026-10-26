@@ -2,9 +2,12 @@ import { applicationWorldCodeMap, applicationWorldPrefixMap, subscribeApplicatio
 // File: src/components/Mapping/Workflow/TradePointWorkflow.tsx
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { WorkflowComponentProps, WorldPoint } from './WorkflowHost';
-import * as wfRegistry from './workflowRegistryLabels';
+import {specializedFormLabels} from './specialized/formLabels';
 import AppButton from '@/components/ui/AppButton';
-import { EXT_VALUE_TYPE_TEXT, listCatalogClassOptions, type FeatureKey } from '@/components/Common/featureFormats';
+import { EXT_VALUE_TYPE_TEXT, type FeatureKey } from '@/components/Common/featurePrimitives';
+import {externalRolePaths} from '@/configStudio/externalBindings';
+import {workflowCategoryOptions} from '@/configStudio/workflowCategoryOptions';
+import {specializedReferenceSearch} from './specialized/referenceSearch';
 import WorkflowFeatureSearchSelect, { type SearchSelectConfig } from './WorkflowFeatureSearchSelect';
 
 const WF_KEY = 'trp_point';
@@ -228,6 +231,7 @@ function ensureTradeItem(): TradeItem {
 }
 
 export default function TradePointWorkflow(props: WorkflowComponentProps) {
+  const wfRegistry=specializedFormLabels(props.bridge);
   const { bridge } = props;
 
   const bridgeRef = useRef(bridge);
@@ -274,82 +278,20 @@ export default function TradePointWorkflow(props: WorkflowComponentProps) {
   // 关键修复点：绘制页不要 useMemo 缓存草稿点序，直接读取 bridge.getTempPoints()
   const draftPoint: WorldPoint[] = step === 'point' ? (bridge.getTempPoints?.() ?? []) : [];
 
-  const typeOptions = useMemo(() => listCatalogClassOptions({ classCode: 'TRP', geom: '点' }), []);
+  const captureContext=bridge.getCaptureContext?.();
+  const typeOptions=useMemo(()=>captureContext?workflowCategoryOptions(captureContext.config,externalRolePaths(captureContext.config,captureContext.workflow,'tradePoint')).map(option=>({...option,kind:option.path.kind??'',skind:option.path.skind??'',skind2:option.path.skind2??''})):[],[captureContext?.config,captureContext?.workflow]);
 
-  // ===== 可复用“粗检索选择”配置（仅作为参数块；运行期 worldId/数据池仍在组件内部） =====
-  const readFirst = (fi: any, keys: string[]) => {
-    for (const k of keys) {
-      const v = fi?.[k];
-      if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
-    }
-    return '';
-  };
-
-  const matchAllowed = (fi: any, keys: string[], allowed: string[]) => {
-    const v = readFirst(fi, keys);
-    if (!v) return false;
-    return allowed.includes(v);
-  };
-
-  const landUnitSearchCfg: SearchSelectConfig = useMemo(
-    () => ({
-      cacheKey: 'trp_land',
-      filter: (fi) => fi?.Class==='NGF'&&(fi.Kind==='LAD'||fi.Kind==='WTR'&&(fi.SKind??fi.Skind)==='LWB'||fi.Kind==='LIS'&&(fi.SKind??fi.Skind)==='LAG'&&['PEN','IST'].includes(fi.SKind2??fi.Skind2))||
-        fi?.Class === 'ISG' &&
-        matchAllowed(fi, ['Kind'], ['NGF']) &&
-        matchAllowed(fi, ['SKind'], ['LAD', 'WTB']),
-      // 新规范：所有要素 self 主键/主名均为 ID / Name
-      getId: (fi) => readFirst(fi, ['ID']),
-      getName: (fi) => readFirst(fi, ['Name']),
-      formatOption: (name, id) => `${name}(${id})`,
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
-
-  const uadmLandmarkSearchCfg: SearchSelectConfig = useMemo(
-    () => ({
-      cacheKey: 'trp_uadm',
-      filter: (fi) => fi?.Class==='ADM'&&fi.Kind==='DBP'&&(fi.SKind??fi.Skind)==='SHR'||
-        fi?.Class === 'ISP' &&
-        matchAllowed(fi, ['Kind'], ['ADM']) &&
-        matchAllowed(fi, ['SKind'], ['DBP']) &&
-        matchAllowed(fi, ['SKind2'], ['SHR']),
-      getId: (fi) => readFirst(fi, ['ID']),
-      getName: (fi) => readFirst(fi, ['Name']),
-      formatOption: (name, id) => `${name}(${id})`,
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
-
-  const uadmGSearchCfg: SearchSelectConfig = useMemo(
-    () => ({
-      cacheKey: 'trp_uadmg',
-      filter: (fi) => fi?.Class==='ADM'&&fi.Kind==='DBZ'||
-        fi?.Class === 'ISG' &&
-        matchAllowed(fi, ['Kind'], ['ADM']) &&
-        matchAllowed(fi, ['SKind','Skind'], ['DBZ', 'PLZ']),
-      getId: (fi) => readFirst(fi, ['ID']),
-      getName: (fi) => readFirst(fi, ['Name']),
-      formatOption: (name, id) => `${name}(${id})`,
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
-  const selectedType = useMemo(() => {
-    const [k, s] = String(info.typeKey ?? '').split('|');
-    const kind = String(k ?? '').trim();
-    const skind = String(s ?? '').trim();
-    return typeOptions.find((o) => o.kind === kind && o.skind === skind) ?? null;
-  }, [info.typeKey, typeOptions]);
+  const landUnitSearchCfg:SearchSelectConfig=useMemo(()=>specializedReferenceSearch(bridge,'landUnit'),[captureContext?.config,captureContext?.workflow]);
+  const uadmLandmarkSearchCfg:SearchSelectConfig=useMemo(()=>specializedReferenceSearch(bridge,'settlementPoint'),[captureContext?.config,captureContext?.workflow]);
+  const uadmGSearchCfg:SearchSelectConfig=useMemo(()=>specializedReferenceSearch(bridge,'settlementArea'),[captureContext?.config,captureContext?.workflow]);
+  const selectedType=useMemo(()=>typeOptions.find(option=>option.value===info.typeKey)??null,[info.typeKey,typeOptions]);
 
   const abbrNormalized = useMemo(() => normalizeAbbr(info.abbr), [info.abbr]);
 
   const canGoNextFromCreator = useMemo(() => nonEmpty(creatorId), [creatorId]);
   const canGoNextFromInfo = useMemo(() => {
-    return nonEmpty(creatorId) && nonEmpty(info.typeKey) && nonEmpty(info.name) && nonEmpty(abbrNormalized);
-  }, [creatorId, info.typeKey, info.name, abbrNormalized]);
+    return nonEmpty(creatorId) && Boolean(selectedType) && nonEmpty(info.name) && nonEmpty(abbrNormalized);
+  }, [creatorId, selectedType, info.name, abbrNormalized]);
 
   const canGoNextFromTrade = useMemo(() => {
     if (!canGoNextFromInfo) return false;
@@ -475,7 +417,8 @@ export default function TradePointWorkflow(props: WorkflowComponentProps) {
       });
 
       const res = bridgeRef.current.commitFeature({
-        subType: '交易点' as FeatureKey,
+        role: 'tradePoint', subType: '交易点' as FeatureKey,
+        classification:selectedType?.path,
         mode: 'point',
         coords: [{ x: p0.x, z: p0.z, y: p0.y }],
         editorId: creatorId.trim(),
@@ -488,7 +431,7 @@ export default function TradePointWorkflow(props: WorkflowComponentProps) {
           Name: String(info.name ?? '').trim(),
           Kind: kind,
           SKind: skind,
-          SKind2: '',
+          SKind2: selectedType?.skind2??'',
           Situation: String(info.situation ?? '').trim(),
           Interaction: String(info.interaction ?? '').trim(),
           elevation: elevation ?? '',
@@ -561,8 +504,8 @@ export default function TradePointWorkflow(props: WorkflowComponentProps) {
             >
               <option value="">请选择...</option>
               {typeOptions.map((o) => (
-                <option key={`${o.kind}|${o.skind}`} value={`${o.kind}|${o.skind}`}>
-                  {o.name}（{o.kind}/{o.skind}）
+                <option key={o.key} value={o.value}>
+                  {o.label}
                 </option>
               ))}
             </select>

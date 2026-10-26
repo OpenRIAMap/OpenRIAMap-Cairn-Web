@@ -1,4 +1,4 @@
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import { resolvePictureEntriesForFeature, type FeaturePictureEntry } from '@/components/Rules/cardrules/pictureRules';
 
 export type MinimalFeatureEditPackage = {

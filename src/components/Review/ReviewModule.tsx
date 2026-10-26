@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { checkLocalReviewDelta, type LocalFeatureIdentity } from './localDeltaPrecheck';
 import { materializeRiaReviewPackageForWorkspace } from '@/components/Mapping/core/relayPackageParser';
 import { loadRuleItemsForWorld, normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
-import { pickIdFieldValue } from '@/components/Rules/rendering/renderRules';
+import { pickIdFieldValue } from '@/components/Rules/rendering/renderPrimitives';
 import { createReviewItemFromParsedRelayPackage } from './reviewInboxReader';
 import { openriamapGithubReviewAuth } from './openriamapReviewAuth';
 import { createRiaReviewSubmissionAdapter, requestRiaReviewRevisionDownload } from './riaReviewSubmissionAdapter';

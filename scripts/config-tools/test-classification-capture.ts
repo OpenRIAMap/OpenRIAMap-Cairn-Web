@@ -42,8 +42,8 @@ let committed:WorkflowCommitArgs|undefined,target:ClassificationPath|undefined,p
 const bridge=bindExternalCaptureBridge({commitFeature:(args:WorkflowCommitArgs)=>{committed=args;return {ok:true,layerId:1};},setDrawingTarget:(p:ClassificationPath|undefined,allow:boolean|undefined)=>{target=p;parts=allow;}} as WorkflowBridge,config,switched);
 bridge.setCaptureRole!('PFB');assert.deepEqual(target,{class:'RIL',kind:'PFB'});assert.equal(parts,true);
 bridge.setCaptureRole!('STB');assert.equal(parts,false);
-assert.equal(bridge.commitFeature({subType:'车站建筑',mode:'polygon',coords:[],geometry}).ok,false);
-assert.equal(bridge.commitFeature({subType:'站台轮廓',mode:'polygon',coords:[],geometry}).ok,true);assert.equal(committed!.geometry,geometry);assert.deepEqual(committed!.classification,{class:'RIL',kind:'PFB'});
+assert.equal(bridge.commitFeature({role:'stationBuilding',subType:'车站建筑',mode:'polygon',coords:[],geometry}).ok,false);
+assert.equal(bridge.commitFeature({role:'platformFootprint',subType:'站台轮廓',mode:'polygon',coords:[],geometry}).ok,true);assert.equal(committed!.geometry,geometry);assert.deepEqual(committed!.classification,{class:'RIL',kind:'PFB'});
 const feature=(record:Record<string,unknown>):FeatureRecord=>({uid:String(record.ID),type:'Polygon',featureInfo:record,meta:buildFeatureMeta(record,String(record.Class),'Polygon')}) as FeatureRecord;
 const line=feature({Class:'RIL',Kind:'RLE',ID:'line-a',color:'#12ab34'}),platform=feature({Class:'RIL',Kind:'PLF',ID:'plf-a',lines:[{ID:'line-a'}]}),station=feature({Class:'RIL',Kind:'STA',ID:'sta-a',platforms:[{ID:'plf-a'}]}),decoy=feature({Class:'RIL',Kind:'STB',ID:'decoy',color:'#ff0000'});
 const selectors={lines:[{class:'RIL',kind:'RLE'}],platforms:[{class:'RIL',kind:'PLF'}],stationAreas:[{class:'RIL',kind:'STA'}],stations:[{class:'RIL',kind:'STB'}]};

@@ -1,0 +1,33 @@
+{
+  "source": {
+    "releaseId": "config-cc7c0fa6-52fc-4851-8a94-d5612dc02fde",
+    "packageId": "cairnmap-config-v32-semantic",
+    "projectId": "openriamap-ria",
+    "revision": 91,
+    "contractRevision": 15,
+    "configSha256": "44e87b2a96db47e7b2b8abaf1bd19f1e1c3bc54fb501bc0df6a28c18bb756d07",
+    "manifestSha256": "5b93f8938ce5d6916de02d764135f8b96b3518741d4eaa3d1c9a8ee6e7dfd493",
+    "configUrl": "/configuration/releases/44e87b2a96db47e7b2b8abaf1bd19f1e1c3bc54fb501bc0df6a28c18bb756d07/config.json"
+  },
+  "candidate": {
+    "contractRevision": 16,
+    "revision": 91,
+    "nodes": 100,
+    "workflows": 31,
+    "unchangedComposed": true,
+    "configSha256": "69bab69175de91dbc2f8e24929296a0d6c8767d3bc217f98fd4342af42844545",
+    "archiveSha256": "3e9240f745f7b0b9f0114ef786488138d12832d2222a802e26a68c5c51433974",
+    "migrationChanges": 17
+  },
+  "rulesVersion": "cairnmap-c16-production-1",
+  "kernelSha256": "5563b2f3ed16bc0d4a6a56b1358142ec4e60920807a4e9006299ba0072240507",
+  "pipelineTests": 210,
+  "nativeRuntimeInputs": 2200,
+  "retiredRegistryInputs": [],
+  "performanceExistingFailures": [
+    "lines600",
+    "mixed1200",
+    "labelsMixed1200"
+  ],
+  "productionPublished": false
+}

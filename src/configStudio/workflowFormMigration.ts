@@ -1,4 +1,4 @@
-import { WORKFLOW_EDITOR_SCHEMAS, projectRegistryScene } from '@/components/Common/workflowEditorRegistry';
+import historicalScenes from './migrationData/editor-scenes.json';
 import type { WorkflowDefinition, WorkflowControl } from './types';
 
 /** Imported user order is retained. Only a newly generated factory opts into V1 ordering. */
@@ -30,9 +30,9 @@ export function orderFactoryWorkflowForms(value:WorkflowDefinition):WorkflowDefi
 
 export function migrateUnmodifiedFactoryOrder(workflow:WorkflowDefinition):WorkflowDefinition {
   const schemaKey=String(workflow.legacy?.source?.schemaKey??'');
-  const schema=WORKFLOW_EDITOR_SCHEMAS.find(schema=>schema.schemaKey===schemaKey);
+  const source=historicalScenes.find(item=>item.schema.schemaKey===schemaKey),schema=source?.schema;
   const forms=workflow.steps.filter(step=>step.kind==='form');if(!schema||forms.length!==1)return workflow;
-  const projected=projectRegistryScene(schema,'workflow');
+  const projected=source!.workflow;
   const expected=[...(schema.idField.workflow?.visible?[projected.idField.key]:[]),...projected.fields.map(field=>field.key),...projected.auxInputs.map(field=>field.key),...projected.groups.map(group=>group.key)];
   const actual=(forms[0].controls??[]).filter(control=>!control.systemManaged).map(control=>control.id.startsWith(`${schemaKey}-`)&&control.slot?control.id.slice(schemaKey.length+1,-control.slot.length-1):'');
   return JSON.stringify(actual)===JSON.stringify(expected)?orderFactoryWorkflowForms(workflow):workflow;

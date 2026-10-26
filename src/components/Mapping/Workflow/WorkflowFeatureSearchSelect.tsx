@@ -14,6 +14,7 @@ const stageLabels: Record<string,string> = { 'world-version':'正在确认数据
 export default function WorkflowFeatureSearchSelect({ bridge, label, value, onChange, placeholder, config, disabled }: Props) {
   const worldId = normalizeRuleSourceWorldId(bridge.getCurrentWorldId());
   const dataset = useRuleDataStore(state=>state.datasets[worldId]);
+  const loadedDatasets=useRuleDataStore(state=>state.datasets);
   // Subscribe to source changes, but depend on its stable identity below.
   useRuleDataStore(state=>state.dataSource);
   const source = getRuleDataSourceSnapshot(worldId), sourceKey = ruleDatasetSourceKey(worldId,source);
@@ -29,6 +30,7 @@ export default function WorkflowFeatureSearchSelect({ bridge, label, value, onCh
   const [visible,setVisible] = useState(false), [open,setOpen] = useState(false), [requested,setRequested] = useState(false), [retry,setRetry] = useState(0);
   useEffect(()=>()=>{clearTimeout(blurTimer.current);},[]);
   useEffect(()=>{
+    if(config.error){setPool([]);setStatus('error');setError(config.error);return;}
     if (disabled) {setPool([]);setStatus('idle');setVisible(false);return;}
     if (!requested) return;
     const abort = new AbortController();
@@ -44,16 +46,20 @@ export default function WorkflowFeatureSearchSelect({ bridge, label, value, onCh
       abort.signal.throwIfAborted();
       if (ruleDatasetSourceKey(worldId,getRuleDataSourceSnapshot(worldId))!==sourceKey) throw Error('数据来源已改变，请重试。');
       progress('正在合并图层管理要素和删除标记');
-      const list=mergeWorkflowSearchPool(loaded.features,snapshot.committed,snapshot.deleted,config,worldId);
+      const records=config.worldScope==='loadedWorlds'?[...Object.values(loadedDatasets).filter(item=>datasetMatchesSource(item,item.worldId,getRuleDataSourceSnapshot(item.worldId))).flatMap(item=>item.features),...loaded.features]:loaded.features;
+      const list=mergeWorkflowSearchPool(records,snapshot.committed,snapshot.deleted,config,worldId);
       if(active){setPool(list);setStatus('ready');}
     })().catch(reason=>{if(active){setPool([]);setStatus('error');setError(reason instanceof Error?reason.message:String(reason));}}).finally(()=>{clearTimeout(hint);clearTimeout(timeout);if(active)setVisible(false);});
     const cancel=()=>{active=false;clearTimeout(hint);clearTimeout(timeout);abort.abort(Error('已取消搜索等待。'));};
     stop.current=cancel; return cancel;
-  },[requested,disabled,worldId,sourceKey,dataset,overlayKey,config,retry]);
-  const suggestions=useMemo(()=>filterWorkflowSearchOptions(pool,String(value??''),50),[pool,value]);
+  },[requested,disabled,worldId,sourceKey,dataset,loadedDatasets,overlayKey,config,retry]);
+  const [query,setQuery]=useState(String(value??''));
+  useEffect(()=>{const timer=setTimeout(()=>setQuery(String(value??'')),config.debounceMs??0);return()=>clearTimeout(timer);},[value,config.debounceMs]);
+  const suggestions=useMemo(()=>filterWorkflowSearchOptions(pool,query,50,config),[pool,query,config]);
   const cancel=()=>{stop.current?.();setRequested(false);setVisible(false);setStatus('cancelled');setPool([]);};
   const restart=()=>{setRequested(true);setRetry(current=>current+1);setOpen(true);};
   return <div className="space-y-1">
+    {config.error?<p role="alert" className="text-xs text-rose-700">{config.error}</p>:null}
     <div className="text-xs opacity-80">{label}</div>
     <input className="w-full border p-1 rounded text-sm" value={value??''} placeholder={placeholder} disabled={disabled}
       onChange={event=>{onChange(event.target.value);setRequested(true);setOpen(true);}}

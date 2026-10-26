@@ -32,6 +32,14 @@ class AuthoringBrowser(Browser):
                 raise RuntimeError(result['error'])
             return result.get('result', {})
 
+# Each standalone suite owns a fresh local page, including when a previous
+# failed suite left a beforeunload dialog open.
+import urllib.request
+endpoint='http://127.0.0.1:'+os.environ.get('CAIRNMAP_CDP_PORT','9238')
+opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+fresh=json.load(opener.open(urllib.request.Request(endpoint+'/json/new?about:blank',method='PUT')))
+for page in json.load(opener.open(endpoint+'/json')):
+    if page['type']=='page' and page['id']!=fresh['id'] and (page['url']=='about:blank' or page['url'].startswith(APP_URL)):opener.open(endpoint+'/json/close/'+page['id']).read()
 b = AuthoringBrowser()
 checks = []
 downloads = OUT.parent / 'category-downloads' / str(time.time_ns())
@@ -60,7 +68,10 @@ def new_node(code, geometry=None, template=None):
     value('新分类名称 zh', 'P0 测试 ' + code)
     if template:
         value('初始化状态', 'template')
-        value('分类模板来源 Class', template)
+        options=b.evaluate("[...document.querySelector('select[aria-label=\"分类模板来源 Class\"]').options].map(o=>o.value)")
+        if template not in options and template in ('PLF','RLE'):
+            value('分类模板来源 Class','RIL');value('分类模板来源 Kind',template)
+        else:value('分类模板来源 Class', template)
     elif geometry is not None:
         value('初始化状态', 'blank')
         value('新分类几何', geometry)
@@ -192,7 +203,7 @@ try:
     assert state()['active'] == baseline
     checks.append('referenced-class deletion cannot pass final save; workflow deletion is isolated and reversible')
     b.click('要素设计')
-    for level,code in [('Class','ISL'),('Kind','NGF'),('SKind','BOD')]:
+    for level,code in ([('Class','ISL'),('Kind','NGF'),('SKind','BOD')] if any(n['path']=={'class':'ISL','kind':'NGF','skind':'BOD'} for n in baseline['nodes']) else [('Class','NGF'),('Kind','LIS'),('SKind','LAL')]):
         value('编辑分类 '+level,code)
     b.click('新增分类')
     value('新分类代码','STYLE_ONLY')
@@ -216,11 +227,11 @@ try:
     b.click('工作流设计')
     value('已保存工作流','v3-isg_ngf_lad')
     b.click('读取')
-    for level,code in [('Class','ISG'),('Kind','NGF'),('SKind','LIS')]:
+    for level,code in ([('Class','ISG'),('Kind','NGF'),('SKind','LIS')] if any(n['path']=={'class':'ISG','kind':'NGF','skind':'LIS'} for n in baseline['nodes']) else [('Class','NGF'),('Kind','LIS'),('SKind','LAG')]):
         value('分类 1 '+level,code)
     b.click('核验')
     assert '编辑作用范围' in b.evaluate('document.body.innerText')
-    for level,code in [('Class','ISG'),('Kind','NGF'),('SKind','LIS')]:
+    for level,code in ([('Class','ISG'),('Kind','NGF'),('SKind','LIS')] if any(n['path']=={'class':'ISG','kind':'NGF','skind':'LIS'} for n in baseline['nodes']) else [('Class','NGF'),('Kind','LIS'),('SKind','LAG')]):
         value('编辑作用范围 '+level,code)
     b.click('核验')
     assert '工作流核验通过' in b.evaluate('document.body.innerText')

@@ -14,6 +14,7 @@ export function configPreflightStats(){return {packageValidations:packageValidat
 import { validateApplication } from '../core/project/applicationValidation';
 import { labelTemplateTokens, parseLabelTemplate } from './labelTemplate';
 import {validateExternalEditBinding} from './externalEditRegistry';
+import {externalBindingIssues} from './externalBindings';
 import {testWorkflowEditConversion} from './workflowEditCommit';
 import {compileRenderFormula} from './renderBooleanFormula';
 import {resolveMappedColor} from './renderScalar';
@@ -982,6 +983,10 @@ function validateWorkflowValueCondition(condition: import('./types').WorkflowVal
 }
 
 function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3, issues: ConfigValidationIssue[]): void {
+  if(config.contractRevision>=16&&workflow.mode==='external'){
+    const declared={...config,workflows:config.workflows.some(row=>row.id===workflow.id)?config.workflows.map(row=>row.id===workflow.id?workflow:row):[...config.workflows,workflow]};
+    for(const error of externalBindingIssues(declared).filter(error=>error.path.startsWith('workflows/'+workflow.id+'/')))issue(issues,'error','external-binding-invalid',error.path,error.message);
+  }
   for (const step of workflow.steps) for (const control of step.controls ?? []) {
     const path = `workflows/${workflow.id}/steps/${step.id}/controls/${control.id}`;
     for (const message of fieldImportErrors(config,workflow,control)) issue(issues,'error','field-import-conflict',path,message);
@@ -1000,6 +1005,18 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
   };
   checkIds(workflow.steps, '页面'); checkIds(workflow.outputs, '输出'); checkIds(controlsFor(workflow), '控件');
   if (workflow.mode === 'external') {
+    if(config.contractRevision>=16){
+      if(workflow.steps.length||workflow.outputs.length)issue(issues,'error','external-workflow-invalid',base,'专用成品不能同时包含普通组装步骤。');
+      if(workflow.external?.purpose==='edit'){
+        for(const message of validateExternalEditBinding(workflow))issue(issues,'error','external-editor-invalid',base,message);
+        const scope=workflow.editor?.scope??workflow.target;
+        if(!scope||!hasCategoryNode(config,scope))issue(issues,'error','external-editor-scope-invalid',base,'外部编辑范围不存在。');
+      }else{
+        const components={'railway-integrated':'railwayWorkflow','station-integrated':'stationWorkflow','trp-integrated':'tradePointWorkflow'};
+        if(!workflow.external||components[workflow.external.reason]!==workflow.external.componentKey||workflow.external.purpose&&workflow.external.purpose!=='capture'||workflow.editor?.enabled)issue(issues,'error','external-workflow-invalid',base,'外部采集组件、用途或登记理由不符。');
+      }
+      return;
+    }
     if(workflow.external?.purpose==='edit') {
       for(const message of validateExternalEditBinding(workflow))issue(issues,'error','external-editor-invalid',base,message);
       const scope=workflow.editor?.scope??workflow.target;
@@ -1017,7 +1034,7 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
     if(workflow.editor?.enabled)issue(issues,'error','external-capture-editor-forbidden',base,'外部采集方案不能充当编辑器，请选择独立编辑成品。');
     if(workflow.external?.purpose!==undefined&&workflow.external.purpose!=='capture')issue(issues,'error','external-purpose-invalid',base,'外部用途无效。');
     const allowedComponents = { 'railway-integrated': 'railwayWorkflow', 'station-integrated': 'stationWorkflow', 'trp-integrated': 'tradePointWorkflow' } as const;
-    if (!workflow.external?.componentKey || !EXTERNAL_WORKFLOW_REASONS.has(workflow.external.reason) || allowedComponents[workflow.external.reason as keyof typeof allowedComponents] !== workflow.external.componentKey || workflow.steps.length || workflow.outputs.length || !workflow.external.coveredClassifications?.length) issue(issues, 'error', 'external-workflow-invalid', base, '外部整体工作流必须是铁路一体、车站一体或 TRP 一体的受控成品，且必须声明受控分类。');
+    if (!workflow.external?.componentKey || !EXTERNAL_WORKFLOW_REASONS.has(workflow.external.reason) || allowedComponents[workflow.external.reason as keyof typeof allowedComponents] !== workflow.external.componentKey || workflow.steps.length || workflow.outputs.length || !(config.contractRevision>=16?workflow.external.roleBindings?.length:workflow.external.coveredClassifications?.length)) issue(issues, 'error', 'external-workflow-invalid', base, '外部整体工作流必须为已登记的受控成品，且必须声明有效输出角色。');
     return;
   }
   if (!workflow.outputs.length) issue(issues, 'error', 'workflow-output-required', base, '组合式工作流至少需要一个输出分类。');
@@ -1314,6 +1331,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   const issues: ConfigValidationIssue[] = [];
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: false, createdAt: new Date().toISOString(), issues: structure.map(item => ({ severity: 'error', code: 'native-contract-structure-invalid', ...item })) };
+  for(const error of externalBindingIssues(config).filter(error=>error.path.startsWith('nodes/')))issue(issues,'error','external-reference-invalid',error.path,error.message);
   if(config.resources){
     if(config.contractRevision<12)issue(issues,'error','icon-resources-revision','resources','图标资源能力需要契约 c12。');
     const seen=new Set<string>();for(const item of config.resources.iconLibraries){if(seen.has(item.library))issue(issues,'error','icon-resource-duplicate','resources','同一图库只能声明一次。');seen.add(item.library);if(item.library!==ICON_LIBRARY.library||item.version!==ICON_LIBRARY.version||item.manifestSha256!==ICON_LIBRARY.manifestSha256)issue(issues,'error','icon-resource-unsupported','resources','图库版本或资源摘要不在当前支持的固定清单中。');}

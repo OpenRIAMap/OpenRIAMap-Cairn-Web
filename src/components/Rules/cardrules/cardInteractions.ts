@@ -1,4 +1,5 @@
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
+import type {WorkflowClassificationSelector} from '@/configStudio/types';
 
 /** 外部网页超链接（新标签打开） */
 export type CardExternalLinkValue = {
@@ -9,6 +10,7 @@ export type CardExternalLinkValue = {
 
 /** 信息卡 ID 跳转的目标匹配约束。 */
 export type CardFeatureLinkTarget = {
+  classificationGroup?: {selectors:WorkflowClassificationSelector[]};
   structureRole?:'main';
   /** 目标范围约束。 */
   classCode?: string;

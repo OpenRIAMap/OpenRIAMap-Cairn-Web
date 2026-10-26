@@ -1,5 +1,5 @@
 import type { FeatureStore } from '@/components/Rules/data/featureStore';
-import type { FeatureRecord, FloorViewConfig } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord, FloorViewConfig } from '@/components/Rules/rendering/renderPrimitives';
 import { formatFloorDisplayLabel } from '@/components/Rules/rendering/order/floorDisplayOrder';
 
 /**

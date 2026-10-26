@@ -1,4 +1,6 @@
-import {SCHEMA_TRP_TRADE,projectRegistryScene,type ProjectedRegistryScene} from '../components/Common/workflowEditorRegistry';
+import type {ProjectedRegistryScene} from '../components/Common/formProjection';
+import {specializedFormView} from '../components/Mapping/Workflow/specialized/registration';
+import {externalRolePaths} from './externalBindings';
 import {parseFeatureInfoByRegistry,mergeEditorDraftIntoFeatureInfo,CLASSIFICATION_DRAFT_KEY,type WorkflowEditorDraftValues,type WorkflowEditorUnparsedEntry} from '../components/Common/workflowEditorParser';
 import {annotationEqual,type WorkflowAnnotations} from './workflowAnnotations';
 import {residualAnnotations,buildWorkflowEditRecord,recordClassification,assertEditIdentity,type WorkflowEditPlan} from './workflowEditing';
@@ -12,10 +14,11 @@ import {readMultipartGeometry,validateMultipartGeometry,withCanonicalMultipartGe
 export type TrpExternalEditSession={original:Record<string,unknown>;view:ProjectedRegistryScene;values:WorkflowEditorDraftValues;initialValues:WorkflowEditorDraftValues;unparsed:WorkflowEditorUnparsedEntry[];initialUnparsed:WorkflowEditorUnparsedEntry[];annotations:WorkflowAnnotations;initialAnnotations:WorkflowAnnotations;annotationPlan:WorkflowEditPlan;originalGeometry:MultipartGeometry};
 export function createTrpExternalEditSession(config:ConfigPackageV3,workflow:WorkflowDefinition,initialRecord:Record<string,unknown>):TrpExternalEditSession {
  const errors=validateExternalEditBinding(workflow);if(errors.length)throw Error(errors.join('\n'));
- const path=recordClassification(initialRecord),scope=workflow.editor!.scope??workflow.target!;if(!pathMatchesScope(path,scope)||!hasCategoryNode(config,path))throw Error('记录不属于登记的 TRP 编辑范围。');
+ const path=recordClassification(initialRecord),scope=workflow.editor!.scope??workflow.target!;if(!pathMatchesScope(path,scope)||!hasCategoryNode(config,path)||!externalRolePaths(config,workflow,'tradePoint').some(target=>JSON.stringify(target)===JSON.stringify(path)))throw Error('记录不属于登记的 TRP 编辑范围。');
  const geometry=readMultipartGeometry(initialRecord,'Point');if(geometry.error||!geometry.geometry)throw Error(geometry.error??'TRP 缺少点几何。');
- const view=projectRegistryScene(SCHEMA_TRP_TRADE,'editor'),original=structuredClone(initialRecord),parsed=parseFeatureInfoByRegistry(original,view),annotationControl={id:'trp-external-edit-annotations',kind:'tagsExtensions' as const,columns:1 as const,systemManaged:true,label:{zh:'标签与扩展',en:''},tagsExtensions:{tagsEnabled:true,extensionsEnabled:true}};
+ const view=specializedFormView(config,workflow,path,'tradePoint'),original=structuredClone(initialRecord),parsed=parseFeatureInfoByRegistry(original,view),annotationControl={id:'trp-external-edit-annotations',kind:'tagsExtensions' as const,columns:1 as const,systemManaged:true,label:{zh:'标签与扩展',en:''},tagsExtensions:{tagsEnabled:true,extensionsEnabled:true}};
  const container:WorkflowDefinition={id:'trp-edit-annotations',label:{zh:'标签与扩展',en:''},mode:'composed',steps:[{id:'annotations',kind:'form',label:{zh:'',en:''},controls:[annotationControl]}],outputs:[{id:'trp-edit-output',classification:scope,geometry:{selected:'Point'},assignments:view.fields.map(field=>({id:field.path,target:field.path,expression:'null'}))}]};
+ parsed.values[CLASSIFICATION_DRAFT_KEY]=[path.kind??'',path.skind??'',path.skind2??''].join('||');
  const annotationPlan:WorkflowEditPlan={workflow:container,scope,classifications:[path],controls:[annotationControl],removed:[],bindings:[]},annotations=residualAnnotations(annotationPlan,original);
  return {original,view,values:parsed.values,initialValues:structuredClone(parsed.values),unparsed:parsed.unparsedEntries.filter(entry=>!entry.path.startsWith('tags.')&&!entry.path.startsWith('extensions.')),initialUnparsed:structuredClone(parsed.unparsedEntries),annotations,initialAnnotations:structuredClone(annotations),annotationPlan,originalGeometry:geometry.geometry};
 }
@@ -29,7 +32,10 @@ export function prepareTrpExternalEdit(config:ConfigPackageV3,workflow:WorkflowD
  for(const entry of session.unparsed)if(!annotationEqual(entry.value,session.initialUnparsed.find(item=>item.path===entry.path)?.value)){const parts=entry.path.split('.');if(parts.some(p=>['__proto__','prototype','constructor'].includes(p)))throw Error('危险未解析字段路径。');let node=record;for(const key of parts.slice(0,-1)){node[key]??={};if(!node[key]||typeof node[key]!=='object'||Array.isArray(node[key]))throw Error('未解析字段路径发生冲突。');node=node[key] as Record<string,unknown>;}node[parts[parts.length-1]]=structuredClone(entry.value);}
  const control=session.annotationPlan.controls[0],annotationDraft={slots:{EDIT_ID:record.ID,[control.id]:session.annotations},initialSlots:{EDIT_ID:record.ID,[control.id]:session.initialAnnotations},classification:recordClassification(record)};
  record=buildWorkflowEditRecord(session.annotationPlan,record,annotationDraft);
- const path=recordClassification(record),scope=workflow.editor!.scope??workflow.target!;
+ const scope=workflow.editor!.scope??workflow.target!;
+ if(classificationChanged){const [kind,skind,skind2]=String(session.values[CLASSIFICATION_DRAFT_KEY]??'').split('||');for(const key of ['Kind','SKind','SKind2','Skind','Skind2'])delete record[key];record.Class=scope.class;if(kind)record.Kind=kind;if(skind)record.SKind=skind;if(skind2)record.SKind2=skind2;}
+ const path=recordClassification(record);
+ if(!externalRolePaths(config,workflow,'tradePoint').some(target=>JSON.stringify(target)===JSON.stringify(path)))throw Error('请选择专用角色绑定内的分类。');
  if(!pathMatchesScope(path,scope)||!recordClassificationEligible(config,path,'Point'))throw Error('请选择编辑范围内的最终 TRP 分类。');
  assertEditIdentity(record,session.original,world,others);record=withCanonicalMultipartGeometry(omitOptionalFieldValues(config,path,record),geometry);
  const output={id:'external-trp-edit',...(config.contractRevision>=15?{classificationGroup:{selectors:[{id:'edit',mode:'self' as const,path}]}}:{classification:scope}),geometry:{selected:'Point' as const},assignments:[]};const issues=validateV3WorkflowRecords(config,{...workflow,mode:'composed',outputs:[output]},[{outputId:output.id,classification:path,geometry:'Point',record}]);if(issues.length)throw Error(issues.map(i=>i.message).join('\n'));

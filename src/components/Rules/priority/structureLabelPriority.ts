@@ -1,4 +1,4 @@
-import type { FeatureRecord } from "@/components/Rules/rendering/renderRules";
+import type { FeatureRecord } from "@/components/Rules/rendering/renderPrimitives";
 
 /**
  * RB_SLU_SF1: structure label priority list.

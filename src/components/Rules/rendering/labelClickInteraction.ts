@@ -1,7 +1,7 @@
 import * as L from 'leaflet';
 import type { InteractionVisual } from '@/configStudio/types';
 import type { DynmapProjection } from '@/lib/DynmapProjection';
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import { makeLabelDivIcon, type LabelPlacement, type LabelStyleKey, type LabelStyleKeyInput } from '@/components/Rules/rendering/labelStyles';
 
 export type HighlightStyleKey = 'dash' | 'dash-strong' | 'solid' | 'nav-outline';

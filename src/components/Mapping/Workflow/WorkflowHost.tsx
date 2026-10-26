@@ -2,9 +2,9 @@
 import { useEffect, useMemo, useRef, type ComponentType } from 'react';
 import * as L from 'leaflet';
 
-import type { FeatureKey, DrawMode } from '@/components/Common/featureFormats';
+import type { FeatureKey, DrawMode } from '@/components/Common/featurePrimitives';
 import AppButton from '@/components/ui/AppButton';
-import type {ClassificationPath,ConfigPackageV3} from '@/configStudio/types';
+import type {ClassificationPath,ConfigPackageV3,ExternalRole,WorkflowDefinition} from '@/configStudio/types';
 import type {MultipartGeometry} from '@/core/geometry/multipartGeometry';
 import type {RailCaptureRole} from '@/configStudio/externalCapturePaths';
 
@@ -40,6 +40,8 @@ export type WorkflowPreviewStyle = {
 };
 
 export type WorkflowCommitArgs = {
+  role?: ExternalRole;
+  workflowDefinition?: WorkflowDefinition;
   subType: FeatureKey;
   mode: DrawMode;
   coords: WorldPoint[];
@@ -59,6 +61,7 @@ export type WorkflowCommitResult =
   | { ok: false; error: string };
 
 export type WorkflowBridge = {
+  getCaptureContext?: () => {config:ConfigPackageV3;workflow:WorkflowDefinition};
   /** 当前世界（用于 LineID world 字母转换） */
   getCurrentWorldId: () => string;
 

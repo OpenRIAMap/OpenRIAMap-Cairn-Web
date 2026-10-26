@@ -9,7 +9,7 @@ from c15_render_acceptance import Bidi
 class Driver:
  def __init__(self,firefox=False):
   if not firefox:
-   port=os.environ['CAIRNMAP_CDP_PORT'];assert port in ('9502','9524') and APP_URL.startswith('http://127.0.0.1:')
+   port=os.environ['CAIRNMAP_CDP_PORT'];assert port in ('9502','9524','9338') and APP_URL.startswith('http://127.0.0.1:')
    opener=build_opener(ProxyHandler({}));endpoint='http://127.0.0.1:'+port
    page=json.loads(opener.open(Request(endpoint+'/json/new?about:blank',method='PUT')).read())
    for old in json.loads(opener.open(endpoint+'/json').read()):

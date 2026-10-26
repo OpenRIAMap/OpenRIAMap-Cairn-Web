@@ -1,4 +1,4 @@
-import type { FeatureRecord } from './renderRules';
+import type { FeatureRecord } from './renderPrimitives';
 import { flattenMultipartCoordinates, type MultipartGeometry } from '@/core/geometry/multipartGeometry';
 
 /** Keep source identity/card data, but give anchor/layout one component geometry. */

@@ -1,0 +1,74 @@
+{
+  "lines600": {
+    "baseline": {
+      "createMedian": 49.60000002384186,
+      "createP95": 58.5,
+      "updateP95": 56.80000001192093
+    },
+    "upgrade": {
+      "createMedian": 41.90000003576279,
+      "createP95": 50.09999996423721,
+      "updateP95": 55.40000003576279
+    }
+  },
+  "symbols600": {
+    "baseline": {
+      "createMedian": 50.19999998807907,
+      "createP95": 50.89999997615814,
+      "updateP95": 11.300000011920929
+    },
+    "upgrade": {
+      "createMedian": 33.69999998807907,
+      "createP95": 48.10000002384186,
+      "updateP95": 13.899999976158142
+    }
+  },
+  "icons600": {
+    "baseline": {
+      "createMedian": 33.59999996423721,
+      "createP95": 36.700000047683716,
+      "updateP95": 10.599999964237213
+    },
+    "upgrade": {
+      "createMedian": 27.899999976158142,
+      "createP95": 35.69999998807907,
+      "updateP95": 11.599999964237213
+    }
+  },
+  "polygons200": {
+    "baseline": {
+      "createMedian": 17.200000047683716,
+      "createP95": 25.099999964237213,
+      "updateP95": 15.100000023841858
+    },
+    "upgrade": {
+      "createMedian": 17.100000023841858,
+      "createP95": 25.19999998807907,
+      "updateP95": 15.300000011920929
+    }
+  },
+  "mixed1200": {
+    "baseline": {
+      "createMedian": 116.80000001192093,
+      "createP95": 125.80000001192093,
+      "updateP95": 110.89999997615814
+    },
+    "upgrade": {
+      "createMedian": 97.69999998807907,
+      "createP95": 118.5,
+      "updateP95": 89.19999998807907
+    }
+  },
+  "labelsMixed1200": {
+    "baseline": {
+      "createMedian": 116.89999997615814,
+      "createP95": 125.09999996423721,
+      "updateP95": 119.59999996423721
+    },
+    "upgrade": {
+      "createMedian": 117.30000001192093,
+      "createP95": 125.30000001192093,
+      "updateP95": 119.20000004768372
+    }
+  }
+}

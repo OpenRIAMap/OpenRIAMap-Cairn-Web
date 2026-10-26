@@ -58,6 +58,10 @@ export function validateNativeStructure(value: unknown): NativeStructureIssue[] 
     }
   }
   for(const workflow of config.workflows){
+    if(config.contractRevision<16&&workflow.external&&(workflow.external.roleBindings!==undefined||workflow.external.referenceBindings!==undefined))issues.push({path:'config/workflows/'+workflow.id+'/external',message:'角色与引用绑定最低要求 c16。'});
+    if(config.contractRevision>=16&&workflow.mode==='external'&&(!workflow.external?.roleBindings||workflow.external.coveredClassifications!==undefined))issues.push({path:'config/workflows/'+workflow.id+'/external',message:'c16 专用流程必须使用明确角色绑定，不能保留旧范围副本。'});
+    if(config.contractRevision>=16&&workflow.mode==='external'&&workflow.target!==undefined)issues.push({path:'config/workflows/'+workflow.id+'/target',message:'c16 专用范围使用 roleBindings 与 editor.scope，不能保留旧 target 副本。'});
+    if(config.contractRevision>=16&&workflow.external?.purpose==='edit'&&!workflow.editor?.scope)issues.push({path:'config/workflows/'+workflow.id+'/editor/scope',message:'c16 专用编辑需要明确的路由范围。'});
     if(c15&&workflow.mode==='composed'&&workflow.target)issues.push({path:'config/workflows/'+workflow.id+'/target',message:'c15 分类组不能保留旧 target 副本。'});
     if(c15)for(const step of workflow.steps)for(const control of step.controls??[])if(control.kind==='classificationPicker'&&control.classificationScope)issues.push({path:'config/workflows/'+workflow.id+'/controls/'+control.id,message:'c15 分类控件由 outputId 解析分类组，不能保留旧范围副本。'});
   }

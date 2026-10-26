@@ -1,10 +1,10 @@
 import type {CategorySearch,ConfigPackageV3} from '../../configStudio/types';
-import type {FeatureRecord} from '../Rules/rendering/renderRules';
+import type {FeatureRecord} from '../Rules/rendering/renderPrimitives';
 import {resolveNodeFieldSettings} from '../../configStudio/nodeFieldSettings';
 import {classificationPathKey,resolveCategoryNodes,resolveEffectiveFields} from '../../configStudio/runtime';
 import {recordPath,recordValue,recordWorld,recordId} from '../../configStudio/structureRoleIndex';
 import {normalizeRuleSourceWorldId} from '../Rules/data/ruleDataSources';
-import {getRuleDisplayName} from './searchRuleTables';
+import {getRuleDisplayName} from './searchPresentation';
 
 const defaultSearch:CategorySearch={enabled:true,queryFields:['Name','ID'],subtitle:{mode:'classification'},extension:{mode:'none'}};
 const text=(value:unknown):string=>value===null||value===undefined?'':typeof value==='object'?JSON.stringify(value):String(value);

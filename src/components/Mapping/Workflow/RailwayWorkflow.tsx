@@ -412,7 +412,7 @@ export default function RailwayWorkflow(props: WorkflowComponentProps) {
     };
 
     const payload: WorkflowCommitArgs = {
-      subType: '铁路',
+      role: 'railLine', subType: '铁路',
       mode: 'polyline',
       coords,
       values,

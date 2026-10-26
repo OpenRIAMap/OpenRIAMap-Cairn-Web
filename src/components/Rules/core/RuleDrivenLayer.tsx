@@ -1,3 +1,5 @@
+import {expandBindingGroup} from '@/configStudio/externalBindings';
+import {classificationPathKey} from '@/configStudio/runtime';
 import {createNativePathHitProxy} from '../rendering/nativePathHitProxy';
 import {pointSymbolMetrics} from '../rendering/pointSymbolMetrics';
 import {matchesClassificationReadScope} from '@/configRuntime/classificationReadScopes';
@@ -28,12 +30,11 @@ import {
 import {
   DEFAULT_FLOOR_VIEW,
   buildFeatureMeta,
-  findFirstRule,
   toZoomLevel,
   type FeatureRecord,
   type GeoType,
   type RenderContext,
-} from "@/components/Rules/rendering/renderRules";
+} from "@/components/Rules/rendering/renderPrimitives";
 import {
   layoutLabelsOnMap,
   type LabelRequest,
@@ -44,8 +45,7 @@ import AppButton from "@/components/ui/AppButton";
 import AppCard from "@/components/ui/AppCard";
 import SmallDraggablePanel from "@/components/DraggablePanel/SmallDraggablePanel";
 
-import { resolveFeatureCardComponent } from "@/components/Rules/cardrules/featureCardRegistry";
-import FeatureInteractionCard from "@/components/Rules/core/FeatureInteractionCard";
+import { resolveConfiguredFeatureCard } from "@/components/Rules/cardrules/featureCardRegistry";
 import type { CardFeatureLinkTarget } from "@/components/Rules/cardrules/cardInteractions";
 import {
   getStructureAreaPriorityBonus,
@@ -122,7 +122,7 @@ import { filterRecordsByRuleButtons } from "@/components/Rules/ButtonRule/button
 import { setRuleSearchPool } from "@/components/Rules/search/ruleSearchRegistry";
 import { useRuleDataStore } from "@/store/ruleDataStore";
 import { useLoadingStore } from "@/store/loadingStore";
-import { configRuntimeViewportReach, resolveConfigInteractionVisual, resolveConfigRuntimeCardOverride, resolveConfigRuntimeContextForHost, resolveConfigRuntimeContextForRecord, resolveConfigRuntimeRule, resolveConfigRuntimeScreenGate, resolveConfigRuntimeStackOrder } from "@/components/Rules/configRuntime/configPackageAdapter";
+import { configRuntimeViewportReach, resolveConfigInteractionVisual, resolveConfigRuntimeContextForHost, resolveConfigRuntimeContextForRecord, resolveConfigRuntimeRule, resolveConfigRuntimeScreenGate, resolveConfigRuntimeStackOrder } from "@/components/Rules/configRuntime/configPackageAdapter";
 import type { ConfigPackageV3 } from "@/configStudio/types";
 
 const FLOOR_VIEW_MIN_LEVEL = Math.max(0, DEFAULT_FLOOR_VIEW.minLevel);
@@ -2198,7 +2198,7 @@ export default function RuleDrivenLayer(props: Props) {
 
     // 尽量复用“label click”规则（如果有），保证交互一致；否则仅打开信息卡。
     const curCtx = ctxRef.current;
-    const rule = resolveConfigRuntimeRule(configRuntime, rr, curCtx ?? ({ worldId, leafletZoom: map.getZoom(), zoomLevel: toZoomLevel(map.getZoom()), inFloorView: false, activeBuildingUid: null, activeFloorSelector: null, activeBuildingFloorRefSet: null }), configRuntime ? null : findFirstRule(rr), store);
+    const rule = resolveConfigRuntimeRule(configRuntime, rr, curCtx ?? ({ worldId, leafletZoom: map.getZoom(), zoomLevel: toZoomLevel(map.getZoom()), inFloorView: false, activeBuildingUid: null, activeFloorSelector: null, activeBuildingFloorRefSet: null }), null, store);
     const rawClick = (rule as any)?.symbol?.labelClick;
     if (rawClick) {
       // 若尚未拿到 RenderContext（例如按钮刚被打开、effect 还未同步），则跳过 labelClick 复用逻辑。
@@ -2479,7 +2479,7 @@ export default function RuleDrivenLayer(props: Props) {
       : store.all;
 
     const matchRecord = (r: FeatureRecord): boolean => {
-      if(configRuntime){if(!matchesClassificationReadScope(configRuntime,recordPath(r),{class:targetClass,kind,skind,skind2}))return false;}
+      if(configRuntime){if(!matchesClassificationReadScope(configRuntime,recordPath(r),{class:targetClass,kind,skind,skind2}))return false;if(linkTarget?.classificationGroup&&!expandBindingGroup(configRuntime,linkTarget.classificationGroup).some(path=>classificationPathKey(path)===classificationPathKey(recordPath(r))))return false;}
       else if (targetClass && String(r?.meta?.Class ?? "").trim() !== targetClass)return false;
       const fi: any = r?.featureInfo ?? {};
       if (!configRuntime&&kind && String(fi?.Kind ?? "").trim() !== kind) return false;
@@ -2516,7 +2516,7 @@ export default function RuleDrivenLayer(props: Props) {
     const store = storeRef.current;
     if (!store) return;
 
-    const rule = resolveConfigRuntimeRule(configRuntime, rr, ctx, configRuntime ? null : findFirstRule(rr), store);
+    const rule = resolveConfigRuntimeRule(configRuntime, rr, ctx, null, store);
     const rawClick = (rule as any)?.symbol?.labelClick;
     if (!rawClick) return;
 
@@ -3152,7 +3152,7 @@ export default function RuleDrivenLayer(props: Props) {
             "entered render loop",
           );
 
-        const rule = resolveConfigRuntimeRule(configRuntime, r, context, configRuntime ? null : findFirstRule(r), store);
+        const rule = resolveConfigRuntimeRule(configRuntime, r, context, null, store);
         if (!rule) {
           updateLineAuditBlocked(
             auditRow,
@@ -4443,10 +4443,8 @@ export default function RuleDrivenLayer(props: Props) {
       )}
       <div className="hidden sm:block">
         {(() => {
-          const cls =
-            selectedFeature?.meta?.Class ?? selectedFeature?.featureInfo?.Class;
-          const override = selectedFeature ? resolveConfigRuntimeCardOverride(configRuntime, selectedFeature) : undefined;
-          const Card: any = override ? FeatureInteractionCard : resolveFeatureCardComponent(cls);
+          const resolved=resolveConfiguredFeatureCard(configRuntime,selectedFeature);
+          const Card=resolved.Component;
           return (
             <Card
               open={featureCardOpen}
@@ -4454,7 +4452,7 @@ export default function RuleDrivenLayer(props: Props) {
               onClose={clearSelection}
               resolveFeatureById={resolveFeatureById}
               onTryTriggerLabelClickById={onTryTriggerLabelClickById}
-              {...(override ? { configRuntimeCard: configRuntime, disableFieldRules: true } : {})}
+              {...resolved.props}
             />
           );
         })()}

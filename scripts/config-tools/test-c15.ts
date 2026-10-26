@@ -1,3 +1,4 @@
+import {NATIVE_CONFIG_REVISION} from '../../src/configStudio/contract';
 import assert from 'node:assert/strict';
 import {readC14MigrationSource} from './fixtures/c14-migration-source';
 import {createHash} from 'node:crypto';
@@ -20,7 +21,7 @@ const report=validateConfigPackage(config);
 assert(report.valid,JSON.stringify(report.issues.filter(issue=>issue.severity==='error').slice(0,30),null,2));
 assert.deepEqual(migratePackageToC15(config).config,config);
 assert.throws(()=>migratePackageToC14(config),/降级/);
-assert.throws(()=>migratePackageToC15({...config,contractRevision:16} as unknown as ConfigPackageV3),/未知/);
+assert.throws(()=>migratePackageToC15({...config,contractRevision:NATIVE_CONFIG_REVISION+1} as unknown as ConfigPackageV3),/未知/);
 for(const node of config.nodes)for(const profile of Object.values(node.geometryProfiles))if(profile){
   assert.equal(profile.anchor,undefined);assert.equal(profile.interaction,undefined);
   assert(profile.zoomPriority.rules.every(rule=>rule.multipartAnchor&&rule.interaction));

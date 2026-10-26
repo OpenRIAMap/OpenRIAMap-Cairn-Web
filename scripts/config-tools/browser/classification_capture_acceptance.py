@@ -2,8 +2,8 @@
 import json,os,time,traceback,urllib.request,zipfile
 from pathlib import Path
 from browser_check import Browser,APP_URL,OUT
-assert APP_URL.startswith('http://127.0.0.1:') and os.environ['CAIRNMAP_CDP_PORT']=='9502'
-endpoint='http://127.0.0.1:9502';opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+assert APP_URL.startswith('http://127.0.0.1:') and os.environ['CAIRNMAP_CDP_PORT'] in ('9502','9338')
+endpoint='http://127.0.0.1:'+os.environ['CAIRNMAP_CDP_PORT'];opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
 fresh=json.load(opener.open(urllib.request.Request(endpoint+'/json/new?about:blank',method='PUT')))
 for page in json.load(opener.open(endpoint+'/json')):
  if page['type']=='page' and page['id']!=fresh['id'] and (page['url']=='about:blank' or page['url'].startswith('http://127.0.0.1:')):opener.open(endpoint+'/json/close/'+page['id']).read()
@@ -15,7 +15,7 @@ def click(label):
 def value(selector,data):
  b.evaluate('(()=>{const e=document.querySelector('+json.dumps(selector)+');if(!e||e.disabled)throw Error("Input unavailable");const p=e.tagName==="SELECT"?HTMLSelectElement.prototype:e.tagName==="TEXTAREA"?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(p,"value").set.call(e,'+json.dumps(str(data))+');e.dispatchEvent(new Event(e.tagName==="SELECT"?"change":"input",{bubbles:true}));})()');time.sleep(.12)
 def fill():
- b.evaluate('(()=>{const s=[...document.querySelectorAll("fieldset")].find(e=>e.innerText.includes("填写者ID")||e.innerText.includes("车站和站台")||e.innerText.includes("铁路"));for(const e of s.querySelectorAll("input,textarea")){if(!e.getBoundingClientRect().height||e.disabled||["checkbox","radio","color"].includes(e.type))continue;const label=e.closest("label")?.textContent??e.parentElement.textContent;const v=label.includes("色号")?"2277aa":e.type==="number"?"1":"CAPTURE";const p=e.tagName==="TEXTAREA"?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(p,"value").set.call(e,v);e.dispatchEvent(new Event("input",{bubbles:true}));}})()');time.sleep(.2)
+ b.evaluate('(()=>{for(const e of document.querySelectorAll("input,textarea")){if(!e.getBoundingClientRect().height||e.disabled||["checkbox","radio","color"].includes(e.type))continue;const label=e.closest("label")?.textContent??e.parentElement.textContent;const v=label.includes("色号")?"2277aa":e.type==="number"?"1":"CAPTURE";const p=e.tagName==="TEXTAREA"?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(p,"value").set.call(e,v);e.dispatchEvent(new Event("input",{bubbles:true}));}})()');time.sleep(.2)
 def draw(points):
  for x,y in points:
   for event in ['mousePressed','mouseReleased']:b.call('Input.dispatchMouseEvent',{'type':event,'button':'left','clickCount':1,'x':x,'y':y})
@@ -44,7 +44,7 @@ try:
  value('select[aria-label="部件编号"]','0');assert b.evaluate(q('select[aria-label="内部洞编号"]')+'.options.length')==1
  click('下一步');pfb=next(r for r in records() if r.get('Kind')=='PFB');assert pfb['Class']=='RIL' and len(pfb['CoordG'])==2 and len(pfb['CoordG'][0])==2
  for _ in range(3):fill();draw([(800,680)]);click('下一步')
- captured=records();assert [r['Kind'] for r in captured]==['PFB','PLF','PLF','STA'];assert all(r['Class']=='RIL' for r in captured)
+ captured=records();assert [r['Kind'] for r in captured]==['PFB','PLF','PLF','STA'];assert all(r['Class']=='RIL' for r in captured);assert all(isinstance(row['stationDistance'],(int,float)) for r in captured if r['Kind']=='PLF' for row in r['lines'] if 'stationDistance' in row)
  checks.append('skip STB, two PFB parts and hole survive return-to-base/re-entry, both platform directions and station capture output exact RIL roles')
  b.screenshot('classification-station-full-capture.png')
  # Read the saved PFB through the normal layer editor and preserve every ring.
@@ -89,12 +89,15 @@ try:
  checks.append('actual railway component retains its algorithm and ID convention while outputting the declared RIL/RLE path')
  for role,format,shape,fields in [('STF','车站建筑楼层','面',{'ID':'CAPTURE_STF','Name':'Capture floor','NofFloor':'1','staBuildingID':'CAPTURE_STB'}),('SBP','车站建筑点','点',{'ID':'CAPTURE_SBP','Name':'Capture station point'})]:
   navigate();click('测绘');click('开始测绘(完整)');click(shape)
-  b.evaluate('(()=>{const s=[...document.querySelectorAll("select")].find(e=>[...e.options].some(o=>o.value==='+json.dumps(format)+'));s.value='+json.dumps(format)+';s.dispatchEvent(new Event("change",{bubbles:true}));})()');time.sleep(.2)
-  for key,data in fields.items():value('input[placeholder='+json.dumps(key)+']',data)
+  value('select[aria-label="要素分类 Class"]','RIL');value('select[aria-label="要素分类 Kind"]',role)
+  value('input[aria-label="新建要素 ID"]',fields['ID'])
+  for key,data in fields.items():
+   if key=='ID':continue
+   value('[data-edit-control="edit-'+role+'-'+key+'"] input',data)
   if role=='SBP':
-   click('添加站台条目')
-   b.evaluate('(()=>{const e=[...document.querySelectorAll("input[placeholder=ID]")].at(-1);Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(e,"CAPTURE_PLF");e.dispatchEvent(new Event("input",{bubbles:true}));})()')
-  value('input[placeholder^="可选：用于写入"]','capture-author')
+   b.evaluate('document.querySelector("[data-edit-control=edit-SBP-stations] button").click()');time.sleep(.15)
+   value('[data-edit-control="edit-SBP-stations"] input','CAPTURE_PLF')
+  value('input[aria-label="工作流编辑人"]','capture-author')
   draw([(700,600),(900,600),(900,750),(700,750)] if shape=='面' else [(800,680)]);click('完成当前图层')
   b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===1');record=records()[0];assert record['Class']=='RIL' and record['Kind']==role and record['ID']==fields['ID']
  checks.append('actual full-mode STF and SBP creation use declared RIL roles; manual IDs and field formats remain unchanged')

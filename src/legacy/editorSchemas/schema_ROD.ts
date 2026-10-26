@@ -1,4 +1,4 @@
-import type { PersistedFieldDef, RegistryGroupDef, WorkflowAuxInputDef, WorkflowEditorSchema } from './types';
+import type { PersistedFieldDef, RegistryGroupDef, WorkflowAuxInputDef, WorkflowEditorSchema } from '@/components/Common/formTypes';
 
 const idField: WorkflowEditorSchema['idField'] = {
   key: 'ID',

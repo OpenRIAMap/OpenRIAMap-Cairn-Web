@@ -9,7 +9,7 @@ import {
   EXT_VALUE_TYPE_TEXT,
   type ExtValueType,
   listCatalogSKind2Options,
-} from '@/components/Common/featureFormats';
+} from '@/legacy/formats/featureFormats';
 
 const WF_KEY = 'ngf_wtb';
 

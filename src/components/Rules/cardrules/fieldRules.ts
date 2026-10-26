@@ -1,7 +1,9 @@
+import type {ConfigPackageV3} from '@/configStudio/types';
+import {resolveEffectiveFields} from '@/configStudio/runtime';
+import {recordCategory} from '@/configStudio/multipartPolicy';
 // CairnMap LEGACY CLEANUP: card field rendering helpers only.
 // Do not add new Class-level card layouts here.
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
-import { buildCardRowsFromRegistry } from './cardRegistryRows';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import type { CardInteractiveValue } from './cardInteractions';
 import type { RailNewIndex } from '../../Navigation/railNewIndex';
 
@@ -40,11 +42,16 @@ export type InfoSections = {
 
 export function buildInfoSectionsForFeature(
   feature: FeatureRecord,
-  railIndex?: RailNewIndex | null,
-  _options?: { disableFieldRules?: boolean },
+  _railIndex?: RailNewIndex | null,
+  _options?: { disableFieldRules?: boolean;configuration?:ConfigPackageV3 },
 ): InfoSections {
-  const { mainRows, otherRows } = buildCardRowsFromRegistry(feature, railIndex);
-  return { mainRows, otherRows };
+  // Explicit raw/unparsed section only. Configured cards use V3CardRenderer.
+  // A missing native layout must never revive a Class-specific legacy schema.
+  const labels=new Map((_options?.configuration?resolveEffectiveFields(_options.configuration,recordCategory(feature.featureInfo)):[]).map(field=>[field.key,field.labels.zh||field.labels.en||field.key]));
+  const rows:CardRow[]=[];
+  const visit=(value:unknown,path:string)=>{if(value===undefined)return;if(value&&typeof value==='object'&&!Array.isArray(value)&&['tags','extensions'].some(prefix=>path===prefix||path.startsWith(prefix+'.'))){for(const [key,item]of Object.entries(value))visit(item,path+'.'+key);}else rows.push({label:labels.get(path)??path,value,usedPaths:[path]});};
+  for(const [key,value]of Object.entries(feature.featureInfo??{}))visit(value,key);
+  return {mainRows:[],otherRows:rows};
 }
 
 // 兼容旧调用：仍保留拼接后的版本

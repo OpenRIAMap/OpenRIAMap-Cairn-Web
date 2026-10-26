@@ -13,8 +13,8 @@ import type { ParsedStation, ParsedLine, Player } from '@/types';
 import type { ParsedLandmark } from '@/components/Legacy/data/landmarkParser';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
-import { pickIdFieldValue } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
+import { pickIdFieldValue } from '@/components/Rules/rendering/renderPrimitives';
 import type { ConfigPackageV3 } from '@/configStudio/types';
 import {categorySearchIndex,categorySearchSubtitle,findCategorySearchEntries} from './configSearch';
 import {ConfigSearchExtension} from './ConfigSearchExtension';
@@ -27,7 +27,7 @@ import {
   getRuleCategoryLabelWithParent,
   getRuleDisplayName,
   buildBuildingNameIndex,
-} from '@/components/Search/searchRuleTables';
+} from '@/components/Search/searchPresentation';
 
 // NOTE: blacklist & priority tables are now shared in searchRuleTables.ts
 

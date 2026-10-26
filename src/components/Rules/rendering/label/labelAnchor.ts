@@ -1,6 +1,6 @@
 import * as L from "leaflet";
 import type { DynmapProjection } from "@/lib/DynmapProjection";
-import type { FeatureRecord } from "@/components/Rules/rendering/renderRules";
+import type { FeatureRecord } from "@/components/Rules/rendering/renderPrimitives";
 import type { DisplayAnchorConfig } from "@/components/Rules/rendering/display/displayTypes";
 import { chooseStableGeoAnchorCandidate, type GeoAnchorSelectionDebugInfo } from "@/components/Rules/rendering/label/labelGeoAnchorCache";
 import { getStableLineAnchorCandidates } from "@/components/Rules/rendering/label/labelLineAnchorCache";

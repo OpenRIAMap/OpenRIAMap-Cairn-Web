@@ -9763,15 +9763,15 @@ var require_lib3 = __commonJS({
 });
 
 // src/configStudio/contract.ts
-var NATIVE_CONFIG_REVISION = 15;
+var NATIVE_CONFIG_REVISION = 16;
 var CONTRACT_CAPABILITIES = {
   latest: NATIVE_CONFIG_REVISION,
-  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-  category: [9, 10, 11, 12, 13, 14, 15],
-  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-  publication: [11, 12, 13, 14, 15],
-  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15]] }
+  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+  category: [9, 10, 11, 12, 13, 14, 15, 16],
+  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+  publication: [11, 12, 13, 14, 15, 16],
+  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16]] }
 };
 var supportsContract = (capability, value) => typeof value === "number" && CONTRACT_CAPABILITIES[capability].includes(value);
 function isNativeConfigRevision(value) {
@@ -11745,36 +11745,9 @@ var EXTERNAL_EDIT_OPTIONS = [{ key: "tradePointEditor", label: "TRP \u5DE5\u4F5C
 function validateExternalEditBinding(workflow) {
   const definition = EXTERNAL_EDIT_OPTIONS.find((d) => d.key === workflow.external?.componentKey), scope = workflow.editor?.scope ?? workflow.target;
   if (!definition || workflow.external?.purpose !== "edit" || workflow.external.version !== definition.version || workflow.external.reason !== definition.reason) return ["\u5916\u90E8\u7F16\u8F91\u7EC4\u4EF6\u3001\u7528\u9014\u3001\u7248\u672C\u6216\u767B\u8BB0\u7406\u7531\u65E0\u6548\u3002"];
-  if (!workflow.editor?.enabled || !workflow.editor.dedicated || workflow.quickMapping !== false || scope?.class !== "TRP" || workflow.steps.length || workflow.outputs.length || !workflow.external.coveredClassifications?.length || workflow.external.coveredClassifications.some((p) => p.class !== "TRP")) return ["TRP \u5916\u90E8\u7F16\u8F91\u987B\u4E3A\u6709\u6548 TRP \u8303\u56F4\u3001\u4E13\u4F9B\u7F16\u8F91\u4E14\u5173\u95ED\u4FBF\u6377\u6D4B\u7ED8\u7684\u767B\u8BB0\u5B8C\u6210\u54C1\u3002"];
+  const bound = workflow.external.roleBindings !== void 0 ? workflow.external.roleBindings.length > 0 && Boolean(scope?.class) : scope?.class === "TRP" && Boolean(workflow.external.coveredClassifications?.length) && !workflow.external.coveredClassifications?.some((p) => p.class !== "TRP");
+  if (!workflow.editor?.enabled || !workflow.editor.dedicated || workflow.quickMapping !== false || !bound || workflow.steps.length || workflow.outputs.length) return ["\u4EA4\u6613\u70B9\u5916\u90E8\u7F16\u8F91\u987B\u6709\u660E\u786E\u89D2\u8272\u8303\u56F4\u3001\u4E13\u4F9B\u7F16\u8F91\u4E14\u5173\u95ED\u4FBF\u6377\u6D4B\u7ED8\u3002"];
   return [];
-}
-
-// src/configStudio/workflowFieldControl.ts
-function workflowControlFromField(field, slot, id2, config) {
-  if (!isSafeWorkflowTarget(field.key) || PROTECTED_WORKFLOW_TARGETS.has(field.key) || field.key === "ID") throw new Error("\u7CFB\u7EDF\u5B57\u6BB5\u4E0D\u80FD\u901A\u8FC7\u666E\u901A\u5B57\u6BB5\u8F93\u5165\u91CD\u65B0\u5B9A\u4E49\u3002");
-  if (field.scenes?.workflow === false) throw new Error("\u6B64\u5B57\u6BB5\u672A\u5F00\u653E\u4E3A\u65B0\u5DE5\u4F5C\u6D41\u8F93\u5165\u3002");
-  const kind = field.input === "text" && field.type === "number" ? "number" : field.input;
-  const search = kind === "featureSearch" ? field.reference ? {
-    target: { class: field.reference.classCode },
-    queryFields: [.../* @__PURE__ */ new Set([field.reference.matchField, field.reference.displayField ?? "Name"])],
-    returnField: field.reference.matchField,
-    displayTemplate: `{{${field.reference.matchField}}} ({{${field.reference.displayField ?? "Name"}}})`,
-    matcher: "contains",
-    minQueryLength: 1,
-    maxResults: 30,
-    debounceMs: 180,
-    cacheScope: "world"
-  } : void 0 : void 0;
-  if (kind === "featureSearch" && !search) throw new Error("\u8981\u7D20\u641C\u7D22\u8F93\u5165\u9700\u8981\u5148\u5728\u5B57\u6BB5\u5B9A\u4E49\u4E2D\u8BBE\u7F6E\u5F15\u7528\u76EE\u6807\u3002");
-  const common = { id: id2, slot, columns: 1, label: structuredClone(field.labels), required: field.required, placeholder: field.placeholder, defaultValue: structuredClone(field.defaultValue), optionValueType: field.optionValueType ?? (field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : void 0), fieldFormat: field.format };
-  if (field.type === "json" && field.cardinality === "multiple") return { ...common, kind: "json" };
-  if (field.cardinality === "multiple") return { ...common, kind: "group", group: {
-    storage: "scalar",
-    optional: !field.required,
-    addLabel: { zh: `\u6DFB\u52A0${field.labels.zh}`, en: "" },
-    itemFields: [{ key: "", kind, label: structuredClone(field.labels), options: config ? resolveWorkflowSelectOptions(config, field) : field.options, search, required: true, placeholder: field.placeholder, optionValueType: field.optionValueType ?? (field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : void 0), fieldFormat: field.format }]
-  } };
-  return { ...common, kind, options: field.options, optionSource: field.optionSource, search };
 }
 
 // src/configStudio/lookupTables.ts
@@ -11893,333 +11866,114 @@ function validateLookupTables(config, includeNodes = true) {
   return issues;
 }
 
-// src/configStudio/fieldReuse.ts
-var FIELD_IMPORT_PROPERTIES = ["label", "kind", "options", "optionValueType", "placeholder", "defaultValue", "required", "requiredWhen", "search", "group", "rows", "valueNormalization", "fieldFormat"];
-function fieldSourceSnapshot(field) {
-  const { key: key2, type, cardinality, labels: labels2, options, optionValueType, format, defaultValue, required, requiredWhen, input, placeholder, reference } = field;
-  return structuredClone({ key: key2, type, cardinality, labels: labels2, options, optionValueType, format, defaultValue, required, requiredWhen, input, placeholder, reference });
-}
-function resolveSourceField(config, source) {
-  const node = config.nodes.find((item) => item.nodeId === source.nodeId);
-  if (!node) return void 0;
-  const fields = resolveEffectiveFields(config, node.path);
-  return fields.find((field) => field.fieldId === source.fieldId) ?? fields.find((field) => field.key === source.snapshot.key && field.overrideOf === source.snapshot.key);
-}
-function requiredConditions(field, workflow) {
-  return (field.requiredWhen ?? []).flatMap((condition) => {
-    if (condition.kind === "always") return [];
-    if (!("field" in condition)) throw new Error(`\u5B57\u6BB5 ${field.key} \u7684\u5FC5\u586B\u6761\u4EF6\u4E0D\u80FD\u8F6C\u6362\u4E3A\u8F93\u5165\u69FD\u4F4D\u3002`);
-    const bindings = workflow.outputs.flatMap((output) => output.assignments).filter((item) => item.target === condition.field && /^[A-Z][A-Z0-9_]*$/.test(item.expression));
-    const tokens = [...new Set(bindings.map((item) => item.expression))];
-    if (tokens.length !== 1) throw new Error(`\u8BF7\u5148\u5C06\u6761\u4EF6\u5B57\u6BB5 ${condition.field} \u660E\u786E\u7ED1\u5B9A\u5230\u4E00\u4E2A\u8F93\u5165\u69FD\u4F4D\u3002`);
-    const source = workflow.steps.flatMap((step) => step.controls ?? []).find((control) => control.slot === tokens[0]);
-    const typed = (value) => source?.kind === "number" || source?.optionValueType === "number" ? Number(value) : source?.kind === "toggle" || source?.optionValueType === "boolean" ? value === "true" : value;
-    if (condition.kind === "fieldEquals") return [{ token: tokens[0], operator: "equals", value: typed(condition.value) }];
-    if (condition.kind === "fieldPresent") return [{ token: tokens[0], operator: condition.present ? "present" : "empty" }];
-    return [{ token: tokens[0], operator: "in", values: condition.values.map(typed) }];
+// src/configStudio/externalCapabilities.ts
+var EXTERNAL_ROLES = {
+  railLine: { label: "\u7EBF\u8DEF", geometry: "LineString", fields: { Name: ["string"], bureau: ["string"], line: ["string"], color: ["string"], direction: ["number", "enum"], startplf: ["string", "reference"], endplf: ["string", "reference"] } },
+  stationArea: { label: "\u7AD9\u573A", geometry: "Point", fields: { Name: ["string"], STBuilding: ["string", "reference"], platforms: ["json"] } },
+  platform: { label: "\u7AD9\u53F0", geometry: "Point", fields: { Name: ["string"], Situation: ["boolean"], Connect: ["boolean"], lines: ["json"] } },
+  platformFootprint: { label: "\u7AD9\u53F0\u8F6E\u5ED3", geometry: "Polygon", fields: { Name: ["string"], LineID: ["string", "reference"] } },
+  stationBuilding: { label: "\u8F66\u7AD9\u5EFA\u7B51", geometry: "Polygon", fields: { Name: ["string"], Floors: ["json"] } },
+  stationBuildingPoint: { label: "\u8F66\u7AD9\u5EFA\u7B51\u70B9", geometry: "Point", fields: { Name: ["string"], Floors: ["json"], stations: ["json"] } },
+  stationFloor: { label: "\u8F66\u7AD9\u697C\u5C42", geometry: "Polygon", fields: { Name: ["string"], NofFloor: ["string"], staBuildingID: ["string", "reference"] } },
+  tradePoint: { label: "\u4EA4\u6613\u70B9", geometry: "Point", fields: { Name: ["string"], Trade: ["json"] } }
+};
+var EXTERNAL_COMPONENT_ROLES = {
+  railwayWorkflow: ["railLine"],
+  stationWorkflow: ["stationArea", "platform", "platformFootprint", "stationBuilding", "stationBuildingPoint", "stationFloor"],
+  tradePointWorkflow: ["tradePoint"],
+  tradePointEditor: ["tradePoint"]
+};
+var RAIL_ROLE_KEYS = { RLE: "railLine", STA: "stationArea", PLF: "platform", PFB: "platformFootprint", STB: "stationBuilding", SBP: "stationBuildingPoint", STF: "stationFloor" };
+
+// src/configStudio/externalLegacyBindings.ts
+function legacyExternalRoleBindings(config, workflow) {
+  const declared = workflow.external?.coveredClassifications ?? (workflow.target ? [workflow.target] : []);
+  return (EXTERNAL_COMPONENT_ROLES[workflow.external?.componentKey ?? ""] ?? []).flatMap((role) => {
+    const code = Object.entries(RAIL_ROLE_KEYS).find(([, key2]) => key2 === role)?.[0] ?? "TRP";
+    const candidates = declared.filter((path3) => path3.class === code && !path3.kind || path3.class === "RIL" && path3.kind === code && !path3.skind);
+    if (candidates.length !== 1) return [];
+    const path2 = { ...candidates[0] };
+    const hasChildren = Boolean(config?.nodes.some((node) => node.path.class === path2.class && (!path2.kind || node.path.kind === path2.kind) && Object.values(node.path).filter(Boolean).length > Object.values(path2).filter(Boolean).length));
+    return [{ role, classificationGroup: { selectors: [{ id: "migrated-" + role, mode: role === "tradePoint" && hasChildren ? "leafDescendants" : "self", path: path2 }] } }];
   });
 }
-function importFieldIntoControl(config, workflow, control, nodeId, field) {
-  const imported = workflowControlFromField(field, control.slot ?? control.id, control.id, config);
-  return {
-    ...control,
-    ...imported,
-    columns: control.columns,
-    required: Boolean(field.required || field.requiredWhen?.length),
-    requiredWhen: field.required || field.requiredWhen?.some((condition) => condition.kind === "always") ? [] : field.requiredWhen?.length ? [{ token: "", operator: "present", any: requiredConditions(field, workflow) }] : [],
-    fieldFormat: field.format,
-    optionValueType: imported.optionValueType,
-    fieldSource: { nodeId, fieldId: field.fieldId, snapshot: fieldSourceSnapshot(field), overrides: [] }
-  };
+
+// src/configStudio/standardTagFields.ts
+function tagMetadata(field) {
+  const type = field.type === "enum" || field.input === "select" ? "select" : field.type === "number" ? "number" : field.type === "boolean" ? "bool" : "text";
+  return { kind: "tagField", type, ...field.format === "externalLink" || field.format === "date" ? { format: field.format } : {}, ...type === "select" ? { valueTable: { valueType: field.optionValueType ?? "string", rows: structuredClone(field.options ?? []) } } : {} };
 }
-function resolveImportedControl(config, workflow, control) {
-  if (config.contractRevision >= 9 || !control.fieldSource) return control;
-  const field = resolveSourceField(config, control.fieldSource);
-  if (!field) return control;
-  let generated;
-  try {
-    generated = importFieldIntoControl(config, workflow, control, control.fieldSource.nodeId, field);
-  } catch {
-    return control;
+var stable = (value) => JSON.stringify(value);
+function standardTagFields(config, path2) {
+  const fields = resolveEffectiveFields(config, path2).filter((field) => field.key.startsWith("tags."));
+  if (config.contractRevision < 11) return fields;
+  const table = config.lookupTables?.find((table2) => table2.id === "standard-tag-fields");
+  if (!table || table.functionKind !== "tagField") throw Error("\u6807\u51C6\u6807\u7B7E\u5B57\u6BB5\u76EE\u5F55\u4E0D\u5B58\u5728\u6216\u683C\u5F0F\u65E0\u6548\u3002");
+  const result = table.rows.map((row2) => {
+    const meta = row2.functionValue;
+    if (!meta || typeof meta !== "object" || !("kind" in meta) || meta.kind !== "tagField") throw Error(`\u6807\u7B7E ${row2.value} \u7F3A\u5C11\u53D7\u63A7\u7C7B\u578B\u3002`);
+    const options = meta.type === "select" ? effectiveOptionTable(config, { optionTable: meta.valueTable, optionsTableId: meta.valueTableId }) : void 0;
+    return { fieldId: `tag-catalog-${row2.value}`, key: `tags.${row2.value}`, scope: "tags", type: meta.type === "select" ? "enum" : meta.type === "number" ? "number" : meta.type === "bool" ? "boolean" : "string", input: meta.type === "select" ? "select" : meta.type === "bool" ? "toggle" : "text", cardinality: "single", labels: row2.label, description: { zh: "", en: "" }, format: meta.format, options: options?.rows, optionValueType: options?.valueType };
+  });
+  for (const field of fields) {
+    const index = result.findIndex((row2) => row2.key === field.key);
+    if (index >= 0) result[index] = field;
+    else result.push(field);
   }
-  const next = { ...control };
-  for (const key2 of FIELD_IMPORT_PROPERTIES) if (!control.fieldSource.overrides.includes(key2)) {
-    next[key2] = generated[key2];
-  }
-  return next;
+  return result;
 }
-function resolveImportedGroupField(config, workflow, field) {
-  if (!field.fieldSource) return field;
-  const control = resolveImportedControl(config, workflow, { ...field, id: field.key, slot: "GROUP_VALUE", columns: 1 });
-  const { id: _id, slot: _slot, columns: _columns, ...resolved2 } = control;
-  return { ...field, ...resolved2, key: field.key };
-}
-function resolveWorkflowFields(config, workflow) {
-  return { ...workflow, steps: workflow.steps.map((step) => ({ ...step, controls: step.controls?.map((raw) => {
-    const control = effectiveOptionsOwner(config, resolveImportedControl(config, workflow, raw));
-    return control.group ? { ...control, group: { ...control.group, itemFields: control.group.itemFields.map((field) => effectiveOptionsOwner(config, resolveImportedGroupField(config, workflow, field))) } } : control;
-  }) })) };
-}
-function fieldImportErrors(config, workflow, control) {
-  const source = control.fieldSource;
-  if (!source) return [];
-  const field = resolveSourceField(config, source);
-  if (!field) return [`\u6765\u6E90\u5206\u7C7B/\u5B57\u6BB5 ${source.nodeId}/${source.snapshot.key} \u5DF2\u4E0D\u5B58\u5728\u6216\u4E0D\u518D\u6709\u6548\u3002`];
-  const errors = [];
-  if (field.type === "enum" && (field.optionValueType ?? "string") !== (source.snapshot.optionValueType ?? "string")) errors.push(`\u6765\u6E90\u5B57\u6BB5 ${field.key} \u7684\u4FDD\u5B58\u503C\u7C7B\u578B\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u5BFC\u5165\u3002`);
-  if (field.type !== source.snapshot.type || field.cardinality !== source.snapshot.cardinality) errors.push(`\u6765\u6E90\u5B57\u6BB5 ${field.key} \u7684\u7C7B\u578B\u6216\u503C\u6570\u91CF\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u5BFC\u5165\u540E\u786E\u8BA4\u7ED1\u5B9A\u3002`);
-  if (source.overrides.some((key2) => !FIELD_IMPORT_PROPERTIES.includes(key2))) errors.push("\u5B58\u5728\u672A\u77E5\u5B57\u6BB5\u8986\u5199\u9879\u3002");
-  if (field.scenes?.workflow === false) errors.push(`\u6765\u6E90\u5B57\u6BB5 ${field.key} \u5DF2\u5173\u95ED\u5DE5\u4F5C\u6D41\u4F7F\u7528\u3002`);
-  try {
-    requiredConditions(field, workflow);
-  } catch (error) {
-    errors.push(error instanceof Error ? error.message : "\u5FC5\u586B\u4F9D\u8D56\u65E0\u6CD5\u8F6C\u6362\u3002");
+function tagRecordErrors(config, path2, record) {
+  if (config.contractRevision < 11 || !record.tags || typeof record.tags !== "object") return [];
+  const fields = standardTagFields(config, path2), tags = record.tags, errors = [];
+  for (const field of fields) {
+    const value = tags[field.key.slice(5)];
+    if (value === void 0 || value === null) continue;
+    const values2 = field.cardinality === "multiple" && Array.isArray(value) ? value : [value], type = field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : field.type === "enum" ? field.optionValueType ?? "string" : "string";
+    if (values2.some((value2) => typeof value2 !== type || field.type === "enum" && !field.options?.some((option) => option.value === String(value2)))) errors.push(`${field.key} \u4E0E\u6807\u51C6\u76EE\u5F55\uFF0F\u5206\u7C7B\u5B57\u6BB5\u7684\u7C7B\u578B\u6216\u53EF\u9009\u503C\u4E0D\u7B26\u3002`);
   }
   return errors;
 }
-function storedOptionValue(value, kind) {
-  if (value == null || typeof value === "string" && !value.trim()) return value;
-  if (kind === "number") return Number(value);
-  if (kind === "boolean") return value === true || value === "true" ? true : value === false || value === "false" ? false : value;
-  if (kind === "string") return typeof value === "object" ? value : String(value);
-  return value;
-}
-
-// src/configStudio/nodeFieldSettings.ts
-var cache2 = /* @__PURE__ */ new WeakMap();
-function resolveNodeFieldSettings(config, path2) {
-  const key2 = classificationPathKey(path2), cached = cache2.get(config)?.get(key2);
-  if (cached) return cached;
-  const value = {}, owners = {}, fixed = /* @__PURE__ */ new Set();
-  let propagate = true;
-  for (const [index, node] of resolveCategoryNodes(config, path2).entries()) {
-    if (index > 0) for (const module of ["structure", "search"]) {
-      if (propagate && value[module] && (module === "structure" || value.search?.inheritance === "sealed")) fixed.add(module);
-      else if (!propagate && !fixed.has(module)) {
-        delete value[module];
-        delete owners[module];
+function standardTagTableErrors(config) {
+  if (config.contractRevision < 11) return [];
+  const errors = [], fail = (path2, message) => errors.push({ path: path2, message });
+  for (const [id2, kind] of [["teleport-hubs", "teleportHub"], ["road-travel-modes", "speed"], ["standard-tag-fields", "tagField"]]) {
+    const table2 = config.lookupTables?.find((table3) => table3.id === id2);
+    if (!table2 || table2.functionKind !== kind || table2.valueType !== "string") fail(`lookupTables/${id2}`, "\u7CFB\u7EDF\u6807\u51C6\u8868\u7F3A\u5931\uFF0C\u6216\u5176\u56FA\u5B9A ID\u3001\u7528\u9014\u3001\u4FDD\u5B58\u503C\u7C7B\u578B\u88AB\u4FEE\u6539\u3002");
+  }
+  for (const table2 of config.lookupTables ?? []) if (table2.functionKind === "tagField") {
+    if (table2.valueType !== "string") fail(`lookupTables/${table2.id}`, "\u6807\u7B7E\u540D\u79F0\u76EE\u5F55\u5FC5\u987B\u4EE5\u6587\u672C key \u4FDD\u5B58\u3002");
+    for (const row2 of table2.rows) {
+      const path2 = `lookupTables/${table2.id}/${row2.value}`, meta = row2.functionValue;
+      if (row2.value === "__other__" || !/^[A-Za-z][A-Za-z0-9_]*$/.test(row2.value)) fail(path2, "\u6807\u7B7E key \u65E0\u6548\uFF1B\u5176\u4ED6\u5B57\u6BB5\u5165\u53E3\u4E0D\u80FD\u5B58\u5165\u76EE\u5F55\u3002");
+      if (!meta || typeof meta !== "object" || !("kind" in meta) || meta.kind !== "tagField") {
+        fail(path2, "\u6807\u7B7E\u76EE\u5F55\u9700\u8981\u53D7\u63A7\u7684\u6807\u7B7E\u7C7B\u578B\u529F\u80FD\u503C\u3002");
+        continue;
       }
-    }
-    for (const module of ["structure", "search"]) if (!fixed.has(module) && node.fieldSettings?.[module]) {
-      Object.assign(value, { [module]: node.fieldSettings[module] });
-      owners[module] = node.nodeId;
-    }
-    propagate = inheritanceControls(node).fields;
-  }
-  const result = { value, owners };
-  if (Object.isFrozen(config)) {
-    Object.freeze(value);
-    Object.freeze(owners);
-    Object.freeze(result);
-    let entries = cache2.get(config);
-    if (!entries) {
-      entries = /* @__PURE__ */ new Map();
-      cache2.set(config, entries);
-    }
-    entries.set(key2, result);
-  }
-  return result;
-}
-function incomingNodeFieldSettings(config, node) {
-  const effective = resolveNodeFieldSettings(config, node.path);
-  return Object.fromEntries(Object.entries(effective.value).filter(([key2]) => effective.owners[key2] !== node.nodeId));
-}
-function validateNodeFieldSettings(config, resolveFields) {
-  const issues = [];
-  const error = (path2, message) => issues.push({ severity: "error", code: "field-settings-invalid", path: path2, message });
-  if (config.contractRevision < 10) {
-    if (config.nodes.some((node) => node.fieldSettings)) error("nodes", "\u901A\u7528\u5305\u542B\u5173\u7CFB\u4E0E\u641C\u7D22\u63A7\u5236\u9700\u8981 c10\u3002");
-    return issues;
-  }
-  if (config.contextBindings?.length) error("contextBindings", "r10 \u4EE5\u5206\u7C7B\u81EA\u8EAB\u89D2\u8272\u5B9A\u4E49\u5305\u542B\u5173\u7CFB\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u7684\u5206\u7C7B\u5BF9\u7ED1\u5B9A\u3002");
-  for (const node of config.nodes) {
-    const path2 = `nodes/${node.nodeId}/fieldSettings`, effective = resolveNodeFieldSettings(config, node.path), incoming = incomingNodeFieldSettings(config, node);
-    for (const module of ["structure", "search"]) if (incoming[module] && node.fieldSettings?.[module] && (module === "structure" || incoming.search?.inheritance === "sealed")) error(`${path2}/${module}`, "\u8BE5\u6A21\u5757\u7531\u7956\u5148\u5B57\u6BB5\u8BBE\u8BA1\u56FA\u5B9A\u7EE7\u627F\uFF0C\u4E0D\u80FD\u7528\u672C\u5730\u526F\u672C\u8986\u76D6\u3002");
-    const fields = resolveFields(config, node.path), byKey = new Map(fields.map((field) => [field.key, field]));
-    const has = (key2) => Boolean(key2 && (["ID", "Name", "World", "Class", "Kind", "SKind", "SKind2"].includes(key2) || byKey.has(key2)));
-    const idField = (key2, reverse = false) => {
-      if (!has(key2)) return false;
-      if (key2 === "ID") return true;
-      const field = byKey.get(key2);
-      return field && (["string", "reference"].includes(field.type) || field.type === "enum" && (field.optionValueType ?? "string") === "string" || reverse && field.type === "json") && (reverse || field.cardinality === "single");
-    };
-    const role = effective.value.structure;
-    if (role?.enabled) {
-      if (role.role === "main" && role.memberField && !idField(role.memberField, true)) error(`${path2}/structure`, "\u4E3B\u7ED3\u6784\u6307\u5411\u9644\u5C5E\u5B57\u6BB5\u5FC5\u987B\u662F\u5DF2\u5B9A\u4E49\u7684 ID/ID \u5217\u8868\u5B57\u6BB5\u3002");
-      if (role.role === "member") {
-        if (!idField(role.hostField)) error(`${path2}/structure`, "\u9644\u5C5E\u7ED3\u6784\u5FC5\u987B\u9009\u62E9\u5355\u503C\u7684\u4E3B\u7ED3\u6784 ID \u5B57\u6BB5\u3002");
-        const selector = role.selectorField ? byKey.get(role.selectorField) : void 0;
-        if (!selector || selector.cardinality !== "single" || selector.type === "json") error(`${path2}/structure`, "\u9644\u5C5E\u7ED3\u6784\u5FC5\u987B\u9009\u62E9\u5355\u503C\u6807\u91CF\u5C42\u7EA7\u5B57\u6BB5\u3002");
-      }
-      if (role.role === "main" && (role.hostField || role.selectorField) || role.role === "member" && role.memberField) error(`${path2}/structure`, "\u5305\u542B\u5173\u7CFB\u914D\u7F6E\u542B\u6709\u4E0E\u81EA\u8EAB\u8EAB\u4EFD\u4E0D\u7B26\u7684\u5B57\u6BB5\u3002");
-    }
-    const search = effective.value.search;
-    if (!search) continue;
-    if (!search.queryFields.includes("ID") || !search.queryFields.includes("Name") || new Set(search.queryFields).size !== search.queryFields.length || search.queryFields.some((key2) => !has(key2))) error(`${path2}/search`, "\u641C\u7D22\u6765\u6E90\u5FC5\u987B\u5305\u542B Name\u3001ID\uFF0C\u4E14\u4E0D\u80FD\u91CD\u590D\u6216\u5F15\u7528\u672A\u5B9A\u4E49\u5B57\u6BB5\u3002");
-    if (search.priority !== void 0 && (!Number.isFinite(search.priority) || search.priority < 0)) error(`${path2}/search`, "\u641C\u7D22\u6392\u5E8F\u4F18\u5148\u7EA7\u5FC5\u987B\u662F\u975E\u8D1F\u6570\u3002");
-    const subtitle = search.subtitle;
-    if (subtitle.mode !== "classification") {
-      if (!has(subtitle.field)) error(`${path2}/search/subtitle`, "\u526F\u6807\u9898\u5B57\u6BB5\u672A\u5B9A\u4E49\u3002");
-      if (subtitle.valueMode === "reference" && (!idField(subtitle.field) || !/^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/.test(subtitle.referenceDisplayField ?? "Name") || /(?:^|\.)(?:__proto__|constructor|prototype)(?:\.|$)/.test(subtitle.referenceDisplayField ?? ""))) error(`${path2}/search/subtitle`, "\u5173\u8054\u663E\u793A\u9700\u8981\u5355\u503C ID \u5B57\u6BB5\u548C\u5B89\u5168\u7684\u76EE\u6807\u5B57\u6BB5\u8DEF\u5F84\u3002");
-      if (subtitle.valueMode === "meaning") {
-        const rows = subtitle.valueOptions ?? [], values2 = new Set(rows.map((row2) => row2.value)), field = byKey.get(subtitle.field);
-        if (!rows.length || values2.size !== rows.length || rows.some((row2) => !row2.value.trim() || !row2.label.zh.trim() || !row2.label.en.trim()) || (field?.options ?? []).some((option) => !values2.has(option.value))) error(`${path2}/search/subtitle`, "\u610F\u4E49\u663E\u793A\u9700\u975E\u7A7A\u3001\u552F\u4E00\u3001\u8986\u76D6\u5B57\u6BB5\u53EF\u9009\u503C\u4E14\u540C\u65F6\u5177\u6709 zh/en \u7684\u672C\u5730\u5BF9\u7167\u3002");
-        if (field && (field.cardinality !== "single" || field.type === "json")) error(`${path2}/search/subtitle`, "\u610F\u4E49\u663E\u793A\u9700\u8981\u5355\u503C\u6807\u91CF\u5B57\u6BB5\u3002");
-      }
-    }
-    if (search.extension.mode === "nameColorCapsule" && (!has(search.extension.nameField) || !has(search.extension.colorField))) error(`${path2}/search/extension`, "\u540D\u79F0\u4E0E\u989C\u8272\u80F6\u56CA\u5FC5\u987B\u9009\u62E9\u6709\u6548\u7684\u540D\u79F0\u5B57\u6BB5\u548C\u989C\u8272\u5B57\u6BB5\u3002");
-    if (search.extension.mode === "lineChips" && !search.extension.lineChipSource) error(`${path2}/search/extension`, "\u5173\u8054\u7EBF\u8DEF\u80F6\u56CA\u5FC5\u987B\u9009\u62E9\u5173\u8054\u5C42\u7EA7\u3002");
-  }
-  return issues;
-}
-
-// src/configStudio/structureCommit.ts
-var path = (record) => ({ class: String(record.Class ?? ""), kind: record.Kind, skind: record.SKind ?? record.Skind, skind2: record.SKind2 ?? record.Skind2 });
-function assertStructureTargets(config, created, existing) {
-  if (config.contractRevision < 10) return;
-  const records = [...existing, ...created];
-  const normalizeRuleSourceWorldId2 = (value) => config.application?.worlds.find((world) => [world.id, String(world.numericCode), world.prefix, world.label.zh, world.label.en].includes(value))?.id ?? value;
-  for (const record of created) {
-    const role = resolveNodeFieldSettings(config, path(record)).value.structure;
-    if (!role?.enabled || role.role !== "member") continue;
-    const id2 = role.hostField ? readRecordPath(record, role.hostField) : void 0, world = normalizeRuleSourceWorldId2(String(record.World ?? ""));
-    const candidates = records.filter((row2) => normalizeRuleSourceWorldId2(String(row2.World ?? "")) === world && row2.ID === id2);
-    const targetRole = candidates.length === 1 ? resolveNodeFieldSettings(config, path(candidates[0])).value.structure : void 0;
-    if (candidates.length !== 1 || !targetRole?.enabled || targetRole.role !== "main") throw Error(`\u9644\u5C5E ${record.ID} \u7684\u4E3B\u7ED3\u6784 ${String(id2)} \u4E0D\u5B58\u5728\u3001\u4E0D\u552F\u4E00\u6216\u672A\u542F\u7528\u4E3B\u7ED3\u6784\u8EAB\u4EFD\u3002`);
-  }
-}
-
-// src/configStudio/workflowAnnotations.ts
-var plain = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
-function annotationEqual(left, right) {
-  if (Object.is(left, right)) return true;
-  if (Array.isArray(left) && Array.isArray(right)) return left.length === right.length && left.every((value, index) => annotationEqual(value, right[index]));
-  if (plain(left) && plain(right)) return Object.keys(left).length === Object.keys(right).length && Object.keys(left).every((key2) => Object.prototype.hasOwnProperty.call(right, key2) && annotationEqual(left[key2], right[key2]));
-  return false;
-}
-function mergeAnnotations(target, incoming, prefix = "") {
-  for (const [key2, value] of Object.entries(incoming)) {
-    const path2 = prefix ? `${prefix}.${key2}` : key2;
-    if (["__proto__", "prototype", "constructor"].includes(key2)) throw new Error(`\u65E0\u6548\u6807\u7B7E/\u6269\u5C55\u8DEF\u5F84\uFF1A${path2}`);
-    validateAnnotationValue(value);
-    if (!Object.prototype.hasOwnProperty.call(target, key2)) {
-      target[key2] = structuredClone(value);
-      continue;
-    }
-    if (plain(target[key2]) && plain(value)) {
-      mergeAnnotations(target[key2], value, path2);
-      continue;
-    }
-    if (!annotationEqual(target[key2], value)) throw new Error(`\u6807\u7B7E/\u6269\u5C55 ${path2} \u5B58\u5728\u4E0D\u540C\u503C\uFF1A\u8BF7\u7F16\u8F91\u5DF2\u6709\u8F93\u5165\u6216\u5220\u9664\u91CD\u590D\u884C\u3002`);
-  }
-}
-function rowValue(row2) {
-  if (row2.type === "null") return null;
-  if (row2.type === "bool") {
-    if (![true, false, "true", "false"].includes(row2.value)) throw new Error("\u5E03\u5C14\u503C\u5FC5\u987B\u9009\u62E9\u662F\u6216\u5426\u3002");
-    return row2.value === true || row2.value === "true";
-  }
-  if (row2.type === "number") {
-    if (row2.value == null || String(row2.value).trim() === "" || !Number.isFinite(Number(row2.value))) throw new Error("\u6570\u503C\u5FC5\u987B\u662F\u6709\u9650\u6570\u5B57\u3002");
-    return Number(row2.value);
-  }
-  if (row2.type === "json") return typeof row2.value === "string" ? JSON.parse(row2.value) : structuredClone(row2.value);
-  return String(row2.value ?? "");
-}
-function assembleAnnotations(value) {
-  const result = { tags: {}, extensions: {} };
-  for (const namespace of ["tags", "extensions"]) {
-    const text2 = value?.advancedText?.[namespace];
-    const advanced = text2?.trim() ? JSON.parse(text2) : value?.advanced?.[namespace];
-    if (advanced !== void 0) {
-      if (!plain(advanced)) throw new Error(`${namespace} \u9AD8\u7EA7\u6570\u636E\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002`);
-      if (namespace === "extensions" && Object.values(advanced).some((group) => !plain(group))) throw new Error("\u6269\u5C55\u9AD8\u7EA7\u5BF9\u8C61\u7684\u6BCF\u4E2A\u7EC4\u5FC5\u987B\u662F\u5B57\u6BB5\u5BF9\u8C61\u3002");
-      mergeAnnotations(result[namespace], advanced, namespace);
-    }
-    for (const [index, row2] of (value?.[namespace] ?? []).entries()) {
-      const key2 = row2.key.trim(), group = row2.group?.trim() ?? "";
-      if (row2.type !== "null" && (row2.value == null || String(row2.value).trim() === "")) continue;
-      if (!key2 && !group && row2.type === "text" && !row2.value) continue;
-      if (!key2 || namespace === "extensions" && !group) throw new Error(`${namespace} \u7B2C ${index + 1} \u884C\u7F3A\u5C11${!key2 ? "\u5B57\u6BB5\u540D" : "\u7EC4\u540D"}\u3002`);
-      try {
-        mergeAnnotations(result[namespace], namespace === "tags" ? { [key2]: rowValue(row2) } : { [group]: { [key2]: rowValue(row2) } }, namespace);
-      } catch (error) {
-        throw new Error(`${namespace} \u7B2C ${index + 1} \u884C\uFF1A${error instanceof Error ? error.message : "\u503C\u65E0\u6548"}`);
+      if (meta.type !== "select" && (meta.valueTable || meta.valueTableId)) fail(path2, "\u53EA\u6709\u4E0B\u62C9\u6807\u7B7E\u53EF\u4EE5\u8BBE\u7F6E\u503C\u9009\u9879\u3002");
+      if (meta.type === "select") {
+        if (meta.valueTable && meta.valueTableId) fail(path2, "\u6807\u7B7E\u503C\u526F\u672C\u4E0E\u8868\u683C\u5F15\u7528\u4E0D\u80FD\u5E76\u5B58\u3002");
+        const source = meta.valueTableId ? config.lookupTables?.find((table3) => table3.id === meta.valueTableId) : void 0;
+        if (meta.valueTableId && (!source || source.functionKind === "tagField")) fail(path2, "\u6807\u7B7E\u503C\u5BF9\u7167\u4E0D\u80FD\u5F15\u7528\u540D\u79F0\u76EE\u5F55\u6216\u7F3A\u5931\u8868\u683C\uFF0C\u9632\u6B62\u5FAA\u73AF\u3002");
+        const values2 = effectiveOptionTable(config, { optionTable: meta.valueTable, optionsTableId: meta.valueTableId });
+        if (!values2.rows.length) fail(path2, "\u4E0B\u62C9\u6807\u7B7E\u81F3\u5C11\u9700\u8981\u4E00\u4E2A\u6709\u6548\u503C\u9009\u9879\u3002");
+        const keys = /* @__PURE__ */ new Set();
+        for (const value of values2.rows) {
+          const key2 = values2.valueType === "number" ? String(Number(value.value)) : value.value;
+          if (!value.value.trim() || keys.has(key2) || !(value.label.zh.trim() || value.label.en.trim()) || values2.valueType === "number" && !Number.isFinite(Number(value.value)) || values2.valueType === "boolean" && !["true", "false"].includes(value.value)) fail(path2, "\u6807\u7B7E\u503C\u5BF9\u7167\u5B58\u5728\u91CD\u590D\u3001\u7A7A\u540D\u79F0\u6216\u65E0\u6548\u4FDD\u5B58\u503C\u3002");
+          keys.add(key2);
+        }
       }
     }
   }
-  return result;
-}
-function annotationsForOutput(workflow, slots, outputId) {
-  const result = assembleAnnotations(void 0);
-  for (const control of workflow.steps.flatMap((step) => step.controls ?? []).filter((control2) => control2.kind === "tagsExtensions")) {
-    const stored = slots[control.id];
-    const next = assembleAnnotations(stored?.[outputId]);
-    mergeAnnotations(result.tags, next.tags, "tags");
-    mergeAnnotations(result.extensions, next.extensions, "extensions");
-  }
-  return result;
-}
-function annotationPaths(value, prefix) {
-  return Object.entries(value).flatMap(([key2, value2]) => {
-    const path2 = `${prefix}.${key2}`;
-    return [path2, ...plain(value2) ? annotationPaths(value2, path2) : []];
-  });
-}
-function validateAnnotationValue(value, depth = 0) {
-  if (depth > 64) throw new Error("\u6807\u7B7E/\u6269\u5C55\u6570\u636E\u5D4C\u5957\u8FC7\u6DF1\u3002");
-  if (typeof value === "number" && !Number.isFinite(value)) throw new Error("\u6807\u7B7E/\u6269\u5C55\u5FC5\u987B\u4F7F\u7528\u6709\u9650\u6570\u503C\u3002");
-  if (Array.isArray(value)) for (const item of value) validateAnnotationValue(item, depth + 1);
-  else if (plain(value)) for (const [key2, item] of Object.entries(value)) {
-    if (["__proto__", "prototype", "constructor"].includes(key2)) throw new Error(`\u5371\u9669\u6807\u7B7E/\u6269\u5C55\u952E\uFF1A${key2}`);
-    validateAnnotationValue(item, depth + 1);
-  }
-}
-
-// src/configStudio/workflowValues.ts
-function leafValue(field, value) {
-  if (value == null || typeof value === "object" || (field.kind === "featureSearch" || field.kind === "coarseSearch") && typeof value !== "string") return value;
-  if (field.kind === "select") return storedOptionValue(value, field.optionValueType);
-  if (field.kind === "json" && typeof value === "string" && value.trim()) {
-    try {
-      return JSON.parse(value);
-    } catch {
-      return value;
+  const table = config.lookupTables?.find((table2) => table2.id === "standard-tag-fields");
+  for (const node of config.nodes) for (const field of resolveEffectiveFields(config, node.path).filter((field2) => field2.key.startsWith("tags."))) {
+    const row2 = table?.rows.find((row3) => row3.value === field.key.slice(5)), meta = row2?.functionValue;
+    if (meta && typeof meta === "object" && "kind" in meta && meta.kind === "tagField") {
+      const definition = tagMetadata(field), dictionary = meta.type === "select" ? effectiveOptionTable(config, { optionTable: meta.valueTable, optionsTableId: meta.valueTableId }) : void 0;
+      if (meta.type !== definition.type || dictionary && stable(dictionary) !== stable(definition.valueTable)) fail(`nodes/${node.nodeId}/fields/${field.fieldId}`, "\u5206\u7C7B\u4E13\u7528\u6807\u7B7E\u4E0E\u6807\u51C6\u76EE\u5F55\u7684\u7C7B\u578B\uFF0F\u503C\u9009\u9879\u5B58\u5728\u51B2\u7A81\uFF0C\u8BF7\u660E\u786E\u4FEE\u590D\u3002");
     }
   }
-  if (field.valueNormalization === "abbr") return String(value).trim().replace(/\s+/g, "").replace(/[^A-Za-z0-9_-]/g, "");
-  if (field.valueNormalization === "trim") return String(value).replace(/\r\n?/g, "\n").trim();
-  if ((field.kind === "number" || field.valueNormalization === "number") && String(value).trim() && Number.isFinite(Number(value))) return Number(value);
-  return value;
-}
-function coerceWorkflowValues(workflow, raw) {
-  const slots = { ...raw };
-  for (const control of workflow.steps.flatMap((step) => step.controls ?? [])) {
-    if (!control.slot || slots[control.slot] == null) continue;
-    const value = slots[control.slot];
-    if (control.kind === "select") {
-      slots[control.slot] = storedOptionValue(value, control.optionValueType);
-      continue;
-    }
-    if (control.kind === "group" && Array.isArray(value) && control.group) {
-      slots[control.slot] = value.map((row2) => control.group.storage === "scalar" ? control.group.itemFields[0] ? leafValue(control.group.itemFields[0], row2) : row2 : row2 && typeof row2 === "object" && !Array.isArray(row2) ? Object.fromEntries(Object.entries(row2).map(([key2, value2]) => [key2, control.group.itemFields.find((field) => field.key === key2) ? leafValue(control.group.itemFields.find((field) => field.key === key2), value2) : value2])) : row2);
-      continue;
-    }
-    if (control.kind === "json" && typeof value === "string" && value.trim()) {
-      try {
-        slots[control.slot] = JSON.parse(value);
-      } catch {
-      }
-      continue;
-    }
-    if (control.valueNormalization === "abbr") slots[control.slot] = String(value).trim().replace(/\s+/g, "").replace(/[^A-Za-z0-9_-]/g, "");
-    else if (control.valueNormalization === "trim") slots[control.slot] = String(value).replace(/\r\n?/g, "\n").trim();
-    else if ((control.valueNormalization === "number" || control.kind === "number") && String(value).trim()) {
-      const number3 = Number(value);
-      if (Number.isFinite(number3)) slots[control.slot] = number3;
-    }
-  }
-  return slots;
+  return errors;
 }
 
 // project-config/packages/openriamap-ria/environment/ruleButtons.json
@@ -12607,6 +12361,422 @@ function applicationWorld(id2) {
   return value;
 }
 
+// src/configStudio/workflowFieldControl.ts
+function workflowControlFromField(field, slot, id2, config) {
+  if (!isSafeWorkflowTarget(field.key) || PROTECTED_WORKFLOW_TARGETS.has(field.key) || field.key === "ID") throw new Error("\u7CFB\u7EDF\u5B57\u6BB5\u4E0D\u80FD\u901A\u8FC7\u666E\u901A\u5B57\u6BB5\u8F93\u5165\u91CD\u65B0\u5B9A\u4E49\u3002");
+  if (field.scenes?.workflow === false) throw new Error("\u6B64\u5B57\u6BB5\u672A\u5F00\u653E\u4E3A\u65B0\u5DE5\u4F5C\u6D41\u8F93\u5165\u3002");
+  const kind = field.input === "text" && field.type === "number" ? "number" : field.input;
+  const search = kind === "featureSearch" ? field.reference ? {
+    target: { class: field.reference.classCode },
+    queryFields: [.../* @__PURE__ */ new Set([field.reference.matchField, field.reference.displayField ?? "Name"])],
+    returnField: field.reference.matchField,
+    displayTemplate: `{{${field.reference.matchField}}} ({{${field.reference.displayField ?? "Name"}}})`,
+    matcher: "contains",
+    minQueryLength: 1,
+    maxResults: 30,
+    debounceMs: 180,
+    cacheScope: "world"
+  } : void 0 : void 0;
+  if (kind === "featureSearch" && !search) throw new Error("\u8981\u7D20\u641C\u7D22\u8F93\u5165\u9700\u8981\u5148\u5728\u5B57\u6BB5\u5B9A\u4E49\u4E2D\u8BBE\u7F6E\u5F15\u7528\u76EE\u6807\u3002");
+  const common = { id: id2, slot, columns: 1, label: structuredClone(field.labels), required: field.required, placeholder: field.placeholder, defaultValue: structuredClone(field.defaultValue), optionValueType: field.optionValueType ?? (field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : void 0), fieldFormat: field.format };
+  if (field.type === "json" && field.cardinality === "multiple") return { ...common, kind: "json" };
+  if (field.cardinality === "multiple") return { ...common, kind: "group", group: {
+    storage: "scalar",
+    optional: !field.required,
+    addLabel: { zh: `\u6DFB\u52A0${field.labels.zh}`, en: "" },
+    itemFields: [{ key: "", kind, label: structuredClone(field.labels), options: config ? resolveWorkflowSelectOptions(config, field) : field.options, search, required: true, placeholder: field.placeholder, optionValueType: field.optionValueType ?? (field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : void 0), fieldFormat: field.format }]
+  } };
+  return { ...common, kind, options: field.options, optionSource: field.optionSource, search };
+}
+
+// src/configStudio/fieldReuse.ts
+var FIELD_IMPORT_PROPERTIES = ["label", "kind", "options", "optionValueType", "placeholder", "defaultValue", "required", "requiredWhen", "search", "group", "rows", "valueNormalization", "fieldFormat"];
+function fieldSourceSnapshot(field) {
+  const { key: key2, type, cardinality, labels: labels2, options, optionValueType, format, defaultValue, required, requiredWhen, input, placeholder, reference } = field;
+  return structuredClone({ key: key2, type, cardinality, labels: labels2, options, optionValueType, format, defaultValue, required, requiredWhen, input, placeholder, reference });
+}
+function resolveSourceField(config, source) {
+  const node = config.nodes.find((item) => item.nodeId === source.nodeId);
+  if (!node) return void 0;
+  const fields = resolveEffectiveFields(config, node.path);
+  return fields.find((field) => field.fieldId === source.fieldId) ?? fields.find((field) => field.key === source.snapshot.key && field.overrideOf === source.snapshot.key);
+}
+function requiredConditions(field, workflow) {
+  return (field.requiredWhen ?? []).flatMap((condition) => {
+    if (condition.kind === "always") return [];
+    if (!("field" in condition)) throw new Error(`\u5B57\u6BB5 ${field.key} \u7684\u5FC5\u586B\u6761\u4EF6\u4E0D\u80FD\u8F6C\u6362\u4E3A\u8F93\u5165\u69FD\u4F4D\u3002`);
+    const bindings = workflow.outputs.flatMap((output) => output.assignments).filter((item) => item.target === condition.field && /^[A-Z][A-Z0-9_]*$/.test(item.expression));
+    const tokens = [...new Set(bindings.map((item) => item.expression))];
+    if (tokens.length !== 1) throw new Error(`\u8BF7\u5148\u5C06\u6761\u4EF6\u5B57\u6BB5 ${condition.field} \u660E\u786E\u7ED1\u5B9A\u5230\u4E00\u4E2A\u8F93\u5165\u69FD\u4F4D\u3002`);
+    const source = workflow.steps.flatMap((step) => step.controls ?? []).find((control) => control.slot === tokens[0]);
+    const typed = (value) => source?.kind === "number" || source?.optionValueType === "number" ? Number(value) : source?.kind === "toggle" || source?.optionValueType === "boolean" ? value === "true" : value;
+    if (condition.kind === "fieldEquals") return [{ token: tokens[0], operator: "equals", value: typed(condition.value) }];
+    if (condition.kind === "fieldPresent") return [{ token: tokens[0], operator: condition.present ? "present" : "empty" }];
+    return [{ token: tokens[0], operator: "in", values: condition.values.map(typed) }];
+  });
+}
+function importFieldIntoControl(config, workflow, control, nodeId, field) {
+  const imported = workflowControlFromField(field, control.slot ?? control.id, control.id, config);
+  return {
+    ...control,
+    ...imported,
+    columns: control.columns,
+    required: Boolean(field.required || field.requiredWhen?.length),
+    requiredWhen: field.required || field.requiredWhen?.some((condition) => condition.kind === "always") ? [] : field.requiredWhen?.length ? [{ token: "", operator: "present", any: requiredConditions(field, workflow) }] : [],
+    fieldFormat: field.format,
+    optionValueType: imported.optionValueType,
+    fieldSource: { nodeId, fieldId: field.fieldId, snapshot: fieldSourceSnapshot(field), overrides: [] }
+  };
+}
+function resolveImportedControl(config, workflow, control) {
+  if (config.contractRevision >= 9 || !control.fieldSource) return control;
+  const field = resolveSourceField(config, control.fieldSource);
+  if (!field) return control;
+  let generated;
+  try {
+    generated = importFieldIntoControl(config, workflow, control, control.fieldSource.nodeId, field);
+  } catch {
+    return control;
+  }
+  const next = { ...control };
+  for (const key2 of FIELD_IMPORT_PROPERTIES) if (!control.fieldSource.overrides.includes(key2)) {
+    next[key2] = generated[key2];
+  }
+  return next;
+}
+function resolveImportedGroupField(config, workflow, field) {
+  if (!field.fieldSource) return field;
+  const control = resolveImportedControl(config, workflow, { ...field, id: field.key, slot: "GROUP_VALUE", columns: 1 });
+  const { id: _id, slot: _slot, columns: _columns, ...resolved2 } = control;
+  return { ...field, ...resolved2, key: field.key };
+}
+function resolveWorkflowFields(config, workflow) {
+  return { ...workflow, steps: workflow.steps.map((step) => ({ ...step, controls: step.controls?.map((raw) => {
+    const control = effectiveOptionsOwner(config, resolveImportedControl(config, workflow, raw));
+    return control.group ? { ...control, group: { ...control.group, itemFields: control.group.itemFields.map((field) => effectiveOptionsOwner(config, resolveImportedGroupField(config, workflow, field))) } } : control;
+  }) })) };
+}
+function fieldImportErrors(config, workflow, control) {
+  const source = control.fieldSource;
+  if (!source) return [];
+  const field = resolveSourceField(config, source);
+  if (!field) return [`\u6765\u6E90\u5206\u7C7B/\u5B57\u6BB5 ${source.nodeId}/${source.snapshot.key} \u5DF2\u4E0D\u5B58\u5728\u6216\u4E0D\u518D\u6709\u6548\u3002`];
+  const errors = [];
+  if (field.type === "enum" && (field.optionValueType ?? "string") !== (source.snapshot.optionValueType ?? "string")) errors.push(`\u6765\u6E90\u5B57\u6BB5 ${field.key} \u7684\u4FDD\u5B58\u503C\u7C7B\u578B\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u5BFC\u5165\u3002`);
+  if (field.type !== source.snapshot.type || field.cardinality !== source.snapshot.cardinality) errors.push(`\u6765\u6E90\u5B57\u6BB5 ${field.key} \u7684\u7C7B\u578B\u6216\u503C\u6570\u91CF\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u5BFC\u5165\u540E\u786E\u8BA4\u7ED1\u5B9A\u3002`);
+  if (source.overrides.some((key2) => !FIELD_IMPORT_PROPERTIES.includes(key2))) errors.push("\u5B58\u5728\u672A\u77E5\u5B57\u6BB5\u8986\u5199\u9879\u3002");
+  if (field.scenes?.workflow === false) errors.push(`\u6765\u6E90\u5B57\u6BB5 ${field.key} \u5DF2\u5173\u95ED\u5DE5\u4F5C\u6D41\u4F7F\u7528\u3002`);
+  try {
+    requiredConditions(field, workflow);
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : "\u5FC5\u586B\u4F9D\u8D56\u65E0\u6CD5\u8F6C\u6362\u3002");
+  }
+  return errors;
+}
+function storedOptionValue(value, kind) {
+  if (value == null || typeof value === "string" && !value.trim()) return value;
+  if (kind === "number") return Number(value);
+  if (kind === "boolean") return value === true || value === "true" ? true : value === false || value === "false" ? false : value;
+  if (kind === "string") return typeof value === "object" ? value : String(value);
+  return value;
+}
+
+// src/configStudio/workflowValues.ts
+function leafValue(field, value) {
+  if (value == null || typeof value === "object" || (field.kind === "featureSearch" || field.kind === "coarseSearch") && typeof value !== "string") return value;
+  if (field.kind === "select") return storedOptionValue(value, field.optionValueType);
+  if (field.kind === "json" && typeof value === "string" && value.trim()) {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }
+  if (field.valueNormalization === "abbr") return String(value).trim().replace(/\s+/g, "").replace(/[^A-Za-z0-9_-]/g, "");
+  if (field.valueNormalization === "trim") return String(value).replace(/\r\n?/g, "\n").trim();
+  if ((field.kind === "number" || field.valueNormalization === "number") && String(value).trim() && Number.isFinite(Number(value))) return Number(value);
+  return value;
+}
+function coerceWorkflowValues(workflow, raw) {
+  const slots = { ...raw };
+  for (const control of workflow.steps.flatMap((step) => step.controls ?? [])) {
+    if (!control.slot || slots[control.slot] == null) continue;
+    const value = slots[control.slot];
+    if (control.kind === "select") {
+      slots[control.slot] = storedOptionValue(value, control.optionValueType);
+      continue;
+    }
+    if (control.kind === "group" && Array.isArray(value) && control.group) {
+      slots[control.slot] = value.map((row2) => control.group.storage === "scalar" ? control.group.itemFields[0] ? leafValue(control.group.itemFields[0], row2) : row2 : row2 && typeof row2 === "object" && !Array.isArray(row2) ? Object.fromEntries(Object.entries(row2).map(([key2, value2]) => [key2, control.group.itemFields.find((field) => field.key === key2) ? leafValue(control.group.itemFields.find((field) => field.key === key2), value2) : value2])) : row2);
+      continue;
+    }
+    if (control.kind === "json" && typeof value === "string" && value.trim()) {
+      try {
+        slots[control.slot] = JSON.parse(value);
+      } catch {
+      }
+      continue;
+    }
+    if (control.valueNormalization === "abbr") slots[control.slot] = String(value).trim().replace(/\s+/g, "").replace(/[^A-Za-z0-9_-]/g, "");
+    else if (control.valueNormalization === "trim") slots[control.slot] = String(value).replace(/\r\n?/g, "\n").trim();
+    else if ((control.valueNormalization === "number" || control.kind === "number") && String(value).trim()) {
+      const number3 = Number(value);
+      if (Number.isFinite(number3)) slots[control.slot] = number3;
+    }
+  }
+  return slots;
+}
+
+// src/configStudio/optionalFieldValues.ts
+function isBlankFieldValue(value) {
+  return value == null || typeof value === "string" && value.trim() === "";
+}
+function recordFieldRequired(field, record) {
+  const empty4 = (value) => isBlankFieldValue(value) || Array.isArray(value) && value.length === 0;
+  return Boolean(field.required || field.requiredWhen?.some((condition) => condition.kind === "always" || condition.kind === "fieldPresent" && !empty4(readRecordPath(record, condition.field)) === condition.present || condition.kind === "fieldEquals" && String(readRecordPath(record, condition.field) ?? "") === condition.value || condition.kind === "fieldIn" && condition.values.includes(String(readRecordPath(record, condition.field) ?? ""))));
+}
+var plain = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+var safePath = (path2) => path2.split(".").every((key2) => key2 && !["__proto__", "prototype", "constructor"].includes(key2));
+function replacePath(record, path2, value) {
+  if (!safePath(path2)) return;
+  const keys = path2.split(".");
+  let node = record;
+  for (const key2 of keys.slice(0, -1)) {
+    if (!plain(node[key2])) return;
+    node = node[key2];
+  }
+  if (value === void 0) delete node[keys[keys.length - 1]];
+  else node[keys[keys.length - 1]] = value;
+}
+function schemaBranches(schema, value) {
+  if (schema.type && (schema.type === "array" ? !Array.isArray(value) : schema.type === "object" ? !plain(value) : typeof value !== schema.type)) return [];
+  return [schema, ...(schema.anyOf ?? []).flatMap((branch) => schemaBranches(branch, value))];
+}
+function cleanStructured(value, schemas, path2, protectedPaths) {
+  const branches2 = schemas.flatMap((schema) => schemaBranches(schema, value));
+  if (Array.isArray(value)) {
+    const items = branches2.flatMap((schema) => schema.items ? [schema.items] : []);
+    return items.length ? value.map((item) => cleanStructured(item, items, path2, protectedPaths)) : value;
+  }
+  if (!plain(value)) return value;
+  const required = new Set(branches2.flatMap((schema) => schema.required ?? []));
+  for (const key2 of Object.keys(value)) {
+    const children = branches2.flatMap((schema) => schema.properties && Object.prototype.hasOwnProperty.call(schema.properties, key2) ? [schema.properties[key2]] : []);
+    if (!children.length) continue;
+    const childPath = `${path2}.${key2}`;
+    if (!required.has(key2) && !protectedPaths.has(childPath) && isBlankFieldValue(value[key2])) delete value[key2];
+    else value[key2] = cleanStructured(value[key2], children, childPath, protectedPaths);
+  }
+  return value;
+}
+function groupSchemas(config, path2) {
+  const schemas = /* @__PURE__ */ new Map();
+  for (const workflow of config.workflows) for (const output of workflow.outputs) {
+    if (config.contractRevision >= 15 ? !outputAcceptsClassification(config, output, path2) : !output.classification || !pathMatchesScope(path2, output.classification)) continue;
+    for (const assignment of output.assignments) {
+      const control = workflow.steps.flatMap((step) => step.controls ?? []).find((item) => item.kind === "group" && item.slot === assignment.expression.trim());
+      if (!control?.group || control.group.storage === "scalar") continue;
+      const properties = Object.fromEntries(control.group.itemFields.map((field) => [field.key, {}]));
+      const required = control.group.itemFields.filter((field) => field.required || field.requiredWhen?.length).map((field) => field.key);
+      const schema = { type: "array", items: { type: "object", properties, required } };
+      schemas.set(assignment.target, [...schemas.get(assignment.target) ?? [], schema]);
+    }
+  }
+  return schemas;
+}
+function omitOptionalFieldValues(config, path2, raw) {
+  const record = structuredClone(raw), fields = resolveEffectiveFields(config, path2), groups = groupSchemas(config, path2);
+  const protectedPaths = new Set(fields.filter((field) => field.emptyValue === "preserve" || recordFieldRequired(field, raw)).map((field) => field.key));
+  for (const field of fields) {
+    if (!safePath(field.key)) continue;
+    const value = readRecordPath(record, field.key), required = recordFieldRequired(field, raw);
+    if (required && field.requiredWhen?.length && isBlankFieldValue(readRecordPath(raw, field.key))) throw Error(`${field.key} \u4E3A\u5FC5\u586B\u9879\u3002`);
+    if (field.emptyValue === "preserve" && isBlankFieldValue(value)) continue;
+    if (!required && isBlankFieldValue(value)) {
+      replacePath(record, field.key, void 0);
+      continue;
+    }
+    const schemas = [...field.valueSchema ? [field.valueSchema] : [], ...groups.get(field.key) ?? []];
+    if (schemas.length) replacePath(record, field.key, cleanStructured(value, schemas, field.key, protectedPaths));
+  }
+  return record;
+}
+
+// src/configStudio/nodeFieldSettings.ts
+var cache2 = /* @__PURE__ */ new WeakMap();
+function resolveNodeFieldSettings(config, path2) {
+  const key2 = classificationPathKey(path2), cached = cache2.get(config)?.get(key2);
+  if (cached) return cached;
+  const value = {}, owners = {}, fixed = /* @__PURE__ */ new Set();
+  let propagate = true;
+  for (const [index, node] of resolveCategoryNodes(config, path2).entries()) {
+    if (index > 0) for (const module of ["structure", "search"]) {
+      if (propagate && value[module] && (module === "structure" || value.search?.inheritance === "sealed")) fixed.add(module);
+      else if (!propagate && !fixed.has(module)) {
+        delete value[module];
+        delete owners[module];
+      }
+    }
+    for (const module of ["structure", "search"]) if (!fixed.has(module) && node.fieldSettings?.[module]) {
+      Object.assign(value, { [module]: node.fieldSettings[module] });
+      owners[module] = node.nodeId;
+    }
+    propagate = inheritanceControls(node).fields;
+  }
+  const result = { value, owners };
+  if (Object.isFrozen(config)) {
+    Object.freeze(value);
+    Object.freeze(owners);
+    Object.freeze(result);
+    let entries = cache2.get(config);
+    if (!entries) {
+      entries = /* @__PURE__ */ new Map();
+      cache2.set(config, entries);
+    }
+    entries.set(key2, result);
+  }
+  return result;
+}
+function incomingNodeFieldSettings(config, node) {
+  const effective = resolveNodeFieldSettings(config, node.path);
+  return Object.fromEntries(Object.entries(effective.value).filter(([key2]) => effective.owners[key2] !== node.nodeId));
+}
+function validateNodeFieldSettings(config, resolveFields) {
+  const issues = [];
+  const error = (path2, message) => issues.push({ severity: "error", code: "field-settings-invalid", path: path2, message });
+  if (config.contractRevision < 10) {
+    if (config.nodes.some((node) => node.fieldSettings)) error("nodes", "\u901A\u7528\u5305\u542B\u5173\u7CFB\u4E0E\u641C\u7D22\u63A7\u5236\u9700\u8981 c10\u3002");
+    return issues;
+  }
+  if (config.contextBindings?.length) error("contextBindings", "r10 \u4EE5\u5206\u7C7B\u81EA\u8EAB\u89D2\u8272\u5B9A\u4E49\u5305\u542B\u5173\u7CFB\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u7684\u5206\u7C7B\u5BF9\u7ED1\u5B9A\u3002");
+  for (const node of config.nodes) {
+    const path2 = `nodes/${node.nodeId}/fieldSettings`, effective = resolveNodeFieldSettings(config, node.path), incoming = incomingNodeFieldSettings(config, node);
+    for (const module of ["structure", "search"]) if (incoming[module] && node.fieldSettings?.[module] && (module === "structure" || incoming.search?.inheritance === "sealed")) error(`${path2}/${module}`, "\u8BE5\u6A21\u5757\u7531\u7956\u5148\u5B57\u6BB5\u8BBE\u8BA1\u56FA\u5B9A\u7EE7\u627F\uFF0C\u4E0D\u80FD\u7528\u672C\u5730\u526F\u672C\u8986\u76D6\u3002");
+    const fields = resolveFields(config, node.path), byKey = new Map(fields.map((field) => [field.key, field]));
+    const has = (key2) => Boolean(key2 && (["ID", "Name", "World", "Class", "Kind", "SKind", "SKind2"].includes(key2) || byKey.has(key2)));
+    const idField = (key2, reverse = false) => {
+      if (!has(key2)) return false;
+      if (key2 === "ID") return true;
+      const field = byKey.get(key2);
+      return field && (["string", "reference"].includes(field.type) || field.type === "enum" && (field.optionValueType ?? "string") === "string" || reverse && field.type === "json") && (reverse || field.cardinality === "single");
+    };
+    const role = effective.value.structure;
+    if (role?.enabled) {
+      if (role.role === "main" && role.memberField && !idField(role.memberField, true)) error(`${path2}/structure`, "\u4E3B\u7ED3\u6784\u6307\u5411\u9644\u5C5E\u5B57\u6BB5\u5FC5\u987B\u662F\u5DF2\u5B9A\u4E49\u7684 ID/ID \u5217\u8868\u5B57\u6BB5\u3002");
+      if (role.role === "member") {
+        if (!idField(role.hostField)) error(`${path2}/structure`, "\u9644\u5C5E\u7ED3\u6784\u5FC5\u987B\u9009\u62E9\u5355\u503C\u7684\u4E3B\u7ED3\u6784 ID \u5B57\u6BB5\u3002");
+        const selector = role.selectorField ? byKey.get(role.selectorField) : void 0;
+        if (!selector || selector.cardinality !== "single" || selector.type === "json") error(`${path2}/structure`, "\u9644\u5C5E\u7ED3\u6784\u5FC5\u987B\u9009\u62E9\u5355\u503C\u6807\u91CF\u5C42\u7EA7\u5B57\u6BB5\u3002");
+      }
+      if (role.role === "main" && (role.hostField || role.selectorField) || role.role === "member" && role.memberField) error(`${path2}/structure`, "\u5305\u542B\u5173\u7CFB\u914D\u7F6E\u542B\u6709\u4E0E\u81EA\u8EAB\u8EAB\u4EFD\u4E0D\u7B26\u7684\u5B57\u6BB5\u3002");
+    }
+    const search = effective.value.search;
+    if (!search) continue;
+    if (!search.queryFields.includes("ID") || !search.queryFields.includes("Name") || new Set(search.queryFields).size !== search.queryFields.length || search.queryFields.some((key2) => !has(key2))) error(`${path2}/search`, "\u641C\u7D22\u6765\u6E90\u5FC5\u987B\u5305\u542B Name\u3001ID\uFF0C\u4E14\u4E0D\u80FD\u91CD\u590D\u6216\u5F15\u7528\u672A\u5B9A\u4E49\u5B57\u6BB5\u3002");
+    if (search.priority !== void 0 && (!Number.isFinite(search.priority) || search.priority < 0)) error(`${path2}/search`, "\u641C\u7D22\u6392\u5E8F\u4F18\u5148\u7EA7\u5FC5\u987B\u662F\u975E\u8D1F\u6570\u3002");
+    const subtitle = search.subtitle;
+    if (subtitle.mode !== "classification") {
+      if (!has(subtitle.field)) error(`${path2}/search/subtitle`, "\u526F\u6807\u9898\u5B57\u6BB5\u672A\u5B9A\u4E49\u3002");
+      if (subtitle.valueMode === "reference" && (!idField(subtitle.field) || !/^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/.test(subtitle.referenceDisplayField ?? "Name") || /(?:^|\.)(?:__proto__|constructor|prototype)(?:\.|$)/.test(subtitle.referenceDisplayField ?? ""))) error(`${path2}/search/subtitle`, "\u5173\u8054\u663E\u793A\u9700\u8981\u5355\u503C ID \u5B57\u6BB5\u548C\u5B89\u5168\u7684\u76EE\u6807\u5B57\u6BB5\u8DEF\u5F84\u3002");
+      if (subtitle.valueMode === "meaning") {
+        const rows = subtitle.valueOptions ?? [], values2 = new Set(rows.map((row2) => row2.value)), field = byKey.get(subtitle.field);
+        if (!rows.length || values2.size !== rows.length || rows.some((row2) => !row2.value.trim() || !row2.label.zh.trim() || !row2.label.en.trim()) || (field?.options ?? []).some((option) => !values2.has(option.value))) error(`${path2}/search/subtitle`, "\u610F\u4E49\u663E\u793A\u9700\u975E\u7A7A\u3001\u552F\u4E00\u3001\u8986\u76D6\u5B57\u6BB5\u53EF\u9009\u503C\u4E14\u540C\u65F6\u5177\u6709 zh/en \u7684\u672C\u5730\u5BF9\u7167\u3002");
+        if (field && (field.cardinality !== "single" || field.type === "json")) error(`${path2}/search/subtitle`, "\u610F\u4E49\u663E\u793A\u9700\u8981\u5355\u503C\u6807\u91CF\u5B57\u6BB5\u3002");
+      }
+    }
+    if (search.extension.mode === "nameColorCapsule" && (!has(search.extension.nameField) || !has(search.extension.colorField))) error(`${path2}/search/extension`, "\u540D\u79F0\u4E0E\u989C\u8272\u80F6\u56CA\u5FC5\u987B\u9009\u62E9\u6709\u6548\u7684\u540D\u79F0\u5B57\u6BB5\u548C\u989C\u8272\u5B57\u6BB5\u3002");
+    if (search.extension.mode === "lineChips" && !search.extension.lineChipSource) error(`${path2}/search/extension`, "\u5173\u8054\u7EBF\u8DEF\u80F6\u56CA\u5FC5\u987B\u9009\u62E9\u5173\u8054\u5C42\u7EA7\u3002");
+  }
+  return issues;
+}
+
+// src/configStudio/workflowAnnotations.ts
+var plain2 = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+function annotationEqual(left, right) {
+  if (Object.is(left, right)) return true;
+  if (Array.isArray(left) && Array.isArray(right)) return left.length === right.length && left.every((value, index) => annotationEqual(value, right[index]));
+  if (plain2(left) && plain2(right)) return Object.keys(left).length === Object.keys(right).length && Object.keys(left).every((key2) => Object.prototype.hasOwnProperty.call(right, key2) && annotationEqual(left[key2], right[key2]));
+  return false;
+}
+function mergeAnnotations(target, incoming, prefix = "") {
+  for (const [key2, value] of Object.entries(incoming)) {
+    const path2 = prefix ? `${prefix}.${key2}` : key2;
+    if (["__proto__", "prototype", "constructor"].includes(key2)) throw new Error(`\u65E0\u6548\u6807\u7B7E/\u6269\u5C55\u8DEF\u5F84\uFF1A${path2}`);
+    validateAnnotationValue(value);
+    if (!Object.prototype.hasOwnProperty.call(target, key2)) {
+      target[key2] = structuredClone(value);
+      continue;
+    }
+    if (plain2(target[key2]) && plain2(value)) {
+      mergeAnnotations(target[key2], value, path2);
+      continue;
+    }
+    if (!annotationEqual(target[key2], value)) throw new Error(`\u6807\u7B7E/\u6269\u5C55 ${path2} \u5B58\u5728\u4E0D\u540C\u503C\uFF1A\u8BF7\u7F16\u8F91\u5DF2\u6709\u8F93\u5165\u6216\u5220\u9664\u91CD\u590D\u884C\u3002`);
+  }
+}
+function rowValue(row2) {
+  if (row2.type === "null") return null;
+  if (row2.type === "bool") {
+    if (![true, false, "true", "false"].includes(row2.value)) throw new Error("\u5E03\u5C14\u503C\u5FC5\u987B\u9009\u62E9\u662F\u6216\u5426\u3002");
+    return row2.value === true || row2.value === "true";
+  }
+  if (row2.type === "number") {
+    if (row2.value == null || String(row2.value).trim() === "" || !Number.isFinite(Number(row2.value))) throw new Error("\u6570\u503C\u5FC5\u987B\u662F\u6709\u9650\u6570\u5B57\u3002");
+    return Number(row2.value);
+  }
+  if (row2.type === "json") return typeof row2.value === "string" ? JSON.parse(row2.value) : structuredClone(row2.value);
+  return String(row2.value ?? "");
+}
+function assembleAnnotations(value) {
+  const result = { tags: {}, extensions: {} };
+  for (const namespace of ["tags", "extensions"]) {
+    const text2 = value?.advancedText?.[namespace];
+    const advanced = text2?.trim() ? JSON.parse(text2) : value?.advanced?.[namespace];
+    if (advanced !== void 0) {
+      if (!plain2(advanced)) throw new Error(`${namespace} \u9AD8\u7EA7\u6570\u636E\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002`);
+      if (namespace === "extensions" && Object.values(advanced).some((group) => !plain2(group))) throw new Error("\u6269\u5C55\u9AD8\u7EA7\u5BF9\u8C61\u7684\u6BCF\u4E2A\u7EC4\u5FC5\u987B\u662F\u5B57\u6BB5\u5BF9\u8C61\u3002");
+      mergeAnnotations(result[namespace], advanced, namespace);
+    }
+    for (const [index, row2] of (value?.[namespace] ?? []).entries()) {
+      const key2 = row2.key.trim(), group = row2.group?.trim() ?? "";
+      if (row2.type !== "null" && (row2.value == null || String(row2.value).trim() === "")) continue;
+      if (!key2 && !group && row2.type === "text" && !row2.value) continue;
+      if (!key2 || namespace === "extensions" && !group) throw new Error(`${namespace} \u7B2C ${index + 1} \u884C\u7F3A\u5C11${!key2 ? "\u5B57\u6BB5\u540D" : "\u7EC4\u540D"}\u3002`);
+      try {
+        mergeAnnotations(result[namespace], namespace === "tags" ? { [key2]: rowValue(row2) } : { [group]: { [key2]: rowValue(row2) } }, namespace);
+      } catch (error) {
+        throw new Error(`${namespace} \u7B2C ${index + 1} \u884C\uFF1A${error instanceof Error ? error.message : "\u503C\u65E0\u6548"}`);
+      }
+    }
+  }
+  return result;
+}
+function annotationsForOutput(workflow, slots, outputId) {
+  const result = assembleAnnotations(void 0);
+  for (const control of workflow.steps.flatMap((step) => step.controls ?? []).filter((control2) => control2.kind === "tagsExtensions")) {
+    const stored = slots[control.id];
+    const next = assembleAnnotations(stored?.[outputId]);
+    mergeAnnotations(result.tags, next.tags, "tags");
+    mergeAnnotations(result.extensions, next.extensions, "extensions");
+  }
+  return result;
+}
+function annotationPaths(value, prefix) {
+  return Object.entries(value).flatMap(([key2, value2]) => {
+    const path2 = `${prefix}.${key2}`;
+    return [path2, ...plain2(value2) ? annotationPaths(value2, path2) : []];
+  });
+}
+function validateAnnotationValue(value, depth = 0) {
+  if (depth > 64) throw new Error("\u6807\u7B7E/\u6269\u5C55\u6570\u636E\u5D4C\u5957\u8FC7\u6DF1\u3002");
+  if (typeof value === "number" && !Number.isFinite(value)) throw new Error("\u6807\u7B7E/\u6269\u5C55\u5FC5\u987B\u4F7F\u7528\u6709\u9650\u6570\u503C\u3002");
+  if (Array.isArray(value)) for (const item of value) validateAnnotationValue(item, depth + 1);
+  else if (plain2(value)) for (const [key2, item] of Object.entries(value)) {
+    if (["__proto__", "prototype", "constructor"].includes(key2)) throw new Error(`\u5371\u9669\u6807\u7B7E/\u6269\u5C55\u952E\uFF1A${key2}`);
+    validateAnnotationValue(item, depth + 1);
+  }
+}
+
 // src/core/project/worldIdentity.ts
 function normalizeRuleSourceWorldId(worldId2) {
   const raw = String(worldId2 ?? "").trim(), worlds = getApplicationSettings().worlds;
@@ -12670,299 +12840,6 @@ function captureDrawingSnapshot(workflow, rawSlots, previous, capture) {
   return { slots, captures };
 }
 
-// src/configStudio/workflowEditing.ts
-var recordClassification = (record) => ({ class: String(record.Class ?? ""), ...record.Kind ? { kind: String(record.Kind) } : {}, ...record.SKind ?? record.Skind ? { skind: String(record.SKind ?? record.Skind) } : {}, ...record.SKind2 ?? record.Skind2 ? { skind2: String(record.SKind2 ?? record.Skind2) } : {} });
-function compileWorkflowEditPlan(workflow, config) {
-  workflow = resolveWorkflowFields(config, workflow);
-  const errors = [];
-  if (workflow.mode !== "composed") throw Error("\u5916\u90E8\u65B9\u6848\u901A\u8FC7\u5DF2\u767B\u8BB0\u7684\u7F16\u8F91\u63A5\u53E3\u6267\u884C\uFF0C\u4E0D\u8F6C\u6362\u6807\u51C6\u5DE5\u4F5C\u6D41\u3002");
-  if (workflow.steps.length !== 3 || workflow.steps.map((s) => s.kind).join(",") !== "actor,form,geometry") errors.push("\u5FC5\u987B\u6070\u4E3A\u586B\u5199\u4EBA\u3001\u4FE1\u606F\u6536\u96C6\u3001\u8981\u7D20\u7ED8\u5236\u4E09\u9875\u3002");
-  const drawings = workflow.steps.filter((s) => s.kind === "geometry");
-  if (drawings.some((s) => s.geometryRole === "auxiliary" || s.drawing?.auxiliaryPoints?.length)) errors.push("\u4E0D\u80FD\u5305\u542B\u989D\u5916\u7ED8\u5236\u3002");
-  if (workflow.outputs.length !== 1 || drawings.length !== 1 || drawings[0]?.outputId !== workflow.outputs[0]?.id) errors.push("\u5FC5\u987B\u53EA\u6709\u4E00\u4E2A\u660E\u786E\u7ED1\u5B9A\u8F93\u51FA\u7684\u8981\u7D20\u7ED8\u5236\u3002");
-  if (workflow.steps.some((s) => s.when || s.controls?.some((c) => c.when || c.group?.itemFields.some((f) => "when" in f && f.when))) || workflow.outputs.some((o) => o.when || o.assignments.some((a) => a.when))) errors.push("\u4E0D\u80FD\u5305\u542B\u8F93\u5165\u3001\u9875\u9762\u6216\u8F93\u51FA\u7684\u542F\u7528\u6761\u4EF6\u3002");
-  if (errors.length) throw Error(errors.join("\n"));
-  const output = workflow.outputs[0], scope = workflow.editor?.scope ?? output.classification ?? { class: "" };
-  const classifications = workflowClassificationGroup(config, output).paths.filter((path2) => pathMatchesScope(path2, scope));
-  if (workflow.editor?.scope && !hasCategoryNode(config, scope) || !classifications.length || config.contractRevision < 15 && (!output.classification || !pathMatchesScope(scope, output.classification) || !config.nodes.some((n) => classificationPathKey(n.path) === classificationPathKey(scope)))) throw Error("\u7F16\u8F91\u4F5C\u7528\u8303\u56F4\u5FC5\u987B\u4E3A\u8F93\u51FA\u8303\u56F4\u5185\u7684\u5B9E\u9645\u5206\u7C7B\u3002");
-  const controls = workflow.steps.flatMap((s) => s.controls ?? []), tokens = new Set(controls.flatMap((c) => c.slot ? [c.slot] : [])), needed = /* @__PURE__ */ new Set(), idOnly = /* @__PURE__ */ new Set(), bindings = [];
-  for (const assignment of output.assignments) {
-    const ast = parseWorkflowExpression(assignment.expression), used = workflowExpressionTokens(ast).filter((t) => tokens.has(t));
-    if (assignment.target === "ID") used.forEach((t) => idOnly.add(t));
-    else {
-      used.forEach((t) => needed.add(t));
-      if (ast.kind === "token" && tokens.has(ast.name)) bindings.push({ slot: ast.name, target: assignment.target });
-    }
-  }
-  for (const step of drawings) {
-    if (step.drawing?.heightSlot) needed.add(step.drawing.heightSlot);
-    for (const binding of step.drawing?.bindings ?? []) if (binding.value === "height" && step.drawing?.heightSlot) bindings.push({ slot: step.drawing.heightSlot, target: binding.target });
-  }
-  for (const control of controls) for (const condition of control.requiredWhen ?? []) for (const token of conditionTokens(condition)) if (tokens.has(token)) needed.add(token);
-  const explicit = workflow.editor?.backfill ?? [];
-  for (const binding of explicit) {
-    if (!tokens.has(binding.slot) || !isSafeWorkflowTarget(binding.target) || !classifications.every((path2) => resolveEffectiveFields(config, path2).some((f) => f.key === binding.target)) || ["World", "Class", "Kind", "SKind", "SKind2", "Creator", "CreateBy", "CreateTime"].includes(binding.target)) errors.push(`\u56DE\u586B\u6620\u5C04 ${binding.slot} \u2192 ${binding.target} \u65E0\u6548\u3002`);
-    else bindings.push({ ...binding });
-  }
-  if (config.contractRevision >= 15) for (const [index, binding] of explicit.entries()) {
-    const id2 = "explicit-backfill-" + index;
-    const proposed = { ...workflow, outputs: workflow.outputs.map((item) => item.id === output.id ? { ...item, assignments: [{ id: id2, target: binding.target, expression: binding.slot }] } : item) };
-    for (const classification of classifications) for (const issue2 of validateWorkflowWrites(proposed, (path2) => resolveEffectiveFields(config, path2), { outputId: output.id, classification })) if (issue2.severity === "error" && issue2.path.endsWith("/assignments/" + id2)) errors.push("[" + classificationPathKey(classification) + "] \u56DE\u586B\u6620\u5C04\uFF1A" + issue2.message);
-  }
-  const removed = controls.filter((c) => c.slot && idOnly.has(c.slot) && !needed.has(c.slot)), kept = controls.filter((c) => !removed.includes(c));
-  for (const control of kept) if (control.slot && !bindings.some((b) => b.slot === control.slot) && !["classificationPicker", "tagsExtensions"].includes(control.kind)) errors.push(`\u63A7\u4EF6 ${control.slot}\uFF08${control.label.zh}\uFF09\u7F3A\u5C11\u53EF\u9006\u76F4\u63A5\u8D4B\u503C\u6216\u660E\u786E\u56DE\u586B\u6620\u5C04\u3002`);
-  if (errors.length) throw Error(errors.join("\n"));
-  return { workflow: structuredClone(workflow), scope, classifications, controls: structuredClone(kept), removed: structuredClone(removed), bindings: bindings.filter((b, i, all) => all.findIndex((x) => x.slot === b.slot && x.target === b.target) === i) };
-}
-function conditionTokens(condition) {
-  return [condition.token, ...(condition.all ?? condition.any ?? []).flatMap(conditionTokens)].filter(Boolean);
-}
-function setPath(record, path2, value) {
-  if (!isSafeWorkflowTarget(path2)) throw Error("\u975E\u6CD5\u5B57\u6BB5\u8DEF\u5F84");
-  let node = record;
-  const parts = path2.split(".");
-  for (const key2 of parts.slice(0, -1)) {
-    if (node[key2] == null) node[key2] = {};
-    if (typeof node[key2] !== "object" || Array.isArray(node[key2])) throw Error(`\u5B57\u6BB5\u8DEF\u5F84 ${path2} \u4E0E\u73B0\u6709\u6570\u636E\u51B2\u7A81\u3002`);
-    node = node[key2];
-  }
-  if (value === void 0) delete node[parts[parts.length - 1]];
-  else node[parts[parts.length - 1]] = structuredClone(value);
-}
-function removePath(record, path2) {
-  const parts = path2.split(".");
-  let node = record;
-  for (const key2 of parts.slice(0, -1)) {
-    if (!node[key2] || typeof node[key2] !== "object" || Array.isArray(node[key2])) return;
-    node = node[key2];
-  }
-  delete node[parts[parts.length - 1]];
-}
-var row = (key2, value, group) => ({ key: key2, ...group ? { group } : {}, type: value === null ? "null" : typeof value === "number" ? "number" : typeof value === "boolean" ? "bool" : typeof value === "object" ? "json" : "text", value: structuredClone(value) });
-function residualAnnotations(plan, record) {
-  const residual = structuredClone({ tags: record.tags ?? {}, extensions: record.extensions ?? {} });
-  for (const a of plan.workflow.outputs[0].assignments) if (a.target.startsWith("tags.") || a.target.startsWith("extensions.")) removePath(residual, a.target);
-  const tags = Object.entries(residual.tags ?? {}).map(([key2, value]) => row(key2, value)), extensions = Object.entries(residual.extensions ?? {}).flatMap(([group, values2]) => Object.entries(values2 ?? {}).map(([key2, value]) => row(key2, value, group)));
-  return { [plan.workflow.outputs[0].id]: { tags, extensions } };
-}
-function hydrateWorkflowEdit(plan, record) {
-  const classification = recordClassification(record);
-  if (!pathMatchesScope(classification, plan.scope) || plan.workflow.outputs[0].classificationGroup && !plan.classifications.some((path2) => classificationPathKey(path2) === classificationPathKey(classification))) throw Error("\u8BB0\u5F55\u4E0D\u5728\u7F16\u8F91\u5DE5\u4F5C\u6D41\u7684\u4F5C\u7528\u8303\u56F4\u5185\u3002");
-  const slots = { EDIT_ID: record.ID };
-  for (const control of plan.controls) {
-    if (control.kind === "classificationPicker") {
-      slots[control.slot ?? control.id] = JSON.stringify(classification);
-      continue;
-    }
-    if (control.kind === "tagsExtensions") {
-      slots[control.id] = residualAnnotations(plan, record);
-      continue;
-    }
-    if (!control.slot) continue;
-    const values2 = plan.bindings.filter((b) => b.slot === control.slot).map((b) => readRecordPath(record, b.target));
-    if (values2.some((v) => !annotationEqual(v, values2[0]))) throw Error(`\u69FD\u4F4D ${control.slot} \u7684\u591A\u4E2A\u56DE\u586B\u76EE\u6807\u5177\u6709\u4E0D\u540C\u503C\uFF0C\u4E0D\u80FD\u731C\u6D4B\u3002`);
-    slots[control.slot] = structuredClone(values2[0]);
-  }
-  const draft = { slots, classification, initialSlots: structuredClone(slots) }, filled = workflowEditSlots(plan, record, draft);
-  return { ...draft, slots: filled, initialSlots: structuredClone(filled) };
-}
-function workflowEditSlots(plan, original, draft, supplied) {
-  const geometry = supplied ?? readMultipartGeometry(original, plan.workflow.outputs[0].geometry.selected).geometry, step = plan.workflow.steps.find((s) => s.kind === "geometry");
-  if (!geometry || !step) return { ...draft.slots };
-  const coords = geometry.type === "Point" ? geometry.parts : geometry.type === "LineString" ? geometry.parts[0] : geometry.parts[0][0];
-  const result = captureDrawingSnapshot(plan.workflow, draft.slots, { [drawingKey(step)]: { geometry, coordinates: coords, point: coords[0] } }).slots;
-  const controls = new Set(plan.controls.flatMap((c) => c.slot ? [c.slot] : []));
-  return { ...draft.slots, ...Object.fromEntries(Object.entries(result).filter(([key2]) => !controls.has(key2))) };
-}
-function buildWorkflowEditRecord(plan, original, draft, options = {}) {
-  const record = structuredClone(original), slots = coerceWorkflowValues(plan.workflow, workflowEditSlots(plan, original, draft, options.geometry)), initial = draft.initialSlots;
-  const id2 = String(draft.slots.EDIT_ID ?? "").trim();
-  if (!id2) throw Error("ID \u4E0D\u80FD\u4E3A\u7A7A\u3002");
-  record.ID = id2;
-  if (!pathMatchesScope(draft.classification, plan.scope) || plan.workflow.outputs[0].classificationGroup && !plan.classifications.some((path2) => classificationPathKey(path2) === classificationPathKey(draft.classification))) throw Error("\u4E0D\u80FD\u5C06\u8981\u7D20\u6539\u4E3A\u5DE5\u4F5C\u6D41\u4F5C\u7528\u8303\u56F4\u4E4B\u5916\u7684\u5206\u7C7B\u3002");
-  if (!annotationEqual(draft.classification, recordClassification(original))) {
-    for (const [key2, value] of [["Class", draft.classification.class], ["Kind", draft.classification.kind], ["SKind", draft.classification.skind], ["SKind2", draft.classification.skind2]]) if (value) record[key2] = value;
-    else delete record[key2];
-  }
-  const system = { ID: id2, World: original.World, Class: draft.classification.class, Kind: draft.classification.kind ?? "", Skind: draft.classification.skind ?? "", Skind2: draft.classification.skind2 ?? "", Creator: original.CreateBy ?? "" };
-  Object.assign(system, Object.fromEntries(Object.entries(system).map(([key2, value]) => [`${key2}_1`, value])));
-  const geometryDirty = Boolean(options.geometry && !annotationEqual(options.geometry, readMultipartGeometry(original, plan.workflow.outputs[0].geometry.selected).geometry));
-  const geometryTokens = new Set(plan.workflow.steps.flatMap((s) => [s.drawing?.captureSlot, s.drawing?.pointSlot]).filter((slot) => Boolean(slot)).flatMap((slot) => [slot, `${slot}_X`, `${slot}_Y`, `${slot}_Z`, `${slot}_HEIGHT`]));
-  const beforePath = recordClassification(original), classificationDirty = !annotationEqual(draft.classification, beforePath);
-  for (const assignment of plan.workflow.outputs[0].assignments) if (assignment.target !== "ID") {
-    const tokens = workflowExpressionTokens(parseWorkflowExpression(assignment.expression));
-    if (tokens.some((t) => plan.controls.some((c) => c.slot === t) && !annotationEqual(draft.slots[t], initial[t]) || geometryDirty && geometryTokens.has(t) || /^ID(?:_1)?$/.test(t) && id2 !== String(original.ID) || classificationDirty && /^(Class|Kind|Skind|Skind2)(?:_1)?$/.test(t))) setPath(record, assignment.target, evaluateWorkflowExpression(assignment.expression, slots, system));
-  }
-  for (const binding of plan.bindings) if (plan.workflow.steps.some((step) => step.drawing?.heightSlot === binding.slot) && !annotationEqual(draft.slots[binding.slot], initial[binding.slot])) setPath(record, binding.target, slots[binding.slot]);
-  for (const step of plan.workflow.steps) for (const binding of step.drawing?.bindings ?? []) if (binding.outputId === plan.workflow.outputs[0].id && (geometryDirty || step.drawing?.heightSlot && !annotationEqual(draft.slots[step.drawing.heightSlot], initial[step.drawing.heightSlot]))) {
-    const capture = step.drawing?.captureSlot, value = capture ? slots[binding.value === "height" ? `${capture}_HEIGHT` : capture] : binding.value === "height" && step.drawing?.heightSlot ? slots[step.drawing.heightSlot] : void 0;
-    if (value !== void 0) setPath(record, binding.target, value);
-  }
-  for (const control of plan.controls.filter((c) => c.kind === "tagsExtensions")) if (!annotationEqual(draft.slots[control.id], initial[control.id])) {
-    const before = annotationsForOutput({ ...plan.workflow, steps: [{ id: "annotations", kind: "form", label: { zh: "", en: "" }, controls: [control] }] }, initial, plan.workflow.outputs[0].id), after = annotationsForOutput({ ...plan.workflow, steps: [{ id: "annotations", kind: "form", label: { zh: "", en: "" }, controls: [control] }] }, draft.slots, plan.workflow.outputs[0].id);
-    for (const namespace of ["tags", "extensions"]) {
-      for (const [key2, value] of Object.entries(before[namespace])) if (namespace === "extensions" && value && typeof value === "object") for (const child of Object.keys(value)) removePath(record, `${namespace}.${key2}.${child}`);
-      else removePath(record, `${namespace}.${key2}`);
-      for (const [key2, value] of Object.entries(after[namespace])) if (namespace === "extensions" && value && typeof value === "object") for (const [child, data] of Object.entries(value)) setPath(record, `${namespace}.${key2}.${child}`, data);
-      else setPath(record, `${namespace}.${key2}`, value);
-    }
-  }
-  return record;
-}
-
-// src/configStudio/standardTagFields.ts
-function tagMetadata(field) {
-  const type = field.type === "enum" || field.input === "select" ? "select" : field.type === "number" ? "number" : field.type === "boolean" ? "bool" : "text";
-  return { kind: "tagField", type, ...field.format === "externalLink" || field.format === "date" ? { format: field.format } : {}, ...type === "select" ? { valueTable: { valueType: field.optionValueType ?? "string", rows: structuredClone(field.options ?? []) } } : {} };
-}
-var stable = (value) => JSON.stringify(value);
-function standardTagFields(config, path2) {
-  const fields = resolveEffectiveFields(config, path2).filter((field) => field.key.startsWith("tags."));
-  if (config.contractRevision < 11) return fields;
-  const table = config.lookupTables?.find((table2) => table2.id === "standard-tag-fields");
-  if (!table || table.functionKind !== "tagField") throw Error("\u6807\u51C6\u6807\u7B7E\u5B57\u6BB5\u76EE\u5F55\u4E0D\u5B58\u5728\u6216\u683C\u5F0F\u65E0\u6548\u3002");
-  const result = table.rows.map((row2) => {
-    const meta = row2.functionValue;
-    if (!meta || typeof meta !== "object" || !("kind" in meta) || meta.kind !== "tagField") throw Error(`\u6807\u7B7E ${row2.value} \u7F3A\u5C11\u53D7\u63A7\u7C7B\u578B\u3002`);
-    const options = meta.type === "select" ? effectiveOptionTable(config, { optionTable: meta.valueTable, optionsTableId: meta.valueTableId }) : void 0;
-    return { fieldId: `tag-catalog-${row2.value}`, key: `tags.${row2.value}`, scope: "tags", type: meta.type === "select" ? "enum" : meta.type === "number" ? "number" : meta.type === "bool" ? "boolean" : "string", input: meta.type === "select" ? "select" : meta.type === "bool" ? "toggle" : "text", cardinality: "single", labels: row2.label, description: { zh: "", en: "" }, format: meta.format, options: options?.rows, optionValueType: options?.valueType };
-  });
-  for (const field of fields) {
-    const index = result.findIndex((row2) => row2.key === field.key);
-    if (index >= 0) result[index] = field;
-    else result.push(field);
-  }
-  return result;
-}
-function tagRecordErrors(config, path2, record) {
-  if (config.contractRevision < 11 || !record.tags || typeof record.tags !== "object") return [];
-  const fields = standardTagFields(config, path2), tags = record.tags, errors = [];
-  for (const field of fields) {
-    const value = tags[field.key.slice(5)];
-    if (value === void 0 || value === null) continue;
-    const values2 = field.cardinality === "multiple" && Array.isArray(value) ? value : [value], type = field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : field.type === "enum" ? field.optionValueType ?? "string" : "string";
-    if (values2.some((value2) => typeof value2 !== type || field.type === "enum" && !field.options?.some((option) => option.value === String(value2)))) errors.push(`${field.key} \u4E0E\u6807\u51C6\u76EE\u5F55\uFF0F\u5206\u7C7B\u5B57\u6BB5\u7684\u7C7B\u578B\u6216\u53EF\u9009\u503C\u4E0D\u7B26\u3002`);
-  }
-  return errors;
-}
-function standardTagTableErrors(config) {
-  if (config.contractRevision < 11) return [];
-  const errors = [], fail = (path2, message) => errors.push({ path: path2, message });
-  for (const [id2, kind] of [["teleport-hubs", "teleportHub"], ["road-travel-modes", "speed"], ["standard-tag-fields", "tagField"]]) {
-    const table2 = config.lookupTables?.find((table3) => table3.id === id2);
-    if (!table2 || table2.functionKind !== kind || table2.valueType !== "string") fail(`lookupTables/${id2}`, "\u7CFB\u7EDF\u6807\u51C6\u8868\u7F3A\u5931\uFF0C\u6216\u5176\u56FA\u5B9A ID\u3001\u7528\u9014\u3001\u4FDD\u5B58\u503C\u7C7B\u578B\u88AB\u4FEE\u6539\u3002");
-  }
-  for (const table2 of config.lookupTables ?? []) if (table2.functionKind === "tagField") {
-    if (table2.valueType !== "string") fail(`lookupTables/${table2.id}`, "\u6807\u7B7E\u540D\u79F0\u76EE\u5F55\u5FC5\u987B\u4EE5\u6587\u672C key \u4FDD\u5B58\u3002");
-    for (const row2 of table2.rows) {
-      const path2 = `lookupTables/${table2.id}/${row2.value}`, meta = row2.functionValue;
-      if (row2.value === "__other__" || !/^[A-Za-z][A-Za-z0-9_]*$/.test(row2.value)) fail(path2, "\u6807\u7B7E key \u65E0\u6548\uFF1B\u5176\u4ED6\u5B57\u6BB5\u5165\u53E3\u4E0D\u80FD\u5B58\u5165\u76EE\u5F55\u3002");
-      if (!meta || typeof meta !== "object" || !("kind" in meta) || meta.kind !== "tagField") {
-        fail(path2, "\u6807\u7B7E\u76EE\u5F55\u9700\u8981\u53D7\u63A7\u7684\u6807\u7B7E\u7C7B\u578B\u529F\u80FD\u503C\u3002");
-        continue;
-      }
-      if (meta.type !== "select" && (meta.valueTable || meta.valueTableId)) fail(path2, "\u53EA\u6709\u4E0B\u62C9\u6807\u7B7E\u53EF\u4EE5\u8BBE\u7F6E\u503C\u9009\u9879\u3002");
-      if (meta.type === "select") {
-        if (meta.valueTable && meta.valueTableId) fail(path2, "\u6807\u7B7E\u503C\u526F\u672C\u4E0E\u8868\u683C\u5F15\u7528\u4E0D\u80FD\u5E76\u5B58\u3002");
-        const source = meta.valueTableId ? config.lookupTables?.find((table3) => table3.id === meta.valueTableId) : void 0;
-        if (meta.valueTableId && (!source || source.functionKind === "tagField")) fail(path2, "\u6807\u7B7E\u503C\u5BF9\u7167\u4E0D\u80FD\u5F15\u7528\u540D\u79F0\u76EE\u5F55\u6216\u7F3A\u5931\u8868\u683C\uFF0C\u9632\u6B62\u5FAA\u73AF\u3002");
-        const values2 = effectiveOptionTable(config, { optionTable: meta.valueTable, optionsTableId: meta.valueTableId });
-        if (!values2.rows.length) fail(path2, "\u4E0B\u62C9\u6807\u7B7E\u81F3\u5C11\u9700\u8981\u4E00\u4E2A\u6709\u6548\u503C\u9009\u9879\u3002");
-        const keys = /* @__PURE__ */ new Set();
-        for (const value of values2.rows) {
-          const key2 = values2.valueType === "number" ? String(Number(value.value)) : value.value;
-          if (!value.value.trim() || keys.has(key2) || !(value.label.zh.trim() || value.label.en.trim()) || values2.valueType === "number" && !Number.isFinite(Number(value.value)) || values2.valueType === "boolean" && !["true", "false"].includes(value.value)) fail(path2, "\u6807\u7B7E\u503C\u5BF9\u7167\u5B58\u5728\u91CD\u590D\u3001\u7A7A\u540D\u79F0\u6216\u65E0\u6548\u4FDD\u5B58\u503C\u3002");
-          keys.add(key2);
-        }
-      }
-    }
-  }
-  const table = config.lookupTables?.find((table2) => table2.id === "standard-tag-fields");
-  for (const node of config.nodes) for (const field of resolveEffectiveFields(config, node.path).filter((field2) => field2.key.startsWith("tags."))) {
-    const row2 = table?.rows.find((row3) => row3.value === field.key.slice(5)), meta = row2?.functionValue;
-    if (meta && typeof meta === "object" && "kind" in meta && meta.kind === "tagField") {
-      const definition = tagMetadata(field), dictionary = meta.type === "select" ? effectiveOptionTable(config, { optionTable: meta.valueTable, optionsTableId: meta.valueTableId }) : void 0;
-      if (meta.type !== definition.type || dictionary && stable(dictionary) !== stable(definition.valueTable)) fail(`nodes/${node.nodeId}/fields/${field.fieldId}`, "\u5206\u7C7B\u4E13\u7528\u6807\u7B7E\u4E0E\u6807\u51C6\u76EE\u5F55\u7684\u7C7B\u578B\uFF0F\u503C\u9009\u9879\u5B58\u5728\u51B2\u7A81\uFF0C\u8BF7\u660E\u786E\u4FEE\u590D\u3002");
-    }
-  }
-  return errors;
-}
-
-// src/configStudio/optionalFieldValues.ts
-function isBlankFieldValue(value) {
-  return value == null || typeof value === "string" && value.trim() === "";
-}
-function recordFieldRequired(field, record) {
-  const empty4 = (value) => isBlankFieldValue(value) || Array.isArray(value) && value.length === 0;
-  return Boolean(field.required || field.requiredWhen?.some((condition) => condition.kind === "always" || condition.kind === "fieldPresent" && !empty4(readRecordPath(record, condition.field)) === condition.present || condition.kind === "fieldEquals" && String(readRecordPath(record, condition.field) ?? "") === condition.value || condition.kind === "fieldIn" && condition.values.includes(String(readRecordPath(record, condition.field) ?? ""))));
-}
-var plain2 = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
-var safePath = (path2) => path2.split(".").every((key2) => key2 && !["__proto__", "prototype", "constructor"].includes(key2));
-function replacePath(record, path2, value) {
-  if (!safePath(path2)) return;
-  const keys = path2.split(".");
-  let node = record;
-  for (const key2 of keys.slice(0, -1)) {
-    if (!plain2(node[key2])) return;
-    node = node[key2];
-  }
-  if (value === void 0) delete node[keys[keys.length - 1]];
-  else node[keys[keys.length - 1]] = value;
-}
-function schemaBranches(schema, value) {
-  if (schema.type && (schema.type === "array" ? !Array.isArray(value) : schema.type === "object" ? !plain2(value) : typeof value !== schema.type)) return [];
-  return [schema, ...(schema.anyOf ?? []).flatMap((branch) => schemaBranches(branch, value))];
-}
-function cleanStructured(value, schemas, path2, protectedPaths) {
-  const branches2 = schemas.flatMap((schema) => schemaBranches(schema, value));
-  if (Array.isArray(value)) {
-    const items = branches2.flatMap((schema) => schema.items ? [schema.items] : []);
-    return items.length ? value.map((item) => cleanStructured(item, items, path2, protectedPaths)) : value;
-  }
-  if (!plain2(value)) return value;
-  const required = new Set(branches2.flatMap((schema) => schema.required ?? []));
-  for (const key2 of Object.keys(value)) {
-    const children = branches2.flatMap((schema) => schema.properties && Object.prototype.hasOwnProperty.call(schema.properties, key2) ? [schema.properties[key2]] : []);
-    if (!children.length) continue;
-    const childPath = `${path2}.${key2}`;
-    if (!required.has(key2) && !protectedPaths.has(childPath) && isBlankFieldValue(value[key2])) delete value[key2];
-    else value[key2] = cleanStructured(value[key2], children, childPath, protectedPaths);
-  }
-  return value;
-}
-function groupSchemas(config, path2) {
-  const schemas = /* @__PURE__ */ new Map();
-  for (const workflow of config.workflows) for (const output of workflow.outputs) {
-    if (config.contractRevision >= 15 ? !outputAcceptsClassification(config, output, path2) : !output.classification || !pathMatchesScope(path2, output.classification)) continue;
-    for (const assignment of output.assignments) {
-      const control = workflow.steps.flatMap((step) => step.controls ?? []).find((item) => item.kind === "group" && item.slot === assignment.expression.trim());
-      if (!control?.group || control.group.storage === "scalar") continue;
-      const properties = Object.fromEntries(control.group.itemFields.map((field) => [field.key, {}]));
-      const required = control.group.itemFields.filter((field) => field.required || field.requiredWhen?.length).map((field) => field.key);
-      const schema = { type: "array", items: { type: "object", properties, required } };
-      schemas.set(assignment.target, [...schemas.get(assignment.target) ?? [], schema]);
-    }
-  }
-  return schemas;
-}
-function omitOptionalFieldValues(config, path2, raw) {
-  const record = structuredClone(raw), fields = resolveEffectiveFields(config, path2), groups = groupSchemas(config, path2);
-  const protectedPaths = new Set(fields.filter((field) => field.emptyValue === "preserve" || recordFieldRequired(field, raw)).map((field) => field.key));
-  for (const field of fields) {
-    if (!safePath(field.key)) continue;
-    const value = readRecordPath(record, field.key), required = recordFieldRequired(field, raw);
-    if (required && field.requiredWhen?.length && isBlankFieldValue(readRecordPath(raw, field.key))) throw Error(`${field.key} \u4E3A\u5FC5\u586B\u9879\u3002`);
-    if (field.emptyValue === "preserve" && isBlankFieldValue(value)) continue;
-    if (!required && isBlankFieldValue(value)) {
-      replacePath(record, field.key, void 0);
-      continue;
-    }
-    const schemas = [...field.valueSchema ? [field.valueSchema] : [], ...groups.get(field.key) ?? []];
-    if (schemas.length) replacePath(record, field.key, cleanStructured(value, schemas, field.key, protectedPaths));
-  }
-  return record;
-}
-
 // src/configStudio/workflowRecord.ts
 function finalizeV3WorkflowRecord(config, output, raw, options) {
   const fields = new Map(resolveEffectiveFields(config, output.classification).map((field) => [field.key, field]));
@@ -13023,7 +12900,7 @@ function normalizeV3WorldId(world) {
   return normalizeRuleSourceWorldId(String(world ?? ""));
 }
 var evaluateV3Expression = evaluateWorkflowExpression;
-function setPath2(target, path2, value) {
+function setPath(target, path2, value) {
   if (!isSafeWorkflowTarget(path2)) throw new Error(`\u65E0\u6548\u7EC4\u88C5\u8DEF\u5F84\uFF1A${path2}`);
   const parts = String(path2 ?? "").split(".").filter(Boolean);
   if (!parts.length) return;
@@ -13109,7 +12986,7 @@ function evaluateV3WorkflowOutputs(workflow, slots, options = {}) {
         throw new Error(`\u7CFB\u7EDF\u5B57\u6BB5 ${assignment.target} \u4E0D\u80FD\u7531\u7EC4\u88C5\u8986\u76D6\u3002`);
       }
       const value = parseStructuredOutput(assignment.target, evaluateV3Expression(assignment.expression, slots, system));
-      if (value !== void 0) setPath2(record, assignment.target, value);
+      if (value !== void 0) setPath(record, assignment.target, value);
       system.ID = record.ID ?? "";
       system[`ID_${index + 1}`] = record.ID ?? "";
     }
@@ -13131,7 +13008,7 @@ function evaluateV3WorkflowOutputs(workflow, slots, options = {}) {
         const entered = step.drawing.heightSlot ? slots[step.drawing.heightSlot] : void 0;
         value = { ...value, y: entered !== "" && entered != null ? Number(entered) : -64 };
       }
-      if (value !== void 0) setPath2(record, binding.target, value);
+      if (value !== void 0) setPath(record, binding.target, value);
     }
     const captured = options.coordinates?.[output.id];
     const geometry = captured && !Array.isArray(captured) ? captured : void 0;
@@ -13185,6 +13062,322 @@ function validateV3WorkflowRecords(config, workflow, result) {
     }
   }
   return issues;
+}
+
+// src/configStudio/multipartPolicy.ts
+function recordCategory(record) {
+  return { class: String(record.Class ?? ""), ...record.Kind ? { kind: String(record.Kind) } : {}, ...record.SKind ?? record.Skind ? { skind: String(record.SKind ?? record.Skind) } : {}, ...record.SKind2 ?? record.Skind2 ? { skind2: String(record.SKind2 ?? record.Skind2) } : {} };
+}
+
+// src/configStudio/c16Migration.ts
+var legacyReferenceScopes = {
+  landUnit: [{ class: "ISG", kind: "NGF", skind: "LAD" }, { class: "ISG", kind: "NGF", skind: "WTB" }, { class: "ISG", kind: "NGF", skind: "LIS", skind2: "PEN" }, { class: "ISG", kind: "NGF", skind: "LIS", skind2: "IST" }],
+  settlementPoint: [{ class: "ISP", kind: "ADM", skind: "DBP", skind2: "SHR" }],
+  settlementArea: [{ class: "ISG", kind: "ADM", skind: "DBZ" }, { class: "ISG", kind: "ADM", skind: "PLZ" }]
+};
+var currentReferenceScopes = {
+  landUnit: [{ class: "NGF", kind: "LAD" }, { class: "NGF", kind: "WTR", skind: "LWB" }, { class: "NGF", kind: "LIS", skind: "LAG", skind2: "PEN" }, { class: "NGF", kind: "LIS", skind: "LAG", skind2: "IST" }],
+  settlementPoint: [{ class: "ADM", kind: "DBP", skind: "SHR" }],
+  settlementArea: [{ class: "ADM", kind: "DBZ" }]
+};
+function migrationReferenceBindings(config) {
+  return Object.keys(currentReferenceScopes).map((bindingId) => {
+    const present = (paths2) => paths2.filter((path2) => config?.nodes.some((node) => classificationPathKey(node.path) === classificationPathKey(path2)));
+    const modern = present(currentReferenceScopes[bindingId]), paths = modern.length ? modern : present(legacyReferenceScopes[bindingId]);
+    return { bindingId, classificationGroup: { selectors: paths.map((path2, index) => ({ id: bindingId + "-" + index, mode: "leafDescendants", path: path2 })) }, search: { queryFields: ["Name", "ID"], returnField: "ID", displayTemplate: "{{Name}}\uFF08{{ID}}\uFF09", matcher: "contains", cacheScope: "world", maxResults: 30 } };
+  });
+}
+
+// src/configStudio/externalBindings.ts
+function externalRoleBindings(config, workflow) {
+  return config.contractRevision >= 16 ? workflow.external?.roleBindings ?? [] : legacyExternalRoleBindings(config, workflow);
+}
+function expandBindingGroup(config, group, geometry) {
+  const result = /* @__PURE__ */ new Map();
+  for (const selector of group.selectors) {
+    if (!hasCategoryNode(config, selector.path)) throw Error("\u7ED1\u5B9A\u5206\u7C7B\u4E0D\u5B58\u5728\uFF1A" + classificationPathKey(selector.path));
+    if (!["self", "leafDescendants"].includes(selector.mode)) throw Error("\u672A\u77E5\u5206\u7C7B\u7ED1\u5B9A\u9009\u62E9\u65B9\u5F0F\u3002");
+    const paths = selector.mode === "self" ? [selector.path] : config.nodes.filter((node) => pathMatchesScope(node.path, selector.path) && !hasDescendants(config, node.path)).map((node) => node.path);
+    for (const path2 of paths) if (!geometry || resolveGeometryProfile(config, path2, geometry)?.enabled) result.set(classificationPathKey(path2), path2);
+  }
+  return [...result.values()];
+}
+function externalRolePaths(config, workflow, role) {
+  if (!EXTERNAL_COMPONENT_ROLES[workflow.external?.componentKey ?? ""]?.includes(role)) throw Error("\u6B64\u4E13\u7528\u7EC4\u4EF6\u4E0D\u652F\u6301\u89D2\u8272 " + role + "\u3002");
+  const bindings = externalRoleBindings(config, workflow).filter((binding) => binding.role === role);
+  if (bindings.length !== 1) throw Error(EXTERNAL_ROLES[role].label + "\u9700\u8981\u552F\u4E00\u7684\u8F93\u51FA\u89D2\u8272\u7ED1\u5B9A\u3002");
+  const paths = expandBindingGroup(config, bindings[0].classificationGroup, EXTERNAL_ROLES[role].geometry);
+  if (!paths.length) throw Error(EXTERNAL_ROLES[role].label + "\u7ED1\u5B9A\u8303\u56F4\u6CA1\u6709\u53EF\u7528\u5206\u7C7B\u3002");
+  return paths;
+}
+function resolveExternalReference(config, workflow, bindingId, seen = /* @__PURE__ */ new Set()) {
+  const identity2 = workflow.id + "/" + bindingId;
+  if (seen.size >= 32) throw Error("\u4E13\u7528\u5F15\u7528\u8D85\u8FC7 32 \u7EA7\uFF0C\u5DF2\u505C\u6B62\u89E3\u6790\u3002");
+  if (seen.has(identity2)) throw Error("\u4E13\u7528\u5F15\u7528\u7ED1\u5B9A\u5B58\u5728\u5FAA\u73AF\uFF1A" + identity2);
+  seen.add(identity2);
+  const definitions = workflow.external?.referenceBindings ?? (config.contractRevision < 16 && ["tradePointWorkflow", "tradePointEditor"].includes(workflow.external?.componentKey ?? "") ? migrationReferenceBindings(config) : []);
+  const bindings = definitions.filter((binding2) => binding2.bindingId === bindingId);
+  if (bindings.length !== 1) throw Error("\u4E13\u7528\u5F15\u7528\u7ED1\u5B9A\u7F3A\u5931\u6216\u91CD\u590D\uFF1A" + identity2);
+  const binding = bindings[0];
+  if (binding.source) {
+    const sources = config.workflows.filter((row2) => row2.id === binding.source.workflowId);
+    if (sources.length !== 1 || sources[0].mode !== "external") throw Error("\u4E13\u7528\u5F15\u7528\u6765\u6E90\u5DE5\u4F5C\u6D41\u4E0D\u5B58\u5728\u6216\u4E0D\u552F\u4E00\u3002");
+    return resolveExternalReference(config, sources[0], binding.source.bindingId, seen);
+  }
+  return binding;
+}
+function resolveExternalReferenceSource(config, source) {
+  const workflows = config.workflows.filter((row2) => row2.id === source.workflowId);
+  if (workflows.length !== 1) throw Error("\u5F15\u7528\u6765\u6E90\u5DE5\u4F5C\u6D41\u4E0D\u5B58\u5728\u6216\u4E0D\u552F\u4E00\uFF1A" + source.workflowId);
+  return resolveExternalReference(config, workflows[0], source.bindingId);
+}
+function externalBindingIssues(config) {
+  if (config.contractRevision < 16) return [];
+  const issues = [], fail = (path2, message) => issues.push({ path: path2, message });
+  for (const workflow of config.workflows.filter((row2) => row2.mode === "external")) {
+    const base = "workflows/" + workflow.id + "/external", external = workflow.external, expected = EXTERNAL_COMPONENT_ROLES[external?.componentKey ?? ""];
+    if (!expected) {
+      fail(base, "\u5916\u90E8\u7EC4\u4EF6\u672A\u767B\u8BB0\u3002");
+      continue;
+    }
+    if (external?.coveredClassifications !== void 0) fail(base + "/coveredClassifications", "c16 \u5FC5\u987B\u4F7F\u7528\u89D2\u8272\u7ED1\u5B9A\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u8303\u56F4\u526F\u672C\u3002");
+    for (const role of expected) try {
+      const paths = externalRolePaths(config, workflow, role), spec = EXTERNAL_ROLES[role];
+      for (const path2 of paths) {
+        const fields = resolveEffectiveFields(config, path2), at = base + "/roleBindings/" + role + "/" + classificationPathKey(path2);
+        for (const [key2, types] of Object.entries(spec.fields)) {
+          const field = fields.find((row2) => row2.key === key2);
+          if (!field || !types.includes(field.type)) fail(at + "/" + key2, "\u4E13\u7528\u89D2\u8272\u6240\u9700\u5B57\u6BB5\u4E0D\u5B58\u5728\u6216\u7C7B\u578B\u4E0D\u7B26\uFF1A" + key2);
+          if (field?.type === "json" && field.valueSchema && field.valueSchema.type !== "array" && !field.valueSchema.anyOf?.some((schema) => schema.type === "array")) fail(at + "/" + key2, "\u4E13\u7528\u7ED3\u6784\u5316\u5B57\u6BB5\u9700\u8981\u660E\u786E\u7684\u6570\u7EC4\u503C\u683C\u5F0F\uFF1A" + key2);
+          if (field?.type === "enum" && key2 === "direction") {
+            if (field.optionValueType !== "number") fail(at + "/" + key2, "\u7EBF\u8DEF\u65B9\u5411\u679A\u4E3E\u5FC5\u987B\u4FDD\u5B58\u6570\u5B57\u3002");
+            else if (Array.from({ length: 8 }, (_, i) => String(i)).some((value) => !effectiveOptions(config, field).some((option) => option.value === value))) fail(at + "/" + key2, "\u7EBF\u8DEF\u65B9\u5411\u679A\u4E3E\u987B\u63A5\u7EB3\u4E13\u7528\u7B97\u6CD5\u7684 0\u20137 \u4FDD\u5B58\u503C\u3002");
+          }
+        }
+      }
+    } catch (error) {
+      fail(base + "/roleBindings/" + role, error instanceof Error ? error.message : String(error));
+    }
+    const seen = /* @__PURE__ */ new Set();
+    for (const binding of external?.roleBindings ?? []) {
+      if (!expected.includes(binding.role)) fail(base + "/roleBindings", "\u7EC4\u4EF6\u4E0D\u652F\u6301\u89D2\u8272 " + binding.role);
+      for (const path2 of (() => {
+        try {
+          return expandBindingGroup(config, binding.classificationGroup, EXTERNAL_ROLES[binding.role]?.geometry);
+        } catch {
+          return [];
+        }
+      })()) {
+        const key2 = classificationPathKey(path2);
+        if (seen.has(key2)) fail(base + "/roleBindings", "\u591A\u4E2A\u89D2\u8272\u7ED1\u5B9A\u5230\u540C\u4E00\u5206\u7C7B\uFF0C\u5B58\u5728\u6B67\u4E49\uFF1A" + key2);
+        seen.add(key2);
+      }
+    }
+    const ids = /* @__PURE__ */ new Set();
+    if (["tradePointWorkflow", "tradePointEditor"].includes(external?.componentKey ?? "")) {
+      for (const id2 of ["landUnit", "settlementPoint", "settlementArea"]) if (!external?.referenceBindings?.some((binding) => binding.bindingId === id2)) fail(base + "/referenceBindings/" + id2, "\u7F3A\u5C11\u4EA4\u6613\u70B9\u5173\u8054\u7528\u9014\u7684\u660E\u786E\u7ED1\u5B9A\u3002");
+    }
+    for (const binding of external?.referenceBindings ?? []) try {
+      const at = base + "/referenceBindings/" + binding.bindingId;
+      if (!binding.bindingId || ids.has(binding.bindingId)) throw Error("\u5F15\u7528\u952E\u4E3A\u7A7A\u6216\u91CD\u590D\u3002");
+      ids.add(binding.bindingId);
+      const resolved2 = resolveExternalReference(config, workflow, binding.bindingId), paths = expandBindingGroup(config, resolved2.classificationGroup);
+      if (!paths.length) throw Error("\u5F15\u7528\u8303\u56F4\u4E3A\u7A7A\u3002");
+      if (!["world", "loadedWorlds"].includes(resolved2.search.cacheScope)) throw Error("\u5F15\u7528\u4E16\u754C\u8303\u56F4\u65E0\u6548\u3002");
+      if (!resolved2.search.queryFields?.length || !resolved2.search.returnField) throw Error("\u5F15\u7528\u9700\u8981\u67E5\u8BE2\u5B57\u6BB5\u548C\u8FD4\u56DE\u5B57\u6BB5\u3002");
+      const geometry = { landUnit: "Polygon", settlementPoint: "Point", settlementArea: "Polygon" }[binding.bindingId];
+      if (geometry && paths.some((path2) => !resolveGeometryProfile(config, path2, geometry)?.enabled)) throw Error("\u5F15\u7528\u8303\u56F4\u5305\u542B\u4E0D\u652F\u6301 " + geometry + " \u7684\u5206\u7C7B\u3002");
+      for (const [key2, min, max] of [["minQueryLength", 0, 100], ["maxResults", 1, 500], ["debounceMs", 0, 5e3]]) {
+        const value = resolved2.search[key2];
+        if (value !== void 0 && (!Number.isInteger(value) || value < min || value > max)) throw Error("\u5F15\u7528\u68C0\u7D22\u53C2\u6570 " + key2 + " \u8D85\u51FA\u8303\u56F4\u3002");
+      }
+      for (const path2 of paths) {
+        const fields = resolveEffectiveFields(config, path2);
+        const returned = resolved2.search.returnField;
+        if (returned !== "ID" && !fields.some((field) => field.key === returned && ["string", "reference"].includes(field.type))) throw Error("\u4E13\u7528\u5F15\u7528\u8FD4\u56DE\u5B57\u6BB5\u5FC5\u987B\u4E3A\u6587\u672C ID \u6216\u5F15\u7528\u5B57\u6BB5\u3002");
+      }
+      const displayFields = [...(resolved2.search.displayTemplate ?? "").matchAll(/{{\s*([A-Za-z][A-Za-z0-9_.]*)\s*}}/g)].map((match) => match[1]);
+      for (const path2 of paths) for (const key2 of [...resolved2.search.queryFields, resolved2.search.returnField, ...displayFields]) {
+        if (!["ID", "World", "Class", "Kind", "SKind", "SKind2"].includes(key2) && !resolveEffectiveFields(config, path2).some((field) => field.key === key2)) fail(at, "\u5F15\u7528\u76EE\u6807\u7F3A\u5C11\u5B57\u6BB5 " + key2 + "\uFF1A" + classificationPathKey(path2));
+      }
+    } catch (error) {
+      fail(base + "/referenceBindings/" + binding.bindingId, error instanceof Error ? error.message : String(error));
+    }
+  }
+  for (const node of config.nodes) if (node.card?.mode === "component") {
+    const sources = node.card.options?.referenceBindings;
+    if (node.card.componentKey === "TRP" && (!sources || typeof sources !== "object" || !("landUnit" in sources))) fail("nodes/" + node.nodeId + "/card/options/referenceBindings", "\u4EA4\u6613\u7EC4\u4EF6\u5361\u7247\u9700\u8981\u660E\u786E\u7684\u5730\u7406\u5355\u5143\u5F15\u7528\u6765\u6E90\u3002");
+    if (sources !== void 0) {
+      if (!sources || typeof sources !== "object" || Array.isArray(sources)) {
+        fail("nodes/" + node.nodeId + "/card/options/referenceBindings", "\u5361\u7247\u5F15\u7528\u7ED1\u5B9A\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002");
+        continue;
+      }
+      for (const [key2, raw] of Object.entries(sources)) try {
+        if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw Error("\u5361\u7247\u5F15\u7528\u6765\u6E90\u65E0\u6548\u3002");
+        const binding = resolveExternalReferenceSource(config, raw), geometry = { landUnit: "Polygon", settlementPoint: "Point", settlementArea: "Polygon" }[key2];
+        if (geometry && expandBindingGroup(config, binding.classificationGroup).some((path2) => !resolveGeometryProfile(config, path2, geometry)?.enabled)) throw Error("\u5361\u7247\u5F15\u7528\u6765\u6E90\u4E0E " + key2 + " \u7684\u51E0\u4F55\u7528\u9014\u4E0D\u76F8\u5BB9\u3002");
+      } catch (error) {
+        fail("nodes/" + node.nodeId + "/card/options/referenceBindings/" + key2, error instanceof Error ? error.message : String(error));
+      }
+    }
+  }
+  return issues;
+}
+
+// src/configStudio/structureCommit.ts
+var path = (record) => ({ class: String(record.Class ?? ""), kind: record.Kind, skind: record.SKind ?? record.Skind, skind2: record.SKind2 ?? record.Skind2 });
+function assertStructureTargets(config, created, existing) {
+  if (config.contractRevision < 10) return;
+  const records = [...existing, ...created];
+  const normalizeRuleSourceWorldId2 = (value) => config.application?.worlds.find((world) => [world.id, String(world.numericCode), world.prefix, world.label.zh, world.label.en].includes(value))?.id ?? value;
+  for (const record of created) {
+    const role = resolveNodeFieldSettings(config, path(record)).value.structure;
+    if (!role?.enabled || role.role !== "member") continue;
+    const id2 = role.hostField ? readRecordPath(record, role.hostField) : void 0, world = normalizeRuleSourceWorldId2(String(record.World ?? ""));
+    const candidates = records.filter((row2) => normalizeRuleSourceWorldId2(String(row2.World ?? "")) === world && row2.ID === id2);
+    const targetRole = candidates.length === 1 ? resolveNodeFieldSettings(config, path(candidates[0])).value.structure : void 0;
+    if (candidates.length !== 1 || !targetRole?.enabled || targetRole.role !== "main") throw Error(`\u9644\u5C5E ${record.ID} \u7684\u4E3B\u7ED3\u6784 ${String(id2)} \u4E0D\u5B58\u5728\u3001\u4E0D\u552F\u4E00\u6216\u672A\u542F\u7528\u4E3B\u7ED3\u6784\u8EAB\u4EFD\u3002`);
+  }
+}
+
+// src/configStudio/workflowEditing.ts
+var recordClassification = (record) => ({ class: String(record.Class ?? ""), ...record.Kind ? { kind: String(record.Kind) } : {}, ...record.SKind ?? record.Skind ? { skind: String(record.SKind ?? record.Skind) } : {}, ...record.SKind2 ?? record.Skind2 ? { skind2: String(record.SKind2 ?? record.Skind2) } : {} });
+function compileWorkflowEditPlan(workflow, config) {
+  workflow = resolveWorkflowFields(config, workflow);
+  const errors = [];
+  if (workflow.mode !== "composed") throw Error("\u5916\u90E8\u65B9\u6848\u901A\u8FC7\u5DF2\u767B\u8BB0\u7684\u7F16\u8F91\u63A5\u53E3\u6267\u884C\uFF0C\u4E0D\u8F6C\u6362\u6807\u51C6\u5DE5\u4F5C\u6D41\u3002");
+  if (workflow.steps.length !== 3 || workflow.steps.map((s) => s.kind).join(",") !== "actor,form,geometry") errors.push("\u5FC5\u987B\u6070\u4E3A\u586B\u5199\u4EBA\u3001\u4FE1\u606F\u6536\u96C6\u3001\u8981\u7D20\u7ED8\u5236\u4E09\u9875\u3002");
+  const drawings = workflow.steps.filter((s) => s.kind === "geometry");
+  if (drawings.some((s) => s.geometryRole === "auxiliary" || s.drawing?.auxiliaryPoints?.length)) errors.push("\u4E0D\u80FD\u5305\u542B\u989D\u5916\u7ED8\u5236\u3002");
+  if (workflow.outputs.length !== 1 || drawings.length !== 1 || drawings[0]?.outputId !== workflow.outputs[0]?.id) errors.push("\u5FC5\u987B\u53EA\u6709\u4E00\u4E2A\u660E\u786E\u7ED1\u5B9A\u8F93\u51FA\u7684\u8981\u7D20\u7ED8\u5236\u3002");
+  if (workflow.steps.some((s) => s.when || s.controls?.some((c) => c.when || c.group?.itemFields.some((f) => "when" in f && f.when))) || workflow.outputs.some((o) => o.when || o.assignments.some((a) => a.when))) errors.push("\u4E0D\u80FD\u5305\u542B\u8F93\u5165\u3001\u9875\u9762\u6216\u8F93\u51FA\u7684\u542F\u7528\u6761\u4EF6\u3002");
+  if (errors.length) throw Error(errors.join("\n"));
+  const output = workflow.outputs[0], scope = workflow.editor?.scope ?? output.classification ?? { class: "" };
+  const classifications = workflowClassificationGroup(config, output).paths.filter((path2) => pathMatchesScope(path2, scope));
+  if (workflow.editor?.scope && !hasCategoryNode(config, scope) || !classifications.length || config.contractRevision < 15 && (!output.classification || !pathMatchesScope(scope, output.classification) || !config.nodes.some((n) => classificationPathKey(n.path) === classificationPathKey(scope)))) throw Error("\u7F16\u8F91\u4F5C\u7528\u8303\u56F4\u5FC5\u987B\u4E3A\u8F93\u51FA\u8303\u56F4\u5185\u7684\u5B9E\u9645\u5206\u7C7B\u3002");
+  const controls = workflow.steps.flatMap((s) => s.controls ?? []), tokens = new Set(controls.flatMap((c) => c.slot ? [c.slot] : [])), needed = /* @__PURE__ */ new Set(), idOnly = /* @__PURE__ */ new Set(), bindings = [];
+  for (const assignment of output.assignments) {
+    const ast = parseWorkflowExpression(assignment.expression), used = workflowExpressionTokens(ast).filter((t) => tokens.has(t));
+    if (assignment.target === "ID") used.forEach((t) => idOnly.add(t));
+    else {
+      used.forEach((t) => needed.add(t));
+      if (ast.kind === "token" && tokens.has(ast.name)) bindings.push({ slot: ast.name, target: assignment.target });
+    }
+  }
+  for (const step of drawings) {
+    if (step.drawing?.heightSlot) needed.add(step.drawing.heightSlot);
+    for (const binding of step.drawing?.bindings ?? []) if (binding.value === "height" && step.drawing?.heightSlot) bindings.push({ slot: step.drawing.heightSlot, target: binding.target });
+  }
+  for (const control of controls) for (const condition of control.requiredWhen ?? []) for (const token of conditionTokens(condition)) if (tokens.has(token)) needed.add(token);
+  const explicit = workflow.editor?.backfill ?? [];
+  for (const binding of explicit) {
+    if (!tokens.has(binding.slot) || !isSafeWorkflowTarget(binding.target) || !classifications.every((path2) => resolveEffectiveFields(config, path2).some((f) => f.key === binding.target)) || ["World", "Class", "Kind", "SKind", "SKind2", "Creator", "CreateBy", "CreateTime"].includes(binding.target)) errors.push(`\u56DE\u586B\u6620\u5C04 ${binding.slot} \u2192 ${binding.target} \u65E0\u6548\u3002`);
+    else bindings.push({ ...binding });
+  }
+  if (config.contractRevision >= 15) for (const [index, binding] of explicit.entries()) {
+    const id2 = "explicit-backfill-" + index;
+    const proposed = { ...workflow, outputs: workflow.outputs.map((item) => item.id === output.id ? { ...item, assignments: [{ id: id2, target: binding.target, expression: binding.slot }] } : item) };
+    for (const classification of classifications) for (const issue2 of validateWorkflowWrites(proposed, (path2) => resolveEffectiveFields(config, path2), { outputId: output.id, classification })) if (issue2.severity === "error" && issue2.path.endsWith("/assignments/" + id2)) errors.push("[" + classificationPathKey(classification) + "] \u56DE\u586B\u6620\u5C04\uFF1A" + issue2.message);
+  }
+  const removed = controls.filter((c) => c.slot && idOnly.has(c.slot) && !needed.has(c.slot)), kept = controls.filter((c) => !removed.includes(c));
+  for (const control of kept) if (control.slot && !bindings.some((b) => b.slot === control.slot) && !["classificationPicker", "tagsExtensions"].includes(control.kind)) errors.push(`\u63A7\u4EF6 ${control.slot}\uFF08${control.label.zh}\uFF09\u7F3A\u5C11\u53EF\u9006\u76F4\u63A5\u8D4B\u503C\u6216\u660E\u786E\u56DE\u586B\u6620\u5C04\u3002`);
+  if (errors.length) throw Error(errors.join("\n"));
+  return { workflow: structuredClone(workflow), scope, classifications, controls: structuredClone(kept), removed: structuredClone(removed), bindings: bindings.filter((b, i, all) => all.findIndex((x) => x.slot === b.slot && x.target === b.target) === i) };
+}
+function conditionTokens(condition) {
+  return [condition.token, ...(condition.all ?? condition.any ?? []).flatMap(conditionTokens)].filter(Boolean);
+}
+function setPath2(record, path2, value) {
+  if (!isSafeWorkflowTarget(path2)) throw Error("\u975E\u6CD5\u5B57\u6BB5\u8DEF\u5F84");
+  let node = record;
+  const parts = path2.split(".");
+  for (const key2 of parts.slice(0, -1)) {
+    if (node[key2] == null) node[key2] = {};
+    if (typeof node[key2] !== "object" || Array.isArray(node[key2])) throw Error(`\u5B57\u6BB5\u8DEF\u5F84 ${path2} \u4E0E\u73B0\u6709\u6570\u636E\u51B2\u7A81\u3002`);
+    node = node[key2];
+  }
+  if (value === void 0) delete node[parts[parts.length - 1]];
+  else node[parts[parts.length - 1]] = structuredClone(value);
+}
+function removePath(record, path2) {
+  const parts = path2.split(".");
+  let node = record;
+  for (const key2 of parts.slice(0, -1)) {
+    if (!node[key2] || typeof node[key2] !== "object" || Array.isArray(node[key2])) return;
+    node = node[key2];
+  }
+  delete node[parts[parts.length - 1]];
+}
+var row = (key2, value, group) => ({ key: key2, ...group ? { group } : {}, type: value === null ? "null" : typeof value === "number" ? "number" : typeof value === "boolean" ? "bool" : typeof value === "object" ? "json" : "text", value: structuredClone(value) });
+function residualAnnotations(plan, record) {
+  const residual = structuredClone({ tags: record.tags ?? {}, extensions: record.extensions ?? {} });
+  for (const a of plan.workflow.outputs[0].assignments) if (a.target.startsWith("tags.") || a.target.startsWith("extensions.")) removePath(residual, a.target);
+  const tags = Object.entries(residual.tags ?? {}).map(([key2, value]) => row(key2, value)), extensions = Object.entries(residual.extensions ?? {}).flatMap(([group, values2]) => Object.entries(values2 ?? {}).map(([key2, value]) => row(key2, value, group)));
+  return { [plan.workflow.outputs[0].id]: { tags, extensions } };
+}
+function hydrateWorkflowEdit(plan, record) {
+  const classification = recordClassification(record);
+  if (!pathMatchesScope(classification, plan.scope) || plan.workflow.outputs[0].classificationGroup && !plan.classifications.some((path2) => classificationPathKey(path2) === classificationPathKey(classification))) throw Error("\u8BB0\u5F55\u4E0D\u5728\u7F16\u8F91\u5DE5\u4F5C\u6D41\u7684\u4F5C\u7528\u8303\u56F4\u5185\u3002");
+  const slots = { EDIT_ID: record.ID };
+  for (const control of plan.controls) {
+    if (control.kind === "classificationPicker") {
+      slots[control.slot ?? control.id] = JSON.stringify(classification);
+      continue;
+    }
+    if (control.kind === "tagsExtensions") {
+      slots[control.id] = residualAnnotations(plan, record);
+      continue;
+    }
+    if (!control.slot) continue;
+    const values2 = plan.bindings.filter((b) => b.slot === control.slot).map((b) => readRecordPath(record, b.target));
+    if (values2.some((v) => !annotationEqual(v, values2[0]))) throw Error(`\u69FD\u4F4D ${control.slot} \u7684\u591A\u4E2A\u56DE\u586B\u76EE\u6807\u5177\u6709\u4E0D\u540C\u503C\uFF0C\u4E0D\u80FD\u731C\u6D4B\u3002`);
+    slots[control.slot] = structuredClone(values2[0]);
+  }
+  const draft = { slots, classification, initialSlots: structuredClone(slots) }, filled = workflowEditSlots(plan, record, draft);
+  return { ...draft, slots: filled, initialSlots: structuredClone(filled) };
+}
+function workflowEditSlots(plan, original, draft, supplied) {
+  const geometry = supplied ?? readMultipartGeometry(original, plan.workflow.outputs[0].geometry.selected).geometry, step = plan.workflow.steps.find((s) => s.kind === "geometry");
+  if (!geometry || !step) return { ...draft.slots };
+  const coords = geometry.type === "Point" ? geometry.parts : geometry.type === "LineString" ? geometry.parts[0] : geometry.parts[0][0];
+  const result = captureDrawingSnapshot(plan.workflow, draft.slots, { [drawingKey(step)]: { geometry, coordinates: coords, point: coords[0] } }).slots;
+  const controls = new Set(plan.controls.flatMap((c) => c.slot ? [c.slot] : []));
+  return { ...draft.slots, ...Object.fromEntries(Object.entries(result).filter(([key2]) => !controls.has(key2))) };
+}
+function buildWorkflowEditRecord(plan, original, draft, options = {}) {
+  const record = structuredClone(original), slots = coerceWorkflowValues(plan.workflow, workflowEditSlots(plan, original, draft, options.geometry)), initial = draft.initialSlots;
+  const id2 = String(draft.slots.EDIT_ID ?? "").trim();
+  if (!id2) throw Error("ID \u4E0D\u80FD\u4E3A\u7A7A\u3002");
+  record.ID = id2;
+  if (!pathMatchesScope(draft.classification, plan.scope) || plan.workflow.outputs[0].classificationGroup && !plan.classifications.some((path2) => classificationPathKey(path2) === classificationPathKey(draft.classification))) throw Error("\u4E0D\u80FD\u5C06\u8981\u7D20\u6539\u4E3A\u5DE5\u4F5C\u6D41\u4F5C\u7528\u8303\u56F4\u4E4B\u5916\u7684\u5206\u7C7B\u3002");
+  if (!annotationEqual(draft.classification, recordClassification(original))) {
+    for (const [key2, value] of [["Class", draft.classification.class], ["Kind", draft.classification.kind], ["SKind", draft.classification.skind], ["SKind2", draft.classification.skind2]]) if (value) record[key2] = value;
+    else delete record[key2];
+  }
+  const system = { ID: id2, World: original.World, Class: draft.classification.class, Kind: draft.classification.kind ?? "", Skind: draft.classification.skind ?? "", Skind2: draft.classification.skind2 ?? "", Creator: original.CreateBy ?? "" };
+  Object.assign(system, Object.fromEntries(Object.entries(system).map(([key2, value]) => [`${key2}_1`, value])));
+  const geometryDirty = Boolean(options.geometry && !annotationEqual(options.geometry, readMultipartGeometry(original, plan.workflow.outputs[0].geometry.selected).geometry));
+  const geometryTokens = new Set(plan.workflow.steps.flatMap((s) => [s.drawing?.captureSlot, s.drawing?.pointSlot]).filter((slot) => Boolean(slot)).flatMap((slot) => [slot, `${slot}_X`, `${slot}_Y`, `${slot}_Z`, `${slot}_HEIGHT`]));
+  const beforePath = recordClassification(original), classificationDirty = !annotationEqual(draft.classification, beforePath);
+  for (const assignment of plan.workflow.outputs[0].assignments) if (assignment.target !== "ID") {
+    const tokens = workflowExpressionTokens(parseWorkflowExpression(assignment.expression));
+    if (tokens.some((t) => plan.controls.some((c) => c.slot === t) && !annotationEqual(draft.slots[t], initial[t]) || geometryDirty && geometryTokens.has(t) || /^ID(?:_1)?$/.test(t) && id2 !== String(original.ID) || classificationDirty && /^(Class|Kind|Skind|Skind2)(?:_1)?$/.test(t))) setPath2(record, assignment.target, evaluateWorkflowExpression(assignment.expression, slots, system));
+  }
+  for (const binding of plan.bindings) if (plan.workflow.steps.some((step) => step.drawing?.heightSlot === binding.slot) && !annotationEqual(draft.slots[binding.slot], initial[binding.slot])) setPath2(record, binding.target, slots[binding.slot]);
+  for (const step of plan.workflow.steps) for (const binding of step.drawing?.bindings ?? []) if (binding.outputId === plan.workflow.outputs[0].id && (geometryDirty || step.drawing?.heightSlot && !annotationEqual(draft.slots[step.drawing.heightSlot], initial[step.drawing.heightSlot]))) {
+    const capture = step.drawing?.captureSlot, value = capture ? slots[binding.value === "height" ? `${capture}_HEIGHT` : capture] : binding.value === "height" && step.drawing?.heightSlot ? slots[step.drawing.heightSlot] : void 0;
+    if (value !== void 0) setPath2(record, binding.target, value);
+  }
+  for (const control of plan.controls.filter((c) => c.kind === "tagsExtensions")) if (!annotationEqual(draft.slots[control.id], initial[control.id])) {
+    const before = annotationsForOutput({ ...plan.workflow, steps: [{ id: "annotations", kind: "form", label: { zh: "", en: "" }, controls: [control] }] }, initial, plan.workflow.outputs[0].id), after = annotationsForOutput({ ...plan.workflow, steps: [{ id: "annotations", kind: "form", label: { zh: "", en: "" }, controls: [control] }] }, draft.slots, plan.workflow.outputs[0].id);
+    for (const namespace of ["tags", "extensions"]) {
+      for (const [key2, value] of Object.entries(before[namespace])) if (namespace === "extensions" && value && typeof value === "object") for (const child of Object.keys(value)) removePath(record, `${namespace}.${key2}.${child}`);
+      else removePath(record, `${namespace}.${key2}`);
+      for (const [key2, value] of Object.entries(after[namespace])) if (namespace === "extensions" && value && typeof value === "object") for (const [child, data] of Object.entries(value)) setPath2(record, `${namespace}.${key2}.${child}`, data);
+      else setPath2(record, `${namespace}.${key2}`, value);
+    }
+  }
+  return record;
 }
 
 // src/configStudio/workflowEditCommit.ts
@@ -24133,6 +24326,211 @@ var native_contract_schema_generated_default = {
         "geometry"
       ]
     },
+    t213: {
+      type: "object",
+      properties: {
+        selectors: {
+          type: "array",
+          items: {
+            ref: "t208"
+          }
+        }
+      },
+      required: [
+        "selectors"
+      ]
+    },
+    t212: {
+      type: "object",
+      properties: {
+        role: {
+          anyOf: [
+            {
+              const: "platform"
+            },
+            {
+              const: "stationBuilding"
+            },
+            {
+              const: "railLine"
+            },
+            {
+              const: "stationArea"
+            },
+            {
+              const: "platformFootprint"
+            },
+            {
+              const: "stationBuildingPoint"
+            },
+            {
+              const: "stationFloor"
+            },
+            {
+              const: "tradePoint"
+            }
+          ]
+        },
+        classificationGroup: {
+          ref: "t213"
+        }
+      },
+      required: [
+        "role",
+        "classificationGroup"
+      ]
+    },
+    t215: {
+      type: "object",
+      properties: {
+        workflowId: {
+          type: "string"
+        },
+        bindingId: {
+          type: "string"
+        }
+      },
+      required: [
+        "workflowId",
+        "bindingId"
+      ]
+    },
+    t214: {
+      type: "object",
+      properties: {
+        bindingId: {
+          type: "string"
+        },
+        source: {
+          ref: "t215"
+        },
+        classificationGroup: {
+          type: "undefined"
+        },
+        search: {
+          type: "undefined"
+        }
+      },
+      required: [
+        "bindingId",
+        "source"
+      ]
+    },
+    t217: {
+      type: "object",
+      properties: {
+        selectors: {
+          type: "array",
+          items: {
+            ref: "t208"
+          }
+        }
+      },
+      required: [
+        "selectors"
+      ]
+    },
+    t218: {
+      type: "object",
+      properties: {
+        queryFields: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                type: "string"
+              }
+            }
+          ]
+        },
+        displayTemplate: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        returnField: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        matcher: {
+          anyOf: [
+            {
+              const: "contains"
+            },
+            {
+              const: "prefix"
+            },
+            {
+              const: "token"
+            },
+            {
+              const: "fuzzy"
+            }
+          ]
+        },
+        minQueryLength: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        maxResults: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        debounceMs: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        cacheScope: {
+          anyOf: [
+            {
+              const: "world"
+            },
+            {
+              const: "loadedWorlds"
+            }
+          ]
+        }
+      },
+      required: [
+        "cacheScope"
+      ]
+    },
+    t216: {
+      type: "object",
+      properties: {
+        bindingId: {
+          type: "string"
+        },
+        source: {
+          type: "undefined"
+        },
+        classificationGroup: {
+          ref: "t217"
+        },
+        search: {
+          ref: "t218"
+        }
+      },
+      required: [
+        "bindingId",
+        "classificationGroup",
+        "search"
+      ]
+    },
     t211: {
       type: "object",
       properties: {
@@ -24178,6 +24576,33 @@ var native_contract_schema_generated_default = {
               }
             }
           ]
+        },
+        roleBindings: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                ref: "t212"
+              }
+            }
+          ]
+        },
+        referenceBindings: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                anyOf: [
+                  {
+                    ref: "t214"
+                  },
+                  {
+                    ref: "t216"
+                  }
+                ]
+              }
+            }
+          ]
         }
       },
       required: [
@@ -24185,7 +24610,7 @@ var native_contract_schema_generated_default = {
         "reason"
       ]
     },
-    t212: {
+    t219: {
       type: "object",
       properties: {
         runtimeMode: {
@@ -24301,7 +24726,7 @@ var native_contract_schema_generated_default = {
         legacy: {
           anyOf: [
             {
-              ref: "t212"
+              ref: "t219"
             }
           ]
         }
@@ -24314,7 +24739,7 @@ var native_contract_schema_generated_default = {
         "outputs"
       ]
     },
-    t214: {
+    t221: {
       type: "object",
       properties: {
         kind: {
@@ -24371,7 +24796,7 @@ var native_contract_schema_generated_default = {
         "status"
       ]
     },
-    t213: {
+    t220: {
       type: "object",
       properties: {
         schemaVersion: {
@@ -24387,7 +24812,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t214"
+            ref: "t221"
           }
         },
         generatedAt: {
@@ -24446,6 +24871,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: 15
+            },
+            {
+              const: 16
             }
           ]
         },
@@ -24527,7 +24955,7 @@ var native_contract_schema_generated_default = {
         parity: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t220"
             }
           ]
         }
@@ -24600,6 +25028,10 @@ function validateNativeStructure(value) {
     }
   }
   for (const workflow of config.workflows) {
+    if (config.contractRevision < 16 && workflow.external && (workflow.external.roleBindings !== void 0 || workflow.external.referenceBindings !== void 0)) issues.push({ path: "config/workflows/" + workflow.id + "/external", message: "\u89D2\u8272\u4E0E\u5F15\u7528\u7ED1\u5B9A\u6700\u4F4E\u8981\u6C42 c16\u3002" });
+    if (config.contractRevision >= 16 && workflow.mode === "external" && (!workflow.external?.roleBindings || workflow.external.coveredClassifications !== void 0)) issues.push({ path: "config/workflows/" + workflow.id + "/external", message: "c16 \u4E13\u7528\u6D41\u7A0B\u5FC5\u987B\u4F7F\u7528\u660E\u786E\u89D2\u8272\u7ED1\u5B9A\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u8303\u56F4\u526F\u672C\u3002" });
+    if (config.contractRevision >= 16 && workflow.mode === "external" && workflow.target !== void 0) issues.push({ path: "config/workflows/" + workflow.id + "/target", message: "c16 \u4E13\u7528\u8303\u56F4\u4F7F\u7528 roleBindings \u4E0E editor.scope\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7 target \u526F\u672C\u3002" });
+    if (config.contractRevision >= 16 && workflow.external?.purpose === "edit" && !workflow.editor?.scope) issues.push({ path: "config/workflows/" + workflow.id + "/editor/scope", message: "c16 \u4E13\u7528\u7F16\u8F91\u9700\u8981\u660E\u786E\u7684\u8DEF\u7531\u8303\u56F4\u3002" });
     if (c15 && workflow.mode === "composed" && workflow.target) issues.push({ path: "config/workflows/" + workflow.id + "/target", message: "c15 \u5206\u7C7B\u7EC4\u4E0D\u80FD\u4FDD\u7559\u65E7 target \u526F\u672C\u3002" });
     if (c15) {
       for (const step of workflow.steps) for (const control of step.controls ?? []) if (control.kind === "classificationPicker" && control.classificationScope) issues.push({ path: "config/workflows/" + workflow.id + "/controls/" + control.id, message: "c15 \u5206\u7C7B\u63A7\u4EF6\u7531 outputId \u89E3\u6790\u5206\u7C7B\u7EC4\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u8303\u56F4\u526F\u672C\u3002" });
@@ -25459,6 +25891,10 @@ function validateWorkflowValueCondition(condition, tokens, path2, issues) {
   if (condition.operator === "in" && (!condition.values?.length || condition.values.some((value) => !["string", "number", "boolean"].includes(typeof value)))) issue(issues, "error", "workflow-value-condition-invalid", path2, "\u5C5E\u4E8E\u6761\u4EF6\u5FC5\u987B\u5305\u542B\u6709\u6548\u6BD4\u8F83\u503C\u3002");
 }
 function validateWorkflow(workflow, config, issues) {
+  if (config.contractRevision >= 16 && workflow.mode === "external") {
+    const declared = { ...config, workflows: config.workflows.some((row2) => row2.id === workflow.id) ? config.workflows.map((row2) => row2.id === workflow.id ? workflow : row2) : [...config.workflows, workflow] };
+    for (const error of externalBindingIssues(declared).filter((error2) => error2.path.startsWith("workflows/" + workflow.id + "/"))) issue(issues, "error", "external-binding-invalid", error.path, error.message);
+  }
   for (const step of workflow.steps) for (const control of step.controls ?? []) {
     const path2 = `workflows/${workflow.id}/steps/${step.id}/controls/${control.id}`;
     for (const message of fieldImportErrors(config, workflow, control)) issue(issues, "error", "field-import-conflict", path2, message);
@@ -25492,6 +25928,18 @@ function validateWorkflow(workflow, config, issues) {
   checkIds(workflow.outputs, "\u8F93\u51FA");
   checkIds(controlsFor(workflow), "\u63A7\u4EF6");
   if (workflow.mode === "external") {
+    if (config.contractRevision >= 16) {
+      if (workflow.steps.length || workflow.outputs.length) issue(issues, "error", "external-workflow-invalid", base, "\u4E13\u7528\u6210\u54C1\u4E0D\u80FD\u540C\u65F6\u5305\u542B\u666E\u901A\u7EC4\u88C5\u6B65\u9AA4\u3002");
+      if (workflow.external?.purpose === "edit") {
+        for (const message of validateExternalEditBinding(workflow)) issue(issues, "error", "external-editor-invalid", base, message);
+        const scope = workflow.editor?.scope ?? workflow.target;
+        if (!scope || !hasCategoryNode(config, scope)) issue(issues, "error", "external-editor-scope-invalid", base, "\u5916\u90E8\u7F16\u8F91\u8303\u56F4\u4E0D\u5B58\u5728\u3002");
+      } else {
+        const components = { "railway-integrated": "railwayWorkflow", "station-integrated": "stationWorkflow", "trp-integrated": "tradePointWorkflow" };
+        if (!workflow.external || components[workflow.external.reason] !== workflow.external.componentKey || workflow.external.purpose && workflow.external.purpose !== "capture" || workflow.editor?.enabled) issue(issues, "error", "external-workflow-invalid", base, "\u5916\u90E8\u91C7\u96C6\u7EC4\u4EF6\u3001\u7528\u9014\u6216\u767B\u8BB0\u7406\u7531\u4E0D\u7B26\u3002");
+      }
+      return;
+    }
     if (workflow.external?.purpose === "edit") {
       for (const message of validateExternalEditBinding(workflow)) issue(issues, "error", "external-editor-invalid", base, message);
       const scope = workflow.editor?.scope ?? workflow.target;
@@ -25509,7 +25957,7 @@ function validateWorkflow(workflow, config, issues) {
     if (workflow.editor?.enabled) issue(issues, "error", "external-capture-editor-forbidden", base, "\u5916\u90E8\u91C7\u96C6\u65B9\u6848\u4E0D\u80FD\u5145\u5F53\u7F16\u8F91\u5668\uFF0C\u8BF7\u9009\u62E9\u72EC\u7ACB\u7F16\u8F91\u6210\u54C1\u3002");
     if (workflow.external?.purpose !== void 0 && workflow.external.purpose !== "capture") issue(issues, "error", "external-purpose-invalid", base, "\u5916\u90E8\u7528\u9014\u65E0\u6548\u3002");
     const allowedComponents = { "railway-integrated": "railwayWorkflow", "station-integrated": "stationWorkflow", "trp-integrated": "tradePointWorkflow" };
-    if (!workflow.external?.componentKey || !EXTERNAL_WORKFLOW_REASONS.has(workflow.external.reason) || allowedComponents[workflow.external.reason] !== workflow.external.componentKey || workflow.steps.length || workflow.outputs.length || !workflow.external.coveredClassifications?.length) issue(issues, "error", "external-workflow-invalid", base, "\u5916\u90E8\u6574\u4F53\u5DE5\u4F5C\u6D41\u5FC5\u987B\u662F\u94C1\u8DEF\u4E00\u4F53\u3001\u8F66\u7AD9\u4E00\u4F53\u6216 TRP \u4E00\u4F53\u7684\u53D7\u63A7\u6210\u54C1\uFF0C\u4E14\u5FC5\u987B\u58F0\u660E\u53D7\u63A7\u5206\u7C7B\u3002");
+    if (!workflow.external?.componentKey || !EXTERNAL_WORKFLOW_REASONS.has(workflow.external.reason) || allowedComponents[workflow.external.reason] !== workflow.external.componentKey || workflow.steps.length || workflow.outputs.length || !(config.contractRevision >= 16 ? workflow.external.roleBindings?.length : workflow.external.coveredClassifications?.length)) issue(issues, "error", "external-workflow-invalid", base, "\u5916\u90E8\u6574\u4F53\u5DE5\u4F5C\u6D41\u5FC5\u987B\u4E3A\u5DF2\u767B\u8BB0\u7684\u53D7\u63A7\u6210\u54C1\uFF0C\u4E14\u5FC5\u987B\u58F0\u660E\u6709\u6548\u8F93\u51FA\u89D2\u8272\u3002");
     return;
   }
   if (!workflow.outputs.length) issue(issues, "error", "workflow-output-required", base, "\u7EC4\u5408\u5F0F\u5DE5\u4F5C\u6D41\u81F3\u5C11\u9700\u8981\u4E00\u4E2A\u8F93\u51FA\u5206\u7C7B\u3002");
@@ -25776,6 +26224,7 @@ function validateConfigPackage(config, mountedRecords = []) {
   const issues = [];
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: "cairnmap.config-validation-report.v3", valid: false, createdAt: (/* @__PURE__ */ new Date()).toISOString(), issues: structure.map((item) => ({ severity: "error", code: "native-contract-structure-invalid", ...item })) };
+  for (const error of externalBindingIssues(config).filter((error2) => error2.path.startsWith("nodes/"))) issue(issues, "error", "external-reference-invalid", error.path, error.message);
   if (config.resources) {
     if (config.contractRevision < 12) issue(issues, "error", "icon-resources-revision", "resources", "\u56FE\u6807\u8D44\u6E90\u80FD\u529B\u9700\u8981\u5951\u7EA6 c12\u3002");
     const seen = /* @__PURE__ */ new Set();
@@ -26084,13 +26533,8 @@ async function readRawNativePackage(file, options = {}) {
   return raw;
 }
 
-// src/configStudio/multipartPolicy.ts
-function recordCategory(record) {
-  return { class: String(record.Class ?? ""), ...record.Kind ? { kind: String(record.Kind) } : {}, ...record.SKind ?? record.Skind ? { skind: String(record.SKind ?? record.Skind) } : {}, ...record.SKind2 ?? record.Skind2 ? { skind2: String(record.SKind2 ?? record.Skind2) } : {} };
-}
-
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-c15-production-2";
+var rulesVersion = "cairnmap-c16-production-1";
 var validateConfiguration = validateConfigPackage;
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));

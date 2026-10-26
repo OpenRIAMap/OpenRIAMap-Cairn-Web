@@ -1,6 +1,14 @@
+import {matchesSearchQuery} from '@/configStudio/searchMatch';
+import {getByPath} from '@/components/Common/formProjection';
 import { normalizeRuleSourceWorldId } from '@/core/project/worldIdentity';
 type FeatureInfoAny = Record<string, any>;
 export type SearchSelectConfig = {
+  worldScope?: 'world' | 'loadedWorlds';
+  error?: string;
+  strictFields?:boolean;
+  matcher?:'contains'|'prefix'|'token'|'fuzzy';
+  minQueryLength?:number;maxResults?:number;debounceMs?:number;
+  formatRecord?:(record:FeatureInfoAny)=>string;
   /** 搜索范围的语义标识；每次真实配置变化重新生成候选。 */
   cacheKey: string;
 
@@ -21,7 +29,7 @@ export type SearchSelectConfig = {
   requiredFields?: string[];
 };
 
-export type SearchPoolOption = { id: string; name: string; display: string; className?: string };
+export type SearchPoolOption = { id: string; name: string; display: string; className?: string; queryValues?:string[]; world?:string };
 const DEFAULT_ID_KEYS = [
   'ID',
   'Id',
@@ -84,13 +92,13 @@ function readFirstString(fi: FeatureInfoAny, keys: string[]): string {
 function readCandidateId(fi: FeatureInfoAny, cfg: SearchSelectConfig): string {
   const fromCfg = String(cfg.getId(fi) ?? '').trim();
   if (fromCfg) return fromCfg;
-  return readFirstString(fi, DEFAULT_ID_KEYS);
+  return cfg.strictFields ? '' : readFirstString(fi, DEFAULT_ID_KEYS);
 }
 
 function readCandidateName(fi: FeatureInfoAny, cfg: SearchSelectConfig): string {
   const fromCfg = String(cfg.getName(fi) ?? '').trim();
   if (fromCfg) return fromCfg;
-  return readFirstString(fi, DEFAULT_NAME_KEYS);
+  return cfg.strictFields ? fromCfg : readFirstString(fi, DEFAULT_NAME_KEYS);
 }
 
 function normalizeId(raw: any): string {
@@ -109,35 +117,31 @@ export function buildWorkflowSearchOptionsFromFeatures(features: FeatureInfoAny[
     out.push({
       id,
       name,
-      display: cfg.formatOption(name, id),
+      display: cfg.formatRecord?.(fi) ?? cfg.formatOption(name, id),
+      ...(cfg.searchFields?{queryValues:cfg.searchFields.map(key=>String(getByPath(fi,key)??''))}:{}),
+      world:normalizeRuleSourceWorldId(String(fi.World??'')),
       className: String(fi?.Class ?? '').trim() || undefined,
     });
   }
   return out;
 }
 
-export function filterWorkflowSearchOptions(pool: SearchPoolOption[], q: string, limit = 50): SearchPoolOption[] {
-  const s = q.trim().toLowerCase();
-  if (!s) return pool.slice(0, limit);
-  return pool
-    .filter((o) =>
-      o.name.toLowerCase().includes(s) ||
-      o.id.toLowerCase().includes(s) ||
-      o.display.toLowerCase().includes(s) ||
-      String(o.className ?? '').toLowerCase().includes(s)
-    )
-    .slice(0, limit);
+export function filterWorkflowSearchOptions(pool: SearchPoolOption[], q: string, limit = 50,config?:SearchSelectConfig): SearchPoolOption[] {
+ const query=q.trim();
+ if(query.length<(config?.minQueryLength??0))return [];
+ return pool.filter(option=>(option.queryValues??[option.name,option.id,option.display,option.className]).some(value=>matchesSearchQuery(value,query,config?.matcher))).slice(0,config?.maxResults??limit);
 }
-
 
 export function mergeWorkflowSearchPool(base: FeatureInfoAny[], committed: FeatureInfoAny[], deleted: readonly string[], config: SearchSelectConfig, worldId: string): SearchPoolOption[] {
   const world = normalizeRuleSourceWorldId(worldId), removed = new Set(deleted.map(normalizeId));
-  const relevant = (record: FeatureInfoAny) => record.World === undefined || normalizeRuleSourceWorldId(String(record.World)) === world;
+  const relevant = (record: FeatureInfoAny) => config.worldScope==='loadedWorlds'||record.World === undefined || normalizeRuleSourceWorldId(String(record.World)) === world;
   const merged = new Map<string, FeatureInfoAny>();
   for (const record of [...base, ...committed]) {
     if (!relevant(record)) continue;
-    const id=readCandidateId(record,config);
-    if(id)merged.set(id,record);
+    const id=String(record.ID??readCandidateId(record,config)).trim();
+    if(id)merged.set(normalizeRuleSourceWorldId(String(record.World??world))+':'+id,record);
   }
-  return buildWorkflowSearchOptionsFromFeatures([...merged.values()],config).filter(option => !removed.has(option.id)).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hans-CN'));
+  const options=buildWorkflowSearchOptionsFromFeatures([...merged.values()],config).filter(option => option.world!==world||!removed.has(option.id)).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hans-CN'));
+  if(new Set(options.map(option=>option.id)).size!==options.length)throw Error('引用返回值在所选范围中不唯一，请缩小范围或更换匹配字段。');
+  return options;
 }

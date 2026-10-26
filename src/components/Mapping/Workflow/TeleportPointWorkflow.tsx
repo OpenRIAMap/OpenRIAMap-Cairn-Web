@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { WorkflowComponentProps, WorldPoint } from './WorkflowHost';
 import * as wfRegistry from './workflowRegistryLabels';
 import AppButton from '@/components/ui/AppButton';
-import { EXT_VALUE_TYPE_TEXT, listCatalogClassOptions, type FeatureKey } from '@/components/Common/featureFormats';
+import { EXT_VALUE_TYPE_TEXT, listCatalogClassOptions, type FeatureKey } from '@/legacy/formats/featureFormats';
 import { listHubReturnPoints, type HubReturnPoint } from '@/components/Navigation/teleportHubReturnPoints';
 import { loadRuleItemsForWorld } from '@/components/Rules/data/ruleDataSources';
 import WorkflowFeatureSearchSelect, { type SearchSelectConfig } from './WorkflowFeatureSearchSelect';

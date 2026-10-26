@@ -9,7 +9,7 @@ import {
   EXT_VALUE_TYPE_TEXT,
   type ExtValueType,
   listCatalogSKind2Options,
-} from '@/components/Common/featureFormats';
+} from '@/legacy/formats/featureFormats';
 import WorkflowFeatureSearchSelect, { type SearchSelectConfig } from './WorkflowFeatureSearchSelect';
 
 const WF_KEY = 'adm_plz_plan';

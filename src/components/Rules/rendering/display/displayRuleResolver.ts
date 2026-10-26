@@ -1,5 +1,5 @@
 import type { FeatureStore } from '@/components/Rules/data/featureStore';
-import type { FeatureRecord, RenderContext, RenderRule } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord, RenderContext, RenderRule } from '@/components/Rules/rendering/renderPrimitives';
 import { getDisplayPlanSortKey } from './displayPriority';
 import { normalizeDisplayRule } from './displayRuleNormalizer';
 import type { DisplayMode, DisplayTier, FeatureDisplayPlan } from './displayTypes';

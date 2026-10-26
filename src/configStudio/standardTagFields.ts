@@ -1,4 +1,6 @@
-import {getClassTagRegistryEntries} from '../core/project/classMetadata';
+import historicalTags from './migrationData/tag-entries.json';
+import type {TagRegistryEntry} from '../components/Common/featurePrimitives';
+const getClassTagRegistryEntries=()=>historicalTags as TagRegistryEntry[];
 import type {ClassificationPath,ConfigPackageV3,FieldDefinition,LookupTable,SelectOption,TagFieldMetadata} from './types';
 import {effectiveOptionTable} from './lookupTables';
 import {resolveEffectiveFields} from './runtime';

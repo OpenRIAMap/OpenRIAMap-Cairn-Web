@@ -1,3 +1,6 @@
+import {categorySearchIndex,categorySearchSubtitle} from '@/components/Search/configSearch';
+import {classificationDisplayName} from '@/configStudio/classificationPresentation';
+import {recordCategory} from '@/configStudio/multipartPolicy';
 import { checkBusinessConfiguration } from '../../configRuntime/businessConfiguration';
 import { getApplicationGeneration, getApplicationSettings, applicationWorld, enabledApplicationWorldId, moduleEnabled, subscribeApplication, registerApplicationGuard } from '@/core/project/applicationRuntime';
 import { useSyncExternalStore } from 'react';
@@ -46,8 +49,8 @@ import { WorkspaceTransitionCoordinator, type WorkspaceKind, type WorkspaceTrans
 
 import RuleDrivenLayer from '@/components/Rules/core/RuleDrivenLayer';
 import { hasEnabledTemporaryRuleSources } from '@/components/Rules/data/temporaryRuleSession';
-import { resolveFeatureCardComponent } from '@/components/Rules/cardrules/featureCardRegistry';
-import { pickIdFieldValue, type FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import { resolveConfiguredFeatureCard } from '@/components/Rules/cardrules/featureCardRegistry';
+import { pickIdFieldValue, type FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import RuleButtonPanel from '@/components/Rules/ButtonRule/RuleButtonPanel';
 import { useRuleButtonState } from '@/components/Rules/ButtonRule/ruleButtonState';
 import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
@@ -57,7 +60,7 @@ import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import ToolIconButton from '@/components/Toolbar/ToolIconButton';
 import { Globe2, PanelsTopLeft, Layers3, SlidersHorizontal, Plus, Minus, Pencil, RefreshCw, Ruler, User, History } from 'lucide-react';
-import { buildBuildingNameIndex, getRuleCategoryLabelWithParent, getRuleDisplayName } from '@/components/Search/searchRuleTables';
+import { getRuleDisplayName } from '@/components/Search/searchPresentation';
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { consumeFeatureShareTargetFromLocation, normalizePlayerShareId, type FeatureSharePayload, type FeatureShareTarget, type PlayerShareTarget, type ShareParseResult } from '@/lib/featureShareLink';
 import { PublicReleaseRecordsPanel, ReviewConfirmationHost, ReviewModuleLauncher, createReviewPackageSession, type CairnMapModuleMode, type ReviewInboxItem, type ReviewPackageSession } from '@/components/Review';
@@ -332,7 +335,7 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   const [mobileSheetHidden, setMobileSheetHidden] = useState(false);
   const [mobileSheetOffset, setMobileSheetOffset] = useState(0);
   const [selectedRuleFeature, setSelectedRuleFeature] = useState<FeatureRecord | null>(null);
-  const [selectedRuleClassCode, setSelectedRuleClassCode] = useState<string | null>(null);
+  const [, setSelectedRuleClassCode] = useState<string | null>(null);
   const [navigationInitialEndPoint, setNavigationInitialEndPoint] = useState<NavigationInitialPoint | null>(null);
 
   const [mobileFeatureJson, setMobileFeatureJson] = useState<{ title: string; jsonText: string; filename: string } | null>(null);
@@ -1322,13 +1325,14 @@ if (mapStyle === 'sketch') {
 
       const record = findRuleByShareTarget(pool, target);
       if (record) {
-        const buildingNameIndex = buildBuildingNameIndex(pool);
+        const nativeIndex=configRuntime?categorySearchIndex(configRuntime,pool):undefined;
+        const nativeEntry=nativeIndex?.byRecord.get(record);
         const display = getRuleDisplayName(record);
         const result: SearchResult = {
           type: 'rule',
           name: display.name || display.rawName || target.featureId,
           coord: getRuleCenterCoord(record),
-          extra: getRuleCategoryLabelWithParent(record, buildingNameIndex),
+          extra: configRuntime&&nativeIndex&&nativeEntry?categorySearchSubtitle(configRuntime,nativeIndex,nativeEntry,getApplicationSettings().preferences.language):classificationDisplayName(configRuntime,recordCategory(record.featureInfo)),
           ruleRecord: record,
         };
         finishShare();
@@ -1865,11 +1869,13 @@ map.on('mousemove', handleMouseMove);
     }
 
     if (selectedRuleFeature) {
-      const Card = resolveFeatureCardComponent(selectedRuleClassCode);
+      const resolved=resolveConfiguredFeatureCard(configRuntime,selectedRuleFeature);
+      const Card=resolved.Component;
       return (
         <Card
           open
           feature={selectedRuleFeature}
+          {...resolved.props}
           onClose={closeMobileSheet}
           resolveFeatureById={ruleResolveFeatureByIdRef.current}
           onTryTriggerLabelClickById={ruleTriggerLabelClickRef.current}

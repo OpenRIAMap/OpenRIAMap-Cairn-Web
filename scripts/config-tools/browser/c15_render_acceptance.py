@@ -6,7 +6,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 from browser_check import Browser,APP_URL,OUT
 
 def chrome():
- assert os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514') and APP_URL.startswith('http://127.0.0.1:')
+ assert os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514','9338') and APP_URL.startswith('http://127.0.0.1:')
  opener=build_opener(ProxyHandler({}));cdp='http://127.0.0.1:'+os.environ['CAIRNMAP_CDP_PORT']
  opener.open(Request(cdp+'/json/new?about:blank',method='PUT')).read()
  for page in json.loads(opener.open(cdp+'/json').read()):
