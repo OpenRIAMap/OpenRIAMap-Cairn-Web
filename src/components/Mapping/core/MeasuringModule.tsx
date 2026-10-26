@@ -4370,29 +4370,6 @@ const workflowBridge: WorkflowBridge = {
               </div>
             </div>
 
-            {relayPackageDraft.deleteMarks.length > 0 && (
-              <div className="px-4 py-2 border-b text-xs text-gray-700 bg-rose-50/60 space-y-1">
-                <div className="font-bold text-rose-800">待删除标记</div>
-                <div className="flex flex-wrap gap-1">
-                  {relayPackageDraft.deleteMarks.map((it) => (
-                    <button
-                      key={it.ID}
-                      type="button"
-                      className="px-2 py-0.5 rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
-                      title={it.ID}
-                      onClick={() => setRelayPackageDraft((prev) => ({
-                        ...prev,
-                        deleteMarks: prev.deleteMarks.filter((x) => x.ID !== it.ID),
-                        meta: { ...prev.meta, updatedAt: new Date().toISOString() },
-                      }))}
-                    >
-                      {it.Name || it.ID}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* 顶部横向滚动条：始终可见 */}
             <div className="px-3 pt-2">
               <div
@@ -4411,6 +4388,28 @@ const workflowBridge: WorkflowBridge = {
                 className={isReviewWorkspace ? 'h-full overflow-x-auto overflow-y-auto' : 'overflow-y-auto overflow-x-auto'}
                 style={isReviewWorkspace ? undefined : { maxHeight: layerMgrListMaxHeight }}
               >
+                {relayPackageDraft.deleteMarks.length > 0 && (
+                  <div className="px-4 py-2 border-b text-xs text-gray-700 bg-rose-50/60 space-y-1">
+                    <div className="font-bold text-rose-800">待删除标记</div>
+                    <div className="flex flex-wrap gap-1">
+                      {relayPackageDraft.deleteMarks.map((it) => (
+                        <button
+                          key={it.ID}
+                          type="button"
+                          className="px-2 py-0.5 rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
+                          title={it.ID}
+                          onClick={() => setRelayPackageDraft((prev) => ({
+                            ...prev,
+                            deleteMarks: prev.deleteMarks.filter((x) => x.ID !== it.ID),
+                            meta: { ...prev.meta, updatedAt: new Date().toISOString() },
+                          }))}
+                        >
+                          {it.Name || it.ID}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="min-w-max">
                 {visibleList.map((l) => {
                   const entry = getTempMountedEntryByLayer(l.id);
@@ -5617,6 +5616,7 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
       <RelayPackageExportPanel
         open={relayPackageExportOpen}
         draft={relayPackageDraft}
+        configuration={configRuntime}
         featureCount={layers.filter((l) => l.id !== editingLayerId && l.jsonInfo?.featureInfo).length}
         onClose={() => setRelayPackageExportOpen(false)}
         onExport={handleExportRelayPackage}
