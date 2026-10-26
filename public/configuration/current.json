@@ -1,10 +1,10 @@
 {
-  "releaseId": "config-cc7c0fa6-52fc-4851-8a94-d5612dc02fde",
+  "releaseId": "config-cb9cc4ed-3915-453e-ab20-7874ca8d4312",
   "packageId": "cairnmap-config-v32-semantic",
   "projectId": "openriamap-ria",
-  "revision": 91,
-  "contractRevision": 15,
-  "configSha256": "44e87b2a96db47e7b2b8abaf1bd19f1e1c3bc54fb501bc0df6a28c18bb756d07",
-  "manifestSha256": "5b93f8938ce5d6916de02d764135f8b96b3518741d4eaa3d1c9a8ee6e7dfd493",
-  "configUrl": "/configuration/releases/44e87b2a96db47e7b2b8abaf1bd19f1e1c3bc54fb501bc0df6a28c18bb756d07/config.json"
+  "revision": 92,
+  "contractRevision": 16,
+  "configSha256": "d11e0537c8756dcb7d58326675171a06aa47d71dfe7a4213acde9eb550f3b778",
+  "manifestSha256": "fea1ea93c7c44465a2332520b17d6115d33078a2c0e0651235ae5d61ce4db833",
+  "configUrl": "/configuration/releases/d11e0537c8756dcb7d58326675171a06aa47d71dfe7a4213acde9eb550f3b778/config.json"
 }
