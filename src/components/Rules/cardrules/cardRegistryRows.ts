@@ -1,5 +1,5 @@
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
-import { getByPath } from '../../Common/workflowEditorRegistry';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
+import { getByPath } from '@/legacy/editorSchemas/index';
 import {
   makeExternalLink,
   makeFeatureLink,

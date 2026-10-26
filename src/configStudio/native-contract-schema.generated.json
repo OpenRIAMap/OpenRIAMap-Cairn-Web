@@ -10418,6 +10418,211 @@
         "geometry"
       ]
     },
+    "t213": {
+      "type": "object",
+      "properties": {
+        "selectors": {
+          "type": "array",
+          "items": {
+            "ref": "t208"
+          }
+        }
+      },
+      "required": [
+        "selectors"
+      ]
+    },
+    "t212": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "anyOf": [
+            {
+              "const": "platform"
+            },
+            {
+              "const": "stationBuilding"
+            },
+            {
+              "const": "railLine"
+            },
+            {
+              "const": "stationArea"
+            },
+            {
+              "const": "platformFootprint"
+            },
+            {
+              "const": "stationBuildingPoint"
+            },
+            {
+              "const": "stationFloor"
+            },
+            {
+              "const": "tradePoint"
+            }
+          ]
+        },
+        "classificationGroup": {
+          "ref": "t213"
+        }
+      },
+      "required": [
+        "role",
+        "classificationGroup"
+      ]
+    },
+    "t215": {
+      "type": "object",
+      "properties": {
+        "workflowId": {
+          "type": "string"
+        },
+        "bindingId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "workflowId",
+        "bindingId"
+      ]
+    },
+    "t214": {
+      "type": "object",
+      "properties": {
+        "bindingId": {
+          "type": "string"
+        },
+        "source": {
+          "ref": "t215"
+        },
+        "classificationGroup": {
+          "type": "undefined"
+        },
+        "search": {
+          "type": "undefined"
+        }
+      },
+      "required": [
+        "bindingId",
+        "source"
+      ]
+    },
+    "t217": {
+      "type": "object",
+      "properties": {
+        "selectors": {
+          "type": "array",
+          "items": {
+            "ref": "t208"
+          }
+        }
+      },
+      "required": [
+        "selectors"
+      ]
+    },
+    "t218": {
+      "type": "object",
+      "properties": {
+        "queryFields": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "displayTemplate": {
+          "anyOf": [
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "returnField": {
+          "anyOf": [
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "matcher": {
+          "anyOf": [
+            {
+              "const": "contains"
+            },
+            {
+              "const": "prefix"
+            },
+            {
+              "const": "token"
+            },
+            {
+              "const": "fuzzy"
+            }
+          ]
+        },
+        "minQueryLength": {
+          "anyOf": [
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "maxResults": {
+          "anyOf": [
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "debounceMs": {
+          "anyOf": [
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "cacheScope": {
+          "anyOf": [
+            {
+              "const": "world"
+            },
+            {
+              "const": "loadedWorlds"
+            }
+          ]
+        }
+      },
+      "required": [
+        "cacheScope"
+      ]
+    },
+    "t216": {
+      "type": "object",
+      "properties": {
+        "bindingId": {
+          "type": "string"
+        },
+        "source": {
+          "type": "undefined"
+        },
+        "classificationGroup": {
+          "ref": "t217"
+        },
+        "search": {
+          "ref": "t218"
+        }
+      },
+      "required": [
+        "bindingId",
+        "classificationGroup",
+        "search"
+      ]
+    },
     "t211": {
       "type": "object",
       "properties": {
@@ -10463,6 +10668,33 @@
               }
             }
           ]
+        },
+        "roleBindings": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "ref": "t212"
+              }
+            }
+          ]
+        },
+        "referenceBindings": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "ref": "t214"
+                  },
+                  {
+                    "ref": "t216"
+                  }
+                ]
+              }
+            }
+          ]
         }
       },
       "required": [
@@ -10470,7 +10702,7 @@
         "reason"
       ]
     },
-    "t212": {
+    "t219": {
       "type": "object",
       "properties": {
         "runtimeMode": {
@@ -10586,7 +10818,7 @@
         "legacy": {
           "anyOf": [
             {
-              "ref": "t212"
+              "ref": "t219"
             }
           ]
         }
@@ -10599,7 +10831,7 @@
         "outputs"
       ]
     },
-    "t214": {
+    "t221": {
       "type": "object",
       "properties": {
         "kind": {
@@ -10656,7 +10888,7 @@
         "status"
       ]
     },
-    "t213": {
+    "t220": {
       "type": "object",
       "properties": {
         "schemaVersion": {
@@ -10672,7 +10904,7 @@
         "entries": {
           "type": "array",
           "items": {
-            "ref": "t214"
+            "ref": "t221"
           }
         },
         "generatedAt": {
@@ -10731,6 +10963,9 @@
             },
             {
               "const": 15
+            },
+            {
+              "const": 16
             }
           ]
         },
@@ -10812,7 +11047,7 @@
         "parity": {
           "anyOf": [
             {
-              "ref": "t213"
+              "ref": "t220"
             }
           ]
         }

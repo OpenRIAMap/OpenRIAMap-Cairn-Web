@@ -5,7 +5,7 @@ import AppCard from '@/components/ui/AppCard';
 import AppButton from '@/components/ui/AppButton';
 
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
-import { getValueByPath, pickIdFieldValue, type FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import { getValueByPath, pickIdFieldValue, type FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import type { SearchResult } from '@/components/Search/SearchBar';
 
 type Op = '=' | '!=' | '>' | '>=' | '<' | '<=';

@@ -1,4 +1,4 @@
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 
 const KNOWN_WORLDS = new Set(['zth', 'eden', 'naraku', 'houtu', 'laputa']);
 

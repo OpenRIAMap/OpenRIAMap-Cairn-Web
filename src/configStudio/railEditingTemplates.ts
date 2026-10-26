@@ -1,7 +1,7 @@
 import {migrateC15Workflow} from './c15Migration';
 import {syncWorkflowClassification} from './systemClassification';
-import {RAIL_SCHEMAS,projectRegistryScene} from '../components/Common/workflowEditorRegistry';
-import {FORMAT_REGISTRY} from '../components/Common/featureFormats';
+import {RAIL_SCHEMAS,projectRegistryScene} from '@/legacy/editorSchemas/index';
+import {FORMAT_REGISTRY} from '@/legacy/formats/featureFormats';
 import {resolveEffectiveFields,resolveGeometryProfile,hasDescendants} from './runtime';
 import type {ConfigPackageV3,GeometryKind,WorkflowControl,WorkflowDefinition,WorkflowGroupField,WorkflowAssignment} from './types';
 import {testWorkflowEditConversion} from './workflowEditCommit';
@@ -9,7 +9,7 @@ const kind=(control:string|undefined):WorkflowControl['kind']=>control==='bool'?
 /** Uses the V1 editor scene, never the collection scene or card renderer. */
 export function createRailEditingWorkflows(config:ConfigPackageV3):WorkflowDefinition[] {
  return RAIL_SCHEMAS.map(schema=>{
-  const code=String(schema.match.classCode),scope={class:code},view=projectRegistryScene(schema,'editor'),definition=FORMAT_REGISTRY[schema.match.subType!],fields=resolveEffectiveFields(config,scope),geometry=({RLE:'LineString',STA:'Point',PLF:'Point',PFB:'Polygon',STB:'Polygon',SBP:'Point',STF:'Polygon'} as Record<string,GeometryKind>)[code],outputId=`edit-${code}-output`;
+  const code=String(schema.match.classCode),scope={class:code},view=projectRegistryScene(schema,'editor'),definition=FORMAT_REGISTRY[schema.match.subType! as keyof typeof FORMAT_REGISTRY],fields=resolveEffectiveFields(config,scope),geometry=({RLE:'LineString',STA:'Point',PLF:'Point',PFB:'Polygon',STB:'Polygon',SBP:'Point',STF:'Polygon'} as Record<string,GeometryKind>)[code],outputId=`edit-${code}-output`;
   const controls:WorkflowControl[]=[],assignments:WorkflowAssignment[]=[{id:`edit-${code}-id`,target:'ID',expression:'ID'}];
   const entries=[...view.fields.map(field=>({order:field.order,field})),...view.groups.map(group=>({order:group.order,group}))].sort((a,b)=>a.order-b.order);
   for(const [index,entry]of entries.entries()){

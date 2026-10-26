@@ -911,6 +911,14 @@ export type WorkflowOutput = {
   geometry: { selected: GeometryKind; allowed?: GeometryKind[] };
 };
 export type WorkflowClassificationSelector = { id: string; mode: 'self' | 'leafDescendants'; path: ClassificationPath };
+/** Fixed algorithm capabilities; taxonomy paths are always package data. */
+export type ExternalRole = 'railLine' | 'stationArea' | 'platform' | 'platformFootprint' | 'stationBuilding' | 'stationBuildingPoint' | 'stationFloor' | 'tradePoint';
+export type ExternalRoleBinding = { role: ExternalRole; classificationGroup: { selectors: WorkflowClassificationSelector[] } };
+export type ExternalReferenceBinding = { bindingId: string } & (
+  | { source: { workflowId: string; bindingId: string }; classificationGroup?: never; search?: never }
+  | { source?: never; classificationGroup: { selectors: WorkflowClassificationSelector[] }; search: Omit<SearchProfile, 'target' | 'targetRole' | 'mode' | 'searchFields' | 'displayFields' | 'returnFields' | 'coarse'> }
+);
+export type ExternalReferenceSource = { workflowId: string; bindingId: string };
 export type WorkflowDefinition = {
   id: string;
   label: LocalizedText;
@@ -925,7 +933,7 @@ export type WorkflowDefinition = {
   /** V3.0 compatibility assignments; migrated into outputs[0]. */
   assignments?: WorkflowAssignment[];
   /** Only the three deliberately retained, completed workflows may bypass composition. */
-  external?: { componentKey: string; purpose?:'capture'|'edit'; version?:number; reason: 'railway-integrated' | 'station-integrated' | 'trp-integrated'; coveredClassifications?: ClassificationPath[] };
+  external?: { componentKey: string; purpose?:'capture'|'edit'; version?:number; reason: 'railway-integrated' | 'station-integrated' | 'trp-integrated'; coveredClassifications?: ClassificationPath[]; roleBindings?: ExternalRoleBinding[]; referenceBindings?: ExternalReferenceBinding[] };
   legacy?: { runtimeMode?: string; componentKey?: string; output?: Record<string, unknown>; source?: Record<string, unknown> };
 };
 
@@ -958,7 +966,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */

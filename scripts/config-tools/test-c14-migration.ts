@@ -1,3 +1,4 @@
+import {NATIVE_CONFIG_REVISION} from '../../src/configStudio/contract';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {gunzipSync} from 'node:zlib';
@@ -21,8 +22,8 @@ assert.ok(result.report.changes.some(row=>row.kind==='default'));
 const report=validateConfigPackage(config);assert.equal(report.valid,true,JSON.stringify(report.issues));
 assert.deepEqual(migratePackageToC14(config).config,config);
 assert.deepEqual(migrateConfigToR9(config),config);assert.deepEqual(migrateConfigToR10(config).config,config);
-assert.throws(()=>migrateConfigToR9({...config,contractRevision:16} as unknown as ConfigPackageV3),/未知/);
-assert.throws(()=>migratePackageToC14({...config,contractRevision:16} as unknown as ConfigPackageV3),/未知/);
+assert.throws(()=>migrateConfigToR9({...config,contractRevision:NATIVE_CONFIG_REVISION+1} as unknown as ConfigPackageV3),/未知/);
+assert.throws(()=>migratePackageToC14({...config,contractRevision:NATIVE_CONFIG_REVISION+1} as unknown as ConfigPackageV3),/未知/);
 assert.throws(()=>migrationChain(14,13,'package'),/降级/);
 assert.throws(()=>migrationChain(12,14,'package'),/窗口/);
 assert.throws(()=>migrationChain(13,14,'package',[]),/缺少/);

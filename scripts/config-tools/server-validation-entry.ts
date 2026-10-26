@@ -16,7 +16,7 @@ import {validateV3WorkflowRecords} from '../../src/configStudio/workflowKernel';
 import {assertStructureTargets} from '../../src/configStudio/structureCommit';
 import type { ConfigPackageV3, MountedFeatureRecord } from '../../src/configStudio/types';
 
-export const rulesVersion='cairnmap-c15-production-2';
+export const rulesVersion='cairnmap-c16-production-1';
 export const validateConfiguration=validateConfigPackage;
 export async function validateConfigurationArchive(bytes:Uint8Array) {
   const config=await readRawNativePackage(new File([bytes], 'configuration.zip') as unknown as globalThis.File) as ConfigPackageV3;

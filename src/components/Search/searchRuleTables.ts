@@ -1,9 +1,9 @@
 // Shared search rule tables for SearchBar and Navigation search inputs.
 // Keep ONLY one copy of blacklist/priority maintenance.
 
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
-import { pickIdFieldValue } from '@/components/Rules/rendering/renderRules';
-import { WORKFLOW_FEATURE_CATALOG } from '@/components/Common/featureFormats';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
+import { pickIdFieldValue } from '@/components/Rules/rendering/renderPrimitives';
+import { WORKFLOW_FEATURE_CATALOG } from '@/legacy/formats/featureFormats';
 
 // ===== Rule blacklist =====
 // One rule per line; supported fields: Class / Kind / SKind / SKind2.

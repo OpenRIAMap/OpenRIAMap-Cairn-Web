@@ -8,7 +8,7 @@ import AppCard from '@/components/ui/AppCard';
 import AppButton from '@/components/ui/AppButton';
 import { loadMapSettings } from '@/lib/cookies';
 
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import { buildInfoSectionsForFeature, pickFeatureDisplayName } from '@/components/Rules/cardrules/fieldRules';
 import { buildPictureUrlsForFeature } from '@/components/Rules/cardrules/pictureRules';
 import { buildMinimalFeatureEditPackage } from '@/lib/minimalFeatureEditPackage';

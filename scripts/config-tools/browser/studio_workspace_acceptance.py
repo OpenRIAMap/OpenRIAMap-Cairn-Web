@@ -4,7 +4,7 @@ from pathlib import Path
 from browser_check import Browser, APP_URL, OUT
 
 assert APP_URL.startswith('http://127.0.0.1:')
-assert os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514','9524')
+assert os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514','9524','9338')
 class AcceptanceBrowser(Browser):
     def __init__(self):
         self.dialogs=[]

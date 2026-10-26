@@ -1,5 +1,5 @@
 import { loadRuleItemsForWorld } from '@/components/Rules/data/ruleDataSources';
-import { pickIdFieldValue } from '@/components/Rules/rendering/renderRules';
+import { pickIdFieldValue } from '@/components/Rules/rendering/renderPrimitives';
 
 export type GlobalDbIdHit = {
   file: string;

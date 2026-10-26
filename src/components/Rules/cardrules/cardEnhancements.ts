@@ -1,4 +1,4 @@
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import { passLineBooleanFilters, type RailNewIndex } from '../../Navigation/railNewIndex';
 import type { CardEnhancementKey } from './cardRegistry';
 import type { CardRegistryContext } from './cardRegistryContext';

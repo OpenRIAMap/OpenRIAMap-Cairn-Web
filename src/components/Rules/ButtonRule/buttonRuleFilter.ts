@@ -1,5 +1,5 @@
 import { matchesButtonClassification } from '@/core/project/buttonClassification';
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import { RULE_BUTTON_DEFS, type RuleButtonCriteria } from './buttonRuleConfig';
 
 function normalize(v: any): string {

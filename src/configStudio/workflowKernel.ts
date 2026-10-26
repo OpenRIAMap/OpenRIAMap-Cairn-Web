@@ -1,3 +1,4 @@
+import {matchesSearchQuery} from './searchMatch';
 import {workflowClassificationGroup,outputAcceptsClassification,recordClassificationEligible} from './workflowClassificationGroup';
 import { tagRecordErrors } from './standardTagFields';
 import { validateStructuredValue } from './valueSchema';
@@ -163,13 +164,7 @@ export function findV3SearchCandidates(records: MountedFeatureRecord[], profile:
   const search = normalizeSearchProfile(profile);
   const needle = query.trim().toLocaleLowerCase();
   if (!search || needle.length < (search.minQueryLength ?? 1)) return [];
-  const matches = (value: string) => {
-    const text = value.toLocaleLowerCase();
-    if (search.matcher === 'prefix') return text.startsWith(needle);
-    if (search.matcher === 'token') return text.split(/[\s_\-/.]+/).some((token) => token.startsWith(needle));
-    if (search.matcher === 'fuzzy') { let index = 0; for (const char of text) if (char === needle[index]) index += 1; return index === needle.length; }
-    return text.includes(needle);
-  };
+  const matches = (value: string) => matchesSearchQuery(value,needle,search.matcher);
   return records.filter((record) => {
     if (search.cacheScope !== 'loadedWorlds' && world && String(record.World ?? '').trim() && normalizeV3WorldId(record.World) !== normalizeV3WorldId(world)) return false;
     if(search.targetRole==='main'){const role=config?resolveNodeFieldSettings(config,recordPath(record)).value.structure:undefined;if(!role?.enabled||role.role!=='main')return false;}

@@ -2,7 +2,7 @@ import { normalizeRuleSourceWorldId } from '../core/project/worldIdentity';
 import { isNativeConfigRevision } from './contract';
 import type { CardItem, ClassificationPath, ConfigPackageV3 } from './types';
 import { resolveCardConfiguration, resolveEffectiveFields, optionLabel } from './runtime';
-import type { FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import type { CardRow, InfoSections } from '@/components/Rules/cardrules/fieldRules';
 import type { RailNewIndex } from '@/components/Navigation/railNewIndex';
 import {

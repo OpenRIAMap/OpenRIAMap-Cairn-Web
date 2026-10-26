@@ -5,7 +5,7 @@ import AppButton from '@/components/ui/AppButton';
 import { MapPinned, Plus, Search, Trash2, X } from 'lucide-react';
 import { useRuleDataStore } from '@/store/ruleDataStore';
 import { buildWorkflowSearchOptionsFromFeatures, filterWorkflowSearchOptions, type SearchSelectConfig } from '@/components/Mapping/Workflow/WorkflowFeatureSearchSelect';
-import { pickIdFieldValue } from '@/components/Rules/rendering/renderRules';
+import { pickIdFieldValue } from '@/components/Rules/rendering/renderPrimitives';
 
 export type DeletePanelItem = { ID: string; Name: string; className?: string; worldId?: string };
 

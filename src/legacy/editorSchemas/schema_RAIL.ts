@@ -1,4 +1,4 @@
-import type { PersistedFieldDef, RegistryGroupDef, WorkflowEditorSchema } from './types';
+import type { PersistedFieldDef, RegistryGroupDef, WorkflowEditorSchema } from '@/components/Common/formTypes';
 
 const fixedIntegrations: WorkflowEditorSchema['integrations'] = {
   editor: 'workflowStyleReady',

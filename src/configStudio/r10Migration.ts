@@ -3,7 +3,8 @@ import { defaultApplicationSettings } from '../core/project/applicationDefaults'
 import type { CategorySearch, ConfigPackageV3 } from './types';
 import { resolveNodeFieldSettings } from './nodeFieldSettings';
 import { STRUCTURE_CONTEXT_ID } from './structureRoleIndex';
-import { SEARCH_CATEGORY_OVERRIDE_LINES,SEARCH_RULE_PRIORITY_LINES,SEARCH_RULE_BLACKLIST_LINES } from '../components/Search/searchRuleTables';
+import historicalSearch from './migrationData/search-rules.json';
+const {SEARCH_CATEGORY_OVERRIDE_LINES,SEARCH_RULE_PRIORITY_LINES,SEARCH_RULE_BLACKLIST_LINES}=historicalSearch;
 import { migrateConfigToR9 } from './r9Migration';
 import { defaultLookupTables } from './lookupTables';
 import { createPrefillAudit } from './prefillAudit';

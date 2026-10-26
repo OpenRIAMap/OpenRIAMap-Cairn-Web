@@ -8,6 +8,7 @@ export const EXTERNAL_EDIT_OPTIONS=[{key:'tradePointEditor',label:'TRP 工作流
 export function validateExternalEditBinding(workflow:WorkflowDefinition):string[] {
  const definition=EXTERNAL_EDIT_OPTIONS.find(d=>d.key===workflow.external?.componentKey),scope=workflow.editor?.scope??workflow.target;
  if(!definition||workflow.external?.purpose!=='edit'||workflow.external.version!==definition.version||workflow.external.reason!==definition.reason)return ['外部编辑组件、用途、版本或登记理由无效。'];
- if(!workflow.editor?.enabled||!workflow.editor.dedicated||workflow.quickMapping!==false||scope?.class!=='TRP'||workflow.steps.length||workflow.outputs.length||!workflow.external.coveredClassifications?.length||workflow.external.coveredClassifications.some(p=>p.class!=='TRP'))return ['TRP 外部编辑须为有效 TRP 范围、专供编辑且关闭便捷测绘的登记完成品。'];return [];
+ const bound=workflow.external.roleBindings!==undefined?workflow.external.roleBindings.length>0&&Boolean(scope?.class):scope?.class==='TRP'&&Boolean(workflow.external.coveredClassifications?.length)&&!workflow.external.coveredClassifications?.some(p=>p.class!=='TRP');
+ if(!workflow.editor?.enabled||!workflow.editor.dedicated||workflow.quickMapping!==false||!bound||workflow.steps.length||workflow.outputs.length)return ['交易点外部编辑须有明确角色范围、专供编辑且关闭便捷测绘。'];return [];
 }
 export const createTrpEditingWorkflow=():WorkflowDefinition=>({id:'v3-editor-trp-external',label:{zh:'交易点（专供编辑）',en:''},mode:'external',quickMapping:false,editor:{enabled:true,dedicated:true,scope:{class:'TRP'}},target:{class:'TRP'},steps:[],outputs:[],external:{componentKey:'tradePointEditor',purpose:'edit',reason:'trp-integrated',version:1,coveredClassifications:[{class:'TRP'}]}});

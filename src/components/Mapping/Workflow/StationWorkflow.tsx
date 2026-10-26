@@ -397,7 +397,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     const buildingName = String(base.Name ?? '').trim();
 
     const res = b.commitFeature({
-      subType: '车站建筑',
+      role: 'stationBuilding', subType: '车站建筑',
       mode: 'polygon',
       coords: pts,
       geometry,
@@ -444,7 +444,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     const name = String(base.Name ?? '').trim();
 
     const res = b.commitFeature({
-      subType: '站台轮廓',
+      role: 'platformFootprint', subType: '站台轮廓',
       mode: 'polygon',
       coords: pts,
       geometry,
@@ -474,10 +474,12 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     for (const it of lines ?? []) {
       const ID = String(it?.ID ?? '').trim();
       if (!ID) return { ok: false as const, error: '线路条目中存在空的线路ID(ID)。' };
+      const distance=it.stationDistance;const hasDistance=distance!==undefined&&distance!==null&&String(distance).trim()!=='';
+      if(hasDistance&&!Number.isFinite(Number(distance)))return {ok:false as const,error:'线路距离 stationDistance 必须为有限数值。'};
       out.push({
         ID,
-        stationCode: it.stationCode,
-        stationDistance: it.stationDistance,
+        ...(it.stationCode!==undefined&&String(it.stationCode).trim()?{stationCode:it.stationCode}:{}),
+        ...(hasDistance?{stationDistance:Number(distance)}:{}),
         Avaliable: !!it.Avaliable,
         Overtaking: !!it.Overtaking,
         getin: !!it.getin,
@@ -505,7 +507,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     const name = `${String(base.Name).trim()}-${no}站台`;
 
     const res = b.commitFeature({
-      subType: '站台',
+      role: 'platform', subType: '站台',
       mode: 'point',
       coords: pts,
       values: {
@@ -550,7 +552,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     const name = `${String(base.Name).trim()}-${no}站台`;
 
     const res = b.commitFeature({
-      subType: '站台',
+      role: 'platform', subType: '站台',
       mode: 'point',
       coords: pts,
       values: {
@@ -597,7 +599,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     }
 
     const res = b.commitFeature({
-      subType: '车站',
+      role: 'stationArea', subType: '车站',
       mode: 'point',
       coords: pts,
       values: {
@@ -844,6 +846,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
                   />
                   <LabeledInput
                     label="线路距离 (stationDistance，可选)"
+                    type="number"
                     value={String(ln.stationDistance ?? '')}
                     onChange={(v) =>
                       setPlfLinesDown((p) => {
@@ -1016,6 +1019,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
                   />
                   <LabeledInput
                     label="线路距离 (stationDistance，可选)"
+                    type="number"
                     value={String(ln.stationDistance ?? '')}
                     onChange={(v) =>
                       setPlfLinesUp((p) => {

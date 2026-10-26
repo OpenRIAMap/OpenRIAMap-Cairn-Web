@@ -1,10 +1,5 @@
-import {
-  WORKFLOW_FEATURE_CATALOG,
-  listCatalogClassOptions,
-  listCatalogKindOptions,
-  listCatalogSKind2Options,
-  type FeatureKey,
-} from '../featureFormats';
+import type {FeatureKey} from './featurePrimitives';
+export type * from '@/components/Common/formTypes';
 import type {
   FieldSceneUsage,
   PersistedFieldDef,
@@ -13,11 +8,9 @@ import type {
   ProjectedRegistryGroup,
   ProjectedRegistryScene,
   RegistryClassificationDef,
-  RegistryClassificationOption,
-  RegistryClassificationRef,
   RegistryScene,
   WorkflowEditorSchema,
-} from './types';
+} from '@/components/Common/formTypes';
 
 const normalizeText = (value: unknown): string => String(value ?? '').trim();
 
@@ -209,71 +202,3 @@ export const projectRegistryScene = (
   };
 };
 
-export const getClassificationOptions = (
-  ref: RegistryClassificationRef | undefined
-): RegistryClassificationOption[] => {
-  if (!ref) return [];
-  if (ref.mode === 'classCatalog') {
-    return listCatalogClassOptions({ classCode: ref.classCode, geom: ref.geom }).map((item) => ({
-      kind: item.kind,
-      skind: item.skind,
-      skind2: item.entry.skind2,
-      name: item.name,
-      label: item.label,
-      classCode: item.entry.classCode,
-      geom: item.entry.geom,
-    }));
-  }
-
-  if (ref.skind) {
-    return listCatalogSKind2Options({ kind: ref.kind ?? '', skind: ref.skind, geom: ref.geom }).map((item) => ({
-      kind: item.entry.kind,
-      skind: item.entry.skind,
-      skind2: item.skind2,
-      name: item.name,
-      label: item.label,
-      classCode: item.entry.classCode,
-      geom: item.entry.geom,
-    }));
-  }
-
-  if (ref.kind) {
-    return listCatalogKindOptions({ kind: ref.kind, geom: ref.geom }).map((item) => ({
-      kind: ref.kind ?? item.entry.kind,
-      skind: item.skind,
-      skind2: item.skind2,
-      name: item.name,
-      label: item.label,
-      classCode: item.entry.classCode,
-      geom: item.entry.geom,
-    }));
-  }
-
-  return WORKFLOW_FEATURE_CATALOG
-    .filter((entry) => entry.classCode === ref.classCode && entry.geom === ref.geom)
-    .map((entry) => ({
-      kind: entry.kind,
-      skind: entry.skind,
-      skind2: entry.skind2,
-      name: entry.name,
-      label: `${entry.name}（${entry.kind}/${entry.skind}/${entry.skind2}）`,
-      classCode: entry.classCode,
-      geom: entry.geom,
-    }));
-};
-
-export const resolveClassificationDisplayName = (
-  ref: RegistryClassificationRef | undefined,
-  featureInfo: any
-): string => {
-  if (!ref) return '';
-  const kind = normalizeText(featureInfo?.Kind);
-  const skind = normalizeText(featureInfo?.SKind);
-  const skind2 = normalizeText(featureInfo?.SKind2);
-  const hit = WORKFLOW_FEATURE_CATALOG.find((entry) => {
-    if (ref.mode === 'classCatalog' && entry.classCode !== ref.classCode) return false;
-    if (ref.mode === 'workflowCatalog' && (entry.classCode !== ref.classCode || entry.geom !== ref.geom)) return false;
-    return entry.kind === kind && entry.skind === skind && entry.skind2 === skind2;
-  });
-  return hit?.name ?? [kind, skind, skind2].filter(Boolean).join('/');
-};

@@ -1,20 +1,17 @@
+import {recordsAfterExactDeletes} from '@/configStudio/nativeRecordSubmission';
+import {prepareSpecializedCapture} from '@/configStudio/nativeRecordSubmission';
 import {categoryAllowsParts,recordCategory} from '@/configStudio/multipartPolicy';
-import {declaredRailFormatPath} from '@/configStudio/externalCapturePaths';
-import {getOpenRIAMapClassConfigs} from '@/core/project/openriamapRiaClasses';
 import {ExternalFeatureEditHost} from '../Workflow/ExternalFeatureEditHost';
 import {createTrpExternalEditSession,prepareTrpExternalEdit,type TrpExternalEditSession} from '@/configStudio/trpExternalEditing';
 import {prepareDownstreamNativeImport} from '../Workflow/downstreamNativeImport';
 import {NativeWorkflowEditPanel} from '../Workflow/NativeWorkflowEditPanel';
 import {compileWorkflowEditPlan,reverseWorkflowEditEndpoints,hydrateWorkflowEdit,findEditingWorkflow,isQuickMappingWorkflow,type WorkflowEditPlan,type WorkflowEditDraft} from '@/configStudio/workflowEditing';
 import {prepareNativeWorkflowEdit} from '@/configStudio/workflowEditCommit';
-import {omitOptionalFieldValues} from '@/configStudio/optionalFieldValues';
 import {normalizeV3WorldId} from '@/configStudio/V3WorkflowRunner';
 import {useRuleDataStore} from '@/store/ruleDataStore';
 import { NativeWorkflowHost } from '../Workflow/NativeWorkflowHost';
-import {prepareExternalCaptureRecord} from '../Workflow/externalCaptureRecord';
 import { prepareNativeWorkflowCommit } from '@/configStudio/nativeWorkflowCommit';
 import { validateConfigPackage,resolveGeometryProfile } from '@/configStudio/runtime';
-import { getClassConfigByCode } from '@/core/project/classMetadata';
 import type { ClassificationPath,ConfigPackageV3, WorkflowDefinition } from '@/configStudio/types';
 import type { V3WorkflowRunResult } from '@/configStudio/V3WorkflowRunner';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type ChangeEvent, type RefObject, useCallback } from 'react';
@@ -23,36 +20,19 @@ import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 
-import {
-  FORMAT_REGISTRY,
-  WORKFLOW_FEATURE_CATALOG,
-  getSubTypeOptions,
-  layerToJsonText,
-  validateImportItemDetailed,
-  validateRequiredDetailed,
-  formatMissingEntries,
-  TAG_KEY_OTHER,
-  TAG_KEY_OPTIONS,
-  EXT_VALUE_TYPE_TEXT,
-  EXT_VALUE_TYPE_NULL,
-  EXT_VALUE_TYPE_OPTIONS,
-  type FeatureKey,
-  type DrawMode,
-} from '@/components/Common/featureFormats';
-import {
-  projectRegistryScene,
-  resolveWorkflowEditorSchema,
-  type ProjectedRegistryScene,
-} from '@/components/Common/workflowEditorRegistry';
-import {
-  mergeEditorDraftIntoFeatureInfo,
-  mergeUnparsedEntriesIntoFeatureInfo,
-  parseFeatureInfoByRegistry,
-  type WorkflowEditorDraftValues,
-  type WorkflowEditorUnparsedEntry,
-} from '@/components/Common/workflowEditorParser';
+import {layerToJsonText,type FeatureKey,type DrawMode} from '@/components/Common/featurePrimitives';
+import {mergeEditorDraftIntoFeatureInfo,type WorkflowEditorDraftValues,type WorkflowEditorUnparsedEntry} from '@/components/Common/workflowEditorParser';
+import type {ProjectedRegistryScene} from '@/components/Common/formProjection';
+import {CategoryPathPicker} from '@/configStudio/CategoryPathPicker';
+import {classificationPathKey,workflowPathLabel,pathMatchesScope,resolveEffectiveFields} from '@/configStudio/runtime';
+import {fullEditorWorkflow,initializeFullEditor,prepareFullEditorCreate} from '@/configStudio/fullEditor';
+import {specializedFormView} from '../Workflow/specialized/registration';
+import {externalRolePaths} from '@/configStudio/externalBindings';
+import {EXTERNAL_COMPONENT_ROLES} from '@/configStudio/externalCapabilities';
+import type {ExternalRole} from '@/configStudio/types';
+import {prepareNativeRecordCreate} from '@/configStudio/nativeRecordSubmission';
+import {prepareMergeDraft,type DraftBundle} from '../Special/NativeMergeForm';
 
-import TRPTradeEditor, { type TradeGroup as TRPTradeGroup } from '@/components/Mapping/SpecialInput/TRPTradeEditor';
 import WorkflowStyleEditPanel from '@/components/Mapping/Editor/WorkflowStyleEditPanel';
 
 
@@ -80,13 +60,12 @@ import RelayPackageExportPanel from '@/components/Mapping/panels/RelayPackageExp
 import DeleteFeatureSelectionPanel, { type DeletePanelItem } from '@/components/Mapping/panels/DeleteFeatureSelectionPanel';
 import DeleteFeaturePickPanel from '@/components/Mapping/panels/DeleteFeaturePickPanel';
 import FeaturePictureBindingPanel from '@/components/Mapping/panels/FeaturePictureBindingPanel';
-import { pickIdFieldValue, type FeatureRecord } from '@/components/Rules/rendering/renderRules';
+import { pickIdFieldValue, type FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import {
   multipartGeometryFromSinglePath,
   readMultipartGeometry,
   validateMultipartHoleDraft,
   validateMultipartGeometry,
-  withCanonicalMultipartGeometry,
   type MultipartGeometry,
   type MultipartGeometryKind,
 } from '@/core/geometry/multipartGeometry';
@@ -141,23 +120,8 @@ import WorkflowHost, {
   type WorkflowRegistry,
   type WorldPoint,
 } from '@/components/Mapping/Workflow/WorkflowHost';
-import { getConfigDrivenWorkflowRegistry, getConfigDrivenWorkflowSelectOptions, describeWorkflowRuntimeSelection } from '@/components/Mapping/Workflow/workflowConfigRuntimeBridge';
 import RailwayWorkflow from '@/components/Mapping/Workflow/RailwayWorkflow';
 import StationWorkflow from '@/components/Mapping/Workflow/StationWorkflow';
-import NaturalLandWorkflow from '@/components/Mapping/Workflow/NaturalLandWorkflow';
-import NaturalLandSurfaceWorkflow from '@/components/Mapping/Workflow/NaturalLandSurfaceWorkflow';
-import RoadWorkflow from '@/components/Mapping/Workflow/RoadWorkflow';
-import NaturalWaterbodyWorkflow from '@/components/Mapping/Workflow/NaturalWaterbodyWorkflow';
-import NaturalWaterwayWorkflow from '@/components/Mapping/Workflow/NaturalWaterwayWorkflow';
-import NaturalBoundaryWorkflow from '@/components/Mapping/Workflow/NaturalBoundaryWorkflow';
-import SettlementBoundaryDeterminedWorkflow from '@/components/Mapping/Workflow/SettlementBoundaryDeterminedWorkflow';
-import SettlementBoundaryPlannedWorkflow from '@/components/Mapping/Workflow/SettlementBoundaryPlannedWorkflow';
-import SettlementBoundaryLineWorkflow from '@/components/Mapping/Workflow/SettlementBoundaryLineWorkflow';
-import SpecialCulturalPointWorkflow from '@/components/Mapping/Workflow/SpecialCulturalPointWorkflow';
-import BuildingWorkflow from '@/components/Mapping/Workflow/BuildingWorkflow';
-import FloorUnitWorkflow from '@/components/Mapping/Workflow/FloorUnitWorkflow';
-import TeleportPointWorkflow from '@/components/Mapping/Workflow/TeleportPointWorkflow';
-import WarpPointWorkflow from '@/components/Mapping/Workflow/WarpPointWorkflow';
 import TradePointWorkflow from '@/components/Mapping/Workflow/TradePointWorkflow';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
@@ -554,11 +518,9 @@ const partsPermission = () => {
   if(workflowDrawingTargetRef.current)return workflowDrawingTargetRef.current.allowParts===true;
   if(specialDraftMode==='merge-point-platform-station')return false;
   if (!configRuntime) return true;
-  const definition=getOpenRIAMapClassConfigs().find(item=>item.sourceFeatureKey===subType);
-  const record={Class:definition?.classCode,...(nativeEdit?.original??externalEdit?.session.original??{}),...featureInfo};
-  let path=recordCategory(record);
-  try{if(!nativeEdit&&!externalEdit)path=declaredRailFormatPath(configRuntime,subType)??path;}catch{return false;}
-  return drawModeRef.current !== 'none' && categoryAllowsParts(configRuntime,path,geometryKindForDrawMode(drawModeRef.current));
+  const path=nativeEdit?.draft.classification??(externalEdit?recordCategory(externalEdit.session.original):fullExternalCreate?.path??fullCategory);
+  const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
+  return !path.class||drawModeRef.current!=='none'&&categoryAllowsParts(config,path,geometryKindForDrawMode(drawModeRef.current));
 };
 const partsLocked = () => multipartStructureLocked || !partsPermission();
 
@@ -840,35 +802,35 @@ const [redoStack, setRedoStack] = useState<Array<{ x: number; z: number; y?: num
 // 当前 JSON 特征信息
 const [featureInfo, setFeatureInfo] = useState<any>({});
 
-// JSON 表单：动态 fields/groups（由 FORMAT_REGISTRY[subType] 驱动）
+// Raw draft annotations; native forms own their typed slot state.
 const [groupInfo, setGroupInfo] = useState<Record<string, any[]>>({});
 
-// 图层管理编辑专用中间态：命中 workflowEditorRegistry 时使用 workflow-style editor。
-const [editUiMode, setEditUiMode] = useState<'full-fallback' | 'workflow-style' | 'native-workflow' | 'external-workflow'>('full-fallback');
-const [activeEditorView, setActiveEditorView] = useState<ProjectedRegistryScene | null>(null);
-const [editorDraftValues, setEditorDraftValues] = useState<WorkflowEditorDraftValues>({});
-const [editorDraftUnparsed, setEditorDraftUnparsed] = useState<WorkflowEditorUnparsedEntry[]>([]);
+// Full creation and editing share the native editing plan.
+const [editUiMode, setEditUiMode] = useState<'full-fallback' | 'native-workflow' | 'external-workflow'>('full-fallback');
 
-const [nativeEdit,setNativeEdit]=useState<{config:ConfigPackageV3;plan:WorkflowEditPlan;draft:WorkflowEditDraft;original:Record<string,unknown>;world:string}|null>(null);
+const [nativeEdit,setNativeEdit]=useState<{config:ConfigPackageV3;plan:WorkflowEditPlan;draft:WorkflowEditDraft;original?:Record<string,unknown>;world:string}|null>(null);
 const [externalEdit,setExternalEdit]=useState<{config:ConfigPackageV3;workflow:WorkflowDefinition;session:TrpExternalEditSession;world:string}|null>(null);
+const [fullCategory,setFullCategory]=useState<ClassificationPath>({class:''});
+const [fullCategoryError,setFullCategoryError]=useState('');
+const [fullExternalCreate,setFullExternalCreate]=useState<{config:ConfigPackageV3;workflow:WorkflowDefinition;path:ClassificationPath;view:ProjectedRegistryScene;values:WorkflowEditorDraftValues;unparsed:WorkflowEditorUnparsedEntry[];world:string}|null>(null);
 const nativeEditDatasets=useRuleDataStore(state=>state.datasets);
 const nativeEditRecords=useMemo(()=>Object.values(nativeEditDatasets).flatMap(dataset=>dataset.features).map(raw=>(raw.featureInfo&&typeof raw.featureInfo==='object'?raw.featureInfo:raw) as Record<string,unknown>),[nativeEditDatasets]);
 const nativeEditSearchRecords=useMemo(()=>[...nativeEditRecords,...layers.flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])],[nativeEditRecords,layers]);
 const nativeEditWorldMismatch=Boolean(nativeEdit&&nativeEdit.world!==normalizeV3WorldId(currentWorldId));
-const activeEditWorld=nativeEdit?.world??externalEdit?.world;
+const activeEditWorld=nativeEdit?.world??externalEdit?.world??fullExternalCreate?.world;
 const externalEditWorldMismatch=Boolean(externalEdit&&externalEdit.world!==normalizeV3WorldId(currentWorldId));
+const fullExternalWorldMismatch=Boolean(fullExternalCreate&&fullExternalCreate.world!==normalizeV3WorldId(currentWorldId));
 useEffect(()=>{if(!activeEditWorld)return;if(activeEditWorld!==normalizeV3WorldId(currentWorldId)){setDrawing(false);clearDraftOverlays();}else {setDrawing(true);drawDraftGeometry(tempPoints,drawMode,drawColor);}},[currentWorldId,activeEditWorld]);
 const resetWorkflowStyleEditorState = () => {
   setNativeEdit(null);
   setExternalEdit(null);
   setEditUiMode('full-fallback');
-  setActiveEditorView(null);
-  setEditorDraftValues({});
-  setEditorDraftUnparsed([]);
+  setFullExternalCreate(null);
+  setFullCategory({class:''});
+  setFullCategoryError('');
 };
 
 // extensions Step A：按组分区编辑时用于新增 extGroup
-const [newExtGroupInput, setNewExtGroupInput] = useState('');
 
 // 编辑者ID：用于自动写入 CreateBy / ModifityBy（不直接作为附加字段输出）
 const [editorIdInput, setEditorIdInput] = useState('');
@@ -882,14 +844,14 @@ const pendingSwitchActionRef = useRef<null | (() => void)>(null);
 const resetFeatureSelectionState = () => {
   // 要素类型回到默认，附加信息回到空（避免下次进入测绘仍残留上次编辑的字段面板）
   setSubType('默认');
-  const hydrated = FORMAT_REGISTRY['默认'].hydrate({});
-  setFeatureInfo(hydrated.values ?? {});
-  setGroupInfo(hydrated.groups ?? {});
-  setNewExtGroupInput('');
+  setFeatureInfo({});
+  setGroupInfo({});
   resetWorkflowStyleEditorState();
 };
 
 const isExtraInfoNonEmpty = () => {
+  if(nativeEdit&&JSON.stringify(nativeEdit.draft.slots)!==JSON.stringify(nativeEdit.draft.initialSlots))return true;
+  if(fullExternalCreate&&Object.values(fullExternalCreate.values).some(value=>value!==''&&value!==undefined))return true;
   if (subType === '默认') return false;
 
   const hasNonEmptyValue = (obj: any) => {
@@ -2096,6 +2058,7 @@ const finishLayer = () => {
   if (!map || !proj) return;
 
   if (drawMode === 'none') return;
+  if(activeEditWorld&&activeEditWorld!==normalizeV3WorldId(currentWorldId)){alert('请返回本次工作区所属世界后保存。');return;}
 
   // —— 关键：编辑态允许“未改坐标直接保存”，此时用备份 coords 兜底
   const backup = editingBackupCoordsRef.current ?? [];
@@ -2153,308 +2116,38 @@ const finishLayer = () => {
     resetSpecialDrafts();
 
     setSubType('默认');
-    const hydrated = FORMAT_REGISTRY['默认'].hydrate({});
-    setFeatureInfo(hydrated.values ?? {});
-    setGroupInfo(hydrated.groups ?? {});
+  setFeatureInfo({});
+  setGroupInfo({});
     resetWorkflowStyleEditorState();
     resetMultipartEditor();
   };
 
-  // =========================
-  // Special：多点合一（站台+车站）
-  // =========================
-  if (specialDraftMode === 'merge-point-platform-station') {
-    if (editingLayerId !== null) {
-      alert('“多点合一”仅支持新建图层，不支持在编辑模式下保存。');
-      return;
-    }
-    if (drawMode !== 'point') {
-      alert('“多点合一”仅支持点要素。');
-      return;
-    }
-    if(multipartEnabledRef.current&&(multipartDraftRef.current?.parts.length??0)>1){alert('多点合一在同一个位置生成各角色，不能截断现有多部件草稿；请先处理部件。');return;}
-
-    const p0 = finalCoords[finalCoords.length - 1];
-    const pointCoords = [{ x: p0.x, z: p0.z, y: p0.y }];
-
-    const outputs: LayerType[] = [];
-
-    const addOne = (k: string, values: any, groups: any) => {
-      const def: any = (FORMAT_REGISTRY as any)[k];
-      if (!def) {
-        alert(`缺少格式定义：${k}`);
-        return false;
-      }
-
-      const req = validateRequiredDetailed(def, values ?? {}, groups ?? {});
-      if (!req.ok) {
-        const detail = formatMissingEntries(req.missing);
-        alert(`无法保存，${k} 的必填附加信息为空：\n${detail}`);
-        return false;
-      }
-
-      let featureInfoOut = withCanonicalMultipartGeometry(
-        def.buildFeatureInfo({
-          op: 'create',
-          mode: 'point',
-          coords: pointCoords,
-          values: values ?? {},
-          groups: groups ?? {},
-          worldId: currentWorldId,
-          editorId: editorIdInput,
-          prevFeatureInfo: undefined,
-          now: new Date(),
-        }),
-        multipartGeometryFromSinglePath('Point', pointCoords),
-      );
-      try {if(configRuntime)featureInfoOut=prepareExternalCaptureRecord(featureInfoOut,multipartGeometryFromSinglePath('Point',pointCoords),configRuntime,declaredRailFormatPath(configRuntime,k));}
-      catch(error){alert(error instanceof Error?error.message:'要素字段无效。');return false;}
-
-      const id = nextLayerId.current++;
-      const newGroup = makeLeafletGroup('point', pointCoords, drawColor);
-
-      outputs.push({
-        id,
-        mode: 'point',
-        color: drawColor,
-        coords: pointCoords,
-        visible: true,
-        leafletGroup: newGroup,
-        jsonInfo: {
-          subType: k as unknown as FeatureKey,
-          featureInfo: featureInfoOut,
-        },
-      });
-
-      return true;
-    };
-
-    const hasPlatforms = (mergePointPSDraft.platforms ?? []).length > 0;
-    const hasStation = Boolean(mergePointPSDraft.station);
-
-    if (!hasPlatforms && !hasStation) {
-      alert('多点合一：请至少添加一个“站台”或一个“车站”。');
-      return;
-    }
-
-    // 站台（多个）
-    for (let i = 0; i < (mergePointPSDraft.platforms ?? []).length; i++) {
-      const b = mergePointPSDraft.platforms[i];
-      const ok = addOne('站台', b?.values, b?.groups);
-      if (!ok) return;
-    }
-
-    // 车站（最多一个）
-    if (mergePointPSDraft.station) {
-      const ok = addOne('车站', mergePointPSDraft.station.values, mergePointPSDraft.station.groups);
-      if (!ok) return;
-    }
-
-    setLayers(prev => {
-      const next = [...prev, ...outputs];
-      syncFixedRoot(next, null);
-      return next;
-    });
-
-    cleanupAfterFinish();
-    return;
+  if(specialDraftMode!=='none'){
+    if(editingLayerId!==null){alert('合并工具仅用于新建。');return;}
+    const geometry=buildCurrentMultipartGeometry(drawMode as DrawMode,finalCoords);
+    const bundles:DraftBundle[]=specialDraftMode==='merge-point-platform-station'?[...mergePointPSDraft.platforms,...(mergePointPSDraft.station?[mergePointPSDraft.station]:[])]:[...(mergePolygonOBDraft.outline?[mergePolygonOBDraft.outline]:[]),...(mergePolygonOBDraft.building?[mergePolygonOBDraft.building]:[])];
+    if(!bundles.length){alert('请至少添加一份要素信息。');return;}
+    if(specialDraftMode==='merge-point-platform-station'&&geometry.parts.length!==1){alert('多点合一需要一个共享坐标，不能截断多部件。');return;}
+    const outputs:LayerType[]=[],records=[...recordsAfterExactDeletes(nativeEditRecords,relayPackageDraft.deleteMarks),...layersRef.current.flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])];
+    try{for(const bundle of bundles){const record=prepareMergeDraft(bundle,geometry,currentWorldId,editorIdInput,[...records,...outputs.flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])]);outputs.push({id:nextLayerId.current++,mode:drawMode as DrawMode,color:drawColor,coords:finalCoords,visible:true,leafletGroup:makeLeafletGroup(drawMode as DrawMode,finalCoords,drawColor,geometry),jsonInfo:{subType:classificationPathKey(recordCategory(record)),featureInfo:record}});}}catch(error){alert(error instanceof Error?error.message:String(error));return;}
+    setLayers(previous=>{const next=[...previous,...outputs];syncFixedRoot(next,null);return next;});cleanupAfterFinish();return;
   }
 
-  // =========================
-  // Special：多面合一（站台轮廓 + 车站建筑）
-  // =========================
-  if (specialDraftMode === 'merge-polygon-outline-building') {
-    if (editingLayerId !== null) {
-      alert('“多面合一”仅支持新建图层，不支持在编辑模式下保存。');
-      return;
-    }
-    if (drawMode !== 'polygon') {
-      alert('“多面合一”仅支持面要素。');
-      return;
-    }
-    if (finalCoords.length < 3) {
-      alert('面要素至少需要 3 个控制点。');
-      return;
-    }
-
-    const outputs: LayerType[] = [];
-    const sharedGeometry=buildCurrentMultipartGeometry('polygon',finalCoords);
-    const sharedGeometryError=validateMultipartGeometry(sharedGeometry);
-    if(sharedGeometryError){alert(sharedGeometryError);return;}
-
-    const addOnePolygon = (k: string, values: any, groups: any) => {
-      const def: any = (FORMAT_REGISTRY as any)[k];
-      if (!def) {
-        alert(`缺少格式定义：${k}`);
-        return false;
-      }
-
-      const req = validateRequiredDetailed(def, values ?? {}, groups ?? {});
-      if (!req.ok) {
-        const detail = formatMissingEntries(req.missing);
-        alert(`无法保存，${k} 的必填附加信息为空：\n${detail}`);
-        return false;
-      }
-
-      let featureInfoOut = withCanonicalMultipartGeometry(
-        def.buildFeatureInfo({
-          op: 'create',
-          mode: 'polygon',
-          coords: finalCoords,
-          values: values ?? {},
-          groups: groups ?? {},
-          worldId: currentWorldId,
-          editorId: editorIdInput,
-          prevFeatureInfo: undefined,
-          now: new Date(),
-        }),
-        sharedGeometry,
-      );
-      try {if(configRuntime)featureInfoOut=prepareExternalCaptureRecord(featureInfoOut,sharedGeometry,configRuntime,declaredRailFormatPath(configRuntime,k));}
-      catch(error){alert(error instanceof Error?error.message:'要素字段无效。');return false;}
-
-      const id = nextLayerId.current++;
-      const newGroup = makeLeafletGroup('polygon', finalCoords, drawColor,sharedGeometry);
-
-      outputs.push({
-        id,
-        mode: 'polygon',
-        color: drawColor,
-        coords: finalCoords,
-        visible: true,
-        leafletGroup: newGroup,
-        jsonInfo: {
-          subType: k as unknown as FeatureKey,
-          featureInfo: featureInfoOut,
-        },
-      });
-
-      return true;
-    };
-
-    const outlineKey = '站台轮廓';
-    const buildingKey = '车站建筑';
-
-    const hasOutline = Boolean(mergePolygonOBDraft.outline);
-    const hasBuilding = Boolean(mergePolygonOBDraft.building);
-
-    if (!hasOutline && !hasBuilding) {
-      alert('多面合一：请至少添加一个“站台轮廓”或一个“车站建筑”。');
-      return;
-    }
-
-    if (mergePolygonOBDraft.outline) {
-      const ok = addOnePolygon(outlineKey, mergePolygonOBDraft.outline.values, mergePolygonOBDraft.outline.groups);
-      if (!ok) return;
-    }
-
-    if (mergePolygonOBDraft.building) {
-      const ok = addOnePolygon(buildingKey, mergePolygonOBDraft.building.values, mergePolygonOBDraft.building.groups);
-      if (!ok) return;
-    }
-
-    setLayers(prev => {
-      const next = [...prev, ...outputs];
-      syncFixedRoot(next, null);
-      return next;
-    });
-
-    cleanupAfterFinish();
-    return;
-  }
-
-  // =========================
-  // Normal：单图层保存
-  // - 新建 / full fallback：沿用原 featureInfo + groupInfo
-  // - workflow-style 编辑：先把 registry draft 合并回 raw featureInfo，再走现有 buildFeatureInfo
-  // =========================
-  const def = FORMAT_REGISTRY[subType] ?? FORMAT_REGISTRY['默认'];
   const finalGeometry = buildCurrentMultipartGeometry(drawMode as DrawMode, finalCoords);
   const geometryError = validateMultipartGeometry(finalGeometry);
   if (geometryError) {
     alert(`无法保存，${geometryError}`);
     return;
   }
-  const op = editingLayerId !== null ? 'edit' : 'create';
-  const prevFeatureInfo = editingLayerId !== null
-    ? layersRef.current.find(l => l.id === editingLayerId)?.jsonInfo?.featureInfo
-    : undefined;
-
-  let finalFeatureInfo: any;
-
-  const useWorkflowStyleEditor =
-    editingLayerId !== null &&
-    editUiMode === 'workflow-style' &&
-    activeEditorView !== null;
-
-  if(externalEdit&&editUiMode==='external-workflow') {
-    try {finalFeatureInfo=prepareTrpExternalEdit(externalEdit.config,externalEdit.workflow,externalEdit.session,finalGeometry,currentWorldId,editorIdInput,[...nativeEditRecords,...layersRef.current.filter(layer=>layer.id!==editingLayerId).flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])]);}
-    catch(error){alert(error instanceof Error?error.message:'外部编辑保存失败。');return;}
-  } else if(nativeEdit&&editUiMode==='native-workflow') {
-    try { finalFeatureInfo=prepareNativeWorkflowEdit(nativeEdit.config,nativeEdit.plan.workflow,nativeEdit.original,nativeEdit.draft,finalGeometry,currentWorldId,editorIdInput,[...nativeEditRecords,...layersRef.current.filter(layer=>layer.id!==editingLayerId).flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])]); }
-    catch(error){alert(error instanceof Error?error.message:'编辑保存失败。');return;}
-  } else if (useWorkflowStyleEditor && activeEditorView) {
-    const mergedDraftFeatureInfo = mergeEditorDraftIntoFeatureInfo({
-      originalFeatureInfo: prevFeatureInfo ?? {},
-      view: activeEditorView,
-      draftValues: editorDraftValues,
-    });
-
-    const hydrated = def.hydrate(mergedDraftFeatureInfo);
-    const nextValues = hydrated.values ?? {};
-    const normalizedGroups = normalizeGroupInfoByDef(def, (hydrated.groups ?? {}) as any);
-    const nextGroups = compactWorkflowStyleGroupInfoByDef(def, normalizedGroups);
-
-    const req = validateRequiredDetailed(def, nextValues, nextGroups);
-    if (!req.ok) {
-      const detail = formatMissingEntries(req.missing);
-      alert(`无法保存，部分必填的附加信息为空：\n${detail}`);
-      return;
-    }
-
-    const builtFeatureInfo = def.buildFeatureInfo({
-      op,
-      mode: drawMode as DrawMode,
-      coords: finalCoords,
-      values: nextValues,
-      groups: nextGroups,
-      worldId: currentWorldId,
-      editorId: editorIdInput,
-      prevFeatureInfo,
-      now: new Date(),
-    });
-
-    finalFeatureInfo = mergeUnparsedEntriesIntoFeatureInfo(builtFeatureInfo, editorDraftUnparsed);
-  } else {
-    const req = validateRequiredDetailed(def, featureInfo ?? {}, groupInfo ?? {});
-    if (!req.ok) {
-      const detail = formatMissingEntries(req.missing);
-      alert(`无法保存，部分必填的附加信息为空：\n${detail}`);
-      return;
-    }
-
-    finalFeatureInfo = def.buildFeatureInfo({
-      op,
-      mode: drawMode as DrawMode,
-      coords: finalCoords,
-      values: featureInfo ?? {},
-      groups: groupInfo ?? {},
-      worldId: currentWorldId,
-      editorId: editorIdInput,
-      prevFeatureInfo,
-      now: new Date(),
-    });
-  }
-
-  try {
-    if(configRuntime&&op==='create'){
-      const target=declaredRailFormatPath(configRuntime,subType);
-      if(target)finalFeatureInfo=prepareExternalCaptureRecord(finalFeatureInfo,finalGeometry,configRuntime,target);
-    }
-    if(configRuntime&&finalGeometry.parts.length>1&&!categoryAllowsParts(configRuntime,recordCategory(finalFeatureInfo),finalGeometry.type))throw Error('此分类仅允许一个部件，无法保存多部件要素。完整草稿已保留，请先处理部件数量。');
-    finalFeatureInfo = withCanonicalMultipartGeometry(configRuntime?omitOptionalFieldValues(configRuntime,recordCategory(finalFeatureInfo),finalFeatureInfo):finalFeatureInfo, finalGeometry);
-  }
-  catch(error){alert(error instanceof Error?error.message:'要素字段无效。');return;}
+  let finalFeatureInfo:Record<string,unknown>|undefined;
+  const others=[...recordsAfterExactDeletes(nativeEditRecords,relayPackageDraft.deleteMarks),...layersRef.current.filter(layer=>layer.id!==editingLayerId).flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])];
+  try{
+    if(fullCategoryError)throw Error(fullCategoryError);
+    if(externalEdit&&editUiMode==='external-workflow')finalFeatureInfo=prepareTrpExternalEdit(externalEdit.config,externalEdit.workflow,externalEdit.session,finalGeometry,currentWorldId,editorIdInput,others);
+    else if(nativeEdit&&editUiMode==='native-workflow')finalFeatureInfo=nativeEdit.original?prepareNativeWorkflowEdit(nativeEdit.config,nativeEdit.plan.workflow,nativeEdit.original,nativeEdit.draft,finalGeometry,currentWorldId,editorIdInput,others):prepareFullEditorCreate(nativeEdit.config,nativeEdit.plan.workflow,nativeEdit.draft,finalGeometry,currentWorldId,editorIdInput,others);
+    else if(fullExternalCreate){const raw=mergeEditorDraftIntoFeatureInfo({originalFeatureInfo:{},view:fullExternalCreate.view,draftValues:fullExternalCreate.values});finalFeatureInfo=prepareNativeRecordCreate(fullExternalCreate.config,fullExternalCreate.path,finalGeometry,raw,currentWorldId,editorIdInput,others);}
+    else if(fullCategory.class)throw Error('请先完成分类选择并加载可用编辑方案。');
+  }catch(error){alert(error instanceof Error?error.message:'原生保存失败。');return;}
 
   const newLayerId = editingLayerId ?? nextLayerId.current++;
 
@@ -2468,7 +2161,7 @@ const finishLayer = () => {
     visible: true,
     leafletGroup: newGroup,
     jsonInfo: {
-      subType,
+      subType:finalFeatureInfo?classificationPathKey(recordCategory(finalFeatureInfo)):'默认',
       featureInfo: finalFeatureInfo,
     },
   };
@@ -2531,225 +2224,20 @@ const getAvailableSubTypes = (): FeatureKey[] => {
   return Array.from(set) as FeatureKey[];
 };
 
-// ======== JSON 导出：按 WORKFLOW_FEATURE_CATALOG 分划（更细粒度筛选） ========
+// Native export filters use the complete classification identity.
 type WorkflowCatalogExportKey = `__WF__:${string}`;
-
-const readString1 = (obj: any, keys: string[]) => {
-  for (const k of keys) {
-    const s = String(obj?.[k] ?? '').trim();
-    if (s) return s;
-  }
-  return '';
-};
-
-/**
- * 字段解析接口（导出筛选用 Kind/SKind/SKind2 三元组）
- *
- * 说明：通用要素集在不同几何类型下采用不同字段命名：
- * - 面（Polygon）：PGonKind / PGonSKind / PGonSKind2
- * - 线（Polyline，ISL）：PLineKind / PLineSKind / PLineSKind2
- * - 点（Point，ISP）：PointKind / PointSKind / PointSKind2
- * - 兼容旧/杂项：Kind / SKind / SKind2
- *
- * 后续如需新增来源字段，请在此处集中扩展。
- */
-const extractKindTripletFromFeatureInfo = (fi: any): { Kind: string; SKind: string; SKind2: string } => {
-  const Kind =
-    readString1(fi, ['Kind', 'PGonKind', 'PLineKind', 'PointKind']) ||
-    readString1(fi?.tags, ['Kind', 'PGonKind', 'PLineKind', 'PointKind']) ||
-    readString1(fi, ['Class']) ||
-    '';
-  const SKind =
-    readString1(fi, ['SKind', 'PGonSKind', 'PLineSKind', 'PointSKind']) ||
-    readString1(fi?.tags, ['SKind', 'PGonSKind', 'PLineSKind', 'PointSKind']) ||
-    '';
-  const SKind2 =
-    readString1(fi, ['SKind2', 'PGonSKind2', 'PLineSKind2', 'PointSKind2']) ||
-    readString1(fi?.tags, ['SKind2', 'PGonSKind2', 'PLineSKind2', 'PointSKind2']) ||
-    '';
-  return { Kind, SKind, SKind2 };
-};
-
-const buildWorkflowCatalogKey = (triplet: { Kind: string; SKind: string; SKind2: string }): WorkflowCatalogExportKey =>
-  (`__WF__:${triplet.Kind}/${triplet.SKind}/${triplet.SKind2}` as WorkflowCatalogExportKey);
-
-const parseWorkflowCatalogKey = (key: string): { Kind: string; SKind: string; SKind2: string } | null => {
-  const s = String(key ?? '');
-  if (!s.startsWith('__WF__:')) return null;
-  const rest = s.slice('__WF__:'.length);
-  const parts = rest.split('/');
-  return { Kind: parts[0] ?? '', SKind: parts[1] ?? '', SKind2: parts[2] ?? '' };
-};
-
-const getAvailableWorkflowCatalogKeys = (): Array<{ key: WorkflowCatalogExportKey; label: string }> => {
-  const seen = new Set<string>();
-  const out: Array<{ key: WorkflowCatalogExportKey; label: string }> = [];
-
-  for (const l of layers) {
-    const fi = l?.jsonInfo?.featureInfo ?? {};
-    const t = extractKindTripletFromFeatureInfo(fi);
-    if (!t.Kind) continue;
-
-    // 仅列出注册表中存在的条目（避免按钮膨胀/无法解释）
-    const hit = WORKFLOW_FEATURE_CATALOG.find((e) => e.kind === t.Kind && e.skind === t.SKind && e.skind2 === t.SKind2);
-    if (!hit) continue;
-
-    const k = buildWorkflowCatalogKey(t);
-    if (seen.has(k)) continue;
-    seen.add(k);
-
-    // UI 按键仅显示 name，避免因承载过多字段导致按钮堆叠拥挤。
-    out.push({ key: k, label: hit.name });
-  }
-
-  return out.sort((a, b) => a.label.localeCompare(b.label, 'zh-Hans-CN'));
-};
-
-const getLayersJSONOutputByWorkflowCatalogKey = (key: WorkflowCatalogExportKey): string => {
-  const t = parseWorkflowCatalogKey(key);
-  if (!t) return '[]';
-
-  const filtered = layers.filter((l) => {
-    const fi = l?.jsonInfo?.featureInfo ?? {};
-    const k = extractKindTripletFromFeatureInfo(fi);
-    return k.Kind === t.Kind && k.SKind === t.SKind && k.SKind2 === t.SKind2;
-  });
-
-  const items = filtered
-    .map((l) => l?.jsonInfo?.featureInfo)
-    .filter(Boolean);
-
-  return stringifyFeatureJsonArray(items);
-};
-
+const getAvailableWorkflowCatalogKeys=()=>[...new Map(layers.flatMap(layer=>{const record=layer.jsonInfo?.featureInfo;if(!record?.Class)return [];const path=recordCategory(record),key=('__WF__:'+classificationPathKey(path)) as WorkflowCatalogExportKey;return [[key,{key,label:configRuntime?workflowPathLabel(configRuntime,path):classificationPathKey(path)}] as const];})).values()];
+const getLayersJSONOutputByWorkflowCatalogKey=(key:WorkflowCatalogExportKey)=>stringifyFeatureJsonArray(layers.flatMap(layer=>layer.jsonInfo?.featureInfo&&classificationPathKey(recordCategory(layer.jsonInfo.featureInfo))===key.slice(7)?[layer.jsonInfo.featureInfo]:[]));
 
 const nativeLayerRecord = (layer: LayerType) => {
   const record=layer.jsonInfo?.featureInfo;
   if(!configRuntime||!record||!String(record.ID??'').trim()||!String(record.Class??'').trim())return undefined;
   return resolveGeometryProfile(configRuntime,recordCategory(record),geometryKindForDrawMode(layer.mode))?.enabled?record:undefined;
 };
-const getLayerDisplayTitle = (l: LayerType) => {
-  const native=nativeLayerRecord(l);
-  if(native)return `${String(native.ID).trim()}${String(native.Name??'').trim()?' '+String(native.Name).trim():''}`;
-  const fi = l?.jsonInfo?.featureInfo;
-  const st = l?.jsonInfo?.subType as FeatureKey | undefined;
-  if (!fi || !st || !(FORMAT_REGISTRY as any)[st]) {
-    return `#${l.id} ${l.mode}`;
-  }
-  const def = (FORMAT_REGISTRY as any)[st] as any;
-  const pickIdKey = (featureKey: string, d: any, info: any): string | undefined => {
-    const fields: any[] = Array.isArray(d?.fields) ? d.fields : [];
-    const want = `${featureKey}ID`.toLowerCase();
-    const want2 = `${featureKey}Id`.toLowerCase();
+const getLayerDisplayTitle=(layer:LayerType)=>{const record=layer.jsonInfo?.featureInfo;return record?.ID?String(record.ID)+(record.Name?' '+String(record.Name):''):'#'+layer.id+' '+layer.mode;};
+const getLayerPrimaryIdValue=(layer:LayerType)=>String(layer.jsonInfo?.featureInfo?.ID??'');
+const getLayerPrimaryNameValue=(layer:LayerType)=>String(layer.jsonInfo?.featureInfo?.Name??'');
 
-    // (1) 首选：与 ClassCode 强相关的 xxxID
-    const exact = fields.find((f) => typeof f?.key === 'string' && String(f.key).toLowerCase() === want);
-    if (exact?.key) return String(exact.key);
-    const exact2 = fields.find((f) => typeof f?.key === 'string' && String(f.key).toLowerCase() === want2);
-    if (exact2?.key) return String(exact2.key);
-
-    // (2) 其次：选择“存在非空值”的 ID 字段（避免优先命中 LineID 等空字段导致候选缺失）
-    for (const f of fields) {
-      const k = f?.key;
-      if (typeof k !== 'string') continue;
-      const kk = String(k);
-      if (!(kk.endsWith('ID') || kk.endsWith('Id') || kk.endsWith('id'))) continue;
-      const v = (info as any)[kk];
-      if (v != null && String(v).trim().length > 0) return kk;
-    }
-
-    // (3) 兜底：第一个 ID 字段
-    const any = fields.find((f) => typeof f?.key === 'string' && (String(f.key).endsWith('ID') || String(f.key).endsWith('Id') || String(f.key).endsWith('id')));
-    return any?.key ? String(any.key) : undefined;
-  };
-
-  const pickNameKey = (featureKey: string, d: any, info: any): string | undefined => {
-    const fields: any[] = Array.isArray(d?.fields) ? d.fields : [];
-    const want = `${featureKey}Name`.toLowerCase();
-
-    const exact = fields.find((f) => typeof f?.key === 'string' && String(f.key).toLowerCase() === want);
-    if (exact?.key) return String(exact.key);
-
-    // 优先选择“存在非空值”的 Name
-    for (const f of fields) {
-      const k = f?.key;
-      if (typeof k !== 'string') continue;
-      const kk = String(k);
-      if (!(kk.endsWith('Name') || kk.endsWith('name'))) continue;
-      const v = (info as any)[kk];
-      if (v != null && String(v).trim().length > 0) return kk;
-    }
-
-    const any = fields.find((f) => typeof f?.key === 'string' && (String(f.key).endsWith('Name') || String(f.key).endsWith('name')));
-    return any?.key ? String(any.key) : undefined;
-  };
-
-  const idKey = pickIdKey(String(st), def, fi);
-  const nameKey = pickNameKey(String(st), def, fi);
-
-  const idVal = idKey ? String((fi as any)[idKey] ?? '').trim() : '';
-  const nameVal = nameKey ? String((fi as any)[nameKey] ?? '').trim() : '';
-  const head = idVal || `#${l.id}`;
-  const mid = nameVal ? ` ${nameVal}` : '';
-  return `${head}${mid}`;
-};
-
-// 图层主 ID（用于全局重复性检查/提示）：尽量与 getLayerDisplayTitle 保持一致的取值策略
-const getLayerPrimaryIdValue = (l: LayerType): string => {
-  const native=nativeLayerRecord(l);if(native)return String(native.ID).trim();
-  const fi = l?.jsonInfo?.featureInfo;
-  const st = l?.jsonInfo?.subType as FeatureKey | undefined;
-  if (!fi || !st || !(FORMAT_REGISTRY as any)[st]) return '';
-  const def = (FORMAT_REGISTRY as any)[st] as any;
-
-  // 与 getLayerDisplayTitle 保持一致：优先 xxxID，其次“存在非空值”的 ID 字段
-  const fields: any[] = Array.isArray(def?.fields) ? def.fields : [];
-  const want = `${String(st)}ID`.toLowerCase();
-  const want2 = `${String(st)}Id`.toLowerCase();
-  const exact = fields.find((f) => typeof f?.key === 'string' && String(f.key).toLowerCase() === want);
-  if (exact?.key) return String((fi as any)[String(exact.key)] ?? '').trim();
-  const exact2 = fields.find((f) => typeof f?.key === 'string' && String(f.key).toLowerCase() === want2);
-  if (exact2?.key) return String((fi as any)[String(exact2.key)] ?? '').trim();
-
-  for (const f of fields) {
-    const k = f?.key;
-    if (typeof k !== 'string') continue;
-    const kk = String(k);
-    if (!(kk.endsWith('ID') || kk.endsWith('Id') || kk.endsWith('id'))) continue;
-    const v = (fi as any)[kk];
-    if (v != null && String(v).trim().length > 0) return String(v).trim();
-  }
-
-  const any = fields.find((f) => typeof f?.key === 'string' && (String(f.key).endsWith('ID') || String(f.key).endsWith('Id') || String(f.key).endsWith('id')));
-  return any?.key ? String((fi as any)[String(any.key)] ?? '').trim() : '';
-};
-
-// 图层主 Name（用于简略CSV）：尽量与 getLayerDisplayTitle 保持一致的取值策略
-const getLayerPrimaryNameValue = (l: LayerType): string => {
-  const native=nativeLayerRecord(l);if(native)return String(native.Name??'').trim();
-  const fi = l?.jsonInfo?.featureInfo;
-  const st = l?.jsonInfo?.subType as FeatureKey | undefined;
-  if (!fi || !st || !(FORMAT_REGISTRY as any)[st]) return '';
-  const def = (FORMAT_REGISTRY as any)[st] as any;
-  const fields: any[] = Array.isArray(def?.fields) ? def.fields : [];
-  const want = `${String(st)}Name`.toLowerCase();
-  const exact = fields.find((f) => typeof f?.key === 'string' && String(f.key).toLowerCase() === want);
-  if (exact?.key) return String((fi as any)[String(exact.key)] ?? '').trim();
-
-  for (const f of fields) {
-    const k = f?.key;
-    if (typeof k !== 'string') continue;
-    const kk = String(k);
-    if (!(kk.endsWith('Name') || kk.endsWith('name'))) continue;
-    const v = (fi as any)[kk];
-    if (v != null && String(v).trim().length > 0) return String(v).trim();
-  }
-
-  const any = fields.find((f) => typeof f?.key === 'string' && (String(f.key).endsWith('Name') || String(f.key).endsWith('name')));
-  return any?.key ? String((fi as any)[String(any.key)] ?? '').trim() : '';
-};
-
-// ===== 简略 CSV 导出（Type,Class,World,ID,Name） =====
 const csvEscape = (v: any) => {
   const s = v === null || v === undefined ? '' : String(v);
 
@@ -3262,8 +2750,7 @@ const clearAllLayers = () => {
 const currentTempOutput = () => {
   if (tempPoints.length === 0 || drawMode === 'none') return '';
 
-  const def = FORMAT_REGISTRY[subType];
-  if (def?.hideTempOutput) return '';
+  if(nativeEdit||externalEdit||fullExternalCreate)return '';
 
 
   const pts = tempPoints.map((p) => `${formatGridNumber(p.x)},${formatGridNumber(p.z)}`);
@@ -3285,6 +2772,8 @@ const editLayer = (id: number) => {
     if(workflow?.mode==='composed'){const config=structuredClone(configRuntime),plan=compileWorkflowEditPlan(workflow,config),original=structuredClone(layer.jsonInfo.featureInfo);nativeContext={config,plan,original,draft:hydrateWorkflowEdit(plan,original),world:normalizeV3WorldId(String(original.World??currentWorldId))};}
     else if(workflow?.mode==='external'&&workflow.external?.purpose==='edit'){const config=structuredClone(configRuntime),session=createTrpExternalEditSession(config,workflow,layer.jsonInfo.featureInfo);externalContext={config,workflow:structuredClone(workflow),session,world:normalizeV3WorldId(String(session.original.World??currentWorldId))};}
   }catch(error){alert(error instanceof Error?error.message:'工作流编辑回填失败。');return;}
+
+  if(layer.jsonInfo?.featureInfo?.Class&&!nativeContext&&!externalContext){alert('该分类没有启用的编辑方案，原图层保持。');return;}
 
   // 从固定容器移除（用 removeLayer 更稳）
   fixedRootRef.current?.removeLayer(layer.leafletGroup);
@@ -3327,37 +2816,12 @@ const editLayer = (id: number) => {
 
   resetWorkflowStyleEditorState();
 
-  // 恢复 jsonInfo：默认仍通过 FORMAT_REGISTRY.hydrate；命中 registry 且标记可编辑时再切换到 workflow-style editor
-  if (layer.jsonInfo) {
-    const key = (layer.jsonInfo.subType ?? '默认') as FeatureKey;
-    const def = FORMAT_REGISTRY[key] ?? FORMAT_REGISTRY['默认'];
-
-    setSubType(key);
-
-    const hydrated = def.hydrate(layer.jsonInfo.featureInfo ?? {});
-    setFeatureInfo(hydrated.values ?? {});
-    setGroupInfo(normalizeGroupInfoByDef(def, (hydrated.groups ?? {}) as any));
-
-    const schema = resolveWorkflowEditorSchema({
-      subType: key,
-      featureInfo: layer.jsonInfo.featureInfo ?? {},
-    });
-
-    if (schema?.integrations?.editor === 'workflowStyleReady') {
-      const view = projectRegistryScene(schema, 'editor');
-      const draft = parseFeatureInfoByRegistry(layer.jsonInfo.featureInfo ?? {}, view);
-      setEditUiMode('workflow-style');
-      setActiveEditorView(view);
-      setEditorDraftValues(draft.values);
-      setEditorDraftUnparsed(draft.unparsedEntries);
-    }
-  } else {
-    setSubType('默认');
-    const hydrated = FORMAT_REGISTRY['默认'].hydrate({});
-    setFeatureInfo(hydrated.values ?? {});
-    setGroupInfo(hydrated.groups ?? {});
-  }  if(nativeContext){setNativeEdit(nativeContext);setEditUiMode('native-workflow');}
+  setFeatureInfo(layer.jsonInfo?.featureInfo??{});setGroupInfo({});
+  const path=layer.jsonInfo?.featureInfo?.Class?recordCategory(layer.jsonInfo.featureInfo):{class:''};
+  setFullCategory(path);setSubType(path.class?classificationPathKey(path):'默认');
+  if(nativeContext){setNativeEdit(nativeContext);setEditUiMode('native-workflow');}
   if(externalContext){setExternalEdit(externalContext);setEditUiMode('external-workflow');}
+
 };
 
 
@@ -3398,27 +2862,8 @@ if (editingLayerId === id) {
 
  
 // ---------- 批量导入（文本/文件）：只支持“新规范 JSON 条目” ----------
-// ===== 批量导入：识别条目对应的格式定义（按 Class -> FORMAT_REGISTRY.classCode / key 兜底） =====
-const detectImportItemDefinition = (item: any) => {
-  const clsRaw = (item?.Class ?? item?.class ?? item?.featureInfo?.Class ?? item?.featureInfo?.class) as any;
-  const cls = typeof clsRaw === 'string' ? clsRaw.trim() : '';
-  if (!cls) return null;
+// Batch import uses the current package native record contract.
 
-  // 1) 按 classCode 精确匹配（新规范最可靠）
-  for (const def of Object.values(FORMAT_REGISTRY)) {
-    if (!def || (def as any).key === '默认') continue;
-    const code = (def as any).classCode;
-    if (code && String(code).trim() === cls) return def as any;
-  }
-
-  // 2) 兜底：允许 Class 直接写 FeatureKey
-  const maybeKey = cls as FeatureKey;
-  if ((FORMAT_REGISTRY as any)[maybeKey] && (FORMAT_REGISTRY as any)[maybeKey].key !== '默认') {
-    return (FORMAT_REGISTRY as any)[maybeKey];
-  }
-
-  return null;
-};
 
 const runBatchImportFromText = (rawText: string, sourceLabel: string) => {
   const text = String(rawText ?? '').trim();
@@ -3481,42 +2926,8 @@ const runBatchImportFromText = (rawText: string, sourceLabel: string) => {
     const item = items[i];
     let nativeImport:ReturnType<typeof prepareDownstreamNativeImport>|undefined;
     if(configRuntime)try{nativeImport=prepareDownstreamNativeImport(configRuntime,item,currentWorldId,useRuleDataStore.getState().datasets[normalizeV3WorldId(currentWorldId)]?.features??[]);}catch(error){errors.push(`${sourceLabel} 第 ${i+1} 条：${error instanceof Error?error.message:'原生记录无效。'}`);continue;}
-    const def = detectImportItemDefinition(item)??(nativeImport?FORMAT_REGISTRY['默认']:undefined);
-    if (!def) {
-      errors.push(`${sourceLabel} 第 ${i + 1} 条导入失败：无法识别条目类型（缺少 Type/Class/必要字段）。`);
-      continue;
-    }
-
-    const v = nativeImport?{ok:true,mode:nativeImport.mode,coords:nativeImport.coords,hydrated:{values:{},groups:{}},missing:[],structuralErrors:[]}:validateImportItemDetailed(def,item,{worldId:currentWorldId,strictSystemFields:true});
-    if (!v.ok) {
-      const parts: string[] = [];
-      if (v.missing.length > 0) parts.push(`必填缺失/为空：\n${formatMissingEntries(v.missing)}`);
-      if (v.structuralErrors.length > 0) parts.push(`结构错误：${v.structuralErrors.join('；')}`);
-      errors.push(`${sourceLabel} ${def.label} 第 ${i + 1} 条导入失败：\n${parts.join('\n')}`);
-      continue;
-    }
-
-    const mode = v.mode;
-    const coords = v.coords;
-    const importedGeometry = readMultipartGeometry(item, geometryKindForDrawMode(mode));
-    if (!importedGeometry.geometry) {
-      errors.push(`${sourceLabel} ${def.label} 第 ${i + 1} 条导入失败：${importedGeometry.error ?? '缺少可解析的几何坐标'}`);
-      continue;
-    }
-    const hydrated = v.hydrated ?? def.hydrate(item);
-    const normGroups = normalizeGroupInfoByDef(def, (hydrated.groups ?? {}) as any);
-
-    const featureInfoOut = nativeImport?.record??withCanonicalMultipartGeometry(def.buildFeatureInfo({
-      op: 'import',
-      mode,
-      coords,
-      values: hydrated.values ?? {},
-      groups: normGroups,
-      worldId: currentWorldId,
-      prevFeatureInfo: item,
-      now: new Date(),
-    }), importedGeometry.geometry);
-
+    if(!nativeImport){errors.push(sourceLabel+' 第 '+(i+1)+' 条：缺少当前正式配置，无法核验原生记录。');continue;}
+    const mode=nativeImport.mode,coords=nativeImport.coords,importedGeometry={geometry:nativeImport.geometry},featureInfoOut=nativeImport.record;
     const itemColor = randomColor();
     const group = L.layerGroup();
 
@@ -3557,7 +2968,7 @@ const runBatchImportFromText = (rawText: string, sourceLabel: string) => {
       visible: true,
       leafletGroup: group,
       jsonInfo: {
-        subType: def.key,
+        subType: classificationPathKey(recordCategory(featureInfoOut)),
         featureInfo: featureInfoOut,
       },
     });
@@ -3998,573 +3409,55 @@ const handleImportFileSelected = async (e: ChangeEvent<HTMLInputElement>) => {
 
 
 
- const subTypeOptions =
-  drawMode === 'none'
-    ? []
-    : getSubTypeOptions(drawMode as DrawMode).filter(k => k !== '默认');
-
-// ========= 动态附加信息渲染（由 FORMAT_REGISTRY[subType].fields/groups 驱动） =========
-const activeDef = FORMAT_REGISTRY[subType] ?? FORMAT_REGISTRY['默认'];
-const isWorkflowStyleEditing =
-  editingLayerId !== null &&
-  (editUiMode === 'workflow-style' && activeEditorView !== null || editUiMode==='native-workflow'&&nativeEdit!==null||editUiMode==='external-workflow'&&externalEdit!==null);
-
-const setEditorDraftValue = (path: string, value: unknown) => {
-  setEditorDraftValues(prev => ({ ...prev, [path]: value }));
-};
-
-const setValue = (key: string, value: any) => {
-  setFeatureInfo((prev: any) => ({ ...prev, [key]: value }));
-};
-
-const setGroupItems = (groupKey: string, items: any[]) => {
-  setGroupInfo(prev => ({ ...prev, [groupKey]: items }));
-};
-
-const coerceSelectValue = (field: any, raw: string) => {
-  const opt = field.options?.find((o: any) => String(o.value) === raw);
-  return opt ? opt.value : raw;
-};
-
-const renderField = (field: any, value: any, onChange: (v: any) => void) => {
-  const label = field.optional ? `${field.label}（可选）` : field.label;
-
-  // ===== 特殊输入：TRP 交易列表（支持多级 group；允许删除交易条目但至少保留 1 条） =====
-  if (subType === '交易点' && field.key === 'TradeJSON') {
-    // 优先使用 values.Trade；否则回退解析 TradeJSON 文本
-    let tradeArr: TRPTradeGroup[] | undefined = (featureInfo as any)?.Trade;
-    if (!Array.isArray(tradeArr)) {
-      const txt = String((featureInfo as any)?.TradeJSON ?? '').trim();
-      if (txt) {
-        try {
-          const parsed = JSON.parse(txt);
-          if (Array.isArray(parsed)) tradeArr = parsed;
-        } catch {
-          // ignore, keep undefined
-        }
-      }
+const selectFullCategory=(path:ClassificationPath)=>{
+  if(drawMode==='none'||!configRuntime)return;
+  const mode=geometryKindForDrawMode(drawMode);
+  const apply=()=>{
+    const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
+    const complete=multipartDraftRef.current;
+    if(complete&&complete.parts.length>1&&resolveGeometryProfile(config,path,mode)?.enabled&&!categoryAllowsParts(config,path,mode)){alert('目标分类禁止多部件，请先处理部件；完整草稿保持。');return;}
+    setFullCategory(path);setFullCategoryError('');
+    if(nativeEdit?.original){
+      if(!nativeEdit.plan.classifications.some(candidate=>classificationPathKey(candidate)===classificationPathKey(path))){setFullCategoryError('请选择当前编辑方案接纳的实际分类；可继续展开下级。');return;}
+      const slots={...nativeEdit.draft.slots};for(const control of nativeEdit.plan.controls)if(control.kind==='classificationPicker')slots[control.slot??control.id]=JSON.stringify(path);
+      setNativeEdit({...nativeEdit,draft:{...nativeEdit.draft,classification:path,slots}});return;
     }
-
-    return (
-      <div key={field.key} className="mb-2">
-        <TRPTradeEditor
-          value={tradeArr}
-          onChange={(arr) => {
-            // 写入 values.Trade 供 buildFeatureInfo 直接输出
-            setValue('Trade', arr);
-            // 同时同步 TradeJSON 以兼容旧数据导出/导入
-            onChange(JSON.stringify(arr, null, 2));
-          }}
-        />
-      </div>
-    );
-  }
-
-  if (field.type === 'select') {
-    const current = value ?? (field.options?.[0]?.value ?? '');
-    return (
-      <div key={field.key} className="mb-2">
-        <label className="block text-xs font-semibold mb-1">{label}</label>
-        <select
-          className="w-full border p-1 rounded"
-          value={String(current)}
-          onChange={(e) => onChange(coerceSelectValue(field, e.target.value))}
-        >
-          {(field.options ?? []).map((o: any) => (
-            <option key={String(o.value)} value={String(o.value)}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-
-  if (field.type === 'number') {
-    return (
-      <div key={field.key} className="mb-2">
-        <label className="block text-xs font-semibold mb-1">{label}</label>
-        <input
-          type="number"
-          className="w-full border p-1 rounded"
-          placeholder={field.placeholder ?? field.key}
-          value={value ?? ''}
-          onChange={(e) => onChange(e.target.value)} // 保留 ''，由 buildFeatureInfo/pickByFields 决定是否输出
-        />
-      </div>
-    );
-  }
-
-  if (field.type === 'bool') {
-    return (
-      <div key={field.key} className="mb-2 flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={Boolean(value)}
-          onChange={(e) => onChange(e.target.checked)}
-        />
-        <label className="text-xs font-semibold">{label}</label>
-      </div>
-    );
-  }
-
-  // text
-  return (
-    <div key={field.key} className="mb-2">
-      <label className="block text-xs font-semibold mb-1">{label}</label>
-      <input
-        type="text"
-        className="w-full border p-1 rounded"
-        placeholder={field.placeholder ?? field.key}
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </div>
-  );
-};
-
-const makeEmptyItem = (fields: any[]) => {
-  const obj: Record<string, any> = {};
-  for (const f of fields) {
-    if (f.defaultValue !== undefined) {
-      obj[f.key] = f.defaultValue;
-      continue;
+    if(externalEdit){
+      const scope=externalEdit.workflow.editor?.scope??externalEdit.workflow.target;
+      if(!scope||!pathMatchesScope(path,scope)||!externalRolePaths(config,externalEdit.workflow,'tradePoint').some(candidate=>classificationPathKey(candidate)===classificationPathKey(path))){setFullCategoryError('请选择专用编辑范围内的有效分类。');return;}
+      setExternalEdit({...externalEdit,session:{...externalEdit.session,view:specializedFormView(config,externalEdit.workflow,path,'tradePoint'),values:{...externalEdit.session.values,__workflowEditorClassification:[path.kind??'',path.skind??'',path.skind2??''].join('||')}}});return;
     }
-    if (f.type === 'select') obj[f.key] = f.options?.[0]?.value ?? '';
-    else if (f.type === 'bool') obj[f.key] = false;
-    else obj[f.key] = '';
-  }
-  return obj;
+    if(nativeEdit&&classificationPathKey(nativeEdit.draft.classification)===classificationPathKey(path))return;
+    setNativeEdit(null);setExternalEdit(null);setFullExternalCreate(null);setEditUiMode('full-fallback');resetSpecialDrafts();
+    setSubType(path.class?classificationPathKey(path):'默认');setFeatureInfo({});setGroupInfo({});
+    if(!path.class)return;
+    try{
+      const snapshot=structuredClone(config),workflow=fullEditorWorkflow(snapshot,path,mode),world=normalizeV3WorldId(currentWorldId);
+      if(workflow.mode==='composed'){const plan=compileWorkflowEditPlan(workflow,snapshot);setNativeEdit({config:snapshot,plan,draft:initializeFullEditor(snapshot,plan,path),world});setEditUiMode('native-workflow');}
+      else {const view=specializedFormView(snapshot,workflow,path,'tradePoint'),fields=resolveEffectiveFields(snapshot,path),values:WorkflowEditorDraftValues={ID:''};for(const field of view.fields){const definition=fields.find(item=>item.key===field.path);values[field.path]=definition?.defaultValue!==undefined?structuredClone(definition.defaultValue):field.control==='bool'?false:field.control==='trpTrade'?[]:'';}setFullExternalCreate({config:snapshot,workflow,path,view,values,unparsed:[],world});}
+    }catch(error){setFullCategoryError(error instanceof Error?error.message:String(error));}
+  };
+  if(editingLayerId!==null)apply();else requestSwitchWithExtraWarn(apply);
 };
-
-// 用于 tags UI：如果导入/历史数据里出现不在 TAG_KEY_OPTIONS 中的 tagKey，
-// 则统一回显为：tagKey=其他，tagKeyOther=原始 key。
-const TAG_KEY_VALUE_SET = new Set(TAG_KEY_OPTIONS.map((o) => o.value));
-
-const normalizeGroupInfoByDef = (def: any, groups: Record<string, any[]>) => {
-  if (!def?.groups || !groups) return groups;
-  let changed = false;
-  const next: Record<string, any[]> = { ...groups };
-
-  // tags：未知 key -> 其他
-  const hasTags = def.groups.some((g: any) => g.key === 'tags');
-  if (hasTags) {
-    const items = Array.isArray(groups.tags) ? groups.tags : [];
-    const mapped = items.map((it: any) => {
-      const rawKey = String(it?.tagKey ?? '').trim();
-      if (!rawKey) return it;
-      if (rawKey === TAG_KEY_OTHER) {
-        const other = String(it?.tagKeyOther ?? '').trim();
-        if (other !== String(it?.tagKeyOther ?? '')) {
-          changed = true;
-          return { ...it, tagKeyOther: other };
-        }
-        return it;
-      }
-      if (!TAG_KEY_VALUE_SET.has(rawKey)) {
-        changed = true;
-        return { ...it, tagKey: TAG_KEY_OTHER, tagKeyOther: rawKey };
-      }
-      return it;
-    });
-    if (mapped !== items) {
-      next.tags = mapped;
-    }
-  }
-
-  // extensions：确保 extType 缺省时有默认值；null 类型时清空 extValue
-  const hasExt = def.groups.some((g: any) => g.key === 'extensions');
-  if (hasExt) {
-    const items = Array.isArray(groups.extensions) ? groups.extensions : [];
-    const mapped = items.map((it: any) => {
-      const t = (it?.extType ?? EXT_VALUE_TYPE_TEXT) as string;
-      if (t !== it?.extType) {
-        changed = true;
-        return { ...it, extType: t, extValue: t === EXT_VALUE_TYPE_NULL ? '' : it?.extValue ?? '' };
-      }
-      if (t === EXT_VALUE_TYPE_NULL && String(it?.extValue ?? '').trim() !== '') {
-        changed = true;
-        return { ...it, extValue: '' };
-      }
-      return it;
-    });
-    if (mapped !== items) {
-      next.extensions = mapped;
-    }
-  }
-
-  return changed ? next : groups;
+const renderFullCategoryPicker=()=>{
+  const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
+  return config?<div className="mb-2 space-y-2"><CategoryPathPicker config={config} value={fullCategory} onChange={selectFullCategory} label="要素分类"/>{fullCategoryError?<p role="alert" className="text-xs text-rose-700">{fullCategoryError}</p>:null}</div>:<p role="alert">缺少当前正式配置，未启用分类编辑。</p>;
 };
-
-
-const isWorkflowEditorBlankValue = (value: any): boolean => {
-  if (value === undefined || value === null) return true;
-  if (typeof value === 'string') return value.trim() === '';
-  if (Array.isArray(value)) return value.length === 0;
-  if (typeof value === 'object') return Object.keys(value).length === 0;
-  return false;
+const renderFullForm=()=>{
+  const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
+  if(!config)return null;
+  const roles=new Set<ExternalRole>();
+  for(const workflow of config.workflows.filter(workflow=>workflow.mode==='external'))for(const role of EXTERNAL_COMPONENT_ROLES[workflow.external?.componentKey??'']??[])try{if(externalRolePaths(config,workflow,role).some(path=>classificationPathKey(path)===classificationPathKey(fullCategory)))roles.add(role);}catch{/* The binding validator reports this declaration. */}
+  const mergeProps={config,world:normalizeV3WorldId(currentWorldId),editor:editorIdInput,onEditorChange:setEditorIdInput,records:nativeEditSearchRecords};
+  return <section className="mb-2 border-t pt-2"><div className="mb-2 flex flex-wrap items-center justify-between gap-2"><strong className="text-sm">附加信息{nativeEdit?' · '+nativeEdit.plan.workflow.label.zh:externalEdit?' · '+externalEdit.workflow.label.zh:fullExternalCreate?' · '+fullExternalCreate.workflow.label.zh:''}</strong>
+    <div className="flex gap-2">{editingLayerId===null&&drawMode==='point'&&roles.has('platform')?<AppButton type="button" onClick={()=>requestExitSpecialDraftIfNeeded(()=>setSpecialDraftMode(specialDraftMode==='merge-point-platform-station'?'none':'merge-point-platform-station'))}>多点合一</AppButton>:null}
+    {editingLayerId===null&&drawMode==='polygon'&&(roles.has('platformFootprint')||roles.has('stationBuilding'))?<AppButton type="button" onClick={()=>requestExitSpecialDraftIfNeeded(()=>setSpecialDraftMode(specialDraftMode==='merge-polygon-outline-building'?'none':'merge-polygon-outline-building'))}>多面合一</AppButton>:null}
+    {drawMode==='polyline'&&roles.has('railLine')?<RailwayDirectionReverseButton enabled={tempPoints.length>=2&&!drawClickSuppressed} onReverse={()=>{const reversed=[...tempPoints].reverse();if(multipartEnabledRef.current)persistActiveEditorCoords(reversed);setTempPoints(reversed);drawDraftGeometry(reversed,'polyline',drawColor);setNativeEdit(current=>current?{...current,draft:reverseWorkflowEditEndpoints(current.plan,current.draft)}:current);}}/>:null}</div>
+   </div>
+   {specialDraftMode==='merge-point-platform-station'?<MergePointPlatformStation {...mergeProps} draft={mergePointPSDraft} onChange={setMergePointPSDraft}/>:specialDraftMode==='merge-polygon-outline-building'?<MergePolygonOutlineBuilding {...mergeProps} draft={mergePolygonOBDraft} onChange={setMergePolygonOBDraft}/>:fullCategoryError?<p className="text-xs text-slate-600">请完成分类选择，当前草稿未作为其他分类保存。</p>:externalEdit?<fieldset disabled={externalEditWorldMismatch}><ExternalFeatureEditHost hideClassification config={externalEdit.config} workflow={externalEdit.workflow} session={externalEdit.session} bridge={workflowBridge} context={{initialRecord:externalEdit.session.original,featureIdentity:{layerId:editingLayerId!,originalId:String(externalEdit.session.original.ID)},activeWorld:externalEdit.world,originalGeometry:externalEdit.session.originalGeometry,currentGeometry:multipartDraftRef.current??undefined,editor:editorIdInput,onEditorChange:setEditorIdInput,onUpdate:finishLayer,onCancel:clearTemporaryForVariantSwitch}} onDraftChange={session=>setExternalEdit(current=>current?{...current,session}:current)}/></fieldset>:nativeEdit?<fieldset disabled={nativeEditWorldMismatch}>{nativeEditWorldMismatch?<p role="alert">请返回 {nativeEdit.world} 后继续。</p>:null}<NativeWorkflowEditPanel config={nativeEdit.config} plan={nativeEdit.plan} draft={nativeEdit.draft} records={nativeEditSearchRecords} world={nativeEdit.world} editor={editorIdInput} onEditorChange={setEditorIdInput} onCancel={clearTemporaryForVariantSwitch} onChange={draft=>setNativeEdit(current=>current?{...current,draft}:current)} mode={nativeEdit.original?'edit':'create'} hideClassification/></fieldset>:fullExternalCreate?<fieldset disabled={fullExternalWorldMismatch}>{fullExternalWorldMismatch?<p role="alert">请返回 {fullExternalCreate.world} 后继续此新建。</p>:null}<WorkflowStyleEditPanel view={fullExternalCreate.view} values={fullExternalCreate.values} unparsedEntries={fullExternalCreate.unparsed} bridge={{...workflowBridge,getCaptureContext:()=>({config:fullExternalCreate.config,workflow:fullExternalCreate.workflow})}} idFirst classificationContent={<p className="text-xs">分类由上方四级选择树指定；本次保存为新要素。</p>} onChangeValue={(key,value)=>setFullExternalCreate(current=>current?{...current,values:{...current.values,[key]:value}}:current)} onChangeUnparsedEntries={unparsed=>setFullExternalCreate(current=>current?{...current,unparsed}:current)} editorId={editorIdInput} onChangeEditorId={setEditorIdInput}/></fieldset>:<p className="text-xs text-slate-500">未分类几何草稿。选择分类后使用对应编辑方案填写新要素。</p>}
+  </section>;
 };
-
-const compactWorkflowStyleGroupInfoByDef = (def: any, groups: Record<string, any[]>): Record<string, any[]> => {
-  if (!def?.groups || !groups) return groups;
-
-  let changed = false;
-  const next: Record<string, any[]> = { ...groups };
-
-  for (const g of def.groups ?? []) {
-    const key = g?.key;
-    if (!key || !g?.optional) continue;
-    const items = Array.isArray(next[key]) ? next[key] : [];
-
-    const filtered = items.filter((it: any) => {
-      if (!it || typeof it !== 'object') return !isWorkflowEditorBlankValue(it);
-
-      if (key === 'tags') {
-        return !isWorkflowEditorBlankValue(it.tagValue) || !isWorkflowEditorBlankValue(it.tagKeyOther);
-      }
-
-      if (key === 'extensions') {
-        const extType = String(it.extType ?? EXT_VALUE_TYPE_TEXT);
-        const extKey = String(it.extKey ?? '').trim();
-        const extValue = it.extValue;
-        if (!extKey) return false;
-        if (extType === EXT_VALUE_TYPE_NULL) return true;
-        return !isWorkflowEditorBlankValue(extValue);
-      }
-
-      if (key === 'ConnectL') {
-        return !isWorkflowEditorBlankValue(it.tgt ?? it.Tgt);
-      }
-
-      if (key === 'Blacklist') {
-        return !isWorkflowEditorBlankValue(it.tgt ?? it.ID ?? it.id);
-      }
-
-      if (key === 'Mode') {
-        return !isWorkflowEditorBlankValue(it.code ?? it.tgt ?? it.ID ?? it.id);
-      }
-
-      return (g.fields ?? []).some((f: any) => !isWorkflowEditorBlankValue(it?.[f.key]));
-    });
-
-    if (filtered.length !== items.length) {
-      changed = true;
-      next[key] = filtered;
-    }
-  }
-
-  return changed ? next : groups;
-};
-
-const renderDynamicExtraInfo = () => {
-  const hasFields = Array.isArray(activeDef?.fields) && activeDef.fields.length > 0;
-  const hasGroups = Array.isArray(activeDef?.groups) && activeDef.groups.length > 0;
-
-  return (
-    <div className="mt-2">
-      {!hasFields && !hasGroups && (
-        <div className="text-xs text-gray-500">该类型无附加字段</div>
-      )}
-      {hasFields && (
-        <div className="mb-3">
-          {activeDef.fields.map((f: any) =>
-            renderField(f, featureInfo?.[f.key], (v) => setValue(f.key, v))
-          )}
-        </div>
-      )}
-
-      {hasGroups && (
-        <div className="space-y-3">
-          {activeDef.groups!.map((g: any) => {
-            const items: any[] = (groupInfo?.[g.key] ?? []) as any[];
-            const safeItems = items;
-
-            // ---------- extensions Step A/B：按 extGroup 分区 + 值类型选择逻辑 ----------
-            const renderExtensionsGroup = () => {
-              const extItems: any[] = safeItems;
-              const byGroup = new Map<string, any[]>();
-              for (const it of extItems) {
-                const gg = String(it?.extGroup ?? '').trim() || '未命名';
-                if (!byGroup.has(gg)) byGroup.set(gg, []);
-                byGroup.get(gg)!.push(it);
-              }
-
-              const addGroup = () => {
-                const gg = newExtGroupInput.trim();
-                if (!gg) return;
-                const next = extItems.concat([
-                  {
-                    extGroup: gg,
-                    extKey: '',
-                    extType: EXT_VALUE_TYPE_TEXT,
-                    extValue: '',
-                  },
-                ]);
-                setGroupItems(g.key, next);
-                setNewExtGroupInput('');
-              };
-
-              const addFieldToGroup = (gg: string) => {
-                const next = extItems.concat([
-                  {
-                    extGroup: gg === '未命名' ? '' : gg,
-                    extKey: '',
-                    extType: EXT_VALUE_TYPE_TEXT,
-                    extValue: '',
-                  },
-                ]);
-                setGroupItems(g.key, next);
-              };
-
-              const deleteGroup = (gg: string) => {
-                const next = extItems.filter((it) => {
-                  const g2 = String(it?.extGroup ?? '').trim() || '未命名';
-                  return g2 !== gg;
-                });
-                setGroupItems(g.key, next);
-              };
-
-              const updateItem = (idxInAll: number, patch: Record<string, any>) => {
-                const next = extItems.slice();
-                const cur = { ...(next[idxInAll] ?? {}) };
-                const merged = { ...cur, ...patch };
-                // Step B：extType==null 时清空并禁用 extValue（UI 禁用在渲染里做）
-                if (merged.extType === EXT_VALUE_TYPE_NULL) merged.extValue = '';
-                next[idxInAll] = merged;
-                setGroupItems(g.key, next);
-              };
-
-              const removeItem = (idxInAll: number) => {
-                setGroupItems(g.key, extItems.filter((_, i) => i !== idxInAll));
-              };
-
-              // 为了在 grouped 渲染里能定位到“全局数组索引”，我们建立一次映射
-              const indexOfItem = new Map<any, number>();
-              extItems.forEach((it, i) => indexOfItem.set(it, i));
-
-              const sortedGroups = Array.from(byGroup.keys()).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
-
-              return (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      className="flex-1 border p-1 rounded text-sm"
-                      placeholder="新增扩展组 extGroup（例如 poi / note）"
-                      value={newExtGroupInput}
-                      onChange={(e) => setNewExtGroupInput(e.target.value)}
-                    />
-                    <AppButton
-                      className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                      type="button"
-                      onClick={addGroup}
-                    >
-                      新增组
-                    </AppButton>
-                  </div>
-
-                  {sortedGroups.length === 0 ? (
-                    <div className="text-xs text-gray-500">暂无条目</div>
-                  ) : (
-                    <div className="space-y-3">
-                      {sortedGroups.map((gg) => {
-                        const rows = byGroup.get(gg) ?? [];
-                        return (
-                          <div key={gg} className="border rounded p-2">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="text-sm font-semibold">{gg}</div>
-                              <div className="flex items-center gap-2">
-                                <AppButton
-                                  className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                                  type="button"
-                                  onClick={() => addFieldToGroup(gg)}
-                                >
-                                  添加字段
-                                </AppButton>
-                                <AppButton
-                                  className="bg-red-600 text-white px-2 py-1 rounded text-xs"
-                                  type="button"
-                                  onClick={() => deleteGroup(gg)}
-                                >
-                                  删除组
-                                </AppButton>
-                              </div>
-                            </div>
-
-                            {rows.length === 0 ? (
-                              <div className="text-xs text-gray-500">暂无字段</div>
-                            ) : (
-                              <div className="space-y-2">
-                                {rows.map((row) => {
-                                  const idxAll = indexOfItem.get(row) ?? -1;
-                                  const extType = String(row?.extType ?? EXT_VALUE_TYPE_TEXT);
-                                  const valueDisabled = extType === EXT_VALUE_TYPE_NULL;
-                                  return (
-                                    <div key={idxAll} className="border rounded p-2">
-                                      <div className="flex items-center justify-between mb-2">
-                                        <div className="text-xs font-semibold">#{idxAll + 1}</div>
-                                        <AppButton
-                                          className="bg-red-600 text-white px-2 py-1 rounded text-xs"
-                                          type="button"
-                                          onClick={() => removeItem(idxAll)}
-                                        >
-                                          删除
-                                        </AppButton>
-                                      </div>
-
-                                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
-                                        <div>
-                                          <label className="block text-xs font-semibold mb-1">字段名(extKey)</label>
-                                          <input
-                                            type="text"
-                                            className="w-full border p-1 rounded"
-                                            value={row?.extKey ?? ''}
-                                            onChange={(e) => updateItem(idxAll, { extKey: e.target.value })}
-                                          />
-                                        </div>
-
-                                        <div>
-                                          <label className="block text-xs font-semibold mb-1">值类型</label>
-                                          <select
-                                            className="w-full border p-1 rounded"
-                                            value={extType}
-                                            onChange={(e) => updateItem(idxAll, { extType: e.target.value })}
-                                          >
-                                            {EXT_VALUE_TYPE_OPTIONS.map((o) => (
-                                              <option key={o.value} value={o.value}>{o.label}</option>
-                                            ))}
-                                          </select>
-                                        </div>
-
-                                        <div className="sm:col-span-2">
-                                          <label className="block text-xs font-semibold mb-1">值(extValue)</label>
-                                          <input
-                                            type="text"
-                                            className={`w-full border p-1 rounded ${valueDisabled ? 'bg-gray-100 text-gray-400' : ''}`}
-                                            disabled={valueDisabled}
-                                            placeholder={valueDisabled ? 'null 类型无需填写' : '请输入'}
-                                            value={row?.extValue ?? ''}
-                                            onChange={(e) => updateItem(idxAll, { extValue: e.target.value })}
-                                          />
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            };
-
-            return (
-              <div key={g.key} className="border rounded p-2">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-semibold">{g.label}</div>
-                  {g.key === 'extensions' ? null : (
-                    <AppButton
-                      className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                      onClick={() => setGroupItems(g.key, [...safeItems, makeEmptyItem(g.fields)])}
-                      type="button"
-                    >
-                      {g.addButtonText ?? '添加'}
-                    </AppButton>
-                  )}
-                </div>
-
-                {g.key === 'extensions' ? (
-                  renderExtensionsGroup()
-                ) : (
-                  safeItems.length === 0 ? (
-                    <div className="text-xs text-gray-500">暂无条目</div>
-                  ) : (
-                    <div className="space-y-2">
-                      {safeItems.map((it, idx) => (
-                        <div key={idx} className="border rounded p-2">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="text-xs font-semibold">#{idx + 1}</div>
-                            <AppButton
-                              className="bg-red-600 text-white px-2 py-1 rounded text-xs"
-                              onClick={() => setGroupItems(g.key, safeItems.filter((_, i) => i !== idx))}
-                              type="button"
-                            >
-                              删除
-                            </AppButton>
-                          </div>
-
-                          <div>
-                            {g.fields.map((f: any) => {
-                              // tags：仅当字段名=其他时显示 tagKeyOther
-                              if (g.key === 'tags' && f.key === 'tagKeyOther') {
-                                const k = String(it?.tagKey ?? '').trim();
-                                if (k !== TAG_KEY_OTHER) return null;
-                              }
-
-                              return renderField(
-                                f,
-                                it?.[f.key],
-                                (v) => {
-                                  const nextItems = safeItems.slice();
-                                  const nextItem = { ...(nextItems[idx] ?? {}) };
-
-                                  // tags：切换字段名时处理“其他字段名”联动
-                                  if (g.key === 'tags' && f.key === 'tagKey') {
-                                    const vv = String(v ?? '').trim();
-                                    nextItem.tagKey = vv;
-                                    if (vv !== TAG_KEY_OTHER) {
-                                      // 非“其他”：清空 tagKeyOther，避免一直显示/残留
-                                      nextItem.tagKeyOther = '';
-                                    } else {
-                                      // “其他”：如为空则保留用户已有输入
-                                      nextItem.tagKeyOther = String(nextItem.tagKeyOther ?? '').trim();
-                                    }
-                                    nextItems[idx] = nextItem;
-                                    setGroupItems(g.key, nextItems);
-                                    return;
-                                  }
-
-                                  nextItem[f.key] = v;
-                                  nextItems[idx] = nextItem;
-                                  setGroupItems(g.key, nextItems);
-                                },
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* 编辑者ID：用于系统字段 CreateBy/ModifityBy 的自动写入 */}
-      {subType !== '默认' && (
-        <div className="mt-3 border-t pt-2">
-          <label className="block text-xs font-semibold mb-1">编辑者ID</label>
-          <input
-            type="text"
-            className="w-full border p-1 rounded"
-            placeholder="可选：用于写入 CreateBy / ModifityBy"
-            value={editorIdInput}
-            onChange={(e) => setEditorIdInput(e.target.value)}
-          />
-          <div className="text-[11px] text-gray-500 mt-1">
-            初次绘制完成时（非空）写入 CreateBy；编辑保存时（非空）写入 ModifityBy。
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+const isWorkflowStyleEditing=Boolean(nativeEdit||externalEdit||fullExternalCreate);
 
 useEffect(() => {
   const mq = window.matchMedia('(max-width: 639px)'); // < sm
@@ -4594,9 +3487,8 @@ useEffect(() => {
 
 const resetFeatureFormToDefault = () => {
   setSubType('默认');
-  const hydrated = FORMAT_REGISTRY['默认'].hydrate({});
-  setFeatureInfo(hydrated.values ?? {});
-  setGroupInfo(hydrated.groups ?? {});
+  setFeatureInfo({});
+  setGroupInfo({});
   resetWorkflowStyleEditorState();
 };
 
@@ -4650,52 +3542,9 @@ const handleDrawModeButtonClick = (m: 'point' | 'polyline' | 'polygon') => {
 // =========================
 // Workflow（快捷模式）桥接层
 // =========================
-const legacyWorkflowRegistry: WorkflowRegistry = {
-  railway: RailwayWorkflow,
-  station: StationWorkflow,
-  tpp_point: TeleportPointWorkflow,
-  wrp_point: WarpPointWorkflow,
-  trp_point: TradePointWorkflow,
-  rod_road: RoadWorkflow,
-  ngf_land: NaturalLandWorkflow,
-  ngf_lis: NaturalLandSurfaceWorkflow,
-  ngf_wtb: NaturalWaterbodyWorkflow,
-  ngf_wtr: NaturalWaterwayWorkflow,
-  ngf_bod: NaturalBoundaryWorkflow,
-  adm_dbz_set: SettlementBoundaryDeterminedWorkflow,
-  adm_plz_plan: SettlementBoundaryPlannedWorkflow,
-  adm_line_settlement: SettlementBoundaryLineWorkflow,
-  adm_point_special: SpecialCulturalPointWorkflow,
-  bud_building: BuildingWorkflow,
-  flr_unit: FloorUnitWorkflow,
-};
-
-
-const LEGACY_WORKFLOW_SELECT_OPTIONS: Array<{ key: WorkflowKey; label: string; hidden?: boolean }> = [
-  { key: 'railway', label: '铁路' },
-  { key: 'station', label: '车站和站台' },
-  { key: 'rod_road', label: '道路' },
-  { key: 'bud_building', label: '建筑' },
-  { key: 'flr_unit', label: '楼内单元' },
-  { key: 'ngf_land', label: '自然要素-陆地' },
-  { key: 'ngf_lis', label: '自然要素-陆面要素' },
-  { key: 'ngf_wtb', label: '自然要素-水域' },
-  { key: 'ngf_wtr', label: '自然要素-河道' },
-  { key: 'adm_dbz_set', label: '聚落范围-确定范围' },
-  { key: 'adm_plz_plan', label: '聚落范围-规划范围' },
-  { key: 'tpp_point', label: '传送点' },
-  { key: 'wrp_point', label: 'Warp点' },
-  { key: 'trp_point', label: '交易点' },
-  { key: 'ngf_bod', label: '自然要素-地理边界' },
-  { key: 'adm_line_settlement', label: '聚落边界线要素' },
-  { key: 'adm_point_special', label: '特殊人文点要素' },
-
-];
-
-const workflowRegistry: WorkflowRegistry = getConfigDrivenWorkflowRegistry(legacyWorkflowRegistry);
-const WORKFLOW_SELECT_OPTIONS: Array<{ key: WorkflowKey; label: string; hidden?: boolean }> =
-  configRuntime ? configRuntime.workflows.filter(isQuickMappingWorkflow).map(workflow => ({ key: workflow.id as WorkflowKey, label: workflow.label.zh })) : getConfigDrivenWorkflowSelectOptions(LEGACY_WORKFLOW_SELECT_OPTIONS);
-
+const specializedWorkflowRegistry={railway:RailwayWorkflow,station:StationWorkflow,trp_point:TradePointWorkflow} as WorkflowRegistry;
+const workflowRegistry=specializedWorkflowRegistry;
+const WORKFLOW_SELECT_OPTIONS:Array<{key:WorkflowKey;label:string;hidden?:boolean}>=configRuntime?configRuntime.workflows.filter(isQuickMappingWorkflow).map(workflow=>({key:workflow.id as WorkflowKey,label:workflow.label.zh})):[];
 
 const stopWorkflowToSelector = () => {
   // 回到“工作流初始选择页面”（不退出测绘）
@@ -4729,7 +3578,7 @@ const startWorkflow = () => {
   }
 
   try {
-    void describeWorkflowRuntimeSelection(workflowKey);
+    if(!configRuntime){alert('缺少当前正式配置，无法启动工作流。');return;}
   } catch {
     // config-driven workflow diagnostics should never block legacy workflow startup
   }
@@ -4836,41 +3685,14 @@ const commitFeatureFromWorkflow = (args: WorkflowCommitArgs) => {
   const proj = projectionRef.current;
   if (!map || !proj) return { ok: false as const, error: '地图未就绪' };
 
-  const def = FORMAT_REGISTRY[args.subType] ?? FORMAT_REGISTRY['默认'];
-
-  const req = validateRequiredDetailed(def, args.values ?? {}, args.groupInfo ?? {});
-  if (!req.ok) {
-    const detail = formatMissingEntries(req.missing);
-    return { ok: false as const, error: `无法保存，部分必填的附加信息为空：\n${detail}` };
-  }
-
-  const now = new Date();
-  const editorId = (args.editorId ?? editorIdInput ?? '').trim();
+  const config=args.configuration??configRuntime,workflow=args.workflowDefinition;
+  if(!config||!workflow||!args.role)return {ok:false as const,error:'专用采集缺少配置、工作流或业务角色。'};
   const geometry=args.geometry??multipartGeometryFromSinglePath(geometryKindForDrawMode(args.mode),args.mode==='point'?args.coords.slice(0,1):args.coords);
   const geometryError=validateMultipartGeometry(geometry);
-  if(geometryError||geometry.type!==geometryKindForDrawMode(args.mode))return {ok:false as const,error:geometryError??'工作流几何类型与绘制类型不一致。'};
-  // A legacy executor needs one projection to calculate its non-geometry fields;
-  // the complete geometry remains authoritative for storage and rendering.
+  if(geometryError||geometry.type!==geometryKindForDrawMode(args.mode))return {ok:false as const,error:geometryError??'专用几何类型不一致。'};
   const workflowCoords=geometry.type==='Point'?geometry.parts:geometry.type==='LineString'?geometry.parts[0]:geometry.parts[0]?.[0]??[];
-  if (workflowCoords.length === 0) return { ok: false as const, error: '无法保存：工作流缺少坐标。' };
-
-  const formatFeatureInfo = def.buildFeatureInfo({
-    op: 'create',
-    mode: args.mode as DrawMode,
-    coords: workflowCoords,
-    values: args.values ?? {},
-    groups: args.groupInfo ?? {},
-    worldId: currentWorldId,
-    editorId,
-    prevFeatureInfo: undefined,
-    now,
-  });
-  const config=args.configuration??configRuntime;
-  // The bridge is shared by every registered workflow.  Applying canonical
-  // geometry here, after a format executor, prevents an old executor from
-  // reintroducing coordinate / PLpoints / Conpoints aliases.
   let finalFeatureInfo:Record<string,unknown>;
-  try {finalFeatureInfo = prepareExternalCaptureRecord(formatFeatureInfo,geometry,config,args.classification);}catch(error){return {ok:false as const,error:error instanceof Error?error.message:'要素字段无效。'};}
+  try{finalFeatureInfo=prepareSpecializedCapture(config,workflow,args.role,geometry,args.values??{},args.groupInfo??{},currentWorldId,args.editorId??editorIdInput,[...recordsAfterExactDeletes(nativeEditRecords,relayPackageDraft.deleteMarks),...layersRef.current.flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])],args.classification);}catch(error){return {ok:false as const,error:error instanceof Error?error.message:'专用要素无效。'};}
 
   const id = nextLayerId.current++;
   const color = args.color ?? drawColor;
@@ -4908,7 +3730,7 @@ const commitNativeWorkflow = (config: ConfigPackageV3, workflow: WorkflowDefinit
     const color = typeof item.record.color === 'string' ? item.record.color : drawColor;
     return { id: firstId + index, mode: item.mode, color, coords: item.coords, visible: true,
       leafletGroup: makeLeafletGroupForCoords(item.mode, item.coords, color),
-      jsonInfo: { subType: (getClassConfigByCode(String(item.record.Class))?.sourceFeatureKey ?? String(item.record.Class)) as FeatureKey, featureInfo: item.record },
+      jsonInfo: { subType: classificationPathKey(recordCategory(item.record)), featureInfo: item.record },
     };
   });
   nextLayerId.current += batch.length;
@@ -5548,29 +4370,6 @@ const workflowBridge: WorkflowBridge = {
               </div>
             </div>
 
-            {relayPackageDraft.deleteMarks.length > 0 && (
-              <div className="px-4 py-2 border-b text-xs text-gray-700 bg-rose-50/60 space-y-1">
-                <div className="font-bold text-rose-800">待删除标记</div>
-                <div className="flex flex-wrap gap-1">
-                  {relayPackageDraft.deleteMarks.map((it) => (
-                    <button
-                      key={it.ID}
-                      type="button"
-                      className="px-2 py-0.5 rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
-                      title={it.ID}
-                      onClick={() => setRelayPackageDraft((prev) => ({
-                        ...prev,
-                        deleteMarks: prev.deleteMarks.filter((x) => x.ID !== it.ID),
-                        meta: { ...prev.meta, updatedAt: new Date().toISOString() },
-                      }))}
-                    >
-                      {it.Name || it.ID}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* 顶部横向滚动条：始终可见 */}
             <div className="px-3 pt-2">
               <div
@@ -5589,6 +4388,28 @@ const workflowBridge: WorkflowBridge = {
                 className={isReviewWorkspace ? 'h-full overflow-x-auto overflow-y-auto' : 'overflow-y-auto overflow-x-auto'}
                 style={isReviewWorkspace ? undefined : { maxHeight: layerMgrListMaxHeight }}
               >
+                {relayPackageDraft.deleteMarks.length > 0 && (
+                  <div className="px-4 py-2 border-b text-xs text-gray-700 bg-rose-50/60 space-y-1">
+                    <div className="font-bold text-rose-800">待删除标记</div>
+                    <div className="flex flex-wrap gap-1">
+                      {relayPackageDraft.deleteMarks.map((it) => (
+                        <button
+                          key={it.ID}
+                          type="button"
+                          className="px-2 py-0.5 rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
+                          title={it.ID}
+                          onClick={() => setRelayPackageDraft((prev) => ({
+                            ...prev,
+                            deleteMarks: prev.deleteMarks.filter((x) => x.ID !== it.ID),
+                            meta: { ...prev.meta, updatedAt: new Date().toISOString() },
+                          }))}
+                        >
+                          {it.Name || it.ID}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="min-w-max">
                 {visibleList.map((l) => {
                   const entry = getTempMountedEntryByLayer(l.id);
@@ -5781,7 +4602,7 @@ const measuringWindowActions = (
 
   return (
     <>
-      {nativeWorkflowSnapshot ? createPortal(<NativeWorkflowHost key={nativeWorkflowSnapshot.workflow.id} config={nativeWorkflowSnapshot.config} workflow={nativeWorkflowSnapshot.workflow} bridge={workflowBridge} registry={legacyWorkflowRegistry} onCommit={commitNativeWorkflow} onExit={stopWorkflowToSelector} />, nativeHostElement) : null}
+      {nativeWorkflowSnapshot ? createPortal(<NativeWorkflowHost key={nativeWorkflowSnapshot.workflow.id} config={nativeWorkflowSnapshot.config} workflow={nativeWorkflowSnapshot.workflow} bridge={workflowBridge} registry={specializedWorkflowRegistry} onCommit={commitNativeWorkflow} onExit={stopWorkflowToSelector} />, nativeHostElement) : null}
       {rightDockNode}
 
       {/* =========================
@@ -5867,38 +4688,7 @@ const measuringWindowActions = (
 
 
                 {/* 要素类型下拉 */}
-                {measuringVariant === 'full' && drawMode !== 'none' && !isWorkflowStyleEditing && (
-                  <div className="mb-2">
-                    <label className="block text-sm font-bold">要素类型</label>
-                    <select
-                      value={subType}
-onChange={(e) => {
-  const next = e.target.value as FeatureKey;
-
-  requestSwitchWithExtraWarn(() => {
-    requestExitSpecialDraftIfNeeded(() => {
-      resetSpecialDrafts();
-
-      setSubType(next);
-      const def = FORMAT_REGISTRY[next];
-      const hydrated = def.hydrate({});
-      setFeatureInfo(hydrated.values ?? {});
-      setGroupInfo(normalizeGroupInfoByDef(def, (hydrated.groups ?? {}) as any));
-    });
-  });
-}}
-
-                      className="w-full border p-1 rounded"
-                    >
-                      <option value="默认">默认</option>
-                      {subTypeOptions.map((k) => (
-                        <option key={k} value={k}>
-                          {FORMAT_REGISTRY[k].label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                {measuringVariant === 'full' && drawMode !== 'none' ? renderFullCategoryPicker() : null}
 
                 {/* 颜色 */}
                 {drawMode !== 'none' && (
@@ -6132,124 +4922,7 @@ onChange={(e) => {
 
 
                 {/* JSON 输入区 */}
-{measuringVariant === 'full' && (subType !== '默认' || isWorkflowStyleEditing) && (
-  <div className="mb-2 border-t pt-2">
-    <div className="flex items-center justify-between gap-2">
-      <label className="text-sm font-bold">
-        附加信息 (
-        {specialDraftMode === 'merge-point-platform-station'
-          ? '多点合一-站台车站'
-          : specialDraftMode === 'merge-polygon-outline-building'
-          ? '多面合一-站台建筑与轮廓'
-          : nativeEdit?.plan.workflow.label.zh ?? FORMAT_REGISTRY[subType]?.label ?? subType}
-        )
-      </label>
-
-      <div className="flex items-center gap-2">
-        {/* 点：站台 -> 多点合一 */}
-        {drawMode === 'point' && subType === '站台' && (
-          <AppButton
-            type="button"
-            className={`px-2 py-1 text-xs rounded border ${
-              specialDraftMode === 'merge-point-platform-station'
-                ? 'bg-blue-600 text-white border-blue-700'
-                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'
-            }`}
-            onClick={() => {
-              requestSwitchWithExtraWarn(() => {
-                if (specialDraftMode === 'merge-point-platform-station') {
-                  requestExitSpecialDraftIfNeeded(() => resetSpecialDrafts());
-                } else {
-                  // 进入多点合一：初始化草稿
-                  setSpecialDraftMode('merge-point-platform-station');
-                  setMergePointPSDraft({ platforms: [], station: null });
-                }
-              });
-            }}
-          >
-            多点合一
-          </AppButton>
-        )}
-
-        {/* 线：铁路 -> 方向反转（>=2 控制点） */}
-        {drawMode === 'polyline' && subType === '铁路' && (
-          <RailwayDirectionReverseButton
-            enabled={tempPoints.length >= 2 && !drawClickSuppressed}
-            onReverse={() => {
-              if (tempPoints.length < 2) return;
-
-              // 反转控制点
-              const reversed = [...tempPoints].reverse();
-              if (multipartEnabledRef.current) persistActiveEditorCoords(reversed);
-              setTempPoints(reversed);
-              drawDraftGeometry(reversed, 'polyline', drawColor);
-
-              setNativeEdit(current=>current?{...current,draft:reverseWorkflowEditEndpoints(current.plan,current.draft)}:current);
-              // 调转起止站台字段（若存在）
-              setFeatureInfo((prev: any) => {
-                const start = prev?.startplf;
-                const end = prev?.endplf;
-                return { ...(prev ?? {}), startplf: end ?? '', endplf: start ?? '' };
-              });
-            }}
-          />
-        )}
-
-        {/* 面：站台轮廓/车站建筑 -> 多面合一 */}
-        {drawMode === 'polygon' && (String(subType) === '站台轮廓' || subType === '车站建筑') && (
-          <AppButton
-            type="button"
-            className={`px-2 py-1 text-xs rounded border ${
-              specialDraftMode === 'merge-polygon-outline-building'
-                ? 'bg-blue-600 text-white border-blue-700'
-                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'
-            }`}
-            onClick={() => {
-              requestSwitchWithExtraWarn(() => {
-                if (specialDraftMode === 'merge-polygon-outline-building') {
-                  requestExitSpecialDraftIfNeeded(() => resetSpecialDrafts());
-                } else {
-                  setSpecialDraftMode('merge-polygon-outline-building');
-                  setMergePolygonOBDraft({ outline: null, building: null });
-                }
-              });
-            }}
-          >
-            多面合一
-          </AppButton>
-        )}
-      </div>
-    </div>
-
-    {/* 内容：编辑专用模式优先；否则按 special 模式切换渲染 */}
-    {editUiMode==='external-workflow'&&externalEdit ? (<div>{externalEditWorldMismatch?<p role="alert">请返回 {externalEdit.world} 后继续编辑。<button type="button" className="ml-2 rounded border px-2 py-1" onClick={clearTemporaryForVariantSwitch}>放弃此编辑</button></p>:null}<fieldset disabled={externalEditWorldMismatch}><ExternalFeatureEditHost config={externalEdit.config} workflow={externalEdit.workflow} session={externalEdit.session} bridge={workflowBridge} context={{initialRecord:externalEdit.session.original,featureIdentity:{layerId:editingLayerId!,originalId:String(externalEdit.session.original.ID)},activeWorld:externalEdit.world,originalGeometry:externalEdit.session.originalGeometry,currentGeometry:multipartDraftRef.current??undefined,editor:editorIdInput,onEditorChange:setEditorIdInput,onUpdate:finishLayer,onCancel:clearTemporaryForVariantSwitch}} onDraftChange={session=>setExternalEdit(current=>current?{...current,session}:current)}/></fieldset></div>) : editUiMode==='native-workflow'&&nativeEdit ? (<fieldset disabled={nativeEditWorldMismatch}>{nativeEditWorldMismatch?<p role="alert">请返回 {nativeEdit.world} 后继续编辑或放弃草稿。</p>:null}<NativeWorkflowEditPanel config={nativeEdit.config} plan={nativeEdit.plan} draft={nativeEdit.draft} records={nativeEditSearchRecords} world={nativeEdit.world} editor={editorIdInput} onEditorChange={setEditorIdInput} onCancel={clearTemporaryForVariantSwitch} onChange={draft=>setNativeEdit(current=>current?{...current,draft}:current)}/></fieldset>) : isWorkflowStyleEditing && activeEditorView ? (
-      <WorkflowStyleEditPanel
-        view={activeEditorView}
-        values={editorDraftValues}
-        unparsedEntries={editorDraftUnparsed}
-        onChangeValue={setEditorDraftValue}
-        onChangeUnparsedEntries={setEditorDraftUnparsed}
-        bridge={workflowBridge}
-        editorId={editorIdInput}
-        onChangeEditorId={setEditorIdInput}
-      />
-    ) : specialDraftMode === 'merge-point-platform-station' ? (
-      <MergePointPlatformStation
-        draft={mergePointPSDraft}
-        onChange={setMergePointPSDraft}
-      />
-    ) : specialDraftMode === 'merge-polygon-outline-building' ? (
-      <MergePolygonOutlineBuilding
-        draft={mergePolygonOBDraft}
-        onChange={setMergePolygonOBDraft}
-        outlineKey="站台轮廓"
-        buildingKey="车站建筑"
-      />
-    ) : (
-      renderDynamicExtraInfo()
-    )}
-  </div>
-)}
+{measuringVariant==='full'&&drawMode!=='none'?renderFullForm():null}
 
               </div>
             </AppCard>
@@ -6291,35 +4964,7 @@ onChange={(e) => {
 </div>
 
 
-              {drawMode !== 'none' && !isWorkflowStyleEditing && (
-                <div className="mb-2">
-                  <label className="block text-sm font-bold">要素类型</label>
-                  <select
-                    value={subType}
-onChange={(e) => {
-  const next = e.target.value as FeatureKey;
-
-  requestSwitchWithExtraWarn(() => {
-    setSubType(next);
-
-    const def = FORMAT_REGISTRY[next];
-    const hydrated = def.hydrate({});
-    setFeatureInfo(hydrated.values ?? {});
-    setGroupInfo(normalizeGroupInfoByDef(def, (hydrated.groups ?? {}) as any));
-  });
-}}
-
-                    className="w-full border p-1 rounded"
-                  >
-                    <option value="默认">默认</option>
-                    {subTypeOptions.map((k) => (
-                      <option key={k} value={k}>
-                        {FORMAT_REGISTRY[k].label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              {drawMode !== 'none' ? renderFullCategoryPicker() : null}
 
               {drawMode !== 'none' && (
                 <div className="mb-2">
@@ -6448,124 +5093,7 @@ onChange={(e) => {
 
 
 
-{(subType !== '默认' || isWorkflowStyleEditing) && (
-  <div className="mb-2 border-t pt-2">
-    <div className="flex items-center justify-between gap-2">
-      <label className="text-sm font-bold">
-        附加信息 (
-        {specialDraftMode === 'merge-point-platform-station'
-          ? '多点合一-站台车站'
-          : specialDraftMode === 'merge-polygon-outline-building'
-          ? '多面合一-站台建筑与轮廓'
-          : nativeEdit?.plan.workflow.label.zh ?? FORMAT_REGISTRY[subType]?.label ?? subType}
-        )
-      </label>
-
-      <div className="flex items-center gap-2">
-        {/* 点：站台 -> 多点合一 */}
-        {drawMode === 'point' && subType === '站台' && (
-          <AppButton
-            type="button"
-            className={`px-2 py-1 text-xs rounded border ${
-              specialDraftMode === 'merge-point-platform-station'
-                ? 'bg-blue-600 text-white border-blue-700'
-                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'
-            }`}
-            onClick={() => {
-              requestSwitchWithExtraWarn(() => {
-                if (specialDraftMode === 'merge-point-platform-station') {
-                  requestExitSpecialDraftIfNeeded(() => resetSpecialDrafts());
-                } else {
-                  // 进入多点合一：初始化草稿
-                  setSpecialDraftMode('merge-point-platform-station');
-                  setMergePointPSDraft({ platforms: [], station: null });
-                }
-              });
-            }}
-          >
-            多点合一
-          </AppButton>
-        )}
-
-        {/* 线：铁路 -> 方向反转（>=2 控制点） */}
-        {drawMode === 'polyline' && subType === '铁路' && (
-          <RailwayDirectionReverseButton
-            enabled={tempPoints.length >= 2 && !drawClickSuppressed}
-            onReverse={() => {
-              if (tempPoints.length < 2) return;
-
-              // 反转控制点
-              const reversed = [...tempPoints].reverse();
-              if (multipartEnabledRef.current) persistActiveEditorCoords(reversed);
-              setTempPoints(reversed);
-              drawDraftGeometry(reversed, 'polyline', drawColor);
-
-              setNativeEdit(current=>current?{...current,draft:reverseWorkflowEditEndpoints(current.plan,current.draft)}:current);
-              // 调转起止站台字段（若存在）
-              setFeatureInfo((prev: any) => {
-                const start = prev?.startplf;
-                const end = prev?.endplf;
-                return { ...(prev ?? {}), startplf: end ?? '', endplf: start ?? '' };
-              });
-            }}
-          />
-        )}
-
-        {/* 面：站台轮廓/车站建筑 -> 多面合一 */}
-        {drawMode === 'polygon' && (String(subType) === '站台轮廓' || subType === '车站建筑') && (
-          <AppButton
-            type="button"
-            className={`px-2 py-1 text-xs rounded border ${
-              specialDraftMode === 'merge-polygon-outline-building'
-                ? 'bg-blue-600 text-white border-blue-700'
-                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'
-            }`}
-            onClick={() => {
-              requestSwitchWithExtraWarn(() => {
-                if (specialDraftMode === 'merge-polygon-outline-building') {
-                  requestExitSpecialDraftIfNeeded(() => resetSpecialDrafts());
-                } else {
-                  setSpecialDraftMode('merge-polygon-outline-building');
-                  setMergePolygonOBDraft({ outline: null, building: null });
-                }
-              });
-            }}
-          >
-            多面合一
-          </AppButton>
-        )}
-      </div>
-    </div>
-
-    {/* 内容：编辑专用模式优先；否则按 special 模式切换渲染 */}
-    {editUiMode==='external-workflow'&&externalEdit ? (<div>{externalEditWorldMismatch?<p role="alert">请返回 {externalEdit.world} 后继续编辑。<button type="button" className="ml-2 rounded border px-2 py-1" onClick={clearTemporaryForVariantSwitch}>放弃此编辑</button></p>:null}<fieldset disabled={externalEditWorldMismatch}><ExternalFeatureEditHost config={externalEdit.config} workflow={externalEdit.workflow} session={externalEdit.session} bridge={workflowBridge} context={{initialRecord:externalEdit.session.original,featureIdentity:{layerId:editingLayerId!,originalId:String(externalEdit.session.original.ID)},activeWorld:externalEdit.world,originalGeometry:externalEdit.session.originalGeometry,currentGeometry:multipartDraftRef.current??undefined,editor:editorIdInput,onEditorChange:setEditorIdInput,onUpdate:finishLayer,onCancel:clearTemporaryForVariantSwitch}} onDraftChange={session=>setExternalEdit(current=>current?{...current,session}:current)}/></fieldset></div>) : editUiMode==='native-workflow'&&nativeEdit ? (<fieldset disabled={nativeEditWorldMismatch}>{nativeEditWorldMismatch?<p role="alert">请返回 {nativeEdit.world} 后继续编辑或放弃草稿。</p>:null}<NativeWorkflowEditPanel config={nativeEdit.config} plan={nativeEdit.plan} draft={nativeEdit.draft} records={nativeEditSearchRecords} world={nativeEdit.world} editor={editorIdInput} onEditorChange={setEditorIdInput} onCancel={clearTemporaryForVariantSwitch} onChange={draft=>setNativeEdit(current=>current?{...current,draft}:current)}/></fieldset>) : isWorkflowStyleEditing && activeEditorView ? (
-      <WorkflowStyleEditPanel
-        view={activeEditorView}
-        values={editorDraftValues}
-        unparsedEntries={editorDraftUnparsed}
-        onChangeValue={setEditorDraftValue}
-        onChangeUnparsedEntries={setEditorDraftUnparsed}
-        bridge={workflowBridge}
-        editorId={editorIdInput}
-        onChangeEditorId={setEditorIdInput}
-      />
-    ) : specialDraftMode === 'merge-point-platform-station' ? (
-      <MergePointPlatformStation
-        draft={mergePointPSDraft}
-        onChange={setMergePointPSDraft}
-      />
-    ) : specialDraftMode === 'merge-polygon-outline-building' ? (
-      <MergePolygonOutlineBuilding
-        draft={mergePolygonOBDraft}
-        onChange={setMergePolygonOBDraft}
-        outlineKey="站台轮廓"
-        buildingKey="车站建筑"
-      />
-    ) : (
-      renderDynamicExtraInfo()
-    )}
-  </div>
-)}
+{measuringVariant==='full'&&drawMode!=='none'?renderFullForm():null}
 
             </div>
           </AppCard>
@@ -6753,7 +5281,7 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
             {getAvailableWorkflowCatalogKeys().length > 0 && (
               <>
                 <div className="mt-3 pt-2 border-t border-black/10 text-xs text-black/60">
-                  按目录（WORKFLOW_FEATURE_CATALOG）
+                  按当前分类
                 </div>
                 {getAvailableWorkflowCatalogKeys().map((it) => (
                   <AppButton
@@ -7088,6 +5616,7 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
       <RelayPackageExportPanel
         open={relayPackageExportOpen}
         draft={relayPackageDraft}
+        configuration={configRuntime}
         featureCount={layers.filter((l) => l.id !== editingLayerId && l.jsonInfo?.featureInfo).length}
         onClose={() => setRelayPackageExportOpen(false)}
         onExport={handleExportRelayPackage}

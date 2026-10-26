@@ -4,7 +4,7 @@ import {
   type ProjectedRegistryScene,
   type ProjectedRegistryField,
   type ProjectedRegistryGroup,
-} from './workflowEditorRegistry';
+} from './formProjection';
 
 export const CLASSIFICATION_DRAFT_KEY = '__workflowEditorClassification';
 
@@ -20,6 +20,7 @@ export type WorkflowEditorUnparsedEntry = {
 const SYSTEM_ROOT_KEYS = new Set([
   'Type',
   'Class',
+  'Kind','SKind','SKind2','Skind','Skind2',
   'World',
   'CreateTime',
   'CreateBy',
@@ -36,6 +37,7 @@ const SYSTEM_ROOT_KEYS = new Set([
 const GEOMETRY_ROOT_KEYS = new Set([
   'coordinate',
   'coordinates',
+  'CoordP','CoordL','CoordG',
   'Linepoints',
   'PLpoints',
   'Flrpoints',

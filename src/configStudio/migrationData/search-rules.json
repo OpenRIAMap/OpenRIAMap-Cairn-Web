@@ -1,0 +1,19 @@
+{
+  "SEARCH_RULE_BLACKLIST_LINES": [
+    "\"Class\":\"PFB\""
+  ],
+  "SEARCH_RULE_PRIORITY_LINES": [
+    "\"Class\":\"STB\"",
+    "\"Class\":\"BUD\""
+  ],
+  "SEARCH_CATEGORY_OVERRIDE_LINES": [
+    "\"Class\":\"STB\",\"Name\":\"车站\"",
+    "\"Class\":\"STA\",\"Name\":\"站场\"",
+    "\"Class\":\"PLF\",\"Name\":\"站台\"",
+    "\"Class\":\"PFB\",\"Name\":\"站台轮廓\"",
+    "\"Class\":\"SBP\",\"Name\":\"车站建筑点\"",
+    "\"Class\":\"TRP\",\"Name\":\"交易点\"",
+    "\"Class\":\"TPP\",\"Name\":\"传送点\"",
+    "\"Class\":\"WRP\",\"Name\":\"Warp点\""
+  ]
+}

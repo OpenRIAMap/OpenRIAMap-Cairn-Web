@@ -2,7 +2,7 @@
 import json,os
 from urllib.request import build_opener,ProxyHandler,Request
 from browser_check import Browser,APP_URL,OUT
-assert APP_URL.startswith('http://127.0.0.1:') and os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514')
+assert APP_URL.startswith('http://127.0.0.1:') and os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514','9338')
 opener=build_opener(ProxyHandler({}));cdp='http://127.0.0.1:'+os.environ['CAIRNMAP_CDP_PORT']
 opener.open(Request(cdp+'/json/new?about:blank',method='PUT')).read()
 for page in json.loads(opener.open(cdp+'/json').read()):

@@ -1,4 +1,5 @@
-import type { PersistedFieldDef, RegistryGroupDef, WorkflowAuxInputDef, WorkflowEditorSchema } from './types';
+// Private algorithm form layout. Taxonomy/field authority comes from the current package.
+import type { PersistedFieldDef, RegistryGroupDef, WorkflowAuxInputDef, WorkflowEditorSchema } from '@/components/Common/formTypes';
 
 const idField: WorkflowEditorSchema['idField'] = {
   key: 'ID',
@@ -150,14 +151,7 @@ const groups: RegistryGroupDef[] = [];
 export const SCHEMA_TRP_TRADE: WorkflowEditorSchema = {
   schemaKey: 'trp_trade',
   displayName: '交易点',
-  match: { subType: '交易点', classCode: 'TRP', workflowKeys: ['trp_point'] },
-  classification: {
-    ref: { mode: 'classCatalog', classCode: 'TRP', geom: '点' },
-    editScope: 'classScope',
-    workflow: { visible: true, label: '交易点种类（必填）', order: 10 },
-    editor: { visible: true, label: '交易点类型', order: 10 },
-    infocard: { visible: true, label: '类型', order: 10, section: 'main' },
-  },
+  match: {},
   idField,
   workflowAuxInputs,
   persistedFields: fields,

@@ -1,4 +1,4 @@
-import type { FeatureRecord, LabelPlan, RenderRule } from '../../components/Rules/rendering/renderRules';
+import type { FeatureRecord, LabelPlan, RenderRule } from '../../components/Rules/rendering/renderPrimitives';
 
 import { resolveClassDisplayRule, resolveLabelStyle } from './displayMetadata';
 import { resolveDisplayRuntimeContractForClass } from './displayRuleRuntimeAdapter';

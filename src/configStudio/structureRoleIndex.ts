@@ -1,5 +1,5 @@
 import type {ConfigPackageV3,ConfigValidationIssue,MountedFeatureRecord,StructureRole} from './types';
-import type {FeatureRecord} from '../components/Rules/rendering/renderRules';
+import type {FeatureRecord} from '../components/Rules/rendering/renderPrimitives';
 import type {FeatureStore} from '../components/Rules/data/featureStore';
 import {normalizeRuleSourceWorldId} from '../core/project/worldIdentity';
 import {resolveNodeFieldSettings} from './nodeFieldSettings';

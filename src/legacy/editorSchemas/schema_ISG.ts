@@ -1,4 +1,4 @@
-import type { PersistedFieldDef, WorkflowAuxInputDef, WorkflowEditorSchema } from './types';
+import type { PersistedFieldDef, WorkflowAuxInputDef, WorkflowEditorSchema } from '@/components/Common/formTypes';
 
 const idField = (label = '地物ID'): WorkflowEditorSchema['idField'] => ({
   key: 'ID',

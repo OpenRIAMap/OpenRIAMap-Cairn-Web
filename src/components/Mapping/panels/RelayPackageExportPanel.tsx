@@ -3,18 +3,21 @@ import AppCard from '@/components/ui/AppCard';
 import BlockingFullscreenModal from '@/components/Common/BlockingFullscreenModal';
 import AppButton from '@/components/ui/AppButton';
 import { relayDraftShowsMeta, relayDraftStatusLabel, type RelayPackageDraft } from '@/components/Mapping/core/relayPackageDraft';
+import { formatConfigRevision, formatContractRevision } from '@/configStudio/contract';
+import type { ConfigPackageV3 } from '@/configStudio/types';
 import { X } from 'lucide-react';
 
 export default function RelayPackageExportPanel(props: {
   open: boolean;
   draft: RelayPackageDraft;
+  configuration?: Pick<ConfigPackageV3, 'revision' | 'contractRevision'>;
   featureCount: number;
   onClose: () => void;
   onExport: (operator: string, note: string) => Promise<{ blob: Blob; filename: string }>;
   /** Optional application binding. Core export UI never chooses a provider. */
   onUploadToReview?: (input: { blob: Blob; filename: string; operator: string; note: string }) => Promise<{ submissionId: string; revisionId: string }>;
 }) {
-  const { open, draft, featureCount, onClose, onExport, onUploadToReview } = props;
+  const { open, draft, configuration, featureCount, onClose, onExport, onUploadToReview } = props;
   const [operator, setOperator] = useState(draft.meta.operator ?? '');
   const [note, setNote] = useState(draft.meta.note ?? '');
   const [busy, setBusy] = useState(false);
@@ -81,7 +84,7 @@ export default function RelayPackageExportPanel(props: {
             <div><span className="font-bold">要素数量：</span>{featureCount}</div>
             <div><span className="font-bold">图片数量：</span>{pictureCount}</div>
             <div><span className="font-bold">删除标记数量：</span>{draft.deleteMarks.length}</div>
-            <div><span className="font-bold">Schema版本：</span>{draft.meta.schemaVersion}</div>
+            <div><span className="font-bold">当前配置：</span>{configuration ? `${formatConfigRevision(configuration.revision)} · 契约 ${formatContractRevision(configuration.contractRevision)}` : '未提供配置版本'}</div>
             <div><span className="font-bold">更新时间：</span>{draft.meta.updatedAt}</div>
           </div>
 

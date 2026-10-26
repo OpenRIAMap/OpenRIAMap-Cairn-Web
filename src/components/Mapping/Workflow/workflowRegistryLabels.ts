@@ -7,7 +7,7 @@ import {
   projectRegistryScene,
   resolveWorkflowEditorSchema,
   type ProjectedRegistryScene,
-} from '@/components/Common/workflowEditorRegistry';
+} from '@/legacy/editorSchemas/index';
 
 const viewCache = new Map<string, ProjectedRegistryScene | null>();
 

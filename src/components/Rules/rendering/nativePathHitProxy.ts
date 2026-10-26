@@ -1,5 +1,5 @@
 import L from 'leaflet';
-import type {FeatureRecord} from './renderRules';
+import type {FeatureRecord} from './renderPrimitives';
 export function createNativePathHitProxy(
   type: FeatureRecord['type'],
   lineLatLngs: L.LatLngExpression[],

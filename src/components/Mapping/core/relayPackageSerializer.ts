@@ -1,4 +1,4 @@
-import { WORLD_CODE_BY_WORLD_ID } from '@/components/Common/featureFormats';
+import { WORLD_CODE_BY_WORLD_ID } from '@/components/Common/featurePrimitives';
 import {
   buildReviewPackageArtifact,
   type ReviewPackageFeatureInput,

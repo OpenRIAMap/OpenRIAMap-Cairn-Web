@@ -1,4 +1,4 @@
-import type { FeatureRecord, SignatureEntry } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord, SignatureEntry } from '@/components/Rules/rendering/renderPrimitives';
 import type {RailwayRole,RailwaySelectors} from '@/core/project/navigationTypes';
 import {defaultRailwaySelectors,matchesRaw} from '@/core/project/navigationDefinition';
 import type {ClassificationPath,ConfigPackageV3} from '@/configStudio/types';

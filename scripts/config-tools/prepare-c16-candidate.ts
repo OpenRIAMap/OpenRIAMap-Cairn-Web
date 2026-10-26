@@ -1,0 +1,13 @@
+import fs from 'node:fs';import path from 'node:path';import {gzipSync} from 'node:zlib';import {createHash} from 'node:crypto';
+import {migratePackageToC16} from '../../src/configStudio/contractMigration';
+import {validateConfigPackage} from '../../src/configStudio/runtime';
+import {buildConfigPackageArchive,readableConfigText} from '../../src/configStudio/package';
+const index=JSON.parse(fs.readFileSync('public/configuration/current.json','utf8')),originalBytes=fs.readFileSync('public'+index.configUrl),source=JSON.parse(originalBytes.toString('utf8'));
+const {config,report:migration}=migratePackageToC16(source),validation=validateConfigPackage(config);if(!validation.valid)throw Error(JSON.stringify(validation.issues));
+const out=process.argv[2]??'../delivery';fs.mkdirSync(out,{recursive:true});
+fs.writeFileSync(path.join(out,'formal-source-r91-c15.json'),originalBytes);
+const text=readableConfigText(config);fs.writeFileSync(path.join(out,'candidate-r91-c16.json'),text);fs.writeFileSync(path.join(out,'migration-report.json'),JSON.stringify(migration,null,2)+'\n');fs.writeFileSync(path.join(out,'validation-report.json'),JSON.stringify(validation,null,2)+'\n');
+const archive=Buffer.from(await (await buildConfigPackageArchive(config,validation)).arrayBuffer());fs.writeFileSync(path.join(out,'CairnMap_c16_from-r91_review.cairn-config-v3.zip'),archive);
+const metadata={source:index,contractRevision:config.contractRevision,revision:config.revision,nodes:config.nodes.length,workflows:config.workflows.length,unchangedComposed:JSON.stringify(config.workflows.filter(w=>w.mode==='composed'))===JSON.stringify(source.workflows.filter(w=>w.mode==='composed')),configSha256:createHash('sha256').update(text).digest('hex'),archiveSha256:createHash('sha256').update(archive).digest('hex'),migrationChanges:migration.changes.length};fs.writeFileSync(path.join(out,'delivery-manifest.json'),JSON.stringify(metadata,null,2)+'\n');
+if(process.argv[3])fs.writeFileSync(process.argv[3],gzipSync(text,{mtime:0} as any));
+console.log(JSON.stringify(metadata));

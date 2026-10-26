@@ -147,7 +147,7 @@
     "test:navigation-r13": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-r13.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-runtime-r13.ts",
     "test:optional-field-cleanup": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-optional-field-cleanup.ts",
     "verify:production-build": "node scripts/config-tools/build-server-validation.mjs --check && node scripts/config-tools/vendor-pinhead.mjs --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/prepare-production-seed.ts --check && tsx --tsconfig tsconfig.app.json scripts/config-tools/validate-production-build.ts",
-    "verify:ci": "npm run verify:config-v32 && npm run test:release-repair && npm run test:production-runtime && npm run test:deployment-finalization && npm run test:optional-field-cleanup && npm run test:navigation-canonical && npm run test:workflow-search && npm run test:production-build-guards && npm run test:publication-deployment && npm run test:studio-formal-default && npm run test:studio-temporary-package && npm run test:c14 && npm run test:c15 && npm run test:workflow-classification && npm run test:studio-category-authoring && npm run test:classification-capture && npm run test:review-local-delta",
+    "verify:ci": "npm run verify:config-v32 && npm run test:release-repair && npm run test:production-runtime && npm run test:deployment-finalization && npm run test:optional-field-cleanup && npm run test:navigation-canonical && npm run test:workflow-search && npm run test:production-build-guards && npm run test:publication-deployment && npm run test:studio-formal-default && npm run test:studio-temporary-package && npm run test:c14 && npm run test:c15 && npm run test:workflow-classification && npm run test:studio-category-authoring && npm run test:classification-capture && npm run test:review-local-delta && npm run test:c16",
     "test:navigation-canonical": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-navigation-runtime-r13.ts --canonical-only",
     "test:workflow-search": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-workflow-search.ts",
     "test:production-build-guards": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-production-build-guards.ts",
@@ -159,7 +159,8 @@
     "test:studio-category-authoring": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-studio-category-authoring.ts",
     "test:workflow-classification": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-workflow-classification-correction.ts",
     "test:review-local-delta": "tsx --tsconfig tsconfig.app.json scripts/review/test-review-local-delta.ts",
-    "test:classification-capture": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-classification-capture.ts"
+    "test:classification-capture": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-classification-capture.ts",
+    "test:c16": "node scripts/config-tools/audit-native-runtime.mjs && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-c16-bindings.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-c16-full-editor.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-c16-runtime.ts"
   },
   "dependencies": {
     "jszip": "^3.10.1",

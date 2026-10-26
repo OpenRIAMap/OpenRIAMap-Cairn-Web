@@ -1,5 +1,5 @@
 import type { FeatureStore } from '../data/featureStore';
-import type { FeatureRecord } from '../rendering/renderRules';
+import type { FeatureRecord } from '../rendering/renderPrimitives';
 import { normalizeRuleSourceWorldId } from '../data/ruleDataSources';
 const indexes = new WeakMap<FeatureStore, Map<string, Map<string, FeatureRecord[]>>>();
 const worldOf = (record: FeatureRecord, active: string) => normalizeRuleSourceWorldId(String(record.featureInfo?.World ?? record.meta.World ?? active));

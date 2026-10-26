@@ -1,0 +1,322 @@
+[
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  },
+  {
+    "key": "category",
+    "label": "分类(category)",
+    "type": "text"
+  },
+  {
+    "key": "level",
+    "label": "等级(level)",
+    "type": "number"
+  },
+  {
+    "key": "status",
+    "label": "状态(status)",
+    "type": "text"
+  },
+  {
+    "key": "source",
+    "label": "来源(source)",
+    "type": "text"
+  }
+]

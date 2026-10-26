@@ -1,5 +1,7 @@
 import type {ClassificationPath,ConfigPackageV3,WorkflowDefinition} from './types';
 import {resolveGeometryProfile} from './runtime';
+import {externalSingleRolePath} from './externalBindings';
+import {RAIL_ROLE_KEYS} from './externalCapabilities';
 export type RailCaptureRole='RLE'|'STA'|'PLF'|'PFB'|'STB'|'SBP'|'STF';
 const roleByFormat:Record<string,RailCaptureRole>={'铁路':'RLE','车站':'STA','站台':'PLF','站台轮廓':'PFB','车站建筑':'STB','车站建筑点':'SBP','车站建筑楼层':'STF'};
 const roles:Record<string,readonly string[]>={railwayWorkflow:['RLE'],stationWorkflow:['STA','PLF','PFB','STB','SBP','STF'],tradePointWorkflow:['TRP']};
@@ -11,6 +13,7 @@ export function preferredExternalCapturePaths(config:ConfigPackageV3,component:s
  return (roles[component]??[]).map(code=>{const migrated={class:'RIL',kind:code};return code!=='TRP'&&exists(config,migrated)?migrated:{class:code};});
 }
 export function externalCapturePath(config:ConfigPackageV3,workflow:WorkflowDefinition,role:RailCaptureRole):ClassificationPath {
+ if(config.contractRevision>=16)return externalSingleRolePath(config,workflow,RAIL_ROLE_KEYS[role]);
  const permitted=roles[workflow.external?.componentKey??'']??[];
  if(workflow.mode!=='external'||workflow.external?.purpose==='edit'||!permitted.includes(role))throw Error(`此整体采集方案未登记 ${role} 输出。`);
  const candidates=(workflow.external?.coveredClassifications??[]).filter(path=>key(path)===role||key(path)==='RIL/'+role);

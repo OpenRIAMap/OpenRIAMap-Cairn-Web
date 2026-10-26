@@ -1,5 +1,5 @@
 import type {ConfigPackageV3} from '../../configStudio/types';
-import type {FeatureRecord} from '../Rules/rendering/renderRules';
+import type {FeatureRecord} from '../Rules/rendering/renderPrimitives';
 import type {RailNewIndex} from '../Navigation/railNewIndex';
 import {resolveNodeFieldSettings} from '../../configStudio/nodeFieldSettings';
 import {recordPath,recordValue} from '../../configStudio/structureRoleIndex';

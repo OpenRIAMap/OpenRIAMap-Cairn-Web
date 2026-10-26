@@ -27,7 +27,7 @@ import { createDefaultGeometryProfile } from '@/configStudio/v32Defaults';
 import { isCompiledConfigRuntime, resolveGeometryProfile, resolveZoomRule, resolveRenderExtensions } from '@/configStudio/runtime';
 import { buildV3CardSections } from '@/configStudio/V3CardRenderer';
 import type { FeatureStore } from '@/components/Rules/data/featureStore';
-import type { FeatureRecord, RenderContext, RenderRule } from '@/components/Rules/rendering/renderRules';
+import type { FeatureRecord, RenderContext, RenderRule } from '@/components/Rules/rendering/renderPrimitives';
 import { fmtFloorLabel } from '@/components/Rules/utils/ruleHelpers';
 import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
 
@@ -736,7 +736,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
     symbol: {
       pane,
       pathStyle,
-      point: nativePointPlan as import('../rendering/renderRules').PointSymbolPlan,
+      point: nativePointPlan as import('../rendering/renderPrimitives').PointSymbolPlan,
       label: {
         enabled: label.visible,
         textFrom: (candidate: FeatureRecord) => {

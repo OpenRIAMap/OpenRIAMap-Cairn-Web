@@ -1,14 +1,16 @@
+import {externalRolePaths} from '@/configStudio/externalBindings';
+import {workflowCategoryOptions} from '@/configStudio/workflowCategoryOptions';
+import {specializedReferenceSearch} from '../Workflow/specialized/referenceSearch';
 import type {ReactNode} from 'react';
 import TRPTradeEditor, { type TradeGroup as TRPTradeGroup } from '@/components/Mapping/SpecialInput/TRPTradeEditor';
-import WorkflowFeatureSearchSelect, { type SearchSelectConfig } from '@/components/Mapping/Workflow/WorkflowFeatureSearchSelect';
+import WorkflowFeatureSearchSelect from '@/components/Mapping/Workflow/WorkflowFeatureSearchSelect';
 import type { WorkflowBridge } from '@/components/Mapping/Workflow/WorkflowHost';
 import {
-  getClassificationOptions,
   type ProjectedRegistryField,
   type ProjectedRegistryGroup,
   type ProjectedRegistryScene,
   type RegistryGroupItemFieldDef,
-} from '@/components/Common/workflowEditorRegistry';
+} from '@/components/Common/formProjection';
 import {
   CLASSIFICATION_DRAFT_KEY,
   updateUnparsedEntryValue,
@@ -18,26 +20,7 @@ import {
 
 const getText = (value: unknown): string => String(value ?? '');
 
-const classCodeOf = (fi: Record<string, unknown>): string => String(fi.Class ?? fi.class ?? '').trim().toUpperCase();
-const kindOf = (fi: Record<string, unknown>): string => String(fi.Kind ?? '').trim().toUpperCase();
-const idOf = (fi: Record<string, unknown>): string => String(fi.ID ?? fi.LineID ?? fi.WRPointI2D ?? '').trim();
-const nameOf = (fi: Record<string, unknown>): string => String(fi.Name ?? fi.name ?? fi.ID ?? '').trim();
-
-const makeSearchConfig = (cacheKey: string, filter: SearchSelectConfig['filter']): SearchSelectConfig => ({
-  cacheKey,
-  filter,
-  getId: idOf,
-  getName: nameOf,
-  formatOption: (name, id) => `${name}（${id}）`,
-});
-
-const SEARCH_CONFIGS: Record<string, SearchSelectConfig> = {
-  landUnit: makeSearchConfig('workflow-editor-land-unit', (fi) => classCodeOf(fi) === 'ISG' || kindOf(fi) === 'NGF'),
-  admAny: makeSearchConfig('workflow-editor-adm-any', (fi) => kindOf(fi) === 'ADM'),
-  building: makeSearchConfig('workflow-editor-building', (fi) => classCodeOf(fi) === 'BUD'),
-  road: makeSearchConfig('workflow-editor-road', (fi) => classCodeOf(fi) === 'ROD'),
-  warpPoint: makeSearchConfig('workflow-editor-warp-point', (fi) => classCodeOf(fi) === 'WRP'),
-};
+const referenceKey=(field:{path?:string;searchConfigKey?:string})=>({'tags.Land':'landUnit','tags.UAdm':'settlementPoint','tags.UAdmG':'settlementArea'} as Record<string,string>)[field.path??'']??field.searchConfigKey??'';
 
 type Props = {
   idFirst?:boolean;
@@ -119,11 +102,13 @@ export default function WorkflowStyleEditPanel(props: Props) {
     onChangeEditorId,
     idFirst=false,classificationContent,extraContent,
   } = props;
-  const classificationOptions = view.classification?.ref ? getClassificationOptions(view.classification.ref) : [];
+  const context=bridge.getCaptureContext?.();
+  const classificationOptions=context?workflowCategoryOptions(context.config,externalRolePaths(context.config,context.workflow,'tradePoint')).map(option=>({kind:option.path.kind??'',skind:option.path.skind??'',skind2:option.path.skind2??'',name:option.label,label:option.label,classCode:option.path.class})):[];
 
   const renderField = (field: ProjectedRegistryField) => {
     const value = values[field.path];
     const label = field.label;
+    if(field.control==='select')return <label key={field.path} data-editor-field={field.path} className="mb-2 block text-xs">{label}{field.required?' *':''}<select className="mt-1 w-full rounded border p-1 text-sm" value={getText(value)} onChange={event=>onChangeValue(field.path,event.target.value)}><option value="">请选择</option>{field.options?.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
 
     if (field.control === 'bool') {
       return (
@@ -200,7 +185,7 @@ export default function WorkflowStyleEditPanel(props: Props) {
       );
     }
 
-    if (field.control === 'featureSearch' && field.searchConfigKey && SEARCH_CONFIGS[field.searchConfigKey]) {
+    if (field.control === 'featureSearch' && field.searchConfigKey) {
       return (
         <div key={field.path} data-editor-field={field.path} className="mb-2">
           <WorkflowFeatureSearchSelect
@@ -209,7 +194,7 @@ export default function WorkflowStyleEditPanel(props: Props) {
             value={getText(value)}
             onChange={(v) => onChangeValue(field.path, v)}
             placeholder={field.placeholder ?? field.path}
-            config={SEARCH_CONFIGS[field.searchConfigKey]}
+            config={specializedReferenceSearch(bridge,referenceKey(field))}
           />
         </div>
       );
@@ -306,7 +291,7 @@ export default function WorkflowStyleEditPanel(props: Props) {
       );
     }
 
-    if (field.control === 'featureSearch' && field.searchConfigKey && SEARCH_CONFIGS[field.searchConfigKey]) {
+    if (field.control === 'featureSearch' && field.searchConfigKey) {
       return (
         <WorkflowFeatureSearchSelect
           key={fieldKey}
@@ -315,7 +300,7 @@ export default function WorkflowStyleEditPanel(props: Props) {
           value={getText(value)}
           onChange={(v) => updateItem({ ...item, [field.key]: v })}
           placeholder={field.placeholder ?? field.key}
-          config={SEARCH_CONFIGS[field.searchConfigKey]}
+          config={specializedReferenceSearch(bridge,referenceKey(field))}
         />
       );
     }

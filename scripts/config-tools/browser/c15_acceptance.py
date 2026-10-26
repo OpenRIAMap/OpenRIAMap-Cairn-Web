@@ -4,7 +4,7 @@ from urllib.request import build_opener,ProxyHandler,Request
 from pathlib import Path
 from browser_check import Browser,APP_URL,OUT
 assert APP_URL.startswith('http://127.0.0.1:')
-assert os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514','9524')
+assert os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514','9524','9338')
 
 class C15Browser(Browser):
     def call(self,method,params=None):
@@ -79,6 +79,7 @@ try:
     b.call('Network.enable');b.call('Network.setBlockedURLs',{'urls':['https://*',APP_URL+'/api/*','http://analysis.602007.xyz/*']})
     b.call('Browser.setDownloadBehavior',{'behavior':'allow','downloadPath':str(downloads.resolve())})
     reset()
+    LATEST=b.evaluate("(async()=>(await import('/src/configStudio/contract.ts')).NATIVE_CONFIG_REVISION)()")
     assert '契约 c' in b.evaluate("document.querySelector('main header').innerText")
     # Prepare old files with the actual codecs. Their import is performed via file inputs.
     payload=b.evaluate("""(async()=>{const c="""+json.dumps(source)+""";const a=await import('/src/configStudio/categoryArtifact.ts'),w=await import('/src/configStudio/workflowArtifact.ts');const n=c.nodes.find(n=>n.path.class==='PLF');return {config:JSON.stringify(c),node:JSON.stringify(await a.createCategoryArtifact(c,n.nodeId,'node')),tree:JSON.stringify(await a.createCategoryArtifact(c,n.nodeId,'classTree')),workflow:JSON.stringify(w.buildWorkflowArtifact(c,c.workflows.find(w=>w.mode==='composed')))}})()""")
@@ -93,35 +94,35 @@ try:
     b.click('已读取草稿')
     assert document("nodes.find(n=>n.path.class==='BUD').fields.find(f=>f.key==='Name').labels.zh")=='C14_UNSAVED_DRAFT'
     assert document('contractRevision')==13
-    assert b.evaluate("[...document.querySelectorAll('main header button')].find(x=>x.textContent.includes('迁移到 c15')).disabled")
+    assert b.evaluate("[...document.querySelectorAll('main header button')].find(x=>x.textContent.includes('迁移到 c')).disabled")
     b.screenshot('c13-restored-draft-protected.png');record('c13 restored unsaved category survives repeated read; migration is blocked until its region finishes')
     reset()
     b.call('Page.navigate',{'url':APP_URL+'/scripts/browser/fixtures/studio-formal-default.html'});b.wait("document.title==='Studio storage acceptance'")
     b.evaluate("""(async()=>{const c="""+json.dumps(source)+""";const st=await import('/src/configStudio/workspaceStorage.ts'),old=await st.initializeWorkspaceStorage();await st.writeWorkspaceCheckpoint({schemaVersion:'cairnmap.studio-workspace.v1',config:c,generation:1,updatedAt:new Date().toISOString()},old.token);return true})()""")
-    nav();b.click('继续编辑');editor();b.click('迁移到 c15 草稿');b.wait("Boolean(document.querySelector('[aria-label=\"整包草稿操作\"]'))")
-    assert document('contractRevision')==15
+    nav();b.click('继续编辑');editor();b.click(f'迁移到 c{LATEST} 草稿');b.wait("Boolean(document.querySelector('[aria-label=\"整包草稿操作\"]'))")
+    assert document('contractRevision')==LATEST
     assert b.evaluate("document.querySelector('[aria-label=\"迁移处理提示\"]').innerText.includes('新增')")
     before=document('revision');b.click('清除全部迁移提示');assert document('revision')==before
     assert b.evaluate("(async()=>{const s=await import('/src/configStudio/workspaceController.ts');return s.getWorkspaceState().migration.report.dismissed.length>0})()")
-    record('explicit c13 → c15 candidate, source-preserving migration notices and dismissal without validation bypass')
+    record(f'explicit c13 → c{LATEST} candidate, source-preserving migration notices and dismissal without validation bypass')
     select('select[aria-label="编辑分类 Class"]','PLF')
     upload('input[accept=".json,.zip"]',files/'node.json');b.wait("[...document.querySelectorAll('button')].some(x=>x.textContent==='已读取草稿')")
-    assert document('contractRevision')==15;b.click('核验');b.click('保存')
+    assert document('contractRevision')==LATEST;b.click('核验');b.click('保存')
     b.wait("[...document.querySelectorAll('button')].some(x=>x.textContent==='读取分类')")
     b.click('导出分类');b.wait("document.body.innerText.includes('分类文件已导出。')")
     b.wait("document.querySelector('[aria-label=\"分类导出范围\"]')?.value==='node'")
     select('select[aria-label="分类导出范围"]','classTree');b.click('导出分类')
     upload('input[accept=".json,.zip"]',files/'tree.json');b.wait("Boolean(document.querySelector('[aria-label=\"Class 树导入总控\"]'))")
     b.click('核验整棵 Class 树');b.click('保存 Class 树到总配置');b.wait("!document.querySelector('[aria-label=\"Class 树导入总控\"]')")
-    record('actual c13 category and Class-tree file selection, automatic c15 migration and region/tree validation/save')
+    record('actual c13 category and Class-tree file selection, automatic current-contract migration and region/tree validation/save')
     b.click('工作流设计');upload('[aria-label="工作流编辑区域"] input[type=file]',files/'workflow.json')
     b.wait("[...document.querySelector('[aria-label=\"工作流编辑区域\"]').querySelectorAll('button')].find(x=>x.textContent==='核验')?.disabled===false")
     inside('[aria-label="工作流编辑区域"]','核验');inside('[aria-label="工作流编辑区域"]','保存')
     b.wait("[...document.querySelector('[aria-label=\"工作流编辑区域\"]').querySelectorAll('button')].find(x=>x.textContent==='核验')?.disabled===true")
-    b.click('要素设计');record('actual c13 workflow import/validation/save into c15; workflow structure preserved')
+    b.click('要素设计');record('actual c13 workflow import/validation/save into the current contract; workflow structure preserved')
     # Whole-package import gets its declared latest writable target independently.
     b.click('放弃整包草稿');upload('main header input[type=file]',files/'config.zip')
-    b.wait("Boolean(document.querySelector('[aria-label=\"整包草稿操作\"]'))");assert document('contractRevision')==15
+    b.wait("Boolean(document.querySelector('[aria-label=\"整包草稿操作\"]'))");assert document('contractRevision')==LATEST
     b.click('下载导入原件')
     deadline=time.time()+10
     while time.time()<deadline and not any(p.read_bytes()==(files/'config.zip').read_bytes() for p in downloads.glob('config*.zip')):time.sleep(.1)
@@ -245,9 +246,9 @@ try:
     b.evaluate("(async()=>{const w=await import('/src/configStudio/workspaceController.ts');await w.flushWorkspace()})()")
     nav();b.click('继续编辑');editor()
     b.wait('document.querySelector('+json.dumps('details[data-fold-key="'+fold_key+'"]')+')?.open')
-    assert document('contractRevision')==15
+    assert document('contractRevision')==LATEST
     assert b.evaluate("(async()=>{const w=await import('/src/configStudio/workspaceController.ts');return /^[a-f0-9]{64}$/.test(w.getWorkspaceState().migration.resultSha256)})()")
-    record('explicit cached-workspace continue restores c15 edits and the same stable rule fold ID')
+    record('explicit cached-workspace continue restores current-contract edits and the same stable rule fold ID')
     assert document("nodes.find(n=>n.path.class==='BUD').geometryProfiles.Polygon.zoomPriority.rules.find(r=>r.id==="+json.dumps(polygon_id)+").style.halo.enabled")
     select_label(polygon,'显示种类','point');polygon_point=polygon+' [aria-label="点状显示效果"]'
     click_selector(polygon_point+' [aria-label="Halo 外环"] input[type=checkbox]')
@@ -257,7 +258,7 @@ try:
     reset();b.call('Page.navigate',{'url':APP_URL+'/scripts/browser/fixtures/studio-formal-default.html'});b.wait("document.title==='Studio storage acceptance'")
     b.evaluate("""(async()=>{const c="""+json.dumps(source)+""";const m=await import('/src/configStudio/contractMigration.ts'),st=await import('/src/configStudio/workspaceStorage.ts');const base=m.migratePackageToC14(c).config,old=await st.initializeWorkspaceStorage();await st.writeWorkspaceCheckpoint({schemaVersion:'cairnmap.studio-workspace.v1',config:base,session:{baseline:base,draft:null,tree:null,selectedId:'',editing:false,packageCandidate:{baseline:base,config:c,source:'recovery'}},generation:1,updatedAt:new Date().toISOString()},old.token);return true})()""")
     nav();b.click('继续编辑');editor();assert document('contractRevision')==13
-    b.click('迁移到 c15 草稿');assert document('contractRevision')==15
+    b.click(f'迁移到 c{LATEST} 草稿');assert document('contractRevision')==LATEST
     assert snapshot()['packageCandidate']['baseline']['contractRevision']==14
     record('c14 saved baseline with c13 current candidate migrates the candidate and preserves its saved c14 baseline')
     # Exercise the real classification-group designer, its folds and save/export cycle.
