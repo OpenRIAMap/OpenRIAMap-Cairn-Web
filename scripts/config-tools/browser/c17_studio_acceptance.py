@@ -63,7 +63,29 @@ try:
  select_path();b.click('读取分类');open_rule();assert b.evaluate(label('来源形式')+'.value')=='library';assert b.evaluate(root+'.innerText.includes("图片选择：N1.png")');checks.append('reload requires explicit checkpoint decision and restores actual c17 selection')
  decoded=b.evaluate('''(async()=>{const {libraryImages}=await import('/src/configStudio/imageLibraryCatalogue.ts');return await Promise.all(libraryImages.map(row=>new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>image.decode().then(()=>resolve(row.name),reject);image.onerror=()=>reject(Error(row.name));image.src=row.url;})));})()''')
  assert len(decoded)>=25;checks.append('all initial 25 original images decode in a real browser')
+ b.screenshot('c17-main-roundtrip-restored.png')
+ # Invalid library paths remain semantic errors so the existing repair and
+ # diagnostic workflow can carry them without allowing a formal publication.
+ b.click('放弃草稿')
+ invalid=json.loads(json.dumps(config));bad_image=next(n for n in invalid['nodes'] if n['path']=={'class':'RIL','kind':'PLF'})['geometryProfiles']['Point']['zoomPriority']['rules'][0]['style']['pointSymbol']['image'];bad_image['url']='https://outside.invalid/N1.png'
+ invalid_file=OUT/'invalid-library-path.json';invalid_file.write_text(json.dumps(invalid,ensure_ascii=False),encoding='utf-8')
+ b.click('导入本地配置');document=b.call('DOM.getDocument');upload=b.call('DOM.querySelector',{'nodeId':document['root']['nodeId'],'selector':'header input[type=file]'})['nodeId'];b.call('DOM.setFileInputFiles',{'nodeId':upload,'files':[str(invalid_file.resolve())]})
+ b.wait('document.body.innerText.includes("已导入隔离候选")',45);b.click('全局核验');b.wait('document.body.innerText.includes("全局核验未通过")')
+ assert b.evaluate('[...document.querySelectorAll("header button")].find(e=>e.textContent.trim()==="整包下载/上传").disabled')
+ previous={p.name:p.stat().st_mtime_ns for p in directory.glob('*.zip')};b.click('临时保存和下载');b.click('确认临时保存并下载')
+ deadline=time.time()+25;new=[]
+ while not new and time.time()<deadline:
+  new=[p for p in directory.glob('*.zip') if p.name not in previous or p.stat().st_mtime_ns>previous[p.name]];time.sleep(.1)
+ assert new,'temporary diagnostic download was not produced';diagnostic_archive=max(new,key=lambda p:p.stat().st_mtime_ns)
+ with zipfile.ZipFile(diagnostic_archive) as zip:
+  diagnostic_config=json.loads(zip.read('config.json'));diagnostic_report=json.loads(zip.read('reports/temporary-validation.json'))
+ diagnostic_image=next(n for n in diagnostic_config['nodes'] if n['path']=={'class':'RIL','kind':'PLF'})['geometryProfiles']['Point']['zoomPriority']['rules'][0]['style']['pointSymbol']['image']
+ assert diagnostic_image==bad_image and diagnostic_report['report']['valid'] is False
+ checks.append('invalid library path blocks formal output but actual temporary download preserves intent, URL and error report')
+ b.wait('!Boolean(document.querySelector("[role=dialog][aria-label=临时保存和下载]"))');b.click('放弃整包草稿');b.click('导入本地配置');document=b.call('DOM.getDocument');upload=b.call('DOM.querySelector',{'nodeId':document['root']['nodeId'],'selector':'header input[type=file]'})['nodeId'];b.call('DOM.setFileInputFiles',{'nodeId':upload,'files':[str(diagnostic_archive.resolve())]})
+ b.wait('document.body.innerText.includes("已载入隔离候选和上次导出报告")',45);select_path();b.click('读取分类');open_rule();assert b.evaluate(label('来源形式')+'.value')=='library';assert b.evaluate(root+'.innerText.includes("https://outside.invalid/N1.png")')
+ checks.append('actual temporary diagnostic ZIP reimport retains invalid reference for repair without URL-mode coercion')
  assert not b.errors,b.errors
- b.screenshot('c17-main-roundtrip-restored.png');(OUT/'c17-studio-result.json').write_text(json.dumps({'checks':checks,'archive':str(archive),'contractRevision':config['contractRevision'],'revision':config['revision'],'image':image,'decodedImages':decoded,'runtimeErrors':b.errors},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps(checks,ensure_ascii=False,indent=2))
+ b.screenshot('c17-diagnostic-reimport.png');(OUT/'c17-studio-result.json').write_text(json.dumps({'checks':checks,'archive':str(archive),'diagnosticArchive':str(diagnostic_archive),'contractRevision':config['contractRevision'],'revision':config['revision'],'image':image,'decodedImages':decoded,'runtimeErrors':b.errors},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps(checks,ensure_ascii=False,indent=2))
 except Exception:
  b.screenshot('c17-studio-failure.png');(OUT/'c17-studio-failure.json').write_text(json.dumps({'checks':checks,'text':b.evaluate('document.body.innerText'),'errors':b.errors},ensure_ascii=False,indent=2),encoding='utf-8');raise

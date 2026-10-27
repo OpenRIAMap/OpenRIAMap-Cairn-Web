@@ -76,7 +76,9 @@ export function validateNativeStructure(value: unknown): NativeStructureIssue[] 
       const image=style.pointSymbol.image,at=path+'/pointSymbol/image';
       if(image.mode==='fixed'||image.mode==='valueMap'){
         const rows=image.mode==='fixed'?[{value:image,path:at}]:image.entries.map((value,index)=>({value,path:`${at}/entries/${index}`}));
-        for(const row of rows)for(const issue of imageSourceFormProblems(row.value,config.contractRevision))issues.push({path:row.path+'/'+issue.path,message:issue.message});
+        // Intent is structural; URL policy is semantic so a diagnostic package
+        // with a wrong path remains safely importable for repair.
+        for(const row of rows)for(const issue of imageSourceFormProblems(row.value,config.contractRevision).filter(issue=>issue.path==='sourceForm'))issues.push({path:row.path+'/'+issue.path,message:issue.message});
       }
     }
     const halos=[{path:path+'/halo',value:style?.halo,required},...symbolHalos(style?.pointSymbol).map(row=>({path:path+'/pointSymbol/'+row.path,value:row.value,required:config.contractRevision>=14}))];

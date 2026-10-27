@@ -25099,7 +25099,7 @@ function validateNativeStructure(value) {
       const image = style.pointSymbol.image, at = path2 + "/pointSymbol/image";
       if (image.mode === "fixed" || image.mode === "valueMap") {
         const rows = image.mode === "fixed" ? [{ value: image, path: at }] : image.entries.map((value2, index) => ({ value: value2, path: `${at}/entries/${index}` }));
-        for (const row2 of rows) for (const issue2 of imageSourceFormProblems(row2.value, config.contractRevision)) issues.push({ path: row2.path + "/" + issue2.path, message: issue2.message });
+        for (const row2 of rows) for (const issue2 of imageSourceFormProblems(row2.value, config.contractRevision).filter((issue3) => issue3.path === "sourceForm")) issues.push({ path: row2.path + "/" + issue2.path, message: issue2.message });
       }
     }
     const halos = [{ path: path2 + "/halo", value: style?.halo, required }, ...symbolHalos(style?.pointSymbol).map((row2) => ({ path: path2 + "/pointSymbol/" + row2.path, value: row2.value, required: config.contractRevision >= 14 }))];

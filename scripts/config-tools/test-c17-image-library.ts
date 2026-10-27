@@ -126,6 +126,13 @@ const diagnosticRun=await validateWorkspace(diagnosticSource,[],17);assert.equal
 const diagnosticBlob=await buildTemporaryConfigArchive(diagnosticSource,diagnosticRun,17);
 const diagnosticImport=await readConfigPackageWithDiagnostics(new File([await diagnosticBlob.arrayBuffer()],'c17-temporary.zip'));
 assert.deepEqual(diagnosticImport.config,wire(diagnosticSource));assert.equal(diagnosticImport.diagnostic?.report.valid,false);assert.equal(diagnosticImport.recheckReason,undefined);
+const wrongPath=structuredClone(fixture),wrongPathImage=(wrongPath.nodes.find(n=>n.nodeId===node.nodeId)!.geometryProfiles.Point!.zoomPriority.rules[0].style!.pointSymbol as Extract<PointSymbol,{kind:'externalImage'}>).image;
+assert.equal(wrongPathImage.mode,'fixed');if(wrongPathImage.mode==='fixed')wrongPathImage.url='https://outside.invalid/N1.png';
+assert.deepEqual(validateNativeStructure(wrongPath),[],'a wrong library path is semantic, not a broken document structure');
+const wrongRun=await validateWorkspace(wrongPath,[],18);assert.equal(wrongRun.report.valid,false);
+await assert.rejects(()=>buildConfigPackageArchive(wrongPath,wrongRun.report),/配置无效/);
+const repairBlob=await buildTemporaryConfigArchive(wrongPath,wrongRun,18),repair=await readConfigPackageWithDiagnostics(new File([await repairBlob.arrayBuffer()],'repair-library-path.zip'));
+assert.deepEqual(repair.config,wire(wrongPath));assert.equal(repair.diagnostic?.report.valid,false);
 const catalogue = await scanImageLibrary(path.resolve('public/image-library'));
 assert(catalogue.length >= 25, 'the initial library remains available; new uploaded files need no test/index edits'); assert.equal(new Set(catalogue.map(image => image.name.toLowerCase())).size, catalogue.length);
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cairn-image-library-'));

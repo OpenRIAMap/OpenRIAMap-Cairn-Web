@@ -1,7 +1,7 @@
 {
   "schemaVersion": "cairnmap.validation-kernel.v1",
   "rulesVersion": "cairnmap-c17-production-1",
-  "sha256": "c5a1d7946a1d9ed6535922c80fc842d9b3e74d1aefb874fdb784e760234ac7e7",
+  "sha256": "10a5039b2fbe0a37d88212c5a9467a3a6d78b4c683ca80b884551c8778e1d8e9",
   "sourceTextEol": "LF",
   "sources": {
     ".cairn/formal-data-source-runtime.json": "9a925beb75448ec20bd50503df9b97f1b5b2d0104598c34bdbb4cdf292b0fb38",
@@ -103,7 +103,7 @@
     "src/configStudio/multipartPolicy.ts": "0c73fa2cb2503e1ba4f585d4d2223ef994aba8072676d91afecabacb4ec3d88f",
     "src/configStudio/native-contract-schema.generated.json": "e434c825a34dd4cef78187acc097f0a88ed101e5d47ce63c697b53def0da1051",
     "src/configStudio/nativeArchive.ts": "94b10c30d9ee25b9daa708da9aaa514fdfd04633028b4e33d4b712394158496a",
-    "src/configStudio/nativeContractValidation.ts": "dd91ceddd294bf1521ac72dcbb8b636cf266cc81fe62119f3a7c47cd949ca566",
+    "src/configStudio/nativeContractValidation.ts": "16ed394f6ad7ef59fbd6a418e869ff355d4eb8d60c50a299e015c9b13ec62372",
     "src/configStudio/navigationValidation.ts": "db87e195969a3e58d2858958999c7ebee4acdc4599b3a7b2b2e28ee98db2f79e",
     "src/configStudio/nodeFieldSettings.ts": "74ea4f452c8878ebcef6c7aa0986a4cb12e4223feb57aa5b38546c30c6e7b7b7",
     "src/configStudio/optionalFieldValues.ts": "86e0fdb7d6d31c400f983bc535ca87a0789a08c8616f0cccd0f16a73cc32d997",
