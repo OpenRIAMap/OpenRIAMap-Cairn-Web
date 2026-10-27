@@ -4,7 +4,7 @@ from urllib.request import build_opener,ProxyHandler,Request
 from pathlib import Path
 from browser_check import Browser,APP_URL,OUT
 assert APP_URL.startswith('http://127.0.0.1:')
-assert os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514','9524','9338')
+assert os.environ.get('CAIRNMAP_CDP_PORT') in ('9502','9514','9524','9338','9517')
 
 class C15Browser(Browser):
     def call(self,method,params=None):
@@ -170,14 +170,14 @@ try:
     b.wait("Boolean(document.querySelector('img.leaflet-marker-icon[src^=\"data:image/svg\"]'))",30)
     record('Icon catalogue/configuration modal with live Halo preview, confirmation and actual SVG map symbol')
     # Each image definition owns its halo; no pixel access or cross-origin canvas.
-    select(point+' select','externalImage');select_label(point,'图片链接来源','fixed');image_url=APP_URL+'/icons/pinhead/v25/bus.svg'
+    select(point+' select','externalImage');select_label(point,'图片来源','fixed');image_url=APP_URL+'/icons/pinhead/v25/bus.svg'
     fill(point,'图片 URL',image_url);click_selector(point+' [aria-label="Halo 外环"] input[type=checkbox]')
     b.wait("Boolean(document.querySelector('.ria-config-image-marker img'))",30)
     fixed=b.evaluate("(()=>{const e=document.querySelector('.ria-config-image-marker img'),r=e.getBoundingClientRect();return {w:r.width,h:r.height,outline:getComputedStyle(e).outlineStyle}})()")
     assert fixed=={'w':24,'h':24,'outline':'none'},fixed
     b.screenshot('c14-image-rectangle-halo.png')
     source_select=point+' select' # Point kind; source mode is selected by its label below.
-    select_label(point,'图片链接来源','valueMap');select_label(point,'图片映射字段','Name');inside(point,'添加图片映射行')
+    select_label(point,'图片来源','valueMap');select_label(point,'图片映射字段','Name');inside(point,'添加图片映射行')
     def row(index):
         b.evaluate("[...document.querySelector("+json.dumps(point)+").querySelectorAll('section.cm-item')].forEach((e,i)=>e.setAttribute('data-c14-image-row',i))")
         return point+' [data-c14-image-row="'+str(index)+'"]'
@@ -190,9 +190,9 @@ try:
     settings=document("nodes.find(n=>n.path.class==='SBP').geometryProfiles.Point.zoomPriority.rules.find(r=>r.id==="+json.dumps(rule_id)+").style.pointSymbol.image.entries.map(r=>({value:r.value,width:r.presentation.sizePx.width,halo:r.presentation.halo.widthPx}))")
     assert settings==[{'value':'HALO_IMAGE_A','width':24,'halo':2},{'value':'HALO_IMAGE_B','width':40,'halo':4}],settings
     b.screenshot('c14-image-map-independent-halo.png');inside(second,'删除图片行')
-    select_label(point,'图片链接来源','fieldUrl');select_label(point,'图标 URL 字段','Name')
+    select_label(point,'图片来源','fieldUrl');select_label(point,'图标 URL 字段','Name')
     b.wait("!document.querySelector('.ria-config-image-marker')")
-    select_label(point,'图片链接来源','externalFieldUrl');select_label(point,'目标要素 ID 所在字段','ID');fill(point,'目标要素的图片 URL 字段路径','Name')
+    select_label(point,'图片来源','externalFieldUrl');select_label(point,'目标要素 ID 所在字段','ID');fill(point,'目标要素的图片 URL 字段路径','Name')
     b.wait("!document.querySelector('.ria-config-image-marker')")
     # Fallback is independent of the failed image's rectangle.
     fallback=point+' fieldset.cm-subsection:last-child'

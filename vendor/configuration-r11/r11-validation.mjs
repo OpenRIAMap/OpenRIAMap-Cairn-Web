@@ -9763,15 +9763,15 @@ var require_lib3 = __commonJS({
 });
 
 // src/configStudio/contract.ts
-var NATIVE_CONFIG_REVISION = 16;
+var NATIVE_CONFIG_REVISION = 17;
 var CONTRACT_CAPABILITIES = {
   latest: NATIVE_CONFIG_REVISION,
-  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-  category: [9, 10, 11, 12, 13, 14, 15, 16],
-  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-  publication: [11, 12, 13, 14, 15, 16],
-  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16]] }
+  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+  category: [9, 10, 11, 12, 13, 14, 15, 16, 17],
+  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+  publication: [11, 12, 13, 14, 15, 16, 17],
+  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17]] }
 };
 var supportsContract = (capability, value) => typeof value === "number" && CONTRACT_CAPABILITIES[capability].includes(value);
 function isNativeConfigRevision(value) {
@@ -11072,6 +11072,31 @@ function scalarValueErrors(field, value) {
 }
 var validMappedColor = (color) => typeof color === "string" && /^#[a-f\d]{6}$/i.test(color);
 
+// src/configStudio/imageLibrary.ts
+var IMAGE_LIBRARY_PREFIX = "/image-library/";
+var IMAGE_LIBRARY_EXTENSIONS = ["png", "jpg", "jpeg", "webp", "gif", "avif"];
+function supportedLibraryFilename(name) {
+  return Boolean(name && name.trim() === name && !/[\\/\u0000-\u001f\u007f<>:"|?*]/.test(name) && IMAGE_LIBRARY_EXTENSIONS.some((extension) => name.toLowerCase().endsWith("." + extension)));
+}
+function imageLibraryUrl(name) {
+  if (!supportedLibraryFilename(name)) throw Error(`\u56FE\u7247\u5E93\u6587\u4EF6\u540D\u4E0D\u5408\u6CD5\uFF1A${name}`);
+  return IMAGE_LIBRARY_PREFIX + encodeURIComponent(name);
+}
+function imageLibraryFilename(value) {
+  if (typeof value !== "string" || !value.startsWith(IMAGE_LIBRARY_PREFIX)) return;
+  try {
+    const name = decodeURIComponent(value.slice(IMAGE_LIBRARY_PREFIX.length));
+    return supportedLibraryFilename(name) && imageLibraryUrl(name) === value ? name : void 0;
+  } catch {
+    return;
+  }
+}
+function imageSourceFormProblems(value, contractRevision) {
+  if (contractRevision < 17) return value.sourceForm === void 0 ? [] : [{ path: "sourceForm", message: "\u56FE\u7247\u6765\u6E90\u5F62\u5F0F\u6700\u4F4E\u8981\u6C42\u5951\u7EA6 c17\uFF0C\u8BF7\u5148\u660E\u786E\u8FC1\u79FB\u3002" }];
+  if (value.sourceForm !== "url" && value.sourceForm !== "library") return [{ path: "sourceForm", message: "c17 \u56FE\u7247\u5FC5\u987B\u660E\u786E\u8BBE\u7F6E\u6765\u6E90\u5F62\u5F0F\u4E3A URL \u6216\u56FE\u7247\u5E93\uFF0C\u4E0D\u80FD\u6839\u636E\u5730\u5740\u63A8\u65AD\u3002" }];
+  return value.sourceForm === "library" && !imageLibraryFilename(value.url) ? [{ path: "url", message: "\u56FE\u7247\u5E93\u6765\u6E90\u5FC5\u987B\u4F7F\u7528 /image-library/ \u4E0B\u652F\u6301\u7684\u56FE\u7247\u6587\u4EF6\u5730\u5740\uFF0C\u4E0D\u5F97\u5305\u542B\u5B50\u76EE\u5F55\u3001\u67E5\u8BE2\u53C2\u6570\u6216\u7247\u6BB5\u3002" }] : [];
+}
+
 // src/configStudio/pointSymbol.ts
 var ICON_LIBRARY = { library: "pinhead", version: pinhead_capabilities_generated_default.version, manifestSha256: pinhead_capabilities_generated_default.manifestSha256 };
 var iconIds = new Set(pinhead_capabilities_generated_default.ids);
@@ -11152,13 +11177,17 @@ function pointSymbolProblems(value, fields, config) {
       if (!range(p.sizePx.width, 1, 2048) || !range(p.sizePx.height, 1, 2048)) fail(at, "\u56FE\u7247\u5BBD\u9AD8\u987B\u4ECB\u4E8E 1\u20132048px\u3002");
       placement(p.placement, at + "/placement");
     };
-    if (source.mode === "valueMap") rows(source.field, source.entries, "image", (row2, at) => {
+    const reference = (row2, at) => {
+      for (const issue2 of imageSourceFormProblems(row2, config.contractRevision)) fail(at + "/" + issue2.path, issue2.message);
       if (!acceptableImageUrl(row2.url)) fail(at + "/url", "\u56FE\u7247\u94FE\u63A5\u5FC5\u987B\u662F\u6709\u6548 HTTP(S) \u6216\u7AD9\u5185\u5730\u5740\u3002");
+    };
+    if (source.mode === "valueMap") rows(source.field, source.entries, "image", (row2, at) => {
+      reference(row2, at);
       presentation(row2.presentation, at + "/presentation");
     });
     else {
       presentation(source.presentation, "image/presentation");
-      if (source.mode === "fixed" && !acceptableImageUrl(source.url)) fail("image/url", "\u56FE\u7247\u94FE\u63A5\u5FC5\u987B\u662F\u6709\u6548 HTTP(S) \u6216\u7AD9\u5185\u5730\u5740\u3002");
+      if (source.mode === "fixed") reference(source, "image");
       if (source.mode === "fieldUrl") field(source.field, "image/field");
       if (source.mode === "externalFieldUrl") {
         const id2 = field(source.targetIdField, "image/targetIdField");
@@ -20645,17 +20674,27 @@ var native_contract_schema_generated_default = {
         mode: {
           const: "fixed"
         },
+        presentation: {
+          ref: "t153"
+        },
         url: {
           type: "string"
         },
-        presentation: {
-          ref: "t153"
+        sourceForm: {
+          anyOf: [
+            {
+              const: "url"
+            },
+            {
+              const: "library"
+            }
+          ]
         }
       },
       required: [
         "mode",
-        "url",
-        "presentation"
+        "presentation",
+        "url"
       ]
     },
     t155: {
@@ -20719,17 +20758,27 @@ var native_contract_schema_generated_default = {
             }
           ]
         },
+        presentation: {
+          ref: "t153"
+        },
         url: {
           type: "string"
         },
-        presentation: {
-          ref: "t153"
+        sourceForm: {
+          anyOf: [
+            {
+              const: "url"
+            },
+            {
+              const: "library"
+            }
+          ]
         }
       },
       required: [
         "value",
-        "url",
-        "presentation"
+        "presentation",
+        "url"
       ]
     },
     t157: {
@@ -24874,6 +24923,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: 16
+            },
+            {
+              const: 17
             }
           ]
         },
@@ -25043,6 +25095,13 @@ function validateNativeStructure(value) {
     if (!c15 && (!output.classification || output.classificationGroup)) issues.push({ path: at, message: "\u6B64\u5386\u53F2\u5951\u7EA6\u5FC5\u987B\u4F7F\u7528\u5355\u8DEF\u5F84\u8F93\u51FA\uFF0C\u5206\u7C7B\u7EC4\u6700\u4F4E\u8981\u6C42 c15\u3002" });
   }
   const check = (style, path2, required) => {
+    if (style?.pointSymbol?.kind === "externalImage") {
+      const image = style.pointSymbol.image, at = path2 + "/pointSymbol/image";
+      if (image.mode === "fixed" || image.mode === "valueMap") {
+        const rows = image.mode === "fixed" ? [{ value: image, path: at }] : image.entries.map((value2, index) => ({ value: value2, path: `${at}/entries/${index}` }));
+        for (const row2 of rows) for (const issue2 of imageSourceFormProblems(row2.value, config.contractRevision)) issues.push({ path: row2.path + "/" + issue2.path, message: issue2.message });
+      }
+    }
     const halos = [{ path: path2 + "/halo", value: style?.halo, required }, ...symbolHalos(style?.pointSymbol).map((row2) => ({ path: path2 + "/pointSymbol/" + row2.path, value: row2.value, required: config.contractRevision >= 14 }))];
     for (const row2 of halos) {
       if (config.contractRevision < 14 && row2.value !== void 0) issues.push({ path: row2.path, message: "Halo \u6700\u4F4E\u8981\u6C42\u5951\u7EA6 c14\uFF0C\u4E0D\u80FD\u5728\u65E7\u5951\u7EA6\u4E2D\u52A0\u5165\u65B0\u5C5E\u6027\u3002" });
@@ -26534,7 +26593,7 @@ async function readRawNativePackage(file, options = {}) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-c16-production-1";
+var rulesVersion = "cairnmap-c17-production-1";
 var validateConfiguration = validateConfigPackage;
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));

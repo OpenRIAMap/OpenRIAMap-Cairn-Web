@@ -20,7 +20,7 @@ import { compileConfigRuntime } from '../../src/configStudio/runtime';
 import { DynmapProjection, createDynmapCRS, ZTH_FLAT_CONFIG } from '../../src/lib/DynmapProjection';
 import { MAP_ZOOM_BOUNDS } from '../../src/lib/mapZoom';
 import {preferredExternalCapturePaths} from '../../src/configStudio/externalCapturePaths';
-const classificationSeed:ConfigPackageV3|undefined=location.search.includes('c16=1')?await fetch('/configuration/current.json').then(r=>r.json()).then(identity=>fetch(identity.configUrl)).then(r=>r.json()).then(c16AcceptanceConfig):location.search.includes('classification=1')?await (async()=>{
+const classificationSeed:ConfigPackageV3|undefined=location.search.includes('c16=1')?await fetch('/configuration/releases/44e87b2a96db47e7b2b8abaf1bd19f1e1c3bc54fb501bc0df6a28c18bb756d07/config.json').then(r=>r.json()).then(c16AcceptanceConfig):location.search.includes('classification=1')?await (async()=>{
   // Immutable actual UI-authored A snapshot; future active configs cannot
   // silently change this regression's classification fixture.
   const config:ConfigPackageV3=await fetch('/configuration/releases/fdf0b20f0b1a8efef813b3525b4d95232c9bf372ca8c9800aec67c143282db5b/config.json').then(r=>r.json());

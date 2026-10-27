@@ -9,8 +9,8 @@ const result=await build({absWorkingDir:root,entryPoints:[resolve(root,'scripts/
 const files=Object.keys(result.metafile.inputs).sort(),sources={};
 if(files.some(file=>/^(?:\.\.[\\/]|[A-Za-z]:|\/)/.test(file)))throw Error('Validation kernel includes an external workspace path; build must be reproducible from this repository.');
 for(const file of files)sources[file.replaceAll('\\','/')]=createHash('sha256').update((await readFile(resolve(root,file),'utf8')).replaceAll('\r\n','\n')).digest('hex');
-const body=Buffer.from(result.outputFiles[0].contents),manifest=Buffer.from(JSON.stringify({schemaVersion:'cairnmap.validation-kernel.v1',rulesVersion:'cairnmap-c16-production-1',sha256:createHash('sha256').update(body).digest('hex'),sourceTextEol:'LF',sources},null,2)+'\n');
+const body=Buffer.from(result.outputFiles[0].contents),manifest=Buffer.from(JSON.stringify({schemaVersion:'cairnmap.validation-kernel.v1',rulesVersion:'cairnmap-c17-production-1',sha256:createHash('sha256').update(body).digest('hex'),sourceTextEol:'LF',sources},null,2)+'\n');
 if(checking){
   for(const [name,bytes] of [['r11-validation.mjs',body],['manifest.json',manifest]])if(!bytes.equals(await readFile(resolve(target,name))))throw Error('Validation kernel is stale: '+resolve(target,name));
 }else{await mkdir(target,{recursive:true});await writeFile(resolve(target,'r11-validation.mjs'),body);await writeFile(resolve(target,'manifest.json'),manifest);}
-console.log(`${checking?'Verified':'Built'} pure Node c11–c16 validator: ${files.length} inputs, ${body.length} bytes; no React/Leaflet/Zustand.`);
+console.log(`${checking?'Verified':'Built'} pure Node c11–c17 validator: ${files.length} inputs, ${body.length} bytes; no React/Leaflet/Zustand.`);
