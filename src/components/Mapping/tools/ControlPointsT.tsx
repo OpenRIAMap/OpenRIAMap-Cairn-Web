@@ -29,6 +29,8 @@ export type ControlPointsTHandle = {
 };
 
 type ControlPointsTProps = {
+  /** The measuring editor's numbering view is read-only, including late writes. */
+  readOnly?: boolean;
   mapReady: boolean;
   leafletMapRef: MutableRefObject<L.Map | null>;
   projectionRef: MutableRefObject<DynmapProjection | null>;
@@ -264,6 +266,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
     activeMode,
     activeColor,
     activeCoords,
+    readOnly=false,
     onApplyActiveCoords,
     validateCandidateCoords,
     onSessionStateChange,
@@ -278,6 +281,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
     onEnterAddModeConfigureAssistLine,
     onExitAddModeRestoreAssistLine,
   } = props;
+  const readOnlyRef=useRef(readOnly);readOnlyRef.current=readOnly;
 
   // Kept solely for backwards-compatible imperative closes. No visible entry
   // opens this legacy container; all user actions are now the inline command bar.
@@ -330,7 +334,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
 
   const fmt = useCallback((p: WorldPoint) => `${formatGridNumber(p.x)}, ${formatGridNumber(p.z)}`, []);
 
-  const modeOk = useMemo(() => activeMode === 'polyline' || activeMode === 'polygon', [activeMode]);
+  const modeOk = useMemo(() => !readOnly&&(activeMode === 'polyline' || activeMode === 'polygon'), [activeMode,readOnly]);
   const arrayGeometryType = useMemo(() => getGeometryTypeForArrayEditor(activeMode), [activeMode]);
 
   const sessionCoords = useMemo<WorldPoint[]>(() => {
@@ -534,6 +538,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
       });
 
       marker.on('click', (e: any) => {
+        if(readOnlyRef.current)return;
         if (e?.originalEvent) {
           L.DomEvent.stop(e.originalEvent);
         }
@@ -579,6 +584,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
     if (!map) return;
 
     const onMapClick = (e: L.LeafletMouseEvent) => {
+      if(readOnlyRef.current)return;
       if (!editEnabled) return;
       if (!editPanelOpen) return;
       if (!modeOk) return;
@@ -635,6 +641,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
     if (!map) return;
 
     const onMapClick = (e: L.LeafletMouseEvent) => {
+      if(readOnlyRef.current)return;
       if (!addEnabled) return;
       if (!addPanelOpen) return;
       if (!modeOk) return;
@@ -710,6 +717,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
 
   // -------- 撤回/恢复 --------
   const doUndo = useCallback(() => {
+    if(readOnlyRef.current)return;
     setUndoStack((u) => {
       if (!u.length) return u;
       const last = u[u.length - 1];
@@ -738,6 +746,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
   }, [activeCoords]);
 
   const doRedo = useCallback(() => {
+    if(readOnlyRef.current)return;
     setRedoStack((r) => {
       if (!r.length) return r;
       const last = r[r.length - 1];
@@ -767,13 +776,15 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
   // -------- 保存（应用到当前要素，并关闭窗口）--------
   const commitAndClose = useCallback(
     (mode: 'edit' | 'add' | 'delete') => {
+      if(readOnlyRef.current)return;
       const coords = (workingCoords ?? activeCoords).slice();
-
+      const error=validateCandidateCoords?.(coords);
+      if(error){setStatusText(error);return;}
       onApplyActiveCoords?.(coords);
 
       endAllModes({ restoreAssistLine: mode === 'add' });
     },
-    [workingCoords, activeCoords, onApplyActiveCoords, endAllModes]
+    [workingCoords, activeCoords, onApplyActiveCoords, endAllModes, validateCandidateCoords]
   );
 
   const tryClosePanelDiscard = useCallback(
@@ -804,6 +815,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
   }, []);
 
   const openArrayEditor = useCallback(() => {
+    if(readOnlyRef.current)return;
     if (arrayEditorOpen) return;
     if (!arrayGeometryType) {
       setStatusText('数组编辑：当前没有可编辑的要素类型');
@@ -872,6 +884,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
   }, [arrayGeometryType, arrayText, arrayDefaultY, validateCandidateCoords]);
 
   const applyArrayEditorToDraft = useCallback(() => {
+    if(readOnlyRef.current)return false;
     if (!arrayValidated || !arrayValidatedCoords) return false;
 
     const applied = arrayValidatedCoords.map((p) => ({ ...p }));
@@ -1143,7 +1156,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
 
   const canEdit = useMemo(() => modeOk && activeCoords.length >= 1, [modeOk, activeCoords.length]);
   const canAdd = useMemo(() => modeOk && activeCoords.length >= 2, [modeOk, activeCoords.length]);
-  const canArrayEdit = useMemo(() => Boolean(arrayGeometryType) && activeCoords.length >= 1, [arrayGeometryType, activeCoords.length]);
+  const canArrayEdit = useMemo(() => !readOnly&&Boolean(arrayGeometryType) && activeCoords.length >= 1, [readOnly,arrayGeometryType, activeCoords.length]);
 
   const busy = useMemo(() => Boolean(editEnabled || addEnabled || deleteEnabled), [editEnabled, addEnabled, deleteEnabled]);
 
@@ -1157,7 +1170,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
   }, [modeOk, activeCoords.length, busy, arrayEditorOpen, onApplyActiveCoords]);
 
   const doReverse = useCallback(() => {
-    if (!canReverse) return;
+    if (readOnlyRef.current||!canReverse) return;
 
     const base = activeCoords.slice();
 
@@ -1166,10 +1179,11 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
     }
 
     const reversed = base.slice().reverse();
-
+    const error=validateCandidateCoords?.(reversed);
+    if(error){setStatusText(error);return;}
     onApplyActiveCoords?.(reversed);
     setStatusText('已执行：控制点顺序反转');
-  }, [canReverse, activeCoords, activeMode, onApplyActiveCoords]);
+  }, [canReverse, activeCoords, activeMode, onApplyActiveCoords,validateCandidateCoords]);
 
   return (
     <div className="mt-2">
