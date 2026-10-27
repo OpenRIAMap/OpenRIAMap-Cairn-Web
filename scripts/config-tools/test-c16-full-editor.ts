@@ -1,14 +1,14 @@
 import {editableGeometryProfile} from '../../src/configStudio/renderRuleTemplates';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
+import {readC16MigrationSource} from './fixtures/c16-migration-source';
 import {migratePackageToC16} from '../../src/configStudio/contractMigration';
 import {validateConfigPackage} from '../../src/configStudio/runtime';
 import {fullEditorWorkflow,initializeFullEditor,prepareFullEditorCreate} from '../../src/configStudio/fullEditor';
 import {compileWorkflowEditPlan,hydrateWorkflowEdit} from '../../src/configStudio/workflowEditing';
 import {prepareNativeWorkflowEdit} from '../../src/configStudio/workflowEditCommit';
-import type {ConfigPackageV3,WorkflowDefinition} from '../../src/configStudio/types';
+import type {WorkflowDefinition} from '../../src/configStudio/types';
 
-const current=JSON.parse(fs.readFileSync('public/configuration/current.json','utf8')),base=JSON.parse(fs.readFileSync('public'+current.configUrl,'utf8')) as ConfigPackageV3;
+const base=readC16MigrationSource();
 const config=migratePackageToC16(base).config,path={class:'NEWCLASS'},profile=editableGeometryProfile('Point',16);
 config.nodes.push({nodeId:'newclass',path,geometryType:'Point',children:[],fields:[
  {fieldId:'new-name',key:'Name',type:'string',cardinality:'single',input:'text',labels:{zh:'新名字',en:''},description:{zh:'',en:''},required:true},

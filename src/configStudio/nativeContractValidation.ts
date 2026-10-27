@@ -1,5 +1,6 @@
 import generated from './native-contract-schema.generated.json';
 import {symbolHalos} from './halo';
+import {imageSourceFormProblems} from './imageLibrary';
 import type {ConfigPackageV3,RenderStyle} from './types';
 type Schema = { ref?: string; type?: string; const?: unknown; anyOf?: Schema[]; tuple?: Schema[]; items?: Schema; properties?: Record<string, Schema>; required?: string[]; additionalProperties?: Schema };
 export type NativeStructureIssue = { path: string; message: string };
@@ -71,6 +72,15 @@ export function validateNativeStructure(value: unknown): NativeStructureIssue[] 
     if(!c15&&(!output.classification||output.classificationGroup))issues.push({path:at,message:'此历史契约必须使用单路径输出，分类组最低要求 c15。'});
   }
   const check=(style:RenderStyle|undefined,path:string,required:boolean)=>{
+    if(style?.pointSymbol?.kind==='externalImage'){
+      const image=style.pointSymbol.image,at=path+'/pointSymbol/image';
+      if(image.mode==='fixed'||image.mode==='valueMap'){
+        const rows=image.mode==='fixed'?[{value:image,path:at}]:image.entries.map((value,index)=>({value,path:`${at}/entries/${index}`}));
+        // Intent is structural; URL policy is semantic so a diagnostic package
+        // with a wrong path remains safely importable for repair.
+        for(const row of rows)for(const issue of imageSourceFormProblems(row.value,config.contractRevision).filter(issue=>issue.path==='sourceForm'))issues.push({path:row.path+'/'+issue.path,message:issue.message});
+      }
+    }
     const halos=[{path:path+'/halo',value:style?.halo,required},...symbolHalos(style?.pointSymbol).map(row=>({path:path+'/pointSymbol/'+row.path,value:row.value,required:config.contractRevision>=14}))];
     for(const row of halos){
       if(config.contractRevision<14&&row.value!==undefined)issues.push({path:row.path,message:'Halo 最低要求契约 c14，不能在旧契约中加入新属性。'});

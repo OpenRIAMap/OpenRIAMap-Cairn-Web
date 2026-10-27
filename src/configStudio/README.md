@@ -2,6 +2,14 @@
 
 修改本模块前先阅读 [契约更新要求](../../docs/20_config-reference/ContractUpdates.md)。它是后续人工和 AI 更新工作台的维护约定。
 
+## c17：内部图片库与显式图片来源
+
+- 固定图片保存 `image.sourceForm`，字段分类映射每行保存 `entries[i].sourceForm`，值为 `url`／`library`。为表示历史配置，TS 属性可省略，但 c17 结构及语义核验要求它必填；旧契约禁止写入。不得从 URL 前缀推断或重新指定来源形式。
+- `imageLibrary.ts` 是 Web、构建目录扫描及共享 Node 内核的纯路径策略；`c17Migration.ts` 由统一相邻迁移注册表调用。c16→c17 为旧固定图片／映射行补 `url`，保留地址、参数和其他内容；普通读取、缓存恢复及保存不迁移。
+- `ImageReferenceEditor` 管理来源形式及各形式的临时输入；`ImageLibraryPicker` 只选图片，确认原子写入标记与地址，取消不修改外部表单。行键复用现有稳定预览身份，大小、锚点、偏移、Halo 和全局回退仍独立。
+- 图片放在 `public/image-library/`，无需维护索引。`scripts/image-library-plugin.mjs` 在构建／开发时自动扫描，通过虚拟模块提供文件名和地址；添加图片后正常部署 Web 即可。不要为目录枚举增加 SCF 接口，也不要把图片内联进配置包。
+- `library` 路径格式由共享规则核验，文件是否已部署只影响编辑提示和运行回退，不作为服务端联网核验条件。URL 模式即使指向同一目录也必须保持 URL 意图。参见 [图片库维护与使用](../../docs/20_config-reference/ImageLibrary.md)。
+
 ## 契约更新要求
 
 - 配置修订使用 `rN`，契约使用 `cN`；内部 `revision`、`contractRevision` 保持数字。身份展示和能力门禁取 `contract.ts`，不把标题、编辑范围和正式发布范围混用。

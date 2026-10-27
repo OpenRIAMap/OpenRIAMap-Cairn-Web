@@ -4,6 +4,7 @@ import {resolveMappedColor} from '../../../configStudio/renderScalar';
 import { validCssColor } from '../../../configStudio/cssColor';
 import {haloWidth} from '../../../configStudio/halo';
 import { placementAnchor, acceptableImageUrl, pointSymbolReach } from '../../../configStudio/pointSymbol';
+import { imageSourceFormProblems } from '../../../configStudio/imageLibrary';
 import { composeIconSvg,iconCanvas } from '../../../configStudio/iconComposition';
 import { pinheadPath, externalImageAsset, symbolAssetEpoch } from '../rendering/symbolAssets';
 import {buildStructureIndex,structureSelector,STRUCTURE_CONTEXT_ID,type StructureIndex} from '../../../configStudio/structureRoleIndex';
@@ -692,12 +693,13 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
   if (pointSymbol && pointSymbol.kind !== 'shape') {
     let url: string | undefined, size: [number, number] | undefined, anchor: [number, number] | undefined;
     let status: 'pending' | 'success' | 'failure' = 'failure';
+    let assetReason: string | undefined;
     let imageHalo:import('../rendering/geometryHalo').ResolvedHalo|undefined,hitIconSize:[number,number]|undefined,hitIconAnchor:[number,number]|undefined,haloInsetPx=0;
     if (pointSymbol.kind === 'icon') {
       const source = pointSymbol.icon;
       const item = source.mode === 'single' ? source.item : source.entries.find(row => row.value === featureValue(record, source.field))?.item;
       if (item) {
-        const asset = pinheadPath(item.id); status = asset.phase;
+        const asset = pinheadPath(item.id); status = asset.phase; assetReason = asset.reason;
         if (asset.phase === 'success' && asset.value) {
           url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(composeIconSvg(item, asset.value, (binding, fallback) => resolveColor(record, binding, fallback, store),config.contractRevision>=15));
           const canvas=iconCanvas(item);hitIconSize=[item.sizePx,item.sizePx];hitIconAnchor=placementAnchor(item.placement,...hitIconSize);
@@ -706,26 +708,29 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
       }
     } else {
       const source = pointSymbol.image;
-      let candidate: unknown, presentation: import('../../../configStudio/types').ImagePresentation | undefined;
-      if (source.mode === 'valueMap') { const hit = source.entries.find(row => row.value === featureValue(record, source.field)); candidate = hit?.url; presentation = hit?.presentation; }
+      let candidate: unknown, presentation: import('../../../configStudio/types').ImagePresentation | undefined, reference: import('../../../configStudio/types').ImageReference | undefined;
+      if (source.mode === 'valueMap') { const hit = source.entries.find(row => row.value === featureValue(record, source.field)); reference = hit; candidate = hit?.url; presentation = hit?.presentation; if(!hit)assetReason='图片映射未命中当前字段保存值'; }
       else {
         presentation = source.presentation;
-        if (source.mode === 'fixed') candidate = source.url;
+        if (source.mode === 'fixed') { reference = source; candidate = source.url; }
         else if (source.mode === 'fieldUrl') candidate = featureValue(record, source.field);
         else {
           const id = featureValue(record, source.targetIdField);
           const target = uniqueImageTarget(store,record,String(ctx.worldId),id);
           if (target) candidate = featureValue(target, source.targetUrlField);
+          else assetReason = '外部图片目标要素缺失或在当前来源／世界中不唯一';
         }
       }
-      if (acceptableImageUrl(candidate) && presentation) {
-        const asset = externalImageAsset(candidate); status = asset.phase;
+      const formProblems=reference?imageSourceFormProblems(reference,config.contractRevision):[];
+      if(formProblems.length)assetReason=formProblems.map(issue=>issue.message).join('；');
+      if (!formProblems.length && acceptableImageUrl(candidate) && presentation) {
+        const asset = externalImageAsset(candidate); status = asset.phase; assetReason = asset.reason;
         if (status === 'success') { imageHalo=haloWidth(presentation.halo)>0?{widthPx:haloWidth(presentation.halo),color:resolveColor(record,presentation.halo!.color,'#ffffff',store),cutout:config.contractRevision>=15}:undefined; url = candidate; size = [presentation.sizePx.width, presentation.sizePx.height]; anchor = placementAnchor(presentation.placement, ...size); }
-      }
+      } else assetReason ??= '图片来源为空或地址不合法';
     }
     if (status === 'pending') nativePointPlan = { ...nativePointPlan, kind: 'shape',shape:'circle', radius: 0,halo:undefined,imageHalo:undefined, style: { ...pathStyle, opacity: 0, fillOpacity: 0, weight: 0, interactive: false }, assetStatus: status };
     else if (status === 'success' && url && size && anchor) nativePointPlan = { ...nativePointPlan, kind: 'icon', halo:undefined,iconUrl: url, iconUrlFrom: undefined, iconSize: size, iconAnchor: anchor, imageHalo,hitIconSize,hitIconAnchor,haloInsetPx,assetStatus: status };
-    else nativePointPlan = { ...nativePointPlan, assetStatus: 'failure' };
+    else nativePointPlan = { ...nativePointPlan, assetStatus: 'failure', assetReason: assetReason ?? '图像资源缺失，使用规则回退' };
   }
 
   return {

@@ -341,6 +341,9 @@ const entries:Record<string,string>={
   '角度':'设置文字或符号的屏幕旋转角度，单位为度。沿线策略仍会按路径和可读方向约束实际显示。',
   '旋转':'设置标签旋转方式或角度，检查短线、转弯和竖排时的可读性；不旋转源几何。',
   '图标 URL 字段':'从此字段读取点图标地址。启用外部图标后使用所设尺寸和锚点，失败行为由图标回退设置控制。',
+  '来源形式':'URL 使用填写的地址，图片库从 Web 内置文件中选择。c17 明确保存所选形式，重新打开或导入不会根据地址猜测。',
+  '搜索文件名':'按图片库文件名筛选，忽略大小写；以空格分隔的关键词需要同时匹配。选图不会修改外部尺寸、定位或 Halo 设置。',
+  '图片 URL':'填写 HTTP(S) 或站内图片地址。即使填写图片库地址，URL 形式仍保持 URL；宽高、锚点、Halo 在外部设置。',
   '图标锚点':'指定图片内与地图几何位置对齐的像素位置。它与标签九方向锚点及屏幕偏移分别设置。',
   '图标缺失时':'选择图标加载失败时隐藏还是退回普通点符号，不读取其他记录的图标替代。',
   '取值':'选择指标值从面积、长度、部件数量还是字段计算；后续倍率、合成和上下限控制最终权重。',
@@ -439,6 +442,7 @@ export function resolveSettingHelp(title:string,context:string):HelpResolution {
   if(/^碰撞框 (?:x|y|width|height) 调整 px$/.test(normalized))return {key,text:'对当前文字碰撞矩形的位置或尺寸作屏幕像素调整。它只校准碰撞边界，不能代替真实标签位置偏移或改变源几何。',kind:'semantic'};
   if(/^条件 C\d+ (?:前置关系|比较|值)$/.test(normalized))return {key,text:'设置这个编号条件与前行的 AND/OR/NOT 关系、字段比较运算及所需值。手动公式启用后行连接关系暂停，但编号及比较内容继续使用。',kind:'semantic'};
   if(context.startsWith('GeneralParameterEditor:')&&/^\d+$/.test(normalized))return {key,text:context.includes('/sourceIds/')?'填写使用 GitHub Raw 链接模式的数据源 ID；必须是当前来源组中已登记的来源。':'填写此关联列表的一项目标模块或来源 ID。每项单独保存，必须与当前配置中的已登记身份一致。',kind:'semantic'};
+  if((context==='PointSymbolEditor'||context==='SymbolFormControls')&&normalized==='图片来源')return {key,text:'固定图片、按字段分类逐行映射、直接读取字段地址或绑定外部要素字段；切换不改变各来源的保存含义。',kind:'semantic'};
   const exact=entries[normalized];if(exact)return {key,text:exact,kind:'exact'};
   if(context==='LookupTablesEditor'&&/^[xyz]$/i.test(normalized))return {key,text:'填写返回点的世界坐标，X/Z 表示水平位置，Y 表示高度；不是屏幕像素偏移。坐标必须为有限数字，零也是有效值。',kind:'semantic'};
   for(const [pattern,text] of patterns)if(pattern.test(normalized))return {key,text,kind:'semantic'};

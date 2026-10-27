@@ -1,13 +1,11 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
+import {readC16MigrationSource} from './fixtures/c16-migration-source';
 import {migratePackageToC16,migrateContract} from '../../src/configStudio/contractMigration';
 import {validateConfigPackage} from '../../src/configStudio/runtime';
 import {externalBindingIssues,externalRolePaths,resolveExternalReference} from '../../src/configStudio/externalBindings';
 import {validateNativeStructure} from '../../src/configStudio/nativeContractValidation';
-import type {ConfigPackageV3} from '../../src/configStudio/types';
 
-const identity=JSON.parse(fs.readFileSync('public/configuration/current.json','utf8'));
-const original=JSON.parse(fs.readFileSync('public'+identity.configUrl,'utf8')) as ConfigPackageV3,before=JSON.stringify(original);
+const original=readC16MigrationSource(),before=JSON.stringify(original);
 const {config,report}=migratePackageToC16(original);
 assert.equal(config.contractRevision,16);assert.equal(JSON.stringify(original),before,'input is immutable');
 assert.deepEqual(config.workflows.filter(w=>w.mode==='composed'),original.workflows.filter(w=>w.mode==='composed'));

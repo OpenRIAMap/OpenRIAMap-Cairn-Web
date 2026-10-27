@@ -85,3 +85,5 @@ jobs:
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c16_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c16_tools_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c16_card_acceptance.py
+          "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/image_library_acceptance.py
+          "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c17_studio_acceptance.py

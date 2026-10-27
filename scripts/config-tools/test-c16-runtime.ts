@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
+import {readC16MigrationSource} from './fixtures/c16-migration-source';
 import {migratePackageToC16,migrateContract} from '../../src/configStudio/contractMigration';
 import {prepareSpecializedCapture,recordsAfterExactDeletes} from '../../src/configStudio/nativeRecordSubmission';
 import {externalRolePaths,resolveExternalReference,externalBindingIssues} from '../../src/configStudio/externalBindings';
@@ -13,9 +13,9 @@ import {createMergeDraft,prepareMergeDraft} from '../../src/components/Mapping/S
 import {readMultipartGeometry,type MultipartGeometry} from '../../src/core/geometry/multipartGeometry';
 import {resolveEffectiveFields,resolveGeometryProfile} from '../../src/configStudio/runtime';
 import {readC14MigrationSource} from './fixtures/c14-migration-source';
-import type {ConfigPackageV3,ExternalRole} from '../../src/configStudio/types';
+import type {ExternalRole} from '../../src/configStudio/types';
 import type {WorkflowBridge} from '../../src/components/Mapping/Workflow/WorkflowHost';
-const index=JSON.parse(fs.readFileSync('public/configuration/current.json','utf8')),base=JSON.parse(fs.readFileSync('public'+index.configUrl,'utf8')) as ConfigPackageV3,config=migratePackageToC16(base).config;
+const base=readC16MigrationSource(),config=migratePackageToC16(base).config;
 const point:MultipartGeometry={type:'Point',parts:[{x:1,y:64,z:2}]},ring=[{x:0,y:64,z:0},{x:20,y:64,z:0},{x:20,y:64,z:20},{x:0,y:64,z:20}],polygon:MultipartGeometry={type:'Polygon',parts:[[ring]]},multi:MultipartGeometry={type:'Polygon',parts:[[ring,ring.map(p=>({...p,x:5+p.x/4,z:5+p.z/4}))],[ring.map(p=>({...p,x:p.x+40}))]]},line:MultipartGeometry={type:'LineString',parts:[[ring[0],ring[1]]]};
 const values:Record<ExternalRole,Record<string,unknown>>={railLine:{Name:'rail',bureau:'TEST',line:'A',color:'#123456',direction:1,startplf:'p1',endplf:'p2'},stationArea:{Name:'area',STBuilding:'b',platforms:[{ID:'p'}]},platform:{Name:'platform',Situation:true,Connect:false,lines:[{ID:'l',getin:true,getout:true}]},platformFootprint:{Name:'outline',LineID:'l'},stationBuilding:{Name:'building',Floors:[{ID:'f'}]},stationBuildingPoint:{Name:'building point',Floors:[{ID:'f'}],stations:[{ID:'s'}]},stationFloor:{Name:'floor',NofFloor:'1F',staBuildingID:'b'},tradePoint:{Name:'trade',Trade:[]}};
 for(const workflow of config.workflows.filter(w=>w.mode==='external'&&w.external?.purpose!=='edit'))for(const role of EXTERNAL_COMPONENT_ROLES[workflow.external!.componentKey]){

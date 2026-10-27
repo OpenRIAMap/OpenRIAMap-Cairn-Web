@@ -142,11 +142,14 @@ export type IconItem = {
   placement: SymbolPlacement;
 };
 export type ImagePresentation = { sizePx: { width: number; height: number }; placement: SymbolPlacement; halo?: HaloSettings };
+export type ImageSourceForm = 'url' | 'library';
+/** Optional only to represent historical contracts. c17 requires this property. */
+export type ImageReference = { url: string; sourceForm?: ImageSourceForm };
 export type ImageSource =
-  | { mode: 'fixed'; url: string; presentation: ImagePresentation }
+  | ({ mode: 'fixed'; presentation: ImagePresentation } & ImageReference)
   | { mode: 'fieldUrl'; field: string; presentation: ImagePresentation }
   | { mode: 'externalFieldUrl'; targetIdField: string; targetUrlField: string; presentation: ImagePresentation }
-  | { mode: 'valueMap'; field: string; entries: Array<{ value: string | number | boolean; url: string; presentation: ImagePresentation }> };
+  | { mode: 'valueMap'; field: string; entries: Array<{ value: string | number | boolean; presentation: ImagePresentation } & ImageReference> };
 export type PointSymbol =
   | { kind: 'shape'; shape: BasePointStyle }
   | { kind: 'icon'; icon: { mode: 'single'; item: IconItem } | { mode: 'valueMap'; field: string; entries: Array<{ value: string | number | boolean; item: IconItem }> }; fallback: BasePointStyle }
@@ -966,7 +969,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */

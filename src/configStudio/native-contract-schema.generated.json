@@ -6737,17 +6737,27 @@
         "mode": {
           "const": "fixed"
         },
+        "presentation": {
+          "ref": "t153"
+        },
         "url": {
           "type": "string"
         },
-        "presentation": {
-          "ref": "t153"
+        "sourceForm": {
+          "anyOf": [
+            {
+              "const": "url"
+            },
+            {
+              "const": "library"
+            }
+          ]
         }
       },
       "required": [
         "mode",
-        "url",
-        "presentation"
+        "presentation",
+        "url"
       ]
     },
     "t155": {
@@ -6811,17 +6821,27 @@
             }
           ]
         },
+        "presentation": {
+          "ref": "t153"
+        },
         "url": {
           "type": "string"
         },
-        "presentation": {
-          "ref": "t153"
+        "sourceForm": {
+          "anyOf": [
+            {
+              "const": "url"
+            },
+            {
+              "const": "library"
+            }
+          ]
         }
       },
       "required": [
         "value",
-        "url",
-        "presentation"
+        "presentation",
+        "url"
       ]
     },
     "t157": {
@@ -10966,6 +10986,9 @@
             },
             {
               "const": 16
+            },
+            {
+              "const": 17
             }
           ]
         },

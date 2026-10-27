@@ -2,6 +2,7 @@ import {defaultHalo,haloWidth,haloProblems,symbolHalos} from './halo';
 import pinhead from './pinhead-capabilities.generated.json';
 import type { BasePointStyle, ConfigPackageV3, FieldDefinition, IconItem, PointSymbol, RenderColorBinding, RenderStyle, SymbolPlacement } from './types';
 import { scalarValueErrors } from './renderScalar';
+import { imageSourceFormProblems } from './imageLibrary';
 
 export const ICON_LIBRARY = { library: 'pinhead' as const, version: pinhead.version, manifestSha256: pinhead.manifestSha256 };
 const iconIds=new Set(pinhead.ids);
@@ -97,10 +98,14 @@ export function pointSymbolProblems(value: PointSymbol, fields: FieldDefinition[
       if (!range(p.sizePx.width, 1, 2048) || !range(p.sizePx.height, 1, 2048)) fail(at, '图片宽高须介于 1–2048px。');
       placement(p.placement, at + '/placement');
     };
-    if (source.mode === 'valueMap') rows(source.field, source.entries, 'image', (row, at) => { if (!acceptableImageUrl(row.url)) fail(at + '/url', '图片链接必须是有效 HTTP(S) 或站内地址。'); presentation(row.presentation, at + '/presentation'); });
+    const reference=(row:import('./types').ImageReference,at:string)=>{
+      for(const issue of imageSourceFormProblems(row,config.contractRevision))fail(at+'/'+issue.path,issue.message);
+      if(!acceptableImageUrl(row.url))fail(at+'/url','图片链接必须是有效 HTTP(S) 或站内地址。');
+    };
+    if (source.mode === 'valueMap') rows(source.field, source.entries, 'image', (row, at) => { reference(row,at); presentation(row.presentation, at + '/presentation'); });
     else {
       presentation(source.presentation, 'image/presentation');
-      if (source.mode === 'fixed' && !acceptableImageUrl(source.url)) fail('image/url', '图片链接必须是有效 HTTP(S) 或站内地址。');
+      if (source.mode === 'fixed') reference(source,'image');
       if (source.mode === 'fieldUrl') field(source.field, 'image/field');
       if (source.mode === 'externalFieldUrl') {
         const id = field(source.targetIdField, 'image/targetIdField');

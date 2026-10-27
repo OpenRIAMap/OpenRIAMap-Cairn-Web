@@ -65,13 +65,13 @@ try:
     wait("Object.values(window.r12Harness.map._layers).some(l=>l._radius>0)")
     fill('图片 URL','/icons/pinhead/v25/bus.svg');wait("!!document.querySelector('.leaflet-container img[src$=\"/icons/pinhead/v25/bus.svg\"]')")
     checks.append('fixed external image decoded and displayed with its own dimensions/local offset')
-    select('图片链接来源','valueMap');select('图片映射字段','Name');click('添加图片映射行')
+    select('图片来源','valueMap');select('图片映射字段','Name');click('添加图片映射行')
     fill('实际保存值','bus');fill('图片 URL','/icons/pinhead/v25/bus.svg');fill('图片宽 px',40);click('显示第 1 行')
     wait("document.querySelector('.leaflet-container').innerText.includes('bus')")
-    select('图片链接来源','fixed')
+    select('图片来源','fixed')
     assert js(control('图片宽 px','input')+'.value')=='36'
     assert js(control('局部 X 偏移 px','input')+'.value')=='7'
-    select('图片链接来源','valueMap');assert js(control('图片宽 px','input')+'.value')=='40'
+    select('图片来源','valueMap');assert js(control('图片宽 px','input')+'.value')=='40'
     select('点状显示','icon');assert js("window.r12Harness.config.nodes.find(n=>n.nodeId==='class-sbp').geometryProfiles.Point.zoomPriority.rules[1].style.pointSymbol.icon.entries[0].value")== 'airport'
     checks.append('source modes and per-image presentation drafts survive switching without leaking inactive branches')
     select('Label 样式','custom_pill_1')
