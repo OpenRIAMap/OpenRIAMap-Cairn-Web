@@ -1,3 +1,5 @@
+import {layerClassificationCaption} from './layerPresentation';
+import {diagnoseEditorClassification} from './editorClassificationDiagnostics';
 import {recordsAfterExactDeletes} from '@/configStudio/nativeRecordSubmission';
 import {prepareSpecializedCapture} from '@/configStudio/nativeRecordSubmission';
 import {categoryAllowsParts,recordCategory} from '@/configStudio/multipartPolicy';
@@ -24,7 +26,7 @@ import {layerToJsonText,type FeatureKey,type DrawMode} from '@/components/Common
 import {mergeEditorDraftIntoFeatureInfo,type WorkflowEditorDraftValues,type WorkflowEditorUnparsedEntry} from '@/components/Common/workflowEditorParser';
 import type {ProjectedRegistryScene} from '@/components/Common/formProjection';
 import {CategoryPathPicker} from '@/configStudio/CategoryPathPicker';
-import {classificationPathKey,workflowPathLabel,pathMatchesScope,resolveEffectiveFields} from '@/configStudio/runtime';
+import {classificationPathKey,workflowPathLabel,resolveEffectiveFields} from '@/configStudio/runtime';
 import {fullEditorWorkflow,initializeFullEditor,prepareFullEditorCreate} from '@/configStudio/fullEditor';
 import {specializedFormView} from '../Workflow/specialized/registration';
 import {externalRolePaths} from '@/configStudio/externalBindings';
@@ -537,7 +539,7 @@ const partsPermission = () => {
   if (!configRuntime) return true;
   const path=nativeEdit?.draft.classification??(externalEdit?recordCategory(externalEdit.session.original):fullExternalCreate?.path??fullCategory);
   const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
-  return !path.class||drawModeRef.current!=='none'&&categoryAllowsParts(config,path,geometryKindForDrawMode(drawModeRef.current));
+  return !path.class||drawMode!=='none'&&categoryAllowsParts(config,path,geometryKindForDrawMode(drawMode));
 };
 const partsLocked = () => showMultipartPartLabelsRef.current || multipartStructureLocked || !partsPermission();
 
@@ -834,7 +836,9 @@ const [nativeEdit,setNativeEdit]=useState<{config:ConfigPackageV3;plan:WorkflowE
 const [externalEdit,setExternalEdit]=useState<{config:ConfigPackageV3;workflow:WorkflowDefinition;session:TrpExternalEditSession;world:string}|null>(null);
 const [fullCategory,setFullCategory]=useState<ClassificationPath>({class:''});
 const [fullCategoryError,setFullCategoryError]=useState('');
+const [fullSubmissionError,setFullSubmissionError]=useState('');
 const [fullExternalCreate,setFullExternalCreate]=useState<{config:ConfigPackageV3;workflow:WorkflowDefinition;path:ClassificationPath;view:ProjectedRegistryScene;values:WorkflowEditorDraftValues;unparsed:WorkflowEditorUnparsedEntry[];world:string}|null>(null);
+useEffect(()=>{setFullSubmissionError('');},[nativeEdit?.draft,externalEdit?.session,fullExternalCreate?.values,tempPoints,fullCategory]);
 const nativeEditDatasets=useRuleDataStore(state=>state.datasets);
 const nativeEditRecords=useMemo(()=>Object.values(nativeEditDatasets).flatMap(dataset=>dataset.features).map(raw=>(raw.featureInfo&&typeof raw.featureInfo==='object'?raw.featureInfo:raw) as Record<string,unknown>),[nativeEditDatasets]);
 const nativeEditSearchRecords=useMemo(()=>[...nativeEditRecords,...layers.flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])],[nativeEditRecords,layers]);
@@ -2169,7 +2173,7 @@ const finishLayer = () => {
     else if(nativeEdit&&editUiMode==='native-workflow')finalFeatureInfo=nativeEdit.original?prepareNativeWorkflowEdit(nativeEdit.config,nativeEdit.plan.workflow,nativeEdit.original,nativeEdit.draft,finalGeometry,currentWorldId,editorIdInput,others):prepareFullEditorCreate(nativeEdit.config,nativeEdit.plan.workflow,nativeEdit.draft,finalGeometry,currentWorldId,editorIdInput,others);
     else if(fullExternalCreate){const raw=mergeEditorDraftIntoFeatureInfo({originalFeatureInfo:{},view:fullExternalCreate.view,draftValues:fullExternalCreate.values});finalFeatureInfo=prepareNativeRecordCreate(fullExternalCreate.config,fullExternalCreate.path,finalGeometry,raw,currentWorldId,editorIdInput,others);}
     else if(fullCategory.class)throw Error('请先完成分类选择并加载可用编辑方案。');
-  }catch(error){alert(error instanceof Error?error.message:'原生保存失败。');return;}
+  }catch(error){const message=`分类 ${workflowPathLabel(configRuntime!,fullCategory)}；${nativeEdit?`编辑方案 ${nativeEdit.plan.workflow.label.zh||nativeEdit.plan.workflow.id}：`:''}${error instanceof Error?error.message:'原生保存失败。'}\n请修正对应字段或设置后重试，当前草稿保持。`;setFullSubmissionError(message);alert(message);return;}
 
   const newLayerId = editingLayerId ?? nextLayerId.current++;
 
@@ -2825,6 +2829,7 @@ const editLayer = (id: number) => {
   // 进入编辑态
   setEditingLayerId(id);
   setDrawing(true);
+  drawModeRef.current=layer.mode;
   setDrawMode(layer.mode);
   setDrawColor(layer.color);
 
@@ -3436,16 +3441,14 @@ const selectFullCategory=(path:ClassificationPath)=>{
   const apply=()=>{
     const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
     const complete=multipartDraftRef.current;
-    if(complete&&complete.parts.length>1&&resolveGeometryProfile(config,path,mode)?.enabled&&!categoryAllowsParts(config,path,mode)){alert('目标分类禁止多部件，请先处理部件；完整草稿保持。');return;}
-    setFullCategory(path);setFullCategoryError('');
+    const diagnostic=path.class||nativeEdit?.original||externalEdit?diagnoseEditorClassification({config,path,geometry:mode,parts:complete?.parts.length??1,workflow:nativeEdit?.original?nativeEdit.plan.workflow:externalEdit?.workflow,plan:nativeEdit?.original?nativeEdit.plan:undefined,externalPaths:externalEdit?externalRolePaths(config,externalEdit.workflow,'tradePoint'):undefined}):[];
+    setFullCategory(path);setFullCategoryError('');setFullSubmissionError('');
+    if(diagnostic.length){setFullCategoryError(diagnostic.map(issue=>issue.message).join('\n'));return;}
     if(nativeEdit?.original){
-      if(!nativeEdit.plan.classifications.some(candidate=>classificationPathKey(candidate)===classificationPathKey(path))){setFullCategoryError('请选择当前编辑方案接纳的实际分类；可继续展开下级。');return;}
       const slots={...nativeEdit.draft.slots};for(const control of nativeEdit.plan.controls)if(control.kind==='classificationPicker')slots[control.slot??control.id]=JSON.stringify(path);
       setNativeEdit({...nativeEdit,draft:{...nativeEdit.draft,classification:path,slots}});return;
     }
     if(externalEdit){
-      const scope=externalEdit.workflow.editor?.scope??externalEdit.workflow.target;
-      if(!scope||!pathMatchesScope(path,scope)||!externalRolePaths(config,externalEdit.workflow,'tradePoint').some(candidate=>classificationPathKey(candidate)===classificationPathKey(path))){setFullCategoryError('请选择专用编辑范围内的有效分类。');return;}
       setExternalEdit({...externalEdit,session:{...externalEdit.session,view:specializedFormView(config,externalEdit.workflow,path,'tradePoint'),values:{...externalEdit.session.values,__workflowEditorClassification:[path.kind??'',path.skind??'',path.skind2??''].join('||')}}});return;
     }
     if(nativeEdit&&classificationPathKey(nativeEdit.draft.classification)===classificationPathKey(path))return;
@@ -3456,13 +3459,13 @@ const selectFullCategory=(path:ClassificationPath)=>{
       const snapshot=structuredClone(config),workflow=fullEditorWorkflow(snapshot,path,mode),world=normalizeV3WorldId(currentWorldId);
       if(workflow.mode==='composed'){const plan=compileWorkflowEditPlan(workflow,snapshot);setNativeEdit({config:snapshot,plan,draft:initializeFullEditor(snapshot,plan,path),world});setEditUiMode('native-workflow');}
       else {const view=specializedFormView(snapshot,workflow,path,'tradePoint'),fields=resolveEffectiveFields(snapshot,path),values:WorkflowEditorDraftValues={ID:''};for(const field of view.fields){const definition=fields.find(item=>item.key===field.path);values[field.path]=definition?.defaultValue!==undefined?structuredClone(definition.defaultValue):field.control==='bool'?false:field.control==='trpTrade'?[]:'';}setFullExternalCreate({config:snapshot,workflow,path,view,values,unparsed:[],world});}
-    }catch(error){setFullCategoryError(error instanceof Error?error.message:String(error));}
+    }catch(error){setFullCategoryError(`当前选择 ${workflowPathLabel(config,path)}：${error instanceof Error?error.message:String(error)}；尚未应用。`);}
   };
   if(editingLayerId!==null)apply();else requestSwitchWithExtraWarn(apply);
 };
 const renderFullCategoryPicker=()=>{
   const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
-  return config?<div className="mb-2 space-y-2"><CategoryPathPicker config={config} value={fullCategory} onChange={selectFullCategory} label="要素分类"/>{fullCategoryError?<p role="alert" className="text-xs text-rose-700">{fullCategoryError}</p>:null}</div>:<p role="alert">缺少当前正式配置，未启用分类编辑。</p>;
+  return config?<div className="mb-2 space-y-2"><CategoryPathPicker config={config} value={fullCategory} onChange={selectFullCategory} label="要素分类"/>{fullCategoryError?<p role="alert" className="whitespace-pre-line text-xs text-rose-700">{fullCategoryError}</p>:null}{fullSubmissionError?<p role="alert" className="whitespace-pre-line text-xs text-rose-700">{fullSubmissionError}</p>:null}</div>:<p role="alert">缺少当前正式配置，未启用分类编辑。</p>;
 };
 const renderFullForm=()=>{
   const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
@@ -3597,30 +3600,13 @@ const startWorkflow = () => {
   setWorkflowRunning(true);
 };
 
-// 从 coords 生成 Leaflet 图形组（用于 fixed 图层保存）
-const makeLeafletGroupForCoords = (mode: DrawMode, coords: { x: number; z: number }[], color: string, geometry?:MultipartGeometry) => {
-  const proj = projectionRef.current;
-  if (!proj) return L.layerGroup();
-
-  const g = L.layerGroup();
-  if(geometry){
-    const project=(point:{x:number;z:number})=>proj.locationToLatLng(point.x,64,point.z);
-    const layers=geometry.type==='Point'?geometry.parts.map(point=>L.circleMarker(project(point),{color,fillColor:color,radius:6})):geometry.type==='LineString'?geometry.parts.map(part=>L.polyline(part.map(project),{color})):geometry.parts.map(part=>L.polygon(part.map(ring=>ring.map(project)),{color}));
-    layers.forEach(layer=>layer.addTo(g));return g;
-  }
-  const latlngs = coords.map(p => proj.locationToLatLng(p.x, 64, p.z));
-
-  if (mode === 'point') {
-    latlngs.forEach(ll => {
-      L.circleMarker(ll, { color, fillColor: color, radius: 6 }).addTo(g);
-    });
-  } else if (mode === 'polyline') {
-    L.polyline(latlngs, { color }).addTo(g);
-  } else if (mode === 'polygon') {
-    if (latlngs.length > 2) L.polygon(latlngs, { color }).addTo(g);
-    else L.polyline(latlngs, { color }).addTo(g);
-  }
-  return g;
+// Fixed native/specialized outputs require the complete validated geometry.
+const makeLeafletGroupForGeometry = (geometry:MultipartGeometry,color:string) => {
+  const proj=projectionRef.current;
+  if(!proj)throw Error('地图投影未就绪，无法构建完整固定图形。');
+  const project=(point:{x:number;z:number})=>proj.locationToLatLng(point.x,64,point.z);
+  const layers=geometry.type==='Point'?geometry.parts.map(point=>L.circleMarker(project(point),{color,fillColor:color,radius:6})):geometry.type==='LineString'?geometry.parts.map(part=>L.polyline(part.map(project),{color})):geometry.parts.map(part=>L.polygon(part.map(ring=>ring.map(project)),{color}));
+  return L.layerGroup(layers);
 };
 
 const upsertWorkflowPreview = (
@@ -3641,23 +3627,28 @@ const upsertWorkflowPreview = (
   const color = style?.color ?? drawColorRef.current;
   const weight = style?.weight ?? 4;
   const dashArray = style?.dashArray;
+  const interactive=style?.interactive??true;
 
   const latlngs = (points ?? []).map(p => proj.locationToLatLng(p.x, 64, p.z));
 
   let layer: L.Layer;
   if(geometry) {
     const project=(point:{x:number;z:number})=>proj.locationToLatLng(point.x,64,point.z);
-    layer=L.layerGroup(geometry.type==='Point'?geometry.parts.map(point=>L.circleMarker(project(point),{color,fillColor:color,radius:6})):geometry.type==='LineString'?geometry.parts.map(part=>L.polyline(part.map(project),{color,weight,dashArray})):geometry.parts.map(part=>L.polygon(part.map(ring=>ring.map(project)),{color,weight,dashArray})));
+    layer=L.layerGroup(geometry.type==='Point'?geometry.parts.map(point=>L.circleMarker(project(point),{color,fillColor:color,radius:6,interactive})):geometry.type==='LineString'?geometry.parts.map(part=>L.polyline(part.map(project),{color,weight,dashArray,interactive})):geometry.parts.map(part=>L.polygon(part.map(ring=>ring.map(project)),{color,weight,dashArray,interactive})));
   } else if (kind === 'point') {
     if (latlngs.length === 0) return;
-    layer = L.circleMarker(latlngs[0], { color, fillColor: color, radius: 6 });
+    layer = L.circleMarker(latlngs[0], { color, fillColor: color, radius: 6, interactive });
   } else if (kind === 'polygon') {
-    layer = L.polygon(latlngs, { color, weight, dashArray } as any);
+    layer = L.polygon(latlngs, { color, weight, dashArray, interactive } as any);
   } else {
-    layer = L.polyline(latlngs, { color, weight, dashArray } as any);
+    layer = L.polyline(latlngs, { color, weight, dashArray, interactive } as any);
   }
 
   layer.addTo(root);
+  if(!interactive){
+    const behind=(item:L.Layer)=>{if(item instanceof L.LayerGroup)item.eachLayer(behind);else if(item instanceof L.Path)item.bringToBack();};
+    behind(layer);
+  }
   workflowPreviewMapRef.current.set(key, layer);
 };
 
@@ -3694,7 +3685,7 @@ const commitFeatureFromWorkflow = (args: WorkflowCommitArgs) => {
 
   const id = nextLayerId.current++;
   const color = args.color ?? drawColor;
-  const newGroup = makeLeafletGroupForCoords(args.mode as DrawMode, workflowCoords, color,geometry);
+  const newGroup = makeLeafletGroupForGeometry(geometry,color);
 
   const layerObj: LayerType = {
     id,
@@ -3727,7 +3718,7 @@ const commitNativeWorkflow = (config: ConfigPackageV3, workflow: WorkflowDefinit
   const batch: LayerType[] = prepared.map((item, index) => {
     const color = typeof item.record.color === 'string' ? item.record.color : drawColor;
     return { id: firstId + index, mode: item.mode, color, coords: item.coords, visible: true,
-      leafletGroup: makeLeafletGroupForCoords(item.mode, item.coords, color),
+      leafletGroup: makeLeafletGroupForGeometry(item.geometry,color),
       jsonInfo: { subType: classificationPathKey(recordCategory(item.record)), featureInfo: item.record },
     };
   });
@@ -4481,7 +4472,7 @@ const workflowBridge: WorkflowBridge = {
 
                         <div className="flex-1 text-sm truncate">
                           {getLayerDisplayTitle(l)}
-                          <span className="text-gray-400"> {String(l.jsonInfo?.subType ?? l.mode)}</span>
+                          <span className="text-gray-400"> {layerClassificationCaption(configRuntime,l.jsonInfo?.featureInfo,String(l.jsonInfo?.subType??l.mode))}</span>
                         </div>
                       </div>
                     );
@@ -4542,7 +4533,7 @@ const workflowBridge: WorkflowBridge = {
 
                       <div className="flex-1 text-sm truncate">
                         {getLayerDisplayTitle(l)}
-                        <span className="text-gray-400"> {String(l.jsonInfo?.subType ?? l.mode)}</span>
+                        <span className="text-gray-400"> {layerClassificationCaption(configRuntime,l.jsonInfo?.featureInfo,String(l.jsonInfo?.subType??l.mode))}</span>
                         <span style={{ color: l.color }} className="ml-1">■</span>
                       </div>
                     </div>

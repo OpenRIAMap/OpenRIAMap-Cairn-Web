@@ -1,3 +1,4 @@
+import {NativeDrawingPreviews} from './nativeDrawingPreviews';
 import {externalRolePaths} from '@/configStudio/externalBindings';
 import {EXTERNAL_COMPONENT_ROLES,EXTERNAL_ROLES} from '@/configStudio/externalCapabilities';
 import {workflowCategoryOptions} from '@/configStudio/workflowCategoryOptions';
@@ -27,11 +28,13 @@ export function NativeWorkflowHost({ config, workflow, bridge, registry, onCommi
   const worldMismatch = normalizeV3WorldId(bridge.getCurrentWorldId()) !== snapshot.world;
   const bridgeRef = useRef(bridge); bridgeRef.current = bridge;
   const [session] = useState(()=>new NativeDrawingSession(()=>bridgeRef.current,snapshot.workflow));
+  const [previews]=useState(()=>new NativeDrawingPreviews(()=>bridgeRef.current));
+  const syncPreviews=()=>previews.setContext(session.active,worldMismatch||session.paused,new Set([...session.drafts.keys(),...(session.active?[session.active]:[])]));
   const [drawingRevision,setDrawingRevision]=useState(0);
   useEffect(()=>bridge.subscribeDrawingChanges?.(()=>setDrawingRevision(value=>value+1)),[bridge.subscribeDrawingChanges]);
-  useEffect(()=>{session.setWorldMismatch(worldMismatch);},[session,worldMismatch]);
-  useEffect(()=>()=>{session.stop();},[session]);
-  const exit=()=>{session.stop();onExit();};
+  useEffect(()=>{session.setWorldMismatch(worldMismatch);syncPreviews();},[session,previews,worldMismatch]);
+  useEffect(()=>()=>{session.stop();previews.clearAll();},[session,previews]);
+  const exit=()=>{session.stop();previews.clearAll();onExit();};
   const datasets = useRuleDataStore(state => state.datasets);
   const deleted = new Set(bridge.getDeleteMarkedFeatureIds?.() ?? []);
   const all = [...Object.values(datasets).flatMap(dataset => dataset.features), ...(bridge.getCommittedLayerJsonInfos?.().map(item => item.featureInfo) ?? [])];
@@ -39,9 +42,9 @@ export function NativeWorkflowHost({ config, workflow, bridge, registry, onCommi
     const record = (raw.featureInfo && typeof raw.featureInfo === 'object' ? raw.featureInfo : raw) as MountedFeatureRecord;
     return [`${record.World}:${record.Class}:${record.Kind ?? ""}:${record.SKind ?? record.Skind ?? ""}:${record.SKind2 ?? record.Skind2 ?? ""}:${record.ID}`, record] as const;
   })).values()].filter(record => !deleted.has(String(record.ID ?? '')));
-  const switchStep=useCallback((step:WorkflowStep|undefined,targets:Record<string,WorkflowDrawingTarget>)=>{session.setTargets(targets);session.switchPage(step);},[session]);
+  const switchStep=useCallback((step:WorkflowStep|undefined,targets:Record<string,WorkflowDrawingTarget>)=>{try{session.setTargets(targets);session.switchPage(step);}finally{syncPreviews();}},[session,previews,worldMismatch]);
   const previewSlots = useCallback((slots: Record<string, unknown>) => {
-    for(const step of snapshot.workflow.steps.filter(step=>step.kind==='geometry'))if(!enabledDrawing(step,snapshot.workflow,slots))session.invalidate(drawingKey(step));
+    for(const step of snapshot.workflow.steps.filter(step=>step.kind==='geometry'))if(!enabledDrawing(step,snapshot.workflow,slots)){const key=drawingKey(step);session.invalidate(key);previews.clear(key);}
     const actor = String(slots.actor ?? '');
     if (bridgeRef.current.getEditorId() !== actor) bridgeRef.current.setEditorId(actor);
   }, []);
@@ -53,11 +56,11 @@ export function NativeWorkflowHost({ config, workflow, bridge, registry, onCommi
     return key ? <div>{worldMismatch ? <p role="alert">请返回 {snapshot.world} 后继续此工作流。<button type="button" onClick={exit}>退出工作流</button></p> : null}<fieldset disabled={worldMismatch}>{(EXTERNAL_COMPONENT_ROLES[snapshot.workflow.external?.componentKey??'']??[]).filter(role=>role!=='tradePoint').map(role=>{const paths=externalRolePaths(snapshot.config,snapshot.workflow,role);if(paths.length<2)return null;return <label className="mb-2 block text-xs" key={role}>{EXTERNAL_ROLES[role].label}目标分类<select aria-label={EXTERNAL_ROLES[role].label+'目标分类'} className="mt-1 w-full rounded border px-2 py-1" value={roleSelection.paths.has(role)?JSON.stringify(roleSelection.paths.get(role)):''} onChange={event=>{if(event.target.value)roleSelection.paths.set(role,JSON.parse(event.target.value));else roleSelection.paths.delete(role);captureBridge.setCaptureRole?.(roleSelection.active);setDrawingRevision(value=>value+1);}}><option value="">请选择实际目标分类</option>{workflowCategoryOptions(snapshot.config,paths).map(option=><option key={option.key} value={JSON.stringify(option.path)}>{option.label}</option>)}</select></label>;})}<WorkflowHost workflowKey={key} bridge={captureBridge} registry={registry} onExit={exit} /></fieldset></div> : <p role="alert">外部工作流未获得受控绑定。</p>;
   }
   return <div>{worldMismatch ? <p role="alert" className="mb-2 rounded border border-amber-300 bg-amber-50 p-2 text-sm">此工作流属于 {snapshot.world}。请返回原世界继续，或退出后重新开始。</p> : null}<button type="button" className="mb-2 rounded border px-2 py-1 text-xs" onClick={exit}>退出工作流</button><fieldset disabled={worldMismatch}><V3WorkflowRunner config={snapshot.config} workflow={snapshot.workflow} records={records} worldId={snapshot.world} initialActor={bridge.getEditorId()} activeDrawingKey={session.active} drawingRevision={drawingRevision} drawingPaused={session.paused}
-    onInvalidateGeometry={id=>bridgeRef.current.clearWorkflowPreview(`native:${id}`)}
-    onPreviewGeometry={(id,geometry)=>bridgeRef.current.upsertWorkflowPreview(`native:${id}`,geometry.type==='Point'?'point':geometry.type==='LineString'?'polyline':'polygon',[],undefined,geometry)}
+    onInvalidateGeometry={id=>previews.clear(id)}
+    onPreviewGeometry={(id,geometry)=>{syncPreviews();previews.update(id,geometry);}}
     onStepChange={switchStep} onPreviewSlotsChange={previewSlots}
     onRequestGeometry={(outputId, geometry) => {
-      session.activate(outputId,geometry);
+      session.activate(outputId,geometry);syncPreviews();
     }}
     onCaptureGeometry={(outputId, geometry) => {
       if(normalizeV3WorldId(bridgeRef.current.getCurrentWorldId())!==snapshot.world)throw new Error('请返回原世界并重新进入绘制。');
