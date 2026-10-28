@@ -63,6 +63,7 @@ import FeaturePictureBindingPanel from '@/components/Mapping/panels/FeaturePictu
 import { pickIdFieldValue, type FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import {
   multipartGeometryFromSinglePath,
+  firstMultipartCoordinate,
   readMultipartGeometry,
   validateMultipartHoleDraft,
   validateMultipartGeometry,
@@ -113,6 +114,7 @@ import RailwayDirectionReverseButton from '@/components/Mapping/Special/RailwayD
 
 import WorkflowHost, {
   type WorkflowBridge,
+  type WorkflowDrawingDraft,
   type WorkflowCommitArgs,
   type WorkflowKey,
   type WorkflowPreviewKind,
@@ -319,11 +321,12 @@ useEffect(() => { if (configRuntime && !workflowRunning && !configRuntime.workfl
 const [tempPoints, setTempPointState] = useState<Array<{ x: number; z: number; y?: number }>>([]);
 const tempPointsRef=useRef(tempPoints);
 const drawingListeners=useRef(new Set<()=>void>());
+const [drawingTargetRevision,setDrawingTargetRevision]=useState(0);
 const setTempPoints=useCallback((value:typeof tempPoints|((previous:typeof tempPoints)=>typeof tempPoints))=>{
   const next=typeof value==='function'?value(tempPointsRef.current):value;
   tempPointsRef.current=next;setTempPointState(next);
 },[]);
-useEffect(()=>{for(const listener of drawingListeners.current)listener();},[tempPoints]);
+useEffect(()=>{for(const listener of drawingListeners.current)listener();},[tempPoints,drawingTargetRevision]);
 
 // 对外广播测绘激活态（用于禁用导航“图上选点”等交互）
 useEffect(() => {
@@ -370,6 +373,7 @@ type EditorCoord = { x: number; z: number; y?: number };
  * control points and undo/redo scoped to the visible selected part.
  */
 const multipartDraftRef = useRef<MultipartGeometry | null>(null);
+const rawPartPointsRef=useRef(new Map<number,WorldPoint>());
 const workflowDrawingTargetRef=useRef<{path:ClassificationPath;allowParts?:boolean}|null>(null);
 const [multipartEnabled, setMultipartEnabled] = useState(false);
 const [multipartPanelOpen,setMultipartPanelOpen]=useState(true);
@@ -433,7 +437,13 @@ const asEditorCoords = (coords: Array<{ x: number; y: number; z: number }>): Edi
 
 const resetMultipartEditor = () => {
   multipartDraftRef.current = null;
+  rawPartPointsRef.current.clear();
   multipartEnabledRef.current = false;
+  activeMultipartPartRef.current = 0;
+  innerSpaceEnabledRef.current = false;
+  editSelectedInnerSpaceRef.current = false;
+  activeInnerSpaceRef.current = 0;
+  showMultipartPartLabelsRef.current = false;
   setMultipartEnabled(false);
   setActiveMultipartPart(0);
   setInnerSpaceEnabled(false);
@@ -446,19 +456,23 @@ const resetMultipartEditor = () => {
 const activeEditorCoordsFromMultipart = (geometry: MultipartGeometry | null): EditorCoord[] => {
   if (!geometry) return [];
   const partIndex = Math.max(0, Math.min(activeMultipartPartRef.current, geometry.parts.length - 1));
-  if (geometry.type === 'Point') return asEditorCoords(geometry.parts.slice(partIndex, partIndex + 1));
-  if (geometry.type === 'LineString') return asEditorCoords(geometry.parts[partIndex] ?? []);
-  const component = geometry.parts[partIndex] ?? [];
-  const targetRing = editSelectedInnerSpaceRef.current
-    ? component[Math.max(1, activeInnerSpaceRef.current + 1)] ?? []
-    : component[0] ?? [];
-  return asEditorCoords(targetRing);
+  let selected:EditorCoord[];
+  if(geometry.type==='Point')selected=asEditorCoords(geometry.parts.slice(partIndex,partIndex+1));
+  else if(geometry.type==='LineString')selected=asEditorCoords(geometry.parts[partIndex]??[]);
+  else {
+    const component=geometry.parts[partIndex]??[];
+    selected=asEditorCoords(editSelectedInnerSpaceRef.current?component[Math.max(1,activeInnerSpaceRef.current+1)]??[]:component[0]??[]);
+  }
+  const raw=rawPartPointsRef.current.get(partIndex);
+  if(!editSelectedInnerSpaceRef.current&&selected[0]&&raw&&selected[0].x===raw.x&&selected[0].z===raw.z)selected[0]={...selected[0],y:raw.y};
+  return selected;
 };
 
 const persistActiveEditorCoords = (coords: EditorCoord[]) => {
   const geometry = multipartDraftRef.current;
   if (!geometry) return;
   const partIndex = Math.max(0, Math.min(activeMultipartPartRef.current, geometry.parts.length - 1));
+  if(!editSelectedInnerSpaceRef.current){if(coords[0])rawPartPointsRef.current.set(partIndex,{...coords[0]});else rawPartPointsRef.current.delete(partIndex);}
   const next = asMultipartCoords(coords);
   if (geometry.type === 'Point') {
     // A point component is one coordinate. The current point controls may
@@ -481,6 +495,8 @@ const persistActiveEditorCoords = (coords: EditorCoord[]) => {
 
 /** Keep invalid hole points out of every editing entrance, not only Save. */
 const validateActiveMultipartCoords = (coords: EditorCoord[]): string | undefined => {
+  if(showMultipartPartLabelsRef.current)return '部件编号显示中，关闭编号显示后才可编辑坐标。';
+  if(drawModeRef.current==='point'&&coords.length>1)return '每个点部件只能有一个坐标，请通过“多部件和内洞设置”添加其他部件。';
   const geometry = multipartDraftRef.current;
   if (!multipartEnabledRef.current || !geometry || geometry.type !== 'Polygon' || !editSelectedInnerSpaceRef.current) return undefined;
   return validateMultipartHoleDraft(
@@ -499,6 +515,7 @@ const acceptActiveMultipartCoords = (coords: EditorCoord[]): boolean => {
 
 const buildCurrentMultipartGeometry = (mode: DrawMode, activeCoords: EditorCoord[]): MultipartGeometry => {
   if (!multipartEnabledRef.current || !multipartDraftRef.current) {
+    rawPartPointsRef.current.clear();if(activeCoords[0])rawPartPointsRef.current.set(0,{...activeCoords[0]});
     return multipartGeometryFromSinglePath(geometryKindForDrawMode(mode), activeCoords);
   }
   persistActiveEditorCoords(activeCoords);
@@ -522,7 +539,7 @@ const partsPermission = () => {
   const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
   return !path.class||drawModeRef.current!=='none'&&categoryAllowsParts(config,path,geometryKindForDrawMode(drawModeRef.current));
 };
-const partsLocked = () => multipartStructureLocked || !partsPermission();
+const partsLocked = () => showMultipartPartLabelsRef.current || multipartStructureLocked || !partsPermission();
 
 const selectMultipartPart = (nextIndex: number, persistCurrent = true) => {
   if (partsLocked()) return;
@@ -565,11 +582,13 @@ const removeMultipartPart = () => {
   persistActiveEditorCoords(tempPoints);
   const removal = removeMultipartPartAt(geometry, activeMultipartPartRef.current);
   if (!removal) return;
+  const removedIndex=activeMultipartPartRef.current;
+  rawPartPointsRef.current=new Map<number,WorldPoint>([...rawPartPointsRef.current].filter(([index])=>index!==removedIndex).map(([index,point])=>[index>removedIndex?index-1:index,point]));
   selectMultipartPart(removal.nextPartIndex, false);
 };
 
 const selectInnerSpace = (nextIndex: number, persistCurrent = true) => {
-  if (multipartStructureLocked) return;
+  if (showMultipartPartLabelsRef.current || multipartStructureLocked) return;
   const geometry = multipartDraftRef.current;
   if (!geometry || geometry.type !== 'Polygon') return;
   if (persistCurrent) persistActiveEditorCoords(tempPoints);
@@ -583,7 +602,7 @@ const selectInnerSpace = (nextIndex: number, persistCurrent = true) => {
 };
 
 const addInnerSpace = () => {
-  if (multipartStructureLocked) return;
+  if (showMultipartPartLabelsRef.current || multipartStructureLocked) return;
   const geometry = multipartDraftRef.current;
   if (!geometry || geometry.type !== 'Polygon') return;
   persistActiveEditorCoords(tempPoints);
@@ -595,7 +614,7 @@ const addInnerSpace = () => {
 };
 
 const removeInnerSpace = () => {
-  if (multipartStructureLocked) return;
+  if (showMultipartPartLabelsRef.current || multipartStructureLocked) return;
   const geometry = multipartDraftRef.current;
   if (!geometry || geometry.type !== 'Polygon') return;
   const component = geometry.parts[activeMultipartPartRef.current] ?? [];
@@ -618,7 +637,8 @@ const removeInnerSpace = () => {
 
 const toggleMultipartPartLabels = () => {
   if (!multipartEnabled || !multipartDraftRef.current) return;
-  if (showMultipartPartLabels) {
+  if (showMultipartPartLabelsRef.current) {
+    showMultipartPartLabelsRef.current=false;
     setShowMultipartPartLabels(false);
     return;
   }
@@ -626,6 +646,7 @@ const toggleMultipartPartLabels = () => {
   curveInputTRef.current?.requestCloseAndClear?.();
   persistActiveEditorCoords(tempPoints);
   setMultipartInputError('');
+  showMultipartPartLabelsRef.current=true;
   setShowMultipartPartLabels(true);
 };
 
@@ -651,6 +672,7 @@ const renderMultipartEditor = () => (
               geometryKindForDrawMode(drawMode as DrawMode),
               tempPoints,
             );
+            rawPartPointsRef.current.clear();if(tempPoints[0])rawPartPointsRef.current.set(0,{...tempPoints[0]});
             activeMultipartPartRef.current = 0;
             setActiveMultipartPart(0);
             multipartEnabledRef.current = true;
@@ -1761,7 +1783,7 @@ const onMapDrawClick = (e: L.LeafletMouseEvent) => {
     // Point multipart components are individual coordinates, not a nested
     // path. Re-clicking replaces the selected point rather than creating an
     // invisible second coordinate in the same component.
-    const updated = drawMode === 'point' && multipartEnabledRef.current ? [newPoint] : [...prev, newPoint];
+    const updated = drawMode === 'point' ? [newPoint] : [...prev, newPoint];
     if (!acceptActiveMultipartCoords(updated)) return prev;
     // The selected component/ring is the canonical draft before Leaflet draws
     // the persistent reference geometry. This is what prevents redraws from
@@ -1791,7 +1813,7 @@ const onManualPointSubmit = (v: { x: number; y: number; z: number }) => {
   const newPoint = ({ x: v.x, z: v.z, y: v.y } as { x: number; z: number; y: number });
 
   setTempPoints((prev) => {
-    const updated = drawMode === 'point' && multipartEnabledRef.current ? [newPoint] : [...prev, newPoint];
+    const updated = drawMode === 'point' ? [newPoint] : [...prev, newPoint];
     if (!acceptActiveMultipartCoords(updated)) return prev;
     if (multipartEnabledRef.current) persistActiveEditorCoords(updated);
     setRedoStack([]);
@@ -2605,13 +2627,12 @@ useEffect(() => {
 
  
 const handleUndo = () => {
-  if (!tempPoints.length) return;
+  if (showMultipartPartLabelsRef.current || controlPointSessionBusyRef.current || !tempPoints.length) return;
 
   const last = tempPoints[tempPoints.length - 1];
-  setRedoStack((prev) => [...prev, last]);
-
   const updated = tempPoints.slice(0, tempPoints.length - 1);
   if (!acceptActiveMultipartCoords(updated)) return;
+  setRedoStack((prev) => [...prev, last]);
   if (multipartEnabledRef.current) persistActiveEditorCoords(updated);
   setTempPoints(updated);
 
@@ -2622,13 +2643,12 @@ const handleUndo = () => {
 };
 
 const handleRedo = () => {
-  if (!redoStack.length) return;
+  if (showMultipartPartLabelsRef.current || controlPointSessionBusyRef.current || !redoStack.length) return;
 
   const redoPoint = redoStack[redoStack.length - 1];
-  setRedoStack((prev) => prev.slice(0, prev.length - 1));
-
   const updated = [...tempPoints, redoPoint];
   if (!acceptActiveMultipartCoords(updated)) return;
+  setRedoStack((prev) => prev.slice(0, prev.length - 1));
   if (multipartEnabledRef.current) persistActiveEditorCoords(updated);
   setTempPoints(updated);
 
@@ -2642,6 +2662,7 @@ const handleRedo = () => {
 useEffect(() => {
   const onKeyDown = (event: KeyboardEvent) => {
     if (!measuringActive || !drawing || drawMode === 'none') return;
+    if (showMultipartPartLabelsRef.current) return;
     if (manualPointInputOpen || curveInputOpen || controlPointSessionBusy) return;
     const target = event.target as HTMLElement | null;
     const tag = target?.tagName?.toLowerCase();
@@ -3452,38 +3473,15 @@ const renderFullForm=()=>{
   return <section className="mb-2 border-t pt-2"><div className="mb-2 flex flex-wrap items-center justify-between gap-2"><strong className="text-sm">附加信息{nativeEdit?' · '+nativeEdit.plan.workflow.label.zh:externalEdit?' · '+externalEdit.workflow.label.zh:fullExternalCreate?' · '+fullExternalCreate.workflow.label.zh:''}</strong>
     <div className="flex gap-2">{editingLayerId===null&&drawMode==='point'&&roles.has('platform')?<AppButton type="button" onClick={()=>requestExitSpecialDraftIfNeeded(()=>setSpecialDraftMode(specialDraftMode==='merge-point-platform-station'?'none':'merge-point-platform-station'))}>多点合一</AppButton>:null}
     {editingLayerId===null&&drawMode==='polygon'&&(roles.has('platformFootprint')||roles.has('stationBuilding'))?<AppButton type="button" onClick={()=>requestExitSpecialDraftIfNeeded(()=>setSpecialDraftMode(specialDraftMode==='merge-polygon-outline-building'?'none':'merge-polygon-outline-building'))}>多面合一</AppButton>:null}
-    {drawMode==='polyline'&&roles.has('railLine')?<RailwayDirectionReverseButton enabled={tempPoints.length>=2&&!drawClickSuppressed} onReverse={()=>{const reversed=[...tempPoints].reverse();if(multipartEnabledRef.current)persistActiveEditorCoords(reversed);setTempPoints(reversed);drawDraftGeometry(reversed,'polyline',drawColor);setNativeEdit(current=>current?{...current,draft:reverseWorkflowEditEndpoints(current.plan,current.draft)}:current);}}/>:null}</div>
+    {drawMode==='polyline'&&roles.has('railLine')?<RailwayDirectionReverseButton enabled={tempPoints.length>=2&&!drawClickSuppressed&&!showMultipartPartLabels} onReverse={()=>{if(showMultipartPartLabelsRef.current)return;const reversed=[...tempPoints].reverse();if(multipartEnabledRef.current)persistActiveEditorCoords(reversed);setTempPoints(reversed);drawDraftGeometry(reversed,'polyline',drawColor);setNativeEdit(current=>current?{...current,draft:reverseWorkflowEditEndpoints(current.plan,current.draft)}:current);}}/>:null}</div>
    </div>
    {specialDraftMode==='merge-point-platform-station'?<MergePointPlatformStation {...mergeProps} draft={mergePointPSDraft} onChange={setMergePointPSDraft}/>:specialDraftMode==='merge-polygon-outline-building'?<MergePolygonOutlineBuilding {...mergeProps} draft={mergePolygonOBDraft} onChange={setMergePolygonOBDraft}/>:fullCategoryError?<p className="text-xs text-slate-600">请完成分类选择，当前草稿未作为其他分类保存。</p>:externalEdit?<fieldset disabled={externalEditWorldMismatch}><ExternalFeatureEditHost hideClassification config={externalEdit.config} workflow={externalEdit.workflow} session={externalEdit.session} bridge={workflowBridge} context={{initialRecord:externalEdit.session.original,featureIdentity:{layerId:editingLayerId!,originalId:String(externalEdit.session.original.ID)},activeWorld:externalEdit.world,originalGeometry:externalEdit.session.originalGeometry,currentGeometry:multipartDraftRef.current??undefined,editor:editorIdInput,onEditorChange:setEditorIdInput,onUpdate:finishLayer,onCancel:clearTemporaryForVariantSwitch}} onDraftChange={session=>setExternalEdit(current=>current?{...current,session}:current)}/></fieldset>:nativeEdit?<fieldset disabled={nativeEditWorldMismatch}>{nativeEditWorldMismatch?<p role="alert">请返回 {nativeEdit.world} 后继续。</p>:null}<NativeWorkflowEditPanel config={nativeEdit.config} plan={nativeEdit.plan} draft={nativeEdit.draft} records={nativeEditSearchRecords} world={nativeEdit.world} editor={editorIdInput} onEditorChange={setEditorIdInput} onCancel={clearTemporaryForVariantSwitch} onChange={draft=>setNativeEdit(current=>current?{...current,draft}:current)} mode={nativeEdit.original?'edit':'create'} hideClassification/></fieldset>:fullExternalCreate?<fieldset disabled={fullExternalWorldMismatch}>{fullExternalWorldMismatch?<p role="alert">请返回 {fullExternalCreate.world} 后继续此新建。</p>:null}<WorkflowStyleEditPanel view={fullExternalCreate.view} values={fullExternalCreate.values} unparsedEntries={fullExternalCreate.unparsed} bridge={{...workflowBridge,getCaptureContext:()=>({config:fullExternalCreate.config,workflow:fullExternalCreate.workflow})}} idFirst classificationContent={<p className="text-xs">分类由上方四级选择树指定；本次保存为新要素。</p>} onChangeValue={(key,value)=>setFullExternalCreate(current=>current?{...current,values:{...current.values,[key]:value}}:current)} onChangeUnparsedEntries={unparsed=>setFullExternalCreate(current=>current?{...current,unparsed}:current)} editorId={editorIdInput} onChangeEditorId={setEditorIdInput}/></fieldset>:<p className="text-xs text-slate-500">未分类几何草稿。选择分类后使用对应编辑方案填写新要素。</p>}
   </section>;
 };
 const isWorkflowStyleEditing=Boolean(nativeEdit||externalEdit||fullExternalCreate);
 
-useEffect(() => {
-  const mq = window.matchMedia('(max-width: 639px)'); // < sm
-  const sync = () => {
-    if (!mq.matches) return;
-
-    // 进入移动端：强制关闭并停止所有绘制/编辑
-    setMeasuringActive(false);
-    setImportPanelOpen(false);
-
-    setDrawing(false);
-    setDrawMode('none');
-    setTempPoints([]);
-    setRedoStack([]);
-    setEditingLayerId(null);
-
-    clearDraftOverlays();
-    setShowDraftControlPoints(false);
-    setShowDraftControlPointCoords(false);
-
-  };
-
-  sync();
-  mq.addEventListener('change', sync);
-  return () => mq.removeEventListener('change', sync);
-}, []);
+// Responsive shells share the same editor/portal. A viewport change is not an
+// instruction to discard geometry or exit a running workflow.
 
 const resetFeatureFormToDefault = () => {
   setSubType('默认');
@@ -3781,9 +3779,9 @@ const workflowBridge: WorkflowBridge = {
   getTempPoints: () => tempPointsRef.current,
   subscribeDrawingChanges: listener => {drawingListeners.current.add(listener);return()=>{drawingListeners.current.delete(listener);};},
   setTempPoints: (pts: WorldPoint[]) => {
+    if(showMultipartPartLabelsRef.current){setMultipartInputError('部件编号显示中，关闭编号显示后才可编辑坐标。');return;}
     const next = (pts ?? []) as any;
-    // Workflow data is always a flat single-component draft.  It must not
-    // mutate the full editor's multipart reference even after a mode switch.
+    // Legacy tool projection only. Native task archival uses getDrawingDraft.
     setTempPoints(next);
     // 同步草稿几何显示（避免 setState 异步导致绘制模式滞后）
     drawDraftGeometry(next, drawModeRef.current, drawColorRef.current);
@@ -3793,12 +3791,61 @@ const workflowBridge: WorkflowBridge = {
     resetMultipartEditor();
     clearDraftOverlays();
   },
-  setDrawingTarget:(path,allowParts)=>{workflowDrawingTargetRef.current=path?{path,allowParts}:null;},
+  setDrawingTarget:(path,allowParts)=>{
+    const next=path?{path,allowParts}:null;
+    if(JSON.stringify(next)===JSON.stringify(workflowDrawingTargetRef.current))return;
+    workflowDrawingTargetRef.current=next;setDrawingTargetRevision(value=>value+1);
+  },
   getDrawingGeometry:()=>drawModeRef.current==='none'?null:structuredClone(buildCurrentMultipartGeometry(drawModeRef.current,tempPointsRef.current)),
+  prepareDrawingTransition:()=>{
+    if(manualPointInputOpen||curveInputFrozenRef.current)return false;
+    return closeControlPointSessions();
+  },
+  getDrawingDraft:():WorkflowDrawingDraft|null=>drawModeRef.current==='none'?null:{
+    geometry:structuredClone(buildCurrentMultipartGeometry(drawModeRef.current,tempPointsRef.current)),
+    coordinates:tempPointsRef.current.map(point=>({...point})),
+    point:rawPartPointsRef.current.has(0)?{...rawPartPointsRef.current.get(0)!}:undefined,
+    representatives:structuredClone([...rawPartPointsRef.current]),
+    editor:{multipart:multipartEnabledRef.current,part:activeMultipartPartRef.current,innerSpace:innerSpaceEnabledRef.current,editingHole:editSelectedInnerSpaceRef.current,hole:activeInnerSpaceRef.current,panelOpen:multipartPanelOpen,showingPartNumbers:showMultipartPartLabelsRef.current},
+    redo:redoStack.map(point=>({...point})),
+  },
+  restoreDrawingDraft:draft=>{
+    if(drawModeRef.current==='none'||draft.geometry.type!==geometryKindForDrawMode(drawModeRef.current))throw Error('完整草稿与当前绘制页几何类型不一致。');
+    // Restore unfinished or newly incompatible drafts intact. Submission and
+    // the editor's existing controls enforce policy; restoration never trims.
+    resetMultipartEditor();
+    const editor=draft.editor,geometry=structuredClone(draft.geometry);
+    multipartDraftRef.current=editor.multipart?geometry:null;
+    multipartEnabledRef.current=editor.multipart;setMultipartEnabled(editor.multipart);
+    const part=Math.max(0,Math.min(editor.part,Math.max(0,geometry.parts.length-1)));
+    activeMultipartPartRef.current=part;setActiveMultipartPart(part);
+    const holes=geometry.type==='Polygon'?Math.max(0,(geometry.parts[part]?.length??1)-1):0;
+    const hole=Math.max(0,Math.min(editor.hole,Math.max(0,holes-1))),editingHole=editor.editingHole&&holes>0;
+    innerSpaceEnabledRef.current=editor.innerSpace;setInnerSpaceEnabled(editor.innerSpace);
+    editSelectedInnerSpaceRef.current=editingHole;setEditSelectedInnerSpace(editingHole);
+    activeInnerSpaceRef.current=hole;setActiveInnerSpace(hole);
+    setMultipartPanelOpen(editor.panelOpen);
+    // Keep raw optional Y; deriving the path from canonical geometry would
+    // turn a display fallback into an explicitly captured height.
+    const coordinates=draft.coordinates.map(point=>({...point}));
+    rawPartPointsRef.current=new Map<number,WorldPoint>(structuredClone(draft.representatives??(draft.point?[[0,draft.point]]:[])));
+    setTempPoints(coordinates);setRedoStack(draft.redo.map(point=>({...point})));
+    showMultipartPartLabelsRef.current=editor.showingPartNumbers;setShowMultipartPartLabels(editor.showingPartNumbers);
+    drawDraftGeometry(coordinates,drawModeRef.current,drawColorRef.current);
+  },
   setDrawingGeometry:geometry=>{
+    if(showMultipartPartLabelsRef.current){setMultipartInputError('部件编号显示中，关闭编号显示后才可编辑坐标。');return;}
     if(drawModeRef.current==='none'||geometry.type!==geometryKindForDrawMode(drawModeRef.current))throw Error('草稿几何类型与当前绘制页不一致。');
     if(geometry.parts.length>1&&workflowDrawingTargetRef.current?.allowParts===false)throw Error('当前绘制分类禁止多部件，不能截断导入几何。');
-    resetMultipartEditor();multipartDraftRef.current=structuredClone(geometry);multipartEnabledRef.current=true;setMultipartEnabled(true);activeMultipartPartRef.current=0;editSelectedInnerSpaceRef.current=false;activeInnerSpaceRef.current=0;
+    resetMultipartEditor();
+    multipartDraftRef.current=structuredClone(geometry);
+    for(let index=0;index<geometry.parts.length;index++){
+      const part={...geometry,parts:geometry.parts.slice(index,index+1)} as MultipartGeometry;
+      const point=firstMultipartCoordinate(part);
+      if(point)rawPartPointsRef.current.set(index,{...point});
+    }
+    multipartEnabledRef.current=true;setMultipartEnabled(true);
+    activeMultipartPartRef.current=0;editSelectedInnerSpaceRef.current=false;activeInnerSpaceRef.current=0;
     const holes=geometry.type==='Polygon'&&(geometry.parts[0]?.length??0)>1;innerSpaceEnabledRef.current=holes;setInnerSpaceEnabled(holes);
     renderSelectedMultipartCoords(multipartDraftRef.current,drawColorRef.current);
   },
@@ -4705,10 +4752,10 @@ const measuringWindowActions = (
 
 {drawMode !== 'none' && (
   <div className="flex gap-2 mb-2">
-    <AppButton className="bg-yellow-400 text-white px-2 py-1 rounded flex-1" onClick={handleUndo} type="button">
+    <AppButton className="bg-yellow-400 text-white px-2 py-1 rounded flex-1 disabled:opacity-40" onClick={handleUndo} disabled={showMultipartPartLabels||controlPointSessionBusy} type="button">
       撤销
     </AppButton>
-    <AppButton className="bg-orange-400 text-white px-2 py-1 rounded flex-1" onClick={handleRedo} type="button">
+    <AppButton className="bg-orange-400 text-white px-2 py-1 rounded flex-1 disabled:opacity-40" onClick={handleRedo} disabled={showMultipartPartLabels||controlPointSessionBusy} type="button">
       重做
     </AppButton>
 
@@ -4834,6 +4881,7 @@ const measuringWindowActions = (
 {drawMode !== 'none' && (
   <ControlPointsT
     ref={controlPointsTDesktopRef}
+    readOnly={showMultipartPartLabels}
     mapReady={mapReady}
     leafletMapRef={leafletMapRef}
     projectionRef={projectionRef}
@@ -4980,10 +5028,10 @@ const measuringWindowActions = (
 
 {drawMode !== 'none' && (
   <div className="flex gap-2 mb-2">
-    <AppButton className="bg-yellow-400 text-white px-2 py-1 rounded flex-1" onClick={handleUndo} type="button">
+    <AppButton className="bg-yellow-400 text-white px-2 py-1 rounded flex-1 disabled:opacity-40" onClick={handleUndo} disabled={showMultipartPartLabels||controlPointSessionBusy} type="button">
       撤销
     </AppButton>
-    <AppButton className="bg-orange-400 text-white px-2 py-1 rounded flex-1" onClick={handleRedo} type="button">
+    <AppButton className="bg-orange-400 text-white px-2 py-1 rounded flex-1 disabled:opacity-40" onClick={handleRedo} disabled={showMultipartPartLabels||controlPointSessionBusy} type="button">
       重做
     </AppButton>
 
@@ -5007,6 +5055,7 @@ const measuringWindowActions = (
 {drawMode !== 'none' && (
   <ControlPointsT
     ref={controlPointsTCompactRef}
+    readOnly={showMultipartPartLabels}
     mapReady={mapReady}
     leafletMapRef={leafletMapRef}
     projectionRef={projectionRef}

@@ -1,9 +1,11 @@
 import { coerceWorkflowValues } from './workflowValues';
 import { multipartGeometryFromSinglePath, serializeMultipartGeometry, validateMultipartGeometry, type MultipartCoord, type MultipartGeometry } from '../core/geometry/multipartGeometry';
-import type { WorkflowDefinition, WorkflowStep } from './types';
+import type { ClassificationPath, WorkflowDefinition, WorkflowStep } from './types';
 import { workflowConditionMatches } from './workflowExpression';
 
 export type WorkflowDrawingCapture = { coordinates:MultipartCoord[]; geometry?:MultipartGeometry; point?:{x:number;y?:number;z:number} };
+/** UI policy computed by the runner using the existing multipart rules. */
+export type WorkflowDrawingTarget = { path?:ClassificationPath; allowParts:boolean };
 export const drawingKey=(step:WorkflowStep)=>step.geometryRole==='auxiliary'?step.id:step.outputId!;
 export function enabledDrawing(step:WorkflowStep,workflow:WorkflowDefinition,slots:Record<string,unknown>):boolean {
   if(step.geometryRole==='auxiliary'&&step.drawing?.bindings?.length&&!step.drawing.bindings.some(binding=>activeOutputIds(workflow,slots).includes(binding.outputId)))return false;
@@ -44,17 +46,4 @@ export function captureDrawingSnapshot(workflow:WorkflowDefinition,rawSlots:Reco
     const rawPoint=captures[key]?.point??captures[key]?.coordinates[0];for(const slot of [step.drawing?.captureSlot,step.drawing?.pointSlot])if(slot)for(const axis of ['x','y','z'] as const)slots[`${slot}_${axis.toUpperCase()}`]=typeof rawPoint?.[axis]==='number'?rawPoint[axis]:undefined;
   }
   return {slots,captures};
-}
-/** Preserve already collected components when editing the current component. */
-export function mergeDrawingCapture(previous:WorkflowDrawingCapture|undefined,next:WorkflowDrawingCapture,type:import('./types').GeometryKind,action:'replace'|'part'|'ring'='replace'):WorkflowDrawingCapture {
-  const current=next.geometry??multipartGeometryFromSinglePath(type,next.coordinates),old=previous?.geometry;
-  if(!old||old.type!==current.type||current.type==='Point')return {...next,geometry:current};
-  if(current.type==='LineString'&&old.type==='LineString')return {...next,geometry:{type:'LineString',parts:[...old.parts.slice(0,action==='part'?undefined:-1),...current.parts]}};
-  if(current.type==='Polygon'&&old.type==='Polygon'){
-    if(action==='part')return {...next,geometry:{type:'Polygon',parts:[...old.parts,...current.parts]}};
-    const last=old.parts[old.parts.length-1]??[];
-    const rings=action==='ring'?[...last,...current.parts[0]]:last.length>1?[...last.slice(0,-1),...current.parts[0]]:current.parts[0];
-    return {...next,geometry:{type:'Polygon',parts:[...old.parts.slice(0,-1),rings]}};
-  }
-  return {...next,geometry:current};
 }

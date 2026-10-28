@@ -123,7 +123,7 @@
     "src/configStudio/workflowAnnotations.ts": "7bdd2da9494edee46317ab86a9b9bb0aade630cefba3e73cf6304362a07c75a3",
     "src/configStudio/workflowClassificationGroup.ts": "78330becc1ab8edfc01d598523928acb514962adebfd6bd909e54f04c757f796",
     "src/configStudio/workflowConditionCoverage.ts": "856951c52445a69221c82dc5cad28c5997acc43f7c457188dd9a7a549678bd18",
-    "src/configStudio/workflowDrawing.ts": "ae1b40316c13d33c254d6e83934f19f6bec196b96626a0572951fb5270da9814",
+    "src/configStudio/workflowDrawing.ts": "e3f1a3585c8ab9a8430b067c0ed71f6a556267ca6c8372ec00b03dec339e4af5",
     "src/configStudio/workflowDrawingMigration.ts": "e5363f0af947b5bf5ffbfef099a39906fdd47b019d35217fcd4e2423161f652f",
     "src/configStudio/workflowEditCommit.ts": "0d60a95db680a9128a69e9ac9be4fff52a95ced789a2ba735ee9e79b0a130fc9",
     "src/configStudio/workflowEditing.ts": "d6229858e3da43df6a2732c3bf7aca0f95ed7f9b2d0e7cdeea966666af0273a6",

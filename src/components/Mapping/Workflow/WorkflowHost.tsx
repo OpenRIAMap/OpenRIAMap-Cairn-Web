@@ -11,6 +11,28 @@ import type {RailCaptureRole} from '@/configStudio/externalCapturePaths';
 /** 与 MeasuringModule 内部一致的世界坐标点 */
 export type WorldPoint = { x: number; z: number; y?: number };
 
+/** In-memory editor state, including unfinished components; never record/config
+ * data. The measuring editor remains the sole owner of structural operations. */
+export type WorkflowDrawingDraft = {
+  geometry: MultipartGeometry;
+  coordinates: WorldPoint[];
+  /** Raw representative point: omitted Y must remain distinct from the
+   * canonical geometry's display fallback, so height-slot values can apply. */
+  point?: WorldPoint;
+  /** Raw first-point metadata per part, preserving omitted versus explicit Y. */
+  representatives?: Array<[number,WorldPoint]>;
+  editor: {
+    multipart: boolean;
+    part: number;
+    innerSpace: boolean;
+    editingHole: boolean;
+    hole: number;
+    panelOpen: boolean;
+    showingPartNumbers: boolean;
+  };
+  redo: WorldPoint[];
+};
+
 /** 目前实现：railway / station / ngf_*；后续可扩展 */
 export type WorkflowKey =
   | 'railway'
@@ -86,6 +108,12 @@ export type WorkflowBridge = {
   clearTempPoints: () => void;
   getDrawingGeometry?: () => MultipartGeometry | null;
   setDrawingGeometry?: (geometry: MultipartGeometry) => void;
+  /** Archive before suspend/mode changes; restore after activating the mode.
+   * Restoring an incompatible draft preserves it for correction, never trims. */
+  getDrawingDraft?: () => WorkflowDrawingDraft | null;
+  restoreDrawingDraft?: (draft: WorkflowDrawingDraft) => void;
+  /** Preserve an existing tool transaction when the user declines to close it. */
+  prepareDrawingTransition?: () => boolean;
   setDrawingTarget?: (path:ClassificationPath|undefined,allowParts?:boolean) => void;
   setCaptureRole?: (role:RailCaptureRole|undefined) => void;
 

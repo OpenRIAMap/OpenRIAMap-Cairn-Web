@@ -7,7 +7,7 @@ import {migrateConfigToR9} from '../../src/configStudio/r9Migration';
 import finalSeed from '../../src/configStudio/defaults/r9-r5.config.json';
 import type {ConfigPackageV3} from '../../src/configStudio/types';
 // Isolated production MeasuringModule acceptance, never imported by the app.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { StrictMode, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MapContainer, useMap } from 'react-leaflet';
 import type * as L from 'leaflet';
@@ -47,4 +47,4 @@ function Harness() {
     {map ? <MeasuringModule ref={measurementRef} mapReady leafletMapRef={mapRef} projectionRef={projectionRef} currentWorldId={world} configRuntime={runtimeConfig} disablePackageUpload={!location.search.includes('edit=1')} /> : null}
   </main>;
 }
-createRoot(document.getElementById('root')!).render(<Harness />);
+createRoot(document.getElementById('root')!).render(location.search.includes('strict=1')?<StrictMode><Harness /></StrictMode>:<Harness />);
