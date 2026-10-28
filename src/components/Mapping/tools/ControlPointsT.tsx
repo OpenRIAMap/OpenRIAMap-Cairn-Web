@@ -31,6 +31,7 @@ export type ControlPointsTHandle = {
 type ControlPointsTProps = {
   /** The measuring editor's numbering view is read-only, including late writes. */
   readOnly?: boolean;
+  onOpenCompleteArray?:()=>void;
   mapReady: boolean;
   leafletMapRef: MutableRefObject<L.Map | null>;
   projectionRef: MutableRefObject<DynmapProjection | null>;
@@ -1193,7 +1194,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
         <AppButton type="button" className={`shrink-0 px-1.5 py-1 rounded text-xs border ${addEnabled ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-800 border-gray-300'} ${canAdd && !arrayEditorOpen ? '' : 'opacity-50 cursor-not-allowed'}`} onClick={toggleAdd} disabled={!canAdd || arrayEditorOpen}>添加</AppButton>
         <AppButton type="button" className={`shrink-0 px-1.5 py-1 rounded text-xs border ${deleteEnabled ? 'bg-rose-600 text-white border-rose-700' : 'bg-white text-gray-800 border-gray-300'} ${canDelete && !arrayEditorOpen ? '' : 'opacity-50 cursor-not-allowed'}`} onClick={toggleDelete} disabled={!canDelete || arrayEditorOpen}>删除</AppButton>
         <AppButton type="button" className={`shrink-0 px-1.5 py-1 rounded text-xs border ${canReverse ? 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50' : 'opacity-50 cursor-not-allowed bg-white text-gray-800 border-gray-300'}`} onClick={doReverse} disabled={!canReverse}>反转</AppButton>
-        <AppButton type="button" className={`shrink-0 px-1.5 py-1 rounded text-xs border ${arrayEditorOpen ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-800 border-gray-300'} ${canArrayEdit && !busy ? '' : 'opacity-50 cursor-not-allowed'}`} onClick={() => arrayEditorOpen ? tryCloseArrayEditor() : openArrayEditor()} disabled={!arrayEditorOpen && (!canArrayEdit || busy)}>数组编辑</AppButton>
+        <AppButton type="button" className={`shrink-0 px-1.5 py-1 rounded text-xs border ${arrayEditorOpen ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-800 border-gray-300'} ${canArrayEdit && !busy ? '' : 'opacity-50 cursor-not-allowed'}`} onClick={() => arrayEditorOpen ? tryCloseArrayEditor() : openArrayEditor()} disabled={!arrayEditorOpen && (!canArrayEdit || busy)}>数组</AppButton>{props.onOpenCompleteArray?<AppButton type="button" className="shrink-0 rounded border bg-white px-1.5 py-1 text-xs disabled:opacity-50" disabled={readOnly||busy||arrayEditorOpen} onClick={props.onOpenCompleteArray}>完整数组</AppButton>:null}
       </div>
 
       {toolPanelOpen && (
@@ -1307,11 +1308,12 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
                   }}
                   title="数组编辑"
                 >
-                  数组编辑
+                  数组
                 </AppButton>
               </div>
 
               {(editEnabled || addEnabled) && dirty && <div className="text-xs text-orange-700">未保存修改</div>}
+              {props.onOpenCompleteArray?<AppButton type="button" className="rounded border bg-white px-3 py-1 text-xs disabled:opacity-50" disabled={readOnly||busy||arrayEditorOpen} onClick={props.onOpenCompleteArray}>完整数组</AppButton>:null}
               {arrayEditorOpen && <div className="text-xs text-blue-700">数组编辑开启中，其他控制点功能已锁定</div>}
               {statusText && <div className="text-xs text-gray-700">{statusText}</div>}
             </div>

@@ -17,6 +17,7 @@ def value(selector,data):
  expr=target(selector);b.wait('Boolean('+expr+')');b.evaluate('(()=>{const e='+expr+';if(e.disabled)throw Error("Input disabled");const p=e.tagName==="SELECT"?HTMLSelectElement.prototype:e.tagName==="TEXTAREA"?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(p,"value").set.call(e,'+json.dumps(str(data))+');e.dispatchEvent(new Event(e.tagName==="SELECT"?"change":"input",{bubbles:true}));})()');time.sleep(.12)
 def path(parts):
  for level,part in zip(['Class','Kind','SKind','SKind2'],parts):value('select[aria-label="要素分类 '+level+'"]',part)
+ click('确认选择并导入')
 def draw(points):
  for x,y in points:
   for event in ['mousePressed','mouseReleased']:b.call('Input.dispatchMouseEvent',{'type':event,'button':'left','clickCount':1,'x':x,'y':y})
@@ -27,7 +28,7 @@ def navigate():
 try:
  navigate();click('测绘');click('开始测绘(完整)')
  for key,shape,points in [('POINT','点',[(800,600)]),('LINE','线',[(800,600),(950,630)]),('AREA','面',[(750,580),(950,580),(950,730),(750,730)])]:
-  click(shape);path(['C16TEST','PARENT',key,'LEAF']);b.wait('Boolean('+target('input[aria-label="新建要素 ID"]')+')')
+  path(['C16TEST','PARENT',key,'LEAF']);b.wait('Boolean('+target('input[aria-label="新建要素 ID"]')+')')
   value('input[aria-label="新建要素 ID"]','MANUAL_'+key);value('[data-edit-control="name"] input','Actual '+key);value('input[aria-label="工作流编辑人"]','local-user')
   assert b.evaluate(target('[data-edit-control="count"] input')+'.value')=='0'
   draw(points);click('完成当前图层');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length==='+str(len(checks)+1))

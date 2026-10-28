@@ -17,6 +17,7 @@ def value(selector,data):
  expr=target(selector);b.wait('Boolean('+expr+')');b.evaluate('(()=>{const e='+expr+';if(e.disabled)throw Error("Input disabled");const p=e.tagName==="SELECT"?HTMLSelectElement.prototype:e.tagName==="TEXTAREA"?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(p,"value").set.call(e,'+json.dumps(str(data))+');e.dispatchEvent(new Event(e.tagName==="SELECT"?"change":"input",{bubbles:true}));})()');time.sleep(.12)
 def path(parts):
  for level,part in zip(['Class','Kind','SKind','SKind2'],parts):value('select[aria-label="要素分类 '+level+'"]',part)
+ click('确认选择并导入')
 def draw(points):
  for x,y in points:
   for event in ['mousePressed','mouseReleased']:b.call('Input.dispatchMouseEvent',{'type':event,'button':'left','clickCount':1,'x':x,'y':y})
@@ -41,10 +42,10 @@ def fill_form(i,role,ident):
 def by_label(text,index=0,tag='input'):
  return '[...document.querySelectorAll("label")].filter(e=>e.getBoundingClientRect().height&&e.textContent.includes('+json.dumps(text)+')&&e.querySelector('+json.dumps(tag)+'))['+str(index)+']?.querySelector('+json.dumps(tag)+')'
 try:
- navigate();click('测绘');click('开始测绘(完整)');click('点');path(['RIL','PLF']);click('多点合一');click('添加站台');click('添加站台');click('添加站场')
+ navigate();click('测绘');click('开始测绘(完整)');path(['RIL','PLF']);click('多点合一');click('添加站台');click('添加站台');click('添加站场')
  fill_form(0,'PLF','MERGE_P1');fill_form(1,'PLF','MERGE_P2');fill_form(2,'STA','MERGE_S');draw([(800,600)]);click('完成当前图层');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===3');rows=records();assert [r['Kind'] for r in rows]==['PLF','PLF','STA'];assert rows[0]['CoordP']==rows[1]['CoordP']==rows[2]['CoordP'];checks.append('actual point merge: two platforms and one station saved atomically with independent IDs and a shared coordinate')
  b.screenshot('c16-point-merge.png')
- click('面');path(['RIL','PFB']);click('多面合一');click('添加站台轮廓');click('添加车站建筑');fill_form(0,'PFB','MERGE_OUTLINE');fill_form(1,'STB','MERGE_BUILDING');draw([(750,580),(950,580),(950,730),(750,730)]);click('完成当前图层');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===5');rows=records();assert rows[3]['CoordG']==rows[4]['CoordG'];assert [r['Kind'] for r in rows[-2:]]==['PFB','STB'];checks.append('actual polygon merge: outline and building retain independent native records and identical complete geometry')
+ path(['RIL','PFB']);click('多面合一');click('添加站台轮廓');click('添加车站建筑');fill_form(0,'PFB','MERGE_OUTLINE');fill_form(1,'STB','MERGE_BUILDING');draw([(750,580),(950,580),(950,730),(750,730)]);click('完成当前图层');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===5');rows=records();assert rows[3]['CoordG']==rows[4]['CoordG'];assert [r['Kind'] for r in rows[-2:]]==['PFB','STB'];checks.append('actual polygon merge: outline and building retain independent native records and identical complete geometry')
  b.screenshot('c16-polygon-merge.png')
  navigate();click('测绘');click('开始测绘(快捷)');expr_value('[...document.querySelectorAll("select")].find(e=>[...e.options].some(o=>o.value==="external-trp-integrated"))','external-trp-integrated');click('开始')
  expr_value(by_label('填写者ID'),'trade-author');click('下一步');expr_value(by_label('类型',tag='select'),json.dumps({'class':'TRP','kind':'NOM','skind':'NOM'},separators=(',',':')));expr_value(by_label('交易点名'),'actual trade');expr_value(by_label('字符简称'),'C16TRADE')
@@ -53,7 +54,7 @@ try:
  expr_value(by_label('物品名称',0),'Stone');expr_value(by_label('物品名称',1),'Emerald');expr_value(by_label('数量',0),'0');expr_value(by_label('数量',1),'1');click('下一步');draw([(800,600)]);print(b.evaluate('document.body.innerText')[-800:]);click('下一步');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===1');trade=records()[0];assert trade['Class']=='TRP' and trade['tags']['Land']=='C16_LAND' and trade['Trade'][0]['OfferItems'][0]['Count']==0;checks.append('actual trade capture: native terminal category, scoped feature search excludes wrong class/world, nested Trade keeps valid zero')
  click('切换到完整模式');click('>');click('编辑');b.wait('document.body.innerText.includes("TRP 外部编辑")');value('[data-editor-field=Name] input','actual trade edited');click('保存编辑图层');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures()[0].Name==="actual trade edited"');edited=records()[0];assert edited['CreateBy']=='trade-author' and edited['Trade']==trade['Trade'];checks.append('actual TRP private editor preserves creation identity, nested trades and explicit reference values')
  b.screenshot('c16-trade-edited.png')
- navigate();click('测绘');click('开始测绘(完整)');click('线');path(['RIL','RLE']);value('input[aria-label="新建要素 ID"]','REVERSE_RAIL')
+ navigate();click('测绘');click('开始测绘(完整)');path(['RIL','RLE']);value('input[aria-label="新建要素 ID"]','REVERSE_RAIL')
  for key,data in [('Name','reverse rail'),('bureau','TEST'),('line','A'),('color','#123456'),('startplf','START'),('endplf','END')]:value('[data-edit-control="edit-RLE-'+key+'"] input',data)
  value('[data-edit-control="edit-RLE-direction"] select','2');value('input[aria-label="工作流编辑人"]','rail-author');draw([(750,600),(950,630)]);click('方向反转');click('完成当前图层');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===1');rail=records()[0];assert rail['startplf']=='END' and rail['endplf']=='START' and rail['CoordL'][0][0][0]>rail['CoordL'][0][-1][0];checks.append('actual railway reverse swaps the geometry and native endpoint fields together')
  assert not b.errors,b.errors

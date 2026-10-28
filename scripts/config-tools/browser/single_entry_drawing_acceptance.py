@@ -18,14 +18,14 @@ const native=window.fetch.bind(window);window.fetch=(input,init)=>{const url=new
 
 def click(label):b.click(label)
 def press(expression):
- at=b.evaluate('(()=>{const e='+expression+';if(!e||e.disabled)throw Error("Button unavailable");e.scrollIntoView({block:"center"});const r=e.getBoundingClientRect();if(!r.width||!r.height)throw Error("Button is in an inactive layout shell");return {x:r.x+r.width/2,y:r.y+r.height/2};})()')
+ at=b.evaluate('(()=>{const e='+expression+';if(!e||e.matches(":disabled"))throw Error("Button unavailable");e.scrollIntoView({block:"center"});const r=e.getBoundingClientRect();if(!r.width||!r.height)throw Error("Button is in an inactive layout shell");return {x:r.x+r.width/2,y:r.y+r.height/2};})()')
  for event in ['mousePressed','mouseReleased']:b.call('Input.dispatchMouseEvent',{'type':event,'button':'left','clickCount':1,**at})
  time.sleep(.13)
 def val(selector,value):
- val_expr('[...document.querySelectorAll('+json.dumps(selector)+')].find(e=>e.getBoundingClientRect().height&&!e.disabled)',value)
+ val_expr('[...document.querySelectorAll('+json.dumps(selector)+')].find(e=>e.getBoundingClientRect().height&&!e.matches(":disabled"))',value)
 def val_expr(expression,value):
- b.wait('(()=>{const e='+expression+';return Boolean(e&&!e.disabled&&e.getBoundingClientRect().height);})()')
- b.evaluate('(()=>{const e='+expression+';if(!e||e.disabled)throw Error("Input unavailable");const proto=e.tagName==="SELECT"?HTMLSelectElement.prototype:e.tagName==="TEXTAREA"?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,"value").set.call(e,'+json.dumps(str(value))+');e.dispatchEvent(new Event(e.tagName==="SELECT"?"change":"input",{bubbles:true}));})()');time.sleep(.1)
+ b.wait('(()=>{const e='+expression+';return Boolean(e&&!e.matches(":disabled")&&e.getBoundingClientRect().height);})()')
+ b.evaluate('(()=>{const e='+expression+';if(!e||e.matches(":disabled"))throw Error("Input unavailable");const proto=e.tagName==="SELECT"?HTMLSelectElement.prototype:e.tagName==="TEXTAREA"?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,"value").set.call(e,'+json.dumps(str(value))+');e.dispatchEvent(new Event(e.tagName==="SELECT"?"change":"input",{bubbles:true}));})()');time.sleep(.1)
 def probe():
  return b.evaluate(r"""(()=>{const el=document.querySelector('.leaflet-container');let root=el?.[Object.keys(el??{}).find(k=>k.startsWith('__reactFiber'))];if(!root)return false;while(root.return)root=root.return;root=root.stateNode?.current??root;const todo=[root],seen=new Set();let bridge,session,runner;
  while(todo.length){const f=todo.pop();if(!f||seen.has(f))continue;seen.add(f);const p=f.memoizedProps;if(p?.bridge&&p?.workflow&&p?.onCommit)bridge=p.bridge;if(f.type?.name==='V3WorkflowRunner')runner=f;
@@ -45,7 +45,7 @@ def draw(points):
   for event in ['mousePressed','mouseReleased']:b.call('Input.dispatchMouseEvent',{'type':event,'button':'left','clickCount':1,**at})
   time.sleep(.1)
 def array(points):
- click('数组编辑');selector='textarea[placeholder^="请输入严格 JSON 数组"]';b.wait('!!document.querySelector('+json.dumps(selector)+')');val(selector,json.dumps([[x,64,z] for x,z in points]));click('校验');click('完成');b.wait('!document.querySelector('+json.dumps(selector)+')')
+ click('数组');selector='textarea[placeholder^="请输入严格 JSON 数组"]';b.wait('!!document.querySelector('+json.dumps(selector)+')');val(selector,json.dumps([[x,64,z] for x,z in points]));click('校验');click('完成');b.wait('!document.querySelector('+json.dumps(selector)+')')
 def page():return b.evaluate('document.querySelector("[data-workflow-step]")?.dataset.workflowStep')
 def fresh(config):
  b.call('Storage.clearDataForOrigin',{'origin':APP_URL,'storageTypes':'all'})
@@ -131,7 +131,7 @@ try:
  checks.append('A05/A06: non-last part/hole edits preserve siblings; outside map point rejected with geometry unchanged')
  # Every original coordinate-input route is tested against the same active hole.
  click('手动输入');val('[data-panel-id="manual-point-input"] input[placeholder="例如 10 / 10.1"]','120');val('[data-panel-id="manual-point-input"] input[placeholder="例如 -64 / -64.3"]','64');val('[data-panel-id="manual-point-input"] input[placeholder="例如 20 / 20.1"]','0');press(panel_button('manual-point-input','完成'));assert geometry()==before;close_panel('manual-point-input')
- click('数组编辑');val('textarea[placeholder^="请输入严格 JSON 数组"]','[[120,64,0],[130,64,0],[130,64,10]]');click('校验');assert geometry()==before
+ click('数组');val('textarea[placeholder^="请输入严格 JSON 数组"]','[[120,64,0],[130,64,0],[130,64,10]]');click('校验');assert geometry()==before
  assert b.evaluate(panel_button('cpT-array-editor-panel','完成')+'.disabled');close_panel('cpT-array-editor-panel')
  click('曲线输入')
  for i,(x,z) in enumerate([(120,0),(130,10)]):
@@ -147,7 +147,7 @@ try:
  checks.append('A06: original manual/array/curve/control-point inputs reject outside-hole edits, reverse roundtrip is isolated, and points inside another hole are rejected')
  click('显示部件编号');locked=draft()
  assert b.evaluate('[...document.querySelectorAll("button")].find(e=>e.title==="添加部件").disabled')
- assert all(b.evaluate('[...document.querySelectorAll("button")].find(e=>e.textContent.trim()==='+json.dumps(label)+').disabled') for label in ['撤销','重做','数组编辑','修改','添加','删除','反转'])
+ assert all(b.evaluate('[...document.querySelectorAll("button")].find(e=>e.textContent.trim()==='+json.dumps(label)+').disabled') for label in ['撤销','重做','数组','修改','添加','删除','反转'])
  b.evaluate('document.activeElement?.blur()')
  for key,code,n in [('z','KeyZ',90),('y','KeyY',89)]:
   b.call('Input.dispatchKeyEvent',{'type':'keyDown','key':key,'code':code,'windowsVirtualKeyCode':n,'modifiers':2});b.call('Input.dispatchKeyEvent',{'type':'keyUp','key':key,'code':code,'windowsVirtualKeyCode':n})
@@ -235,7 +235,7 @@ try:
   else:array([(10,0),(50,0)])
   assert geometry()['parts'][1]==second and geometry()['parts'][0]!=first['parts'][0]
   if kind=='Point':
-   intact=geometry();click('数组编辑');val('textarea[placeholder^="请输入严格 JSON 数组"]','[[1,64,1],[2,64,2]]');click('校验');assert geometry()==intact;assert b.evaluate(panel_button('cpT-array-editor-panel','完成')+'.disabled');close_panel('cpT-array-editor-panel')
+   intact=geometry();click('数组');val('textarea[placeholder^="请输入严格 JSON 数组"]','[[1,64,1],[2,64,2]]');click('校验');assert geometry()==intact;assert b.evaluate(panel_button('cpT-array-editor-panel','完成')+'.disabled');close_panel('cpT-array-editor-panel')
   else:
    array([(round(10+i*.1,1),round(10+(i%11)*.1,1)) for i in range(500)])
    probe();perf=b.evaluate(r"""(()=>{const s=window.singleEntryProbe.session,b=window.singleEntryProbe.bridge,before=JSON.stringify(b.getDrawingGeometry()),times=[];for(let i=0;i<100;i++){const t=performance.now();s.capture(s.active);times.push(performance.now()-t);}times.sort((a,b)=>a-b);return {kind:'read-only session capture, not frame/render timing',vertices:502,reads:100,p95Ms:times[94],maxMs:times[99],unchanged:before===JSON.stringify(b.getDrawingGeometry())};})()""")
@@ -256,7 +256,7 @@ try:
  draw([(0,0),(60,0),(60,60),(0,60)]);click('多部件和内洞设置');array([(0,0),(60,0),(60,60),(0,60)])
  click('内部空间');click('添加内部洞');draw([(10,10),(20,10),(20,20)]);array([(10,10),(20,10),(20,20),(10,20)])
  first_task=draft()
- click('数组编辑');val('textarea[placeholder^="请输入严格 JSON 数组"]','[[11,64,11],[21,64,11],[21,64,21],[11,64,21]]');b.evaluate('window.confirm=()=>false');click('下一页')
+ click('数组');val('textarea[placeholder^="请输入严格 JSON 数组"]','[[11,64,11],[21,64,11],[21,64,21],[11,64,21]]');b.evaluate('window.confirm=()=>false');click('下一页')
  assert geometry()==first_task['geometry'] and b.evaluate('window.singleEntryProbe.session.active')==flow['outputs'][0]['id']
  assert b.evaluate('document.querySelector(\'textarea[placeholder^="请输入严格 JSON 数组"]\').value')=='[[11,64,11],[21,64,11],[21,64,21],[11,64,21]]'
  click('上一页');b.evaluate('window.confirm=()=>true');click('校验');click('完成');first_task=draft()

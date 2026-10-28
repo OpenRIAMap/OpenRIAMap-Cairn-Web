@@ -20,7 +20,7 @@ assert b.evaluate("document.querySelector('select[aria-label=\"内部洞编号\"
 value('input[aria-label="工作流编辑人"]','multipart-r10-editor')
 selector='textarea[placeholder^="请输入严格 JSON 数组"]'
 def array_change(coords,undo=False):
- click('数组编辑');b.wait('!!document.querySelector('+json.dumps(selector)+')')
+ click('数组');b.wait('!!document.querySelector('+json.dumps(selector)+')')
  before=b.evaluate('document.querySelector('+json.dumps(selector)+').value');value(selector,json.dumps(coords))
  if undo:
   click('撤回');assert b.evaluate('document.querySelector('+json.dumps(selector)+').value')==before

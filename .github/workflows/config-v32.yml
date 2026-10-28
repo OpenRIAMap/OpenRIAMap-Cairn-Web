@@ -85,6 +85,8 @@ jobs:
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/single_entry_drawing_acceptance.py
           node scripts/config-tools/verify-single-entry-browser-records.mjs
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/saved_layer_five_fixes_acceptance.py
+          "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/full_mode_selection_array_acceptance.py
+          node scripts/config-tools/verify-full-mode-array-browser-record.mjs
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c16_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c16_tools_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c16_card_acceptance.py
