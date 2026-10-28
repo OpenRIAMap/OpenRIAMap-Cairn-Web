@@ -101,6 +101,17 @@ def download(suffix):
 def save_config(name,config):
  with gzip.open(OUT/('single-entry-'+name+'-config.json.gz'),'wt',encoding='utf8') as stream:json.dump(config,stream,ensure_ascii=False)
 
+def assert_fixed_geometry(expected):
+ actual=b.evaluate('''(async()=>{const {DynmapProjection,ZTH_FLAT_CONFIG}=await import('/src/lib/DynmapProjection.ts');const p=new DynmapProjection(ZTH_FLAT_CONFIG),world=pair=>{const v=p.latLngToLocation({lng:pair[0],lat:pair[1]},64);return [Number(v.x.toFixed(6)),Number(v.z.toFixed(6))];};return Object.values(window.workflowAcceptance.map._layers).filter(l=>typeof l.getLatLngs==='function'||typeof l.getLatLng==='function').map(l=>l.toGeoJSON?.().geometry).filter(Boolean).flatMap(g=>g.type==='Point'?[world(g.coordinates)]:g.type==='LineString'?[g.coordinates.map(world)]:g.type==='Polygon'?[g.coordinates.map(r=>r.map(world))]:[]);})()''')
+ def xy(point):return [round(point['x'],6),round(point['z'],6)]
+ desired=[xy(p) for p in expected['parts']] if expected['type']=='Point' else [[xy(p) for p in part] for part in expected['parts']] if expected['type']=='LineString' else [[[xy(p) for p in ring] for ring in part] for part in expected['parts']]
+ if expected['type']=='Polygon':
+  for collection in [actual,desired]:
+   for part in collection:
+    for ring in part:
+     if len(ring)>1 and ring[0]==ring[-1]:ring.pop()
+ assert actual==desired,{'actual fixed geometry':actual,'expected complete geometry':desired}
+
 try:
  config=copy.deepcopy(BASE);flow=open_flow(config,'v3-bud_building','SEPOLYGON')
  save_config('polygon',config)
@@ -147,6 +158,7 @@ try:
  expected=geometry();assert next(iter(captures().values()))==expected
  click('确认保存输出');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===1')
  saved=records()[0];assert saved['CoordG']==canonical(expected),(saved,expected)
+ assert_fixed_geometry(expected)
  (OUT/'single-entry-polygon-record.json').write_text(json.dumps(saved,ensure_ascii=False,indent=2),encoding='utf8')
  checks.append('A13: actual confirm/save writes both Polygon parts and every hole into canonical CoordG')
  # Normal layer edit, standard ZIP, complete JSON and import use actual UI.
@@ -233,6 +245,7 @@ try:
   assert next(iter(captures().values()))==expected
   click('确认保存输出');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===1')
   saved=records()[0];field='CoordP' if kind=='Point' else 'CoordL';assert saved[field]==canonical(expected)
+  assert_fixed_geometry(expected)
   (OUT/('single-entry-'+kind+'-record.json')).write_text(json.dumps(saved,ensure_ascii=False,indent=2),encoding='utf8')
   checks.append('A03/A04/A11/A13: '+kind+' original part controls, unfinished-part blocking, non-last-part correction, backtrack and exact canonical save')
  # Two independent Polygon tasks plus an auxiliary point. The fixture builder

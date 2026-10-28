@@ -56,6 +56,7 @@ export type WorkflowKey =
 export type WorkflowPreviewKind = 'point' | 'polyline' | 'polygon';
 
 export type WorkflowPreviewStyle = {
+  interactive?: boolean;
   color?: string;
   weight?: number;
   dashArray?: string;
