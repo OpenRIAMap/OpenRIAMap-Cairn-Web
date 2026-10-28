@@ -1,23 +1,24 @@
-import type {ConfigPackageV3,MountedFeatureRecord} from '@/configStudio/types';
-import {workflowClassificationCaption} from '@/configStudio/workflowCategoryOptions';
+import {classificationPathKey} from '@/configStudio/runtime';
+import type {ConfigPackageV3,MountedFeatureRecord,ClassificationPath,WorkflowControl} from '@/configStudio/types';
+import {workflowClassificationCaption,workflowCategoryOptions} from '@/configStudio/workflowCategoryOptions';
 import {ControlInput} from '@/configStudio/V3WorkflowRunner';
 import {WorkflowAnnotationsInput} from '@/configStudio/WorkflowAnnotationsInput';
 import type {WorkflowEditDraft,WorkflowEditPlan} from '@/configStudio/workflowEditing';
-export function NativeRecordForm({config,plan,draft,onChange,records,world,editor,onEditorChange,onCancel,mode='edit',hideClassification=false}:{
- config:ConfigPackageV3;plan:WorkflowEditPlan;draft:WorkflowEditDraft;onChange:(draft:WorkflowEditDraft)=>void;records:MountedFeatureRecord[];world:string;editor:string;onEditorChange:(value:string)=>void;onCancel:()=>void;mode?:'create'|'edit';hideClassification?:boolean;
+export function NativeRecordForm({config,plan,draft,onChange,records,world,editor,onEditorChange,onCancel,mode='edit',hideClassification=false,onClassificationChange}:{
+ config:ConfigPackageV3;plan:WorkflowEditPlan;draft:WorkflowEditDraft;onChange:(draft:WorkflowEditDraft)=>void;records:MountedFeatureRecord[];world:string;editor:string;onEditorChange:(value:string)=>void;onCancel:()=>void;mode?:'create'|'edit';hideClassification?:boolean;onClassificationChange?:(path:ClassificationPath)=>void;
 }){
  const change=(key:string,value:unknown)=>onChange({...draft,slots:{...draft.slots,[key]:value}});
+ const originalControls=plan.controls.some(c=>c.kind==='classificationPicker')?plan.controls:[{id:'edit-classification',kind:'classificationPicker',label:{zh:'类型',en:''},columns:1,outputId:plan.workflow.outputs[0].id} as WorkflowControl,...plan.controls];
+ const controls=originalControls.filter((c,i,all)=>c.kind!=='classificationPicker'||all.findIndex(v=>v.kind==='classificationPicker')===i);
+ const classificationOptions=workflowCategoryOptions(config,plan.classifications);
  return <section aria-label="V3 工作流式编辑" className="config-editor space-y-3 rounded border bg-white p-3">
   <h4 className="font-medium">{plan.workflow.label.zh} · {mode==='create'?'新建':'编辑'}</h4>
   <label className="block text-sm">ID<input aria-label={mode==='create'?'新建要素 ID':'编辑要素 ID'} className="mt-1 w-full rounded border px-2 py-1" value={String(draft.slots.EDIT_ID??'')} onChange={event=>change('EDIT_ID',event.target.value)}/></label>
   <p className="text-xs text-slate-600">{mode==='create'?'使用编辑方案填写新要素；保存时生成创建信息。':'原几何已恢复。保存替换当前图层；未修改字段和创建信息保留。'}</p>
-  {plan.controls.filter(control=>!hideClassification||control.kind!=='classificationPicker').map(control=><div key={control.id} data-edit-control={control.id} className="space-y-1 text-sm">
+  {controls.filter(control=>!hideClassification||control.kind!=='classificationPicker').map(control=><fieldset disabled={control.kind==='classificationPicker'&&plan.classifications.length===1} key={control.id} data-edit-control={control.id} className="space-y-1 text-sm">
    <span>{control.kind==='classificationPicker'?workflowClassificationCaption(config,control,plan.workflow.outputs[0]):control.label.zh}{control.required?' *':''}</span>
-   {control.kind==='tagsExtensions'?<WorkflowAnnotationsInput config={config} workflow={plan.workflow} control={control} value={draft.slots[control.id]} classifications={{[plan.workflow.outputs[0].id]:draft.classification}} onChange={value=>change(control.id,value)}/>:<ControlInput classificationPaths={plan.classifications} output={plan.workflow.outputs[0]} control={control} value={draft.slots[control.slot??control.id]} config={config} records={records} world={world} fixedGeometry={plan.workflow.outputs[0].geometry.selected} onChange={value=>{
-    if(control.kind==='classificationPicker'){if(!value){onChange({...draft,classification:{class:''},slots:{...draft.slots,[control.slot??control.id]:''}});return;}try{const classification=JSON.parse(String(value));onChange({...draft,classification,slots:{...draft.slots,[control.slot??control.id]:value}});}catch{/* Controlled selection only. */}}
-    else change(control.slot??control.id,value);
-   }}/>}
-  </div>)}
+   {control.kind==='classificationPicker'?<select aria-label="工作流分类" className="w-full rounded border px-2 py-1" value={classificationPathKey(draft.classification)} onChange={event=>{const option=classificationOptions.find(o=>o.key===event.target.value);if(!option)return;if(onClassificationChange)onClassificationChange(option.path);else onChange({...draft,classification:option.path,slots:{...draft.slots,[control.slot??control.id]:option.value}});}}>{classificationOptions.map(option=><option key={option.key} value={option.key}>{option.label}</option>)}</select>:control.kind==='tagsExtensions'?<WorkflowAnnotationsInput config={config} workflow={plan.workflow} control={control} value={draft.slots[control.id]} classifications={{[plan.workflow.outputs[0].id]:draft.classification}} onChange={value=>change(control.id,value)}/>:<ControlInput classificationPaths={plan.classifications} output={plan.workflow.outputs[0]} control={control} value={draft.slots[control.slot??control.id]} config={config} records={records} world={world} fixedGeometry={plan.workflow.outputs[0].geometry.selected} onChange={value=>change(control.slot??control.id,value)}/>}
+  </fieldset>)}
   <label className="block text-sm">{mode==='create'?'填写人':'编辑人'}<input aria-label="工作流编辑人" className="mt-1 w-full rounded border px-2 py-1" value={editor} onChange={event=>onEditorChange(event.target.value)}/></label>
   <button type="button" className="rounded border px-3 py-1" onClick={onCancel}>{mode==='create'?'放弃此新建':'放弃要素编辑'}</button>
  </section>;

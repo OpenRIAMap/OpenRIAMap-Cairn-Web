@@ -23,7 +23,7 @@ def draw(points):
 def world_draw(points):
  draw([tuple(b.evaluate('window.workflowAcceptance.screenPointAt('+str(x)+','+str(z)+')').values()) for x,z in points])
 def array(coords):
- click('数组编辑');selector='textarea[placeholder^="请输入严格 JSON 数组"]';b.wait('Boolean(document.querySelector('+json.dumps(selector)+'))');value(selector,json.dumps(coords));click('校验');click('完成');b.wait('!document.querySelector('+json.dumps(selector)+')')
+ click('数组');selector='textarea[placeholder^="请输入严格 JSON 数组"]';b.wait('Boolean(document.querySelector('+json.dumps(selector)+'))');value(selector,json.dumps(coords));click('校验');click('完成');b.wait('!document.querySelector('+json.dumps(selector)+')')
 def navigate():
  b.call('Page.navigate',{'url':APP_URL+'/scripts/config-tools/workflow-acceptance.html?classification=1&edit=1'})
  b.wait('Boolean(window.workflowAcceptance?.measurement)',60)
@@ -88,8 +88,8 @@ try:
  rail=records();assert len(rail)==1 and rail[0]['Class']=='RIL' and rail[0]['Kind']=='RLE' and len(rail[0]['CoordL'][0])==2
  checks.append('actual railway component retains its algorithm and ID convention while outputting the declared RIL/RLE path')
  for role,format,shape,fields in [('STF','车站建筑楼层','面',{'ID':'CAPTURE_STF','Name':'Capture floor','NofFloor':'1','staBuildingID':'CAPTURE_STB'}),('SBP','车站建筑点','点',{'ID':'CAPTURE_SBP','Name':'Capture station point'})]:
-  navigate();click('测绘');click('开始测绘(完整)');click(shape)
-  value('select[aria-label="要素分类 Class"]','RIL');value('select[aria-label="要素分类 Kind"]',role)
+  navigate();click('测绘');click('开始测绘(完整)')
+  value('select[aria-label="要素分类 Class"]','RIL');value('select[aria-label="要素分类 Kind"]',role);click('确认选择并导入')
   value('input[aria-label="新建要素 ID"]',fields['ID'])
   for key,data in fields.items():
    if key=='ID':continue
@@ -162,10 +162,11 @@ try:
    time.sleep(.1)
   assert csvs;csv_text=csvs[0].read_text(encoding='utf-8-sig');assert original['ID'] in csv_text and original['Name'] in csv_text and original['Class'] in csv_text
  checks.append('new NGF point/line/polygon, ADM and PTA capture/import edit, layer identity, temporary mount eligibility and actual CSV download work without legacy registrations or ID/geometry changes')
- navigate();click('测绘');click('开始测绘(完整)');click('点');draw([(700,600)]);click('完成当前图层')
- assert b.evaluate('[...document.querySelectorAll("button")].some(e=>e.textContent==="临时挂载"&&e.disabled)')
- assert b.evaluate('[...document.querySelectorAll("button")].some(e=>e.textContent==="简略CSV文件"&&e.disabled)')
- checks.append('untyped default geometry remains excluded from temporary mounting and typed CSV export')
+ navigate();click('测绘');click('开始测绘(完整)');draw([(700,600)])
+ assert not b.evaluate('window.workflowAcceptance.measurement.getCommittedFeatures().length')
+ assert b.evaluate('document.querySelector("[data-full-category-state]").dataset.fullCategoryState')=='unloaded'
+ assert not b.evaluate('[...document.querySelectorAll("button")].some(e=>e.getBoundingClientRect().height&&["点","线","面"].includes(e.textContent.trim()))')
+ checks.append('full creation remains untyped and non-drawing until an explicit valid category import')
  assert not b.evaluate('window.alerts.length'),b.evaluate('window.alerts');assert not b.errors,b.errors
  (OUT/'classification-capture-browser-result.json').write_text(json.dumps({'checks':checks,'runtimeErrors':b.errors},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'checks':checks,'runtimeErrors':b.errors},ensure_ascii=False),flush=True)
 except Exception:

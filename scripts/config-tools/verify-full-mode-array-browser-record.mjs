@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {gunzipSync} from 'node:zlib';
+import {validateIncomingRecord,validateIncomingBatch} from '../../vendor/configuration-r11/r11-validation.mjs';
+
+const out=path.resolve(process.env.CAIRNMAP_ACCEPTANCE_OUT??process.argv[2]??'scripts/config-tools/browser/artifacts');
+const result=JSON.parse(fs.readFileSync(path.join(out,'full-mode-selection-array-result.json'),'utf8'));
+assert.deepEqual(result.runtimeErrors,[]);assert.deepEqual(result.remoteOrWriteRequests,[]);
+const config=JSON.parse(gunzipSync(fs.readFileSync(path.join(out,'full-mode-array-config.json.gz'))).toString('utf8'));
+const record=JSON.parse(fs.readFileSync(path.join(out,'full-mode-array-record.json'),'utf8'));
+assert.equal(record.CoordG.length,2);
+assert.equal(record.CoordG[1].length,3,'The saved second part retains both reordered holes.');
+assert.deepEqual(validateIncomingRecord(config,record,'zth'),[]);
+validateIncomingBatch(config,[record],[]);
+const invalid=structuredClone(record);invalid.CoordG[1][1]=[[9999,64,9999],[10000,64,9999],[10000,64,10000]];
+assert.ok(validateIncomingRecord(config,invalid,'zth').length,'An outside hole must still fail the unchanged formal kernel.');
+const verification={kernel:'unchanged c17 pure Node entry',revision:config.revision,contract:config.contractRevision,parts:record.CoordG.length,holes:record.CoordG.map(p=>p.length-1),negativeCase:'outside hole rejected'};
+fs.writeFileSync(path.join(out,'full-mode-array-kernel-result.json'),JSON.stringify(verification,null,2)+'\n');
+console.log(JSON.stringify(verification));

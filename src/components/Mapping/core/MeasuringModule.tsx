@@ -1,3 +1,6 @@
+import CompleteArrayEditor from '../tools/CompleteArrayEditor';
+import {resolveCreateForm,projectCreateDraft,transferCreateDraft,type CreateForm} from './fullCreateForms';
+import {convertEditingGeometry,validateEditingGeometry,replaceDraftGeometry,parseCompleteArray,completeArrayText} from './editingGeometry';
 import {layerClassificationCaption} from './layerPresentation';
 import {diagnoseEditorClassification} from './editorClassificationDiagnostics';
 import {recordsAfterExactDeletes} from '@/configStudio/nativeRecordSubmission';
@@ -283,6 +286,16 @@ const MappingEditorCore = forwardRef<MeasuringModuleHandle, MeasuringModuleProps
 // ---------- 测绘 & 图层管理状态 ------------
 // ---------- 测绘 & 图层管理状态 ------------
 const [measuringActive, setMeasuringActive] = useState(false); // 是否开启测绘控制UI
+const drawingEpochRef=useRef(0);
+const renderedDrawingEpoch=drawingEpochRef.current;
+const fullFrozenRef=useRef(false),completeArrayOpenRef=useRef(false),internalWriteRef=useRef(false),worldReadOnlyRef=useRef(false);
+const writeBlocked=()=>!internalWriteRef.current&&(fullFrozenRef.current||completeArrayOpenRef.current||worldReadOnlyRef.current);
+const toolWriteBlocked=()=>writeBlocked()||(!internalWriteRef.current&&renderedDrawingEpoch!==drawingEpochRef.current);
+const writeInternally=<T,>(action:()=>T):T=>{const previous=internalWriteRef.current;internalWriteRef.current=true;try{return action();}finally{internalWriteRef.current=previous;}};
+const [completeArray,setCompleteArray]=useState<{geometry:MultipartGeometry;id:number;world:string;allowParts:boolean}|null>(null);
+const completeArrayEpoch=useRef(0);
+const completeHistory=useRef<{undo:Array<{before:WorkflowDrawingDraft;after:WorkflowDrawingDraft}>;redo:Array<{before:WorkflowDrawingDraft;after:WorkflowDrawingDraft}>}>({undo:[],redo:[]});
+const [historyRevision,setHistoryRevision]=useState(0);
 const [drawMode, setDrawMode] = useState<'none'|'point'|'polyline'|'polygon'>('none');
 const drawModeRef = useRef<'none'|'point'|'polyline'|'polygon'>('none');
 useEffect(() => { drawModeRef.current = drawMode; }, [drawMode]);
@@ -325,7 +338,9 @@ const tempPointsRef=useRef(tempPoints);
 const drawingListeners=useRef(new Set<()=>void>());
 const [drawingTargetRevision,setDrawingTargetRevision]=useState(0);
 const setTempPoints=useCallback((value:typeof tempPoints|((previous:typeof tempPoints)=>typeof tempPoints))=>{
+  if(writeBlocked())return;
   const next=typeof value==='function'?value(tempPointsRef.current):value;
+  if(!internalWriteRef.current)completeHistory.current.redo=[];
   tempPointsRef.current=next;setTempPointState(next);
 },[]);
 useEffect(()=>{for(const listener of drawingListeners.current)listener();},[tempPoints,drawingTargetRevision]);
@@ -403,7 +418,7 @@ useEffect(() => { editSelectedInnerSpaceRef.current = editSelectedInnerSpace; },
 useEffect(() => { activeInnerSpaceRef.current = activeInnerSpace; }, [activeInnerSpace]);
 useEffect(() => { showMultipartPartLabelsRef.current = showMultipartPartLabels; }, [showMultipartPartLabels]);
 
-const multipartStructureLocked = showMultipartPartLabels || controlPointSessionBusy || manualPointInputOpen || curveInputOpen;
+const multipartStructureLocked = showMultipartPartLabels || controlPointSessionBusy || manualPointInputOpen || curveInputOpen || completeArray!==null || fullFrozenRef.current;
 
 
 
@@ -438,6 +453,7 @@ const asEditorCoords = (coords: Array<{ x: number; y: number; z: number }>): Edi
     .map((coord) => ({ x: coord.x, y: coord.y, z: coord.z }));
 
 const resetMultipartEditor = () => {
+  if(writeBlocked())return;
   multipartDraftRef.current = null;
   rawPartPointsRef.current.clear();
   multipartEnabledRef.current = false;
@@ -471,6 +487,7 @@ const activeEditorCoordsFromMultipart = (geometry: MultipartGeometry | null): Ed
 };
 
 const persistActiveEditorCoords = (coords: EditorCoord[]) => {
+  if(writeBlocked())return;
   const geometry = multipartDraftRef.current;
   if (!geometry) return;
   const partIndex = Math.max(0, Math.min(activeMultipartPartRef.current, geometry.parts.length - 1));
@@ -497,6 +514,7 @@ const persistActiveEditorCoords = (coords: EditorCoord[]) => {
 
 /** Keep invalid hole points out of every editing entrance, not only Save. */
 const validateActiveMultipartCoords = (coords: EditorCoord[]): string | undefined => {
+  if(toolWriteBlocked())return '当前分类/数组上下文已锁定或变化，不能写入旧焦点坐标。';
   if(showMultipartPartLabelsRef.current)return '部件编号显示中，关闭编号显示后才可编辑坐标。';
   if(drawModeRef.current==='point'&&coords.length>1)return '每个点部件只能有一个坐标，请通过“多部件和内洞设置”添加其他部件。';
   const geometry = multipartDraftRef.current;
@@ -537,7 +555,7 @@ const partsPermission = () => {
   if(workflowDrawingTargetRef.current)return workflowDrawingTargetRef.current.allowParts===true;
   if(specialDraftMode==='merge-point-platform-station')return false;
   if (!configRuntime) return true;
-  const path=nativeEdit?.draft.classification??(externalEdit?recordCategory(externalEdit.session.original):fullExternalCreate?.path??fullCategory);
+  const path=nativeEdit?.draft.classification??(externalEdit?externalEditingPath(externalEdit.session):fullExternalCreate?.path??fullCategory);
   const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
   return !path.class||drawMode!=='none'&&categoryAllowsParts(config,path,geometryKindForDrawMode(drawMode));
 };
@@ -834,9 +852,14 @@ const [editUiMode, setEditUiMode] = useState<'full-fallback' | 'native-workflow'
 
 const [nativeEdit,setNativeEdit]=useState<{config:ConfigPackageV3;plan:WorkflowEditPlan;draft:WorkflowEditDraft;original?:Record<string,unknown>;world:string}|null>(null);
 const [externalEdit,setExternalEdit]=useState<{config:ConfigPackageV3;workflow:WorkflowDefinition;session:TrpExternalEditSession;world:string}|null>(null);
+const externalEditingPath=(session:TrpExternalEditSession):ClassificationPath=>{const original=recordCategory(session.original),value=session.values.__workflowEditorClassification;if(value===undefined)return original;const [kind,skind,skind2]=String(value).split('||');return {class:original.class,...(kind?{kind}:{}),...(skind?{skind}:{}),...(skind2?{skind2}:{})};};
 const [fullCategory,setFullCategory]=useState<ClassificationPath>({class:''});
 const [fullCategoryError,setFullCategoryError]=useState('');
 const [fullSubmissionError,setFullSubmissionError]=useState('');
+const [fullSelectionState,setFullSelectionState]=useState<'unloaded'|'loaded'|'switching'>('unloaded');
+const [candidateCategory,setCandidateCategory]=useState<ClassificationPath>({class:''});
+const fullSwitchSnapshot=useRef<{config:ConfigPackageV3;path:ClassificationPath;form:CreateForm;geometry:WorkflowDrawingDraft;world:string;color:string;actor:string;history:typeof completeHistory.current}|null>(null);
+
 const [fullExternalCreate,setFullExternalCreate]=useState<{config:ConfigPackageV3;workflow:WorkflowDefinition;path:ClassificationPath;view:ProjectedRegistryScene;values:WorkflowEditorDraftValues;unparsed:WorkflowEditorUnparsedEntry[];world:string}|null>(null);
 useEffect(()=>{setFullSubmissionError('');},[nativeEdit?.draft,externalEdit?.session,fullExternalCreate?.values,tempPoints,fullCategory]);
 const nativeEditDatasets=useRuleDataStore(state=>state.datasets);
@@ -844,10 +867,12 @@ const nativeEditRecords=useMemo(()=>Object.values(nativeEditDatasets).flatMap(da
 const nativeEditSearchRecords=useMemo(()=>[...nativeEditRecords,...layers.flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])],[nativeEditRecords,layers]);
 const nativeEditWorldMismatch=Boolean(nativeEdit&&nativeEdit.world!==normalizeV3WorldId(currentWorldId));
 const activeEditWorld=nativeEdit?.world??externalEdit?.world??fullExternalCreate?.world;
+worldReadOnlyRef.current=Boolean(activeEditWorld&&activeEditWorld!==normalizeV3WorldId(currentWorldId));
 const externalEditWorldMismatch=Boolean(externalEdit&&externalEdit.world!==normalizeV3WorldId(currentWorldId));
 const fullExternalWorldMismatch=Boolean(fullExternalCreate&&fullExternalCreate.world!==normalizeV3WorldId(currentWorldId));
 useEffect(()=>{if(!activeEditWorld)return;if(activeEditWorld!==normalizeV3WorldId(currentWorldId)){setDrawing(false);clearDraftOverlays();}else {setDrawing(true);drawDraftGeometry(tempPoints,drawMode,drawColor);}},[currentWorldId,activeEditWorld]);
 const resetWorkflowStyleEditorState = () => {
+  drawingEpochRef.current++;fullFrozenRef.current=false;worldReadOnlyRef.current=false;fullSwitchSnapshot.current=null;completeArrayOpenRef.current=false;completeArrayEpoch.current++;setCompleteArray(null);setFullSelectionState('unloaded');setCandidateCategory({class:''});completeHistory.current={undo:[],redo:[]};
   setNativeEdit(null);
   setExternalEdit(null);
   setEditUiMode('full-fallback');
@@ -1160,6 +1185,7 @@ const [tempMountAllActive, setTempMountAllActive] = useState(false);
 const TEMP_MOUNT_READONLY_REASON = '临时挂载模式下仅可查看，无法编辑或保存。';
 const isTempMountReadonly = tempMountAllActive;
 const guardTempMountReadonly = () => {
+  if(writeBlocked()){window.alert('请先完成完整数组事务或恢复/完成分类切换。');return true;}
   if (!isTempMountReadonly) return false;
   window.alert(TEMP_MOUNT_READONLY_REASON);
   return true;
@@ -1488,6 +1514,7 @@ const hasUnsavedWorkForVariantSwitch = () => {
 };
 
 const clearTemporaryForVariantSwitch = () => {
+  fullFrozenRef.current=false;worldReadOnlyRef.current=false;completeArrayOpenRef.current=false;completeArrayEpoch.current++;setCompleteArray(null);
   // 仅清理临时容器：workflow + draft + 编辑/绘制态；不清 fixedRoot 与 layers
   workflowRootRef.current?.clearLayers();
   workflowPreviewMapRef.current.clear();
@@ -1684,7 +1711,7 @@ useEffect(() => {
   if (!map) return;
 
   const handleClick = (e: L.LeafletMouseEvent) => {
-    if (!mapDraftInputActiveRef.current) return;
+    if (!mapDraftInputActiveRef.current || writeBlocked()) return;
     // 曲线输入面板开启时：主绘制/编辑区完全冻结
     if (curveInputFrozenRef.current) return;
 
@@ -1803,6 +1830,7 @@ const onMapDrawClick = (e: L.LeafletMouseEvent) => {
 onMapDrawClickRef.current = onMapDrawClick;
 
 const onManualPointSubmit = (v: { x: number; y: number; z: number }) => {
+  if(writeBlocked())return;
   if (showMultipartPartLabelsRef.current) return;
   if (!measuringActive || !drawing || drawMode === 'none') return;
   if (curveInputFrozenRef.current) return;
@@ -2081,7 +2109,7 @@ const finishLayer = () => {
   if (guardTempMountReadonly()) return;
   const map = leafletMapRef.current;
   const proj = projectionRef.current;
-  if (!map || !proj) return;
+  if (!map || !proj || writeBlocked()) return;
 
   if (drawMode === 'none') return;
   if(activeEditWorld&&activeEditWorld!==normalizeV3WorldId(currentWorldId)){alert('请返回本次工作区所属世界后保存。');return;}
@@ -2631,7 +2659,12 @@ useEffect(() => {
 
  
 const handleUndo = () => {
-  if (showMultipartPartLabelsRef.current || controlPointSessionBusyRef.current || !tempPoints.length) return;
+  if(writeBlocked()||showMultipartPartLabelsRef.current||controlPointSessionBusyRef.current)return;
+  const whole=completeHistory.current.undo[completeHistory.current.undo.length-1];
+  if(whole&&sameDrawingValue(workflowBridge.getDrawingDraft?.(),whole.after)){
+    writeInternally(()=>workflowBridge.restoreDrawingDraft?.(whole.before));completeHistory.current.undo.pop();completeHistory.current.redo.push(whole);setHistoryRevision(v=>v+1);return;
+  }
+  if(!tempPoints.length)return;
 
   const last = tempPoints[tempPoints.length - 1];
   const updated = tempPoints.slice(0, tempPoints.length - 1);
@@ -2647,7 +2680,12 @@ const handleUndo = () => {
 };
 
 const handleRedo = () => {
-  if (showMultipartPartLabelsRef.current || controlPointSessionBusyRef.current || !redoStack.length) return;
+  if(writeBlocked()||showMultipartPartLabelsRef.current||controlPointSessionBusyRef.current)return;
+  const whole=completeHistory.current.redo[completeHistory.current.redo.length-1];
+  if(whole&&sameDrawingValue(workflowBridge.getDrawingDraft?.(),whole.before)){
+    writeInternally(()=>workflowBridge.restoreDrawingDraft?.(whole.after));completeHistory.current.redo.pop();completeHistory.current.undo.push(whole);setHistoryRevision(v=>v+1);return;
+  }
+  if(!redoStack.length)return;
 
   const redoPoint = redoStack[redoStack.length - 1];
   const updated = [...tempPoints, redoPoint];
@@ -2665,7 +2703,7 @@ const handleRedo = () => {
 // undo/redo and therefore deliberately takes precedence.
 useEffect(() => {
   const onKeyDown = (event: KeyboardEvent) => {
-    if (!measuringActive || !drawing || drawMode === 'none') return;
+    if (!measuringActive || !drawing || drawMode === 'none' || writeBlocked()) return;
     if (showMultipartPartLabelsRef.current) return;
     if (manualPointInputOpen || curveInputOpen || controlPointSessionBusy) return;
     const target = event.target as HTMLElement | null;
@@ -2675,25 +2713,28 @@ useEffect(() => {
 
     const key = event.key.toLowerCase();
     if (key === 'z' && !event.shiftKey) {
-      if (!tempPoints.length) return;
+      if (!tempPoints.length&&!completeHistory.current.undo.length) return;
       event.preventDefault();
       handleUndo();
       return;
     }
     if (key === 'y' || (key === 'z' && event.shiftKey)) {
-      if (!redoStack.length) return;
+      if (!redoStack.length&&!completeHistory.current.redo.length) return;
       event.preventDefault();
       handleRedo();
     }
   };
   window.addEventListener('keydown', onKeyDown);
   return () => window.removeEventListener('keydown', onKeyDown);
-}, [measuringActive, drawing, drawMode, manualPointInputOpen, curveInputOpen, controlPointSessionBusy, tempPoints, redoStack]);
+}, [measuringActive, drawing, drawMode, manualPointInputOpen, curveInputOpen, controlPointSessionBusy, tempPoints, redoStack, historyRevision]);
 
  
  
  // ========= 清除所有图层 =========
 const clearAllLayers = () => {
+  if(completeArrayOpenRef.current){window.alert('请先完成或关闭完整数组事务。');return;}
+  if(fullFrozenRef.current&&!window.confirm('当前正在切换分类，清空将放弃原分类快照和当前草稿，是否确认？'))return;
+  fullFrozenRef.current=false;worldReadOnlyRef.current=false;
   // 1) 清空三个容器（fixed + workflow + draft）
   fixedRootRef.current?.clearLayers();
   workflowRootRef.current?.clearLayers();
@@ -2860,6 +2901,7 @@ const editLayer = (id: number) => {
  
  // ========= 删除图层 =========
  const deleteLayer = (id: number) => {
+   if(guardTempMountReadonly())return;
    setLayers(prev => {
      const target = prev.find(l => l.id === id);
  
@@ -2892,6 +2934,7 @@ if (editingLayerId === id) {
 
 
 const runBatchImportFromText = (rawText: string, sourceLabel: string) => {
+  if(writeBlocked()){window.alert('请先完成完整数组事务或恢复/完成分类切换，再导入。');return;}
   const text = String(rawText ?? '').trim();
   if (!text) return;
 
@@ -3066,6 +3109,7 @@ const mergeRelayPackageDrafts = (base: RelayPackageDraft, incoming: RelayPackage
 };
 
 const applyParsedRelayPackage = (parsed: { draft: RelayPackageDraft; jsonItems: any[] }) => {
+  if(writeBlocked()){window.alert('当前编辑事务未结束，未导入标准包。');return;}
   const incomingIdSet = new Set<string>();
   for (const item of parsed.jsonItems) {
     if (!item || typeof item !== 'object') continue;
@@ -3182,6 +3226,7 @@ useEffect(() => {
 }, [isReviewWorkspace, currentWorldId, onReviewDirtyChange]);
 
 const applyMinimalFeatureEditPackage = (pkg: MinimalFeatureEditPackage) => {
+  if(writeBlocked()){window.alert('当前编辑事务未结束，未替换要素编辑包。');return;}
   const item = (pkg?.feature ?? {}) as any;
   if (!item || typeof item !== 'object') return;
 
@@ -3319,7 +3364,9 @@ const buildRelayPackageArtifact = async (operator: string, note: string): Promis
 };
 
 const handleExportRelayPackage = async (operator: string, note: string): Promise<{ blob: Blob; filename: string }> => {
+  if(writeBlocked())throw Error('请先完成当前编辑事务再导出标准包。');
   const artifact = await buildRelayPackageArtifact(operator, note);
+  if(writeBlocked())throw Error('编辑上下文已锁定，未应用导出状态。');
   setRelayPackageDraft((prev) => ({ ...prev, meta: { ...prev.meta, ...artifact.nextMeta } }));
   return artifact;
 };
@@ -3435,7 +3482,77 @@ const handleImportFileSelected = async (e: ChangeEvent<HTMLInputElement>) => {
 
 
 
+
+const currentCreateForm=():CreateForm=>{
+ if(nativeEdit&&!nativeEdit.original)return {kind:'native',plan:nativeEdit.plan,draft:nativeEdit.draft};
+ if(fullExternalCreate)return {kind:'external',workflow:fullExternalCreate.workflow,view:fullExternalCreate.view,values:fullExternalCreate.values,unparsed:fullExternalCreate.unparsed};
+ throw Error('当前没有已载入的完整新建表单。');
+};
+const applyCreateForm=(config:ConfigPackageV3,path:ClassificationPath,form:CreateForm,type:MultipartGeometry['type'],world:string,geometry?:WorkflowDrawingDraft)=>{
+ drawingEpochRef.current++;
+ writeInternally(()=>{
+  setExternalEdit(null);setFullCategory(path);setCandidateCategory(path);setFullCategoryError('');setFullSubmissionError('');
+  if(form.kind==='native'){setNativeEdit({config,plan:form.plan,draft:form.draft,world});setFullExternalCreate(null);setEditUiMode('native-workflow');}
+  else {setNativeEdit(null);setFullExternalCreate({config,workflow:form.workflow,path,view:form.view,values:form.values,unparsed:form.unparsed,world});setEditUiMode('external-workflow');}
+  const mode=type==='Point'?'point':type==='LineString'?'polyline':'polygon';drawModeRef.current=mode;setDrawMode(mode);setDrawing(world===normalizeV3WorldId(currentWorldId));
+  completeHistory.current={undo:[],redo:[]};
+  if(geometry)workflowBridge.restoreDrawingDraft?.(geometry);else {resetMultipartEditor();setTempPoints([]);setRedoStack([]);clearDraftOverlays();}
+ });
+ fullFrozenRef.current=false;fullSwitchSnapshot.current=null;setFullSelectionState('loaded');
+};
+const confirmFullCategory=()=>{
+ if(!configRuntime||editingLayerId!==null||fullSelectionState!=='unloaded'||isTempMountReadonly)return;
+ try {const config=structuredClone(configRuntime),target=resolveCreateForm(config,candidateCategory);applyCreateForm(config,structuredClone(candidateCategory),target.form,target.type,normalizeV3WorldId(currentWorldId));}
+ catch(e){setFullCategoryError(e instanceof Error?e.message:String(e));}
+};
+const unlockFullCategory=()=>{
+ if(writeBlocked()||editingLayerId!==null||fullSelectionState!=='loaded')return;
+ try {
+  if(specialDraftMode!=='none')throw Error('请先结束或放弃当前专用合并会话。');
+  if(manualPointInputOpen||curveInputOpen||controlPointSessionBusy||showMultipartPartLabels)throw Error('请先结束坐标工具并关闭部件编号显示，再解锁分类。');
+  if(activeEditWorld!==normalizeV3WorldId(currentWorldId))throw Error('请返回本次新建所属世界。');
+  const form=currentCreateForm(),config=nativeEdit?.config??fullExternalCreate!.config,geometry=workflowBridge.getDrawingDraft?.();if(!geometry)throw Error('缺少当前绘图草稿。');
+  projectCreateDraft(config,fullCategory,form);
+  const error=validateEditingGeometry(geometry.geometry);if(error)throw Error(error);
+  if(geometry.geometry.parts.length>1&&!categoryAllowsParts(config,fullCategory,geometry.geometry.type))throw Error('当前分类禁止多部件，请先处理现有部件。');
+  fullSwitchSnapshot.current=structuredClone({config,path:fullCategory,form,geometry,world:activeEditWorld!,color:drawColor,actor:editorIdInput,history:completeHistory.current});
+  drawingEpochRef.current++;fullFrozenRef.current=true;setCandidateCategory(fullCategory);setFullCategoryError('');setFullSubmissionError('');setFullSelectionState('switching');
+ }catch(e){setFullCategoryError(e instanceof Error?e.message:String(e));}
+};
+const tryFullCategory=()=>{
+ const saved=fullSwitchSnapshot.current;if(!saved||!fullFrozenRef.current)return;
+ try {
+  if(saved.world!==normalizeV3WorldId(currentWorldId))throw Error('请返回原世界后切换分类。');
+  if(configRuntime&&(saved.config.packageId!==configRuntime.packageId||saved.config.revision!==configRuntime.revision||saved.config.contractRevision!==configRuntime.contractRevision||JSON.stringify(saved.config)!==JSON.stringify(configRuntime)))throw Error('配置上下文已经变化，请恢复原分类并结束此会话后重新载入。');
+  const target=resolveCreateForm(saved.config,candidateCategory),geometry=convertEditingGeometry(saved.geometry.geometry,target.type,categoryAllowsParts(saved.config,candidateCategory,target.type));
+  const form=transferCreateDraft(saved.config,saved.path,saved.form,candidateCategory,target.form);
+  const draft=replaceDraftGeometry(saved.geometry,geometry);draft.coordinates=structuredClone(saved.geometry.coordinates);draft.representatives=structuredClone(saved.geometry.representatives);draft.point=structuredClone(saved.geometry.point);
+  applyCreateForm(saved.config,structuredClone(candidateCategory),form,target.type,saved.world,draft);
+ }catch(e){setFullCategoryError(e instanceof Error?e.message:String(e));}
+};
+const restoreFullCategory=()=>{
+ const saved=fullSwitchSnapshot.current;if(!saved)return;
+ applyCreateForm(saved.config,saved.path,saved.form,saved.geometry.geometry.type,saved.world,saved.geometry);completeHistory.current=structuredClone(saved.history);setDrawColor(saved.color);setEditorIdInput(saved.actor);
+};
+const sameDrawingValue=(a:WorkflowDrawingDraft|null|undefined,b:WorkflowDrawingDraft)=>!!a&&JSON.stringify(a.geometry)===JSON.stringify(b.geometry);
+const openCompleteArray=()=>{
+ if(writeBlocked()||showMultipartPartLabelsRef.current||isTempMountReadonly||activeEditWorld&&activeEditWorld!==normalizeV3WorldId(currentWorldId))return;
+ if(manualPointInputOpen||curveInputOpen||controlPointSessionBusy){setMultipartInputError('请先完成当前坐标工具，再打开完整数组。');return;}
+ const draft=workflowBridge.getDrawingDraft?.();if(!draft)return;
+ setMeasureDropdownOpen(false);completeArrayOpenRef.current=true;const id=++completeArrayEpoch.current;
+ setCompleteArray({geometry:structuredClone(draft.geometry),id,world:normalizeV3WorldId(currentWorldId),allowParts:partsPermission()});
+};
+const closeCompleteArray=()=>{completeArrayOpenRef.current=false;completeArrayEpoch.current++;setCompleteArray(null);};
+const applyCompleteArray=(geometry:MultipartGeometry,id:number)=>{
+ if(!completeArrayOpenRef.current||completeArrayEpoch.current!==id||!completeArray||completeArray.world!==normalizeV3WorldId(currentWorldId)||fullFrozenRef.current||showMultipartPartLabelsRef.current||isTempMountReadonly)throw Error('完整数组上下文已失效或只读，未应用。');
+ const valid=parseCompleteArray(completeArrayText(geometry),geometry.type,partsPermission()),before=workflowBridge.getDrawingDraft?.();if(!before||before.geometry.type!==geometry.type)throw Error('绘图类型已变化，未应用。');
+ const after=replaceDraftGeometry(before,valid);drawingEpochRef.current++;writeInternally(()=>workflowBridge.restoreDrawingDraft?.(after));
+ completeHistory.current.undo.push({before,after});completeHistory.current.redo=[];setHistoryRevision(v=>v+1);
+ setMultipartInputError('已按完整数组顺序更新部件和内洞编号。');
+};
+
 const selectFullCategory=(path:ClassificationPath)=>{
+  if(writeBlocked())return;
   if(drawMode==='none'||!configRuntime)return;
   const mode=geometryKindForDrawMode(drawMode);
   const apply=()=>{
@@ -3464,21 +3581,26 @@ const selectFullCategory=(path:ClassificationPath)=>{
   if(editingLayerId!==null)apply();else requestSwitchWithExtraWarn(apply);
 };
 const renderFullCategoryPicker=()=>{
-  const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
-  return config?<div className="mb-2 space-y-2"><CategoryPathPicker config={config} value={fullCategory} onChange={selectFullCategory} label="要素分类"/>{fullCategoryError?<p role="alert" className="whitespace-pre-line text-xs text-rose-700">{fullCategoryError}</p>:null}{fullSubmissionError?<p role="alert" className="whitespace-pre-line text-xs text-rose-700">{fullSubmissionError}</p>:null}</div>:<p role="alert">缺少当前正式配置，未启用分类编辑。</p>;
+ const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
+ if(!config)return <p role="alert">缺少当前配置，不能载入分类。</p>;
+ return <div className="mb-2 space-y-2" data-full-category-state={editingLayerId!==null?'editing':fullSelectionState}>
+  {editingLayerId===null?<><CategoryPathPicker config={config} value={fullSelectionState==='loaded'?fullCategory:candidateCategory} onChange={path=>{if(fullSelectionState==='loaded'||completeArrayOpenRef.current)return;setCandidateCategory(path);setFullCategoryError('');}} disabled={fullSelectionState==='loaded'||completeArray!==null||isTempMountReadonly} label="要素分类"/>
+  {fullSelectionState==='unloaded'?<AppButton type="button" className="w-full rounded border px-3 py-2" disabled={isTempMountReadonly} onClick={confirmFullCategory}>确认选择并导入</AppButton>:fullSelectionState==='loaded'?<AppButton type="button" className="w-full rounded border px-3 py-2" disabled={completeArray!==null||isTempMountReadonly} onClick={unlockFullCategory}>解锁分类选择</AppButton>:<div className="flex gap-2"><AppButton type="button" className="flex-1 rounded border px-3 py-2" onClick={tryFullCategory}>尝试切换</AppButton><AppButton type="button" className="flex-1 rounded border px-3 py-2" onClick={restoreFullCategory}>恢复原分类</AppButton></div>}</>:null}
+  {fullCategoryError?<p role="alert" className="whitespace-pre-line text-xs text-rose-700">{fullCategoryError}</p>:null}{fullSubmissionError?<p role="alert" className="whitespace-pre-line text-xs text-rose-700">{fullSubmissionError}</p>:null}
+ </div>;
 };
 const renderFullForm=()=>{
   const config=nativeEdit?.config??externalEdit?.config??fullExternalCreate?.config??configRuntime;
   if(!config)return null;
   const roles=new Set<ExternalRole>();
   for(const workflow of config.workflows.filter(workflow=>workflow.mode==='external'))for(const role of EXTERNAL_COMPONENT_ROLES[workflow.external?.componentKey??'']??[])try{if(externalRolePaths(config,workflow,role).some(path=>classificationPathKey(path)===classificationPathKey(fullCategory)))roles.add(role);}catch{/* The binding validator reports this declaration. */}
-  const mergeProps={config,world:normalizeV3WorldId(currentWorldId),editor:editorIdInput,onEditorChange:setEditorIdInput,records:nativeEditSearchRecords};
+  const mergeProps={config,world:normalizeV3WorldId(currentWorldId),editor:editorIdInput,onEditorChange:(value:string)=>{if(!writeBlocked())setEditorIdInput(value);},records:nativeEditSearchRecords};
   return <section className="mb-2 border-t pt-2"><div className="mb-2 flex flex-wrap items-center justify-between gap-2"><strong className="text-sm">附加信息{nativeEdit?' · '+nativeEdit.plan.workflow.label.zh:externalEdit?' · '+externalEdit.workflow.label.zh:fullExternalCreate?' · '+fullExternalCreate.workflow.label.zh:''}</strong>
     <div className="flex gap-2">{editingLayerId===null&&drawMode==='point'&&roles.has('platform')?<AppButton type="button" onClick={()=>requestExitSpecialDraftIfNeeded(()=>setSpecialDraftMode(specialDraftMode==='merge-point-platform-station'?'none':'merge-point-platform-station'))}>多点合一</AppButton>:null}
     {editingLayerId===null&&drawMode==='polygon'&&(roles.has('platformFootprint')||roles.has('stationBuilding'))?<AppButton type="button" onClick={()=>requestExitSpecialDraftIfNeeded(()=>setSpecialDraftMode(specialDraftMode==='merge-polygon-outline-building'?'none':'merge-polygon-outline-building'))}>多面合一</AppButton>:null}
     {drawMode==='polyline'&&roles.has('railLine')?<RailwayDirectionReverseButton enabled={tempPoints.length>=2&&!drawClickSuppressed&&!showMultipartPartLabels} onReverse={()=>{if(showMultipartPartLabelsRef.current)return;const reversed=[...tempPoints].reverse();if(multipartEnabledRef.current)persistActiveEditorCoords(reversed);setTempPoints(reversed);drawDraftGeometry(reversed,'polyline',drawColor);setNativeEdit(current=>current?{...current,draft:reverseWorkflowEditEndpoints(current.plan,current.draft)}:current);}}/>:null}</div>
    </div>
-   {specialDraftMode==='merge-point-platform-station'?<MergePointPlatformStation {...mergeProps} draft={mergePointPSDraft} onChange={setMergePointPSDraft}/>:specialDraftMode==='merge-polygon-outline-building'?<MergePolygonOutlineBuilding {...mergeProps} draft={mergePolygonOBDraft} onChange={setMergePolygonOBDraft}/>:fullCategoryError?<p className="text-xs text-slate-600">请完成分类选择，当前草稿未作为其他分类保存。</p>:externalEdit?<fieldset disabled={externalEditWorldMismatch}><ExternalFeatureEditHost hideClassification config={externalEdit.config} workflow={externalEdit.workflow} session={externalEdit.session} bridge={workflowBridge} context={{initialRecord:externalEdit.session.original,featureIdentity:{layerId:editingLayerId!,originalId:String(externalEdit.session.original.ID)},activeWorld:externalEdit.world,originalGeometry:externalEdit.session.originalGeometry,currentGeometry:multipartDraftRef.current??undefined,editor:editorIdInput,onEditorChange:setEditorIdInput,onUpdate:finishLayer,onCancel:clearTemporaryForVariantSwitch}} onDraftChange={session=>setExternalEdit(current=>current?{...current,session}:current)}/></fieldset>:nativeEdit?<fieldset disabled={nativeEditWorldMismatch}>{nativeEditWorldMismatch?<p role="alert">请返回 {nativeEdit.world} 后继续。</p>:null}<NativeWorkflowEditPanel config={nativeEdit.config} plan={nativeEdit.plan} draft={nativeEdit.draft} records={nativeEditSearchRecords} world={nativeEdit.world} editor={editorIdInput} onEditorChange={setEditorIdInput} onCancel={clearTemporaryForVariantSwitch} onChange={draft=>setNativeEdit(current=>current?{...current,draft}:current)} mode={nativeEdit.original?'edit':'create'} hideClassification/></fieldset>:fullExternalCreate?<fieldset disabled={fullExternalWorldMismatch}>{fullExternalWorldMismatch?<p role="alert">请返回 {fullExternalCreate.world} 后继续此新建。</p>:null}<WorkflowStyleEditPanel view={fullExternalCreate.view} values={fullExternalCreate.values} unparsedEntries={fullExternalCreate.unparsed} bridge={{...workflowBridge,getCaptureContext:()=>({config:fullExternalCreate.config,workflow:fullExternalCreate.workflow})}} idFirst classificationContent={<p className="text-xs">分类由上方四级选择树指定；本次保存为新要素。</p>} onChangeValue={(key,value)=>setFullExternalCreate(current=>current?{...current,values:{...current.values,[key]:value}}:current)} onChangeUnparsedEntries={unparsed=>setFullExternalCreate(current=>current?{...current,unparsed}:current)} editorId={editorIdInput} onChangeEditorId={setEditorIdInput}/></fieldset>:<p className="text-xs text-slate-500">未分类几何草稿。选择分类后使用对应编辑方案填写新要素。</p>}
+   {specialDraftMode==='merge-point-platform-station'?<MergePointPlatformStation {...mergeProps} draft={mergePointPSDraft} onChange={setMergePointPSDraft}/>:specialDraftMode==='merge-polygon-outline-building'?<MergePolygonOutlineBuilding {...mergeProps} draft={mergePolygonOBDraft} onChange={setMergePolygonOBDraft}/>:externalEdit?<fieldset disabled={externalEditWorldMismatch}><ExternalFeatureEditHost onClassificationChange={selectFullCategory} config={externalEdit.config} workflow={externalEdit.workflow} session={externalEdit.session} bridge={workflowBridge} context={{initialRecord:externalEdit.session.original,featureIdentity:{layerId:editingLayerId!,originalId:String(externalEdit.session.original.ID)},activeWorld:externalEdit.world,originalGeometry:externalEdit.session.originalGeometry,currentGeometry:multipartDraftRef.current??undefined,editor:editorIdInput,onEditorChange:(value:string)=>{if(!writeBlocked())setEditorIdInput(value);},onUpdate:finishLayer,onCancel:clearTemporaryForVariantSwitch}} onDraftChange={session=>!toolWriteBlocked()&&setExternalEdit(current=>current?{...current,session}:current)}/></fieldset>:nativeEdit?<fieldset disabled={nativeEditWorldMismatch}>{nativeEditWorldMismatch?<p role="alert">请返回 {nativeEdit.world} 后继续。</p>:null}<NativeWorkflowEditPanel config={nativeEdit.config} plan={nativeEdit.plan} draft={nativeEdit.draft} records={nativeEditSearchRecords} world={nativeEdit.world} editor={editorIdInput} onEditorChange={value=>{if(!writeBlocked())setEditorIdInput(value);}} onCancel={clearTemporaryForVariantSwitch} onChange={draft=>!toolWriteBlocked()&&setNativeEdit(current=>current?{...current,draft}:current)} mode={nativeEdit.original?'edit':'create'} hideClassification={!nativeEdit.original} onClassificationChange={selectFullCategory}/></fieldset>:fullExternalCreate?<fieldset disabled={fullExternalWorldMismatch}>{fullExternalWorldMismatch?<p role="alert">请返回 {fullExternalCreate.world} 后继续此新建。</p>:null}<WorkflowStyleEditPanel view={fullExternalCreate.view} values={fullExternalCreate.values} unparsedEntries={fullExternalCreate.unparsed} bridge={{...workflowBridge,getCaptureContext:()=>({config:fullExternalCreate.config,workflow:fullExternalCreate.workflow})}} idFirst classificationContent={<p className="text-xs">分类由上方四级选择树指定；本次保存为新要素。</p>} onChangeValue={(key,value)=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,values:{...current.values,[key]:value}}:current)} onChangeUnparsedEntries={unparsed=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,unparsed}:current)} editorId={editorIdInput} onChangeEditorId={value=>{if(!writeBlocked())setEditorIdInput(value);}}/></fieldset>:<p className="text-xs text-slate-500">未分类几何草稿。选择分类后使用对应编辑方案填写新要素。</p>}
   </section>;
 };
 const isWorkflowStyleEditing=Boolean(nativeEdit||externalEdit||fullExternalCreate);
@@ -3486,59 +3608,7 @@ const isWorkflowStyleEditing=Boolean(nativeEdit||externalEdit||fullExternalCreat
 // Responsive shells share the same editor/portal. A viewport change is not an
 // instruction to discard geometry or exit a running workflow.
 
-const resetFeatureFormToDefault = () => {
-  setSubType('默认');
-  setFeatureInfo({});
-  setGroupInfo({});
-  resetWorkflowStyleEditorState();
-};
-
-const handleDrawModeButtonClick = (m: 'point' | 'polyline' | 'polygon') => {
-  if (guardTempMountReadonly()) return;
-  requestSwitchWithExtraWarn(() => {
-    const sameMode = drawMode === m;
-
-    // 二次点击同一模式：关闭回到 none
-    if (sameMode) {
-      // 只要会清空草稿/临时点，就做二次确认（与你“和 .5/.0 类似”的交互一致）
-      if (tempPoints.length > 0) {
-        if (!confirm('取消当前模式将清空当前临时图形？')) return;
-      }
-
-      // 统一清理草稿（避免端点/控制点残留）
-      clearDraftOverlays();
-      setTempPoints([]);
-      setRedoStack([]);
-
-      resetSpecialDrafts();
-
-      setDrawMode('none');
-      setDrawing(false);
-
-      resetFeatureFormToDefault();
-      return;
-    }
-
-    // 切换到另一模式
-    if (tempPoints.length > 0 && drawMode !== 'none') {
-      if (!confirm('切换模式将清空当前临时图形？')) return;
-
-      // 统一清理草稿（避免端点/控制点残留）
-      clearDraftOverlays();
-      setTempPoints([]);
-      setRedoStack([]);
-    } else {
-      // 即便没有 tempPoints，切换模式也应清理“最新端点指示”
-      draftEndpointRef.current?.clearLayers();
-    }
-    resetSpecialDrafts();
-
-    setDrawMode(m);
-    setDrawing(true);
-
-    resetFeatureFormToDefault();
-  });
-};
+const resetFeatureFormToDefault=()=>{setSubType('默认');setFeatureInfo({});setGroupInfo({});resetWorkflowStyleEditorState();};
 
 // =========================
 // Workflow（快捷模式）桥接层
@@ -3548,6 +3618,7 @@ const workflowRegistry=specializedWorkflowRegistry;
 const WORKFLOW_SELECT_OPTIONS:Array<{key:WorkflowKey;label:string;hidden?:boolean}>=configRuntime?configRuntime.workflows.filter(isQuickMappingWorkflow).map(workflow=>({key:workflow.id as WorkflowKey,label:workflow.label.zh})):[];
 
 const stopWorkflowToSelector = () => {
+  if(writeBlocked())return;
   // 回到“工作流初始选择页面”（不退出测绘）
   setWorkflowRunning(false);
   setNativeWorkflowSnapshot(null);
@@ -3670,6 +3741,7 @@ const clearWorkflowPreview = (key?: string) => {
 };
 
 const commitFeatureFromWorkflow = (args: WorkflowCommitArgs) => {
+  if(writeBlocked())return {ok:false as const,error:'请先结束当前编辑事务。'};
   const map = leafletMapRef.current;
   const proj = projectionRef.current;
   if (!map || !proj) return { ok: false as const, error: '地图未就绪' };
@@ -3710,6 +3782,7 @@ const commitFeatureFromWorkflow = (args: WorkflowCommitArgs) => {
 };
 
 const commitNativeWorkflow = (config: ConfigPackageV3, workflow: WorkflowDefinition, outputs: V3WorkflowRunResult) => {
+  if(writeBlocked())throw Error('请先结束当前编辑事务再保存输出。');
   if (!leafletMapRef.current || !projectionRef.current) throw new Error('地图未就绪。');
   const prepared = prepareNativeWorkflowCommit(config, workflow, outputs, currentWorldId);
   const existing = new Set(layers.map(layer => String(layer.jsonInfo?.featureInfo?.ID ?? '')));
@@ -3732,6 +3805,7 @@ const workflowBridge: WorkflowBridge = {
   setEditorId: (id: string) => setEditorIdInput(id),
 
   setDrawMode: (mode: 'none' | DrawMode) => {
+    if(toolWriteBlocked())return;
     // 工作流内部切换模式：不走 UI 确认弹窗
     if (mode === 'none') {
       clearDraftOverlays();
@@ -3757,6 +3831,9 @@ const workflowBridge: WorkflowBridge = {
   },
 
   suspendDrawMode: () => {
+    if(!internalWriteRef.current&&renderedDrawingEpoch!==drawingEpochRef.current)return;
+    if(fullFrozenRef.current)return;
+    if(completeArrayOpenRef.current){completeArrayEpoch.current++;setCompleteArray(v=>v?{...v}:v);}
     setEditingLayerId(null);
     setDrawing(false);
     setDrawMode('none');
@@ -3770,6 +3847,7 @@ const workflowBridge: WorkflowBridge = {
   getTempPoints: () => tempPointsRef.current,
   subscribeDrawingChanges: listener => {drawingListeners.current.add(listener);return()=>{drawingListeners.current.delete(listener);};},
   setTempPoints: (pts: WorldPoint[]) => {
+    if(toolWriteBlocked())return;
     if(showMultipartPartLabelsRef.current){setMultipartInputError('部件编号显示中，关闭编号显示后才可编辑坐标。');return;}
     const next = (pts ?? []) as any;
     // Legacy tool projection only. Native task archival uses getDrawingDraft.
@@ -3778,6 +3856,7 @@ const workflowBridge: WorkflowBridge = {
     drawDraftGeometry(next, drawModeRef.current, drawColorRef.current);
   },
   clearTempPoints: () => {
+    if(toolWriteBlocked())return;
     setTempPoints([]);
     resetMultipartEditor();
     clearDraftOverlays();
@@ -3789,7 +3868,7 @@ const workflowBridge: WorkflowBridge = {
   },
   getDrawingGeometry:()=>drawModeRef.current==='none'?null:structuredClone(buildCurrentMultipartGeometry(drawModeRef.current,tempPointsRef.current)),
   prepareDrawingTransition:()=>{
-    if(manualPointInputOpen||curveInputFrozenRef.current)return false;
+    if(manualPointInputOpen||curveInputFrozenRef.current||completeArrayOpenRef.current||fullFrozenRef.current)return false;
     return closeControlPointSessions();
   },
   getDrawingDraft:():WorkflowDrawingDraft|null=>drawModeRef.current==='none'?null:{
@@ -3801,6 +3880,7 @@ const workflowBridge: WorkflowBridge = {
     redo:redoStack.map(point=>({...point})),
   },
   restoreDrawingDraft:draft=>{
+    if(toolWriteBlocked())return;
     if(drawModeRef.current==='none'||draft.geometry.type!==geometryKindForDrawMode(drawModeRef.current))throw Error('完整草稿与当前绘制页几何类型不一致。');
     // Restore unfinished or newly incompatible drafts intact. Submission and
     // the editor's existing controls enforce policy; restoration never trims.
@@ -3825,6 +3905,7 @@ const workflowBridge: WorkflowBridge = {
     drawDraftGeometry(coordinates,drawModeRef.current,drawColorRef.current);
   },
   setDrawingGeometry:geometry=>{
+    if(toolWriteBlocked())return;
     if(showMultipartPartLabelsRef.current){setMultipartInputError('部件编号显示中，关闭编号显示后才可编辑坐标。');return;}
     if(drawModeRef.current==='none'||geometry.type!==geometryKindForDrawMode(drawModeRef.current))throw Error('草稿几何类型与当前绘制页不一致。');
     if(geometry.parts.length>1&&workflowDrawingTargetRef.current?.allowParts===false)throw Error('当前绘制分类禁止多部件，不能截断导入几何。');
@@ -3934,7 +4015,7 @@ const workflowBridge: WorkflowBridge = {
       {/* 导入数据：仅开始测绘后显示 */}
       {measuringActive && !disablePackageUpload && (
         <AppButton
-          onClick={() => setImportPanelOpen(true)}
+          onClick={() => {if(!writeBlocked())setImportPanelOpen(true);}}
           className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors text-gray-700"
           type="button"
         >
@@ -4016,7 +4097,7 @@ const workflowBridge: WorkflowBridge = {
   };
 
   const toggleTempMountAllLayers = async (layerList: LayerType[], busy: boolean) => {
-    if (busy || showMultipartPartLabels) return;
+    if (busy || showMultipartPartLabels || writeBlocked()) return;
     const ids = layerList.map((l) => l.id);
 
     // 已挂载：移除所有 layer-* 临时源，并恢复测绘图层显示（存在即移除）
@@ -4640,7 +4721,7 @@ const measuringWindowActions = (
 
   return (
     <>
-      {nativeWorkflowSnapshot ? createPortal(<NativeWorkflowHost key={nativeWorkflowSnapshot.workflow.id} config={nativeWorkflowSnapshot.config} workflow={nativeWorkflowSnapshot.workflow} bridge={workflowBridge} registry={specializedWorkflowRegistry} onCommit={commitNativeWorkflow} onExit={stopWorkflowToSelector} />, nativeHostElement) : null}
+      {nativeWorkflowSnapshot ? createPortal(<NativeWorkflowHost readOnly={completeArray!==null} key={nativeWorkflowSnapshot.workflow.id} config={nativeWorkflowSnapshot.config} workflow={nativeWorkflowSnapshot.workflow} bridge={workflowBridge} registry={specializedWorkflowRegistry} onCommit={commitNativeWorkflow} onExit={stopWorkflowToSelector} />, nativeHostElement) : null}
       {rightDockNode}
 
       {/* =========================
@@ -4672,23 +4753,7 @@ const measuringWindowActions = (
               <div className="p-3 overflow-y-auto max-h-[calc(70vh-48px)]">
 
 {/* 点/线/面（完整模式） / 工作流选择（快捷模式） */}
-{measuringVariant === 'full' ? (
-  <div className="flex gap-2 mb-2">
-    {(['point', 'polyline', 'polygon'] as const).map((m) => (
-      <AppButton
-        key={m}
-        className={`flex-1 py-1 border ${drawMode === m ? 'bg-blue-300' : ''} ${
-          isTempMountReadonly ? 'opacity-50 cursor-not-allowed' : ''
-        }`}
-        onClick={() => handleDrawModeButtonClick(m)}
-        type="button"
-        disabled={isTempMountReadonly}
-      >
-        {m === 'point' ? '点' : m === 'polyline' ? '线' : '面'}
-      </AppButton>
-    ))}
-  </div>
-) : (
+{measuringVariant === 'full' ? null : (
   <div className="flex gap-2 mb-2">
     <select
       className="flex-1 border p-1 rounded"
@@ -4726,7 +4791,8 @@ const measuringWindowActions = (
 
 
                 {/* 要素类型下拉 */}
-                {measuringVariant === 'full' && drawMode !== 'none' ? renderFullCategoryPicker() : null}
+                {measuringVariant === 'full' ? renderFullCategoryPicker() : null}
+<fieldset disabled={fullFrozenRef.current||completeArray!==null}>
 
                 {/* 颜色 */}
                 {drawMode !== 'none' && (
@@ -4735,7 +4801,7 @@ const measuringWindowActions = (
                     <input
                       type="color"
                       value={drawColor}
-                      onChange={(e) => setDrawColor(e.target.value)}
+                      onChange={(e) => {if(!writeBlocked())setDrawColor(e.target.value);}}
                       className="w-full"
                     />
                   </div>
@@ -4872,7 +4938,8 @@ const measuringWindowActions = (
 {drawMode !== 'none' && (
   <ControlPointsT
     ref={controlPointsTDesktopRef}
-    readOnly={showMultipartPartLabels}
+    readOnly={showMultipartPartLabels||fullFrozenRef.current||completeArray!==null||Boolean(activeEditWorld&&activeEditWorld!==normalizeV3WorldId(currentWorldId))}
+    onOpenCompleteArray={openCompleteArray}
     mapReady={mapReady}
     leafletMapRef={leafletMapRef}
     projectionRef={projectionRef}
@@ -4917,6 +4984,7 @@ const measuringWindowActions = (
 
 
 {/* 临时输出：默认关闭；仅“默认” subtype 启用 */}
+</fieldset>
 {measuringVariant === 'workflow' ? (
   workflowRunning ? (
     <div
@@ -4961,7 +5029,9 @@ const measuringWindowActions = (
 
 
                 {/* JSON 输入区 */}
+<fieldset disabled={fullFrozenRef.current||completeArray!==null}>
 {measuringVariant==='full'&&drawMode!=='none'?renderFullForm():null}
+</fieldset>
 
               </div>
             </AppCard>
@@ -4986,24 +5056,8 @@ const measuringWindowActions = (
             </div>
 
             <div className="p-3 overflow-y-auto max-h-[calc(70vh-48px)]">
-              <div className="flex gap-2 mb-2">
-  {(['point', 'polyline', 'polygon'] as const).map((m) => (
-    <AppButton
-      key={m}
-      className={`flex-1 py-1 border ${drawMode === m ? 'bg-blue-300' : ''} ${
-        isTempMountReadonly ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
-      onClick={() => handleDrawModeButtonClick(m)}
-      type="button"
-      disabled={isTempMountReadonly}
-    >
-      {m === 'point' ? '点' : m === 'polyline' ? '线' : '面'}
-    </AppButton>
-  ))}
-</div>
-
-
-              {drawMode !== 'none' ? renderFullCategoryPicker() : null}
+              {measuringVariant==='full'?renderFullCategoryPicker():null}
+<fieldset disabled={fullFrozenRef.current||completeArray!==null}>
 
               {drawMode !== 'none' && (
                 <div className="mb-2">
@@ -5011,7 +5065,7 @@ const measuringWindowActions = (
                   <input
                     type="color"
                     value={drawColor}
-                    onChange={(e) => setDrawColor(e.target.value)}
+                    onChange={(e) => {if(!writeBlocked())setDrawColor(e.target.value);}}
                     className="w-full"
                   />
                 </div>
@@ -5046,7 +5100,8 @@ const measuringWindowActions = (
 {drawMode !== 'none' && (
   <ControlPointsT
     ref={controlPointsTCompactRef}
-    readOnly={showMultipartPartLabels}
+    readOnly={showMultipartPartLabels||fullFrozenRef.current||completeArray!==null||Boolean(activeEditWorld&&activeEditWorld!==normalizeV3WorldId(currentWorldId))}
+    onOpenCompleteArray={openCompleteArray}
     mapReady={mapReady}
     leafletMapRef={leafletMapRef}
     projectionRef={projectionRef}
@@ -5090,6 +5145,7 @@ const measuringWindowActions = (
 
 
 
+</fieldset>
 {measuringVariant === 'workflow' ? (
   workflowRunning ? (
     <div
@@ -5133,7 +5189,9 @@ const measuringWindowActions = (
 
 
 
+<fieldset disabled={fullFrozenRef.current||completeArray!==null}>
 {measuringVariant==='full'&&drawMode!=='none'?renderFullForm():null}
+</fieldset>
 
             </div>
           </AppCard>
@@ -5713,7 +5771,8 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
       />
 
 
-  </>
+  {completeArray?<CompleteArrayEditor key={completeArray.id} initial={completeArray.geometry} sessionId={completeArray.id} allowParts={completeArray.allowParts} readOnly={fullFrozenRef.current||showMultipartPartLabels||isTempMountReadonly||completeArray.world!==normalizeV3WorldId(currentWorldId)||completeArray.id!==completeArrayEpoch.current} onApply={applyCompleteArray} onClose={closeCompleteArray}/>:null}
+      </>
 );
 });
 

@@ -56,11 +56,8 @@ try:
  val('select[aria-label="部件编号"]',1);val('select[aria-label="部件编号"]',0)
  click('显示部件编号');assert part_locked();click('显示部件编号');assert not part_locked()
  b.screenshot('five-fix-reentry-enabled.png')
- val('select[aria-label="要素分类 SKind"]','')
- alert=b.evaluate('[...document.querySelectorAll("p[role=alert]")].map(e=>e.textContent).join("；")')
- assert '上级' in alert and 'NOM' in alert and '尚未应用' in alert,alert
+ assert not b.evaluate('!!document.querySelector(\'select[aria-label="要素分类 Class"]\')')
  assert records()[0]==saved
- val('select[aria-label="要素分类 SKind"]','NOM');b.wait('!!document.querySelector(\'section[aria-label="V3 工作流式编辑"]\')')
  assert not part_locked();val('input[aria-label="工作流编辑人"]','FIVEFIXEDIT')
  # Existing actual field failure stays specific and repairable in this form.
  name_input='[...document.querySelectorAll("[data-edit-control]")].find(e=>e.getBoundingClientRect().height&&e.querySelector(":scope>span")?.textContent.trim().startsWith("名称")).querySelector("input,textarea")'
@@ -69,7 +66,7 @@ try:
  assert b.evaluate('!!document.querySelector(\'section[aria-label="V3 工作流式编辑"]\')')
  val_expr(name_input,'FIVEFIX repaired');click('保存编辑图层');b.wait('!document.querySelector(\'section[aria-label="V3 工作流式编辑"]\')')
  assert records()[0]['CoordG']==saved['CoordG'];after_save(expected)
- checks.append('FIX03/05: reentry is immediately enabled; numbering still locks; parent diagnostics explain exact current plan; actual required field errors preserve repairable form')
+ checks.append('FIX03/05: reentry is immediately enabled; numbering still locks; reedit uses only workflow-scoped category choices; actual required field errors preserve repairable form')
  # Fixed visibility reuses the same complete shapes.
  press('[...('+row(saved)+').querySelectorAll("button")].find(e=>e.textContent.trim()==="隐藏")');assert paths()==[]
  press('[...('+row(saved)+').querySelectorAll("button")].find(e=>e.textContent.trim()==="显示")');after_save(expected)
