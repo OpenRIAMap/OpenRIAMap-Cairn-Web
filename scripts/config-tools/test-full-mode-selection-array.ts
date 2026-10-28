@@ -22,6 +22,7 @@ const line={type:'LineString' as const,parts:[[xyz(0,0),xyz(5,0),xyz(5,5)]]};
 assert.equal(convertEditingGeometry(line,'LineString',true).parts[0].length,3);
 assert.throws(()=>convertEditingGeometry(line,'Point',true),/最多 1/);
 assert.equal(convertEditingGeometry({type:'LineString',parts:[[xyz(0,0)]]},'Polygon',true).parts.length,1);
+assert.throws(()=>convertEditingGeometry({type:'LineString',parts:[[xyz(0,0),xyz(20,20),xyz(20,0),xyz(0,20)]]},'Polygon',true),/拓扑/,'A valid open line cannot become an invalid completed polygon.');
 assert.equal(validateEditingGeometry({type:'Polygon',parts:[[[xyz(0,0),xyz(5,0)]]]}),undefined);
 const polygon={type:'Polygon' as const,parts:[[[xyz(0,0),xyz(20,0),xyz(20,20),xyz(0,20)],[xyz(2,2),xyz(5,2),xyz(5,5),xyz(2,5)]]]},array=[[[[0,7,0],[20,7,0],[20,7,20],[0,7,20]],[[2,7,2],[5,7,2],[5,7,5],[2,7,5]]]];
 assert.throws(()=>convertEditingGeometry(polygon,'LineString',true),/内洞/);

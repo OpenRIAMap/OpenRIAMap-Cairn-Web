@@ -25,7 +25,9 @@ export function convertEditingGeometry(g:MultipartGeometry,type:MultipartGeometr
   if(g.type==='Polygon'&&g.parts.some(p=>p.length>1))throw Error('当前包含内洞或内洞占位，目标类型不能承接；请先通过原多部件和内洞设置处理。');
   const paths=g.type==='Point'?g.parts.map(p=>pending(p)?[]:[p]):g.type==='LineString'?g.parts:g.parts.map(p=>p[0]);
   if(type==='Point'&&paths.some(p=>p.length>1))throw Error('目标点类型要求每个部件最多 1 个点，不能截断现有路径。');
-  return structuredClone(type==='Point'?{type,parts:paths.map(p=>p[0]??emptyPoint())}:type==='LineString'?{type,parts:paths}:{type,parts:paths.map(p=>[p])}) as MultipartGeometry;
+  const converted=structuredClone(type==='Point'?{type,parts:paths.map(p=>p[0]??emptyPoint())}:type==='LineString'?{type,parts:paths}:{type,parts:paths.map(p=>[p])}) as MultipartGeometry;
+  const targetError=validateEditingGeometry(converted);if(targetError)throw Error(targetError);
+  return converted;
 }
 /** Lexical checks must precede the canonical reader, which also reads historical numeric text. */
 export function parseCompleteArray(text:string,type:MultipartGeometry['type'],allowParts:boolean):MultipartGeometry{
