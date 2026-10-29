@@ -343,7 +343,9 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     setBusy('save-status');
     try {
       const remote = await submissionAdapter.getStatusBoard(actor);
-      const differences = compareReviewStatusBoards(draft, remote.entries).filter((difference) => difference.kind !== 'unchanged');
+      // Compare two server snapshots. The draft may deliberately select a new
+      // immutable revision; that local decision is not a concurrent cloud edit.
+      const differences = compareReviewStatusBoards(board.entries, remote.entries).filter((difference) => difference.kind !== 'unchanged');
       const revisionChanges = differences.filter((difference) => difference.kind === 'revision-changed');
       if (revisionChanges.length) {
         setMessage(`保存状态已阻断：${revisionChanges.map((difference) => difference.submissionId).join('、')} 的云端决策版本已变化。请刷新并检查对应审核包。`);
@@ -380,7 +382,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     } finally {
       setBusy(null);
     }
-  }, [actor, board, draft, refreshList, selectedEntries, submissionAdapter]);
+  }, [actor, board, refreshList, selectedEntries, submissionAdapter]);
 
   const loadWorkspace = useCallback(async () => {
     if (!detail || !revision) return;
