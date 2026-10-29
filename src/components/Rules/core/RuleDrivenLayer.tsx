@@ -811,7 +811,9 @@ function nativeHitTolerance(displayPlan?: FeatureDisplayPlan | null): number {
 }
 
 function nativeHitProxySignature(kind: string, tolerance: number, baseSize: number, enabled: boolean): string | undefined {
-  return enabled && tolerance > 0 ? `${kind}:${tolerance}:${baseSize}` : undefined;
+  // Halo cutouts also use a proxy when tolerance is zero. Its signature must
+  // survive refreshes so clicks remain bound to the interactive proxy.
+  return enabled ? `${kind}:${tolerance}:${baseSize}` : undefined;
 }
 
 function createNativePointHitProxy(latlngs: L.LatLng[], radius: number, iconPlan?: { iconSize?: [number, number]; iconAnchor?: [number, number]; hitIconSize?:[number,number];hitIconAnchor?:[number,number] }, tolerance = 0): L.Layer {
