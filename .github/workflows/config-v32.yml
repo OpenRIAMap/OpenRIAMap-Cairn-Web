@@ -75,6 +75,9 @@ jobs:
             if curl --noproxy '*' -fsS "$CAIRNMAP_APP_URL/" > /dev/null 2>&1 && curl --noproxy '*' -fsS http://127.0.0.1:9502/json/version > /dev/null 2>&1; then break; fi
             sleep 0.5
           done
+          # Start the service-port fixture before Studio tests intentionally leave
+          # unsaved diagnostic drafts that correctly block page navigation.
+          "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/review_revision_save_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/category_authoring_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/studio_workspace_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c15_acceptance.py
@@ -92,4 +95,3 @@ jobs:
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c16_card_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/image_library_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c17_studio_acceptance.py
-          "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/review_revision_save_acceptance.py
