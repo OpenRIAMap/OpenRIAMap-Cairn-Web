@@ -1,4 +1,4 @@
-import { WORLD_CODE_BY_WORLD_ID } from '@/components/Common/featurePrimitives';
+import { normalizeRuleSourceWorldId } from '@/core/project/worldIdentity';
 import {
   buildReviewPackageArtifact,
   type ReviewPackageFeatureInput,
@@ -23,13 +23,10 @@ export type RelayExportLayer = {
   };
 };
 
-const REVERSE_WORLD = Object.fromEntries(Object.entries(WORLD_CODE_BY_WORLD_ID).map(([worldId, code]) => [String(code), worldId]));
-
 /** Convert a legacy RIA world code to the stable directory world id. */
 export function resolveRelayPackageWorldId(world: unknown, fallbackWorldId: string): string {
   const value = String(world ?? '').trim();
-  if (value && REVERSE_WORLD[value]) return String(REVERSE_WORLD[value]);
-  return value || fallbackWorldId;
+  return normalizeRuleSourceWorldId(value || fallbackWorldId);
 }
 
 function fileNameFromUrl(url: string): string | undefined {
