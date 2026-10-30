@@ -20,6 +20,8 @@ type PublicRelease = {
   state: 'completed';
   publishedAt?: string | null;
   formalVersion?: number | null;
+  worldVersionChanges?:Array<{worldId:string;from:number|null;to:number}>;
+  noContentChange?:boolean;
   lifecycle?: { dataPublishedAt?: string | null; mirroredAt?: string | null; archivedAt?: string | null; completedAt?: string | null };
   packages: PublicPackage[];
 };
@@ -104,7 +106,8 @@ export function PublicReleaseRecordPanel({ onClose }: { onClose?: () => void }) 
     <div className="mt-4 space-y-3">
       {records.map((release) => <section key={release.releaseId} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
         <div className="flex items-start justify-between gap-2"><div className="font-semibold text-slate-900">{release.releaseId}</div><span className="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">发布完成</span></div>
-        <div className="mt-2 text-xs text-slate-600">完成时间：{release.lifecycle?.completedAt ?? release.lifecycle?.archivedAt ?? release.publishedAt ?? '未记录'}{release.formalVersion ? ` · 正式版本：${release.formalVersion}` : ' · 本次仅发布审核结果'}</div>
+        <div className="mt-2 text-xs text-slate-600">完成时间：{release.lifecycle?.completedAt ?? release.lifecycle?.archivedAt ?? release.publishedAt ?? '未记录'}{release.formalVersion ? ` · 发布批次：${release.formalVersion}` : ' · 本次仅发布审核结果'}</div>
+        {release.worldVersionChanges?.length?<p className="text-xs text-slate-600">世界版本：{release.worldVersionChanges.map(change=>`${change.worldId} ${change.from??'首次'}→${change.to}`).join('；')}</p>:release.noContentChange?<p className="text-xs text-slate-600">内容未变化，本次完成审核归档。</p>:null}
         <div className="mt-3 space-y-2">{release.packages.map((pkg) => {
           return <article key={`${pkg.submissionId}-${pkg.decisionRevisionId}`} className="rounded-xl border border-slate-200 bg-white p-3">
             <div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="truncate font-medium text-slate-900">{pkg.packageName}</div><div className="mt-1 break-all text-xs text-slate-500">版本：{pkg.decisionRevisionId} · 共 {pkg.revisionCount} 个版本</div></div><span className={`shrink-0 rounded-full px-2 py-1 text-xs ${statusTone[pkg.decisionAction]}`}>{statusLabel[pkg.decisionAction]}</span></div>

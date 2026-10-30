@@ -9,13 +9,14 @@ import {
   loadFormalWorldFeatures,
   resolveFormalWorldRelease,
   assertFormalReleaseCurrent,
+  formalReleaseMetadata,
   withStableFormalRelease,
   type FormalReleaseSet,
 } from './formalReleaseReader';
 import { isRuleWorldCacheValid, readRuleWorldCache, writeRuleWorldCache, type RuleCacheScope } from './worldRuleCache';
 import type { RuleWorldDataset } from './sourceTypes';
 
-function cacheScope(source: RuleDataSourceSnapshot, releaseId: string, worldId: string): RuleCacheScope { return {sourceId:source.sourceId,transportId:source.transportId,releaseId,worldId,readerSchemaVersion:source.readerSchemaVersion}; }
+function cacheScope(source: RuleDataSourceSnapshot, releaseId: string, worldId: string,release?:import('./formalReleaseReader').FormalWorldRelease): RuleCacheScope { return {sourceId:source.sourceId,transportId:source.transportId,releaseId,worldId,readerSchemaVersion:source.readerSchemaVersion,...(release?.effectiveReaderProtocol?{effectiveReaderProtocol:release.effectiveReaderProtocol,contentSha256:release.contentSha256}:{})}; }
 /** A view normalizes World for the app; cache/warehouse records stay untouched. */
 export function applicationWorldDataset(dataset:RuleWorldDataset,source:RuleDataSourceSnapshot,worldId:string):RuleWorldDataset {
   dataset={...dataset,sourceGeneration:source.generation};
@@ -25,6 +26,11 @@ export function applicationWorldDataset(dataset:RuleWorldDataset,source:RuleData
 export type RuleWorldVersion = {
   formalVersion: string | null;
   releaseId: string;
+  publicationId?:string;
+  publicationVersion?:number;
+  bindingRevision?:number;
+  contentSha256?:string;
+  effectiveReaderProtocol?:string;
 };
 
 export async function fetchWorldMergeVersion(
@@ -36,7 +42,7 @@ export async function fetchWorldMergeVersion(
   if (source.readerKind === 'formal-release-v2') {
     let initialSet=releaseSet;
     const release = await withStableFormalRelease(async()=>{const selectedSet=initialSet;initialSet=undefined;const value=await resolveFormalWorldRelease({source,worldId,releaseSet:selectedSet});await assertFormalReleaseCurrent({source,release:value});return value;});
-    return { formalVersion: release.formalVersion === null ? null : String(release.formalVersion), releaseId: release.releaseId };
+    return { formalVersion: release.formalVersion === null ? null : String(release.formalVersion), releaseId: release.releaseId,...formalReleaseMetadata(release) };
   }
   throw Error('已退役数据格式不能恢复；请选择现役正式数据源。');
 }
@@ -61,12 +67,12 @@ async function readWorldRuleDataset(
   signal.throwIfAborted();
   onProgress?.({ stage: 'world-version', status: 'loading' });
   const release = await resolveFormalWorldRelease({ source, worldId, fetchJson });
-  const scope = cacheScope(source, release.releaseId, worldId);
+  const scope = cacheScope(source, release.releaseId, worldId,release);
   onProgress?.({ stage: 'world-cache-check', status: 'loading' });
   if (isRuleWorldCacheValid(scope)) {
     onProgress?.({ stage: 'world-cache-check', status: 'success' });
     const cached = readRuleWorldCache(scope);
-    if (cached && cached.features.length===release.worldManifest.featureCount) {await assertFormalReleaseCurrent({source,release,fetchJson});signal.throwIfAborted();return applicationWorldDataset(cached,source,worldId);}
+    if (cached && cached.features.length===release.worldManifest.featureCount) {await assertFormalReleaseCurrent({source,release,fetchJson});signal.throwIfAborted();const updated={...cached,formalVersion:release.formalVersion??undefined,...formalReleaseMetadata(release)};writeRuleWorldCache(scope,updated);return applicationWorldDataset(updated,source,worldId);}
   } else {
     onProgress?.({ stage: 'world-cache-check', status: 'success', message: 'Cache requires refresh' });
   }
@@ -78,6 +84,7 @@ async function readWorldRuleDataset(
     mergeVersion: release.releaseId,
     releaseId: release.releaseId,
     formalVersion: release.formalVersion ?? undefined,
+    ...formalReleaseMetadata(release),
     sourceId: source.sourceId,
     transportId: source.transportId,
     readerSchemaVersion: source.readerSchemaVersion,

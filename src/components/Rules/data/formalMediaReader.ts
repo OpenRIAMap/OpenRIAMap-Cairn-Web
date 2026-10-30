@@ -1,6 +1,6 @@
 import type { RuleDataSourceSnapshot } from './formalDataSourceRuntime';
 import { fetchFormalObject, formalObjectLayout } from './formalObjectAccess';
-import { readFormalReleaseSet, FormalReleaseReaderError } from './formalReleaseReader';
+import { readFormalReleaseSet, bindingForWorld, FormalReleaseReaderError } from './formalReleaseReader';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -86,7 +86,7 @@ export async function loadFormalMediaAssets(args: {
   const key = featureIndexKey(releaseId, worldId, classCode, kindPath);
   const checkCurrent = async()=>{
     const current=await readFormalReleaseSet({source:args.source});
-    if(current.releaseId!==releaseId||!current.worlds.includes(worldId))throw new FormalReleaseReaderError('release-set','图片所属发布已更新，请重新同步该世界。','release-changed');
+    if((bindingForWorld(current,worldId)?.dataReleaseId??current.releaseId)!==releaseId||!current.worlds.includes(worldId))throw new FormalReleaseReaderError('release-set','图片所属发布已更新，请重新同步该世界。','release-changed');
   };
   const mutableMirror=!args.fetchJson&&formalObjectLayout(args.source)==='github-stable-v1';
   if(mutableMirror)await checkCurrent();

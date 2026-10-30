@@ -14,6 +14,8 @@ export type RuleCacheScope = {
   releaseId: string;
   worldId: string;
   readerSchemaVersion: string;
+  effectiveReaderProtocol?:string;
+  contentSha256?:string;
 };
 
 export type RuleCacheMeta = RuleCacheScope & {
@@ -26,7 +28,7 @@ function normalized(value: string): string {
 }
 
 function scopePart(scope: RuleCacheScope): string {
-  return [scope.sourceId, scope.transportId, scope.releaseId, scope.worldId, scope.readerSchemaVersion]
+  return [scope.sourceId, scope.transportId, scope.releaseId, scope.worldId, scope.readerSchemaVersion,...(scope.effectiveReaderProtocol?[scope.effectiveReaderProtocol,scope.contentSha256??'']:[])]
     .map((value) => encodeURIComponent(normalized(value)))
     .join(':');
 }
@@ -85,6 +87,7 @@ export function readRuleWorldCache(scopeOrWorld: RuleCacheScope | string): RuleW
     const dataset = JSON.parse(raw) as RuleWorldDataset;
     if (dataset.worldId !== scope.worldId || String(dataset.mergeVersion) !== String(scope.releaseId)) return null;
     if (dataset.sourceId !== scope.sourceId || dataset.transportId !== scope.transportId || dataset.readerSchemaVersion !== scope.readerSchemaVersion) return null;
+    if(dataset.effectiveReaderProtocol!==scope.effectiveReaderProtocol||dataset.contentSha256!==scope.contentSha256)return null;
     return dataset;
   } catch {
     return null;
@@ -107,6 +110,7 @@ export function writeRuleWorldCache(scope: RuleCacheScope, dataset: RuleWorldDat
     releaseId: normalized(scope.releaseId),
     worldId: normalized(scope.worldId),
     readerSchemaVersion: normalized(scope.readerSchemaVersion),
+    ...(scope.effectiveReaderProtocol?{effectiveReaderProtocol:scope.effectiveReaderProtocol,contentSha256:scope.contentSha256}:{}),
   };
   const normalizedDataset: RuleWorldDataset = {
     ...dataset,

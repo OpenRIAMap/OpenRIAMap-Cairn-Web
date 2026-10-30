@@ -6,6 +6,7 @@ export type ReviewAuthSettingsSectionProps = {
   auth: ReviewAuthPort;
   title?: string;
   loginLabel?: string;
+  onSessionChange?:(session:ReviewAuthSessionState)=>void;
 };
 
 function highestRole(roles?: string[]) {
@@ -30,8 +31,9 @@ function presentation(session: ReviewAuthSessionState): { tone: string; text: st
  * Provider-neutral settings section.  The application supplies its own auth
  * port, labels and routes; no provider or OAuth details enter core UI code.
  */
-export function ReviewAuthSettingsSection({ auth, title = '登录状态', loginLabel = '登录' }: ReviewAuthSettingsSectionProps) {
+export function ReviewAuthSettingsSection({ auth, title = '登录状态', loginLabel = '登录',onSessionChange }: ReviewAuthSettingsSectionProps) {
   const [session, setSession] = useState<ReviewAuthSessionState>({ status: 'anonymous' });
+  useEffect(()=>{onSessionChange?.(session);},[session,onSessionChange]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const sectionRef = useRef<HTMLDivElement | null>(null);
