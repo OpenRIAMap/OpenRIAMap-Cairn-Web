@@ -446,7 +446,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
                         </div>
                       </div>
                       {row.errorMessage?<p className="text-xs text-orange-700 break-words [overflow-wrap:anywhere]">{row.errorMessage}</p>:null}
-                      {row.remoteReleaseId||row.localReleaseId?<details className="text-[11px] text-gray-500 break-words [overflow-wrap:anywhere]"><summary>数据发布身份</summary><p>远端技术数据 ID：{row.remoteReleaseId||'—'}</p><p>本地技术数据 ID：{row.localReleaseId||'—'}</p>{row.publicationVersion?<p>发布批次：{row.publicationVersion} · 绑定修订：{row.bindingRevision??'—'}</p>:null}<WorldVersionControl worldId={row.worldId} name={row.name} canManage={versionSession.status==='authenticated'&&Boolean(versionSession.roles?.some(role=>role==='maintainer'||role==='admin'))} onChanged={async()=>{await useRuleDataStore.getState().ensureWorldLoaded(row.worldId);await syncRuleWorldRows();}}/></details>:null}
+                      {row.remoteReleaseId||row.localReleaseId?<details className="text-[11px] text-gray-500 break-words [overflow-wrap:anywhere]"><summary>数据发布身份</summary><p>远端技术数据 ID：{row.remoteReleaseId||'—'}</p><p>本地技术数据 ID：{row.localReleaseId||'—'}</p>{row.publicationVersion?<p>发布批次：{row.publicationVersion} · 绑定修订：{row.bindingRevision??'—'}</p>:null}<WorldVersionControl worldId={row.worldId} name={row.name} canManage={versionSession.status==='authenticated'&&Boolean(versionSession.roles?.some(role=>role==='maintainer'||role==='admin'))} onChanged={async()=>{await useRuleDataStore.getState().refreshWorlds([row.worldId]);await syncRuleWorldRows();}}/></details>:null}
                     </div>
                   );
                 })}

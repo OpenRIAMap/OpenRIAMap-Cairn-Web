@@ -22,10 +22,11 @@ b.evaluate("[...document.querySelectorAll('button')].filter(e=>e.textContent==='
 b.wait("document.body.innerText.includes('已排队')")
 b.click('查询进度')
 b.wait("document.body.innerText.includes('任务已完成')",40)
-result={'versions':b.evaluate(versions),'localStoreVersion':b.evaluate('window.worldVersionSettingsFixture.localVersion()'),'runtimeErrors':b.errors}
+result={'versions':b.evaluate(versions),'localStoreVersion':b.evaluate('window.worldVersionSettingsFixture.localVersion()'),'loadingWorld':b.evaluate('window.worldVersionSettingsFixture.loadingWorld()'),'runtimeErrors':b.errors}
 (OUT/'world-version-settings-result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
 b.screenshot('world-version-settings-refreshed.png')
 assert result['localStoreVersion']==1,result
 assert result['versions']==['1','1'],result
+assert result['loadingWorld'] is None,result
 assert not b.errors,b.errors
 print(json.dumps({'passed':'actual Settings card keeps both remote and local versions at 1 after the delayed refresh response',**result},ensure_ascii=False))

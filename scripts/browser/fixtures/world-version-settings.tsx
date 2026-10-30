@@ -7,6 +7,10 @@ import {getRuleDataSourceSnapshot} from '../../../src/components/Rules/data/form
 
 await loadFormalConfiguration();
 const {useRuleDataStore}=await import('../../../src/store/ruleDataStore');
+const {useLoadingStore}=await import('../../../src/store/loadingStore');
+const {writeRuleWorldCache}=await import('../../../src/components/Rules/data/worldRuleCache');
+document.cookie=`map_settings=${encodeURIComponent(JSON.stringify({currentWorld:'zth'}))};path=/;SameSite=Lax`;
+useLoadingStore.setState({initialized:true,isLoading:false,activeFlowId:null,activeRuleWorldId:null});
 const source=getRuleDataSourceSnapshot('eden'),dataReleaseId='data-eden-first';
 const manifest={schemaVersion:'openriamap.world-release-manifest.v2',worldId:'eden',releaseId:dataReleaseId,chunkCatalogKeys:[],featureCount:0,chunkCount:0};
 const manifestText=JSON.stringify(manifest);
@@ -17,11 +21,8 @@ const current=()=>({schemaVersion:'openriamap.current-release-set.v3',releaseId:
   worldManifestKey:`releases/${dataReleaseId}/manifests/worlds/eden.json`,worldManifestSha256:manifestSha256,contentSha256:'b'.repeat(64),operationId:'world-version-settings',updatedAt:'2026-10-30T00:00:00Z',
 }]});
 const dataset=(formalVersion:number)=>({worldId:'eden',mergeVersion:dataReleaseId,releaseId:dataReleaseId,formalVersion,bindingRevision:formalVersion===24?1:2,sourceId:source.sourceId,transportId:source.transportId,readerSchemaVersion:source.readerSchemaVersion,sourceGeneration:source.generation,loadedAt:1,features:[]});
-useRuleDataStore.setState({datasets:{eden:dataset(24)},ensureWorldLoaded:async()=>{
-  const updated=dataset(1);useRuleDataStore.setState({datasets:{eden:updated}});
-  // The store update renders before the later remote status response arrives.
-  await new Promise(resolve=>setTimeout(resolve,25));return updated;
-}});
+useRuleDataStore.setState({datasets:{eden:dataset(24)}});
+writeRuleWorldCache({sourceId:source.sourceId,transportId:source.transportId,releaseId:dataReleaseId,worldId:'eden',readerSchemaVersion:source.readerSchemaVersion,effectiveReaderProtocol:'openriamap.formal-release-reader.v3',contentSha256:'b'.repeat(64)},dataset(24));
 const response=(value:unknown)=>new Response(JSON.stringify(value),{headers:{'content-type':'application/json'}});
 const original=window.fetch.bind(window);
 window.fetch=async(input,init)=>{
@@ -50,7 +51,7 @@ window.fetch=async(input,init)=>{
   if(/^https?:/.test(url)&&!url.startsWith(location.origin))throw Error(`Unexpected remote request: ${url}`);
   return original(input,init);
 };
-(window as any).worldVersionSettingsFixture={localVersion:()=>useRuleDataStore.getState().datasets.eden?.formalVersion};
+(window as any).worldVersionSettingsFixture={localVersion:()=>useRuleDataStore.getState().datasets.eden?.formalVersion,loadingWorld:()=>useLoadingStore.getState().activeRuleWorldId};
 const auth={getSession:async()=>({status:'authenticated' as const,principalId:'fixture-maintainer',roles:['maintainer']}),beginLogin:async()=>{},logout:async()=>{}};
 const {SettingsPanel}=await import('../../../src/components/Settings/SettingsPanel');
 createRoot(document.getElementById('root')!).render(<><SettingsPanel onClose={()=>{}} reviewAuth={auth}/><ReviewConfirmationHost/></>);
