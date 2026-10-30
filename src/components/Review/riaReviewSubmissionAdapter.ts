@@ -214,6 +214,8 @@ export type PublicReviewReleaseFeedItem = {
   publishedAt?: string | null;
   lifecycle?: Record<string, string | null> | null;
   formalVersion?: number | null;
+  worldVersionChanges?:Array<{worldId:string;from:number|null;to:number;bindingRevision:number}>;
+  noContentChange?:boolean;
   packageCount?: number;
 };
 

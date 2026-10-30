@@ -11,9 +11,19 @@ export type FormalWorldRelease = {
   worldId: string;
   worldManifest: JsonRecord;
   releaseSet: FormalReleaseSet;
+  publicationId?: string;
+  publicationVersion?: number;
+  bindingRevision?: number;
+  contentSha256?: string;
+  effectiveReaderProtocol?: 'openriamap.formal-release-reader.v3';
 };
 
-export type FormalReleaseSet = { schemaVersion: 'openriamap.current-release-set.v2'; releaseId: string; formalVersion: number | null; worlds: string[] };
+export type FormalWorldBinding = {worldId:string;authorityGroupId:string;worldVersion:number;bindingRevision:number;dataReleaseId:string;worldManifestKey:string;worldManifestSha256:string;contentSha256:string;operationId:string;updatedAt:string};
+export type FormalReleaseSet = { schemaVersion: 'openriamap.current-release-set.v2'|'openriamap.current-release-set.v3'; releaseId: string; formalVersion: number | null; worlds: string[]; publicationId?:string;publicationVersion?:number;indexRevision?:number;worldBindings?:FormalWorldBinding[] };
+export function bindingForWorld(set:FormalReleaseSet,worldId:string):FormalWorldBinding|undefined { return set.worldBindings?.find(binding=>binding.worldId===worldId); }
+export function formalReleaseMetadata(release:FormalWorldRelease) {
+  return release.effectiveReaderProtocol ? {publicationId:release.publicationId,publicationVersion:release.publicationVersion,bindingRevision:release.bindingRevision,contentSha256:release.contentSha256,effectiveReaderProtocol:release.effectiveReaderProtocol} : {};
+}
 export type FormalReadOptions = { releaseId?: string; integrity?: FormalObjectIntegrity; signal?: AbortSignal };
 /** Test/host adapters receive the logical key and declared integrity contract. */
 export type FormalReleaseFetchJson = <T>(key: string, stage: FormalReleaseReaderError['stage'], options?: FormalReadOptions) => Promise<T>;
@@ -77,11 +87,28 @@ export function abortActiveFormalDataRequests(worldIds?:readonly string[]): void
 export async function readFormalReleaseSet(args: { source: RuleDataSourceSnapshot; fetchJson?: FormalReleaseFetchJson }): Promise<FormalReleaseSet> {
   const value = asRecord(await sourceFetcher(args.source,args.fetchJson)<JsonRecord>('current/worlds/_release-set.json','release-set'),'release-set','release set');
   const releaseId = requiredString(value,'releaseId','release-set');
+  if(value.schemaVersion!=='openriamap.current-release-set.v2'&&value.schemaVersion!=='openriamap.current-release-set.v3')throw new FormalReleaseReaderError('release-set','正式数据协议已更新，请刷新应用后重试。');
+  if(value.schemaVersion==='openriamap.current-release-set.v3'){
+    const positive=(number:unknown):number is number=>typeof number==='number'&&Number.isSafeInteger(number)&&number>0;
+    const safe=(id:unknown)=>typeof id==='string'&&/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(id);
+    if(!positive(value.indexRevision)||!positive(value.publicationVersion)||value.publicationId!==releaseId||value.formalVersion!==value.publicationVersion||!Array.isArray(value.worlds)||!value.worlds.every(safe)||new Set(value.worlds).size!==value.worlds.length||!Array.isArray(value.worldBindings)||value.worldBindings.length!==value.worlds.length)throw new FormalReleaseReaderError('release-set','世界独立版本集合无效。');
+    const bindings=value.worldBindings.map(raw=>{
+      const b=asRecord(raw,'release-set','world binding');
+      if(!safe(b.worldId)||!safe(b.authorityGroupId)||!safe(b.dataReleaseId)||!safe(b.operationId)||!positive(b.worldVersion)||!positive(b.bindingRevision)||b.worldManifestKey!==`releases/${b.dataReleaseId}/manifests/worlds/${b.worldId}.json`||!/^[a-f0-9]{64}$/.test(String(b.worldManifestSha256??''))||!/^[a-f0-9]{64}$/.test(String(b.contentSha256??''))||!Number.isFinite(Date.parse(String(b.updatedAt??''))))throw new FormalReleaseReaderError('release-set','世界版本绑定无效。');
+      return b as FormalWorldBinding;
+    });
+    if(new Set(bindings.map(b=>b.worldId)).size!==value.worlds.length||bindings.some(b=>!(value.worlds as string[]).includes(b.worldId)))throw new FormalReleaseReaderError('release-set','世界绑定重复或范围不符。');
+    return {schemaVersion:'openriamap.current-release-set.v3',releaseId,formalVersion:value.publicationVersion,worlds:value.worlds as string[],publicationId:releaseId,publicationVersion:value.publicationVersion,indexRevision:value.indexRevision,worldBindings:bindings};
+  }
   if(value.schemaVersion!=='openriamap.current-release-set.v2'||!Array.isArray(value.worlds)||!value.worlds.every(world=>typeof world==='string'&&/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(world))||new Set(value.worlds).size!==value.worlds.length||!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(releaseId))throw new FormalReleaseReaderError('release-set','发布集合无效。');
   return {schemaVersion:'openriamap.current-release-set.v2',releaseId,formalVersion:optionalFormalVersion(value,'formalVersion','release-set'),worlds:value.worlds as string[]};
 }
 export async function assertFormalReleaseCurrent(args: {source:RuleDataSourceSnapshot;release:FormalWorldRelease;fetchJson?:FormalReleaseFetchJson}):Promise<void>{
   const after=await readFormalReleaseSet(args);
+  if(after.schemaVersion==='openriamap.current-release-set.v3'&&args.release.releaseSet.schemaVersion===after.schemaVersion){
+    if(JSON.stringify(bindingForWorld(after,args.release.worldId))!==JSON.stringify(bindingForWorld(args.release.releaseSet,args.release.worldId)))throw new FormalReleaseReaderError('release-set','读取期间该世界版本绑定已更新，正在重新同步。','release-changed');
+    return;
+  }
   if(JSON.stringify(after)!==JSON.stringify(args.release.releaseSet))throw new FormalReleaseReaderError('release-set','读取期间正式发布已更新，正在重新同步。','release-changed');
 }
 
@@ -95,12 +122,14 @@ export async function resolveFormalWorldRelease(args: {
   if (!worldId) throw new FormalReleaseReaderError('world-pointer', 'worldId is required');
   const fetchJson = sourceFetcher(args.source, args.fetchJson);
   const releaseSet = args.releaseSet ?? await readFormalReleaseSet(args);
-  const {releaseId,formalVersion}=releaseSet;
+  const binding=bindingForWorld(releaseSet,worldId);
+  const releaseId=binding?.dataReleaseId??releaseSet.releaseId,formalVersion=binding?.worldVersion??releaseSet.formalVersion;
   if (!Array.isArray(releaseSet.worlds) || !releaseSet.worlds.includes(worldId)) {
     throw new FormalReleaseReaderError('release-set', `该来源尚未发布世界 ${worldId}。`, 'world-not-published');
   }
 
-  const pointer = asRecord(await fetchJson<JsonRecord>(`current/worlds/${worldId}.json`, 'world-pointer'), 'world-pointer', 'world pointer');
+  // The v3 collection is the single atomic authority; per-world files are projections.
+  const pointer = binding ? {...binding,schemaVersion:'openriamap.current-world.v2',releaseId,formalVersion} : asRecord(await fetchJson<JsonRecord>(`current/worlds/${worldId}.json`, 'world-pointer'), 'world-pointer', 'world pointer');
   if (pointer.schemaVersion !== 'openriamap.current-world.v2') {
     throw new FormalReleaseReaderError('world-pointer', 'unsupported world-pointer schema');
   }
@@ -129,7 +158,7 @@ export async function resolveFormalWorldRelease(args: {
   }
 
   if(!Number.isSafeInteger(worldManifest.featureCount)||Number(worldManifest.featureCount)<0||!Number.isSafeInteger(worldManifest.chunkCount)||Number(worldManifest.chunkCount)<0)throw new FormalReleaseReaderError('manifest','世界清单计数无效。');
-  return { releaseId, formalVersion, worldId, worldManifest, releaseSet };
+  return { releaseId, formalVersion, worldId, worldManifest, releaseSet, ...(binding?{publicationId:releaseSet.publicationId,publicationVersion:releaseSet.publicationVersion,bindingRevision:binding.bindingRevision,contentSha256:binding.contentSha256,effectiveReaderProtocol:'openriamap.formal-release-reader.v3' as const}:{}) };
 }
 
 export async function loadFormalWorldFeatures(args: {
@@ -213,6 +242,7 @@ export async function loadFormalWorldRuleDataset(args: {
     mergeVersion: release.releaseId,
     releaseId: release.releaseId,
     formalVersion: release.formalVersion ?? undefined,
+    ...formalReleaseMetadata(release),
     sourceId: args.source.sourceId,
     transportId: args.source.transportId,
     readerSchemaVersion: args.source.readerSchemaVersion,

@@ -29,6 +29,11 @@ export type RuleWorldDataset = {
   mergeVersion: number | string;
   releaseId?: string;
   formalVersion?: number | string;
+  publicationId?:string;
+  publicationVersion?:number;
+  bindingRevision?:number;
+  contentSha256?:string;
+  effectiveReaderProtocol?:string;
   sourceId?: string;
   transportId?: string;
   readerSchemaVersion?: string;

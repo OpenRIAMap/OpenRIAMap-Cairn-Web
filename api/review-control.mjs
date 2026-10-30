@@ -2,6 +2,7 @@ import { requireReviewAutomation } from './_reviewAutomation.mjs';
 import { signDispatcherRequest, verifySession } from './review-relay-transfer.mjs';
 
 const operations = new Set([
+  'world-version',
   'detail', 'list', 'revision-upload-request', 'revision-upload-complete', 'revision-upload-progress', 'save',
   'precheck', 'approve', 'reject', 'request-changes', 'reopen', 'save-and-approve',
   'publish', 'publish-precheck', 'publish-confirm', 'status', 'report', 'release-feed', 'release-gate', 'archive',
@@ -85,6 +86,21 @@ function requireStatusBoardSave(request) {
 export function normalizeReviewControlRequest(input, actor) {
   const operation = input?.operation;
   if (!operations.has(operation)) throw new Error('invalid-review-control-operation');
+  if(operation==='world-version'){
+    const request=input.request;
+    if(!request||!['inspect','precheck','confirm','progress','recover'].includes(request.action))throw Error('invalid-world-version-request');
+    if(request.action==='inspect')return {operation,actor,request:{action:'inspect'}};
+    if(request.action==='precheck'){
+      const plan=request.request;
+      if(!plan||!['initialize','reassign'].includes(plan.action)||typeof plan.reason!=='string'||!plan.reason.trim()||plan.reason.length>1000||plan.readerProtocol!=='openriamap.formal-release-reader.v3')throw Error('invalid-world-version-plan');
+      if(plan.action==='reassign'&&(!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(plan.worldId??'')||!Number.isSafeInteger(plan.targetVersion)||plan.targetVersion<1))throw Error('invalid-world-version-target');
+      return {operation,actor,request:{action:'precheck',request:{action:plan.action,reason:plan.reason,readerProtocol:plan.readerProtocol,...(plan.action==='reassign'?{worldId:plan.worldId,targetVersion:plan.targetVersion}:{})}}};
+    }
+    const source=request.action==='confirm'?request.request:request;
+    const operationId=requireString(source?.operationId,'invalid-world-version-operation');
+    if(!/^world-version-[a-f0-9-]{36}$/.test(operationId))throw Error('invalid-world-version-operation');
+    return {operation,actor,request:request.action==='confirm'?{action:'confirm',request:{operationId,planSha256:requireSha256(source.planSha256,'invalid-world-version-plan')}}:{action:request.action,operationId}};
+  }
   if (operation === 'detail') return { operation, submissionId: requireString(input.submissionId, 'invalid-review-submission-id'), actor };
   if (operation === 'list') return { operation, limit: input.limit ?? 50, actor };
   if (operation === 'release-feed') return { operation, limit: input.limit ?? 10, actor };

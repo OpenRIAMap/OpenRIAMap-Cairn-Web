@@ -2,7 +2,7 @@ import { getApplicationDefinition } from '@/core/project/applicationRuntime';
 import { defaultSourceSettings, resourceGroupForWorld } from '@/core/project/applicationResources';
 import { getRuleDataSourceSnapshot, type RuleDataSourceSnapshot } from './formalDataSourceRuntime';
 import { formalObjectLayout, formalObjectUrl } from './formalObjectAccess';
-import { FormalReleaseReaderError, readFormalReleaseSet, type FormalReleaseSet } from './formalReleaseReader';
+import { FormalReleaseReaderError, readFormalReleaseSet, bindingForWorld, type FormalReleaseSet } from './formalReleaseReader';
 import { fetchWorldMergeVersion, type RuleWorldVersion } from './worldRuleDatasetLoader';
 
 export type WorldPublicationStatus = { worldId: string; state: 'published' | 'unpublished' | 'disabled' | 'error'; version: RuleWorldVersion; message?: string };
@@ -42,6 +42,13 @@ export async function compareFormalSourceVersions(worldId?:string):Promise<Sourc
   const values=await Promise.allSettled([authority,mirror].map(source=>readFormalReleaseSet({source:getRuleDataSourceSnapshot(world,source.id)})));
   if(values.some(value=>value.status!=='fulfilled'))return {state:'unavailable',text:'尚未能完成来源比较；某一来源当前不可达或响应无效，不能据此认定镜像落后。',checkedAt:Date.now()};
   const [left,right]=values.map(value=>(value as PromiseFulfilledResult<FormalReleaseSet>).value);
+  if(left.schemaVersion==='openriamap.current-release-set.v3'&&right.schemaVersion===left.schemaVersion){
+    const remoteWorld=active.remoteWorldId??world,a=bindingForWorld(left,remoteWorld),b=bindingForWorld(right,remoteWorld);
+    const content=Boolean(a&&b&&a.contentSha256===b.contentSha256);
+    const binding=Boolean(a&&b&&JSON.stringify(a)===JSON.stringify(b));
+    const metadata=left.indexRevision===right.indexRevision&&left.publicationId===right.publicationId&&left.publicationVersion===right.publicationVersion;
+    return {state:content&&binding&&metadata?'same':'different',text:`世界 ${remoteWorld}：${authority.label.zh||authority.id} v${a?.worldVersion??'尚未发布'}；${mirror.label.zh||mirror.id} v${b?.worldVersion??'尚未发布'}。世界内容${content?'一致':'存在差异'}；版本绑定${binding?'一致':'待同步'}；集合元数据${metadata?'一致':'待同步'}。`,checkedAt:Date.now()};
+  }
   const same=left.releaseId===right.releaseId&&left.formalVersion===right.formalVersion&&JSON.stringify([...left.worlds].sort())===JSON.stringify([...right.worlds].sort());
   return {state:same?'same':'different',text:`${authority.label.zh||authority.id} v${left.formalVersion??'未分配'}；${mirror.label.zh||mirror.id} v${right.formalVersion??'未分配'}。${same?'发布身份一致。':'发布身份存在差异，请检查实际发布进度。'}`,checkedAt:Date.now()};
 }

@@ -66,6 +66,7 @@
     "test:feature-module-contract": "tsx --tsconfig ./tsconfig.app.json ./scripts/review/test-feature-module-contract.ts",
     "test:data-source-selection": "tsx ./scripts/data-source/test-data-source-selection.ts",
     "test:formal-release-reader": "tsx ./scripts/data-source/test-formal-release-reader.ts",
+    "test:world-versions": "tsx --tsconfig ./tsconfig.app.json ./scripts/data-source/test-world-versions.ts",
     "test:formal-media-reader": "tsx ./scripts/data-source/test-formal-media-reader.ts",
     "test:player-polling-policy": "tsx ./scripts/player/test-player-polling-policy.ts",
     "validate:formal-data-source-runtime": "node ./scripts/data-source/validate-formal-data-source-runtime.mjs",

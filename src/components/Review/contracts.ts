@@ -286,6 +286,8 @@ export type ReviewReleaseProgress = {
   state: string;
   lifecycle?: ReviewReleaseLifecycle;
   formalVersion?: number | null;
+  worldVersionChanges?:Array<{worldId:string;from:number|null;to:number;bindingRevision:number}>;
+  noContentChange?:boolean;
   approval?: { approvedBy?: string; approvedRole?: string; approvedAt?: string } | null;
   packages?: ReviewReleasePackageSummary[];
   archive?: { state?: string; archivedAt?: string | null; queuedAt?: string | null; startedAt?: string | null; failedAt?: string | null; error?: string | null; downloadReady?: boolean; bundleByteLength?: number | null } | null;
@@ -302,6 +304,8 @@ export type ReviewReleaseFeedItem = {
   mirroredAt?: string | null;
   lifecycle?: ReviewReleaseLifecycle;
   formalVersion?: number | null;
+  worldVersionChanges?:Array<{worldId:string;from:number|null;to:number;bindingRevision:number}>;
+  noContentChange?:boolean;
   packages?: ReviewReleasePackageSummary[];
   download?: { byteLength?: number };
   reconciliation?: { action: 'release-archive-reconcile'; reason: string };

@@ -198,7 +198,8 @@ export default function PublicReleaseRecordsPanel({ onClose, showNativeClose = f
                   <div className="font-semibold text-slate-900">{item.releaseId}</div>
                   <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">发布完成</span>
                 </div>
-                <div className="mt-1 text-xs text-slate-500">发布时间：{time(item.publishedAt ?? item.lifecycle?.completedAt)} · 正式版本：{item.formalVersion ?? '—'} · {item.packageCount ?? detail?.packages.length ?? 0} 个审核包</div>
+                <div className="mt-1 text-xs text-slate-500">发布时间：{time(item.publishedAt ?? item.lifecycle?.completedAt)} · 发布批次：{item.formalVersion ?? '—'} · {item.packageCount ?? detail?.packages.length ?? 0} 个审核包</div>
+                {item.worldVersionChanges?.length?<p className="mt-1 text-xs text-slate-500">世界版本：{item.worldVersionChanges.map(change=>`${change.worldId} ${change.from??'首次'}→${change.to}`).join('；')}</p>:item.noContentChange?<p className="mt-1 text-xs text-slate-500">内容未变化，本次完成审核归档。</p>:null}
                 {detail ? <div className="mt-3 space-y-2">{detail.packages.map((entry) => {
                   const key = `${item.releaseId}:${entry.submissionId}:${entry.decisionRevisionId}`;
                   return <CompactPackageCard key={key} entry={entry} downloading={downloadingKey === key} onDownload={() => void download(item.releaseId, entry.submissionId, entry.decisionRevisionId)} />;

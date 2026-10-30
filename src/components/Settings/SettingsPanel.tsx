@@ -31,7 +31,8 @@ import AppCard from '@/components/ui/AppCard';
 import DataSourceSelectionSection from './DataSourceSelectionSection';
 import { getRuleDataSourceSnapshot, getRuleDataSourceSelectionController, getRuleDataSourceSelectionPolicy, isFormalGithubTransportSource } from '@/components/Rules/data/formalDataSourceRuntime';
 import ReviewAuthSettingsSection from '@/components/Settings/ReviewAuthSettingsSection';
-import type { ReviewAuthPort } from '@/components/Review/auth';
+import type { ReviewAuthPort,ReviewAuthSessionState } from '@/components/Review/auth';
+import {WorldVersionControl} from './WorldVersionControl';
 import {
   getCurrentSourceLinkModeId,
   getDefaultSourceLinkModeId,
@@ -62,6 +63,9 @@ type RuleWorldRow = {
   isLoaded: boolean;
   publicationState?:WorldPublicationStatus['state'];
   errorMessage?:string;
+  publicationVersion?:number;
+  bindingRevision?:number;
+  localBindingRevision?:number;
 };
 
 /** Keep the compact card readable while the title retains both immutable IDs. */
@@ -72,6 +76,7 @@ function compactFormalVersion(value: string | null): string {
 }
 
 export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, reviewAuth, reviewAuthTitle, reviewAuthLoginLabel }: SettingsPanelProps) {
+  const [versionSession,setVersionSession]=useState<ReviewAuthSessionState>({status:'anonymous'});
   const formalConfiguration=useSyncExternalStore(subscribeFormalConfiguration,getFormalConfiguration);
   const formal=formalConfiguration?.identity;
   const compatibility=Object.values(getRuntimeDataDiagnostics()).flatMap(value=>value.unknown);
@@ -178,7 +183,9 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
 
   const buildRuleWorldRow = (worldId: string, remote: RuleWorldVersion, remoteOk: boolean): RuleWorldRow => {
     const source=getRuleDataSourceSnapshot(worldId);
-    const candidate=datasets[worldId],latestMeta=readRuleWorldMeta(worldId,source);
+    // A management callback may predate the completed dataset refresh. Read the
+    // live store so a later remote response cannot restore the old local number.
+    const candidate=useRuleDataStore.getState().datasets[worldId],latestMeta=readRuleWorldMeta(worldId,source);
     const meta=latestMeta?.sourceId===source.sourceId&&latestMeta.transportId===source.transportId?latestMeta:null;
     const loadedDataset=candidate?.sourceId===source.sourceId&&candidate.transportId===source.transportId?candidate:undefined;
     const cachedDataset = meta?readRuleWorldCache(meta):null;
@@ -190,6 +197,9 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
       remoteVersion: remote.formalVersion ?? '未分配',
       remoteReleaseId: remote.releaseId,
       remoteOk,
+      publicationVersion:remote.publicationVersion,
+      bindingRevision:remote.bindingRevision,
+      localBindingRevision:localDataset?.bindingRevision,
       localVersion: localDataset?.formalVersion === undefined || localDataset.formalVersion === null ? null : String(localDataset.formalVersion),
       localReleaseId: localDataset?.releaseId ?? meta?.releaseId ?? null,
       cachedAt: meta?.cachedAt ?? null,
@@ -212,7 +222,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   };
 
   const syncRuleWorldRowsFromLocal = () => {
-    setRuleWorldRows((prev) => prev.map((row) => ({...row,...buildRuleWorldRow(row.worldId, { formalVersion: row.remoteVersion, releaseId: row.remoteReleaseId ?? '' }, row.remoteOk)})));
+    setRuleWorldRows((prev) => prev.map((row) => ({...row,...buildRuleWorldRow(row.worldId, { formalVersion: row.remoteVersion, releaseId: row.remoteReleaseId ?? '',publicationVersion:row.publicationVersion,bindingRevision:row.bindingRevision }, row.remoteOk)})));
     setRuleCacheSize(calculateRuleCacheSize());
   };
 
@@ -296,7 +306,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
     if(row.publicationState==='disabled')return {text:'未启用',className:'text-gray-600',icon:'none'};
     if (!row.remoteOk) return { text: '远端读取失败', className: 'text-orange-600', icon: 'warn' };
     if (!row.localReleaseId) return { text: row.isLoaded ? '仅内存已加载' : '未缓存', className: 'text-gray-600', icon: 'none' };
-    if (row.localReleaseId === row.remoteReleaseId) return { text: '已缓存', className: 'text-green-600', icon: 'ok' };
+    if (row.localReleaseId === row.remoteReleaseId && row.localVersion === row.remoteVersion && (row.bindingRevision===undefined||row.bindingRevision===row.localBindingRevision)) return { text: '已缓存', className: 'text-green-600', icon: 'ok' };
     return { text: '缓存待刷新', className: 'text-orange-600', icon: 'warn' };
   };
 
@@ -312,7 +322,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
         .filter((worldId) => !!readRuleWorldMeta(worldId));
       const loadedWorldIds = Object.keys(datasets);
       const outOfDateWorldIds = remoteRows
-        .filter((row) => row.remoteOk && row.remoteReleaseId !== row.localReleaseId)
+        .filter((row) => row.remoteOk && (row.remoteReleaseId !== row.localReleaseId||row.remoteVersion!==row.localVersion||row.bindingRevision!==row.localBindingRevision))
         .map((row) => row.worldId);
       const targetWorldIds = Array.from(new Set([...cachedWorldIds, ...loadedWorldIds, ...outOfDateWorldIds])).filter(id=>remoteRows.some(row=>row.worldId===id&&row.remoteOk));
 
@@ -378,6 +388,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
             auth={reviewAuth}
             title={reviewAuthTitle}
             loginLabel={reviewAuthLoginLabel}
+            onSessionChange={setVersionSession}
           />
         ) : null}
         {/* 世界数据版本 */}
@@ -435,7 +446,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
                         </div>
                       </div>
                       {row.errorMessage?<p className="text-xs text-orange-700 break-words [overflow-wrap:anywhere]">{row.errorMessage}</p>:null}
-                      {row.remoteReleaseId||row.localReleaseId?<details className="text-[11px] text-gray-500 break-words [overflow-wrap:anywhere]"><summary>数据发布身份</summary><p>远端：{row.remoteReleaseId||'—'}</p><p>本地：{row.localReleaseId||'—'}</p></details>:null}
+                      {row.remoteReleaseId||row.localReleaseId?<details className="text-[11px] text-gray-500 break-words [overflow-wrap:anywhere]"><summary>数据发布身份</summary><p>远端技术数据 ID：{row.remoteReleaseId||'—'}</p><p>本地技术数据 ID：{row.localReleaseId||'—'}</p>{row.publicationVersion?<p>发布批次：{row.publicationVersion} · 绑定修订：{row.bindingRevision??'—'}</p>:null}<WorldVersionControl worldId={row.worldId} name={row.name} canManage={versionSession.status==='authenticated'&&Boolean(versionSession.roles?.some(role=>role==='maintainer'||role==='admin'))} onChanged={async()=>{await useRuleDataStore.getState().refreshWorlds([row.worldId]);await syncRuleWorldRows();}}/></details>:null}
                     </div>
                   );
                 })}
