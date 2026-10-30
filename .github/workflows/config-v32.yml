@@ -80,6 +80,7 @@ jobs:
           # unsaved diagnostic drafts that correctly block page navigation.
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/review_revision_save_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/world_version_acceptance.py
+          "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/world_version_settings_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/category_authoring_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/studio_workspace_acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c15_acceptance.py

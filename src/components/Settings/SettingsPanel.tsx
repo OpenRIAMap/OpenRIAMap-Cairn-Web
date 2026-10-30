@@ -183,7 +183,9 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
 
   const buildRuleWorldRow = (worldId: string, remote: RuleWorldVersion, remoteOk: boolean): RuleWorldRow => {
     const source=getRuleDataSourceSnapshot(worldId);
-    const candidate=datasets[worldId],latestMeta=readRuleWorldMeta(worldId,source);
+    // A management callback may predate the completed dataset refresh. Read the
+    // live store so a later remote response cannot restore the old local number.
+    const candidate=useRuleDataStore.getState().datasets[worldId],latestMeta=readRuleWorldMeta(worldId,source);
     const meta=latestMeta?.sourceId===source.sourceId&&latestMeta.transportId===source.transportId?latestMeta:null;
     const loadedDataset=candidate?.sourceId===source.sourceId&&candidate.transportId===source.transportId?candidate:undefined;
     const cachedDataset = meta?readRuleWorldCache(meta):null;
