@@ -80,7 +80,7 @@ export function setMigrationAttachment(value?:MigrationAttachment,result?:unknow
   }else if(!value)migrationStamp++;
 }
 export function setImportedDiagnostic(value?:TemporaryDiagnostic){state.importedDiagnostic=value;notify();schedule();}
-export const needsWorkspaceExitPrompt=()=>!allowUnload&&state.modified&&(!currentValidation(state.validation,state.generation)||state.validation?.report.valid!==true||hasStudioDraft(state.session)||Object.keys(readInputBuffers()).length>0);
+export const needsWorkspaceExitPrompt=()=>!allowUnload&&state.modified&&(!currentValidation(state.validation,state.generation)||state.validation?.report.valid!==true||hasStudioDraft(state.session)||Object.keys(readInputBuffers()).length>0||Boolean(state.writeError));
 export async function flushWorkspace():Promise<void>{
   if(state.timer){clearTimeout(state.timer);state.timer=undefined;}
   const task=state.writes.catch(()=>undefined).then(async()=>{if(!state.enabled||!state.modified)return;try{const value=checkpoint();state.token=await writeWorkspaceCheckpoint(value,state.token);state.savedAt=value.updatedAt;state.writeError='';notify();}catch(error){state.writeError=String(error);notify();throw error;}});state.writes=task;await task;
@@ -105,8 +105,14 @@ export async function persistActiveConfig(value:ConfigPackageV3,increment=false,
   const updatedAt=new Date().toISOString(),nextGeneration=generation+(changedValue?1:0);
   const valueToWrite:WorkspaceCheckpoint={schemaVersion:'cairnmap.studio-workspace.v1',config,generation:nextGeneration,updatedAt,editAudit,baselineIdentity:baseline,migration:state.migration,importedDiagnostic:state.importedDiagnostic};
   if(state.timer){clearTimeout(state.timer);state.timer=undefined;}
-  const token=await writeWorkspaceCheckpoint(valueToWrite,state.token);
-  state.token=token;state.editAudit=editAudit;state.importedEditAudit=undefined;state.baselineIdentity=baseline;state.session=undefined;state.generation=nextGeneration;state.signature=signatureValue;state.modified=true;state.savedAt=updatedAt;state.writeError='';
+  let token=state.token,writeError='';
+  try{token=await writeWorkspaceCheckpoint(valueToWrite,state.token);}catch(error){
+    // A quota failure preserves one complete in-memory config/checkpoint/audit.
+    // Cross-tab conflicts never enter this escape and cannot overwrite a peer.
+    if(!(error instanceof DOMException)||!['QuotaExceededError','NS_ERROR_DOM_QUOTA_REACHED'].includes(error.name))throw error;
+    writeError=String(error);
+  }
+  state.token=token;state.editAudit=editAudit;state.importedEditAudit=undefined;state.baselineIdentity=baseline;state.session=undefined;state.generation=nextGeneration;state.signature=signatureValue;state.modified=true;state.savedAt=writeError?state.savedAt:updatedAt;state.writeError=writeError;
   activate(config);notify();
 
   return config;

@@ -6,7 +6,7 @@ origin=b.evaluate('performance.timeOrigin');b.call('Page.navigate',{'url':APP_UR
 b.wait('window.__c18?.ready===true')
 result=b.evaluate("""(async()=>{
  const w=await import('/src/configStudio/workspaceController.ts'),p=await import('/src/configStudio/package.ts'),m=await import('/src/configStudio/contractMigration.ts'),v=await import('/src/configStudio/runtime.ts');
- const initial=await w.startDefaultWorkspace(),next=m.migratePackageToContract(initial,18).config;
+ const initial=await w.startDefaultWorkspace(),r=initial.revision,target=(await import('/src/configStudio/contract.ts')).NATIVE_CONFIG_REVISION,next=m.migratePackageToContract(initial,target).config;next.displayName={...next.displayName,zh:'Browser audit checkpoint'};
  await w.persistActiveConfig(next,true);
  const first=w.getWorkspaceState().editAudit;
  const blob=await p.buildConfigPackageArchive(next,v.validateConfigPackage(next));
@@ -21,16 +21,16 @@ result=b.evaluate("""(async()=>{
  await w.resumeWorkspace(stored.checkpoint);
  if(w.getWorkspaceState().editAudit.checkpoints[0].id!==first.checkpoints[0].id||!w.getWorkspaceState().importedEditAudit)throw Error('Imported audit cache failed');
  await w.persistActiveConfig(candidate,true);
- if(w.getWorkspaceState().editAudit.checkpoints.length!==2||w.getActiveConfigSnapshot().revision!==151)throw Error('Handover save changed formal revision or lost the source chain');
- const published={...candidate,revision:152},identity={releaseId:'isolated-test-publication',packageId:published.packageId,projectId:published.projectId,revision:152,contractRevision:18,configSha256:'a'.repeat(64),manifestSha256:'b'.repeat(64),configUrl:'/configuration/releases/'+ 'a'.repeat(64)+'/config.json'};
+ if(w.getWorkspaceState().editAudit.checkpoints.length!==2||w.getActiveConfigSnapshot().revision!==r)throw Error('Handover save changed formal revision or lost the source chain');
+ const published={...candidate,revision:r+1},identity={releaseId:'isolated-test-publication',packageId:published.packageId,projectId:published.projectId,revision:r+1,contractRevision:target,configSha256:'a'.repeat(64),manifestSha256:'b'.repeat(64),configUrl:'/configuration/releases/'+ 'a'.repeat(64)+'/config.json'};
  let blocked=false;try{await w.acknowledgePublishedWorkspace(identity,{...published,displayName:{zh:'Different'}})}catch{blocked=true}
  if(!blocked||!w.getWorkspaceState().editAudit)throw Error('Mismatched publication cleared audit');
  await w.acknowledgePublishedWorkspace(identity,published);
- if(w.getWorkspaceState().editAudit||w.getActiveConfigSnapshot().revision!==152)throw Error('Published audit was not retired');
+ if(w.getWorkspaceState().editAudit||w.getActiveConfigSnapshot().revision!==r+1)throw Error('Published audit was not retired');
  await w.persistActiveConfig({...published,displayName:{...published.displayName,zh:'Next edit'}},true);
  const newAudit=w.getWorkspaceState().editAudit;
- if(newAudit.baseline.revision!==152||newAudit.checkpoints.length!==1||w.getActiveConfigSnapshot().revision!==152)throw Error('New edit did not start a fresh baseline');
- return {checks:['A06: ZIP handover retains source checkpoint identity','A06: uncommitted candidate exports a staged source chain without inventing a validated checkpoint','A06: imported audit and source snapshot survive real IndexedDB resume','A05: handover save appends one checkpoint while formal r remains 151','A05/A07: mismatched publication retains audit; exact confirmed publication retires it; next edit starts one checkpoint on r152'],runtimeErrors:[]};
+ if(newAudit.baseline.revision!==r+1||newAudit.checkpoints.length!==1||w.getActiveConfigSnapshot().revision!==r+1)throw Error('New edit did not start a fresh baseline');
+ return {checks:['A06: ZIP handover retains source checkpoint identity','A06: uncommitted candidate exports a staged source chain without inventing a validated checkpoint','A06: imported audit and source snapshot survive real IndexedDB resume','A05: handover save appends one checkpoint while formal r remains '+r,'A05/A07: mismatched publication retains audit; exact confirmed publication retires it; next edit starts one checkpoint on r'+(r+1)],runtimeErrors:[]};
 })()""")
 assert not b.errors,b.errors
 result['runtimeErrors']=b.errors
