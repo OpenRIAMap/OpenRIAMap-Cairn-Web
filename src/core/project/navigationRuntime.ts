@@ -3,7 +3,7 @@ import { getRuntimeConfiguration } from '../../configRuntime/runtimeDataView';
 import type { ApplicationSettings } from './applicationTypes';
 import type { ClassificationPath, ConfigPackageV3, LookupTable } from '../../configStudio/types';
 import type { NavigationSettings, RailwayRole, RailwaySelectors } from './navigationTypes';
-import { defaultNavigationSettings, defaultRailwaySelectors, matchesRaw } from './navigationDefinition';
+import { defaultNavigationSettings, defaultRailwaySelectors, matchesRaw, pathsMatch } from './navigationDefinition';
 import { defaultLookupTables } from '../../configStudio/lookupTables';
 import { validateStructuredValue, valueSchemaTemplate } from '../../configStudio/valueSchema';
 import { validateNavigationRecords } from '../../configStudio/navigationValidation';
@@ -29,7 +29,7 @@ export function captureNavigationContext(): NavigationContext {
   const shared=structuredClone(app.preferences.railwayRoles?.selectors??defaultRailwaySelectors());
   // Old contracts keep their historical constant-backed navigation behaviour.
   const tables=structuredClone(native?config?.lookupTables??[]:defaultLookupTables());
-  const structure=config?.nodes.filter(n=>Object.values(shared).some(paths=>paths.some(p=>p.class===n.path.class))).map(n=>({path:n.path,geometryType:n.geometryType,inheritDown:n.inheritDown,receiveFromParent:n.receiveFromParent,fields:n.fields.map(f=>({key:f.key,type:f.type,cardinality:f.cardinality,valueSchema:f.valueSchema}))}));
+  const structure=config?.nodes.filter(n=>Object.values(shared).some(paths=>pathsMatch(paths,n.path))).map(n=>({path:n.path,geometryType:n.geometryType,inheritDown:n.inheritDown,receiveFromParent:n.receiveFromParent,fields:n.fields.map(f=>({key:f.key,type:f.type,cardinality:f.cardinality,valueSchema:f.valueSchema}))}));
   const sharedSignature=JSON.stringify({shared,structure,sources:app.sources,worlds:app.worlds.map(w=>({id:w.id,remoteWorldId:w.remoteWorldId,numericCode:w.numericCode,prefix:w.prefix}))});
   const {name:_railName,...rail}=settings.rail,{name:_teleportName,...teleport}=settings.teleport,{name:_roadName,...road}=settings.road;
   const algorithmTables=tables.filter(t=>t.id===settings.teleport.hubTableId||t.id===settings.road.travelModesTableId).map(t=>({id:t.id,valueType:t.valueType,functionKind:t.functionKind,rows:t.rows.map(r=>({value:r.value,functionValue:r.functionValue&&typeof r.functionValue==='object'&&'returnPoints' in r.functionValue?{...r.functionValue,returnPoints:r.functionValue.returnPoints.map(({label:_label,...point})=>point)}:r.functionValue}))}));

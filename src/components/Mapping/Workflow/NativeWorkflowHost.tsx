@@ -1,3 +1,4 @@
+import {availableQuickWorkflows} from '@/configStudio/WorkflowAvailabilityEditor';
 import {NativeDrawingPreviews} from './nativeDrawingPreviews';
 import {externalRolePaths} from '@/configStudio/externalBindings';
 import {EXTERNAL_COMPONENT_ROLES,EXTERNAL_ROLES} from '@/configStudio/externalCapabilities';
@@ -48,7 +49,7 @@ export function NativeWorkflowHost({ config, workflow, bridge, registry, onCommi
     const actor = String(slots.actor ?? '');
     if (bridgeRef.current.getEditorId() !== actor) bridgeRef.current.setEditorId(actor);
   }, []);
-  if(!isQuickMappingWorkflow(snapshot.workflow))return <p role="alert">此方案专供编辑或已关闭便捷测绘，不能从采集入口执行。</p>;
+  if(!isQuickMappingWorkflow(snapshot.workflow)||!availableQuickWorkflows(snapshot.config,snapshot.world).some(item=>item.id===snapshot.workflow.id))return <p role="alert">此方案专供编辑或已关闭便捷测绘，不能从采集入口执行。</p>;
   if (snapshot.workflow.mode === 'external') {
     const key = { railwayWorkflow: 'railway', stationWorkflow: 'station', tradePointWorkflow: 'trp_point' }[snapshot.workflow.external?.componentKey ?? ''] as WorkflowKey | undefined;
     let captureBridge:WorkflowBridge;

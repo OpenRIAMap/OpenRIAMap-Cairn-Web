@@ -32,7 +32,7 @@ function App() {
   const workspace = params.get('workspace');
   const legacy = location.pathname === '/legacy-v1/' || workspace === 'config-lab' && params.get('configMode') === 'v1';
   const isConfigStudio = workspace === 'config-studio'
-  const isConfigLab = workspace === 'config-lab'
+  const isConfigLab = workspace === 'config-lab'||workspace==='config-lab-frame'
   const isWorkflowStudio = workspace === 'config-workflow'
   const entryModule=legacy?'legacy-v1':isConfigStudio||isConfigLab||isWorkflowStudio?'configuration':undefined;
 

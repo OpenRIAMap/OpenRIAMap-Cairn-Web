@@ -1,0 +1,37 @@
+<!doctype html><html lang="zh"><meta charset="UTF-8"><title>c18 isolated browser acceptance</title><div id="root"></div><script type="module">
+// A test page served only by Vite. It is not imported by the application build.
+import React,{useEffect,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import '/src/styles/index.css';
+import {HelpLabel} from '/src/configStudio/SettingHelp.tsx';
+import {FoldOrderControls,FoldDropArea} from '/src/configStudio/FoldOrderControls.tsx';
+import {RichTextEditor,RichTextView} from '/src/configStudio/RichTextComponents.tsx';
+import {AnnouncementHost} from '/src/components/Map/AnnouncementHost.tsx';
+import {DiagnosticGroups} from '/src/configStudio/DiagnosticGroups.tsx';
+import {readInputBuffers} from '/src/configStudio/inputBufferStore.ts';
+const h=React.createElement,root=createRoot(document.getElementById('root'));
+window.__c18={};
+function InputTest(){
+ const [text,setText]=useState(''),[json,setJson]=useState('{}'),[number,setNumber]=useState(14),[rich,setRich]=useState({paragraphs:[{runs:[{text:'safe text'}]}]}),[saves,setSaves]=useState(0);
+ useEffect(()=>{window.__c18.commits=(window.__c18.commits??0)+1;},[text,json]);
+ window.__c18.state={text,json,number,rich,saves};
+ return h('main',{'data-buffer-scope':'harness',className:'config-editor p-6 space-y-4'},
+  h(HelpLabel,{context:'ConfigStudio'},'文本',h('input',{'aria-label':'buffered-text',value:text,onChange:event=>setText(event.target.value)})),
+  h(HelpLabel,{context:'ConfigStudio'},'JSON',h('textarea',{'aria-label':'buffered-json',value:json,onChange:event=>{try{setJson(JSON.stringify(JSON.parse(event.target.value)));}catch{}}})),
+  h(HelpLabel,{context:'ConfigStudio'},'数值',h('input',{'aria-label':'buffered-number',type:'number',value:number,onChange:event=>setNumber(Number(event.target.value))})),
+  h(RichTextEditor,{label:'富文本验收',value:rich,onChange:setRich}),
+  h('button',{onClick:()=>setSaves(value=>value+1)},'保存验收'),h('pre',{},JSON.stringify({text,json,saves})),h(RichTextView,{value:rich}));
+}
+function OrderTest(){
+ const [rows,setRows]=useState([{id:'a',page:'one'},{id:'b',page:'one'},{id:'c',page:'two'}]);
+ const move=value=>setRows(prior=>{const next=[...prior],from=next.findIndex(row=>row.id===value.from);if(from<0)return prior;const [row]=next.splice(from,1),at=next.findIndex(row=>row.id===value.to);next.splice(at<0?next.length:at+Number(value.after),0,{...row,page:value.toContainer});return next;});
+ window.__c18.order=rows;
+ return h('main',{className:'config-editor p-6'},['one','two','empty'].map(page=>h('section',{key:page,className:'rounded border p-3 mb-4','data-page':page},h('h2',{},page),h(FoldDropArea,{scope:'test-controls',container:page,onMove:move},rows.filter(row=>row.page===page).map((row,index,array)=>h('details',{key:row.id,'data-test-row':row.id,className:'cm-item'},h('summary',{},row.id,h(FoldOrderControls,{scope:'test-controls',container:page,id:row.id,index,count:array.length,label:row.id,onMove:move,onStep:offset=>{const target=array[index+offset];if(target)move({from:row.id,to:target.id,after:offset>0,fromContainer:page,toContainer:page});}})),h('p',{},'展开内容 '+row.id)))))));
+}
+window.__c18.showInputs=()=>root.render(h(InputTest));
+window.__c18.showOrder=()=>root.render(h(OrderTest));
+window.__c18.buffers=readInputBuffers;
+window.__c18.showNotices=(items,ready=true)=>root.render(h(AnnouncementHost,{config:{projectId:'c18-browser-test',application:{announcements:{items}}},ready}));
+window.__c18.showDiagnostics=()=>root.render(h(DiagnosticGroups,{report:{valid:false,issues:Array.from({length:120},(_,i)=>({severity:i<2?'error':'warning',code:i<2?'real-error':'workflow-expression-type-unknown',path:'workflows/w'+(i%3)+'/outputs/x',message:'[分类'+i+'] '+(i<2?'真实错误':'需试运行'),affectedFeatures:[{id:'id-'+i}]}))}}));
+window.__c18.ready=true;
+</script></html>

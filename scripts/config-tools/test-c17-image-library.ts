@@ -1,3 +1,4 @@
+import {NATIVE_CONFIG_REVISION} from '../../src/configStudio/contract';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -88,7 +89,7 @@ for (const version of [13, 14, 15, 16]) {
   assert.equal(result.config.contractRevision, 17); assert.deepEqual(validateNativeStructure(result.config), []);
 }
 assert.throws(() => migrateContract({ contractRevision: 17 }, 16, 'workflow'), /降级/);
-assert.throws(() => migrateContract({ contractRevision: 18 }, 17, 'workflow'), /未知/);
+assert.throws(() => migrateContract({ contractRevision: NATIVE_CONFIG_REVISION+1 }, 17, 'workflow'), /未知/);
 assert.throws(() => migrateContract({ contractRevision: 12 }, 17, 'workflow'), /窗口/);
 assert.deepEqual(imageSourceFormProblems({ sourceForm: 'url', url: '/image-library/N1.png' }, 17), []);
 assert.deepEqual(imageSourceFormProblems({ sourceForm: 'library', url: '/image-library/missing.png' }, 17), [], 'file existence is not a server admission rule');

@@ -1,5 +1,6 @@
 import type { ClassificationPath } from '../../configStudio/types';
 import type { NavigationSettings, RailwaySelectors, RailParameters, SharedRailwayRoles } from './navigationTypes';
+import {matchesClassificationRange,type ClassificationRange} from '../../configStudio/classificationScope';
 
 export const RAILWAY_ROLES = ['lines', 'platforms', 'stationAreas', 'stations'] as const;
 export function defaultRailwaySelectors(): RailwaySelectors {
@@ -18,8 +19,8 @@ export function defaultNavigationSettings(parameters?: RailParameters): Navigati
 export function pathCovers(scope: ClassificationPath, path: ClassificationPath): boolean {
   return (['class', 'kind', 'skind', 'skind2'] as const).every(key => !scope[key] || scope[key] === path[key]);
 }
-export function pathsMatch(paths: ClassificationPath[], path: ClassificationPath): boolean { return paths.some(scope => pathCovers(scope, path)); }
+export function pathsMatch(paths: ClassificationRange, path: ClassificationPath): boolean { return matchesClassificationRange(paths,path); }
 export function rawClassification(value: Record<string, unknown>): ClassificationPath {
   return { class: String(value.Class ?? value.class ?? '').trim(), kind: value.Kind as string | undefined, skind: (value.SKind ?? value.Skind) as string | undefined, skind2: (value.SKind2 ?? value.Skind2) as string | undefined };
 }
-export function matchesRaw(paths: ClassificationPath[], value: Record<string, unknown>): boolean { return pathsMatch(paths, rawClassification(value)); }
+export function matchesRaw(paths: ClassificationRange, value: Record<string, unknown>): boolean { return pathsMatch(paths, rawClassification(value)); }

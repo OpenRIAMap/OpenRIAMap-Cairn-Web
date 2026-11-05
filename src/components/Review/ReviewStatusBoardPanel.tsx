@@ -1,3 +1,4 @@
+import {reviewReportFindings,reviewReportProtocolValid} from './reviewReportFindings';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Archive, CheckCircle2, ClipboardCheck, FileDown, FileText, RefreshCw, RotateCcw, Send, ShieldCheck, XCircle } from 'lucide-react';
@@ -132,6 +133,9 @@ function publishConfirmationFailureMessage(error: unknown): string {
 function reviewDecisionLabel(decision: string | undefined): string {
   return ({
     ready: '可继续',
+    pending: '后台核验中',
+    failed: '检查失败',
+    'in-progress': '已有任务正在进行',
     'warning-confirmation-required': '需要人工确认',
     blocked: '已阻断',
     stale: '状态已过期',
@@ -175,18 +179,19 @@ function createEntry(submission: ReviewSubmissionSnapshot, existing?: ReviewStat
 
 function reportView(report: ReviewReleaseControlReport | ReviewPackagePrecheckReport | null, title: string) {
   if (!report) return null;
-  const rawFindings = 'findings' in report ? report.findings : report.report?.findings ?? [];
+  const rawFindings = reviewReportFindings(report);
+  if(!reviewReportProtocolValid(report))rawFindings.push({code:'REPORT_PROTOCOL_INVALID',severity:'blocker',message:'服务端返回了阻断或警告状态，却没有具体原因。请重新检查并保留关联信息；当前禁止发布。'});
   const localizedFindings = rawFindings.map((finding) => {
     const code = 'code' in finding ? finding.code : undefined;
     return {
       ...finding,
       key: code ?? finding.message ?? 'finding',
-      message: code ? reviewFindingLabel(code, finding.message) : finding.message ?? '未提供阻断或警告说明。',
+      message: (finding.packageId?finding.packageId+'：':'')+(code ? reviewFindingLabel(code, finding.message) : finding.message ?? '未提供阻断或警告说明。'),
     };
   });
   return <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
     <div className="font-semibold">{title}：{reviewDecisionLabel(report.decision)}</div>
-    {localizedFindings.length ? <div className="mt-2 space-y-1">{localizedFindings.map((finding, index) => <div key={`${finding.key}-${index}`} className={finding.severity === 'blocker' ? 'text-red-700' : finding.severity === 'warning' ? 'text-amber-700' : 'text-gray-600'}>• {finding.message}</div>)}</div> : <div className="mt-1 text-gray-500">未返回阻断或警告项。</div>}
+    {localizedFindings.length ? <div className="mt-2 space-y-1">{localizedFindings.map((finding, index) => <div key={`${finding.key}-${index}`} className={finding.severity === 'blocker' ? 'text-red-700' : finding.severity === 'warning' ? 'text-amber-700' : 'text-gray-600'}>• {finding.message}</div>)}</div> : <div className="mt-1 text-gray-500">未发现阻断或警告项。</div>}
   </div>;
 }
 function progressText(progress: ReviewWorkspaceLoadProgress) {
@@ -229,7 +234,11 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   const selectedEntries = useMemo(() => draft.filter((entry) => selectedIds.has(entry.submissionId) && !submissions.some((item) => item.submissionId === entry.submissionId && isHistoricalArchiveCandidate(item, entry))), [draft, selectedIds, submissions]);
   const historicalArchiveCandidates = useMemo(() => submissions.filter((submission) => isHistoricalArchiveCandidate(submission, draft.find((entry) => entry.submissionId === submission.submissionId))), [draft, submissions]);
   const dirty = board ? isReviewStatusBoardDirty({ baseBoardVersion: board.boardVersion, entries: draft }, board) : false;
-  const publishReady = releaseReport?.decision === 'ready' || releaseReport?.decision === 'warning-confirmation-required';
+  const publishReady = reviewReportProtocolValid(releaseReport)&&(releaseReport?.decision === 'ready' || releaseReport?.decision === 'warning-confirmation-required');
+  const precheckGeneration=useRef(0);
+  const ongoingPrecheck=useRef<{key:string;request:Parameters<typeof releaseControl.runReleasePrecheck>[0]}>();
+  const selectedKey=selectedEntries.map(entry=>entry.submissionId+':'+entry.decisionRevisionId).join('|');
+  useEffect(()=>{return()=>{precheckGeneration.current++;};},[selectedKey,board?.boardVersion]);
 
   const selectDetail = useCallback((submission: ReviewSubmissionSnapshot) => {
     if (activeWorkspaceSubmissionId && activeWorkspaceSubmissionId !== submission.submissionId) {
@@ -471,9 +480,14 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     if (!approved || !owner) { setMessage('至少选择一个已通过且已指定版本的审核包。'); return; }
     setBusy('release-precheck');
     try {
+      const sessionKey='cairnmap-review-precheck:'+actor.principalId;
+      if(!ongoingPrecheck.current)try{
+        const saved=JSON.parse(sessionStorage.getItem(sessionKey)??'null');
+        if(saved?.key===selectedKey+':'+board.boardVersion&&saved.savedAt>Date.now()-24*60*60*1000&&typeof saved.request?.request?.idempotencyKey==='string'&&saved.request.request.actor?.principalId===actor.principalId)ongoingPrecheck.current=saved;
+      }catch{/* Session storage is optional; server identity checks remain authoritative. */}
       const gate = normalizeGate(await releaseControl.getReleaseGate(actor));
       setReleaseGate(gate);
-      if (isReviewReleaseGateLeaseActive(gate)) { setMessage('当前已有发布进行中，请稍后刷新 Release Gate。'); return; }
+      if (isReviewReleaseGateLeaseActive(gate)&&!(gate.state==='prechecking'&&ongoingPrecheck.current?.key===selectedKey+':'+board.boardVersion)) { setMessage('当前已有发布进行中，请稍后刷新 Release Gate。'); return; }
       if (isReviewReleaseGateLeaseExpired(gate)) setMessage(null);
       const remote = await submissionAdapter.getStatusBoard(actor);
       const differences = compareReviewStatusBoards(draft, remote.entries).filter((difference) => difference.kind !== 'unchanged');
@@ -486,12 +500,24 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
         }
         return;
       }
-      const result = await releaseControl.runReleasePrecheck({
-        selectedSubmissionIds: selectedEntries.map((entry) => entry.submissionId), expectedBoardVersion: board.boardVersion,
-        request: { requestId: createId('release-precheck'), correlationId: createId('release-correlation'), idempotencyKey: createId('release-idempotency'), submissionId: owner.submissionId, targetRevisionId: approved.decisionRevisionId!, expectedStateVersion: owner.stateVersion, action: 'publish', occurredAt: new Date().toISOString(), actor },
-      }, actor);
-      setReleaseReport(result);
-      setReleaseGate(normalizeGate(result.gate));
+      const generation=++precheckGeneration.current;
+      const key=selectedKey+':'+board.boardVersion;
+      const request=ongoingPrecheck.current?.key===key?ongoingPrecheck.current.request:{precheckProtocol:'pending-v2' as const,selectedSubmissionIds:selectedEntries.map(entry=>entry.submissionId),expectedBoardVersion:board.boardVersion,request:{requestId:createId('release-precheck'),correlationId:createId('release-correlation'),idempotencyKey:createId('release-idempotency'),submissionId:owner.submissionId,targetRevisionId:approved.decisionRevisionId!,expectedStateVersion:owner.stateVersion,action:'publish' as const,occurredAt:new Date().toISOString(),actor}};
+      ongoingPrecheck.current={key,request};
+      try{sessionStorage.setItem(sessionKey,JSON.stringify({key,request,savedAt:Date.now()}));}catch{/* The current page can still resume without storage. */}
+      let pendingResult=false;
+      for(const delay of [0,1000,2000,4000,8000,10000,15000]){
+        if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
+        if(generation!==precheckGeneration.current)return;
+        const result=await releaseControl.runReleasePrecheck(request,actor);
+        if(generation!==precheckGeneration.current)return;
+        setReleaseReport(result);setReleaseGate(normalizeGate(result.gate));
+        pendingResult=result.decision==='pending';
+        if(!pendingResult){ongoingPrecheck.current=undefined;try{sessionStorage.removeItem(sessionKey);}catch{/* optional storage */}setMessage(result.decision==='ready'?'发布前检查通过。':null);break;}
+        setMessage('后台正在按当前正式配置核验；保持本次选择，完成后自动更新报告。');
+      }
+      if(pendingResult)setMessage('后台核验仍在进行；可再次点击发布前检查继续查询同一任务，无需刷新 Release Gate。');
+
     } catch (error) {
       setMessage(describeError(error));
     } finally {

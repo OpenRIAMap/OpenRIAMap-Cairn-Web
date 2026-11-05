@@ -61,6 +61,7 @@ type RuleWorldRow = {
   cachedAt: number | null;
   featureCount: number | null;
   isLoaded: boolean;
+  localRecovery?:boolean;
   publicationState?:WorldPublicationStatus['state'];
   errorMessage?:string;
   publicationVersion?:number;
@@ -205,6 +206,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
       cachedAt: meta?.cachedAt ?? null,
       featureCount: loadedFeatureCount ?? cachedDataset?.features.length ?? null,
       isLoaded: !!loadedDataset,
+      localRecovery:!!loadedDataset?.localRecovery,
     };
   };
 
@@ -445,6 +447,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
                           <span className="text-gray-700">{row.featureCount ?? '—'}{row.isLoaded ? '（已加载）' : ''}</span>
                         </div>
                       </div>
+                      {row.localRecovery?<p className="text-xs text-amber-700">已使用同来源本地完整版本，尚未确认远端最新状态。</p>:null}
                       {row.errorMessage?<p className="text-xs text-orange-700 break-words [overflow-wrap:anywhere]">{row.errorMessage}</p>:null}
                       {row.remoteReleaseId||row.localReleaseId?<details className="text-[11px] text-gray-500 break-words [overflow-wrap:anywhere]"><summary>数据发布身份</summary><p>远端技术数据 ID：{row.remoteReleaseId||'—'}</p><p>本地技术数据 ID：{row.localReleaseId||'—'}</p>{row.publicationVersion?<p>发布批次：{row.publicationVersion} · 绑定修订：{row.bindingRevision??'—'}</p>:null}<WorldVersionControl worldId={row.worldId} name={row.name} canManage={versionSession.status==='authenticated'&&Boolean(versionSession.roles?.some(role=>role==='maintainer'||role==='admin'))} onChanged={async()=>{await useRuleDataStore.getState().refreshWorlds([row.worldId]);await syncRuleWorldRows();}}/></details>:null}
                     </div>

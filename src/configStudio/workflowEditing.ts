@@ -1,3 +1,4 @@
+import {matchesClassificationRange} from './classificationScope';
 import {workflowClassificationGroup,outputAcceptsClassification} from './workflowClassificationGroup';
 import {resolveWorkflowFields} from './fieldReuse';
 import type {ClassificationPath,ConfigPackageV3,WorkflowControl,WorkflowDefinition} from './types';
@@ -13,6 +14,13 @@ export type WorkflowEditPlan={workflow:WorkflowDefinition;scope:ClassificationPa
 export type WorkflowEditDraft={slots:Record<string,unknown>;classification:ClassificationPath;initialSlots:Record<string,unknown>};
 export const recordClassification=(record:Record<string,unknown>):ClassificationPath=>({class:String(record.Class??''),...(record.Kind?{kind:String(record.Kind)}:{}),...(record.SKind??record.Skind?{skind:String(record.SKind??record.Skind)}:{}),...(record.SKind2??record.Skind2?{skind2:String(record.SKind2??record.Skind2)}:{})});
 export const isQuickMappingWorkflow=(workflow:WorkflowDefinition)=>workflow.quickMapping!==false&&!workflow.editor?.dedicated&&workflow.external?.purpose!=='edit';
+/** Remove only unavailable quick-workflow references; preserve each world's order. */
+export function pruneWorkflowAvailability(config:ConfigPackageV3):ConfigPackageV3 {
+ if(config.contractRevision<18||!config.application?.workflowAvailability)return config;
+ const valid=new Set(config.workflows.filter(isQuickMappingWorkflow).map(workflow=>workflow.id));
+ const availability=Object.fromEntries(Object.entries(config.application.workflowAvailability).map(([world,ids])=>[world,ids.filter(id=>valid.has(id))]));
+ return {...config,application:{...config.application,workflowAvailability:availability}};
+}
 export function compileWorkflowEditPlan(workflow:WorkflowDefinition,config:ConfigPackageV3):WorkflowEditPlan {
  workflow=resolveWorkflowFields(config,workflow);
  const errors:string[]=[];
@@ -23,7 +31,7 @@ export function compileWorkflowEditPlan(workflow:WorkflowDefinition,config:Confi
  if(workflow.outputs.length!==1||drawings.length!==1||drawings[0]?.outputId!==workflow.outputs[0]?.id)errors.push('必须只有一个明确绑定输出的要素绘制。');
  if(workflow.steps.some(s=>s.when||s.controls?.some(c=>c.when||c.group?.itemFields.some(f=>'when' in f&&f.when)))||workflow.outputs.some(o=>o.when||o.assignments.some(a=>a.when)))errors.push('不能包含输入、页面或输出的启用条件。');
  if(errors.length)throw Error(errors.join('\n'));
- const output=workflow.outputs[0],scope=workflow.editor?.scope??output.classification??{class:''};const classifications=workflowClassificationGroup(config,output).paths.filter(path=>pathMatchesScope(path,scope));
+ const output=workflow.outputs[0],scope=workflow.editor?.scope??output.classification??{class:''};const classifications=workflowClassificationGroup(config,output).paths.filter(path=>workflow.editor?.range?matchesClassificationRange(workflow.editor.range,path):pathMatchesScope(path,scope));
  if(workflow.editor?.scope&&!hasCategoryNode(config,scope)||!classifications.length||(config.contractRevision<15&&(!output.classification||!pathMatchesScope(scope,output.classification)||!config.nodes.some(n=>classificationPathKey(n.path)===classificationPathKey(scope)))))throw Error('编辑作用范围必须为输出范围内的实际分类。');
  const controls=workflow.steps.flatMap(s=>s.controls??[]),tokens=new Set(controls.flatMap(c=>c.slot?[c.slot]:[])),needed=new Set<string>(),idOnly=new Set<string>(),bindings:Array<{slot:string;target:string}>=[];
  for(const assignment of output.assignments){const ast=parseWorkflowExpression(assignment.expression),used=workflowExpressionTokens(ast).filter(t=>tokens.has(t));if(assignment.target==='ID')used.forEach(t=>idOnly.add(t));else {used.forEach(t=>needed.add(t));if(ast.kind==='token'&&tokens.has(ast.name))bindings.push({slot:ast.name,target:assignment.target});}}
@@ -52,7 +60,7 @@ export function residualAnnotations(plan:WorkflowEditPlan,record:Record<string,u
  return {[plan.workflow.outputs[0].id]:{tags,extensions}};
 }
 export function hydrateWorkflowEdit(plan:WorkflowEditPlan,record:Record<string,unknown>):WorkflowEditDraft {
- const classification=recordClassification(record);if(!pathMatchesScope(classification,plan.scope)||plan.workflow.outputs[0].classificationGroup&&!plan.classifications.some(path=>classificationPathKey(path)===classificationPathKey(classification)))throw Error('记录不在编辑工作流的作用范围内。');
+ const classification=recordClassification(record);if(plan.workflow.editor?.range?!plan.classifications.some(path=>classificationPathKey(path)===classificationPathKey(classification)):!pathMatchesScope(classification,plan.scope)||Boolean(plan.workflow.outputs[0].classificationGroup)&&!plan.classifications.some(path=>classificationPathKey(path)===classificationPathKey(classification)))throw Error('记录不在编辑工作流的作用范围内。');
  const slots:Record<string,unknown>={EDIT_ID:record.ID};
  for(const control of plan.controls){if(control.kind==='classificationPicker'){slots[control.slot??control.id]=JSON.stringify(classification);continue;}if(control.kind==='tagsExtensions'){slots[control.id]=residualAnnotations(plan,record);continue;}
    if(!control.slot)continue;const values=plan.bindings.filter(b=>b.slot===control.slot).map(b=>readRecordPath(record,b.target));if(values.some(v=>!annotationEqual(v,values[0])))throw Error(`槽位 ${control.slot} 的多个回填目标具有不同值，不能猜测。`);slots[control.slot]=structuredClone(values[0]);
@@ -72,7 +80,7 @@ export function workflowEditSlots(plan:WorkflowEditPlan,original:Record<string,u
 export function buildWorkflowEditRecord(plan:WorkflowEditPlan,original:Record<string,unknown>,draft:WorkflowEditDraft,options:{geometry?:MultipartGeometry}={}):Record<string,unknown> {
  const record=structuredClone(original),slots=coerceWorkflowValues(plan.workflow,workflowEditSlots(plan,original,draft,options.geometry)),initial=draft.initialSlots;
  const id=String(draft.slots.EDIT_ID??'').trim();if(!id)throw Error('ID 不能为空。');record.ID=id;
- if(!pathMatchesScope(draft.classification,plan.scope)||plan.workflow.outputs[0].classificationGroup&&!plan.classifications.some(path=>classificationPathKey(path)===classificationPathKey(draft.classification)))throw Error('不能将要素改为工作流作用范围之外的分类。');
+ if(plan.workflow.editor?.range?!plan.classifications.some(path=>classificationPathKey(path)===classificationPathKey(draft.classification)):!pathMatchesScope(draft.classification,plan.scope)||Boolean(plan.workflow.outputs[0].classificationGroup)&&!plan.classifications.some(path=>classificationPathKey(path)===classificationPathKey(draft.classification)))throw Error('不能将要素改为工作流作用范围之外的分类。');
  if(!annotationEqual(draft.classification,recordClassification(original))){for(const [key,value] of [['Class',draft.classification.class],['Kind',draft.classification.kind],['SKind',draft.classification.skind],['SKind2',draft.classification.skind2]] as const)if(value)record[key]=value;else delete record[key];}
  const system={ID:id,World:original.World,Class:draft.classification.class,Kind:draft.classification.kind??'',Skind:draft.classification.skind??'',Skind2:draft.classification.skind2??'',Creator:original.CreateBy??''};
  Object.assign(system,Object.fromEntries(Object.entries(system).map(([key,value])=>[`${key}_1`,value])));
@@ -91,8 +99,8 @@ export function buildWorkflowEditRecord(plan:WorkflowEditPlan,original:Record<st
  return record;
 }
 export function findEditingWorkflow(config:ConfigPackageV3,record:Record<string,unknown>):WorkflowDefinition|undefined {
- const path=recordClassification(record),matches=(w:WorkflowDefinition)=>w.editor?.enabled&&pathMatchesScope(path,w.editor.scope??w.target??w.outputs[0]?.classification??{class:''})&&(w.mode==='external'||w.outputs.some(output=>outputAcceptsClassification(config,output,path)));
- const rank=(w:WorkflowDefinition)=>Object.values(w.editor?.scope??w.target??w.outputs[0]?.classification??{}).filter(Boolean).length;
+ const path=recordClassification(record),matches=(w:WorkflowDefinition)=>w.editor?.enabled&&(w.editor.range?matchesClassificationRange(w.editor.range,path):pathMatchesScope(path,w.editor.scope??w.target??w.outputs[0]?.classification??{class:''}))&&(w.mode==='external'||w.outputs.some(output=>outputAcceptsClassification(config,output,path)));
+ const rank=(w:WorkflowDefinition)=>w.editor?.range?Math.max(0,...w.editor.range.rows.filter(row=>row.condition==='include'&&pathMatchesScope(path,row.path)).map(row=>Object.values(row.path).filter(Boolean).length)):Object.values(w.editor?.scope??w.target??w.outputs[0]?.classification??{}).filter(Boolean).length;
  const candidates=config.workflows.filter(matches).sort((a,b)=>rank(b)-rank(a));
  if(candidates[1]&&rank(candidates[0])===rank(candidates[1]))throw Error('此分类存在多个同优先级编辑工作流，请在工作台解决重复路由。');return candidates[0];
 }

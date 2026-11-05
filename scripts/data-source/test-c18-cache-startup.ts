@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const memory=new Map<string,string>(),removed:string[]=[];
+Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:(key:string)=>memory.get(key)??null,setItem:(key:string,value:string)=>memory.set(key,String(value)),removeItem:(key:string)=>{removed.push(key);memory.delete(key);},key:(index:number)=>[...memory.keys()][index]??null,get length(){return memory.size;}}});
+Object.defineProperty(globalThis,'document',{configurable:true,value:{cookie:`map_settings=${encodeURIComponent(JSON.stringify({currentWorld:'eden'}))}`}});
+Object.defineProperty(globalThis,'window',{configurable:true,value:Object.assign(new EventTarget(),{localStorage})});
+let requests=0;globalThis.fetch=async()=>{requests++;throw Error('isolated offline probe');};
+const {applyApplicationSettings,getApplicationDefinition}=await import('../../src/core/project/applicationRuntime');
+const {getRuleDataSourceSnapshot}=await import('../../src/components/Rules/data/formalDataSourceRuntime');
+const {writeRuleWorldCache,readRuleWorldMeta}=await import('../../src/components/Rules/data/worldRuleCache');
+const config=JSON.parse(fs.readFileSync('public/configuration/releases/b81d2f8aa9f0014768645d5b0f9ec6d6d7bd2ccb671857d9175e0d09069d03be/config.json','utf8'));
+const defaults=structuredClone(getApplicationDefinition()),worlds=['zth','eden','naraku','houtu'];
+applyApplicationSettings(config.application);
+for(const world of worlds){const source=getRuleDataSourceSnapshot(world),scope={sourceId:source.sourceId,transportId:source.transportId,worldId:world,releaseId:'recovery-probe',readerSchemaVersion:source.readerSchemaVersion};writeRuleWorldCache(scope,{worldId:world,mergeVersion:scope.releaseId,formalVersion:world==='zth'?25:1,loadedAt:1,features:[{ID:world+'-cache-probe',Class:'TPT',Kind:'WRP',SKind:'NOM',SKind2:'NOM',World:world}]});}
+applyApplicationSettings(defaults);
+const {useRuleDataStore}=await import('../../src/store/ruleDataStore');
+removed.length=0;applyApplicationSettings(config.application);
+assert.deepEqual(worlds.filter(world=>readRuleWorldMeta(world)),worlds);assert.equal(removed.length,0);assert.equal(requests,0);
+const {createDataSourceSelectionFailure}=await import('../../src/core/dataSourceSelection');
+const source=getRuleDataSourceSnapshot('eden');useRuleDataStore.setState({dataSource:source,dataSourceFailure:createDataSourceSelectionFailure({sourceId:source.sourceId,worldId:'eden',stage:'network',message:'offline',retryAllowed:true})});
+assert.equal(useRuleDataStore.getState().recoverLocalWorld(),true);
+assert.equal(useRuleDataStore.getState().datasets.eden.localRecovery?.remoteConfirmed,false);
+assert.equal(useRuleDataStore.getState().datasets.eden.features.length,1);
+assert.equal(useRuleDataStore.getState().dataSourceFailure,null);
+assert.deepEqual(worlds.filter(world=>readRuleWorldMeta(world)),worlds);assert.equal(requests,0);
+console.log('c18-cache: actual store startup preserves four worlds and local recovery mounts without SCF/network');

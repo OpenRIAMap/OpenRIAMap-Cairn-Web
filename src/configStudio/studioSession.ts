@@ -8,7 +8,7 @@ export type FeatureDraftScope = 'package' | 'category';
 export type StudioEditingSession={draft:ConfigPackageV3|null;draftScope?:FeatureDraftScope;tree:ClassTreeSession|null;selectedId:string;editing:boolean;baseline:ConfigPackageV3;generalDrafts?:import('./GeneralRulesEditor').GeneralDrafts;lookupDraft?:import('./lookupTableTransaction').LookupTableDraft|null;engineDraft?:EngineDraft|null;packageCandidate?:PackageCandidate|null;activeTab?:StudioTab;workflowSession?:WorkflowEditingSession|null;detailsByTab?:Partial<Record<StudioTab,string[]|number[]>>;categoryCreation?:import('./CategoryCreationPanel').CategoryCreationDraft|null;editorExpanded?:boolean;scenario?:import('./types').PreviewScenario};
 
 export function hasStudioDraft(session?: StudioEditingSession): boolean {
-  return Boolean(session && (session.draft || session.tree || session.editing || session.lookupDraft || session.engineDraft || session.packageCandidate || (session.workflowSession?.draft || session.workflowSession?.creation) || session.categoryCreation || Object.keys(session.generalDrafts ?? {}).length));
+  return Boolean(session && (session.draft || session.tree || session.editing || session.lookupDraft || session.engineDraft || session.packageCandidate || (session.workflowSession?.draft || session.workflowSession?.creation||session.workflowSession?.availability) || session.categoryCreation || Object.keys(session.generalDrafts ?? {}).length));
 }
 
 export function recoverPackageCandidate(session?: StudioEditingSession): PackageCandidate | null {

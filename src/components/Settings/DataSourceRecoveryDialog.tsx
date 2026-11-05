@@ -18,6 +18,7 @@ export type DataSourceRecoveryDialogProps = {
   title?: string;
   applyLabel?: string;
   cancelLabel?: string;
+  recoveryDescription?: string;
 };
 
 function selectableSources(sources: readonly DataSourceDefinition[]): DataSourceDefinition[] {
@@ -36,6 +37,7 @@ export function DataSourceRecoveryDialog({
   title = 'Data source request failed',
   applyLabel = 'Apply and retry',
   cancelLabel = 'Cancel',
+  recoveryDescription,
 }: DataSourceRecoveryDialogProps) {
   const selectionAllowed = isDataSourceSelectionAllowed(policy, 'failure');
   const sourceOptions = selectableSources(sources);
@@ -60,6 +62,7 @@ export function DataSourceRecoveryDialog({
             <AlertCircle className="h-4 w-4 shrink-0 text-orange-600" />
             <h2 className="truncate font-bold text-gray-800">{title}</h2>
           </div>
+          {recoveryDescription ? <p className="text-xs text-gray-600">{recoveryDescription}</p> : null}
           <AppButton
             onClick={onClose}
             disabled={isApplying}

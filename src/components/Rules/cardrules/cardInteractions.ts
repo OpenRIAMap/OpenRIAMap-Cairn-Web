@@ -12,6 +12,7 @@ export type CardExternalLinkValue = {
 export type CardFeatureLinkTarget = {
   classificationGroup?: {selectors:WorkflowClassificationSelector[]};
   structureRole?:'main';
+  classificationScope?:import('@/configStudio/classificationScope').ClassificationScope;
   /** 目标范围约束。 */
   classCode?: string;
   kind?: string;

@@ -21,7 +21,7 @@ export default function BlockingFullscreenModal(props: {
   if (!open) return null;
 
   return createPortal(
-    <div className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]`}>
+    <div data-blocking-modal className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]`}>
       <div className="absolute inset-0" onClick={onBackdropClick} />
       <div className="relative max-h-full max-w-full">{children}</div>
     </div>,

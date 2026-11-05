@@ -20,7 +20,7 @@ export function prepareWorkflowArtifactImport(config:ConfigPackageV3,input:unkno
   if(!supportsContract('workflow',artifact.contractRevision)||artifact.contractRevision>config.contractRevision)throw Error('未知或更高的工作流契约版本，请先迁移总配置。');
   if(Object.keys(artifact).some(key=>!['schemaVersion','contractRevision','exportedAt','projectId','workflow','lookupTables','fieldDependencies'].includes(key)))throw Error('工作流文件含有未知属性。');
   if(artifact.contractRevision<13&&config.contractRevision>=14)throw Error('组件自动迁移从 c13 开始；请先迁移来源完整包再重新导出。');
-  const sourceShape=validateNativeStructure({...config,contractRevision:artifact.contractRevision,nodes:[],workflows:[artifact.workflow]});if(sourceShape.length)throw Error(sourceShape.map(i=>i.path+'：'+i.message).join('\n'));
+  const sourceShape=validateNativeStructure({schemaVersion:config.schemaVersion,packageId:config.packageId,projectId:config.projectId,revision:config.revision,displayName:config.displayName,registries:config.registries,contractRevision:artifact.contractRevision,nodes:[],workflows:[artifact.workflow]});if(sourceShape.length)throw Error(sourceShape.map(i=>i.path+'：'+i.message).join('\n'));
   const tables:LookupTable[]=[];
   for(const table of artifact.lookupTables??[]){const existing=config.lookupTables?.find(row=>row.id===table.id)??tables.find(row=>row.id===table.id);if(existing&&canonical(existing)!==canonical(table))throw Error(`对照表 ${table.id} 与当前配置冲突，未覆盖共享表。`);if(!existing)tables.push(structuredClone(table));}
   const migration=artifact.contractRevision>=13&&artifact.contractRevision<config.contractRevision?migrateContract(artifact,config.contractRevision,'workflow',config):undefined;

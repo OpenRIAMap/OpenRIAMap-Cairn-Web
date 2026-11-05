@@ -1,3 +1,4 @@
+import ConfigLabFrame from '../configStudio/ConfigLabFrame';
 import ConfigStudio from '../configStudio/ConfigStudio';
 import ConfigLab from '../configStudio/ConfigLab';
 import WorkflowStudioPage from '../configStudio/WorkflowStudioPage';
@@ -9,5 +10,7 @@ function WorkspaceContents({workspace,onClose}:{workspace:string;onClose:()=>voi
 }
 
 export default function ConfigurationEntry({ workspace, onClose }: { workspace: string; onClose: () => void }) {
+  if(workspace==='config-lab-frame')return <ConfigLabFrame/>;
+  if(workspace==='config-lab')return <ConfigLab onClose={onClose}/>;
   return <ConfigBootstrap onClose={onClose}><WorkspaceContents workspace={workspace} onClose={onClose}/></ConfigBootstrap>;
 }

@@ -1,3 +1,4 @@
+import {classificationScopeProblems,matchesClassificationRange} from './classificationScope';
 import {effectiveOptions} from './lookupTables';
 import type {ClassificationPath,ConfigPackageV3,ExternalReferenceBinding,ExternalReferenceSource,ExternalRole,ExternalRoleBinding,GeometryKind,MountedFeatureRecord,WorkflowDefinition} from './types';
 import {classificationPathKey,hasCategoryNode,hasDescendants,pathMatchesScope,resolveEffectiveFields,resolveGeometryProfile} from './runtime';
@@ -11,6 +12,7 @@ export function externalRoleBindings(config:ConfigPackageV3,workflow:WorkflowDef
  return config.contractRevision>=16?workflow.external?.roleBindings??[]:legacyExternalRoleBindings(config,workflow);
 }
 export function expandBindingGroup(config:ConfigPackageV3,group:ExternalRoleBinding['classificationGroup'],geometry?:GeometryKind):ClassificationPath[]{
+ if(config.contractRevision>=18){const scope={rows:group.selectors.map(row=>({id:row.id,condition:row.condition??'include',path:row.path}))};const problems=classificationScopeProblems(scope,config);if(problems.length)throw Error(problems.join('；'));return config.nodes.filter(node=>matchesClassificationRange(scope,node.path)&&(!geometry||resolveGeometryProfile(config,node.path,geometry)?.enabled)).map(node=>node.path);}
  const result=new Map<string,ClassificationPath>();
  for(const selector of group.selectors){
   if(!hasCategoryNode(config,selector.path))throw Error('绑定分类不存在：'+classificationPathKey(selector.path));

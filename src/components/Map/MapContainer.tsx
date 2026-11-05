@@ -1,3 +1,4 @@
+import {AnnouncementHost} from './AnnouncementHost';
 import {categorySearchIndex,categorySearchSubtitle} from '@/components/Search/configSearch';
 import {classificationDisplayName} from '@/configStudio/classificationPresentation';
 import {recordCategory} from '@/configStudio/multipartPolicy';
@@ -354,6 +355,7 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   const loadedRuleDatasets = useRuleDataStore((s) => s.datasets);
   const mountedRuleRecords = useMemo(() => Object.values(loadedRuleDatasets).flatMap((dataset) => dataset?.features ?? []), [loadedRuleDatasets]);
   const openConfigStudio = useCallback(() => {
+    if(configLab){window.parent.postMessage({type:'cairnmap-lab-edit'},location.origin);return;}
     try {
       sessionStorage.setItem('cairnmap-config-studio-mounted-records', JSON.stringify(mountedRuleRecords));
     } catch {
@@ -1908,7 +1910,7 @@ map.on('mousemove', handleMouseMove);
 
     switch (mobileActivePanel) {
       case 'about':
-        return <AboutCard onClose={closeMobileSheet} />;
+        return <AboutCard content={configRuntime?.application?.about} onClose={closeMobileSheet} />;
       case 'settings':
         return <SettingsPanel onClose={closeMobileSheet} onOpenConfigStudio={() => { closeMobileSheet(); openConfigStudio(); }} onOpenConfigLab={configLab ? undefined : () => { closeMobileSheet(); openConfigLab(); }} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />;
       case 'releaseRecords':
@@ -1972,6 +1974,7 @@ case 'players':
       className={`relative w-full h-full ${application.preferences.toolbar.compact?'cm-toolbar-compact':''}`}
       style={{ ['--ria-mobile-bottom-offset' as any]: `${mobileSheetOffset}px` }}
     >
+      {!configLab&&configRuntime&&configRuntime.contractRevision>=18?<AnnouncementHost config={configRuntime} ready={!!currentRuleDataset&&!currentRulePending&&!isGlobalLoading}/>:null}
       {/* 地图容器 */}
       <div ref={mapRef} className="w-full h-full" />
 
@@ -2302,7 +2305,7 @@ case 'players':
           id="about"
           defaultPosition={{ x: 16, y: 240 }}
         >
-          <AboutCard onClose={() => setShowAbout(false)} />
+          <AboutCard content={configRuntime?.application?.about} onClose={() => setShowAbout(false)} />
         </DraggablePanel>
         </div>
       )}

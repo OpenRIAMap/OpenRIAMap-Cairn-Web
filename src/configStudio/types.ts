@@ -9,7 +9,7 @@ export type LocalizedText = Record<'zh' | 'en', string>;
 
 export type ClassificationPath = { class: string; kind?: string; skind?: string; skind2?: string };
 export type InheritanceMode = 'sealed' | 'overridable' | 'localOnly';
-export type InheritanceControls = { fields: boolean; display: boolean; card: boolean };
+export type InheritanceControls = { fields: boolean; display: boolean; card: boolean; search?: boolean };
 export type FieldValueType = 'string' | 'number' | 'boolean' | 'enum' | 'json' | 'reference';
 /** A select always carries the human-facing label separately from its value.
  * V1 uses this for many railway and road fields (for example 上行 -> 1). */
@@ -106,7 +106,7 @@ export type RenderColorBinding =
   | {mode:'valueMap';field:string;entries:Array<{value:string|number|boolean;color:string}>;fallbackColor:string}
   | { mode: 'fixed'; color: string }
   | { mode: 'field'; field: string; fallbackColor?: string }
-  | { mode: 'external'; target: ClassificationPath; targetIdField: string; targetColorField: string; fallbackColor?: string }
+  | { mode: 'external'; target: ClassificationPath; targetScope?:import('./classificationScope').ClassificationScope; targetIdField: string; targetColorField: string; fallbackColor?: string }
   /**
    * The map already exposes a stable related-line index.  V3 makes the three
    * real V1 lookups explicit instead of hiding them in class-specific code.
@@ -623,7 +623,7 @@ export type ContextBinding = {
   profile: 'default' | 'keep-host-context' | 'show-active-member-only';
 };
 /** r10 roles do not constrain the classification of the opposite endpoint. */
-export type StructureRole = { enabled:boolean;role:'main'|'member';memberField?:string;hostField?:string;selectorField?:string;visibility?:'activeLevel'|'allMembers' };
+export type StructureRole = { enabled:boolean;role:'main'|'member';memberField?:string;hostField?:string;selectorField?:string;visibility?:'activeLevel'|'allMembers';allowIndependentDisplay?:boolean;floorViewMinZoom?:number };
 export type CategorySearch = {
   enabled:boolean;
   inheritance?:'sealed'|'overridable';
@@ -689,6 +689,7 @@ export type CardSection = 'main' | 'other';
 export type CardRelation = {
   targetRole?:'main';
   targetClassification?: ClassificationPath;
+  targetScope?:import('./classificationScope').ClassificationScope;
   targetMatchField?: string;
   targetDisplayField?: string;
   clickable?: boolean;
@@ -752,11 +753,13 @@ export type CategoryNode = {
   /** The three explicitly editable inheritance switches. */
   inheritDown?: InheritanceControls;
   /** Optional incoming modules; sealed inherited fields cannot be disabled. */
-  receiveFromParent?: { fields?: boolean; geometry?: boolean; display?: boolean; card?: boolean };
+  receiveFromParent?: { fields?: boolean; geometry?: boolean; display?: boolean; card?: boolean; search?: boolean };
   /** Compatibility metadata for V3.0 imports; runtime uses inheritDown first. */
   policies?: { fields: InheritanceMode; display: InheritanceMode; card: InheritanceMode; workflow?: InheritanceMode };
   fields: FieldDefinition[];
   fieldSettings?:NodeFieldSettings;
+  displaySettings?: {structure?:StructureRole};
+  searchSettings?:CategorySearch;
   /** Once selected, descendants may only resolve this geometry kind. */
   geometryType?: GeometryKind;
   geometryProfiles: Partial<Record<GeometryKind, GeometryProfile>>;
@@ -774,6 +777,7 @@ export type CategoryNode = {
 
 export type SearchProfile = {
   target: ClassificationPath;
+  scope?:import('./classificationScope').ClassificationScope;
   targetRole?:'main';
   /** One reusable feature-search model replaces the old duplicate coarse
    * search control. The old fields remain import-only compatibility data. */
@@ -913,7 +917,7 @@ export type WorkflowOutput = {
   /** A V3.2 output has one fixed drawing type. `allowed` is r2 import data. */
   geometry: { selected: GeometryKind; allowed?: GeometryKind[] };
 };
-export type WorkflowClassificationSelector = { id: string; mode: 'self' | 'leafDescendants'; path: ClassificationPath };
+export type WorkflowClassificationSelector = { id: string; mode: 'self' | 'leafDescendants'; path: ClassificationPath; condition?: 'include' | 'exclude' };
 /** Fixed algorithm capabilities; taxonomy paths are always package data. */
 export type ExternalRole = 'railLine' | 'stationArea' | 'platform' | 'platformFootprint' | 'stationBuilding' | 'stationBuildingPoint' | 'stationFloor' | 'tradePoint';
 export type ExternalRoleBinding = { role: ExternalRole; classificationGroup: { selectors: WorkflowClassificationSelector[] } };
@@ -927,7 +931,7 @@ export type WorkflowDefinition = {
   label: LocalizedText;
   mode: 'composed' | 'external';
   quickMapping?: boolean;
-  editor?: { enabled:boolean; dedicated?:boolean; scope?:ClassificationPath; backfill?:Array<{slot:string;target:string}> };
+  editor?: { enabled:boolean; dedicated?:boolean; scope?:ClassificationPath; range?:import('./classificationScope').ClassificationScope; backfill?:Array<{slot:string;target:string}> };
   actor?: { required: boolean };
   /** V3.0 compatibility target; composed flows resolve target through outputs[0]. */
   target?: ClassificationPath;
@@ -969,7 +973,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */

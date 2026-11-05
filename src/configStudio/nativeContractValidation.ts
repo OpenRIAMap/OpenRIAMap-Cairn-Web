@@ -44,6 +44,13 @@ export function validateNativeStructure(value: unknown): NativeStructureIssue[] 
   if(issues.length)return issues;
   const config=value as ConfigPackageV3;
   const c15=config.contractRevision>=15;
+  if(config.contractRevision<18){
+    if(config.application?.workflowAvailability||config.application?.announcements||config.application?.about||config.application?.preferences.pictureControls)issues.push({path:'config/application',message:'公告、关于、世界工作流和图片控制最低要求 c18。'});
+    for(const node of config.nodes)if(node.displaySettings||node.searchSettings||node.inheritDown?.search!==undefined||node.receiveFromParent?.search!==undefined)issues.push({path:'config/nodes/'+node.nodeId,message:'独立搜索与结构软继承最低要求 c18。'});
+    const scan=(value:unknown,path:string)=>{if(!value||typeof value!=='object')return;if(Array.isArray(value)){value.forEach((item,index)=>scan(item,path+'/'+index));return;}for(const [key,item] of Object.entries(value)){if(['legacy','defaultValue','valueSchema','parity'].includes(key))continue;if(key==='condition'&&['include','exclude'].includes(String(item))||['targetScope','range','scope'].includes(key)&&item&&typeof item==='object'&&'rows' in item)issues.push({path:path+'/'+key,message:'分类加减范围最低要求 c18。'});else scan(item,path+'/'+key);}};
+    scan(config,'config');
+  }
+
   for(const node of config.nodes)for(const [geometry,profile]of Object.entries(node.geometryProfiles))if(profile){
     const at='config/nodes/'+node.nodeId+'/geometryProfiles/'+geometry;
     if(c15&&(profile.anchor!==undefined||profile.interaction!==undefined))issues.push({path:at,message:'c15 锚点与交互必须位于每条渲染规则，不能残留几何级权威设置。'});
@@ -59,10 +66,11 @@ export function validateNativeStructure(value: unknown): NativeStructureIssue[] 
     }
   }
   for(const workflow of config.workflows){
+    if(config.contractRevision>=18&&workflow.editor?.scope)issues.push({path:'config/workflows/'+workflow.id+'/editor/scope',message:'c18 编辑作用范围必须使用显式分类加减 range，不能保留旧 scope。'});
     if(config.contractRevision<16&&workflow.external&&(workflow.external.roleBindings!==undefined||workflow.external.referenceBindings!==undefined))issues.push({path:'config/workflows/'+workflow.id+'/external',message:'角色与引用绑定最低要求 c16。'});
     if(config.contractRevision>=16&&workflow.mode==='external'&&(!workflow.external?.roleBindings||workflow.external.coveredClassifications!==undefined))issues.push({path:'config/workflows/'+workflow.id+'/external',message:'c16 专用流程必须使用明确角色绑定，不能保留旧范围副本。'});
     if(config.contractRevision>=16&&workflow.mode==='external'&&workflow.target!==undefined)issues.push({path:'config/workflows/'+workflow.id+'/target',message:'c16 专用范围使用 roleBindings 与 editor.scope，不能保留旧 target 副本。'});
-    if(config.contractRevision>=16&&workflow.external?.purpose==='edit'&&!workflow.editor?.scope)issues.push({path:'config/workflows/'+workflow.id+'/editor/scope',message:'c16 专用编辑需要明确的路由范围。'});
+    if(config.contractRevision>=16&&workflow.external?.purpose==='edit'&&!workflow.editor?.scope&&!workflow.editor?.range)issues.push({path:'config/workflows/'+workflow.id+'/editor/scope',message:'c16 专用编辑需要明确的路由范围。'});
     if(c15&&workflow.mode==='composed'&&workflow.target)issues.push({path:'config/workflows/'+workflow.id+'/target',message:'c15 分类组不能保留旧 target 副本。'});
     if(c15)for(const step of workflow.steps)for(const control of step.controls??[])if(control.kind==='classificationPicker'&&control.classificationScope)issues.push({path:'config/workflows/'+workflow.id+'/controls/'+control.id,message:'c15 分类控件由 outputId 解析分类组，不能保留旧范围副本。'});
   }

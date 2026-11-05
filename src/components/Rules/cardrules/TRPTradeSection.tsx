@@ -42,9 +42,9 @@ function nonEmpty(v: any): boolean {
 
 function resolveImgSrc(raw: any): string {
   const s = String(raw ?? '').trim();
-  if (!s) return '/logo.png';
+  if (!s) return '/logo.png?v=c18-20261105';
   if (/^https?:\/\//i.test(s)) return s;
-  return '/logo.png';
+  return '/logo.png?v=c18-20261105';
 }
 
 function normalizeTradeList(raw: any): Array<{ key: string; note: string; offers: TradeItem[]; receives: TradeItem[] }> {
@@ -86,7 +86,7 @@ function TrpItemLine({ item }: { item: TradeItem }) {
         draggable={false}
         onError={(ev) => {
           const img = ev.currentTarget;
-          if (img && img.src && !img.src.endsWith('/logo.png')) img.src = '/logo.png';
+          if (img && img.src && !img.src.endsWith('/logo.png?v=c18-20261105')) img.src = '/logo.png?v=c18-20261105';
         }}
       />
 

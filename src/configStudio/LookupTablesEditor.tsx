@@ -1,5 +1,5 @@
+import {GripOrderControls} from './GripOrderControls';
 import {HelpLabel} from './SettingHelp';
-import { GripVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ConfigPackageV3, LookupTable, TagFieldMetadata } from './types';
 import { renameLookupTable, tableReferences } from './lookupTables';
@@ -22,7 +22,7 @@ function HubEditor({value,onChange}:{value:Hub;onChange:(value:Hub)=>void}){
   </div>;
 }
 export function LookupTablesEditor({config,onChange}:{config:ConfigPackageV3;onChange:(config:ConfigPackageV3)=>void}){
-  const [drag,setDrag]=useState<{table:string;row:number}>(),[message,setMessage]=useState(''),[openTables,setOpenTables]=useState<Set<string>>(()=>new Set());
+  const [message,setMessage]=useState(''),[openTables,setOpenTables]=useState<Set<string>>(()=>new Set());
   useEffect(()=>{const handle=(event:Event)=>{const id=(event as CustomEvent<string>).detail;setOpenTables(previous=>new Set([...previous,id]));const root=document.querySelector<HTMLDetailsElement>('[data-lookup-tables]');if(root)root.open=true;requestAnimationFrame(()=>document.getElementById('lookup-table-'+id)?.scrollIntoView({block:'nearest'}));};window.addEventListener('cairn:lookup-table-error',handle);return()=>window.removeEventListener('cairn:lookup-table-error',handle);},[]);
   useEffect(()=>setMessage(''),[config]);
   const update=(id:string,patch:Partial<LookupTable>)=>onChange({...config,lookupTables:config.lookupTables?.map(table=>table.id===id?{...table,...patch}:table)});
@@ -34,8 +34,8 @@ export function LookupTablesEditor({config,onChange}:{config:ConfigPackageV3;onC
       <HelpLabel context="LookupTablesEditor">存储值类型<select disabled={config.contractRevision>=11&&isStandardTable(table.id)} className={inputClass} value={table.valueType} onChange={event=>update(table.id,{valueType:event.target.value as LookupTable['valueType']})}><option value="string">文本</option><option value="number">数字</option><option value="boolean">布尔</option></select></HelpLabel>
       <HelpLabel context="LookupTablesEditor">功能值格式<select disabled={config.contractRevision>=11&&isStandardTable(table.id)} className={inputClass} value={table.functionKind} onChange={event=>{const kind=event.target.value as LookupTable['functionKind'];update(table.id,{functionKind:kind,rows:table.rows.map(row=>({...row,functionValue:kind==='none'?undefined:kind==='speed'?1:kind==='tagField'?{kind:'tagField',type:'text'}:{world:'zth',range:100,returnPoints:[]}}))});}}><option value="none">无</option><option value="speed">速度（方块/秒）</option><option value="teleportHub">枢纽（世界、范围、返回点）</option>{config.contractRevision>=11?<option value="tagField">标签字段目录</option>:null}</select></HelpLabel>
     </div>
-    {table.rows.map((row,index)=><section key={index} className="mt-3 rounded border bg-slate-50 p-2 text-xs" onDragOver={event=>event.preventDefault()} onDrop={event=>{event.preventDefault();event.stopPropagation();if(drag?.table!==table.id||drag.row===index)return;const rows=[...table.rows],[moved]=rows.splice(drag.row,1);rows.splice(index,0,moved);update(table.id,{rows});setDrag(undefined);}}>
-      <div className={`cm-option-row ${table.functionKind==='speed'?'cm-functional-row':''} gap-2`}><span draggable onDragStart={event=>{event.stopPropagation();setDrag({table:table.id,row:index});}} onDragEnd={()=>setDrag(undefined)} className="cursor-grab self-center" title="拖动手柄调整行顺序"><GripVertical className="h-4 w-4"/></span>
+    {table.rows.map((row,index)=><section key={index} className="mt-3 rounded border bg-slate-50 p-2 text-xs">
+      <div className={`cm-option-row ${table.functionKind==='speed'?'cm-functional-row':''} gap-2`}><GripOrderControls scope={'lookup:'+table.id} index={index} count={table.rows.length} onMove={(from,to)=>{const rows=[...table.rows],[item]=rows.splice(from,1);rows.splice(to,0,item);update(table.id,{rows});}}/>
         {(['zh','en','value'] as const).map(key=><HelpLabel context="LookupTablesEditor" key={key}>{key==='value'?'存储值':`名称 ${key}`}<input className={inputClass} value={key==='value'?row.value:row.label[key]} onChange={event=>update(table.id,{rows:table.rows.map((item,i)=>i!==index?item:key==='value'?{...item,value:event.target.value}:{...item,label:{...item.label,[key]:event.target.value}})})}/></HelpLabel>)}
         {table.functionKind==='speed'?<HelpLabel context="LookupTablesEditor">功能值（方块/秒）<input type="number" min={0.001} step="any" className={inputClass} value={typeof row.functionValue==='number'?row.functionValue:''} onChange={event=>update(table.id,{rows:table.rows.map((item,i)=>i!==index?item:{...item,functionValue:Number(event.target.value)})})}/></HelpLabel>:null}
         <button type="button" className="self-center text-rose-700" onClick={()=>update(table.id,{rows:table.rows.filter((_,i)=>i!==index)})}>删除行</button>

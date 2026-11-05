@@ -15,6 +15,7 @@ import { resolveRuleButtonIcon } from './ruleButtonIconRegistry';
 
 export type RuleButtonCriteria = {
   paths?:CairnMapRuleButtonCriteria['paths'];
+  scope?:CairnMapRuleButtonCriteria['scope'];
   /** featureInfo.Class（优先读取 record.meta.className） */
   Class?: string[];
   /**
@@ -66,6 +67,7 @@ function asStringArray(values: string[] | undefined): string[] | undefined {
 function toLegacyCriteria(criteria: CairnMapRuleButtonCriteria | undefined): RuleButtonCriteria {
   return {
     paths:criteria?.paths,
+    scope:criteria?.scope,
     Class: asStringArray(criteria?.classCode),
     Kind: asStringArray(criteria?.kind),
     SKind: asStringArray(criteria?.skind),

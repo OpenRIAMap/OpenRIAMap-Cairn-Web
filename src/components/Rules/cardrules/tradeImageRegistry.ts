@@ -6,7 +6,7 @@
 
 import type { TradeImageSourceDef } from '@/components/Rules/data/sourceTypes';
 
-export const DEFAULT_TRP_ITEM_IMG = '/logo.png';
+export const DEFAULT_TRP_ITEM_IMG = '/logo.png?v=c18-20261105';
 
 export const TRADE_IMAGE_SOURCE: TradeImageSourceDef = {
   source: 'pub',

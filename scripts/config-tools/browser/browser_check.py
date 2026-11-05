@@ -36,6 +36,10 @@ class Browser:
         self.ws.send(json.dumps({'id': ident, 'method': method, 'params': params or {}}))
         while True:
             result = json.loads(self.ws.recv())
+            if result.get('method') == 'Page.javascriptDialogOpening' and result.get('params', {}).get('type') == 'beforeunload':
+                # Isolated acceptance explicitly requested navigation/reload.
+                self.seq += 1
+                self.ws.send(json.dumps({'id': self.seq, 'method': 'Page.handleJavaScriptDialog', 'params': {'accept': True}}))
             if result.get('method') == 'Runtime.exceptionThrown': self.errors.append(result['params'])
             if result.get('id') != ident: continue
             if 'error' in result: raise RuntimeError(result['error'])

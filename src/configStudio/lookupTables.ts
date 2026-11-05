@@ -11,7 +11,7 @@ export function effectiveOptionTable(config:Pick<ConfigPackageV3,'lookupTables'>
   if(owner.optionsFieldRef){
     if(!('nodes' in config))return {valueType:owner.optionValueType??'string',rows:[]};
     const field=referencedField(config as ConfigPackageV3,owner.optionsFieldRef);
-    return field?{valueType:field.optionValueType??field.optionTable?.valueType??'string',rows:field.options??[]}:{valueType:owner.optionValueType??'string',rows:[]};
+    return field?effectiveOptionTable(config,{...field,optionsFieldRef:undefined}):{valueType:owner.optionValueType??'string',rows:[]};
   }
   const table=owner.optionsTableId?config.lookupTables?.find(table=>table.id===owner.optionsTableId):undefined;
   if(owner.optionsTableId)return {valueType:table?.valueType??owner.optionValueType??'string',rows:table?.rows??[]};

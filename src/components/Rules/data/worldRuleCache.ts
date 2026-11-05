@@ -85,6 +85,7 @@ export function readRuleWorldCache(scopeOrWorld: RuleCacheScope | string): RuleW
     const raw = localStorage.getItem(cacheKey(scope));
     if (!raw) return null;
     const dataset = JSON.parse(raw) as RuleWorldDataset;
+    if (!Array.isArray(dataset.features) || !dataset.features.every(feature => feature && typeof feature === 'object' && !Array.isArray(feature)) || !Number.isFinite(dataset.loadedAt)) return null;
     if (dataset.worldId !== scope.worldId || String(dataset.mergeVersion) !== String(scope.releaseId)) return null;
     if (dataset.sourceId !== scope.sourceId || dataset.transportId !== scope.transportId || dataset.readerSchemaVersion !== scope.readerSchemaVersion) return null;
     if(dataset.effectiveReaderProtocol!==scope.effectiveReaderProtocol||dataset.contentSha256!==scope.contentSha256)return null;
@@ -92,6 +93,24 @@ export function readRuleWorldCache(scopeOrWorld: RuleCacheScope | string): RuleW
   } catch {
     return null;
   }
+}
+
+/** Only a complete cache for the exact selected source/transport is a recovery candidate. */
+export function readRecoverableRuleWorldCache(worldId: string, source: Pick<RuleCacheScope, 'sourceId' | 'transportId' | 'readerSchemaVersion'>): {meta: RuleCacheMeta; dataset: RuleWorldDataset} | null {
+  try {
+    const candidates: RuleCacheMeta[] = [];
+    for (let index = 0; index < localStorage.length; index++) {
+      const key = localStorage.key(index);
+      if (!key?.startsWith(RULE_META_PREFIX)) continue;
+      const meta = parseMeta(localStorage.getItem(key));
+      if (meta?.worldId === worldId && meta.sourceId === source.sourceId && meta.transportId === source.transportId && meta.readerSchemaVersion === source.readerSchemaVersion) candidates.push(meta);
+    }
+    for (const meta of candidates.sort((a, b) => b.cachedAt - a.cachedAt)) {
+      const dataset = readRuleWorldCache(meta);
+      if (dataset) return {meta, dataset};
+    }
+  } catch { /* Storage denied: recovery stays unavailable. */ }
+  return null;
 }
 
 export function readRuleWorldMeta(scopeOrWorld: RuleCacheScope | string, source?:Pick<RuleCacheScope,'sourceId'|'transportId'>): RuleCacheMeta | null {

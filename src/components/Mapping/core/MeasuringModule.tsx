@@ -1,3 +1,4 @@
+import {availableQuickWorkflows} from '@/configStudio/WorkflowAvailabilityEditor';
 import CompleteArrayEditor from '../tools/CompleteArrayEditor';
 import {resolveCreateForm,projectCreateDraft,transferCreateDraft,type CreateForm} from './fullCreateForms';
 import {convertEditingGeometry,validateEditingGeometry,replaceDraftGeometry,parseCompleteArray,completeArrayText} from './editingGeometry';
@@ -328,7 +329,7 @@ const [workflowKey, setWorkflowKey] = useState<WorkflowKey>('railway');
 const [workflowRunning, setWorkflowRunning] = useState(false);
 const [nativeWorkflowSnapshot, setNativeWorkflowSnapshot] = useState<{config: ConfigPackageV3; workflow: WorkflowDefinition} | null>(null);
 const [nativeHostElement] = useState(() => document.createElement('div'));
-useEffect(() => { if (configRuntime && !workflowRunning && !configRuntime.workflows.some(workflow => workflow.id === workflowKey&&isQuickMappingWorkflow(workflow))) setWorkflowKey((configRuntime.workflows.find(isQuickMappingWorkflow)?.id ?? '') as WorkflowKey); }, [configRuntime, workflowRunning, workflowKey]);
+useEffect(() => { if (configRuntime && !workflowRunning && !availableQuickWorkflows(configRuntime,currentWorldId).some(workflow => workflow.id === workflowKey)) setWorkflowKey((availableQuickWorkflows(configRuntime,currentWorldId)[0]?.id ?? '') as WorkflowKey); }, [configRuntime, workflowRunning, workflowKey, currentWorldId]);
 
 
 // 当前临时点集合（临时绘制的坐标）
@@ -3615,7 +3616,7 @@ const resetFeatureFormToDefault=()=>{setSubType('默认');setFeatureInfo({});set
 // =========================
 const specializedWorkflowRegistry={railway:RailwayWorkflow,station:StationWorkflow,trp_point:TradePointWorkflow} as WorkflowRegistry;
 const workflowRegistry=specializedWorkflowRegistry;
-const WORKFLOW_SELECT_OPTIONS:Array<{key:WorkflowKey;label:string;hidden?:boolean}>=configRuntime?configRuntime.workflows.filter(isQuickMappingWorkflow).map(workflow=>({key:workflow.id as WorkflowKey,label:workflow.label.zh})):[];
+const WORKFLOW_SELECT_OPTIONS:Array<{key:WorkflowKey;label:string;hidden?:boolean}>=configRuntime?availableQuickWorkflows(configRuntime,currentWorldId).map(workflow=>({key:workflow.id as WorkflowKey,label:workflow.label.zh})):[];
 
 const stopWorkflowToSelector = () => {
   if(writeBlocked())return;
@@ -3645,7 +3646,7 @@ const startWorkflow = () => {
   if (configRuntime) {
     const report = validateConfigPackage(configRuntime);
     const workflow = configRuntime.workflows.find(item => item.id === workflowKey);
-    if (!report.valid || !workflow||!isQuickMappingWorkflow(workflow)) { window.alert('工作流或当前配置包无效，请在工作台修复。'); return; }
+    if (!report.valid || !workflow||!isQuickMappingWorkflow(workflow)||!availableQuickWorkflows(configRuntime,currentWorldId).some(item=>item.id===workflow.id)) { window.alert('工作流或当前配置包无效，请在工作台修复。'); return; }
     setNativeWorkflowSnapshot({ config: structuredClone(configRuntime), workflow: structuredClone(workflow) });
   }
 

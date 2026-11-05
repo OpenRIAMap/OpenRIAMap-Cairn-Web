@@ -1,3 +1,4 @@
+import {getApplicationSettings} from '@/core/project/applicationRuntime';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AppCard from '@/components/ui/AppCard';
 import BlockingFullscreenModal from '@/components/Common/BlockingFullscreenModal';
@@ -20,6 +21,7 @@ export default function FeaturePictureBindingPanel(props: {
   onConfirm: (pictures: RelayPictureBindingItem[]) => void;
 }) {
   const { open, title, pictures, onClose, onConfirm } = props;
+  const policy=getApplicationSettings().preferences.pictureControls??{allowUpload:true,allowExternalLink:true};
   const [draft, setDraft] = useState<RelayPictureBindingItem[]>([]);
   const [previewPic, setPreviewPic] = useState<RelayPictureBindingItem | null>(null);
   const [sourceMode, setSourceMode] = useState<'upload' | 'external'>('upload');
@@ -32,7 +34,7 @@ export default function FeaturePictureBindingPanel(props: {
     if (!open) return;
     setDraft(clonePictures(pictures));
     setPreviewPic(null);
-    setSourceMode('upload');
+    setSourceMode(policy.allowUpload?'upload':'external');
     setExternalUrl('');
     setExternalError('');
   }, [open, pictures]);
@@ -54,6 +56,7 @@ export default function FeaturePictureBindingPanel(props: {
   const ACCEPTED_EXTENSIONS = ['jpg','jpeg','png','webp','bmp','gif','tif','tiff'];
 
   const addFiles = (files: FileList | null) => {
+    if (!policy.allowUpload){setExternalError('当前配置已关闭新增上传图片。');return;}
     if (!files || files.length === 0) return;
     const next = [...draft];
     for (const file of Array.from(files)) {
@@ -111,6 +114,7 @@ export default function FeaturePictureBindingPanel(props: {
   });
 
   const addExternalUrl = async () => {
+    if(!policy.allowExternalLink){setExternalError('当前配置已关闭新增图片链接。');return;}
     const url = externalUrl.trim();
     setExternalError('');
     if (!isAllowedExternalUrl(url)) {
@@ -127,6 +131,7 @@ export default function FeaturePictureBindingPanel(props: {
         setExternalError('无法读取该图片链接，未添加绑定。请检查链接是否公开可访问。');
         return;
       }
+      if(getApplicationSettings().preferences.pictureControls?.allowExternalLink===false){setExternalError('当前配置已关闭新增图片链接。');return;}
       setDraft((previous) => renumber([...previous, {
         uid: `external-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         originalName: externalName(url),
@@ -167,8 +172,8 @@ export default function FeaturePictureBindingPanel(props: {
         </div>
         <div className="p-4 text-sm text-gray-700 space-y-4">
           <div className="flex rounded-lg border bg-gray-50 p-1 gap-1">
-            <AppButton type="button" onClick={() => { setSourceMode('upload'); setExternalError(''); }} className={`flex-1 px-3 py-2 text-sm rounded ${sourceMode === 'upload' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}><Upload className="w-4 h-4 inline mr-1" />本地上传</AppButton>
-            <AppButton type="button" onClick={() => { setSourceMode('external'); setExternalError(''); }} className={`flex-1 px-3 py-2 text-sm rounded ${sourceMode === 'external' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}><Link2 className="w-4 h-4 inline mr-1" />输入外部链接</AppButton>
+            <AppButton type="button" disabled={!policy.allowUpload} onClick={() => { setSourceMode(policy.allowUpload?'upload':'external'); setExternalError(''); }} className={`flex-1 px-3 py-2 text-sm rounded ${sourceMode === 'upload' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}><Upload className="w-4 h-4 inline mr-1" />本地上传</AppButton>
+            <AppButton type="button" disabled={!policy.allowExternalLink} onClick={() => { setSourceMode('external'); setExternalError(''); }} className={`flex-1 px-3 py-2 text-sm rounded ${sourceMode === 'external' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}><Link2 className="w-4 h-4 inline mr-1" />输入外部链接</AppButton>
           </div>
 
           {sourceMode === 'upload' ? <div
@@ -232,7 +237,7 @@ export default function FeaturePictureBindingPanel(props: {
 
           <div className="flex gap-2">
             <AppButton className="flex-1 bg-gray-200 text-gray-800 px-3 py-2 rounded-lg" onClick={onClose} type="button">取消</AppButton>
-            <AppButton className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg" onClick={() => onConfirm(renumber(draft))} type="button">确认</AppButton>
+            <AppButton className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg" onClick={() => {const current=getApplicationSettings().preferences.pictureControls;const invalid=draft.some(item=>!item.deleted&&!pictures.some(prior=>prior.uid===item.uid)&&(item.source==='external'?current?.allowExternalLink===false:current?.allowUpload===false));if(invalid){setExternalError('图片新增方式已关闭，请移除刚添加的图片后再确认。');return;}onConfirm(renumber(draft));}} type="button">确认</AppButton>
           </div>
         </div>
 
