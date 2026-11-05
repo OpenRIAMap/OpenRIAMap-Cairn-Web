@@ -1,3 +1,4 @@
+import {scopeRows,resolveClassificationScope,classificationScopeProblems,type ClassificationRange} from './classificationScope';
 import type { ClassificationPath, ConfigPackageV3, ConfigValidationIssue, FieldDefinition, MountedFeatureRecord } from './types';
 import { RAILWAY_ROLES, pathCovers, pathsMatch, rawClassification } from '../core/project/navigationDefinition';
 import type { RailwayRole } from '../core/project/navigationTypes';
@@ -16,9 +17,12 @@ export function validateNavigationConfiguration(config: ConfigPackageV3, fields:
   if (!app?.navigation || !app.preferences.railwayRoles) { add(navBase, 'c13 必须包含路径规划设置和共享铁路角色定义。', [sharedBase]); return issues; }
   if (app.preferences.navigation) add(navBase, '旧导航参数与 r13 设置不能并存。', ['application/preferences/navigation']);
   const nav = app.navigation, shared = app.preferences.railwayRoles.selectors;
-  const pointNodes = (path: ClassificationPath) => config.nodes.filter(n => pathCovers(path, n.path));
   const geometry = (path: ClassificationPath) => { const nodes=config.nodes.filter(n => pathCovers(n.path, path) && n.geometryType).sort((a,b) => Object.values(a.path).filter(Boolean).length - Object.values(b.path).filter(Boolean).length);return nodes[nodes.length-1]?.geometryType; };
-  const checkPaths = (rows: ClassificationPath[], base: string, required: boolean) => {
+  const checkPaths = (range: ClassificationRange, base: string, required: boolean) => {
+    if(config.contractRevision>=18&&Array.isArray(range))add(base,'c18 导航和共享角色必须使用显式分类加减范围。');
+    const rows=scopeRows(range).map(row=>row.path);
+    for(const message of classificationScopeProblems(range,config))if(required||rows.length)add(base,message);
+    if(required&&!resolveClassificationScope(config,range).length)add(base,'启用范围的最终集合为空。');
     if (required && !rows.length) add(base, '启用的角色／参与范围至少需要一条分类。');
     for (const [i, row] of rows.entries()) {
       if (!row.class || row.skind && !row.kind || row.skind2 && !row.skind || !config.nodes.some(n => stable(n.path) === stable(Object.fromEntries(Object.entries(row).filter(([,v]) => v))))) add(`${base}/${i}`, 'Class 必填，四级分类必须连续且存在。');
@@ -28,8 +32,8 @@ export function validateNavigationConfiguration(config: ConfigPackageV3, fields:
   const shape = (field: FieldDefinition, template: string, path: string, related: string[]) => {
     if (!field.valueSchema || stable(field.valueSchema) !== stable(VALUE_SCHEMA_TEMPLATES[template].schema)) add(path, `${field.key} 需要已注册的“${VALUE_SCHEMA_TEMPLATES[template].label}”值结构模板。`, related);
   };
-  const inspect = (rows: ClassificationPath[], base: string, role: RailwayRole | 'teleportPoints' | 'warpPoints' | 'roads', navigation: boolean) => {
-    const nodes = [...new Map(rows.flatMap(pointNodes).map(n => [n.nodeId,n])).values()];
+  const inspect = (rows: ClassificationRange, base: string, role: RailwayRole | 'teleportPoints' | 'warpPoints' | 'roads', navigation: boolean) => {
+    const nodes = [...new Map(resolveClassificationScope(config,rows).map(path=>config.nodes.find(node=>stable(node.path)===stable(path))!).map(n => [n.nodeId,n])).values()];
     for (const node of nodes) {
       const fs = fields(config, node.path), byKey = new Map(fs.map(f => [f.key, f])), related = [`nodes/${node.nodeId}`];
       const field = (key: string, kind: string, required = false, template?: string) => {
@@ -39,9 +43,9 @@ export function validateNavigationConfiguration(config: ConfigPackageV3, fields:
         if (type !== kind || f.cardinality !== 'single') add(base, `${node.nodeId} 的 ${key} 需要单值 ${kind}。`, related);
         if (template && type === 'json') shape(f, template, base, related);
       };
-      const reference = (key: string, scopes: ClassificationPath[], matchField = 'ID') => {
+      const reference = (key: string, scopes: ClassificationRange, matchField = 'ID') => {
         const ref = byKey.get(key)?.reference;
-        if (ref && (ref.matchField !== matchField || !scopes.some(p => p.class === ref.classCode))) add(base, `${node.nodeId} 的 ${key} 引用目标与角色范围不兼容。`, related);
+        if (ref && (ref.matchField !== matchField || !resolveClassificationScope(config,scopes).some(p => p.class === ref.classCode))) add(base, `${node.nodeId} 的 ${key} 引用目标与角色范围不兼容。`, related);
       };
       const domain = (key: string, tableId: string) => {
         const f = byKey.get(key);
@@ -78,11 +82,11 @@ export function validateNavigationConfiguration(config: ConfigPackageV3, fields:
     const sPath = `${sharedBase}/selectors/${role}`, nPath = `${navBase}/rail/selectors/${role}`;
     checkPaths(shared[role],sPath,sharedUsed); inspect(shared[role],sPath,role,false);
     checkPaths(nav.rail.selectors[role],nPath,nav.rail.enabled);
-    for (const [i,row] of nav.rail.selectors[role].entries()) if (!shared[role].some(scope => pathCovers(scope,row))) add(`${nPath}/${i}`, '导航参与范围超出同角色共享定义，请协调修改两区。', [sPath]);
+    for (const [i,row] of resolveClassificationScope(config,nav.rail.selectors[role]).entries()) if (!pathsMatch(shared[role],row)) add(`${nPath}/${i}`, '导航参与范围超出同角色共享定义，请协调修改两区。', [sPath]);
     if (nav.rail.enabled) inspect(nav.rail.selectors[role],nPath,role,true);
   }
-  const overlap = (roles: Array<[string,ClassificationPath[]]>) => {
-    for (let a=0;a<roles.length;a++) for (let b=a+1;b<roles.length;b++) if (roles[a][1].some(x => roles[b][1].some(y => pathCovers(x,y)||pathCovers(y,x)))) add(roles[a][0], '不同角色的分类范围重叠。', [roles[b][0]]);
+  const overlap = (roles: Array<[string,ClassificationRange]>) => {
+    for (let a=0;a<roles.length;a++) for (let b=a+1;b<roles.length;b++) if (resolveClassificationScope(config,roles[a][1]).some(x => pathsMatch(roles[b][1],x))) add(roles[a][0], '不同角色的分类范围重叠。', [roles[b][0]]);
   };
   overlap(RAILWAY_ROLES.map(role => [`${sharedBase}/selectors/${role}`, shared[role]]));
   for (const role of ['teleportPoints','warpPoints'] as const) { const base=`${navBase}/teleport/selectors/${role}`; checkPaths(nav.teleport.selectors[role],base,nav.teleport.enabled); if(nav.teleport.enabled)inspect(nav.teleport.selectors[role],base,role,true); }

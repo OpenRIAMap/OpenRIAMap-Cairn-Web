@@ -1,3 +1,5 @@
+import {RichTextView} from '@/configStudio/RichTextComponents';
+import type {RichTextDocument} from '@/configStudio/richText';
 import { moduleEnabled } from '@/core/project/applicationRuntime';
 /**
  * 工具栏组件
@@ -212,10 +214,11 @@ function MapStyleSelector({ mapStyle, onToggleMapStyle }: MapStyleSelectorProps)
 }
 
 interface AboutCardProps {
+  content?:RichTextDocument;
   onClose: () => void;
 }
 
-export function AboutCard({ onClose }: AboutCardProps) {
+export function AboutCard({ onClose,content }: AboutCardProps) {
   return (
     <AppCard className="bg-white/90">
       <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0">
@@ -228,7 +231,7 @@ export function AboutCard({ onClose }: AboutCardProps) {
           <X className="w-4 h-4" />
         </AppButton>
       </div>
-      <div className="p-4 text-xs text-gray-600 space-y-2">
+      {content?<div className="p-4 text-sm text-gray-600"><RichTextView value={content}/></div>:<>      <div className="p-4 text-xs text-gray-600 space-y-2">
         <div className="bg-yellow-50 border border-yellow-200 rounded px-2 py-1 text-yellow-700">
           该平台正在测试中
         </div>
@@ -258,7 +261,7 @@ export function AboutCard({ onClose }: AboutCardProps) {
             </div>
           </div>
         </div>
-      </div>
+      </div></>}
     </AppCard>
   );
 }

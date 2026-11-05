@@ -452,13 +452,16 @@ export type ReviewReleaseControlReport = {
   gate?: ReviewReleaseGateSnapshot;
   report?: {
     reportSha256?: string;
-    findings?: Array<{ severity?: 'blocker' | 'warning' | 'info' | string; message?: string }>;
+    findings?: Array<{ code?: string; severity?: 'blocker' | 'warning' | 'info' | string; message?: string }>;
+    reports?: unknown[];
+    staleReason?: string;
   };
   next?: { action?: string };
   release?: { releaseId?: string; state?: string; selectedCount?: number; archivedCount?: number };
 };
 
 export type ReviewReleaseControlRequest = {
+  precheckProtocol?: 'pending-v2';
   selectedSubmissionIds: readonly string[];
   expectedBoardVersion: number;
   request: ReviewSubmissionRequest;

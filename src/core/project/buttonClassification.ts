@@ -1,9 +1,11 @@
 import type { CairnMapRuleButtonCriteria } from './environmentTypes';
 import type { ApplicationButtons } from './applicationTypes';
+import {matchesClassificationRange} from '../../configStudio/classificationScope';
 export type ButtonClassificationPath={class:string;kind?:string;skind?:string;skind2?:string};
 const levels=['class','kind','skind','skind2'] as const;
 export function classificationContains(scope:ButtonClassificationPath,path:ButtonClassificationPath):boolean{return levels.every(key=>!scope[key]||scope[key]===path[key]);}
 export function matchesButtonClassification(path:ButtonClassificationPath,criteria:CairnMapRuleButtonCriteria):boolean {
+  if(criteria.scope)return matchesClassificationRange(criteria.scope,path);
   if(criteria.paths)return criteria.paths.some(scope=>classificationContains(scope,path));
   return (!criteria.classCode?.length||criteria.classCode.includes(path.class))&&(!criteria.kind?.length||criteria.kind.includes(path.kind??''))&&(!criteria.skind?.length||criteria.skind.includes(path.skind??''))&&(!criteria.skind2?.length||criteria.skind2.includes(path.skind2??''));
 }

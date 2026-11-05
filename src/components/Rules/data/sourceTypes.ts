@@ -38,6 +38,7 @@ export type RuleWorldDataset = {
   transportId?: string;
   readerSchemaVersion?: string;
   sourceGeneration?: number;
+  localRecovery?: {cachedAt: number; remoteConfirmed: false};
   loadedAt: number;
   features: Record<string, unknown>[];
 };

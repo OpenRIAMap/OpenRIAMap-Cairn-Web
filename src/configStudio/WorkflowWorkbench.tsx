@@ -1,3 +1,5 @@
+import {editVersionName} from './editAudit';
+import {WorkflowAvailabilityEditor} from './WorkflowAvailabilityEditor';
 import {locateWorkflowSetting,workflowRowIdentities,restoreWorkflowRows} from './WorkflowFold';
 import {HelpControl} from './SettingHelp';
 import {NewWorkflowDialog,type WorkflowCreationDraft} from './NewWorkflowDialog';
@@ -12,7 +14,7 @@ import { validateConfigPackage, validateWorkflowDefinition, resolveEffectiveFiel
 import { canonicalizeWorkflow, V3WorkflowEditor } from './V3WorkflowEditor';
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
-export type WorkflowEditingSession = { selectedId: string; draft: WorkflowDefinition|null; tables: LookupTable[]; creation?:WorkflowCreationDraft; rowKeys?:Record<string,string> };
+export type WorkflowEditingSession = { selectedId: string; draft: WorkflowDefinition|null; tables: LookupTable[]; creation?:WorkflowCreationDraft; availability?:Record<string,string[]>;rowKeys?:Record<string,string> };
 
 export interface WorkflowWorkbenchProps {
   config: ConfigPackageV3;
@@ -26,17 +28,19 @@ export interface WorkflowWorkbenchProps {
   onSessionChange?: (session: WorkflowEditingSession | null) => void;
 }
 
-function downloadArtifact(artifact: WorkflowArtifact): void {
+function downloadArtifact(artifact: WorkflowArtifact,config:ConfigPackageV3): void {
   const blob = new Blob([JSON.stringify(artifact, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `${artifact.workflow.id}.cairn-workflow-v3.json`;
+  anchor.download = `${artifact.workflow.id}-${editVersionName(config,getWorkspaceState().editAudit?.checkpoints.slice(-1)[0]?.savedAt)}.cairn-workflow-v3.json`;
   anchor.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 export function WorkflowWorkbench({ config, onChange, onDraftStateChange, records = [], isolated = false, initialSession, onSessionChange, onDelete }: WorkflowWorkbenchProps) {
+  const [availability,setAvailability]=useState(initialSession?.availability);
+  const [availabilityError,setAvailabilityError]=useState('');
   const [selectedId, setSelectedId] = useState(initialSession?.selectedId ?? config.workflows[0]?.id ?? '');
   const [draftTables,setDraftTables]=useState<LookupTable[]>(initialSession?.tables ?? []);
   const draftConfig=useMemo(()=>draftTables.length?{...config,lookupTables:[...config.lookupTables??[],...draftTables]}:config,[config,draftTables]);
@@ -47,8 +51,8 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
   const fileRef = useRef<HTMLInputElement>(null);
   const selected = useMemo(() => config.workflows.find((workflow) => workflow.id === selectedId), [config.workflows, selectedId]);
 
-  useEffect(() => { onDraftStateChange?.(draft !== null || creating); }, [draft, creating, onDraftStateChange]);
-  useEffect(() => { onSessionChange?.({ selectedId, draft, rowKeys:draft?workflowRowIdentities(draft):undefined,tables: draftTables,...(creating&&creation?{creation}:{}) }); }, [selectedId, draft, draftTables, creating, creation, onSessionChange]);
+  useEffect(() => { onDraftStateChange?.(draft !== null || creating || !!availability); }, [draft, creating, availability, onDraftStateChange]);
+  useEffect(() => { onSessionChange?.({ selectedId, draft, availability, rowKeys:draft?workflowRowIdentities(draft):undefined,tables: draftTables,...(creating&&creation?{creation}:{}) }); }, [selectedId, draft, availability, draftTables, creating, creation, onSessionChange]);
 
   useEffect(() => {
     if (selectedId && config.workflows.some((workflow) => workflow.id === selectedId)) return;
@@ -94,7 +98,7 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
   };
   const exportDraft = () => {
     if (!draft) return;
-    try{downloadArtifact(buildWorkflowArtifact(draftConfig,canonicalizeWorkflow(draft,draftConfig)));}catch(error){setReport(validateWorkflowDefinition(draft,draftConfig));window.alert(String(error));}
+    try{downloadArtifact(buildWorkflowArtifact(draftConfig,canonicalizeWorkflow(draft,draftConfig)),draftConfig);}catch(error){setReport(validateWorkflowDefinition(draft,draftConfig));window.alert(String(error));}
   };
   const importFile = async (file: File) => {
     try {
@@ -113,6 +117,7 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
   };
 
   return <section aria-label="工作流编辑区域" className="cm-authoring-pane h-full max-h-full min-h-0 overflow-y-auto overscroll-contain rounded-xl border bg-white p-4">
+    {config.contractRevision>=18?<section className="cm-panel mb-4" aria-label="各世界工作流设置"><header className="flex flex-wrap gap-2"><h3 className="mr-auto font-semibold">各世界可选工作流与排序</h3><button className="rounded border px-2" disabled={!!availability||!!draft||creating} onClick={()=>setAvailability(structuredClone(config.application?.workflowAvailability??{}))}>读取/编辑</button><button className="rounded border px-2" disabled={!availability} onClick={async()=>{try{const next={...config,application:{...config.application!,workflowAvailability:availability}},report=validateConfigPackage(next,records);if(!report.valid)throw Error(report.issues.filter(issue=>issue.severity==='error').map(issue=>issue.message).join('；'));if(await onChange(next)!==false)setAvailability(undefined);}catch(error){setAvailabilityError(String(error));}}}>核验并保存</button><button className="rounded border px-2" disabled={!availability} onClick={()=>{setAvailability(undefined);setAvailabilityError('');}}>放弃草稿</button></header>{availability?<WorkflowAvailabilityEditor config={config} value={availability} onChange={setAvailability}/>:null}{availabilityError?<p role="alert" className="text-rose-700">{availabilityError}</p>:null}</section>:null}
     {creating?<NewWorkflowDialog config={config} initialDraft={creation} onStateChange={setCreation} onClose={()=>{setCreating(false);setCreation(undefined);}} onCreate={(next,report)=>{setDraftTables([]);setSelectedId('');setDraft(canonicalizeWorkflow(next,config));setReport(report??null);setCreating(false);}}/>:null}
     <input ref={fileRef} className="hidden" type="file" accept="application/json,.json" onChange={(event) => {
       const file = event.target.files?.[0];

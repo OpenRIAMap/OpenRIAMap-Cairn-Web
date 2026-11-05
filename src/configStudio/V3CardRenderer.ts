@@ -67,6 +67,7 @@ function relationTarget(item: CardItem) {
   const target = item.relation?.targetClassification;
   return {
     ...(item.relation?.targetRole?{structureRole:item.relation.targetRole}:{}),
+    ...(item.relation?.targetScope?{classificationScope:item.relation.targetScope}:{}),
     classCode: target?.class,
     kind: target?.kind,
     skind: target?.skind,

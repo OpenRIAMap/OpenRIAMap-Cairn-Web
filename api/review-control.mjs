@@ -160,6 +160,7 @@ export function normalizeReviewControlRequest(input, actor) {
     if (!Array.isArray(input.selectedSubmissionIds) || !input.selectedSubmissionIds.length || !Number.isSafeInteger(input.expectedBoardVersion) || input.expectedBoardVersion < 0) throw new Error('invalid-review-release-selection');
     return {
       operation,
+      ...(input.precheckProtocol==='pending-v2'?{precheckProtocol:'pending-v2'}:{}),
       request: requireRequest(input.request, { versioned: true }),
       selectedSubmissionIds: input.selectedSubmissionIds.map((value) => requireString(value, 'invalid-review-release-selection')),
       expectedBoardVersion: input.expectedBoardVersion,

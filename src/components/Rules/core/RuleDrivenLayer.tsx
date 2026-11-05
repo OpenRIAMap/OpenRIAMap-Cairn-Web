@@ -1,3 +1,4 @@
+import {matchesClassificationRange} from '@/configStudio/classificationScope';
 import {expandBindingGroup} from '@/configStudio/externalBindings';
 import {classificationPathKey} from '@/configStudio/runtime';
 import {createNativePathHitProxy} from '../rendering/nativePathHitProxy';
@@ -122,7 +123,7 @@ import { filterRecordsByRuleButtons } from "@/components/Rules/ButtonRule/button
 import { setRuleSearchPool } from "@/components/Rules/search/ruleSearchRegistry";
 import { useRuleDataStore } from "@/store/ruleDataStore";
 import { useLoadingStore } from "@/store/loadingStore";
-import { configRuntimeViewportReach, resolveConfigInteractionVisual, resolveConfigRuntimeContextForHost, resolveConfigRuntimeContextForRecord, resolveConfigRuntimeRule, resolveConfigRuntimeScreenGate, resolveConfigRuntimeStackOrder } from "@/components/Rules/configRuntime/configPackageAdapter";
+import { configHostFloorViewEligible, configRuntimeViewportReach, resolveConfigInteractionVisual, resolveConfigRuntimeContextForHost, resolveConfigRuntimeContextForRecord, resolveConfigRuntimeRule, resolveConfigRuntimeScreenGate, resolveConfigRuntimeStackOrder } from "@/components/Rules/configRuntime/configPackageAdapter";
 import type { ConfigPackageV3 } from "@/configStudio/types";
 
 const FLOOR_VIEW_MIN_LEVEL = Math.max(0, DEFAULT_FLOOR_VIEW.minLevel);
@@ -2358,7 +2359,7 @@ export default function RuleDrivenLayer(props: Props) {
       worldId,
       leafletZoom,
       zoomLevel,
-      inFloorView: zoomLevel >= contextMinZoom,
+      inFloorView: configRuntime&&configRuntime.contractRevision>=18?configHostFloorViewEligible(configRuntime,storeRef.current?.all.find(record=>record.uid===activeBuildingUid),zoomLevel):zoomLevel>=contextMinZoom,
       activeBuildingUid,
       activeContextBindingId,
       activeFloorSelector: floorOptions[activeFloorIndex]?.value ?? null,
@@ -2385,7 +2386,7 @@ export default function RuleDrivenLayer(props: Props) {
     if (!isNativeConfigRevision(configRuntime?.contractRevision)) return false;
     const store = storeRef.current;
     const resolved = resolveConfigRuntimeContextForRecord(configRuntime, record, store ?? undefined);
-    if (!resolved) return false;
+    if (!resolved||configRuntime.contractRevision>=18&&!configHostFloorViewEligible(configRuntime,resolved.host,toZoomLevel(map.getZoom()))) return false;
     const previous = lastFloorSelectionRef.current;
     const rememberedIndex = previous?.buildingUid === resolved.host.uid
       ? resolved.options.findIndex((option) => option.value === previous.floorValue)
@@ -2481,7 +2482,7 @@ export default function RuleDrivenLayer(props: Props) {
       : store.all;
 
     const matchRecord = (r: FeatureRecord): boolean => {
-      if(configRuntime){if(!matchesClassificationReadScope(configRuntime,recordPath(r),{class:targetClass,kind,skind,skind2}))return false;if(linkTarget?.classificationGroup&&!expandBindingGroup(configRuntime,linkTarget.classificationGroup).some(path=>classificationPathKey(path)===classificationPathKey(recordPath(r))))return false;}
+      if(configRuntime){if(linkTarget?.classificationScope?!matchesClassificationRange(linkTarget.classificationScope,recordPath(r)):!matchesClassificationReadScope(configRuntime,recordPath(r),{class:targetClass,kind,skind,skind2}))return false;if(linkTarget?.classificationGroup&&!expandBindingGroup(configRuntime,linkTarget.classificationGroup).some(path=>classificationPathKey(path)===classificationPathKey(recordPath(r))))return false;}
       else if (targetClass && String(r?.meta?.Class ?? "").trim() !== targetClass)return false;
       const fi: any = r?.featureInfo ?? {};
       if (!configRuntime&&kind && String(fi?.Kind ?? "").trim() !== kind) return false;
@@ -2660,11 +2661,12 @@ export default function RuleDrivenLayer(props: Props) {
       const updateNativeContext = () => {
         const zoomLevel = toZoomLevel(map.getZoom());
         const minZoom = engineContext?.minZoom ?? FLOOR_VIEW_MIN_LEVEL;
-        if (zoomLevel < minZoom) {
+        if (configRuntime.contractRevision<18&&zoomLevel < minZoom) {
           clearNativeContext();
           return;
         }
         const contexts = store.all
+          .filter(candidate=>configRuntime.contractRevision<18||configHostFloorViewEligible(configRuntime,candidate,zoomLevel))
           .map((candidate) => resolveConfigRuntimeContextForHost(configRuntime, candidate, store))
           .filter((candidate): candidate is NonNullable<typeof candidate> => Boolean(candidate));
         let picked: { context: NonNullable<typeof contexts[number]>; distance: number } | null = null;
@@ -2996,7 +2998,7 @@ export default function RuleDrivenLayer(props: Props) {
       const contextMinZoom = isNativeConfigRevision(configRuntime?.contractRevision)
         ? configRuntime.engine?.contextView?.minZoom ?? FLOOR_VIEW_MIN_LEVEL
         : DEFAULT_FLOOR_VIEW.minLevel;
-      const inFloorView = zoomLevel >= contextMinZoom;
+      const inFloorView = configRuntime&&configRuntime.contractRevision>=18?configHostFloorViewEligible(configRuntime,store.all.find(record=>record.uid===activeBuildingUid),zoomLevel):zoomLevel>=contextMinZoom;
 
       const context: RenderContext = {
         worldId,

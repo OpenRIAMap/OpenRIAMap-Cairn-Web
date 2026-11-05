@@ -1,3 +1,4 @@
+import {editVersionName} from './editAudit';
 import { checkPublicationWebDeployment, type PublicationWebState } from './publicationDeployment';
 import {HelpLabel} from './SettingHelp';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -6,11 +7,10 @@ import type { ConfigPackageV3, MountedFeatureRecord } from './types';
 import { validateConfigPackage } from './runtime';
 import { buildConfigPackageArchive, buildTemporaryConfigArchive, downloadConfigPackage } from './package';
 import {useWorkspaceState} from './ConfigBootstrap';
-import {getWorkspaceState,recordWorkspaceValidation,flushWorkspace,invalidateWorkspaceValidation} from './workspaceController';
+import {getWorkspaceState,recordWorkspaceValidation,flushWorkspace,invalidateWorkspaceValidation,acknowledgePublishedWorkspace} from './workspaceController';
 import {validateWorkspace,currentValidation,VALIDATION_SESSION} from './workspaceValidation';
 import type {WorkspaceValidation} from './workspaceTypes';
-import { highestConfigLabRevision } from './configLabStorage';
-import { persistActiveConfig, readDurableActiveConfig, stableConfigText } from './defaultConfigProvider';
+import { readDurableActiveConfig, stableConfigText } from './defaultConfigProvider';
 import { CONFIGURATION_RULES_VERSION, readFormalIdentity, sha256Bytes, type ConfigurationIdentity } from '../configRuntime/formalConfiguration';
 
 type Gate = { snapshot: string; records: string; base: string; rules: string; run: WorkspaceValidation };
@@ -53,7 +53,13 @@ export function GlobalPackageControls({ config, validationBaseline, records = []
   useEffect(()=>{
     if(server?.state!=='complete'||!server.identity){setWeb(undefined);setWebChecking(false);return;}
     const abort=new AbortController();setWebChecking(true);
-    void checkPublicationWebDeployment(server.identity,abort.signal).then(result=>{if(!abort.signal.aborted)setWeb(result);}).finally(()=>{if(!abort.signal.aborted)setWebChecking(false);});
+    void checkPublicationWebDeployment(server.identity,abort.signal).then(async result=>{
+      if(abort.signal.aborted)return;setWeb(result);
+      const value=candidate.current;
+      if(result.state==='ready'&&value&&server.identity)try{
+        const saved=await acknowledgePublishedWorkspace(server.identity,value.config);onSaved(saved);setBase(server.identity);inform('最终 Web 正式身份已确认，已发布审计保留在发布包中；后续编辑从新的正式基线开始。');
+      }catch(error){inform(String(error));}
+    }).finally(()=>{if(!abort.signal.aborted)setWebChecking(false);});
     return()=>abort.abort();
   },[server?.state,server?.identity,webCheck]);
   useEffect(()=>{
@@ -81,7 +87,7 @@ export function GlobalPackageControls({ config, validationBaseline, records = []
       const blob=await buildTemporaryConfigArchive(config,gate.run,getWorkspaceState().generation);
       if(!downloadOnly)try{await flushWorkspace();}catch(error){setCacheFailure(String(error));return;}
       if(live.current.snapshot!==snapshot||live.current.hasDraft||live.current.recordText!==recordText||!currentValidation(gate.run,getWorkspaceState().generation))throw Error('内容已改变，请重新全局核验。');
-      const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`${config.packageId}.r${config.revision}.contract-c${config.contractRevision}.temporary.${Date.now()}.zip`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`${config.packageId}.${editVersionName(config,workspace.editAudit?.checkpoints.slice(-1)[0]?.savedAt)}.temporary.zip`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
       setTemporaryOpen(false);inform('已发起临时诊断包下载；仅用于继续编辑与排查，不代表正式核验通过。');
     }catch(error){inform(String(error));}finally{setBusy(false);}
   };
@@ -90,7 +96,7 @@ export function GlobalPackageControls({ config, validationBaseline, records = []
     assertCurrent();
     if(candidate.current&&candidate.current.baseKey!==baseKey)throw Error('正式基线已改变，请重新登录并准备新候选。');
     if(candidate.current)return candidate.current;
-    const revision=Math.max(Math.max(config.revision,await highestConfigLabRevision(config.packageId),base?.revision??0)+1,serverRevision);
+    const revision=serverRevision||base!.revision+1;
     const next={...config,revision},report=validateConfigPackage(next,records);
     if(!report.valid)throw Error('自动修订候选未通过核验。');
     const blob=await buildConfigPackageArchive(next,report);
@@ -103,12 +109,9 @@ export function GlobalPackageControls({ config, validationBaseline, records = []
       const operation=async()=>{
         const durable=await readDurableActiveConfig();
         if(stableConfigText(durable.config)!==snapshot)throw Error('本地已保存版本已改变，请刷新编辑器后重新核验。');
-        // A candidate prepared for login may outlive another tab's export.
-        // Reallocate under the cross-tab lock; never reuse an occupied revision.
-        if(candidate.current&&await highestConfigLabRevision(config.packageId)>=candidate.current.config.revision){candidate.current=undefined;setAuthenticated(false);setServer(undefined);operationId.current=crypto.randomUUID();}
-        const value=await prepare();const saved=await persistActiveConfig(value.config,false,durable);
-        await flushWorkspace();
-        downloadConfigPackage(value.blob,value.config);onSaved(saved);setOpen(false);inform(`已下载 ${value.config.packageId} r${value.config.revision}；正式配置保持当前发布版本。`);
+        const report=validateConfigPackage(config,records);
+        const blob=await buildConfigPackageArchive(config,report);
+        await flushWorkspace();downloadConfigPackage(blob,config);onSaved(config);setOpen(false);inform('已下载本机编辑稿，正式 r 仅在远端发布时分配。');
       };
       if(navigator.locks)await navigator.locks.request(`cairnmap-config-export:${config.packageId}`,operation);else await operation();
     }catch(error){inform(String(error));}finally{setBusy(false);}
@@ -154,7 +157,7 @@ export function GlobalPackageControls({ config, validationBaseline, records = []
     </ConfigDialog>
     <ConfigDialog open={open} title="整包下载/上传" onClose={()=>setOpen(false)} busy={busy}>
       <p className="text-sm">正式基线：{base?.packageId} r{base?.revision} · 契约 c{base?.contractRevision}</p><p className="break-all text-xs">SHA-256：{base?.configSha256}</p>
-      <p className="text-sm">下载将自动分配高于已保存、已导出及已知正式版本的修订号。在线发布由服务端最终分配。</p>
+      <p className="text-sm">下载保留正式基线 r，以保存检查点时间标识本机稿。正式上传由服务端分配新的 r。</p>
       {!valid?<p role="alert" className="text-rose-700">全局核验已失效，请关闭并重新核验。</p>:null}
       <div className="flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-2" disabled={busy||!valid} onClick={()=>void download()}>下载配置整包</button><button type="button" className="rounded bg-violet-600 px-3 py-2 text-white" disabled={busy||!valid} onClick={()=>void login()}>重新登录并准备上传</button>{authenticated?<button type="button" className="rounded border px-3 py-2" disabled={busy||!valid} onClick={()=>void preflight()}>再次核验</button>:null}</div>
       {server?<section className="space-y-2 rounded border bg-slate-50 p-3"><p>操作者：{server.actor??'等待服务端确认'} · 服务端阶段：{server.state}</p><p>候选：r{server.revision} · {server.jobId}</p><p className="break-all text-xs">JSON SHA-256: {server.configSha256}</p><p className="break-all text-xs">Manifest SHA-256: {server.manifestSha256}</p><p className="break-all text-xs">ZIP SHA-256: {server.archiveSha256}</p>{server.summary?.map((item,index)=><p key={index} className="text-xs">{item}</p>)}{server.report?.issues.map((issue,index)=><p key={index} className={issue.severity==='error'?'text-rose-700':'text-amber-800'}>{issue.message}</p>)}{warning?<HelpLabel context="GlobalPackageControls" className="flex gap-2"><input type="checkbox" checked={warningsAccepted} onChange={event=>setWarningsAccepted(event.target.checked)}/>已检查以上警告</HelpLabel>:null}<button type="button" className="rounded border px-3 py-2" disabled={busy} onClick={()=>void refresh()}>查询进度</button><button type="button" className="ml-2 rounded bg-emerald-600 px-3 py-2 text-white disabled:bg-slate-300" disabled={busy||!valid||!authenticated||server.report?.valid!==true||!server.receipt||warning&&!warningsAccepted} onClick={()=>void publish()}>上传并发布</button></section>:null}

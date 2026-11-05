@@ -13,4 +13,8 @@ export type WorkspaceCheckpoint = {
   validation?: WorkspaceValidation; importedDiagnostic?: TemporaryDiagnostic;
   migration?: import('./migrationAttachment').MigrationAttachment;
   generation: number; updatedAt: string;
+  importedEditAudit?:{audit:import('./editAudit').EditAudit;sourceConfig:ConfigPackageV3};
+  editAudit?:import('./editAudit').EditAudit;
+  baselineIdentity?:import('../configRuntime/formalConfiguration').ConfigurationIdentity;
+  inputBuffers?:Record<string,string>;
 };

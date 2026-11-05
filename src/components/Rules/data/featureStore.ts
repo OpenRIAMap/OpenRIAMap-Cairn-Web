@@ -1,4 +1,5 @@
 import type { FeatureRecord, SignatureEntry } from '@/components/Rules/rendering/renderPrimitives';
+import {scopeRows} from '@/configStudio/classificationScope';
 import type {RailwayRole,RailwaySelectors} from '@/core/project/navigationTypes';
 import {defaultRailwaySelectors,matchesRaw} from '@/core/project/navigationDefinition';
 import type {ClassificationPath,ConfigPackageV3} from '@/configStudio/types';
@@ -70,7 +71,7 @@ export class FeatureStore {
     // of the narrower navigation participation selectors.
     const selectors=options?.railwaySelectors??defaultRailwaySelectors();
     for(const r of options?.railwayRecords??records){
-      const roles=(['lines','platforms','stationAreas','stations'] as const).filter(role=>selectors[role].some(path=>path.class===r.meta.Class));
+      const roles=(['lines','platforms','stationAreas','stations'] as const).filter(role=>scopeRows(selectors[role]).some(row=>row.condition==='include'&&row.path.class===r.meta.Class));
       const legacyLine=!options?.railwaySelectors&&['LINE','LIN','RMP_LINE'].includes(r.meta.Class);
       if(!roles.length&&!legacyLine)continue;
       // Read classification once, and never touch subtype fields on unrelated

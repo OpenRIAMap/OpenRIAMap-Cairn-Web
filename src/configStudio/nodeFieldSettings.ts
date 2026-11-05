@@ -6,6 +6,17 @@ export type FieldSettingsResolution={value:NodeFieldSettings;owners:Partial<Reco
 const cache=new WeakMap<ConfigPackageV3,Map<string,FieldSettingsResolution>>();
 export function resolveNodeFieldSettings(config:ConfigPackageV3,path:ClassificationPath):FieldSettingsResolution {
   const key=classificationPathKey(path),cached=cache.get(config)?.get(key);if(cached)return cached;
+  if(config.contractRevision>=18){
+    const value:NodeFieldSettings={},owners:FieldSettingsResolution['owners']={};let display=true,search=true;
+    for(const [index,node] of resolveCategoryNodes(config,path).entries()){
+      if(index>0&&(!display||node.receiveFromParent?.display===false)){delete value.structure;delete owners.structure;}
+      if(index>0&&(!search||node.receiveFromParent?.search===false)){delete value.search;delete owners.search;}
+      if(node.displaySettings?.structure){value.structure=node.displaySettings.structure;owners.structure=node.nodeId;}
+      if(node.searchSettings){value.search=node.searchSettings;owners.search=node.nodeId;}
+      display=inheritanceControls(node).display;search=inheritanceControls(node).search===true;
+    }
+    return {value,owners};
+  }
   const value:NodeFieldSettings={},owners:FieldSettingsResolution['owners']={},fixed=new Set<Module>();let propagate=true;
   for(const [index,node] of resolveCategoryNodes(config,path).entries()){
     if(index>0)for(const module of ['structure','search'] as const){if(propagate&&value[module]&&(module==='structure'||value.search?.inheritance==='sealed'))fixed.add(module);else if(!propagate&&!fixed.has(module)){delete value[module];delete owners[module];}}
@@ -24,10 +35,17 @@ export function validateNodeFieldSettings(config:ConfigPackageV3,resolveFields:(
   if(config.contextBindings?.length)error('contextBindings','r10 以分类自身角色定义包含关系，不能保留旧的分类对绑定。');
   for(const node of config.nodes){
     const path=`nodes/${node.nodeId}/fieldSettings`,effective=resolveNodeFieldSettings(config,node.path),incoming=incomingNodeFieldSettings(config,node);
-    for(const module of ['structure','search'] as const)if(incoming[module]&&node.fieldSettings?.[module]&&(module==='structure'||incoming.search?.inheritance==='sealed'))error(`${path}/${module}`,'该模块由祖先字段设计固定继承，不能用本地副本覆盖。');
+    for(const module of ['structure','search'] as const)if(config.contractRevision<18&&incoming[module]&&node.fieldSettings?.[module]&&(module==='structure'||incoming.search?.inheritance==='sealed'))error(`${path}/${module}`,'该模块由祖先字段设计固定继承，不能用本地副本覆盖。');
     const fields=resolveFields(config,node.path),byKey=new Map(fields.map(field=>[field.key,field]));
     const has=(key?:string)=>Boolean(key&&(['ID','Name','World','Class','Kind','SKind','SKind2'].includes(key)||byKey.has(key)));
     const idField=(key?:string,reverse=false)=>{if(!has(key))return false;if(key==='ID')return true;const field=byKey.get(key!)!;return field&&(['string','reference'].includes(field.type)||field.type==='enum'&&(field.optionValueType??'string')==='string'||reverse&&field.type==='json')&&(reverse||field.cardinality==='single');};
+    if(config.contractRevision>=18){
+      if(node.fieldSettings)error(path,'c18 的搜索与包含关系应迁入独立模块。');
+      const controls=inheritanceControls(node);if(!controls.fields&&(controls.display||controls.card||controls.search))error(path,'先启用字段传播，才允许传播渲染、信息卡和搜索。');
+      const role=effective.value.structure;
+      if(role?.role==='main'&&role.enabled&&(!Number.isFinite(role.floorViewMinZoom)||role.floorViewMinZoom!<0||role.floorViewMinZoom!>8))error(path+'/structure/floorViewMinZoom','最小开启楼层视角阈值必须为 0–8 的有限数字。');
+      if(role?.role==='member'&&typeof role.allowIndependentDisplay!=='boolean')error(path+'/structure/allowIndependentDisplay','请明确附属结构是否允许独立显示。');
+    }
     const role=effective.value.structure;
     if(role?.enabled){
       if(role.role==='main'&&role.memberField&&!idField(role.memberField,true))error(`${path}/structure`,'主结构指向附属字段必须是已定义的 ID/ID 列表字段。');

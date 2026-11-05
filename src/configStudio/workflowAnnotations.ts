@@ -48,7 +48,7 @@ export function assembleAnnotations(value:OutputAnnotations|undefined):{tags:Rec
 }
 export function annotationsForOutput(workflow:WorkflowDefinition,slots:Record<string,unknown>,outputId:string) {
   const result=assembleAnnotations(undefined);
-  for(const control of workflow.steps.flatMap(step=>step.controls??[]).filter(control=>control.kind==='tagsExtensions')) {
+  for(const control of workflow.steps.flatMap(step=>step.controls??[]).filter(control=>control.kind==='tagsExtensions'&&(!control.outputId||control.outputId===outputId))) {
     const stored=slots[control.id] as WorkflowAnnotations|undefined;
     const next=assembleAnnotations(stored?.[outputId]);
     mergeAnnotations(result.tags,next.tags,'tags');mergeAnnotations(result.extensions,next.extensions,'extensions');

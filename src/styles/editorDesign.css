@@ -259,3 +259,6 @@
   .config-editor.cm-editor-design .cm-item { padding: 10px; }
   .config-editor.cm-editor-design .cm-subsection { padding: 8px; }
 }
+
+details[data-order-insert="before"]{border-top:3px solid #8b5cf6!important;box-shadow:0 -8px 0 #ede9fe;}
+details[data-order-insert="after"]{border-bottom:3px solid #8b5cf6!important;box-shadow:0 8px 0 #ede9fe;}

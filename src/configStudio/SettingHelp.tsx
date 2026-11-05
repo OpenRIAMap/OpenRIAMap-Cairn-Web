@@ -1,3 +1,4 @@
+import {bufferedControl} from './BufferedControl';
 import {Children,cloneElement,createContext,isValidElement,useContext,type LabelHTMLAttributes,type ReactElement,type ReactNode} from 'react';
 import {ModuleHelp,MODULE_HELP} from './ModuleHelp';
 import {resolveSettingHelp,type HelpResolution} from './settingHelpCatalog';
@@ -19,7 +20,7 @@ function explicitHelp(value:ReactNode):HelpResolution|undefined {
 function annotate(value:ReactNode,resolution:HelpResolution):ReactNode {
   return Children.map(value,node=>{
     if(!isValidElement<ControlProps>(node)||node.type===ModuleHelp)return node;
-    if(['input','textarea','select'].includes(String(node.type)))return cloneElement(node,{'data-config-setting':resolution.key,'data-help-kind':resolution.kind});
+    if(['input','textarea','select'].includes(String(node.type)))return bufferedControl(cloneElement(node,{'data-config-setting':resolution.key,'data-help-kind':resolution.kind}));
     return typeof node.type==='string'?cloneElement(node,{},annotate(node.props.children,resolution)):node;
   });
 }
@@ -38,7 +39,7 @@ export function HelpLabel({context,children,controlStart,...props}:LabelHTMLAttr
  * enclosing label's explanation without adding a second icon. */
 export function HelpControl({context,children,displayLabel}:{context:string;children:ReactElement<ControlProps>;displayLabel?:string}){
   const parent=useContext(inheritedHelp),props=children.props,title=props['aria-label']||props.placeholder||context,resolution=parent??resolveSettingHelp(title,context);
-  const control=cloneElement(children,{'data-config-setting':resolution.key,'data-help-kind':resolution.kind});
+  const control=bufferedControl(cloneElement(children,{'data-config-setting':resolution.key,'data-help-kind':resolution.kind}));
   if(parent)return control;
   return <label data-setting-help={resolution.key} data-help-kind={resolution.kind} data-field-layout={props.type==='checkbox'?'switch':'field'} className={`cm-help-control ${props.type==='checkbox'?'cm-help-checkbox':''}`}><span className="cm-help-heading"><span>{displayLabel||props['aria-label']||props.placeholder||'设置值'}</span><ModuleHelp title={title} helpKey={resolution.key} text={resolution.text}/></span>{control}</label>;
 }

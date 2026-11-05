@@ -1,3 +1,4 @@
+import {matchesClassificationRange} from './classificationScope';
 import {matchesSearchQuery} from './searchMatch';
 import {workflowClassificationGroup,outputAcceptsClassification,recordClassificationEligible} from './workflowClassificationGroup';
 import { tagRecordErrors } from './standardTagFields';
@@ -168,7 +169,7 @@ export function findV3SearchCandidates(records: MountedFeatureRecord[], profile:
   return records.filter((record) => {
     if (search.cacheScope !== 'loadedWorlds' && world && String(record.World ?? '').trim() && normalizeV3WorldId(record.World) !== normalizeV3WorldId(world)) return false;
     if(search.targetRole==='main'){const role=config?resolveNodeFieldSettings(config,recordPath(record)).value.structure:undefined;if(!role?.enabled||role.role!=='main')return false;}
-    else if (!pathMatchesScope(recordPath(record), search.target)) return false;
+    else if(search.scope?!matchesClassificationRange(search.scope,recordPath(record)):!pathMatchesScope(recordPath(record),search.target))return false;
     return (search.queryFields ?? []).some((field) => matches(String(readRecordPath(record, field) ?? '')));
   }).slice(0, search.maxResults ?? 30).map((record, index) => ({ id: String(record.ID ?? index), display: displaySearchTemplate(search.displayTemplate ?? '{{ID}} ({{Name}})', record), returned: readRecordPath(record, search.returnField ?? 'ID'), record }));
 }
@@ -189,14 +190,14 @@ export function validateV3WorkflowInputs(workflow: WorkflowDefinition, slots: V3
     if (field.kind === 'json') try { if (typeof value === 'string') JSON.parse(value); } catch { report(`${field.label.zh} 必须是有效 JSON。`); }
   };
   for (const step of steps) for (const control of step.controls ?? []) {
-    if (!workflowConditionMatches(control.when, slots) || control.kind==='classificationPicker' && control.outputId && !activeOutputIds(workflow,slots).includes(control.outputId)) continue;
+    if (!workflowConditionMatches(control.when, slots) || ['classificationPicker','tagsExtensions'].includes(control.kind) && control.outputId && !activeOutputIds(workflow,slots).includes(control.outputId)) continue;
     const value = slots[control.slot ?? control.id];
     const report = (message: string) => issues.push({ stepId: step.id, controlId: control.id, message });
     if(control.kind==='classificationPicker' && config && !empty(value)){
       const path=decodePath(String(value));if(!path||(config.contractRevision>=15?!workflow.outputs.some(output=>output.id===control.outputId&&outputAcceptsClassification(config,output,path)):!hasCategoryNode(config,path)||hasDescendants(config,path)||!pathMatchesScope(path,control.classificationScope??{class:''})))report('请选择范围内最终子分类。');
     }
     if(control.kind==='tagsExtensions'){
-      try {for(const output of workflow.outputs)annotationsForOutput({...workflow,steps:[{...step,controls:[control]}]},slots,output.id);}catch(error){report(error instanceof Error?error.message:'标签/扩展无效。');}continue;
+      try {for(const output of workflow.outputs.filter(output=>!control.outputId||control.outputId===output.id))annotationsForOutput({...workflow,steps:[{...step,controls:[control]}]},slots,output.id);}catch(error){report(error instanceof Error?error.message:'标签/扩展无效。');}continue;
     }
     validateValue(config && control.kind === 'select' ? { ...control, options: resolveWorkflowSelectOptions(config, control) } : control, value, report);
     if (control.kind !== 'group') continue;

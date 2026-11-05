@@ -1,3 +1,7 @@
+import {getApplicationSettings} from '@/core/project/applicationRuntime';
+import {getRuleDataSourceSnapshot} from '@/components/Rules/data/formalDataSourceRuntime';
+import {readRuleWorldMeta} from '@/components/Rules/data/worldRuleCache';
+import {loadFormalMediaAssets,type FormalMediaAsset} from '@/components/Rules/data/formalMediaReader';
 import { normalizeRuleSourceWorldId } from '@/core/project/worldIdentity';
 import {
   buildReviewPackageArtifact,
@@ -130,10 +134,17 @@ export async function buildRelayPackageZip(args: {
     const location = locationsById.get(featureId);
     if (!location) continue;
     const active = [...bindings].filter((picture) => !picture.deleted).sort((left, right) => left.order - right.order);
+    const policy=getApplicationSettings().preferences.pictureControls;
+    let formal:FormalMediaAsset[]=[];
+    if(active.length&&policy&&(!policy.allowUpload||!policy.allowExternalLink)){
+      const source=getRuleDataSourceSnapshot(location.worldId),meta=readRuleWorldMeta(location.worldId,source),dataset=meta?readRuleWorldCache(meta):null,original=dataset?.features.find(record=>String(record.ID)===featureId);
+      if(original&&meta)formal=await loadFormalMediaAssets({source,releaseId:meta.releaseId,worldId:location.worldId,classCode:String(original.Class),kindPath:[original.Kind,original.SKind??original.Skind,original.SKind2??original.Skind2].filter(Boolean).map(String),featureId});
+    }
     for (const picture of active) {
       if (picture.source === 'external') {
         const url = String(picture.externalUrl ?? picture.previewUrl ?? '').trim();
         if (!url) continue;
+        if(policy?.allowExternalLink===false&&!formal.some(asset=>asset.url===url))throw Error('当前配置已关闭新增图片链接；无法确认的历史绑定请先同步正式数据。');
         externalPictures.push({
           worldId: location.worldId,
           classCode: location.classCode,
@@ -146,6 +157,7 @@ export async function buildRelayPackageZip(args: {
       }
       const resolved = await resolvePictureBlob(picture);
       if (!resolved) continue;
+      if(policy?.allowUpload===false){const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await resolved.blob.arrayBuffer())),byte=>byte.toString(16).padStart(2,'0')).join('');if(!formal.some(asset=>!asset.url&&asset.sha256===digest))throw Error('当前配置已关闭新增上传图片；仅可携带内容不变的正式图片。');}
       pictures.push({
         worldId: location.worldId,
         classCode: location.classCode,

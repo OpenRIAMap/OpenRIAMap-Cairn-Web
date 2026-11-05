@@ -1,4 +1,5 @@
-import {getWorkspaceState} from './workspaceController';
+import {EDIT_AUDIT_PATH,editAuditForExport,editVersionName,readEditAudit,type EditAudit} from './editAudit';
+import {getWorkspaceState,getActiveConfigSnapshot} from './workspaceController';
 import {readRawNativePackage} from './nativeArchive';
 import {readEditorNativeContents} from './editorNativeArchive';
 import {TEMPORARY_REPORT_PATH,readTemporaryDiagnostic,diagnosticMismatch,type TemporaryDiagnostic} from './temporaryDiagnostic';
@@ -75,6 +76,10 @@ async function encodeConfigArchive(config:ConfigPackageV3,report:ConfigValidatio
     { path: 'reports/validation-report.json', body: stableStringify(report) },
     { path: 'reports/v1-parity-report.json', body: stableStringify(parity) },
   ];
+  const workspace=getWorkspaceState();let auditSource=workspace.importedEditAudit?.sourceConfig;
+  if(workspace.editAudit&&!auditSource)try{auditSource=getActiveConfigSnapshot();}catch{/* Standalone codecs have no active workspace. */}
+  const audit=await editAuditForExport(workspace.editAudit,config,auditSource);
+  if(audit)files.push({path:EDIT_AUDIT_PATH,body:JSON.stringify(audit,null,2)+'\n'});
   if(temporary)files.push({path:TEMPORARY_REPORT_PATH,body:JSON.stringify(temporary,null,2)+'\n'});
   if(config.application)files.push({path:'reports/application-dependencies.json',body:stableStringify({schemaVersion:'cairnmap.application-dependencies.v1',projectionIds:[...new Set(config.application.worlds.map(world=>(world.projectionOverride??world.projection??DYNMAP_FLAT_PRESET).id))],readers:(isWorldGroups(config.application.sources)?config.application.sources.groups.flatMap(group=>group.sources.items):config.application.sources.items).map(source=>({sourceId:source.id,readerKind:source.readerKind,schemaVersion:source.readerSchemaVersion,transport:source.transport})),reviewProtocol:config.application.review.protocol,authProvider:config.application.review.provider,serverEnvironmentReferences:Object.values(config.application.review.serverReferences),externalWorkflowKeys:config.workflows.filter(workflow=>workflow.mode==='external').map(workflow=>workflow.external?.componentKey),labelTemplate:'cairnmap.label-template.v1',...(config.application.navigation?{navigation:{sharedRailwayRoles:config.application.preferences.railwayRoles,settings:config.application.navigation}}:{}),lookupTables:(config.lookupTables??[]).map(table=>({id:table.id,functionKind:table.functionKind}))})});
   const manifestFiles = await Promise.all(files.map(async (file) => {
@@ -580,17 +585,18 @@ function asConfig(value: unknown): ConfigPackageV3 {
 
 export async function readConfigPackage(file:File,options:ConfigImportOptions={}):Promise<ConfigPackageV3>{return asConfig(await readRawNativePackage(file,options));}
 
-export async function readConfigPackageWithDiagnostics(file:File,options:ConfigImportOptions={}):Promise<{config:ConfigPackageV3;diagnostic?:TemporaryDiagnostic;recheckReason?:string}>{
+export async function readConfigPackageWithDiagnostics(file:File,options:ConfigImportOptions={}):Promise<{config:ConfigPackageV3;diagnostic?:TemporaryDiagnostic;editAudit?:EditAudit;recheckReason?:string}>{
   const contents=await readEditorNativeContents(file,options),config=asConfig(contents.config),diagnostic=readTemporaryDiagnostic(contents.temporary);
   const recheckReason=contents.diagnosticIssue??(contents.temporary!==undefined&&!diagnostic?'临时报告格式无效，确认后将按当前核验器重新检查。':diagnostic?await diagnosticMismatch(diagnostic,config,contents.configBytes):undefined);
-  return {config,diagnostic,recheckReason};
+  const editAudit=await readEditAudit(contents.editAudit,config);
+  return {config,diagnostic,editAudit,recheckReason};
 }
 
 export function downloadConfigPackage(blob: Blob, config: ConfigPackageV3): void {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `${config.packageId}-r${config.revision}.cairn-config-v3.zip`;
+  anchor.download = `${config.packageId}-${editVersionName(config,getWorkspaceState().editAudit?.checkpoints.slice(-1)[0]?.savedAt)}.cairn-config-v3.zip`;
   anchor.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }

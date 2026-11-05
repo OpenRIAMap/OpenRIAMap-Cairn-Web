@@ -1,3 +1,5 @@
+import {classificationScopeProblems} from '../../configStudio/classificationScope';
+import {richTextProblems} from '../../configStudio/richText';
 import type { ApplicationSettings, ResolvedApplicationSettings } from './applicationTypes';
 import { resolveApplicationSettings, resourceGroupForWorld, validateResourceGroups } from './applicationResources';
 import {isButtonIcon,isButtonTone} from './buttonVisualCatalog';
@@ -23,6 +25,7 @@ export function validateApplication(input:ApplicationSettings,classCodes?:Set<st
     if(!Number.isInteger(world.tiles.maxRetries)||world.tiles.maxRetries<0||world.tiles.maxRetries>10||!Number.isFinite(world.tiles.retryDelay)||world.tiles.retryDelay<0)fail(path,'瓦片重试次数/间隔无效。');
   }
   for(const button of value.buttons.items){const path=`buttons/${button.id}`;if(!isButtonIcon(button.iconKey))fail(path,'图标未注册。');if(!isButtonTone(button.tone))fail(path,'配色未注册。');
+    if(button.criteria.scope){for(const message of classificationScopeProblems(button.criteria.scope))fail(path,message);if(Object.keys(button.criteria).some(key=>key!=='scope'))fail(path,'分类范围不能与旧条件并存。');}
     if(button.criteria.paths){if(!button.criteria.paths.length)fail(path,'至少需要一条显示内容。');if(Object.keys(button.criteria).some(key=>key!=='paths'))fail(path,'完整分类范围不能与旧条件数组并存。');for(const [index,row] of button.criteria.paths.entries()){if(!row.class||row.skind&&!row.kind||row.skind2&&!row.skind)fail(`${path}/criteria/paths/${index}`,'Class 必填，父级路径必须连续。');if(classCodes&&!classCodes.has(row.class))fail(path,`绑定 Class 不存在：${row.class}`);}}
     if(classCodes)for(const code of button.criteria.classCode??[])if(!classCodes.has(code))fail(path,`绑定 Class 不存在：${code}`);
     const behavior=button.behavior;for(const target of [...behavior?.exclusiveWith??[],...behavior?.disableWhenEnabled??[],...behavior?.enableWhenEnabled??[],...(behavior?.linkedButtons??[]).map(row=>row.targetId)])if(target===button.id||!buttons.has(target))fail(path,`关联按钮不存在或引用自身：${target}`);
@@ -54,5 +57,8 @@ export function validateApplication(input:ApplicationSettings,classCodes?:Set<st
     if(value.preferences.navigation)fail('navigation','r13 导航参数不能与旧导航参数并存。');
     if(!value.preferences.railwayRoles)fail('preferences/railwayRoles','新导航需要独立的共享铁路角色定义。');
   }
+  if(input.about)for(const message of richTextProblems(input.about))fail('about',message);
+  if(input.announcements){const seen=new Set<string>();for(const item of input.announcements.items){if(!item.id.trim()||seen.has(item.id))fail('announcements','公告编号必须非空且唯一。');seen.add(item.id);for(const message of richTextProblems(item.content))fail('announcements/'+item.id,message);}}
+  if(input.workflowAvailability)for(const world of Object.keys(input.workflowAvailability))if(!input.worlds.some(item=>item.id===world))fail('workflowAvailability/'+world,'工作流可用清单的世界不存在。');
   return issues;
 }

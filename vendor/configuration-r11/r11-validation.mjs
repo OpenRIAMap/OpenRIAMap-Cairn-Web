@@ -9762,20 +9762,72 @@ var require_lib3 = __commonJS({
   }
 });
 
+// src/configStudio/mediaPolicy.ts
+function validateMediaPolicy(config, incoming, existing) {
+  const policy = config.application?.preferences.pictureControls;
+  if (config.contractRevision < 18 || !policy) return [];
+  const errors = [];
+  for (const item of incoming) {
+    const allowed = item.url ? policy.allowExternalLink : policy.allowUpload;
+    if (allowed) continue;
+    const unchanged = existing.some((prior) => prior.worldId === item.worldId && prior.featureId === item.featureId && (item.url ? prior.url === item.url : !!item.sha256 && prior.sha256 === item.sha256 && !prior.url));
+    if (!unchanged) errors.push(`${item.worldId}/${item.featureId}\uFF1A\u5F53\u524D\u914D\u7F6E\u5DF2\u5173\u95ED\u65B0\u589E${item.url ? "\u56FE\u7247\u94FE\u63A5" : "\u4E0A\u4F20\u56FE\u7247"}\uFF0C\u4EC5\u5141\u8BB8\u643A\u5E26\u672A\u6539\u53D8\u7684\u6B63\u5F0F\u56FE\u7247\u6216\u5220\u9664\u7ED1\u5B9A\u3002`);
+  }
+  return [...new Set(errors)];
+}
+
 // src/configStudio/contract.ts
-var NATIVE_CONFIG_REVISION = 17;
+var NATIVE_CONFIG_REVISION = 18;
 var CONTRACT_CAPABILITIES = {
   latest: NATIVE_CONFIG_REVISION,
-  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
-  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
-  category: [9, 10, 11, 12, 13, 14, 15, 16, 17],
-  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
-  publication: [11, 12, 13, 14, 15, 16, 17],
-  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17]] }
+  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+  category: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+  publication: [11, 12, 13, 14, 15, 16, 17, 18],
+  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17], [17, 18]] }
 };
 var supportsContract = (capability, value) => typeof value === "number" && CONTRACT_CAPABILITIES[capability].includes(value);
 function isNativeConfigRevision(value) {
   return supportsContract("native", value);
+}
+
+// src/configStudio/classificationScope.ts
+var levels = ["class", "kind", "skind", "skind2"];
+function classificationContains(parent, child) {
+  return levels.every((level) => !parent[level] || parent[level] === child[level]);
+}
+function scopeRows(value) {
+  return Array.isArray(value) ? value.map((path2, index) => ({ id: `scope-${index}`, condition: "include", path: path2 })) : value.rows;
+}
+function matchesClassificationRange(value, path2) {
+  const rows = scopeRows(value);
+  return rows.some((row2) => row2.condition === "include" && classificationContains(row2.path, path2)) && !rows.some((row2) => row2.condition === "exclude" && classificationContains(row2.path, path2));
+}
+var cache = /* @__PURE__ */ new WeakMap();
+function resolveClassificationScope(config, scope) {
+  const prior = Object.isFrozen(config) ? cache.get(config)?.get(scope) : void 0;
+  if (prior) return prior;
+  const result = config.nodes.filter((node) => matchesClassificationRange(scope, node.path)).map((node) => node.path);
+  if (Object.isFrozen(config)) {
+    let scopes = cache.get(config);
+    if (!scopes) {
+      scopes = /* @__PURE__ */ new WeakMap();
+      cache.set(config, scopes);
+    }
+    scopes.set(scope, result);
+  }
+  return result;
+}
+function classificationScopeProblems(scope, config) {
+  const rows = scopeRows(scope), problems = [];
+  if (rows.length && !rows.some((row2) => row2.condition === "include")) problems.push("\u4F5C\u7528\u8303\u56F4\u81F3\u5C11\u9700\u8981\u4E00\u4E2A + \u6761\u4EF6\u3002");
+  if (new Set(rows.map((row2) => row2.id)).size !== rows.length) problems.push("\u8303\u56F4\u884C\u6807\u8BC6\u91CD\u590D\u3002");
+  for (const row2 of rows) {
+    if (!["include", "exclude"].includes(row2.condition) || !row2.path.class || levels.some((key2, index) => row2.path[key2] && levels.slice(0, index).some((parent) => !row2.path[parent]))) problems.push("\u8303\u56F4\u6761\u4EF6\u6216\u5206\u7C7B\u8DEF\u5F84\u65E0\u6548\u3002");
+    else if (config && !config.nodes.some((node) => levels.every((key2) => (node.path[key2] ?? "") === (row2.path[key2] ?? "")))) problems.push("\u5206\u7C7B\u8DEF\u5F84\u4E0D\u5B58\u5728\uFF1A" + levels.map((key2) => row2.path[key2]).filter(Boolean).join("/"));
+  }
+  return problems;
 }
 
 // src/configStudio/workflowExpression.ts
@@ -11222,7 +11274,7 @@ function pointSymbolBindings(value) {
 }
 
 // src/configStudio/renderBooleanFormula.ts
-var cache = /* @__PURE__ */ new WeakMap();
+var cache2 = /* @__PURE__ */ new WeakMap();
 function parse(text2, known) {
   if (text2.length > 16384) throw Error("\u6761\u4EF6\u516C\u5F0F\u8D85\u8FC7 16 KiB\u3002");
   const tokens = [];
@@ -11275,7 +11327,7 @@ function parse(text2, known) {
   return result;
 }
 function compileRenderFormula(formula) {
-  if (Object.isFrozen(formula) && cache.has(formula)) return cache.get(formula);
+  if (Object.isFrozen(formula) && cache2.has(formula)) return cache2.get(formula);
   if (!formula.terms.length || formula.terms.length > 256) throw Error("\u6761\u4EF6\u516C\u5F0F\u9700\u8981 1\u2013256 \u4E2A\u539F\u5B50\u6761\u4EF6\u3002");
   if ((formula.groups?.length ?? 0) > 256 || formula.expression.length + (formula.groups ?? []).reduce((sum2, g) => sum2 + g.expression.length, 0) > 16384) throw Error("\u6761\u4EF6\u53CA\u547D\u540D\u7EC4\u516C\u5F0F\u603B\u957F\u5EA6\u8D85\u8FC7 16 KiB\uFF0C\u6216\u547D\u540D\u7EC4\u8D85\u8FC7 256 \u9879\u3002");
   if (formula.terms.some((t) => !/^C\d+$/.test(t.id)) || formula.groups?.some((g) => !/^G\d+$/.test(g.id))) throw Error("\u6761\u4EF6\u4F7F\u7528 C \u7F16\u53F7\uFF0C\u547D\u540D\u7EC4\u4F7F\u7528 G \u7F16\u53F7\u3002");
@@ -11298,7 +11350,7 @@ function compileRenderFormula(formula) {
   };
   for (const [id2, text2] of groups) if (!compiledGroups.has(id2)) compiledGroups.set(id2, resolve(parse(text2, known), /* @__PURE__ */ new Set([id2]), 0));
   const ast = resolve(parse(formula.expression, known), /* @__PURE__ */ new Set(), 0);
-  if (Object.isFrozen(formula)) cache.set(formula, ast);
+  if (Object.isFrozen(formula)) cache2.set(formula, ast);
   return ast;
 }
 function evaluate(ast, read, memo = /* @__PURE__ */ new Map()) {
@@ -11541,6 +11593,30 @@ function localMappingConstraints(rule) {
   return rows;
 }
 
+// src/configStudio/richText.ts
+function safeRichTextLink(value) {
+  try {
+    const url = new URL(value);
+    return ["https:", "http:", "mailto:"].includes(url.protocol) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+function richTextProblems(value) {
+  const errors = [];
+  let size = 0, runs = 0;
+  if (value.paragraphs.length > 500) errors.push("\u5BCC\u6587\u672C\u6700\u591A 500 \u6BB5\u3002");
+  for (const paragraph of value.paragraphs) for (const run of paragraph.runs) {
+    size += run.text.length;
+    runs++;
+    if (run.fontSize !== void 0 && (!Number.isFinite(run.fontSize) || run.fontSize < 8 || run.fontSize > 72)) errors.push("\u5B57\u53F7\u5FC5\u987B\u4E3A 8\u201372px\u3002");
+    if (run.color !== void 0 && !/^#[a-f\d]{6}$/i.test(run.color)) errors.push("\u6587\u5B57\u989C\u8272\u5FC5\u987B\u4E3A\u516D\u4F4D\u5341\u516D\u8FDB\u5236\u989C\u8272\u3002");
+    if (run.link && !safeRichTextLink(run.link)) errors.push("\u94FE\u63A5\u4EC5\u5141\u8BB8\u65E0\u51ED\u636E\u7684 HTTP\u3001HTTPS \u6216 mailto \u5730\u5740\u3002");
+  }
+  if (size > 1e5 || runs > 5e3) errors.push("\u5BCC\u6587\u672C\u8D85\u8FC7\u957F\u5EA6\u6216\u683C\u5F0F\u7247\u6BB5\u6570\u91CF\u9650\u5236\u3002");
+  return [...new Set(errors)];
+}
+
 // src/core/project/buttonVisualCatalog.ts
 var BUTTON_ICONS = [
   ["train", "\u94C1\u8DEF"],
@@ -11645,6 +11721,10 @@ function validateApplication(input, classCodes) {
     const path2 = `buttons/${button.id}`;
     if (!isButtonIcon(button.iconKey)) fail(path2, "\u56FE\u6807\u672A\u6CE8\u518C\u3002");
     if (!isButtonTone(button.tone)) fail(path2, "\u914D\u8272\u672A\u6CE8\u518C\u3002");
+    if (button.criteria.scope) {
+      for (const message of classificationScopeProblems(button.criteria.scope)) fail(path2, message);
+      if (Object.keys(button.criteria).some((key2) => key2 !== "scope")) fail(path2, "\u5206\u7C7B\u8303\u56F4\u4E0D\u80FD\u4E0E\u65E7\u6761\u4EF6\u5E76\u5B58\u3002");
+    }
     if (button.criteria.paths) {
       if (!button.criteria.paths.length) fail(path2, "\u81F3\u5C11\u9700\u8981\u4E00\u6761\u663E\u793A\u5185\u5BB9\u3002");
       if (Object.keys(button.criteria).some((key2) => key2 !== "paths")) fail(path2, "\u5B8C\u6574\u5206\u7C7B\u8303\u56F4\u4E0D\u80FD\u4E0E\u65E7\u6761\u4EF6\u6570\u7EC4\u5E76\u5B58\u3002");
@@ -11721,6 +11801,18 @@ function validateApplication(input, classCodes) {
     if (value.preferences.navigation) fail("navigation", "r13 \u5BFC\u822A\u53C2\u6570\u4E0D\u80FD\u4E0E\u65E7\u5BFC\u822A\u53C2\u6570\u5E76\u5B58\u3002");
     if (!value.preferences.railwayRoles) fail("preferences/railwayRoles", "\u65B0\u5BFC\u822A\u9700\u8981\u72EC\u7ACB\u7684\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u5B9A\u4E49\u3002");
   }
+  if (input.about) for (const message of richTextProblems(input.about)) fail("about", message);
+  if (input.announcements) {
+    const seen = /* @__PURE__ */ new Set();
+    for (const item of input.announcements.items) {
+      if (!item.id.trim() || seen.has(item.id)) fail("announcements", "\u516C\u544A\u7F16\u53F7\u5FC5\u987B\u975E\u7A7A\u4E14\u552F\u4E00\u3002");
+      seen.add(item.id);
+      for (const message of richTextProblems(item.content)) fail("announcements/" + item.id, message);
+    }
+  }
+  if (input.workflowAvailability) {
+    for (const world of Object.keys(input.workflowAvailability)) if (!input.worlds.some((item) => item.id === world)) fail("workflowAvailability/" + world, "\u5DE5\u4F5C\u6D41\u53EF\u7528\u6E05\u5355\u7684\u4E16\u754C\u4E0D\u5B58\u5728\u3002");
+  }
   return issues;
 }
 
@@ -11774,7 +11866,7 @@ var EXTERNAL_EDIT_OPTIONS = [{ key: "tradePointEditor", label: "TRP \u5DE5\u4F5C
 function validateExternalEditBinding(workflow) {
   const definition = EXTERNAL_EDIT_OPTIONS.find((d) => d.key === workflow.external?.componentKey), scope = workflow.editor?.scope ?? workflow.target;
   if (!definition || workflow.external?.purpose !== "edit" || workflow.external.version !== definition.version || workflow.external.reason !== definition.reason) return ["\u5916\u90E8\u7F16\u8F91\u7EC4\u4EF6\u3001\u7528\u9014\u3001\u7248\u672C\u6216\u767B\u8BB0\u7406\u7531\u65E0\u6548\u3002"];
-  const bound = workflow.external.roleBindings !== void 0 ? workflow.external.roleBindings.length > 0 && Boolean(scope?.class) : scope?.class === "TRP" && Boolean(workflow.external.coveredClassifications?.length) && !workflow.external.coveredClassifications?.some((p) => p.class !== "TRP");
+  const bound = workflow.external.roleBindings !== void 0 ? workflow.external.roleBindings.length > 0 && Boolean(scope?.class || workflow.editor?.range?.rows.some((row2) => row2.condition === "include" && row2.path.class)) : scope?.class === "TRP" && Boolean(workflow.external.coveredClassifications?.length) && !workflow.external.coveredClassifications?.some((p) => p.class !== "TRP");
   if (!workflow.editor?.enabled || !workflow.editor.dedicated || workflow.quickMapping !== false || !bound || workflow.steps.length || workflow.outputs.length) return ["\u4EA4\u6613\u70B9\u5916\u90E8\u7F16\u8F91\u987B\u6709\u660E\u786E\u89D2\u8272\u8303\u56F4\u3001\u4E13\u4F9B\u7F16\u8F91\u4E14\u5173\u95ED\u4FBF\u6377\u6D4B\u7ED8\u3002"];
   return [];
 }
@@ -11789,7 +11881,7 @@ function effectiveOptionTable(config, owner) {
   if (owner.optionsFieldRef) {
     if (!("nodes" in config)) return { valueType: owner.optionValueType ?? "string", rows: [] };
     const field = referencedField(config, owner.optionsFieldRef);
-    return field ? { valueType: field.optionValueType ?? field.optionTable?.valueType ?? "string", rows: field.options ?? [] } : { valueType: owner.optionValueType ?? "string", rows: [] };
+    return field ? effectiveOptionTable(config, { ...field, optionsFieldRef: void 0 }) : { valueType: owner.optionValueType ?? "string", rows: [] };
   }
   const table = owner.optionsTableId ? config.lookupTables?.find((table2) => table2.id === owner.optionsTableId) : void 0;
   if (owner.optionsTableId) return { valueType: table?.valueType ?? owner.optionValueType ?? "string", rows: table?.rows ?? [] };
@@ -12632,10 +12724,35 @@ function omitOptionalFieldValues(config, path2, raw) {
 }
 
 // src/configStudio/nodeFieldSettings.ts
-var cache2 = /* @__PURE__ */ new WeakMap();
+var cache3 = /* @__PURE__ */ new WeakMap();
 function resolveNodeFieldSettings(config, path2) {
-  const key2 = classificationPathKey(path2), cached = cache2.get(config)?.get(key2);
+  const key2 = classificationPathKey(path2), cached = cache3.get(config)?.get(key2);
   if (cached) return cached;
+  if (config.contractRevision >= 18) {
+    const value2 = {}, owners2 = {};
+    let display = true, search = true;
+    for (const [index, node] of resolveCategoryNodes(config, path2).entries()) {
+      if (index > 0 && (!display || node.receiveFromParent?.display === false)) {
+        delete value2.structure;
+        delete owners2.structure;
+      }
+      if (index > 0 && (!search || node.receiveFromParent?.search === false)) {
+        delete value2.search;
+        delete owners2.search;
+      }
+      if (node.displaySettings?.structure) {
+        value2.structure = node.displaySettings.structure;
+        owners2.structure = node.nodeId;
+      }
+      if (node.searchSettings) {
+        value2.search = node.searchSettings;
+        owners2.search = node.nodeId;
+      }
+      display = inheritanceControls(node).display;
+      search = inheritanceControls(node).search === true;
+    }
+    return { value: value2, owners: owners2 };
+  }
   const value = {}, owners = {}, fixed = /* @__PURE__ */ new Set();
   let propagate = true;
   for (const [index, node] of resolveCategoryNodes(config, path2).entries()) {
@@ -12657,10 +12774,10 @@ function resolveNodeFieldSettings(config, path2) {
     Object.freeze(value);
     Object.freeze(owners);
     Object.freeze(result);
-    let entries = cache2.get(config);
+    let entries = cache3.get(config);
     if (!entries) {
       entries = /* @__PURE__ */ new Map();
-      cache2.set(config, entries);
+      cache3.set(config, entries);
     }
     entries.set(key2, result);
   }
@@ -12680,7 +12797,7 @@ function validateNodeFieldSettings(config, resolveFields) {
   if (config.contextBindings?.length) error("contextBindings", "r10 \u4EE5\u5206\u7C7B\u81EA\u8EAB\u89D2\u8272\u5B9A\u4E49\u5305\u542B\u5173\u7CFB\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u7684\u5206\u7C7B\u5BF9\u7ED1\u5B9A\u3002");
   for (const node of config.nodes) {
     const path2 = `nodes/${node.nodeId}/fieldSettings`, effective = resolveNodeFieldSettings(config, node.path), incoming = incomingNodeFieldSettings(config, node);
-    for (const module of ["structure", "search"]) if (incoming[module] && node.fieldSettings?.[module] && (module === "structure" || incoming.search?.inheritance === "sealed")) error(`${path2}/${module}`, "\u8BE5\u6A21\u5757\u7531\u7956\u5148\u5B57\u6BB5\u8BBE\u8BA1\u56FA\u5B9A\u7EE7\u627F\uFF0C\u4E0D\u80FD\u7528\u672C\u5730\u526F\u672C\u8986\u76D6\u3002");
+    for (const module of ["structure", "search"]) if (config.contractRevision < 18 && incoming[module] && node.fieldSettings?.[module] && (module === "structure" || incoming.search?.inheritance === "sealed")) error(`${path2}/${module}`, "\u8BE5\u6A21\u5757\u7531\u7956\u5148\u5B57\u6BB5\u8BBE\u8BA1\u56FA\u5B9A\u7EE7\u627F\uFF0C\u4E0D\u80FD\u7528\u672C\u5730\u526F\u672C\u8986\u76D6\u3002");
     const fields = resolveFields(config, node.path), byKey = new Map(fields.map((field) => [field.key, field]));
     const has = (key2) => Boolean(key2 && (["ID", "Name", "World", "Class", "Kind", "SKind", "SKind2"].includes(key2) || byKey.has(key2)));
     const idField = (key2, reverse = false) => {
@@ -12689,6 +12806,14 @@ function validateNodeFieldSettings(config, resolveFields) {
       const field = byKey.get(key2);
       return field && (["string", "reference"].includes(field.type) || field.type === "enum" && (field.optionValueType ?? "string") === "string" || reverse && field.type === "json") && (reverse || field.cardinality === "single");
     };
+    if (config.contractRevision >= 18) {
+      if (node.fieldSettings) error(path2, "c18 \u7684\u641C\u7D22\u4E0E\u5305\u542B\u5173\u7CFB\u5E94\u8FC1\u5165\u72EC\u7ACB\u6A21\u5757\u3002");
+      const controls = inheritanceControls(node);
+      if (!controls.fields && (controls.display || controls.card || controls.search)) error(path2, "\u5148\u542F\u7528\u5B57\u6BB5\u4F20\u64AD\uFF0C\u624D\u5141\u8BB8\u4F20\u64AD\u6E32\u67D3\u3001\u4FE1\u606F\u5361\u548C\u641C\u7D22\u3002");
+      const role2 = effective.value.structure;
+      if (role2?.role === "main" && role2.enabled && (!Number.isFinite(role2.floorViewMinZoom) || role2.floorViewMinZoom < 0 || role2.floorViewMinZoom > 8)) error(path2 + "/structure/floorViewMinZoom", "\u6700\u5C0F\u5F00\u542F\u697C\u5C42\u89C6\u89D2\u9608\u503C\u5FC5\u987B\u4E3A 0\u20138 \u7684\u6709\u9650\u6570\u5B57\u3002");
+      if (role2?.role === "member" && typeof role2.allowIndependentDisplay !== "boolean") error(path2 + "/structure/allowIndependentDisplay", "\u8BF7\u660E\u786E\u9644\u5C5E\u7ED3\u6784\u662F\u5426\u5141\u8BB8\u72EC\u7ACB\u663E\u793A\u3002");
+    }
     const role = effective.value.structure;
     if (role?.enabled) {
       if (role.role === "main" && role.memberField && !idField(role.memberField, true)) error(`${path2}/structure`, "\u4E3B\u7ED3\u6784\u6307\u5411\u9644\u5C5E\u5B57\u6BB5\u5FC5\u987B\u662F\u5DF2\u5B9A\u4E49\u7684 ID/ID \u5217\u8868\u5B57\u6BB5\u3002");
@@ -12782,7 +12907,7 @@ function assembleAnnotations(value) {
 }
 function annotationsForOutput(workflow, slots, outputId) {
   const result = assembleAnnotations(void 0);
-  for (const control of workflow.steps.flatMap((step) => step.controls ?? []).filter((control2) => control2.kind === "tagsExtensions")) {
+  for (const control of workflow.steps.flatMap((step) => step.controls ?? []).filter((control2) => control2.kind === "tagsExtensions" && (!control2.outputId || control2.outputId === outputId))) {
     const stored = slots[control.id];
     const next = assembleAnnotations(stored?.[outputId]);
     mergeAnnotations(result.tags, next.tags, "tags");
@@ -13122,6 +13247,12 @@ function externalRoleBindings(config, workflow) {
   return config.contractRevision >= 16 ? workflow.external?.roleBindings ?? [] : legacyExternalRoleBindings(config, workflow);
 }
 function expandBindingGroup(config, group, geometry) {
+  if (config.contractRevision >= 18) {
+    const scope = { rows: group.selectors.map((row2) => ({ id: row2.id, condition: row2.condition ?? "include", path: row2.path })) };
+    const problems = classificationScopeProblems(scope, config);
+    if (problems.length) throw Error(problems.join("\uFF1B"));
+    return config.nodes.filter((node) => matchesClassificationRange(scope, node.path) && (!geometry || resolveGeometryProfile(config, node.path, geometry)?.enabled)).map((node) => node.path);
+  }
   const result = /* @__PURE__ */ new Map();
   for (const selector of group.selectors) {
     if (!hasCategoryNode(config, selector.path)) throw Error("\u7ED1\u5B9A\u5206\u7C7B\u4E0D\u5B58\u5728\uFF1A" + classificationPathKey(selector.path));
@@ -13282,7 +13413,7 @@ function compileWorkflowEditPlan(workflow, config) {
   if (workflow.steps.some((s) => s.when || s.controls?.some((c) => c.when || c.group?.itemFields.some((f) => "when" in f && f.when))) || workflow.outputs.some((o) => o.when || o.assignments.some((a) => a.when))) errors.push("\u4E0D\u80FD\u5305\u542B\u8F93\u5165\u3001\u9875\u9762\u6216\u8F93\u51FA\u7684\u542F\u7528\u6761\u4EF6\u3002");
   if (errors.length) throw Error(errors.join("\n"));
   const output = workflow.outputs[0], scope = workflow.editor?.scope ?? output.classification ?? { class: "" };
-  const classifications = workflowClassificationGroup(config, output).paths.filter((path2) => pathMatchesScope(path2, scope));
+  const classifications = workflowClassificationGroup(config, output).paths.filter((path2) => workflow.editor?.range ? matchesClassificationRange(workflow.editor.range, path2) : pathMatchesScope(path2, scope));
   if (workflow.editor?.scope && !hasCategoryNode(config, scope) || !classifications.length || config.contractRevision < 15 && (!output.classification || !pathMatchesScope(scope, output.classification) || !config.nodes.some((n) => classificationPathKey(n.path) === classificationPathKey(scope)))) throw Error("\u7F16\u8F91\u4F5C\u7528\u8303\u56F4\u5FC5\u987B\u4E3A\u8F93\u51FA\u8303\u56F4\u5185\u7684\u5B9E\u9645\u5206\u7C7B\u3002");
   const controls = workflow.steps.flatMap((s) => s.controls ?? []), tokens = new Set(controls.flatMap((c) => c.slot ? [c.slot] : [])), needed = /* @__PURE__ */ new Set(), idOnly = /* @__PURE__ */ new Set(), bindings = [];
   for (const assignment of output.assignments) {
@@ -13346,7 +13477,7 @@ function residualAnnotations(plan, record) {
 }
 function hydrateWorkflowEdit(plan, record) {
   const classification = recordClassification(record);
-  if (!pathMatchesScope(classification, plan.scope) || plan.workflow.outputs[0].classificationGroup && !plan.classifications.some((path2) => classificationPathKey(path2) === classificationPathKey(classification))) throw Error("\u8BB0\u5F55\u4E0D\u5728\u7F16\u8F91\u5DE5\u4F5C\u6D41\u7684\u4F5C\u7528\u8303\u56F4\u5185\u3002");
+  if (plan.workflow.editor?.range ? !plan.classifications.some((path2) => classificationPathKey(path2) === classificationPathKey(classification)) : !pathMatchesScope(classification, plan.scope) || Boolean(plan.workflow.outputs[0].classificationGroup) && !plan.classifications.some((path2) => classificationPathKey(path2) === classificationPathKey(classification))) throw Error("\u8BB0\u5F55\u4E0D\u5728\u7F16\u8F91\u5DE5\u4F5C\u6D41\u7684\u4F5C\u7528\u8303\u56F4\u5185\u3002");
   const slots = { EDIT_ID: record.ID };
   for (const control of plan.controls) {
     if (control.kind === "classificationPicker") {
@@ -13378,7 +13509,7 @@ function buildWorkflowEditRecord(plan, original, draft, options = {}) {
   const id2 = String(draft.slots.EDIT_ID ?? "").trim();
   if (!id2) throw Error("ID \u4E0D\u80FD\u4E3A\u7A7A\u3002");
   record.ID = id2;
-  if (!pathMatchesScope(draft.classification, plan.scope) || plan.workflow.outputs[0].classificationGroup && !plan.classifications.some((path2) => classificationPathKey(path2) === classificationPathKey(draft.classification))) throw Error("\u4E0D\u80FD\u5C06\u8981\u7D20\u6539\u4E3A\u5DE5\u4F5C\u6D41\u4F5C\u7528\u8303\u56F4\u4E4B\u5916\u7684\u5206\u7C7B\u3002");
+  if (plan.workflow.editor?.range ? !plan.classifications.some((path2) => classificationPathKey(path2) === classificationPathKey(draft.classification)) : !pathMatchesScope(draft.classification, plan.scope) || Boolean(plan.workflow.outputs[0].classificationGroup) && !plan.classifications.some((path2) => classificationPathKey(path2) === classificationPathKey(draft.classification))) throw Error("\u4E0D\u80FD\u5C06\u8981\u7D20\u6539\u4E3A\u5DE5\u4F5C\u6D41\u4F5C\u7528\u8303\u56F4\u4E4B\u5916\u7684\u5206\u7C7B\u3002");
   if (!annotationEqual(draft.classification, recordClassification(original))) {
     for (const [key2, value] of [["Class", draft.classification.class], ["Kind", draft.classification.kind], ["SKind", draft.classification.skind], ["SKind2", draft.classification.skind2]]) if (value) record[key2] = value;
     else delete record[key2];
@@ -13472,6 +13603,7 @@ function visitPrefillCopies(config, visit) {
   config.nodes.forEach((node) => {
     if (node.card?.mode === "fields") node.card.items.filter((item) => !item.inheritFrom).forEach((item) => visit(item, `nodes/${node.nodeId}/card/${item.id}`));
     if (node.fieldSettings?.search) visit(node.fieldSettings.search.subtitle, `nodes/${node.nodeId}/fieldSettings/search/subtitle`);
+    if (node.searchSettings) visit(node.searchSettings.subtitle, `nodes/${node.nodeId}/searchSettings/subtitle`);
   });
   config.workflows.forEach((w) => w.steps.forEach((s) => s.controls?.forEach((c) => {
     if (!c.optionsTableId) visit(c, `workflows/${w.id}/${c.id}`);
@@ -13487,6 +13619,7 @@ function validatePrefillCopies(config, resolve) {
     const fields = resolve(config, audit.source.path), field = fields.find((field2) => field2.fieldId === audit.source.fieldId) ?? fields.find((field2) => field2.key === audit.source.key);
     const source = Object.values(audit.source.path).filter(Boolean).join("/");
     if (!field) {
+      if (audit.confirmedFingerprint === "missing:" + canonical(audit.source)) return;
       issues.push({ severity: config.contractRevision >= 11 ? "warning" : "error", code: "prefill-source-field-missing", path: path2, field: audit.source.key, message: `\u9884\u586B\u6765\u6E90 ${source} / ${audit.source.key} \u5DF2\u4E0D\u5B58\u5728\uFF1B\u5F53\u524D\u526F\u672C\u4ECD\u72EC\u7ACB\u4FDD\u5B58\uFF0C\u8BF7\u786E\u8BA4\u662F\u5426\u9700\u8981\u66F4\u65B0\u3002` });
       return;
     }
@@ -13502,7 +13635,7 @@ function pathCovers(scope, path2) {
   return ["class", "kind", "skind", "skind2"].every((key2) => !scope[key2] || scope[key2] === path2[key2]);
 }
 function pathsMatch(paths, path2) {
-  return paths.some((scope) => pathCovers(scope, path2));
+  return matchesClassificationRange(paths, path2);
 }
 function rawClassification(value) {
   return { class: String(value.Class ?? value.class ?? "").trim(), kind: value.Kind, skind: value.SKind ?? value.Skind, skind2: value.SKind2 ?? value.Skind2 };
@@ -13525,12 +13658,15 @@ function validateNavigationConfiguration(config, fields) {
   }
   if (app.preferences.navigation) add(navBase, "\u65E7\u5BFC\u822A\u53C2\u6570\u4E0E r13 \u8BBE\u7F6E\u4E0D\u80FD\u5E76\u5B58\u3002", ["application/preferences/navigation"]);
   const nav = app.navigation, shared = app.preferences.railwayRoles.selectors;
-  const pointNodes = (path2) => config.nodes.filter((n) => pathCovers(path2, n.path));
   const geometry = (path2) => {
     const nodes = config.nodes.filter((n) => pathCovers(n.path, path2) && n.geometryType).sort((a, b) => Object.values(a.path).filter(Boolean).length - Object.values(b.path).filter(Boolean).length);
     return nodes[nodes.length - 1]?.geometryType;
   };
-  const checkPaths = (rows, base, required) => {
+  const checkPaths = (range, base, required) => {
+    if (config.contractRevision >= 18 && Array.isArray(range)) add(base, "c18 \u5BFC\u822A\u548C\u5171\u4EAB\u89D2\u8272\u5FC5\u987B\u4F7F\u7528\u663E\u5F0F\u5206\u7C7B\u52A0\u51CF\u8303\u56F4\u3002");
+    const rows = scopeRows(range).map((row2) => row2.path);
+    for (const message of classificationScopeProblems(range, config)) if (required || rows.length) add(base, message);
+    if (required && !resolveClassificationScope(config, range).length) add(base, "\u542F\u7528\u8303\u56F4\u7684\u6700\u7EC8\u96C6\u5408\u4E3A\u7A7A\u3002");
     if (required && !rows.length) add(base, "\u542F\u7528\u7684\u89D2\u8272\uFF0F\u53C2\u4E0E\u8303\u56F4\u81F3\u5C11\u9700\u8981\u4E00\u6761\u5206\u7C7B\u3002");
     for (const [i, row2] of rows.entries()) {
       if (!row2.class || row2.skind && !row2.kind || row2.skind2 && !row2.skind || !config.nodes.some((n) => stable2(n.path) === stable2(Object.fromEntries(Object.entries(row2).filter(([, v]) => v))))) add(`${base}/${i}`, "Class \u5FC5\u586B\uFF0C\u56DB\u7EA7\u5206\u7C7B\u5FC5\u987B\u8FDE\u7EED\u4E14\u5B58\u5728\u3002");
@@ -13541,7 +13677,7 @@ function validateNavigationConfiguration(config, fields) {
     if (!field.valueSchema || stable2(field.valueSchema) !== stable2(VALUE_SCHEMA_TEMPLATES[template].schema)) add(path2, `${field.key} \u9700\u8981\u5DF2\u6CE8\u518C\u7684\u201C${VALUE_SCHEMA_TEMPLATES[template].label}\u201D\u503C\u7ED3\u6784\u6A21\u677F\u3002`, related);
   };
   const inspect = (rows, base, role, navigation) => {
-    const nodes = [...new Map(rows.flatMap(pointNodes).map((n) => [n.nodeId, n])).values()];
+    const nodes = [...new Map(resolveClassificationScope(config, rows).map((path2) => config.nodes.find((node) => stable2(node.path) === stable2(path2))).map((n) => [n.nodeId, n])).values()];
     for (const node of nodes) {
       const fs = fields(config, node.path), byKey = new Map(fs.map((f) => [f.key, f])), related = [`nodes/${node.nodeId}`];
       const field = (key2, kind, required = false, template) => {
@@ -13556,7 +13692,7 @@ function validateNavigationConfiguration(config, fields) {
       };
       const reference = (key2, scopes, matchField = "ID") => {
         const ref = byKey.get(key2)?.reference;
-        if (ref && (ref.matchField !== matchField || !scopes.some((p) => p.class === ref.classCode))) add(base, `${node.nodeId} \u7684 ${key2} \u5F15\u7528\u76EE\u6807\u4E0E\u89D2\u8272\u8303\u56F4\u4E0D\u517C\u5BB9\u3002`, related);
+        if (ref && (ref.matchField !== matchField || !resolveClassificationScope(config, scopes).some((p) => p.class === ref.classCode))) add(base, `${node.nodeId} \u7684 ${key2} \u5F15\u7528\u76EE\u6807\u4E0E\u89D2\u8272\u8303\u56F4\u4E0D\u517C\u5BB9\u3002`, related);
       };
       const domain = (key2, tableId) => {
         const f = byKey.get(key2);
@@ -13614,11 +13750,11 @@ function validateNavigationConfiguration(config, fields) {
     checkPaths(shared[role], sPath, sharedUsed);
     inspect(shared[role], sPath, role, false);
     checkPaths(nav.rail.selectors[role], nPath, nav.rail.enabled);
-    for (const [i, row2] of nav.rail.selectors[role].entries()) if (!shared[role].some((scope) => pathCovers(scope, row2))) add(`${nPath}/${i}`, "\u5BFC\u822A\u53C2\u4E0E\u8303\u56F4\u8D85\u51FA\u540C\u89D2\u8272\u5171\u4EAB\u5B9A\u4E49\uFF0C\u8BF7\u534F\u8C03\u4FEE\u6539\u4E24\u533A\u3002", [sPath]);
+    for (const [i, row2] of resolveClassificationScope(config, nav.rail.selectors[role]).entries()) if (!pathsMatch(shared[role], row2)) add(`${nPath}/${i}`, "\u5BFC\u822A\u53C2\u4E0E\u8303\u56F4\u8D85\u51FA\u540C\u89D2\u8272\u5171\u4EAB\u5B9A\u4E49\uFF0C\u8BF7\u534F\u8C03\u4FEE\u6539\u4E24\u533A\u3002", [sPath]);
     if (nav.rail.enabled) inspect(nav.rail.selectors[role], nPath, role, true);
   }
   const overlap = (roles) => {
-    for (let a = 0; a < roles.length; a++) for (let b = a + 1; b < roles.length; b++) if (roles[a][1].some((x) => roles[b][1].some((y) => pathCovers(x, y) || pathCovers(y, x)))) add(roles[a][0], "\u4E0D\u540C\u89D2\u8272\u7684\u5206\u7C7B\u8303\u56F4\u91CD\u53E0\u3002", [roles[b][0]]);
+    for (let a = 0; a < roles.length; a++) for (let b = a + 1; b < roles.length; b++) if (resolveClassificationScope(config, roles[a][1]).some((x) => pathsMatch(roles[b][1], x))) add(roles[a][0], "\u4E0D\u540C\u89D2\u8272\u7684\u5206\u7C7B\u8303\u56F4\u91CD\u53E0\u3002", [roles[b][0]]);
   };
   overlap(RAILWAY_ROLES.map((role) => [`${sharedBase}/selectors/${role}`, shared[role]]));
   for (const role of ["teleportPoints", "warpPoints"]) {
@@ -13738,9 +13874,9 @@ var values = (record, key2) => {
   const value = recordValue(record, key2);
   return (Array.isArray(value) ? value : [value]).flatMap((value2) => typeof value2 === "string" || typeof value2 === "number" ? [String(value2).trim()].filter(Boolean) : value2 && typeof value2 === "object" && "ID" in value2 && typeof value2.ID === "string" ? [value2.ID.trim()].filter(Boolean) : []);
 };
-var cache3 = /* @__PURE__ */ new WeakMap();
+var cache4 = /* @__PURE__ */ new WeakMap();
 function buildStructureIndex(config, store) {
-  const existing = cache3.get(store)?.get(config);
+  const existing = cache4.get(store)?.get(config);
   if (existing) return existing;
   const result = { byUid: /* @__PURE__ */ new Map(), roles: /* @__PURE__ */ new Map(), hostsByMember: /* @__PURE__ */ new Map(), membersByHost: /* @__PURE__ */ new Map(), diagnostics: [] }, ids = /* @__PURE__ */ new Map();
   const key2 = (record, id2 = recordId(record)) => `${recordWorld(record)}/${id2}`;
@@ -13811,10 +13947,10 @@ function buildStructureIndex(config, store) {
     result.membersByHost.set(host, members);
   }
   if (Object.isFrozen(config)) {
-    let configs = cache3.get(store);
+    let configs = cache4.get(store);
     if (!configs) {
       configs = /* @__PURE__ */ new WeakMap();
-      cache3.set(store, configs);
+      cache4.set(store, configs);
     }
     configs.set(config, result);
   }
@@ -14195,6 +14331,46 @@ var native_contract_schema_generated_default = {
         "class"
       ]
     },
+    t18: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string"
+        },
+        condition: {
+          anyOf: [
+            {
+              const: "include"
+            },
+            {
+              const: "exclude"
+            }
+          ]
+        },
+        path: {
+          ref: "t16"
+        }
+      },
+      required: [
+        "id",
+        "condition",
+        "path"
+      ]
+    },
+    t17: {
+      type: "object",
+      properties: {
+        rows: {
+          type: "array",
+          items: {
+            ref: "t18"
+          }
+        }
+      },
+      required: [
+        "rows"
+      ]
+    },
     t15: {
       type: "object",
       properties: {
@@ -14203,6 +14379,13 @@ var native_contract_schema_generated_default = {
         },
         target: {
           ref: "t16"
+        },
+        targetScope: {
+          anyOf: [
+            {
+              ref: "t17"
+            }
+          ]
         },
         targetIdField: {
           type: "string"
@@ -14225,7 +14408,7 @@ var native_contract_schema_generated_default = {
         "targetColorField"
       ]
     },
-    t17: {
+    t19: {
       type: "object",
       properties: {
         mode: {
@@ -14346,7 +14529,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         }
@@ -14408,7 +14591,7 @@ var native_contract_schema_generated_default = {
         "Polygon"
       ]
     },
-    t18: {
+    t20: {
       type: "object",
       properties: {
         overlay: {
@@ -14431,7 +14614,7 @@ var native_contract_schema_generated_default = {
         "point-top"
       ]
     },
-    t21: {
+    t23: {
       type: "object",
       properties: {
         mode: {
@@ -14463,7 +14646,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t22: {
+    t24: {
       type: "object",
       properties: {
         maxChars: {
@@ -14540,7 +14723,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t23: {
+    t25: {
       type: "object",
       properties: {
         profile: {
@@ -15277,7 +15460,7 @@ var native_contract_schema_generated_default = {
         "profile"
       ]
     },
-    t25: {
+    t27: {
       type: "object",
       properties: {
         x: {
@@ -15292,7 +15475,7 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t26: {
+    t28: {
       type: "object",
       properties: {
         name: {
@@ -15311,7 +15494,7 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t24: {
+    t26: {
       type: "object",
       properties: {
         candidatePlacement: {
@@ -15387,7 +15570,7 @@ var native_contract_schema_generated_default = {
         offsetPx: {
           anyOf: [
             {
-              ref: "t25"
+              ref: "t27"
             }
           ]
         },
@@ -15396,7 +15579,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t26"
+                ref: "t28"
               }
             }
           ]
@@ -15434,7 +15617,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t27: {
+    t29: {
       type: "object",
       properties: {
         weightMode: {
@@ -15595,7 +15778,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t29: {
+    t31: {
       type: "object",
       properties: {
         x: {
@@ -15629,13 +15812,13 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t28: {
+    t30: {
       type: "object",
       properties: {
         boundsAdjustment: {
           anyOf: [
             {
-              ref: "t29"
+              ref: "t31"
             }
           ]
         },
@@ -15730,7 +15913,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t30: {
+    t32: {
       type: "object",
       properties: {
         enabled: {
@@ -15858,7 +16041,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t31: {
+    t33: {
       type: "object",
       properties: {
         enabled: {
@@ -15960,7 +16143,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t32: {
+    t34: {
       type: "object",
       properties: {
         whenNoLabelText: {
@@ -16027,7 +16210,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t34: {
+    t36: {
       type: "object",
       properties: {
         target: {
@@ -16063,7 +16246,7 @@ var native_contract_schema_generated_default = {
         "behavior"
       ]
     },
-    t35: {
+    t37: {
       type: "object",
       properties: {
         target: {
@@ -16113,7 +16296,7 @@ var native_contract_schema_generated_default = {
         "behavior"
       ]
     },
-    t36: {
+    t38: {
       type: "object",
       properties: {
         field: {
@@ -16146,7 +16329,7 @@ var native_contract_schema_generated_default = {
         "switchZoom"
       ]
     },
-    t37: {
+    t39: {
       type: "object",
       properties: {
         bindingId: {
@@ -16169,7 +16352,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t33: {
+    t35: {
       type: "object",
       properties: {
         mode: {
@@ -16197,28 +16380,28 @@ var native_contract_schema_generated_default = {
         sameId: {
           anyOf: [
             {
-              ref: "t34"
+              ref: "t36"
             }
           ]
         },
         coincidentPoint: {
           anyOf: [
             {
-              ref: "t35"
+              ref: "t37"
             }
           ]
         },
         lineContainmentChoice: {
           anyOf: [
             {
-              ref: "t36"
+              ref: "t38"
             }
           ]
         },
         activeContextMember: {
           anyOf: [
             {
-              ref: "t37"
+              ref: "t39"
             }
           ]
         }
@@ -16227,7 +16410,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t39: {
+    t41: {
       type: "object",
       properties: {
         enabled: {
@@ -16335,61 +16518,61 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         }
       },
       required: []
     },
-    t38: {
+    t40: {
       type: "object",
       properties: {
         hover: {
           anyOf: [
             {
-              ref: "t39"
+              ref: "t41"
             }
           ]
         },
         selected: {
           anyOf: [
             {
-              ref: "t39"
+              ref: "t41"
             }
           ]
         },
         searchResult: {
           anyOf: [
             {
-              ref: "t39"
+              ref: "t41"
             }
           ]
         },
         editing: {
           anyOf: [
             {
-              ref: "t39"
+              ref: "t41"
             }
           ]
         },
         deletionMarked: {
           anyOf: [
             {
-              ref: "t39"
+              ref: "t41"
             }
           ]
         }
       },
       required: []
     },
-    t20: {
+    t22: {
       type: "object",
       properties: {
         screenGate: {
           anyOf: [
             {
-              ref: "t21"
+              ref: "t23"
             }
           ]
         },
@@ -16422,97 +16605,97 @@ var native_contract_schema_generated_default = {
         labelText: {
           anyOf: [
             {
-              ref: "t22"
+              ref: "t24"
             }
           ]
         },
         lineLabel: {
           anyOf: [
             {
-              ref: "t23"
+              ref: "t25"
             }
           ]
         },
         anchor: {
           anyOf: [
             {
-              ref: "t24"
+              ref: "t26"
             }
           ]
         },
         polygonCandidates: {
           anyOf: [
             {
-              ref: "t27"
+              ref: "t29"
             }
           ]
         },
         collision: {
           anyOf: [
             {
-              ref: "t28"
+              ref: "t30"
             }
           ]
         },
         stability: {
           anyOf: [
             {
-              ref: "t30"
+              ref: "t32"
             }
           ]
         },
         density: {
           anyOf: [
             {
-              ref: "t31"
+              ref: "t33"
             }
           ]
         },
         fallback: {
           anyOf: [
             {
-              ref: "t32"
+              ref: "t34"
             }
           ]
         },
         visibility: {
           anyOf: [
             {
-              ref: "t33"
+              ref: "t35"
             }
           ]
         },
         interaction: {
           anyOf: [
             {
-              ref: "t38"
+              ref: "t40"
             }
           ]
         }
       },
       required: []
     },
-    t19: {
+    t21: {
       type: "object",
       properties: {
         Point: {
           anyOf: [
             {
-              ref: "t20"
+              ref: "t22"
             }
           ]
         },
         LineString: {
           anyOf: [
             {
-              ref: "t20"
+              ref: "t22"
             }
           ]
         },
         Polygon: {
           anyOf: [
             {
-              ref: "t20"
+              ref: "t22"
             }
           ]
         }
@@ -16535,12 +16718,12 @@ var native_contract_schema_generated_default = {
           ref: "t6"
         },
         paneDefaults: {
-          ref: "t18"
+          ref: "t20"
         },
         renderDefaults: {
           anyOf: [
             {
-              ref: "t19"
+              ref: "t21"
             }
           ]
         }
@@ -16553,7 +16736,7 @@ var native_contract_schema_generated_default = {
         "paneDefaults"
       ]
     },
-    t42: {
+    t44: {
       type: "object",
       properties: {
         value: {
@@ -16568,7 +16751,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t41: {
+    t43: {
       type: "object",
       properties: {
         id: {
@@ -16580,7 +16763,7 @@ var native_contract_schema_generated_default = {
         options: {
           type: "array",
           items: {
-            ref: "t42"
+            ref: "t44"
           }
         }
       },
@@ -16590,7 +16773,7 @@ var native_contract_schema_generated_default = {
         "options"
       ]
     },
-    t44: {
+    t46: {
       type: "object",
       properties: {
         key: {
@@ -16632,7 +16815,7 @@ var native_contract_schema_generated_default = {
         "type"
       ]
     },
-    t43: {
+    t45: {
       type: "object",
       properties: {
         id: {
@@ -16656,7 +16839,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t44"
+                ref: "t46"
               }
             }
           ]
@@ -16667,7 +16850,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t40: {
+    t42: {
       type: "object",
       properties: {
         optionSets: {
@@ -16675,7 +16858,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t41"
+                ref: "t43"
               }
             }
           ]
@@ -16683,37 +16866,37 @@ var native_contract_schema_generated_default = {
         cardLayouts: {
           type: "array",
           items: {
-            ref: "t43"
+            ref: "t45"
           }
         },
         cardComponents: {
           type: "array",
           items: {
-            ref: "t43"
+            ref: "t45"
           }
         },
         displayProfiles: {
           type: "array",
           items: {
-            ref: "t43"
+            ref: "t45"
           }
         },
         specialDisplayLogic: {
           type: "array",
           items: {
-            ref: "t43"
+            ref: "t45"
           }
         },
         workflowControls: {
           type: "array",
           items: {
-            ref: "t43"
+            ref: "t45"
           }
         },
         workflowBlocks: {
           type: "array",
           items: {
-            ref: "t43"
+            ref: "t45"
           }
         }
       },
@@ -16726,7 +16909,7 @@ var native_contract_schema_generated_default = {
         "workflowBlocks"
       ]
     },
-    t48: {
+    t50: {
       type: "object",
       properties: {
         valueType: {
@@ -16745,7 +16928,7 @@ var native_contract_schema_generated_default = {
         rows: {
           type: "array",
           items: {
-            ref: "t42"
+            ref: "t44"
           }
         }
       },
@@ -16754,7 +16937,7 @@ var native_contract_schema_generated_default = {
         "rows"
       ]
     },
-    t47: {
+    t49: {
       type: "object",
       properties: {
         kind: {
@@ -16792,7 +16975,7 @@ var native_contract_schema_generated_default = {
         valueTable: {
           anyOf: [
             {
-              ref: "t48"
+              ref: "t50"
             }
           ]
         },
@@ -16809,7 +16992,7 @@ var native_contract_schema_generated_default = {
         "type"
       ]
     },
-    t50: {
+    t52: {
       type: "object",
       properties: {
         id: {
@@ -16836,7 +17019,7 @@ var native_contract_schema_generated_default = {
         "z"
       ]
     },
-    t49: {
+    t51: {
       type: "object",
       properties: {
         world: {
@@ -16848,7 +17031,7 @@ var native_contract_schema_generated_default = {
         returnPoints: {
           type: "array",
           items: {
-            ref: "t50"
+            ref: "t52"
           }
         }
       },
@@ -16858,7 +17041,7 @@ var native_contract_schema_generated_default = {
         "returnPoints"
       ]
     },
-    t46: {
+    t48: {
       type: "object",
       properties: {
         value: {
@@ -16873,10 +17056,10 @@ var native_contract_schema_generated_default = {
               type: "number"
             },
             {
-              ref: "t47"
+              ref: "t49"
             },
             {
-              ref: "t49"
+              ref: "t51"
             }
           ]
         }
@@ -16886,7 +17069,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t45: {
+    t47: {
       type: "object",
       properties: {
         id: {
@@ -16927,7 +17110,7 @@ var native_contract_schema_generated_default = {
         rows: {
           type: "array",
           items: {
-            ref: "t46"
+            ref: "t48"
           }
         }
       },
@@ -16939,7 +17122,7 @@ var native_contract_schema_generated_default = {
         "rows"
       ]
     },
-    t53: {
+    t55: {
       type: "object",
       properties: {
         zh: {
@@ -16954,7 +17137,7 @@ var native_contract_schema_generated_default = {
         "en"
       ]
     },
-    t54: {
+    t56: {
       type: "object",
       properties: {
         x: {
@@ -16973,7 +17156,7 @@ var native_contract_schema_generated_default = {
         "z"
       ]
     },
-    t55: {
+    t57: {
       type: "object",
       properties: {
         id: {
@@ -17014,7 +17197,7 @@ var native_contract_schema_generated_default = {
         "tilescale"
       ]
     },
-    t56: {
+    t58: {
       type: "object",
       properties: {
         baseUrl: {
@@ -17071,7 +17254,7 @@ var native_contract_schema_generated_default = {
         "retryDelay"
       ]
     },
-    t52: {
+    t54: {
       type: "object",
       properties: {
         id: {
@@ -17084,7 +17267,7 @@ var native_contract_schema_generated_default = {
           type: "number"
         },
         label: {
-          ref: "t53"
+          ref: "t55"
         },
         enabled: {
           type: "boolean"
@@ -17093,7 +17276,7 @@ var native_contract_schema_generated_default = {
           type: "boolean"
         },
         center: {
-          ref: "t54"
+          ref: "t56"
         },
         mapLink: {
           type: "string"
@@ -17115,21 +17298,21 @@ var native_contract_schema_generated_default = {
         projection: {
           anyOf: [
             {
-              ref: "t55"
+              ref: "t57"
             }
           ]
         },
         tiles: {
           anyOf: [
             {
-              ref: "t56"
+              ref: "t58"
             }
           ]
         },
         projectionOverride: {
           anyOf: [
             {
-              ref: "t55"
+              ref: "t57"
             }
           ]
         }
@@ -17145,7 +17328,7 @@ var native_contract_schema_generated_default = {
         "mapLink"
       ]
     },
-    t58: {
+    t60: {
       type: "object",
       properties: {},
       required: [],
@@ -17156,7 +17339,7 @@ var native_contract_schema_generated_default = {
         }
       }
     },
-    t61: {
+    t63: {
       type: "object",
       properties: {
         class: {
@@ -17188,15 +17371,22 @@ var native_contract_schema_generated_default = {
         "class"
       ]
     },
-    t60: {
+    t62: {
       type: "object",
       properties: {
+        scope: {
+          anyOf: [
+            {
+              ref: "t17"
+            }
+          ]
+        },
         paths: {
           anyOf: [
             {
               type: "array",
               items: {
-                ref: "t61"
+                ref: "t63"
               }
             }
           ]
@@ -17244,7 +17434,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t63: {
+    t65: {
       type: "object",
       properties: {
         targetId: {
@@ -17269,7 +17459,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t62: {
+    t64: {
       type: "object",
       properties: {
         exclusiveWith: {
@@ -17297,7 +17487,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t63"
+                ref: "t65"
               }
             }
           ]
@@ -17335,7 +17525,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t59: {
+    t61: {
       type: "object",
       properties: {
         id: {
@@ -17395,17 +17585,17 @@ var native_contract_schema_generated_default = {
           ]
         },
         criteria: {
-          ref: "t60"
+          ref: "t62"
         },
         behavior: {
           anyOf: [
             {
-              ref: "t62"
+              ref: "t64"
             }
           ]
         },
         names: {
-          ref: "t53"
+          ref: "t55"
         },
         size: {
           anyOf: [
@@ -17434,7 +17624,7 @@ var native_contract_schema_generated_default = {
         "group"
       ]
     },
-    t57: {
+    t59: {
       type: "object",
       properties: {
         storageKey: {
@@ -17456,12 +17646,12 @@ var native_contract_schema_generated_default = {
           }
         },
         byWorld: {
-          ref: "t58"
+          ref: "t60"
         },
         items: {
           type: "array",
           items: {
-            ref: "t59"
+            ref: "t61"
           }
         }
       },
@@ -17474,14 +17664,14 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t65: {
+    t67: {
       type: "object",
       properties: {
         id: {
           type: "string"
         },
         label: {
-          ref: "t53"
+          ref: "t55"
         },
         enabled: {
           type: "boolean"
@@ -17524,7 +17714,7 @@ var native_contract_schema_generated_default = {
         "transport"
       ]
     },
-    t66: {
+    t68: {
       type: "object",
       properties: {
         sourceIds: {
@@ -17550,14 +17740,14 @@ var native_contract_schema_generated_default = {
         "branch"
       ]
     },
-    t68: {
+    t70: {
       type: "object",
       properties: {
         id: {
           type: "string"
         },
         label: {
-          ref: "t53"
+          ref: "t55"
         },
         baseUrl: {
           type: "string"
@@ -17573,7 +17763,7 @@ var native_contract_schema_generated_default = {
         "default"
       ]
     },
-    t67: {
+    t69: {
       type: "object",
       properties: {
         storageKey: {
@@ -17588,7 +17778,7 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t68"
+            ref: "t70"
           }
         }
       },
@@ -17598,7 +17788,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t64: {
+    t66: {
       type: "object",
       properties: {
         storageKey: {
@@ -17626,14 +17816,14 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t65"
+            ref: "t67"
           }
         },
         github: {
-          ref: "t66"
+          ref: "t68"
         },
         linkModes: {
-          ref: "t67"
+          ref: "t69"
         }
       },
       required: [
@@ -17646,7 +17836,7 @@ var native_contract_schema_generated_default = {
         "linkModes"
       ]
     },
-    t72: {
+    t74: {
       type: "object",
       properties: {
         name: {
@@ -17671,7 +17861,7 @@ var native_contract_schema_generated_default = {
         "name"
       ]
     },
-    t71: {
+    t73: {
       type: "object",
       properties: {
         baseUrlTemplate: {
@@ -17743,7 +17933,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         attribution: {
-          ref: "t72"
+          ref: "t74"
         },
         maxRetries: {
           anyOf: [
@@ -17766,20 +17956,20 @@ var native_contract_schema_generated_default = {
         "attribution"
       ]
     },
-    t70: {
+    t72: {
       type: "object",
       properties: {
         id: {
           type: "string"
         },
         label: {
-          ref: "t53"
+          ref: "t55"
         },
         enabled: {
           type: "boolean"
         },
         sources: {
-          ref: "t64"
+          ref: "t66"
         },
         dataPathTemplate: {
           type: "string"
@@ -17788,7 +17978,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         tiles: {
-          ref: "t71"
+          ref: "t73"
         }
       },
       required: [
@@ -17801,7 +17991,7 @@ var native_contract_schema_generated_default = {
         "tiles"
       ]
     },
-    t73: {
+    t75: {
       type: "object",
       properties: {},
       required: [],
@@ -17809,7 +17999,7 @@ var native_contract_schema_generated_default = {
         type: "string"
       }
     },
-    t69: {
+    t71: {
       type: "object",
       properties: {
         kind: {
@@ -17828,11 +18018,11 @@ var native_contract_schema_generated_default = {
         groups: {
           type: "array",
           items: {
-            ref: "t70"
+            ref: "t72"
           }
         },
         bindings: {
-          ref: "t73"
+          ref: "t75"
         }
       },
       required: [
@@ -17842,7 +18032,7 @@ var native_contract_schema_generated_default = {
         "bindings"
       ]
     },
-    t75: {
+    t77: {
       type: "object",
       properties: {
         id: {
@@ -17928,7 +18118,7 @@ var native_contract_schema_generated_default = {
         "exclusiveWith"
       ]
     },
-    t76: {
+    t78: {
       type: "object",
       properties: {
         endpoint: {
@@ -17962,17 +18152,17 @@ var native_contract_schema_generated_default = {
         "requestTimeoutMs"
       ]
     },
-    t74: {
+    t76: {
       type: "object",
       properties: {
         items: {
           type: "array",
           items: {
-            ref: "t75"
+            ref: "t77"
           }
         },
         players: {
-          ref: "t76"
+          ref: "t78"
         }
       },
       required: [
@@ -17980,7 +18170,7 @@ var native_contract_schema_generated_default = {
         "players"
       ]
     },
-    t78: {
+    t80: {
       type: "object",
       properties: {
         start: {
@@ -17999,7 +18189,7 @@ var native_contract_schema_generated_default = {
         "logout"
       ]
     },
-    t79: {
+    t81: {
       type: "object",
       properties: {
         oauthClientId: {
@@ -18026,7 +18216,7 @@ var native_contract_schema_generated_default = {
         "brokerSecret"
       ]
     },
-    t77: {
+    t79: {
       type: "object",
       properties: {
         enabled: {
@@ -18039,7 +18229,7 @@ var native_contract_schema_generated_default = {
           const: "openriamap-review-v1"
         },
         auth: {
-          ref: "t78"
+          ref: "t80"
         },
         control: {
           type: "string"
@@ -18051,7 +18241,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         serverReferences: {
-          ref: "t79"
+          ref: "t81"
         }
       },
       required: [
@@ -18065,7 +18255,7 @@ var native_contract_schema_generated_default = {
         "serverReferences"
       ]
     },
-    t81: {
+    t83: {
       type: "object",
       properties: {
         homepageLimit: {
@@ -18084,7 +18274,7 @@ var native_contract_schema_generated_default = {
         "debounceMs"
       ]
     },
-    t82: {
+    t84: {
       type: "object",
       properties: {
         transferWalkSpeed: {
@@ -18107,32 +18297,60 @@ var native_contract_schema_generated_default = {
         "normalPlatformTransferCost"
       ]
     },
-    t84: {
+    t86: {
       type: "object",
       properties: {
         lines: {
-          type: "array",
-          items: {
-            ref: "t16"
-          }
+          anyOf: [
+            {
+              ref: "t17"
+            },
+            {
+              type: "array",
+              items: {
+                ref: "t16"
+              }
+            }
+          ]
         },
         platforms: {
-          type: "array",
-          items: {
-            ref: "t16"
-          }
+          anyOf: [
+            {
+              ref: "t17"
+            },
+            {
+              type: "array",
+              items: {
+                ref: "t16"
+              }
+            }
+          ]
         },
         stationAreas: {
-          type: "array",
-          items: {
-            ref: "t16"
-          }
+          anyOf: [
+            {
+              ref: "t17"
+            },
+            {
+              type: "array",
+              items: {
+                ref: "t16"
+              }
+            }
+          ]
         },
         stations: {
-          type: "array",
-          items: {
-            ref: "t16"
-          }
+          anyOf: [
+            {
+              ref: "t17"
+            },
+            {
+              type: "array",
+              items: {
+                ref: "t16"
+              }
+            }
+          ]
         }
       },
       required: [
@@ -18142,14 +18360,14 @@ var native_contract_schema_generated_default = {
         "stations"
       ]
     },
-    t83: {
+    t85: {
       type: "object",
       properties: {
         schemaVersion: {
           const: "cairnmap.railway-roles.v1"
         },
         selectors: {
-          ref: "t84"
+          ref: "t86"
         }
       },
       required: [
@@ -18157,7 +18375,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t85: {
+    t87: {
       type: "object",
       properties: {
         logicalInitialZoom: {
@@ -18184,7 +18402,7 @@ var native_contract_schema_generated_default = {
         "dragging"
       ]
     },
-    t86: {
+    t88: {
       type: "object",
       properties: {
         position: {
@@ -18206,7 +18424,22 @@ var native_contract_schema_generated_default = {
         "compact"
       ]
     },
-    t80: {
+    t89: {
+      type: "object",
+      properties: {
+        allowUpload: {
+          type: "boolean"
+        },
+        allowExternalLink: {
+          type: "boolean"
+        }
+      },
+      required: [
+        "allowUpload",
+        "allowExternalLink"
+      ]
+    },
+    t82: {
       type: "object",
       properties: {
         language: {
@@ -18220,27 +18453,34 @@ var native_contract_schema_generated_default = {
           ]
         },
         search: {
-          ref: "t81"
+          ref: "t83"
         },
         navigation: {
           anyOf: [
             {
-              ref: "t82"
+              ref: "t84"
             }
           ]
         },
         railwayRoles: {
           anyOf: [
             {
-              ref: "t83"
+              ref: "t85"
             }
           ]
         },
         map: {
-          ref: "t85"
+          ref: "t87"
         },
         toolbar: {
-          ref: "t86"
+          ref: "t88"
+        },
+        pictureControls: {
+          anyOf: [
+            {
+              ref: "t89"
+            }
+          ]
         }
       },
       required: [
@@ -18250,7 +18490,7 @@ var native_contract_schema_generated_default = {
         "toolbar"
       ]
     },
-    t88: {
+    t91: {
       type: "object",
       properties: {
         enabled: {
@@ -18260,10 +18500,10 @@ var native_contract_schema_generated_default = {
           ref: "t1"
         },
         parameters: {
-          ref: "t82"
+          ref: "t84"
         },
         selectors: {
-          ref: "t84"
+          ref: "t86"
         }
       },
       required: [
@@ -18273,20 +18513,34 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t90: {
+    t93: {
       type: "object",
       properties: {
         teleportPoints: {
-          type: "array",
-          items: {
-            ref: "t16"
-          }
+          anyOf: [
+            {
+              ref: "t17"
+            },
+            {
+              type: "array",
+              items: {
+                ref: "t16"
+              }
+            }
+          ]
         },
         warpPoints: {
-          type: "array",
-          items: {
-            ref: "t16"
-          }
+          anyOf: [
+            {
+              ref: "t17"
+            },
+            {
+              type: "array",
+              items: {
+                ref: "t16"
+              }
+            }
+          ]
         }
       },
       required: [
@@ -18294,7 +18548,7 @@ var native_contract_schema_generated_default = {
         "warpPoints"
       ]
     },
-    t89: {
+    t92: {
       type: "object",
       properties: {
         enabled: {
@@ -18307,7 +18561,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         selectors: {
-          ref: "t90"
+          ref: "t93"
         }
       },
       required: [
@@ -18317,21 +18571,28 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t92: {
+    t95: {
       type: "object",
       properties: {
         roads: {
-          type: "array",
-          items: {
-            ref: "t16"
-          }
+          anyOf: [
+            {
+              ref: "t17"
+            },
+            {
+              type: "array",
+              items: {
+                ref: "t16"
+              }
+            }
+          ]
         }
       },
       required: [
         "roads"
       ]
     },
-    t91: {
+    t94: {
       type: "object",
       properties: {
         enabled: {
@@ -18344,7 +18605,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         selectors: {
-          ref: "t92"
+          ref: "t95"
         }
       },
       required: [
@@ -18354,7 +18615,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t93: {
+    t96: {
       type: "object",
       properties: {
         elytraSpeed: {
@@ -18369,23 +18630,23 @@ var native_contract_schema_generated_default = {
         "walkSpeed"
       ]
     },
-    t87: {
+    t90: {
       type: "object",
       properties: {
         schemaVersion: {
           const: "cairnmap.navigation.v1"
         },
         rail: {
-          ref: "t88"
-        },
-        teleport: {
-          ref: "t89"
-        },
-        road: {
           ref: "t91"
         },
+        teleport: {
+          ref: "t92"
+        },
+        road: {
+          ref: "t94"
+        },
         common: {
-          ref: "t93"
+          ref: "t96"
         }
       },
       required: [
@@ -18396,7 +18657,145 @@ var native_contract_schema_generated_default = {
         "common"
       ]
     },
-    t51: {
+    t101: {
+      type: "object",
+      properties: {
+        text: {
+          type: "string"
+        },
+        fontSize: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        bold: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        italic: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        underline: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        color: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        link: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        }
+      },
+      required: [
+        "text"
+      ]
+    },
+    t100: {
+      type: "object",
+      properties: {
+        runs: {
+          type: "array",
+          items: {
+            ref: "t101"
+          }
+        }
+      },
+      required: [
+        "runs"
+      ]
+    },
+    t99: {
+      type: "object",
+      properties: {
+        paragraphs: {
+          type: "array",
+          items: {
+            ref: "t100"
+          }
+        }
+      },
+      required: [
+        "paragraphs"
+      ]
+    },
+    t98: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string"
+        },
+        title: {
+          type: "string"
+        },
+        enabled: {
+          type: "boolean"
+        },
+        mode: {
+          anyOf: [
+            {
+              const: "always"
+            },
+            {
+              const: "once"
+            }
+          ]
+        },
+        content: {
+          ref: "t99"
+        }
+      },
+      required: [
+        "id",
+        "title",
+        "enabled",
+        "mode",
+        "content"
+      ]
+    },
+    t97: {
+      type: "object",
+      properties: {
+        items: {
+          type: "array",
+          items: {
+            ref: "t98"
+          }
+        }
+      },
+      required: [
+        "items"
+      ]
+    },
+    t53: {
       type: "object",
       properties: {
         schemaVersion: {
@@ -18405,35 +18804,56 @@ var native_contract_schema_generated_default = {
         worlds: {
           type: "array",
           items: {
-            ref: "t52"
+            ref: "t54"
           }
         },
         buttons: {
-          ref: "t57"
+          ref: "t59"
         },
         sources: {
           anyOf: [
             {
-              ref: "t64"
+              ref: "t66"
             },
             {
-              ref: "t69"
+              ref: "t71"
             }
           ]
         },
         modules: {
-          ref: "t74"
+          ref: "t76"
         },
         review: {
-          ref: "t77"
+          ref: "t79"
         },
         preferences: {
-          ref: "t80"
+          ref: "t82"
         },
         navigation: {
           anyOf: [
             {
-              ref: "t87"
+              ref: "t90"
+            }
+          ]
+        },
+        workflowAvailability: {
+          anyOf: [
+            {
+              ref: "t60"
+            }
+          ]
+        },
+        announcements: {
+          anyOf: [
+            {
+              ref: "t97"
+            }
+          ]
+        },
+        about: {
+          anyOf: [
+            {
+              ref: "t99"
             }
           ]
         }
@@ -18448,7 +18868,7 @@ var native_contract_schema_generated_default = {
         "preferences"
       ]
     },
-    t95: {
+    t103: {
       type: "object",
       properties: {
         library: {
@@ -18467,13 +18887,13 @@ var native_contract_schema_generated_default = {
         "manifestSha256"
       ]
     },
-    t94: {
+    t102: {
       type: "object",
       properties: {
         iconLibraries: {
           type: "array",
           items: {
-            ref: "t95"
+            ref: "t103"
           }
         }
       },
@@ -18481,7 +18901,7 @@ var native_contract_schema_generated_default = {
         "iconLibraries"
       ]
     },
-    t97: {
+    t105: {
       type: "object",
       properties: {
         class: {
@@ -18515,7 +18935,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t98: {
+    t106: {
       type: "object",
       properties: {
         fields: {
@@ -18526,6 +18946,16 @@ var native_contract_schema_generated_default = {
         },
         card: {
           type: "boolean"
+        },
+        search: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
         }
       },
       required: [
@@ -18534,7 +18964,7 @@ var native_contract_schema_generated_default = {
         "card"
       ]
     },
-    t99: {
+    t107: {
       type: "object",
       properties: {
         fields: {
@@ -18576,11 +19006,21 @@ var native_contract_schema_generated_default = {
               const: true
             }
           ]
+        },
+        search: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
         }
       },
       required: []
     },
-    t100: {
+    t108: {
       type: "object",
       properties: {
         fields: {
@@ -18642,7 +19082,7 @@ var native_contract_schema_generated_default = {
         "card"
       ]
     },
-    t102: {
+    t110: {
       type: "object",
       properties: {
         kind: {
@@ -18653,7 +19093,7 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t103: {
+    t111: {
       type: "object",
       properties: {
         kind: {
@@ -18678,7 +19118,7 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t104: {
+    t112: {
       type: "object",
       properties: {
         kind: {
@@ -18714,7 +19154,7 @@ var native_contract_schema_generated_default = {
         "scope"
       ]
     },
-    t105: {
+    t113: {
       type: "object",
       properties: {
         kind: {
@@ -18733,7 +19173,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t106: {
+    t114: {
       type: "object",
       properties: {
         kind: {
@@ -18755,7 +19195,7 @@ var native_contract_schema_generated_default = {
         "values"
       ]
     },
-    t107: {
+    t115: {
       type: "object",
       properties: {
         kind: {
@@ -18774,15 +19214,15 @@ var native_contract_schema_generated_default = {
         "present"
       ]
     },
-    t109: {
+    t117: {
       type: "object",
       properties: {},
       required: [],
       additionalProperties: {
-        ref: "t108"
+        ref: "t116"
       }
     },
-    t108: {
+    t116: {
       type: "object",
       properties: {
         type: {
@@ -18809,7 +19249,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t108"
+                ref: "t116"
               }
             }
           ]
@@ -18817,7 +19257,7 @@ var native_contract_schema_generated_default = {
         properties: {
           anyOf: [
             {
-              ref: "t109"
+              ref: "t117"
             }
           ]
         },
@@ -18834,7 +19274,7 @@ var native_contract_schema_generated_default = {
         items: {
           anyOf: [
             {
-              ref: "t108"
+              ref: "t116"
             }
           ]
         },
@@ -18892,7 +19332,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t110: {
+    t118: {
       type: "object",
       properties: {
         registryKey: {
@@ -18910,7 +19350,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t111: {
+    t119: {
       type: "object",
       properties: {
         workflow: {
@@ -18956,7 +19396,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t112: {
+    t120: {
       type: "object",
       properties: {
         classCode: {
@@ -18978,7 +19418,7 @@ var native_contract_schema_generated_default = {
         "matchField"
       ]
     },
-    t101: {
+    t109: {
       type: "object",
       properties: {
         fieldId: {
@@ -19081,22 +19521,22 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t102"
+                    ref: "t110"
                   },
                   {
-                    ref: "t103"
+                    ref: "t111"
                   },
                   {
-                    ref: "t104"
+                    ref: "t112"
                   },
                   {
-                    ref: "t105"
+                    ref: "t113"
                   },
                   {
-                    ref: "t106"
+                    ref: "t114"
                   },
                   {
-                    ref: "t107"
+                    ref: "t115"
                   }
                 ]
               }
@@ -19114,7 +19554,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t42"
+                ref: "t44"
               }
             }
           ]
@@ -19129,7 +19569,7 @@ var native_contract_schema_generated_default = {
         optionTable: {
           anyOf: [
             {
-              ref: "t48"
+              ref: "t50"
             }
           ]
         },
@@ -19184,14 +19624,14 @@ var native_contract_schema_generated_default = {
         valueSchema: {
           anyOf: [
             {
-              ref: "t108"
+              ref: "t116"
             }
           ]
         },
         optionSource: {
           anyOf: [
             {
-              ref: "t110"
+              ref: "t118"
             }
           ]
         },
@@ -19223,14 +19663,14 @@ var native_contract_schema_generated_default = {
         scenes: {
           anyOf: [
             {
-              ref: "t111"
+              ref: "t119"
             }
           ]
         },
         reference: {
           anyOf: [
             {
-              ref: "t112"
+              ref: "t120"
             }
           ]
         },
@@ -19265,7 +19705,7 @@ var native_contract_schema_generated_default = {
         "description"
       ]
     },
-    t114: {
+    t122: {
       type: "object",
       properties: {
         enabled: {
@@ -19311,6 +19751,23 @@ var native_contract_schema_generated_default = {
               const: "allMembers"
             }
           ]
+        },
+        allowIndependentDisplay: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        floorViewMinZoom: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
         }
       },
       required: [
@@ -19318,7 +19775,7 @@ var native_contract_schema_generated_default = {
         "role"
       ]
     },
-    t118: {
+    t126: {
       type: "object",
       properties: {
         path: {
@@ -19337,11 +19794,11 @@ var native_contract_schema_generated_default = {
         "key"
       ]
     },
-    t117: {
+    t125: {
       type: "object",
       properties: {
         source: {
-          ref: "t118"
+          ref: "t126"
         },
         fingerprint: {
           type: "string"
@@ -19359,7 +19816,7 @@ var native_contract_schema_generated_default = {
         "fingerprint"
       ]
     },
-    t116: {
+    t124: {
       type: "object",
       properties: {
         mode: {
@@ -19421,7 +19878,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t42"
+                ref: "t44"
               }
             }
           ]
@@ -19429,7 +19886,7 @@ var native_contract_schema_generated_default = {
         prefillAudit: {
           anyOf: [
             {
-              ref: "t117"
+              ref: "t125"
             }
           ]
         }
@@ -19438,7 +19895,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t119: {
+    t127: {
       type: "object",
       properties: {
         mode: {
@@ -19503,7 +19960,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t115: {
+    t123: {
       type: "object",
       properties: {
         enabled: {
@@ -19533,10 +19990,10 @@ var native_contract_schema_generated_default = {
           ]
         },
         subtitle: {
-          ref: "t116"
+          ref: "t124"
         },
         extension: {
-          ref: "t119"
+          ref: "t127"
         }
       },
       required: [
@@ -19546,27 +20003,40 @@ var native_contract_schema_generated_default = {
         "extension"
       ]
     },
-    t113: {
+    t121: {
       type: "object",
       properties: {
         structure: {
           anyOf: [
             {
-              ref: "t114"
+              ref: "t122"
             }
           ]
         },
         search: {
           anyOf: [
             {
-              ref: "t115"
+              ref: "t123"
             }
           ]
         }
       },
       required: []
     },
-    t122: {
+    t128: {
+      type: "object",
+      properties: {
+        structure: {
+          anyOf: [
+            {
+              ref: "t122"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t131: {
       type: "object",
       properties: {
         weight: {
@@ -19600,7 +20070,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t123: {
+    t132: {
       type: "object",
       properties: {
         zLevel: {
@@ -19625,7 +20095,7 @@ var native_contract_schema_generated_default = {
         "zLevel"
       ]
     },
-    t126: {
+    t135: {
       type: "object",
       properties: {
         kind: {
@@ -19698,7 +20168,7 @@ var native_contract_schema_generated_default = {
         "rounding"
       ]
     },
-    t125: {
+    t134: {
       type: "object",
       properties: {
         role: {
@@ -19743,7 +20213,7 @@ var native_contract_schema_generated_default = {
         metric: {
           anyOf: [
             {
-              ref: "t126"
+              ref: "t135"
             }
           ]
         },
@@ -19761,7 +20231,7 @@ var native_contract_schema_generated_default = {
         "hideWhenColliding"
       ]
     },
-    t124: {
+    t133: {
       type: "object",
       properties: {
         visible: {
@@ -19782,28 +20252,28 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t102"
+                ref: "t110"
               },
               {
-                ref: "t103"
+                ref: "t111"
               },
               {
-                ref: "t104"
+                ref: "t112"
               },
               {
-                ref: "t105"
+                ref: "t113"
               },
               {
-                ref: "t106"
+                ref: "t114"
               },
               {
-                ref: "t107"
+                ref: "t115"
               }
             ]
           }
         },
         collision: {
-          ref: "t125"
+          ref: "t134"
         }
       },
       required: [
@@ -19813,7 +20283,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t130: {
+    t139: {
       type: "object",
       properties: {
         min: {
@@ -19828,7 +20298,7 @@ var native_contract_schema_generated_default = {
         "max"
       ]
     },
-    t132: {
+    t141: {
       type: "object",
       properties: {
         kind: {
@@ -19917,7 +20387,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t134: {
+    t143: {
       type: "object",
       properties: {
         id: {
@@ -19939,16 +20409,16 @@ var native_contract_schema_generated_default = {
         condition: {
           anyOf: [
             {
-              ref: "t105"
+              ref: "t113"
             },
             {
-              ref: "t106"
+              ref: "t114"
             },
             {
-              ref: "t107"
+              ref: "t115"
             },
             {
-              ref: "t132"
+              ref: "t141"
             }
           ]
         }
@@ -19959,7 +20429,7 @@ var native_contract_schema_generated_default = {
         "condition"
       ]
     },
-    t135: {
+    t144: {
       type: "object",
       properties: {
         id: {
@@ -19974,7 +20444,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t133: {
+    t142: {
       type: "object",
       properties: {
         expression: {
@@ -19993,7 +20463,7 @@ var native_contract_schema_generated_default = {
         terms: {
           type: "array",
           items: {
-            ref: "t134"
+            ref: "t143"
           }
         },
         groups: {
@@ -20001,7 +20471,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t135"
+                ref: "t144"
               }
             }
           ]
@@ -20012,7 +20482,7 @@ var native_contract_schema_generated_default = {
         "terms"
       ]
     },
-    t131: {
+    t140: {
       type: "object",
       properties: {
         op: {
@@ -20033,19 +20503,19 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t105"
+                ref: "t113"
               },
               {
-                ref: "t106"
+                ref: "t114"
               },
               {
-                ref: "t107"
+                ref: "t115"
               },
               {
-                ref: "t131"
+                ref: "t140"
               },
               {
-                ref: "t132"
+                ref: "t141"
               }
             ]
           }
@@ -20053,7 +20523,7 @@ var native_contract_schema_generated_default = {
         formula: {
           anyOf: [
             {
-              ref: "t133"
+              ref: "t142"
             }
           ]
         }
@@ -20063,16 +20533,16 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t129: {
+    t138: {
       type: "object",
       properties: {
         zoom: {
-          ref: "t130"
+          ref: "t139"
         },
         fields: {
           anyOf: [
             {
-              ref: "t131"
+              ref: "t140"
             }
           ]
         }
@@ -20081,7 +20551,7 @@ var native_contract_schema_generated_default = {
         "zoom"
       ]
     },
-    t137: {
+    t146: {
       type: "object",
       properties: {
         enabled: {
@@ -20105,7 +20575,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         }
@@ -20116,7 +20586,7 @@ var native_contract_schema_generated_default = {
         "color"
       ]
     },
-    t138: {
+    t147: {
       type: "object",
       properties: {
         enabled: {
@@ -20140,7 +20610,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         },
@@ -20155,7 +20625,7 @@ var native_contract_schema_generated_default = {
         "showInner"
       ]
     },
-    t139: {
+    t148: {
       type: "object",
       properties: {
         x: {
@@ -20170,13 +20640,13 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t141: {
+    t150: {
       type: "object",
       properties: {
         halo: {
           anyOf: [
             {
-              ref: "t137"
+              ref: "t146"
             }
           ]
         },
@@ -20249,7 +20719,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         },
@@ -20268,7 +20738,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         },
@@ -20291,14 +20761,14 @@ var native_contract_schema_generated_default = {
         "fillOpacity"
       ]
     },
-    t140: {
+    t149: {
       type: "object",
       properties: {
         kind: {
           const: "shape"
         },
         shape: {
-          ref: "t141"
+          ref: "t150"
         }
       },
       required: [
@@ -20306,7 +20776,7 @@ var native_contract_schema_generated_default = {
         "shape"
       ]
     },
-    t145: {
+    t154: {
       type: "object",
       properties: {
         shape: {
@@ -20350,7 +20820,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         },
@@ -20369,7 +20839,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         },
@@ -20393,7 +20863,7 @@ var native_contract_schema_generated_default = {
         "strokeOpacity"
       ]
     },
-    t147: {
+    t156: {
       type: "object",
       properties: {
         mode: {
@@ -20449,7 +20919,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t148: {
+    t157: {
       type: "object",
       properties: {
         x: {
@@ -20464,14 +20934,14 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t146: {
+    t155: {
       type: "object",
       properties: {
         anchor: {
-          ref: "t147"
+          ref: "t156"
         },
         offsetPx: {
-          ref: "t148"
+          ref: "t157"
         }
       },
       required: [
@@ -20479,13 +20949,13 @@ var native_contract_schema_generated_default = {
         "offsetPx"
       ]
     },
-    t144: {
+    t153: {
       type: "object",
       properties: {
         halo: {
           anyOf: [
             {
-              ref: "t137"
+              ref: "t146"
             }
           ]
         },
@@ -20513,7 +20983,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         },
@@ -20523,12 +20993,12 @@ var native_contract_schema_generated_default = {
         plate: {
           anyOf: [
             {
-              ref: "t145"
+              ref: "t154"
             }
           ]
         },
         placement: {
-          ref: "t146"
+          ref: "t155"
         }
       },
       required: [
@@ -20540,14 +21010,14 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t143: {
+    t152: {
       type: "object",
       properties: {
         mode: {
           const: "single"
         },
         item: {
-          ref: "t144"
+          ref: "t153"
         }
       },
       required: [
@@ -20555,7 +21025,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t150: {
+    t159: {
       type: "object",
       properties: {
         value: {
@@ -20575,7 +21045,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         item: {
-          ref: "t144"
+          ref: "t153"
         }
       },
       required: [
@@ -20583,7 +21053,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t149: {
+    t158: {
       type: "object",
       properties: {
         mode: {
@@ -20595,7 +21065,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t150"
+            ref: "t159"
           }
         }
       },
@@ -20605,7 +21075,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t142: {
+    t151: {
       type: "object",
       properties: {
         kind: {
@@ -20614,15 +21084,15 @@ var native_contract_schema_generated_default = {
         icon: {
           anyOf: [
             {
-              ref: "t143"
+              ref: "t152"
             },
             {
-              ref: "t149"
+              ref: "t158"
             }
           ]
         },
         fallback: {
-          ref: "t141"
+          ref: "t150"
         }
       },
       required: [
@@ -20631,7 +21101,7 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t154: {
+    t163: {
       type: "object",
       properties: {
         width: {
@@ -20646,19 +21116,19 @@ var native_contract_schema_generated_default = {
         "height"
       ]
     },
-    t153: {
+    t162: {
       type: "object",
       properties: {
         sizePx: {
-          ref: "t154"
+          ref: "t163"
         },
         placement: {
-          ref: "t146"
+          ref: "t155"
         },
         halo: {
           anyOf: [
             {
-              ref: "t137"
+              ref: "t146"
             }
           ]
         }
@@ -20668,14 +21138,14 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t152: {
+    t161: {
       type: "object",
       properties: {
         mode: {
           const: "fixed"
         },
         presentation: {
-          ref: "t153"
+          ref: "t162"
         },
         url: {
           type: "string"
@@ -20697,7 +21167,7 @@ var native_contract_schema_generated_default = {
         "url"
       ]
     },
-    t155: {
+    t164: {
       type: "object",
       properties: {
         mode: {
@@ -20707,7 +21177,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t153"
+          ref: "t162"
         }
       },
       required: [
@@ -20716,7 +21186,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t156: {
+    t165: {
       type: "object",
       properties: {
         mode: {
@@ -20729,7 +21199,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t153"
+          ref: "t162"
         }
       },
       required: [
@@ -20739,7 +21209,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t158: {
+    t167: {
       type: "object",
       properties: {
         value: {
@@ -20759,7 +21229,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         presentation: {
-          ref: "t153"
+          ref: "t162"
         },
         url: {
           type: "string"
@@ -20781,7 +21251,7 @@ var native_contract_schema_generated_default = {
         "url"
       ]
     },
-    t157: {
+    t166: {
       type: "object",
       properties: {
         mode: {
@@ -20793,7 +21263,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t158"
+            ref: "t167"
           }
         }
       },
@@ -20803,7 +21273,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t151: {
+    t160: {
       type: "object",
       properties: {
         kind: {
@@ -20812,21 +21282,21 @@ var native_contract_schema_generated_default = {
         image: {
           anyOf: [
             {
-              ref: "t152"
+              ref: "t161"
             },
             {
-              ref: "t155"
+              ref: "t164"
             },
             {
-              ref: "t156"
+              ref: "t165"
             },
             {
-              ref: "t157"
+              ref: "t166"
             }
           ]
         },
         fallback: {
-          ref: "t141"
+          ref: "t150"
         }
       },
       required: [
@@ -20835,7 +21305,7 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t159: {
+    t168: {
       type: "object",
       properties: {
         source: {
@@ -20881,23 +21351,23 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t136: {
+    t145: {
       type: "object",
       properties: {
         halo: {
           anyOf: [
             {
-              ref: "t137"
+              ref: "t146"
             },
             {
-              ref: "t138"
+              ref: "t147"
             }
           ]
         },
         symbolOffsetPx: {
           anyOf: [
             {
-              ref: "t139"
+              ref: "t148"
             }
           ]
         },
@@ -20946,20 +21416,20 @@ var native_contract_schema_generated_default = {
         pointSymbol: {
           anyOf: [
             {
-              ref: "t140"
-            },
-            {
-              ref: "t142"
+              ref: "t149"
             },
             {
               ref: "t151"
+            },
+            {
+              ref: "t160"
             }
           ]
         },
         icon: {
           anyOf: [
             {
-              ref: "t159"
+              ref: "t168"
             }
           ]
         },
@@ -20992,7 +21462,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         },
@@ -21011,7 +21481,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         },
@@ -21074,7 +21544,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t162: {
+    t171: {
       type: "object",
       properties: {
         italic: {
@@ -21110,7 +21580,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t163: {
+    t172: {
       type: "object",
       properties: {
         lineHeightRatio: {
@@ -21140,7 +21610,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         },
@@ -21159,7 +21629,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         },
@@ -21178,7 +21648,7 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         },
@@ -21197,7 +21667,7 @@ var native_contract_schema_generated_default = {
         "strokeWidth"
       ]
     },
-    t161: {
+    t170: {
       type: "object",
       properties: {
         family: {
@@ -21234,7 +21704,7 @@ var native_contract_schema_generated_default = {
         modifiers: {
           anyOf: [
             {
-              ref: "t162"
+              ref: "t171"
             }
           ]
         },
@@ -21253,14 +21723,14 @@ var native_contract_schema_generated_default = {
               ref: "t15"
             },
             {
-              ref: "t17"
+              ref: "t19"
             }
           ]
         },
         pill: {
           anyOf: [
             {
-              ref: "t163"
+              ref: "t172"
             }
           ]
         }
@@ -21270,7 +21740,7 @@ var native_contract_schema_generated_default = {
         "size"
       ]
     },
-    t164: {
+    t173: {
       type: "object",
       properties: {},
       required: [],
@@ -21285,7 +21755,7 @@ var native_contract_schema_generated_default = {
         ]
       }
     },
-    t160: {
+    t169: {
       type: "object",
       properties: {
         visible: {
@@ -21294,7 +21764,7 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t161"
+              ref: "t170"
             }
           ]
         },
@@ -21385,7 +21855,7 @@ var native_contract_schema_generated_default = {
         fallbackValueFormats: {
           anyOf: [
             {
-              ref: "t164"
+              ref: "t173"
             }
           ]
         },
@@ -21464,7 +21934,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         collision: {
-          ref: "t125"
+          ref: "t134"
         }
       },
       required: [
@@ -21472,7 +21942,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t166: {
+    t175: {
       type: "object",
       properties: {
         point: {
@@ -21528,18 +21998,18 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t165: {
+    t174: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t166"
+          ref: "t175"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t168: {
+    t177: {
       type: "object",
       properties: {
         mode: {
@@ -21562,7 +22032,7 @@ var native_contract_schema_generated_default = {
         metric: {
           anyOf: [
             {
-              ref: "t126"
+              ref: "t135"
             }
           ]
         }
@@ -21571,7 +22041,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t167: {
+    t176: {
       type: "object",
       properties: {
         id: {
@@ -21582,22 +22052,22 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t102"
+                ref: "t110"
               },
               {
-                ref: "t103"
+                ref: "t111"
               },
               {
-                ref: "t104"
+                ref: "t112"
               },
               {
-                ref: "t105"
+                ref: "t113"
               },
               {
-                ref: "t106"
+                ref: "t114"
               },
               {
-                ref: "t107"
+                ref: "t115"
               }
             ]
           }
@@ -21621,35 +22091,35 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t136"
+              ref: "t145"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t160"
+              ref: "t169"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t123"
+              ref: "t132"
             }
           ]
         },
         priority: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t177"
             }
           ]
         },
         extensions: {
           anyOf: [
             {
-              ref: "t20"
+              ref: "t22"
             }
           ]
         }
@@ -21659,13 +22129,13 @@ var native_contract_schema_generated_default = {
         "when"
       ]
     },
-    t170: {
+    t179: {
       type: "object",
       properties: {},
       required: [],
       additionalProperties: {}
     },
-    t171: {
+    t180: {
       type: "object",
       properties: {
         preserveFallback: {
@@ -21688,55 +22158,55 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t169: {
+    t178: {
       type: "object",
       properties: {
         predicates: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         },
         visibility: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         },
         geometry: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         },
         symbol: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         },
         collision: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         },
         selection: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         },
@@ -21753,14 +22223,14 @@ var native_contract_schema_generated_default = {
         legacyRuntime: {
           anyOf: [
             {
-              ref: "t171"
+              ref: "t180"
             }
           ]
         }
       },
       required: []
     },
-    t128: {
+    t137: {
       type: "object",
       properties: {
         id: {
@@ -21779,7 +22249,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t129"
+              ref: "t138"
             }
           ]
         },
@@ -21816,35 +22286,35 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t136"
+              ref: "t145"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t160"
+              ref: "t169"
             }
           ]
         },
         interaction: {
           anyOf: [
             {
-              ref: "t165"
+              ref: "t174"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t123"
+              ref: "t132"
             }
           ]
         },
         extensions: {
           anyOf: [
             {
-              ref: "t20"
+              ref: "t22"
             }
           ]
         },
@@ -21853,7 +22323,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t167"
+                ref: "t176"
               }
             }
           ]
@@ -21861,7 +22331,7 @@ var native_contract_schema_generated_default = {
         advanced: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t178"
             }
           ]
         },
@@ -21901,7 +22371,7 @@ var native_contract_schema_generated_default = {
         priority: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t177"
             }
           ]
         }
@@ -21910,13 +22380,13 @@ var native_contract_schema_generated_default = {
         "id"
       ]
     },
-    t127: {
+    t136: {
       type: "object",
       properties: {
         rules: {
           type: "array",
           items: {
-            ref: "t128"
+            ref: "t137"
           }
         }
       },
@@ -21924,18 +22394,18 @@ var native_contract_schema_generated_default = {
         "rules"
       ]
     },
-    t172: {
+    t181: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t166"
+          ref: "t175"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t173: {
+    t182: {
       type: "object",
       properties: {
         ruleIds: {
@@ -21963,7 +22433,7 @@ var native_contract_schema_generated_default = {
         "specialLogicKeys"
       ]
     },
-    t121: {
+    t130: {
       type: "object",
       properties: {
         renderState: {
@@ -22002,38 +22472,38 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t122"
+              ref: "t131"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t123"
+              ref: "t132"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t124"
+              ref: "t133"
             }
           ]
         },
         zoomPriority: {
-          ref: "t127"
+          ref: "t136"
         },
         interaction: {
           anyOf: [
             {
-              ref: "t172"
+              ref: "t181"
             }
           ]
         },
         legacyDisplay: {
           anyOf: [
             {
-              ref: "t173"
+              ref: "t182"
             }
           ]
         }
@@ -22044,34 +22514,34 @@ var native_contract_schema_generated_default = {
         "zoomPriority"
       ]
     },
-    t120: {
+    t129: {
       type: "object",
       properties: {
         Point: {
           anyOf: [
             {
-              ref: "t121"
+              ref: "t130"
             }
           ]
         },
         LineString: {
           anyOf: [
             {
-              ref: "t121"
+              ref: "t130"
             }
           ]
         },
         Polygon: {
           anyOf: [
             {
-              ref: "t121"
+              ref: "t130"
             }
           ]
         }
       },
       required: []
     },
-    t174: {
+    t183: {
       type: "object",
       properties: {
         enabled: {
@@ -22106,7 +22576,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t177: {
+    t186: {
       type: "object",
       properties: {
         nodeId: {
@@ -22121,7 +22591,7 @@ var native_contract_schema_generated_default = {
         "fieldId"
       ]
     },
-    t178: {
+    t187: {
       type: "object",
       properties: {
         nodeId: {
@@ -22136,7 +22606,7 @@ var native_contract_schema_generated_default = {
         "itemId"
       ]
     },
-    t179: {
+    t188: {
       type: "object",
       properties: {
         colorSource: {
@@ -22231,7 +22701,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t180: {
+    t189: {
       type: "object",
       properties: {
         targetRole: {
@@ -22245,6 +22715,13 @@ var native_contract_schema_generated_default = {
           anyOf: [
             {
               ref: "t16"
+            }
+          ]
+        },
+        targetScope: {
+          anyOf: [
+            {
+              ref: "t17"
             }
           ]
         },
@@ -22302,7 +22779,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t176: {
+    t185: {
       type: "object",
       properties: {
         id: {
@@ -22311,14 +22788,14 @@ var native_contract_schema_generated_default = {
         fieldBinding: {
           anyOf: [
             {
-              ref: "t177"
+              ref: "t186"
             }
           ]
         },
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t177"
+              ref: "t186"
             }
           ]
         },
@@ -22332,7 +22809,7 @@ var native_contract_schema_generated_default = {
         optionTable: {
           anyOf: [
             {
-              ref: "t48"
+              ref: "t50"
             }
           ]
         },
@@ -22352,14 +22829,14 @@ var native_contract_schema_generated_default = {
         inheritFrom: {
           anyOf: [
             {
-              ref: "t178"
+              ref: "t187"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t117"
+              ref: "t125"
             }
           ]
         },
@@ -22466,7 +22943,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t42"
+                ref: "t44"
               }
             }
           ]
@@ -22474,14 +22951,14 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t188"
             }
           ]
         },
         relation: {
           anyOf: [
             {
-              ref: "t180"
+              ref: "t189"
             }
           ]
         }
@@ -22493,7 +22970,7 @@ var native_contract_schema_generated_default = {
         "renderer"
       ]
     },
-    t181: {
+    t190: {
       type: "object",
       properties: {
         enabled: {
@@ -22563,7 +23040,7 @@ var native_contract_schema_generated_default = {
         "includeSystem"
       ]
     },
-    t175: {
+    t184: {
       type: "object",
       properties: {
         mode: {
@@ -22572,13 +23049,13 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t176"
+            ref: "t185"
           }
         },
         remaining: {
           anyOf: [
             {
-              ref: "t181"
+              ref: "t190"
             }
           ]
         }
@@ -22588,7 +23065,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t182: {
+    t191: {
       type: "object",
       properties: {
         mode: {
@@ -22600,7 +23077,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         }
@@ -22610,7 +23087,7 @@ var native_contract_schema_generated_default = {
         "layoutId"
       ]
     },
-    t183: {
+    t192: {
       type: "object",
       properties: {
         mode: {
@@ -22622,7 +23099,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         }
@@ -22632,7 +23109,7 @@ var native_contract_schema_generated_default = {
         "componentKey"
       ]
     },
-    t184: {
+    t193: {
       type: "object",
       properties: {
         classCode: {
@@ -22661,7 +23138,7 @@ var native_contract_schema_generated_default = {
         source: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         }
@@ -22671,7 +23148,7 @@ var native_contract_schema_generated_default = {
         "displayRuleIds"
       ]
     },
-    t96: {
+    t104: {
       type: "object",
       properties: {
         nodeId: {
@@ -22683,7 +23160,7 @@ var native_contract_schema_generated_default = {
         classificationLabels: {
           anyOf: [
             {
-              ref: "t97"
+              ref: "t105"
             }
           ]
         },
@@ -22696,34 +23173,48 @@ var native_contract_schema_generated_default = {
         inheritDown: {
           anyOf: [
             {
-              ref: "t98"
+              ref: "t106"
             }
           ]
         },
         receiveFromParent: {
           anyOf: [
             {
-              ref: "t99"
+              ref: "t107"
             }
           ]
         },
         policies: {
           anyOf: [
             {
-              ref: "t100"
+              ref: "t108"
             }
           ]
         },
         fields: {
           type: "array",
           items: {
-            ref: "t101"
+            ref: "t109"
           }
         },
         fieldSettings: {
           anyOf: [
             {
-              ref: "t113"
+              ref: "t121"
+            }
+          ]
+        },
+        displaySettings: {
+          anyOf: [
+            {
+              ref: "t128"
+            }
+          ]
+        },
+        searchSettings: {
+          anyOf: [
+            {
+              ref: "t123"
             }
           ]
         },
@@ -22741,32 +23232,32 @@ var native_contract_schema_generated_default = {
           ]
         },
         geometryProfiles: {
-          ref: "t120"
+          ref: "t129"
         },
         containment: {
           anyOf: [
             {
-              ref: "t174"
+              ref: "t183"
             }
           ]
         },
         card: {
           anyOf: [
             {
-              ref: "t175"
+              ref: "t184"
             },
             {
-              ref: "t182"
+              ref: "t191"
             },
             {
-              ref: "t183"
+              ref: "t192"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t184"
+              ref: "t193"
             }
           ]
         }
@@ -22779,7 +23270,7 @@ var native_contract_schema_generated_default = {
         "geometryProfiles"
       ]
     },
-    t186: {
+    t195: {
       type: "object",
       properties: {
         classification: {
@@ -22794,7 +23285,7 @@ var native_contract_schema_generated_default = {
         "referenceField"
       ]
     },
-    t185: {
+    t194: {
       type: "object",
       properties: {
         id: {
@@ -22804,10 +23295,10 @@ var native_contract_schema_generated_default = {
           ref: "t1"
         },
         host: {
-          ref: "t186"
+          ref: "t195"
         },
         member: {
-          ref: "t186"
+          ref: "t195"
         },
         memberSelectorField: {
           anyOf: [
@@ -22842,7 +23333,7 @@ var native_contract_schema_generated_default = {
         "profile"
       ]
     },
-    t189: {
+    t198: {
       type: "object",
       properties: {
         slot: {
@@ -22857,7 +23348,7 @@ var native_contract_schema_generated_default = {
         "target"
       ]
     },
-    t188: {
+    t197: {
       type: "object",
       properties: {
         enabled: {
@@ -22880,12 +23371,19 @@ var native_contract_schema_generated_default = {
             }
           ]
         },
+        range: {
+          anyOf: [
+            {
+              ref: "t17"
+            }
+          ]
+        },
         backfill: {
           anyOf: [
             {
               type: "array",
               items: {
-                ref: "t189"
+                ref: "t198"
               }
             }
           ]
@@ -22895,7 +23393,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t190: {
+    t199: {
       type: "object",
       properties: {
         required: {
@@ -22906,7 +23404,7 @@ var native_contract_schema_generated_default = {
         "required"
       ]
     },
-    t194: {
+    t203: {
       type: "object",
       properties: {
         placeholder: {
@@ -22919,7 +23417,7 @@ var native_contract_schema_generated_default = {
         reference: {
           anyOf: [
             {
-              ref: "t112"
+              ref: "t120"
             }
           ]
         },
@@ -22976,7 +23474,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t42"
+                ref: "t44"
               }
             }
           ]
@@ -23021,22 +23519,22 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t102"
+                    ref: "t110"
                   },
                   {
-                    ref: "t103"
+                    ref: "t111"
                   },
                   {
-                    ref: "t104"
+                    ref: "t112"
                   },
                   {
-                    ref: "t105"
+                    ref: "t113"
                   },
                   {
-                    ref: "t106"
+                    ref: "t114"
                   },
                   {
-                    ref: "t107"
+                    ref: "t115"
                   }
                 ]
               }
@@ -23074,7 +23572,7 @@ var native_contract_schema_generated_default = {
         "input"
       ]
     },
-    t193: {
+    t202: {
       type: "object",
       properties: {
         nodeId: {
@@ -23084,7 +23582,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         snapshot: {
-          ref: "t194"
+          ref: "t203"
         },
         overrides: {
           type: "array",
@@ -23100,7 +23598,7 @@ var native_contract_schema_generated_default = {
         "overrides"
       ]
     },
-    t195: {
+    t204: {
       type: "object",
       properties: {
         token: {
@@ -23166,7 +23664,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t195"
+                ref: "t204"
               }
             }
           ]
@@ -23176,7 +23674,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t195"
+                ref: "t204"
               }
             }
           ]
@@ -23187,7 +23685,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t196: {
+    t205: {
       type: "object",
       properties: {
         registryKey: {
@@ -23198,7 +23696,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t198: {
+    t207: {
       type: "object",
       properties: {
         matcher: {
@@ -23237,11 +23735,18 @@ var native_contract_schema_generated_default = {
         "maxResults"
       ]
     },
-    t197: {
+    t206: {
       type: "object",
       properties: {
         target: {
           ref: "t16"
+        },
+        scope: {
+          anyOf: [
+            {
+              ref: "t17"
+            }
+          ]
         },
         targetRole: {
           anyOf: [
@@ -23364,7 +23869,7 @@ var native_contract_schema_generated_default = {
         coarse: {
           anyOf: [
             {
-              ref: "t198"
+              ref: "t207"
             }
           ]
         }
@@ -23374,27 +23879,27 @@ var native_contract_schema_generated_default = {
         "cacheScope"
       ]
     },
-    t200: {
+    t209: {
       type: "object",
       properties: {
         optionTable: {
           anyOf: [
             {
-              ref: "t48"
+              ref: "t50"
             }
           ]
         },
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t177"
+              ref: "t186"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t117"
+              ref: "t125"
             }
           ]
         },
@@ -23454,7 +23959,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t42"
+                ref: "t44"
               }
             }
           ]
@@ -23484,7 +23989,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t197"
+              ref: "t206"
             }
           ]
         },
@@ -23523,7 +24028,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t193"
+              ref: "t202"
             }
           ]
         },
@@ -23532,7 +24037,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t195"
+                ref: "t204"
               }
             }
           ]
@@ -23560,13 +24065,13 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t199: {
+    t208: {
       type: "object",
       properties: {
         itemFields: {
           type: "array",
           items: {
-            ref: "t200"
+            ref: "t209"
           }
         },
         storage: {
@@ -23608,7 +24113,7 @@ var native_contract_schema_generated_default = {
         "itemFields"
       ]
     },
-    t201: {
+    t210: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -23623,27 +24128,27 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t192: {
+    t201: {
       type: "object",
       properties: {
         optionTable: {
           anyOf: [
             {
-              ref: "t48"
+              ref: "t50"
             }
           ]
         },
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t177"
+              ref: "t186"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t117"
+              ref: "t125"
             }
           ]
         },
@@ -23745,7 +24250,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t193"
+              ref: "t202"
             }
           ]
         },
@@ -23786,7 +24291,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t195"
+                ref: "t204"
               }
             }
           ]
@@ -23796,7 +24301,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t42"
+                ref: "t44"
               }
             }
           ]
@@ -23811,7 +24316,7 @@ var native_contract_schema_generated_default = {
         optionSource: {
           anyOf: [
             {
-              ref: "t196"
+              ref: "t205"
             }
           ]
         },
@@ -23833,7 +24338,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t197"
+              ref: "t206"
             }
           ]
         },
@@ -23864,7 +24369,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t195"
+              ref: "t204"
             }
           ]
         },
@@ -23881,14 +24386,14 @@ var native_contract_schema_generated_default = {
         group: {
           anyOf: [
             {
-              ref: "t199"
+              ref: "t208"
             }
           ]
         },
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t201"
+              ref: "t210"
             }
           ]
         },
@@ -23902,7 +24407,7 @@ var native_contract_schema_generated_default = {
         legacyBlock: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         }
@@ -23914,7 +24419,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t202: {
+    t211: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -23929,7 +24434,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t204: {
+    t213: {
       type: "object",
       properties: {
         id: {
@@ -23954,7 +24459,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t195"
+              ref: "t204"
             }
           ]
         }
@@ -23965,7 +24470,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t205: {
+    t214: {
       type: "object",
       properties: {
         outputId: {
@@ -23991,7 +24496,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t203: {
+    t212: {
       type: "object",
       properties: {
         enabledFromThisPage: {
@@ -24043,7 +24548,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t204"
+                ref: "t213"
               }
             }
           ]
@@ -24093,7 +24598,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t205"
+                ref: "t214"
               }
             }
           ]
@@ -24101,7 +24606,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t191: {
+    t200: {
       type: "object",
       properties: {
         id: {
@@ -24141,7 +24646,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t192"
+                ref: "t201"
               }
             }
           ]
@@ -24186,7 +24691,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t195"
+              ref: "t204"
             }
           ]
         },
@@ -24200,21 +24705,21 @@ var native_contract_schema_generated_default = {
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t202"
+              ref: "t211"
             }
           ]
         },
         drawing: {
           anyOf: [
             {
-              ref: "t203"
+              ref: "t212"
             }
           ]
         },
         legacyPage: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         }
@@ -24225,7 +24730,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t208: {
+    t217: {
       type: "object",
       properties: {
         id: {
@@ -24243,6 +24748,16 @@ var native_contract_schema_generated_default = {
         },
         path: {
           ref: "t16"
+        },
+        condition: {
+          anyOf: [
+            {
+              const: "include"
+            },
+            {
+              const: "exclude"
+            }
+          ]
         }
       },
       required: [
@@ -24251,13 +24766,13 @@ var native_contract_schema_generated_default = {
         "path"
       ]
     },
-    t207: {
+    t216: {
       type: "object",
       properties: {
         selectors: {
           type: "array",
           items: {
-            ref: "t208"
+            ref: "t217"
           }
         }
       },
@@ -24265,7 +24780,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t209: {
+    t218: {
       type: "object",
       properties: {
         id: {
@@ -24280,7 +24795,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t195"
+              ref: "t204"
             }
           ]
         }
@@ -24291,7 +24806,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t210: {
+    t219: {
       type: "object",
       properties: {
         selected: {
@@ -24332,7 +24847,7 @@ var native_contract_schema_generated_default = {
         "selected"
       ]
     },
-    t206: {
+    t215: {
       type: "object",
       properties: {
         id: {
@@ -24348,25 +24863,25 @@ var native_contract_schema_generated_default = {
         classificationGroup: {
           anyOf: [
             {
-              ref: "t207"
+              ref: "t216"
             }
           ]
         },
         assignments: {
           type: "array",
           items: {
-            ref: "t209"
+            ref: "t218"
           }
         },
         when: {
           anyOf: [
             {
-              ref: "t195"
+              ref: "t204"
             }
           ]
         },
         geometry: {
-          ref: "t210"
+          ref: "t219"
         }
       },
       required: [
@@ -24375,13 +24890,13 @@ var native_contract_schema_generated_default = {
         "geometry"
       ]
     },
-    t213: {
+    t222: {
       type: "object",
       properties: {
         selectors: {
           type: "array",
           items: {
-            ref: "t208"
+            ref: "t217"
           }
         }
       },
@@ -24389,7 +24904,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t212: {
+    t221: {
       type: "object",
       properties: {
         role: {
@@ -24421,7 +24936,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         classificationGroup: {
-          ref: "t213"
+          ref: "t222"
         }
       },
       required: [
@@ -24429,7 +24944,7 @@ var native_contract_schema_generated_default = {
         "classificationGroup"
       ]
     },
-    t215: {
+    t224: {
       type: "object",
       properties: {
         workflowId: {
@@ -24444,14 +24959,14 @@ var native_contract_schema_generated_default = {
         "bindingId"
       ]
     },
-    t214: {
+    t223: {
       type: "object",
       properties: {
         bindingId: {
           type: "string"
         },
         source: {
-          ref: "t215"
+          ref: "t224"
         },
         classificationGroup: {
           type: "undefined"
@@ -24465,13 +24980,13 @@ var native_contract_schema_generated_default = {
         "source"
       ]
     },
-    t217: {
+    t226: {
       type: "object",
       properties: {
         selectors: {
           type: "array",
           items: {
-            ref: "t208"
+            ref: "t217"
           }
         }
       },
@@ -24479,9 +24994,16 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t218: {
+    t227: {
       type: "object",
       properties: {
+        scope: {
+          anyOf: [
+            {
+              ref: "t17"
+            }
+          ]
+        },
         queryFields: {
           anyOf: [
             {
@@ -24558,7 +25080,7 @@ var native_contract_schema_generated_default = {
         "cacheScope"
       ]
     },
-    t216: {
+    t225: {
       type: "object",
       properties: {
         bindingId: {
@@ -24568,10 +25090,10 @@ var native_contract_schema_generated_default = {
           type: "undefined"
         },
         classificationGroup: {
-          ref: "t217"
+          ref: "t226"
         },
         search: {
-          ref: "t218"
+          ref: "t227"
         }
       },
       required: [
@@ -24580,7 +25102,7 @@ var native_contract_schema_generated_default = {
         "search"
       ]
     },
-    t211: {
+    t220: {
       type: "object",
       properties: {
         componentKey: {
@@ -24631,7 +25153,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t212"
+                ref: "t221"
               }
             }
           ]
@@ -24643,10 +25165,10 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t214"
+                    ref: "t223"
                   },
                   {
-                    ref: "t216"
+                    ref: "t225"
                   }
                 ]
               }
@@ -24659,7 +25181,7 @@ var native_contract_schema_generated_default = {
         "reason"
       ]
     },
-    t219: {
+    t228: {
       type: "object",
       properties: {
         runtimeMode: {
@@ -24679,21 +25201,21 @@ var native_contract_schema_generated_default = {
         output: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         },
         source: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t179"
             }
           ]
         }
       },
       required: []
     },
-    t187: {
+    t196: {
       type: "object",
       properties: {
         id: {
@@ -24725,14 +25247,14 @@ var native_contract_schema_generated_default = {
         editor: {
           anyOf: [
             {
-              ref: "t188"
+              ref: "t197"
             }
           ]
         },
         actor: {
           anyOf: [
             {
-              ref: "t190"
+              ref: "t199"
             }
           ]
         },
@@ -24746,13 +25268,13 @@ var native_contract_schema_generated_default = {
         steps: {
           type: "array",
           items: {
-            ref: "t191"
+            ref: "t200"
           }
         },
         outputs: {
           type: "array",
           items: {
-            ref: "t206"
+            ref: "t215"
           }
         },
         assignments: {
@@ -24760,7 +25282,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t209"
+                ref: "t218"
               }
             }
           ]
@@ -24768,14 +25290,14 @@ var native_contract_schema_generated_default = {
         external: {
           anyOf: [
             {
-              ref: "t211"
+              ref: "t220"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t219"
+              ref: "t228"
             }
           ]
         }
@@ -24788,7 +25310,7 @@ var native_contract_schema_generated_default = {
         "outputs"
       ]
     },
-    t221: {
+    t230: {
       type: "object",
       properties: {
         kind: {
@@ -24845,7 +25367,7 @@ var native_contract_schema_generated_default = {
         "status"
       ]
     },
-    t220: {
+    t229: {
       type: "object",
       properties: {
         schemaVersion: {
@@ -24861,7 +25383,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t221"
+            ref: "t230"
           }
         },
         generatedAt: {
@@ -24926,6 +25448,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: 17
+            },
+            {
+              const: 18
             }
           ]
         },
@@ -24956,14 +25481,14 @@ var native_contract_schema_generated_default = {
           ]
         },
         registries: {
-          ref: "t40"
+          ref: "t42"
         },
         lookupTables: {
           anyOf: [
             {
               type: "array",
               items: {
-                ref: "t45"
+                ref: "t47"
               }
             }
           ]
@@ -24971,21 +25496,21 @@ var native_contract_schema_generated_default = {
         application: {
           anyOf: [
             {
-              ref: "t51"
+              ref: "t53"
             }
           ]
         },
         resources: {
           anyOf: [
             {
-              ref: "t94"
+              ref: "t102"
             }
           ]
         },
         nodes: {
           type: "array",
           items: {
-            ref: "t96"
+            ref: "t104"
           }
         },
         contextBindings: {
@@ -24993,7 +25518,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t185"
+                ref: "t194"
               }
             }
           ]
@@ -25001,13 +25526,13 @@ var native_contract_schema_generated_default = {
         workflows: {
           type: "array",
           items: {
-            ref: "t187"
+            ref: "t196"
           }
         },
         parity: {
           anyOf: [
             {
-              ref: "t220"
+              ref: "t229"
             }
           ]
         }
@@ -25065,6 +25590,23 @@ function validateNativeStructure(value) {
   if (issues.length) return issues;
   const config = value;
   const c15 = config.contractRevision >= 15;
+  if (config.contractRevision < 18) {
+    if (config.application?.workflowAvailability || config.application?.announcements || config.application?.about || config.application?.preferences.pictureControls) issues.push({ path: "config/application", message: "\u516C\u544A\u3001\u5173\u4E8E\u3001\u4E16\u754C\u5DE5\u4F5C\u6D41\u548C\u56FE\u7247\u63A7\u5236\u6700\u4F4E\u8981\u6C42 c18\u3002" });
+    for (const node of config.nodes) if (node.displaySettings || node.searchSettings || node.inheritDown?.search !== void 0 || node.receiveFromParent?.search !== void 0) issues.push({ path: "config/nodes/" + node.nodeId, message: "\u72EC\u7ACB\u641C\u7D22\u4E0E\u7ED3\u6784\u8F6F\u7EE7\u627F\u6700\u4F4E\u8981\u6C42 c18\u3002" });
+    const scan = (value2, path2) => {
+      if (!value2 || typeof value2 !== "object") return;
+      if (Array.isArray(value2)) {
+        value2.forEach((item, index) => scan(item, path2 + "/" + index));
+        return;
+      }
+      for (const [key2, item] of Object.entries(value2)) {
+        if (["legacy", "defaultValue", "valueSchema", "parity"].includes(key2)) continue;
+        if (key2 === "condition" && ["include", "exclude"].includes(String(item)) || ["targetScope", "range", "scope"].includes(key2) && item && typeof item === "object" && "rows" in item) issues.push({ path: path2 + "/" + key2, message: "\u5206\u7C7B\u52A0\u51CF\u8303\u56F4\u6700\u4F4E\u8981\u6C42 c18\u3002" });
+        else scan(item, path2 + "/" + key2);
+      }
+    };
+    scan(config, "config");
+  }
   for (const node of config.nodes) for (const [geometry, profile] of Object.entries(node.geometryProfiles)) if (profile) {
     const at = "config/nodes/" + node.nodeId + "/geometryProfiles/" + geometry;
     if (c15 && (profile.anchor !== void 0 || profile.interaction !== void 0)) issues.push({ path: at, message: "c15 \u951A\u70B9\u4E0E\u4EA4\u4E92\u5FC5\u987B\u4F4D\u4E8E\u6BCF\u6761\u6E32\u67D3\u89C4\u5219\uFF0C\u4E0D\u80FD\u6B8B\u7559\u51E0\u4F55\u7EA7\u6743\u5A01\u8BBE\u7F6E\u3002" });
@@ -25080,10 +25622,11 @@ function validateNativeStructure(value) {
     }
   }
   for (const workflow of config.workflows) {
+    if (config.contractRevision >= 18 && workflow.editor?.scope) issues.push({ path: "config/workflows/" + workflow.id + "/editor/scope", message: "c18 \u7F16\u8F91\u4F5C\u7528\u8303\u56F4\u5FC5\u987B\u4F7F\u7528\u663E\u5F0F\u5206\u7C7B\u52A0\u51CF range\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7 scope\u3002" });
     if (config.contractRevision < 16 && workflow.external && (workflow.external.roleBindings !== void 0 || workflow.external.referenceBindings !== void 0)) issues.push({ path: "config/workflows/" + workflow.id + "/external", message: "\u89D2\u8272\u4E0E\u5F15\u7528\u7ED1\u5B9A\u6700\u4F4E\u8981\u6C42 c16\u3002" });
     if (config.contractRevision >= 16 && workflow.mode === "external" && (!workflow.external?.roleBindings || workflow.external.coveredClassifications !== void 0)) issues.push({ path: "config/workflows/" + workflow.id + "/external", message: "c16 \u4E13\u7528\u6D41\u7A0B\u5FC5\u987B\u4F7F\u7528\u660E\u786E\u89D2\u8272\u7ED1\u5B9A\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u8303\u56F4\u526F\u672C\u3002" });
     if (config.contractRevision >= 16 && workflow.mode === "external" && workflow.target !== void 0) issues.push({ path: "config/workflows/" + workflow.id + "/target", message: "c16 \u4E13\u7528\u8303\u56F4\u4F7F\u7528 roleBindings \u4E0E editor.scope\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7 target \u526F\u672C\u3002" });
-    if (config.contractRevision >= 16 && workflow.external?.purpose === "edit" && !workflow.editor?.scope) issues.push({ path: "config/workflows/" + workflow.id + "/editor/scope", message: "c16 \u4E13\u7528\u7F16\u8F91\u9700\u8981\u660E\u786E\u7684\u8DEF\u7531\u8303\u56F4\u3002" });
+    if (config.contractRevision >= 16 && workflow.external?.purpose === "edit" && !workflow.editor?.scope && !workflow.editor?.range) issues.push({ path: "config/workflows/" + workflow.id + "/editor/scope", message: "c16 \u4E13\u7528\u7F16\u8F91\u9700\u8981\u660E\u786E\u7684\u8DEF\u7531\u8303\u56F4\u3002" });
     if (c15 && workflow.mode === "composed" && workflow.target) issues.push({ path: "config/workflows/" + workflow.id + "/target", message: "c15 \u5206\u7C7B\u7EC4\u4E0D\u80FD\u4FDD\u7559\u65E7 target \u526F\u672C\u3002" });
     if (c15) {
       for (const step of workflow.steps) for (const control of step.controls ?? []) if (control.kind === "classificationPicker" && control.classificationScope) issues.push({ path: "config/workflows/" + workflow.id + "/controls/" + control.id, message: "c15 \u5206\u7C7B\u63A7\u4EF6\u7531 outputId \u89E3\u6790\u5206\u7C7B\u7EC4\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u8303\u56F4\u526F\u672C\u3002" });
@@ -25178,6 +25721,7 @@ function normalizeSearchProfile(search) {
   const displayTemplate = search.displayTemplate?.trim() || (displayFields.length ? displayFields.map((field) => `{{${field}}}`).join(" ") : "{{ID}} ({{Name}})");
   return {
     target: search.target,
+    ...search.scope ? { scope: search.scope } : {},
     ...search.targetRole ? { targetRole: search.targetRole } : {},
     queryFields,
     displayTemplate,
@@ -25251,7 +25795,8 @@ function resolveEffectiveFields(config, path2) {
   let inherited = true;
   for (const [index, node] of resolveCategoryNodes(config, path2).entries()) {
     if (index > 0 && !inherited) {
-      if (config.contractRevision >= 10) {
+      if (config.contractRevision >= 18) values2.clear();
+      else if (config.contractRevision >= 10) {
         for (const [key2, field] of values2) if (field.inheritance !== "sealed") values2.delete(key2);
       } else values2.clear();
     }
@@ -25259,7 +25804,8 @@ function resolveEffectiveFields(config, path2) {
       for (const [key2, field] of values2) if (field.inheritance !== "localOnly") values2.set(key2, { ...field, inheritance: "sealed" });
     }
     if (index > 0 && config.contractRevision >= 9 && node.receiveFromParent?.fields === false) {
-      for (const [key2, field] of values2) if (field.inheritance !== "sealed") values2.delete(key2);
+      if (config.contractRevision >= 18) values2.clear();
+      else for (const [key2, field] of values2) if (field.inheritance !== "sealed") values2.delete(key2);
     }
     if (index > 0) {
       for (const [key2, field] of values2) if (field.inheritance === "localOnly") values2.delete(key2);
@@ -25279,6 +25825,7 @@ function resolveIncomingFields(config, path2) {
   if (!parent) return [];
   const node = config.nodes.find((node2) => classificationPathKey(node2.path) === classificationPathKey(parent));
   const fields = resolveEffectiveFields(config, parent);
+  if (config.contractRevision >= 18 && (!node || !inheritanceControls(node).fields || config.nodes.find((child) => classificationPathKey(child.path) === classificationPathKey(path2))?.receiveFromParent?.fields === false)) return [];
   if (config.contractRevision < 10) return fields.filter((field) => field.inheritance === "sealed");
   return fields.filter((field) => field.inheritance === "sealed" || node && inheritanceControls(node).fields && field.inheritance !== "localOnly").map((field) => ({ ...field, inheritance: "sealed" }));
 }
@@ -25317,6 +25864,10 @@ function resolveSelectableFields(config, scope, options = {}) {
   const custom = new Set(common.map((field) => field.key));
   const result = [...systemKeys.filter((key2) => !custom.has(key2)).map(systemFieldDefinition), ...common];
   return compiled ? cachedPathValue(compiled.selectable, cacheKey, freezeData(result)) : result;
+}
+function scopeCommonFields(config, scope) {
+  const sets = resolveClassificationScope(config, scope).map((path2) => resolveSelectableFields(config, path2));
+  return sets.length ? sets[0].filter((field) => sets.every((set) => set.some((other) => other.key === field.key && other.type === field.type && other.cardinality === field.cardinality))) : [];
 }
 function resolveInheritedValue(config, path2, branch, read) {
   let result;
@@ -25381,7 +25932,8 @@ function resolveCardConfiguration(config, path2, bindings = true) {
     result = void 0;
     let parentId = "", propagate = true;
     for (const node of resolveCategoryNodes(config, path2)) {
-      const continuing = result?.mode === "fields" ? { ...result, items: result.items.filter((item) => item.inheritFrom) } : void 0;
+      if (config.contractRevision >= 18 && node.receiveFromParent?.card === false) result = void 0;
+      const continuing = config.contractRevision < 18 && result?.mode === "fields" ? { ...result, items: result.items.filter((item) => item.inheritFrom) } : void 0;
       result = mergeInheritedCard(propagate ? result : continuing, node.card, parentId);
       parentId = node.nodeId;
       propagate = inheritanceControls(node).card;
@@ -25460,9 +26012,9 @@ function validateRenderColorBinding(binding, config, sourcePath, path2, issues) 
     return;
   }
   if (value.mode === "external") {
-    if (!value.target || !isContinuousPath(value.target) || !hasCategoryNode(config, value.target)) issue(issues, "error", "render-color-target-classification-invalid", path2, "\u5916\u90E8\u989C\u8272\u5FC5\u987B\u9009\u62E9\u5B58\u5728\u4E14\u8FDE\u7EED\u7684\u76EE\u6807\u5206\u7C7B\u3002");
+    if (value.targetScope ? classificationScopeProblems(value.targetScope, config).length > 0 || !resolveClassificationScope(config, value.targetScope).length : !value.target || !isContinuousPath(value.target) || !hasCategoryNode(config, value.target)) issue(issues, "error", "render-color-target-classification-invalid", path2, "\u5916\u90E8\u989C\u8272\u5FC5\u987B\u9009\u62E9\u5B58\u5728\u4E14\u8FDE\u7EED\u7684\u76EE\u6807\u5206\u7C7B\u3002");
     if (!value.targetIdField || !sourceFields.has(value.targetIdField) && !SYSTEM_FIELD_KEYS.has(value.targetIdField)) issue(issues, "error", "render-color-target-id-field-invalid", path2, "\u989C\u8272\u76EE\u6807\u8981\u7D20 ID \u5B57\u6BB5\u5FC5\u987B\u662F\u5F53\u524D\u5206\u7C7B\u7684\u6709\u6548\u5B57\u6BB5\u3002", { field: value.targetIdField });
-    const targetFields = value.target && isContinuousPath(value.target) && hasCategoryNode(config, value.target) ? new Set(resolveSelectableFields(config, value.target).map((field) => field.key)) : /* @__PURE__ */ new Set();
+    const targetFields = value.targetScope ? new Set(scopeCommonFields(config, value.targetScope).map((field) => field.key)) : value.target && isContinuousPath(value.target) && hasCategoryNode(config, value.target) ? new Set(resolveSelectableFields(config, value.target).map((field) => field.key)) : /* @__PURE__ */ new Set();
     if (!value.targetColorField || !targetFields.has(value.targetColorField)) issue(issues, "error", "render-color-target-field-invalid", path2, "\u76EE\u6807\u8981\u7D20\u989C\u8272\u5B57\u6BB5\u5FC5\u987B\u5728\u76EE\u6807\u5206\u7C7B\u4E2D\u6709\u6548\u3002", { field: value.targetColorField });
     return;
   }
@@ -25841,11 +26393,15 @@ function validateCard(node, config, issues) {
       if (relation.targetClassification || relation.targetMatchField !== "ID" || !isSafeWorkflowTarget(relation.targetDisplayField ?? "Name")) issue(issues, "error", "relation-role-target-invalid", itemPath, "\u901A\u7528\u4E3B\u7ED3\u6784\u5173\u7CFB\u6309 ID \u5339\u914D\uFF0C\u4E0D\u9650\u5236 Class\uFF1B\u76EE\u6807\u663E\u793A\u5B57\u6BB5\u5FC5\u987B\u4E3A\u5B89\u5168\u8DEF\u5F84\u3002");
       continue;
     }
-    if (!relation?.targetClassification || !isContinuousPath(relation.targetClassification) || !hasCategoryNode(config, relation.targetClassification)) {
+    if (!relation) {
+      issue(issues, "error", "relation-target-required", itemPath, "\u8BF7\u8BBE\u7F6E\u5173\u7CFB\u76EE\u6807\u3002");
+      continue;
+    }
+    if (relation.targetScope ? classificationScopeProblems(relation.targetScope, config).length > 0 || !resolveClassificationScope(config, relation.targetScope).length : !relation?.targetClassification || !isContinuousPath(relation.targetClassification) || !hasCategoryNode(config, relation.targetClassification)) {
       issue(issues, "error", "relation-target-classification-invalid", itemPath, "\u5173\u7CFB\u5361\u5FC5\u987B\u9009\u62E9\u5B58\u5728\u4E14\u8FDE\u7EED\u7684\u76EE\u6807\u5206\u7C7B\u3002");
       continue;
     }
-    const targetFields = new Set(resolveSelectableFields(config, relation.targetClassification).map((field) => field.key));
+    const targetFields = new Set((relation.targetScope ? scopeCommonFields(config, relation.targetScope) : resolveSelectableFields(config, relation.targetClassification)).map((field) => field.key));
     const supports = (field) => Boolean(field && (targetFields.has(field) || SYSTEM_FIELD_KEYS.has(field)));
     if (!supports(relation.targetMatchField)) issue(issues, "error", "relation-target-match-field-invalid", itemPath, "\u5173\u7CFB\u5361\u7684\u76EE\u6807\u5339\u914D\u5B57\u6BB5\u4E0D\u5728\u76EE\u6807\u5206\u7C7B\u7684\u6709\u6548\u5B57\u6BB5\u96C6\u4E2D\u3002");
     if (!supports(relation.targetDisplayField)) issue(issues, "error", "relation-target-display-field-invalid", itemPath, "\u5173\u7CFB\u5361\u7684\u76EE\u6807\u5C55\u793A\u5B57\u6BB5\u4E0D\u5728\u76EE\u6807\u5206\u7C7B\u7684\u6709\u6548\u5B57\u6BB5\u96C6\u4E2D\u3002");
@@ -25856,7 +26412,7 @@ function controlsFor(workflow) {
 }
 function validateSearch(control, config, path2, issues) {
   const search = normalizeSearchProfile(control.search);
-  if (!search || !search.targetRole && (!isContinuousPath(search.target) || !hasCategoryNode(config, search.target))) {
+  if (!search || !search.targetRole && (search.scope ? classificationScopeProblems(search.scope, config).length > 0 || !resolveClassificationScope(config, search.scope).length : !isContinuousPath(search.target) || !hasCategoryNode(config, search.target))) {
     issue(issues, "error", "workflow-search-target-invalid", path2, "\u641C\u7D22\u63A7\u4EF6\u5FC5\u987B\u9009\u62E9\u5B58\u5728\u4E14\u8FDE\u7EED\u7684\u76EE\u6807\u5206\u7C7B\u8303\u56F4\u3002");
     return;
   }
@@ -25865,7 +26421,7 @@ function validateSearch(control, config, path2, issues) {
     return role?.enabled && role.role === "main";
   }) : [];
   if (search.targetRole && (config.contractRevision < 10 || !targets.length)) issue(issues, "error", "workflow-search-role-invalid", path2, "\u901A\u7528\u641C\u7D22\u9700\u8981 c10 \u4E14\u81F3\u5C11\u6709\u4E00\u4E2A\u542F\u7528\u7684\u4E3B\u7ED3\u6784\u5206\u7C7B\u3002");
-  const selectable = new Set(search.targetRole ? targets.flatMap((node) => resolveSelectableFields(config, node.path).map((field) => field.key)).filter((key2) => targets.every((node) => resolveSelectableFields(config, node.path).some((field) => field.key === key2))) : resolveSelectableFields(config, search.target).map((field) => field.key));
+  const selectable = new Set(search.targetRole ? targets.flatMap((node) => resolveSelectableFields(config, node.path).map((field) => field.key)).filter((key2) => targets.every((node) => resolveSelectableFields(config, node.path).some((field) => field.key === key2))) : (search.scope ? scopeCommonFields(config, search.scope) : resolveSelectableFields(config, search.target)).map((field) => field.key));
   if (!search.queryFields?.length) issue(issues, "error", "workflow-search-fields-required", path2, "\u641C\u7D22\u63A7\u4EF6\u81F3\u5C11\u9700\u8981\u9009\u62E9\u4E00\u4E2A\u53EF\u5339\u914D\u5B57\u6BB5\u3002");
   for (const field of search.queryFields ?? []) if (!selectable.has(field)) issue(issues, "error", "workflow-search-field-invalid", path2, `\u641C\u7D22\u5B57\u6BB5 ${field} \u4E0D\u5728\u76EE\u6807\u5206\u7C7B\u7684\u6709\u6548\u5B57\u6BB5\u96C6\u4E2D\u3002`, { field });
   if (!search.returnField || !selectable.has(search.returnField)) issue(issues, "error", "workflow-search-return-field-invalid", path2, "\u641C\u7D22\u63A7\u4EF6\u5FC5\u987B\u9009\u62E9\u4E00\u4E2A\u6709\u6548\u7684\u5355\u4E00\u8FD4\u56DE\u5B57\u6BB5\u3002", { field: search.returnField });
@@ -25962,6 +26518,7 @@ function validateWorkflow(workflow, config, issues) {
   workflow = resolveWorkflowFields(config, workflow);
   const base = `workflows/${workflow.id}`;
   if (workflow.editor?.dedicated && workflow.quickMapping !== false) issue(issues, "error", "workflow-editor-dedicated-visible", base, "\u4E13\u4F9B\u7F16\u8F91\u5DE5\u4F5C\u6D41\u5FC5\u987B\u5173\u95ED\u4FBF\u6377\u6D4B\u7ED8\u3002");
+  if (config.contractRevision >= 18 && workflow.editor?.enabled && (!workflow.editor.range || classificationScopeProblems(workflow.editor.range, config).length || !resolveClassificationScope(config, workflow.editor.range).length)) issue(issues, "error", "workflow-editor-range-invalid", base, "\u542F\u7528\u7F16\u8F91\u65B9\u6848\u5FC5\u987B\u8BBE\u7F6E\u6709\u6548\u4E14\u975E\u7A7A\u7684\u5206\u7C7B\u52A0\u51CF\u8303\u56F4\u3002");
   if (workflow.editor?.enabled && workflow.mode === "composed") try {
     testWorkflowEditConversion(config, workflow);
   } catch (error) {
@@ -25992,7 +26549,7 @@ function validateWorkflow(workflow, config, issues) {
       if (workflow.external?.purpose === "edit") {
         for (const message of validateExternalEditBinding(workflow)) issue(issues, "error", "external-editor-invalid", base, message);
         const scope = workflow.editor?.scope ?? workflow.target;
-        if (!scope || !hasCategoryNode(config, scope)) issue(issues, "error", "external-editor-scope-invalid", base, "\u5916\u90E8\u7F16\u8F91\u8303\u56F4\u4E0D\u5B58\u5728\u3002");
+        if (workflow.editor?.range ? classificationScopeProblems(workflow.editor.range, config).length > 0 : !scope || !hasCategoryNode(config, scope)) issue(issues, "error", "external-editor-scope-invalid", base, "\u5916\u90E8\u7F16\u8F91\u8303\u56F4\u4E0D\u5B58\u5728\u3002");
       } else {
         const components = { "railway-integrated": "railwayWorkflow", "station-integrated": "stationWorkflow", "trp-integrated": "tradePointWorkflow" };
         if (!workflow.external || components[workflow.external.reason] !== workflow.external.componentKey || workflow.external.purpose && workflow.external.purpose !== "capture" || workflow.editor?.enabled) issue(issues, "error", "external-workflow-invalid", base, "\u5916\u90E8\u91C7\u96C6\u7EC4\u4EF6\u3001\u7528\u9014\u6216\u767B\u8BB0\u7406\u7531\u4E0D\u7B26\u3002");
@@ -26002,8 +26559,8 @@ function validateWorkflow(workflow, config, issues) {
     if (workflow.external?.purpose === "edit") {
       for (const message of validateExternalEditBinding(workflow)) issue(issues, "error", "external-editor-invalid", base, message);
       const scope = workflow.editor?.scope ?? workflow.target;
-      if (!scope || !hasCategoryNode(config, scope)) issue(issues, "error", "external-editor-scope-invalid", base, "\u5916\u90E8\u7F16\u8F91\u5206\u7C7B\u8303\u56F4\u4E0D\u5B58\u5728\u3002");
-      else for (const node of config.nodes.filter((n) => pathMatchesScope(n.path, scope))) {
+      if (workflow.editor?.range ? classificationScopeProblems(workflow.editor.range, config).length > 0 : !scope || !hasCategoryNode(config, scope)) issue(issues, "error", "external-editor-scope-invalid", base, "\u5916\u90E8\u7F16\u8F91\u5206\u7C7B\u8303\u56F4\u4E0D\u5B58\u5728\u3002");
+      else for (const node of config.nodes.filter((n) => workflow.editor?.range ? matchesClassificationRange(workflow.editor.range, n.path) : !!scope && pathMatchesScope(n.path, scope))) {
         const fields = resolveSelectableFields(config, node.path);
         for (const [key2, type] of [["Name", "string"], ["Interaction", "string"], ["Situation", "string"], ["Trade", "json"], ["elevation", "number"], ["tags.Land", "string"], ["tags.UAdm", "string"], ["tags.UAdmG", "string"], ["extensions.link.wiki", "string"], ["extensions.character.brief", "string"]]) {
           const field = fields.find((f) => f.key === key2);
@@ -26036,7 +26593,7 @@ function validateWorkflow(workflow, config, issues) {
   const controlList = controlsFor(workflow);
   if (config.contractRevision >= 8) {
     const modules = controlList.filter((control) => control.kind === "tagsExtensions");
-    if (tailIndex >= 0 || modules.length !== 1 || !modules[0]?.systemManaged || workflow.steps.some((step) => step.kind !== "form" && step.controls?.some((control) => control.kind === "tagsExtensions"))) issue(issues, "error", "workflow-inline-annotations-required", base, "\u5FC5\u987B\u5728\u4FE1\u606F\u6536\u96C6\u9875\u4FDD\u7559\u4E00\u4E2A\u4E0D\u53EF\u5220\u9664\u3001\u53EF\u79FB\u52A8\u7684\u6807\u7B7E\u4E0E\u6269\u5C55\u56FA\u5B9A\u5355\u5143\u3002");
+    if (tailIndex >= 0 || (config.contractRevision >= 18 ? modules.length !== workflow.outputs.length || modules.some((control) => !control.systemManaged || !workflow.outputs.some((output) => output.id === control.outputId)) : modules.length !== 1 || !modules[0]?.systemManaged) || workflow.steps.some((step) => step.kind !== "form" && step.controls?.some((control) => control.kind === "tagsExtensions"))) issue(issues, "error", "workflow-inline-annotations-required", base, "\u5FC5\u987B\u5728\u4FE1\u606F\u6536\u96C6\u9875\u4FDD\u7559\u4E00\u4E2A\u4E0D\u53EF\u5220\u9664\u3001\u53EF\u79FB\u52A8\u7684\u6807\u7B7E\u4E0E\u6269\u5C55\u56FA\u5B9A\u5355\u5143\u3002");
   }
   const allTokens = /* @__PURE__ */ new Set([...controlList.flatMap((control) => control.slot ? [control.slot] : []), ...workflowDerivedPointTokens(workflow), ...WORKFLOW_SYSTEM_TOKENS, ...workflow.outputs.flatMap((_, index) => WORKFLOW_SYSTEM_TOKENS.map((token) => `${token}_${index + 1}`))]);
   const captured = workflowCaptureSlots(workflow);
@@ -26135,8 +26692,9 @@ function validateWorkflow(workflow, config, issues) {
   }
   ;
   for (const [outputIndex, output] of workflow.outputs.entries()) {
+    if (config.contractRevision >= 18 && controlList.filter((control) => control.kind === "tagsExtensions" && control.outputId === output.id).length !== 1) issue(issues, "error", "workflow-output-annotations-invalid", `${base}/outputs/${output.id}`, "\u6BCF\u4E2A\u8F93\u51FA\u5FC5\u987B\u7ED1\u5B9A\u552F\u4E00\u7684\u6807\u7B7E\u4E0E\u6269\u5C55\u5355\u5143\u3002");
     const managed = controlList.filter((control) => control.kind === "classificationPicker" && control.systemManaged && (control.outputId === output.id || !control.outputId && control.classificationScope && classificationPathKey(control.classificationScope) === classificationPathKey(output.classification ?? { class: "" })));
-    if ((config.contractRevision >= 15 ? workflowClassificationGroup(config, output).paths.length > 1 : Boolean(output.classification && targetSupportsClassificationPicker(config, output.classification))) !== Boolean(managed.length)) issue(issues, "error", "workflow-classification-picker-stale", `${base}/outputs/${output.id}`, "\u5DE5\u4F5C\u6D41\u8F93\u51FA\u5206\u7C7B\u7684\u5B50\u5206\u7C7B\u72B6\u6001\u5DF2\u53D8\u5316\uFF1B\u8BF7\u6253\u5F00\u5DE5\u4F5C\u6D41\u4EE5\u5237\u65B0\u7CFB\u7EDF Classification \u63A7\u4EF6\u3002");
+    if ((config.contractRevision >= 18 ? true : config.contractRevision >= 15 ? workflowClassificationGroup(config, output).paths.length > 1 : Boolean(output.classification && targetSupportsClassificationPicker(config, output.classification))) !== Boolean(managed.length)) issue(issues, "error", "workflow-classification-picker-stale", `${base}/outputs/${output.id}`, "\u5DE5\u4F5C\u6D41\u8F93\u51FA\u5206\u7C7B\u7684\u5B50\u5206\u7C7B\u72B6\u6001\u5DF2\u53D8\u5316\uFF1B\u8BF7\u6253\u5F00\u5DE5\u4F5C\u6D41\u4EE5\u5237\u65B0\u7CFB\u7EDF Classification \u63A7\u4EF6\u3002");
     validateWorkflowOutput(output, outputIndex, workflow, config, slots, issues);
   }
   if (config.contractRevision >= 15) {
@@ -26295,6 +26853,11 @@ function validateConfigPackage(config, mountedRecords = []) {
   }
   if (config.contractRevision >= 11) for (const button of config.application?.buttons.items ?? []) {
     const rows = button.criteria.paths;
+    if (config.contractRevision >= 18) {
+      if (!button.criteria.scope) issue(issues, "error", "button-scope-required", `application/buttons/${button.id}`, "c18 \u6309\u94AE\u5FC5\u987B\u4F7F\u7528\u663E\u5F0F\u5206\u7C7B\u52A0\u51CF\u8303\u56F4\u3002");
+      else for (const message of classificationScopeProblems(button.criteria.scope, config)) issue(issues, "error", "button-scope-invalid", `application/buttons/${button.id}`, message);
+      continue;
+    }
     if (!rows) issue(issues, "error", "button-path-migration-required", `application/buttons/${button.id}`, "c11 \u53CA\u4EE5\u4E0A\u7684\u6309\u94AE\u9700\u8981\u5B8C\u6574\u5206\u7C7B\u8DEF\u5F84\u3002");
     else for (const [index, row2] of rows.entries()) {
       if (!hasCategoryNode(config, row2)) issue(issues, "error", "button-path-invalid", `application/buttons/${button.id}/${index}`, "\u6309\u94AE\u663E\u793A\u5185\u5BB9\u4E0D\u662F\u6709\u6548\u5206\u7C7B\u8DEF\u5F84\u3002");
@@ -26310,6 +26873,14 @@ function validateConfigPackage(config, mountedRecords = []) {
   issues.push(...validatePrefillCopies(config, resolveEffectiveFields));
   issues.push(...validateNodeFieldSettings(config, resolveEffectiveFields));
   if (config.contractRevision >= 8 && (config.registries.optionSets || config.nodes.some((node) => node.fields.some((field) => field.optionSource)) || config.workflows.some((workflow) => controlsFor(workflow).some((control) => control.optionSource)))) issue(issues, "error", "legacy-option-source-forbidden", "registries", "c8 \u53CA\u4EE5\u4E0A\u4F7F\u7528\u5B57\u6BB5\u5185\u5BF9\u7167\uFF1B\u65E7\u5168\u5C40\u9009\u9879\u6765\u6E90\u5FC5\u987B\u5148\u8FC1\u79FB\u3002");
+  if (config.contractRevision >= 18) {
+    const app = config.application;
+    if (!app?.workflowAvailability || !app.about || !app.announcements || !app.preferences.pictureControls) issue(issues, "error", "c18-application-modules-required", "application", "c18 \u5FC5\u987B\u5305\u542B\u4E16\u754C\u5DE5\u4F5C\u6D41\u6E05\u5355\u3001\u516C\u544A\u3001\u5173\u4E8E\u53CA\u56FE\u7247\u63A7\u5236\uFF1B\u8BF7\u6267\u884C\u5B8C\u6574\u8FC1\u79FB\u3002");
+    if (app?.workflowAvailability) for (const world of app.worlds) {
+      const ids = app.workflowAvailability[world.id];
+      if (!Array.isArray(ids) || new Set(ids).size !== ids.length || ids.some((id2) => !config.workflows.some((workflow) => workflow.id === id2 && workflow.quickMapping !== false && workflow.external?.purpose !== "edit"))) issue(issues, "error", "workflow-availability-invalid", "application/workflowAvailability/" + world.id, "\u4E16\u754C\u5DE5\u4F5C\u6D41\u6E05\u5355\u542B\u91CD\u590D\u3001\u5931\u6548\u6216\u4E0D\u53EF\u7528\u4E8E\u5FEB\u6377\u91C7\u96C6\u7684\u5DE5\u4F5C\u6D41\u3002");
+    }
+  }
   if (config.schemaVersion !== "cairnmap.config-package.v3") issue(issues, "error", "schema-version-invalid", "manifest", "\u914D\u7F6E\u5305\u4E0D\u662F cairnmap.config-package.v3\u3002");
   if (!isNativeConfigRevision(config.contractRevision)) issue(issues, "error", "contract-revision-invalid", "manifest", "\u914D\u7F6E\u5305\u5FC5\u987B\u4F7F\u7528\u53D7\u652F\u6301\u7684\u539F\u751F\u5951\u7EA6\uFF1A" + CONTRACT_CAPABILITIES.native.map((v) => "c" + v).join("\u3001") + "\u3002");
   validateEngine(config, issues);
@@ -26405,9 +26976,10 @@ function validateConfigPackage(config, mountedRecords = []) {
       editorScopes.add(key2);
     } else {
       const rank = Object.values(scope ?? {}).filter(Boolean).length;
-      const candidates = workflow.mode === "external" && scope ? listCategoryPaths(config, scope).filter((path2) => resolveGeometryProfile(config, path2, "Point")?.enabled) : workflow.outputs.flatMap((output) => workflowClassificationGroup(config, output).paths);
-      for (const path2 of [...new Map(candidates.filter((path3) => !scope || pathMatchesScope(path3, scope)).map((path3) => [classificationPathKey(path3), path3])).values()]) {
-        const key2 = rank + ":" + classificationPathKey(path2);
+      const candidates = workflow.mode === "external" ? (workflow.editor?.range ? resolveClassificationScope(config, workflow.editor.range) : scope ? listCategoryPaths(config, scope) : []).filter((path2) => resolveGeometryProfile(config, path2, "Point")?.enabled) : workflow.outputs.flatMap((output) => workflowClassificationGroup(config, output).paths);
+      for (const path2 of [...new Map(candidates.filter((path3) => workflow.editor?.range ? matchesClassificationRange(workflow.editor.range, path3) : !scope || pathMatchesScope(path3, scope)).map((path3) => [classificationPathKey(path3), path3])).values()]) {
+        const exactRank = workflow.editor?.range ? Math.max(0, ...scopeRows(workflow.editor.range).filter((row2) => row2.condition === "include" && pathMatchesScope(path2, row2.path)).map((row2) => Object.values(row2.path).filter(Boolean).length)) : rank;
+        const key2 = exactRank + ":" + classificationPathKey(path2);
         if (editorScopes.has(key2)) issue(issues, "error", "workflow-editor-route-duplicate", `workflows/${workflow.id}`, "\u5206\u7C7B " + classificationPathKey(path2) + " \u5B58\u5728\u540C\u4F18\u5148\u7EA7\u7F16\u8F91\u8DEF\u7531\u3002");
         editorScopes.add(key2);
       }
@@ -26434,27 +27006,30 @@ function validateConfigPackage(config, mountedRecords = []) {
 }
 
 // src/configStudio/workflowClassificationGroup.ts
-var cache4 = /* @__PURE__ */ new WeakMap();
-var levels = ["class", "kind", "skind", "skind2"];
-var continuous = (path2) => Boolean(path2?.class) && levels.every((key2, index) => !path2[key2] || levels.slice(0, index).every((parent) => Boolean(path2[parent])));
+var cache5 = /* @__PURE__ */ new WeakMap();
+var levels2 = ["class", "kind", "skind", "skind2"];
+var continuous = (path2) => Boolean(path2?.class) && levels2.every((key2, index) => !path2[key2] || levels2.slice(0, index).every((parent) => Boolean(path2[parent])));
 var same = (a, b) => classificationPathKey(a) === classificationPathKey(b);
 function workflowClassificationGroup(config, output) {
-  const prior = cache4.get(config)?.get(output);
+  const prior = Object.isFrozen(config) ? cache5.get(config)?.get(output) : void 0;
   if (prior) return prior;
   const selectors = config.contractRevision >= 15 ? output.classificationGroup?.selectors ?? [] : output.classification ? [{ id: "legacy", mode: "leafDescendants", path: output.classification }] : [];
   const rows = selectors.map((selector) => {
     if (!continuous(selector.path) || !hasCategoryNode(config, selector.path)) return { id: selector.id, paths: [], filtered: 0, error: "\u5206\u7C7B\u8DEF\u5F84\u4E0D\u5B58\u5728\u6216\u4E0D\u8FDE\u7EED\u3002" };
+    if (config.contractRevision >= 18 && (selector.mode === "self" && selector.condition !== void 0 || selector.condition !== void 0 && !["include", "exclude"].includes(selector.condition))) return { id: selector.id, paths: [], filtered: 0, error: "\u5206\u7C7B\u6761\u4EF6\u4E0E\u6307\u5B9A\u65B9\u5F0F\u4E0D\u517C\u5BB9\u3002" };
     if (!["self", "leafDescendants"].includes(selector.mode)) return { id: selector.id, paths: [], filtered: 0, error: "\u5206\u7C7B\u6307\u5B9A\u65B9\u5F0F\u65E0\u6548\u3002" };
     const expanded = selector.mode === "self" ? [selector.path] : config.nodes.filter((node) => pathMatchesScope(node.path, selector.path) && !hasDescendants(config, node.path)).map((node) => node.path);
     const paths2 = expanded.filter((path2) => resolveGeometryProfile(config, path2, output.geometry.selected)?.enabled);
-    return { id: selector.id, paths: paths2, filtered: expanded.length - paths2.length, ...!paths2.length ? { error: "\u6B64\u884C\u6CA1\u6709\u542F\u7528\u56FA\u5B9A\u7ED8\u5236\u7C7B\u578B\u7684\u53EF\u9009\u5206\u7C7B\u3002" } : {} };
+    return { id: selector.id, paths: paths2, filtered: expanded.length - paths2.length, ...!paths2.length && selector.condition !== "exclude" ? { error: "\u6B64\u884C\u6CA1\u6709\u542F\u7528\u56FA\u5B9A\u7ED8\u5236\u7C7B\u578B\u7684\u53EF\u9009\u5206\u7C7B\u3002" } : {} };
   });
-  const paths = [...new Map(rows.flatMap((row2) => row2.paths).map((path2) => [classificationPathKey(path2), path2])).values()];
+  const excluded = selectors.filter((row2) => row2.mode === "leafDescendants" && row2.condition === "exclude");
+  const paths = [...new Map(rows.flatMap((row2, index) => selectors[index].condition === "exclude" ? [] : row2.paths.filter((path2) => selectors[index].mode === "self" || !excluded.some((negative) => classificationContains(negative.path, path2)))).map((path2) => [classificationPathKey(path2), path2])).values()];
   const result = { paths, rows };
-  let outputs = cache4.get(config);
+  if (!Object.isFrozen(config)) return result;
+  let outputs = cache5.get(config);
   if (!outputs) {
     outputs = /* @__PURE__ */ new WeakMap();
-    cache4.set(config, outputs);
+    cache5.set(config, outputs);
   }
   outputs.set(output, result);
   return result;
@@ -26593,7 +27168,7 @@ async function readRawNativePackage(file, options = {}) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-c17-production-1";
+var rulesVersion = "cairnmap-c18-production-1";
 var validateConfiguration = validateConfigPackage;
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));
@@ -26654,6 +27229,7 @@ export {
   validateConfigurationArchive,
   validateIncomingBatch,
   validateIncomingRecord,
+  validateMediaPolicy,
   validatePublishedRecords,
   validateRecordGeometry
 };

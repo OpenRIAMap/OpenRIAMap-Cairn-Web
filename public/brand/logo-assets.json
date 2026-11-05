@@ -1,0 +1,27 @@
+{
+  "logo.png": {
+    "size": 1536,
+    "sha256": "50e5b8d2f12de8ce5348d2ffaac9b28ee3f7ba5c97115b27350014b565b501d2",
+    "whiteBackground": true
+  },
+  "favicon-196.png": {
+    "size": 196,
+    "sha256": "6db4de4d306be5401b5542a26a65e9ad81413b483a4beeb5cd8bf6077f03b145",
+    "whiteBackground": true
+  },
+  "apple-icon-180.png": {
+    "size": 180,
+    "sha256": "126215be1e1caeb2d1f1684ff18b6371073317c1e0b82e7744bd3d4364bac5fa",
+    "whiteBackground": true
+  },
+  "manifest-icon-192.png": {
+    "size": 192,
+    "sha256": "3ad57eb11fde4be6b3f741cab6887ab7fd0173f9501b57e18d70d35407ac1dd2",
+    "whiteBackground": true
+  },
+  "manifest-icon-512.png": {
+    "size": 512,
+    "sha256": "685d3b32d7c3a8ee123e63dc5395f72e633da6f9897ae61aa5caf7f1ea0dd3b2",
+    "whiteBackground": true
+  }
+}

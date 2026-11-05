@@ -149,7 +149,10 @@ try:
         select_label(halo,'颜色模式',mode)
         if mode=='field':select_label(halo,'绑定颜色指示字段','Name')
         if mode=='external':
-            select_label(halo,'关系目标分类',document("nodes.find(n=>n.path.class==='SBP').nodeId"));select_label(halo,'目标要素颜色字段','Name')
+            if LATEST>=18:
+                inside(halo,'添加范围');select(halo+' select[aria-label="关系目标分类 1 Class"]','SBP')
+            else:select_label(halo,'关系目标分类',document("nodes.find(n=>n.path.class==='SBP').nodeId"))
+            select_label(halo,'目标要素颜色字段','Name')
         b.wait("Boolean(document.querySelector('.ria-config-shape-marker svg'))")
     select_label(halo,'颜色模式','valueMap');select_label(halo,'设色字段','Name');inside(halo,'添加值—颜色行')
     input_value(halo+' input[aria-label="设色保存值 1"]','HALO_GREEN');input_value(halo+' input[aria-label="设色颜色 1"]','#00ff00');inside(halo,'显示第 1 行')

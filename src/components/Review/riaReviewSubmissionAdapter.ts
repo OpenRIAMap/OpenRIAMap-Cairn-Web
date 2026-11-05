@@ -175,6 +175,7 @@ export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = 
     getReleaseGate: async (_actor: ReviewAuthorizationContext) => normalizeGate(await requestControl<ReviewReleaseGateSnapshot | null>(fetcher, { operation: 'release-gate' })),
     runReleasePrecheck: (request: ReviewReleaseControlRequest, _actor: ReviewAuthorizationContext) => requestControl<ReviewReleaseControlReport>(fetcher, {
       operation: 'publish-precheck',
+      precheckProtocol: request.precheckProtocol,
       selectedSubmissionIds: request.selectedSubmissionIds,
       expectedBoardVersion: request.expectedBoardVersion,
       request: request.request,

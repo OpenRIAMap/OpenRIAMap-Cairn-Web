@@ -1,17 +1,15 @@
-import type { ConfigPackageV3, ClassificationPath } from './types';
+import {ClassificationScopeEditor} from './ClassificationScopeEditor';
+import type {ClassificationRange} from './classificationScope';
+import type { ConfigPackageV3 } from './types';
 import type { NavigationSettings, RailwaySelectors, SharedRailwayRoles } from '../core/project/navigationTypes';
-import { RAILWAY_ROLES, pathCovers } from '../core/project/navigationDefinition';
-import { CategoryPathPicker } from './CategoryPathPicker';
+import { RAILWAY_ROLES } from '../core/project/navigationDefinition';
 import { SettingField } from './SettingField';
 import { ModuleHelp } from './ModuleHelp';
 
 const input='mt-1 w-full min-w-0 rounded border bg-white px-2 py-1';
 const roleNames={lines:'线路',platforms:'站台',stationAreas:'站场',stations:'车站'};
-function ClassificationRows({config,title,rows,onChange,shared}:{config:ConfigPackageV3;title:string;rows:ClassificationPath[];onChange:(rows:ClassificationPath[])=>void;shared?:ClassificationPath[]}){
-  return <section className="cm-subsection mt-3 rounded-lg border bg-white p-3"><h4 className="font-semibold">{title}<ModuleHelp title={title} text={shared?'仅选择同角色共享定义内参与寻路的范围；不修改信息卡、搜索所用的共享索引。':'每行四级分类同时满足，多行取并集；未限定后级包含全部下辖。供全站铁路关系查询使用。'}/></h4>
-    {shared?<p className="my-1 text-xs text-slate-500">共享覆盖：{shared.map(p=>Object.values(p).filter(Boolean).join(' / ')).join('；')||'未定义'}</p>:null}
-    {rows.map((row,i)=><div key={i} className="my-2 rounded border-2 border-slate-200 bg-slate-50 p-2"><CategoryPathPicker config={config} scopeMode label={`${title} ${i+1}`} value={row} onChange={next=>onChange(rows.map((p,at)=>at===i?next:p))}/>{shared&&!shared.some(p=>pathCovers(p,row))?<p role="alert" className="mt-1 text-xs text-rose-700">超出同角色共享定义；核验通过前不能保存。</p>:null}<button type="button" className="mt-2 text-xs text-rose-700" onClick={()=>onChange(rows.filter((_,at)=>at!==i))}>删除显示内容</button></div>)}
-    <button type="button" className="rounded border px-2 py-1 text-sm" onClick={()=>onChange([...rows,{class:''}])}>添加显示内容</button></section>;
+function ClassificationRows({config,title,rows,onChange,shared}:{config:ConfigPackageV3;title:string;rows:ClassificationRange;onChange:(rows:ClassificationRange)=>void;shared?:ClassificationRange}){
+ return <section className="cm-subsection mt-3 rounded-lg border bg-white p-3"><h4 className="font-semibold">{title}</h4>{shared?<p className="text-xs text-slate-500">导航范围需处于同角色共享范围内，保存时核验。</p>:null}<ClassificationScopeEditor config={config} label={title} value={rows} onChange={onChange}/></section>;
 }
 function RailwayRows({config,value,onChange,shared,navigation=false}:{config:ConfigPackageV3;value:RailwaySelectors;onChange:(value:RailwaySelectors)=>void;shared?:RailwaySelectors;navigation?:boolean}){
   return <>{RAILWAY_ROLES.map(role=><ClassificationRows key={role} config={config} title={`${roleNames[role]}${navigation?'导航参与范围':'要素指定'}`} rows={value[role]} shared={shared?.[role]} onChange={rows=>onChange({...value,[role]:rows})}/>)}</>;

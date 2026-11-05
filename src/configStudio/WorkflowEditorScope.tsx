@@ -1,3 +1,4 @@
+import {ClassificationScopeEditor} from './ClassificationScopeEditor';
 import {CategoryPathPicker} from './CategoryPathPicker';
 import {workflowClassificationGroup} from './workflowClassificationGroup';
 import type {ClassificationPath,ConfigPackageV3,WorkflowDefinition} from './types';
@@ -22,6 +23,6 @@ export function WorkflowEditorScope({config,workflow,onChange}:{config:ConfigPac
   return <section className="cm-subsection space-y-2" aria-label="编辑作用范围设置">
     <h4 className="text-sm font-medium">编辑作用范围</h4>
     <p className="text-xs text-slate-500">编辑对象还必须属于下方分类组。迁移输出分类后，请同步核对本范围；未通过匹配与字段核验时不能保存。</p>
-    <CategoryPathPicker config={config} scopeMode label="编辑作用范围" value={proposedWorkflowEditorScope(config,workflow)} onChange={scope=>onChange({...workflow,editor:{...workflow.editor,enabled:workflow.editor?.enabled??false,scope}})}/>
+    {config.contractRevision>=18?<ClassificationScopeEditor config={config} label="编辑作用范围" value={workflow.editor?.range??[]} onChange={range=>onChange({...workflow,editor:{...workflow.editor,enabled:workflow.editor?.enabled??false,range:Array.isArray(range)?{rows:range.map((path,index)=>({id:String(index),condition:'include',path}))}:range,scope:undefined}})}/>:<CategoryPathPicker config={config} scopeMode label="编辑作用范围" value={proposedWorkflowEditorScope(config,workflow)} onChange={scope=>onChange({...workflow,editor:{...workflow.editor,enabled:workflow.editor?.enabled??false,scope}})}/>}
   </section>;
 }

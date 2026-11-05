@@ -14,12 +14,15 @@ export interface MapSettings {
 }
 
 const COOKIE_NAME = 'map_settings';
+let labSettings:string|null=null;
+const isolatedLab=()=>typeof location!=='undefined'&&new URLSearchParams(location.search).get('workspace')==='config-lab-frame';
 const COOKIE_EXPIRES_DAYS = 365;
 
 /**
  * 设置 cookie
  */
 function setCookie(name: string, value: string, days: number): void {
+  if(isolatedLab()){labSettings=value;return;}
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
   document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
@@ -29,6 +32,7 @@ function setCookie(name: string, value: string, days: number): void {
  * 获取 cookie
  */
 function getCookie(name: string): string | null {
+  if(isolatedLab())return labSettings;
   const nameEQ = `${name}=`;
   const cookies = document.cookie.split(';');
   for (const cookie of cookies) {

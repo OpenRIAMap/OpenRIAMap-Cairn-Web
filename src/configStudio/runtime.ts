@@ -1,3 +1,4 @@
+import {classificationScopeProblems,resolveClassificationScope,matchesClassificationRange,scopeRows} from './classificationScope';
 import {validateWorkflowSupplies} from './workflowSupplyValidation';
 import {workflowClassificationGroup} from './workflowClassificationGroup';
 import { isWorldGroups } from '../core/project/applicationResources';
@@ -201,6 +202,7 @@ export function normalizeSearchProfile(search: SearchProfile | undefined): Searc
     || (displayFields.length ? displayFields.map((field) => `{{${field}}}`).join(' ') : '{{ID}} ({{Name}})');
   return {
     target: search.target,
+    ...(search.scope?{scope:search.scope}:{}),
     ...(search.targetRole?{targetRole:search.targetRole}:{}),
     queryFields,
     displayTemplate,
@@ -292,11 +294,11 @@ export function resolveEffectiveFields(config: ConfigPackageV3, path: Classifica
   let inherited = true;
   for (const [index, node] of resolveCategoryNodes(config, path).entries()) {
     if (index > 0 && !inherited) {
-      if(config.contractRevision>=10){for(const [key,field] of values)if(field.inheritance!=='sealed')values.delete(key);}
+      if(config.contractRevision>=18)values.clear();else if(config.contractRevision>=10){for(const [key,field] of values)if(field.inheritance!=='sealed')values.delete(key);}
       else values.clear();
     }
     if(index>0&&config.contractRevision>=10&&inherited)for(const [key,field] of values)if(field.inheritance!=='localOnly')values.set(key,{...field,inheritance:'sealed'});
-    if(index>0&&config.contractRevision>=9&&node.receiveFromParent?.fields===false)for(const [key,field] of values)if(field.inheritance!=='sealed')values.delete(key);
+    if(index>0&&config.contractRevision>=9&&node.receiveFromParent?.fields===false){if(config.contractRevision>=18)values.clear();else for(const [key,field] of values)if(field.inheritance!=='sealed')values.delete(key);}
     if (index > 0) for (const [key,field] of values) if (field.inheritance === 'localOnly') values.delete(key);
     for (const field of node.fields) {
       const key = field.overrideOf || field.key;
@@ -313,6 +315,7 @@ export function resolveIncomingFields(config:ConfigPackageV3,path:Classification
   const parent=parentClassificationPath(path);if(!parent)return [];
   const node=config.nodes.find(node=>classificationPathKey(node.path)===classificationPathKey(parent));
   const fields=resolveEffectiveFields(config,parent);
+  if(config.contractRevision>=18&&(!node||!inheritanceControls(node).fields||config.nodes.find(child=>classificationPathKey(child.path)===classificationPathKey(path))?.receiveFromParent?.fields===false))return [];
   if(config.contractRevision<10)return fields.filter(field=>field.inheritance==='sealed');
   return fields.filter(field=>field.inheritance==='sealed'||node&&inheritanceControls(node).fields&&field.inheritance!=='localOnly').map(field=>({...field,inheritance:'sealed'}));
 }
@@ -350,6 +353,11 @@ export function resolveSelectableFields(config: ConfigPackageV3, scope: Classifi
   const custom = new Set(common.map((field) => field.key));
   const result = [...systemKeys.filter((key) => !custom.has(key)).map(systemFieldDefinition), ...common];
   return compiled ? cachedPathValue(compiled.selectable, cacheKey, freezeData(result)) : result;
+}
+
+export function scopeCommonFields(config:ConfigPackageV3,scope:import('./classificationScope').ClassificationRange):FieldDefinition[]{
+ const sets=resolveClassificationScope(config,scope).map(path=>resolveSelectableFields(config,path));
+ return sets.length?sets[0].filter(field=>sets.every(set=>set.some(other=>other.key===field.key&&other.type===field.type&&other.cardinality===field.cardinality))):[];
 }
 
 /** Display/Card resolve independently and only propagate through their own switch. */
@@ -403,7 +411,8 @@ export function resolveCardConfiguration(config: ConfigPackageV3, path: Classifi
   if(config.contractRevision>=10){
     result=undefined;let parentId='',propagate=true;
     for(const node of resolveCategoryNodes(config,path)){
-      const continuing=result?.mode==='fields'?{...result,items:result.items.filter(item=>item.inheritFrom)}:undefined;
+      if(config.contractRevision>=18&&node.receiveFromParent?.card===false)result=undefined;
+      const continuing=config.contractRevision<18&&result?.mode==='fields'?{...result,items:result.items.filter(item=>item.inheritFrom)}:undefined;
       result=mergeInheritedCard(propagate?result:continuing,node.card,parentId);
       parentId=node.nodeId;propagate=inheritanceControls(node).card;
     }
@@ -474,7 +483,7 @@ function validateField(field: FieldDefinition, path: string, known: Set<string>,
 
 export function validateRenderColorBinding(binding: unknown, config: ConfigPackageV3, sourcePath: ClassificationPath, path: string, issues: ConfigValidationIssue[]): void {
   if (!binding || typeof binding !== 'object') { issue(issues, 'error', 'render-color-binding-required', path, '渲染颜色必须设置为直接颜色、当前字段或外部要素字段。'); return; }
-  const value = binding as { mode?: string; color?: string; field?: string; target?: ClassificationPath; targetIdField?: string; targetColorField?: string; strategy?: string };
+  const value = binding as { mode?: string; color?: string; field?: string; target?: ClassificationPath; targetScope?:import('./classificationScope').ClassificationScope; targetIdField?: string; targetColorField?: string; strategy?: string };
   const fallback = (binding as {fallbackColor?:string}).fallbackColor;
   if (fallback !== undefined && !validCssColor(fallback)) issue(issues,'error','render-color-fallback-invalid',path,'回退颜色需要有效的十六进制、RGB/HSL、命名色或 transparent。');
   const sourceFields = new Set(resolveEffectiveFields(config, sourcePath).map((field) => field.key));
@@ -501,9 +510,9 @@ export function validateRenderColorBinding(binding: unknown, config: ConfigPacka
     return;
   }
   if (value.mode === 'external') {
-    if (!value.target || !isContinuousPath(value.target) || !hasCategoryNode(config, value.target)) issue(issues, 'error', 'render-color-target-classification-invalid', path, '外部颜色必须选择存在且连续的目标分类。');
+    if(value.targetScope?classificationScopeProblems(value.targetScope,config).length>0||!resolveClassificationScope(config,value.targetScope).length:!value.target||!isContinuousPath(value.target)||!hasCategoryNode(config,value.target)) issue(issues, 'error', 'render-color-target-classification-invalid', path, '外部颜色必须选择存在且连续的目标分类。');
     if (!value.targetIdField || (!sourceFields.has(value.targetIdField) && !SYSTEM_FIELD_KEYS.has(value.targetIdField))) issue(issues, 'error', 'render-color-target-id-field-invalid', path, '颜色目标要素 ID 字段必须是当前分类的有效字段。', { field: value.targetIdField });
-    const targetFields = value.target && isContinuousPath(value.target) && hasCategoryNode(config, value.target) ? new Set(resolveSelectableFields(config, value.target).map((field) => field.key)) : new Set<string>();
+    const targetFields = value.targetScope?new Set(scopeCommonFields(config,value.targetScope).map(field=>field.key)):value.target && isContinuousPath(value.target) && hasCategoryNode(config, value.target) ? new Set(resolveSelectableFields(config, value.target).map((field) => field.key)) : new Set<string>();
     if (!value.targetColorField || !targetFields.has(value.targetColorField)) issue(issues, 'error', 'render-color-target-field-invalid', path, '目标要素颜色字段必须在目标分类中有效。', { field: value.targetColorField });
     return;
   }
@@ -880,11 +889,12 @@ function validateCard(node: CategoryNode, config: ConfigPackageV3, issues: Confi
       if(relation.targetClassification||relation.targetMatchField!=='ID'||!isSafeWorkflowTarget(relation.targetDisplayField??'Name'))issue(issues,'error','relation-role-target-invalid',itemPath,'通用主结构关系按 ID 匹配，不限制 Class；目标显示字段必须为安全路径。');
       continue;
     }
-    if (!relation?.targetClassification || !isContinuousPath(relation.targetClassification) || !hasCategoryNode(config, relation.targetClassification)) {
+    if(!relation){issue(issues,'error','relation-target-required',itemPath,'请设置关系目标。');continue;}
+    if(relation.targetScope?classificationScopeProblems(relation.targetScope,config).length>0||!resolveClassificationScope(config,relation.targetScope).length:!relation?.targetClassification||!isContinuousPath(relation.targetClassification)||!hasCategoryNode(config,relation.targetClassification)) {
       issue(issues, 'error', 'relation-target-classification-invalid', itemPath, '关系卡必须选择存在且连续的目标分类。');
       continue;
     }
-    const targetFields = new Set(resolveSelectableFields(config, relation.targetClassification).map((field) => field.key));
+    const targetFields = new Set((relation.targetScope?scopeCommonFields(config,relation.targetScope):resolveSelectableFields(config,relation.targetClassification!)).map(field=>field.key));
     const supports = (field: string | undefined) => Boolean(field && (targetFields.has(field) || SYSTEM_FIELD_KEYS.has(field)));
     if (!supports(relation.targetMatchField)) issue(issues, 'error', 'relation-target-match-field-invalid', itemPath, '关系卡的目标匹配字段不在目标分类的有效字段集中。');
     if (!supports(relation.targetDisplayField)) issue(issues, 'error', 'relation-target-display-field-invalid', itemPath, '关系卡的目标展示字段不在目标分类的有效字段集中。');
@@ -897,13 +907,13 @@ function controlsFor(workflow: WorkflowDefinition): WorkflowControl[] {
 
 function validateSearch(control: Pick<WorkflowControl, 'kind' | 'search'>, config: ConfigPackageV3, path: string, issues: ConfigValidationIssue[]): void {
   const search = normalizeSearchProfile(control.search);
-  if (!search || (!search.targetRole&&(!isContinuousPath(search.target) || !hasCategoryNode(config, search.target)))) {
+  if (!search || (!search.targetRole&&(search.scope?classificationScopeProblems(search.scope,config).length>0||!resolveClassificationScope(config,search.scope).length:!isContinuousPath(search.target)||!hasCategoryNode(config,search.target)))) {
     issue(issues, 'error', 'workflow-search-target-invalid', path, '搜索控件必须选择存在且连续的目标分类范围。');
     return;
   }
   const targets=search.targetRole==='main'?config.nodes.filter(node=>{const role=resolveNodeFieldSettings(config,node.path).value.structure;return role?.enabled&&role.role==='main';}):[];
   if(search.targetRole&&(config.contractRevision<10||!targets.length))issue(issues,'error','workflow-search-role-invalid',path,'通用搜索需要 c10 且至少有一个启用的主结构分类。');
-  const selectable = new Set(search.targetRole?targets.flatMap(node=>resolveSelectableFields(config,node.path).map(field=>field.key)).filter(key=>targets.every(node=>resolveSelectableFields(config,node.path).some(field=>field.key===key))):resolveSelectableFields(config, search.target).map((field) => field.key));
+  const selectable = new Set(search.targetRole?targets.flatMap(node=>resolveSelectableFields(config,node.path).map(field=>field.key)).filter(key=>targets.every(node=>resolveSelectableFields(config,node.path).some(field=>field.key===key))):(search.scope?scopeCommonFields(config,search.scope):resolveSelectableFields(config,search.target)).map(field=>field.key));
   if (!search.queryFields?.length) issue(issues, 'error', 'workflow-search-fields-required', path, '搜索控件至少需要选择一个可匹配字段。');
   for (const field of search.queryFields ?? []) if (!selectable.has(field)) issue(issues, 'error', 'workflow-search-field-invalid', path, `搜索字段 ${field} 不在目标分类的有效字段集中。`, { field });
   if (!search.returnField || !selectable.has(search.returnField)) issue(issues, 'error', 'workflow-search-return-field-invalid', path, '搜索控件必须选择一个有效的单一返回字段。', { field: search.returnField });
@@ -995,6 +1005,7 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
   workflow = resolveWorkflowFields(config,workflow);
   const base = `workflows/${workflow.id}`;
   if(workflow.editor?.dedicated&&workflow.quickMapping!==false)issue(issues,'error','workflow-editor-dedicated-visible',base,'专供编辑工作流必须关闭便捷测绘。');
+  if(config.contractRevision>=18&&workflow.editor?.enabled&&(!workflow.editor.range||classificationScopeProblems(workflow.editor.range,config).length||!resolveClassificationScope(config,workflow.editor.range).length))issue(issues,'error','workflow-editor-range-invalid',base,'启用编辑方案必须设置有效且非空的分类加减范围。');
   if(workflow.editor?.enabled&&workflow.mode==='composed')try {testWorkflowEditConversion(config,workflow);}catch(error){issue(issues,'error','workflow-editor-conversion-invalid',base,error instanceof Error?error.message:'编辑资格或回填失败。');}
   if(config.contractRevision<9&&(workflow.editor||workflow.quickMapping!==undefined||workflow.external?.purpose))issue(issues,'error','workflow-editor-r9-required',base,'工作流编辑用途需要 c9。');
   if(config.contractRevision>=9)for(const step of workflow.steps)for(const control of step.controls??[])if([control,...(control.group?.itemFields??[])].some(item=>item.fieldSource))issue(issues,'error','live-field-source-forbidden',base,'c9 及以上的预填不保留来源关系，请迁移展开旧控件。');
@@ -1010,7 +1021,7 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
       if(workflow.external?.purpose==='edit'){
         for(const message of validateExternalEditBinding(workflow))issue(issues,'error','external-editor-invalid',base,message);
         const scope=workflow.editor?.scope??workflow.target;
-        if(!scope||!hasCategoryNode(config,scope))issue(issues,'error','external-editor-scope-invalid',base,'外部编辑范围不存在。');
+        if(workflow.editor?.range?classificationScopeProblems(workflow.editor.range,config).length>0:!scope||!hasCategoryNode(config,scope))issue(issues,'error','external-editor-scope-invalid',base,'外部编辑范围不存在。');
       }else{
         const components={'railway-integrated':'railwayWorkflow','station-integrated':'stationWorkflow','trp-integrated':'tradePointWorkflow'};
         if(!workflow.external||components[workflow.external.reason]!==workflow.external.componentKey||workflow.external.purpose&&workflow.external.purpose!=='capture'||workflow.editor?.enabled)issue(issues,'error','external-workflow-invalid',base,'外部采集组件、用途或登记理由不符。');
@@ -1020,8 +1031,8 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
     if(workflow.external?.purpose==='edit') {
       for(const message of validateExternalEditBinding(workflow))issue(issues,'error','external-editor-invalid',base,message);
       const scope=workflow.editor?.scope??workflow.target;
-      if(!scope||!hasCategoryNode(config,scope))issue(issues,'error','external-editor-scope-invalid',base,'外部编辑分类范围不存在。');
-      else for(const node of config.nodes.filter(n=>pathMatchesScope(n.path,scope))) {
+      if(workflow.editor?.range?classificationScopeProblems(workflow.editor.range,config).length>0:!scope||!hasCategoryNode(config,scope))issue(issues,'error','external-editor-scope-invalid',base,'外部编辑分类范围不存在。');
+      else for(const node of config.nodes.filter(n=>workflow.editor?.range?matchesClassificationRange(workflow.editor.range,n.path):!!scope&&pathMatchesScope(n.path,scope))) {
         const fields=resolveSelectableFields(config,node.path);
         for(const [key,type]of [['Name','string'],['Interaction','string'],['Situation','string'],['Trade','json'],['elevation','number'],['tags.Land','string'],['tags.UAdm','string'],['tags.UAdmG','string'],['extensions.link.wiki','string'],['extensions.character.brief','string']]) {
           const field=fields.find(f=>f.key===key);
@@ -1055,7 +1066,7 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
   const controlList = controlsFor(workflow);
   if(config.contractRevision>=8){
     const modules=controlList.filter(control=>control.kind==='tagsExtensions');
-    if(tailIndex>=0||modules.length!==1||!modules[0]?.systemManaged||workflow.steps.some(step=>step.kind!=='form'&&step.controls?.some(control=>control.kind==='tagsExtensions')))issue(issues,'error','workflow-inline-annotations-required',base,'必须在信息收集页保留一个不可删除、可移动的标签与扩展固定单元。');
+    if(tailIndex>=0||(config.contractRevision>=18?modules.length!==workflow.outputs.length||modules.some(control=>!control.systemManaged||!workflow.outputs.some(output=>output.id===control.outputId)):modules.length!==1||!modules[0]?.systemManaged)||workflow.steps.some(step=>step.kind!=='form'&&step.controls?.some(control=>control.kind==='tagsExtensions')))issue(issues,'error','workflow-inline-annotations-required',base,'必须在信息收集页保留一个不可删除、可移动的标签与扩展固定单元。');
   }
   const allTokens = new Set([...controlList.flatMap(control => control.slot ? [control.slot] : []), ...workflowDerivedPointTokens(workflow), ...WORKFLOW_SYSTEM_TOKENS, ...workflow.outputs.flatMap((_, index) => WORKFLOW_SYSTEM_TOKENS.map(token => `${token}_${index + 1}`))]);
   const captured = workflowCaptureSlots(workflow);
@@ -1150,8 +1161,9 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
     }
   };
   for (const [outputIndex, output] of workflow.outputs.entries()) {
+    if(config.contractRevision>=18&&controlList.filter(control=>control.kind==='tagsExtensions'&&control.outputId===output.id).length!==1)issue(issues,'error','workflow-output-annotations-invalid',`${base}/outputs/${output.id}`,'每个输出必须绑定唯一的标签与扩展单元。');
     const managed = controlList.filter((control) => control.kind === 'classificationPicker' && control.systemManaged && (control.outputId === output.id || (!control.outputId && control.classificationScope && classificationPathKey(control.classificationScope) === classificationPathKey(output.classification??{class:''}))));
-    if ((config.contractRevision>=15?workflowClassificationGroup(config,output).paths.length>1:Boolean(output.classification&&targetSupportsClassificationPicker(config,output.classification))) !== Boolean(managed.length)) issue(issues, 'error', 'workflow-classification-picker-stale', `${base}/outputs/${output.id}`, '工作流输出分类的子分类状态已变化；请打开工作流以刷新系统 Classification 控件。');
+    if ((config.contractRevision>=18?true:config.contractRevision>=15?workflowClassificationGroup(config,output).paths.length>1:Boolean(output.classification&&targetSupportsClassificationPicker(config,output.classification))) !== Boolean(managed.length)) issue(issues, 'error', 'workflow-classification-picker-stale', `${base}/outputs/${output.id}`, '工作流输出分类的子分类状态已变化；请打开工作流以刷新系统 Classification 控件。');
     validateWorkflowOutput(output, outputIndex, workflow, config, slots, issues);
   }
   // r6/r7 factory capture overrides are an explicitly recognised old drawing
@@ -1336,7 +1348,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
     if(config.contractRevision<12)issue(issues,'error','icon-resources-revision','resources','图标资源能力需要契约 c12。');
     const seen=new Set<string>();for(const item of config.resources.iconLibraries){if(seen.has(item.library))issue(issues,'error','icon-resource-duplicate','resources','同一图库只能声明一次。');seen.add(item.library);if(item.library!==ICON_LIBRARY.library||item.version!==ICON_LIBRARY.version||item.manifestSha256!==ICON_LIBRARY.manifestSha256)issue(issues,'error','icon-resource-unsupported','resources','图库版本或资源摘要不在当前支持的固定清单中。');}
   }
-  if(config.contractRevision>=11)for(const button of config.application?.buttons.items??[]){const rows=button.criteria.paths;if(!rows)issue(issues,'error','button-path-migration-required',`application/buttons/${button.id}`,'c11 及以上的按钮需要完整分类路径。');else for(const [index,row] of rows.entries()){if(!hasCategoryNode(config,row))issue(issues,'error','button-path-invalid',`application/buttons/${button.id}/${index}`,'按钮显示内容不是有效分类路径。');if(rows.some((other,at)=>at!==index&&Object.entries(other).every(([key,value])=>!value||row[key as keyof ClassificationPath]===value)))issue(issues,'warning','button-path-redundant',`application/buttons/${button.id}/${index}`,'该范围已被另一条上级或重复范围包含，可删除冗余行。');}}
+  if(config.contractRevision>=11)for(const button of config.application?.buttons.items??[]){const rows=button.criteria.paths;if(config.contractRevision>=18){if(!button.criteria.scope)issue(issues,'error','button-scope-required',`application/buttons/${button.id}`,'c18 按钮必须使用显式分类加减范围。');else for(const message of classificationScopeProblems(button.criteria.scope,config))issue(issues,'error','button-scope-invalid',`application/buttons/${button.id}`,message);continue;}if(!rows)issue(issues,'error','button-path-migration-required',`application/buttons/${button.id}`,'c11 及以上的按钮需要完整分类路径。');else for(const [index,row] of rows.entries()){if(!hasCategoryNode(config,row))issue(issues,'error','button-path-invalid',`application/buttons/${button.id}/${index}`,'按钮显示内容不是有效分类路径。');if(rows.some((other,at)=>at!==index&&Object.entries(other).every(([key,value])=>!value||row[key as keyof ClassificationPath]===value)))issue(issues,'warning','button-path-redundant',`application/buttons/${button.id}/${index}`,'该范围已被另一条上级或重复范围包含，可删除冗余行。');}}
   if(config.contractRevision<11&&config.application&&isWorldGroups(config.application.sources))issue(issues,'error','resource-groups-revision','application/sources','World resource groups require contract r11.');
   if(config.contractRevision>=10&&!config.application)issue(issues,'error','application-required','application','r10 完整应用包必须包含总体规则。');
   if (config.contractRevision >= 10 && config.application) for (const row of validateApplication(config.application, new Set(config.nodes.map(node=>node.path.class)))) issue(issues,'error','application-invalid','application/'+row.path,row.message);
@@ -1346,6 +1358,11 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   issues.push(...validatePrefillCopies(config,resolveEffectiveFields));
   issues.push(...validateNodeFieldSettings(config,resolveEffectiveFields));
   if (config.contractRevision>=8 && (config.registries.optionSets || config.nodes.some(node=>node.fields.some(field=>field.optionSource)) || config.workflows.some(workflow=>controlsFor(workflow).some(control=>control.optionSource)))) issue(issues,'error','legacy-option-source-forbidden','registries','c8 及以上使用字段内对照；旧全局选项来源必须先迁移。');
+  if(config.contractRevision>=18){
+    const app=config.application;
+    if(!app?.workflowAvailability||!app.about||!app.announcements||!app.preferences.pictureControls)issue(issues,'error','c18-application-modules-required','application','c18 必须包含世界工作流清单、公告、关于及图片控制；请执行完整迁移。');
+    if(app?.workflowAvailability)for(const world of app.worlds){const ids=app.workflowAvailability[world.id];if(!Array.isArray(ids)||new Set(ids).size!==ids.length||ids.some(id=>!config.workflows.some(workflow=>workflow.id===id&&workflow.quickMapping!==false&&workflow.external?.purpose!=='edit')))issue(issues,'error','workflow-availability-invalid','application/workflowAvailability/'+world.id,'世界工作流清单含重复、失效或不可用于快捷采集的工作流。');}
+  }
   if (config.schemaVersion !== 'cairnmap.config-package.v3') issue(issues, 'error', 'schema-version-invalid', 'manifest', '配置包不是 cairnmap.config-package.v3。');
   if (!isNativeConfigRevision(config.contractRevision)) issue(issues, 'error', 'contract-revision-invalid', 'manifest', '配置包必须使用受支持的原生契约：'+CONTRACT_CAPABILITIES.native.map(v=>'c'+v).join('、')+'。');
   validateEngine(config, issues);
@@ -1434,9 +1451,9 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
       const key=classificationPathKey(scope);if(editorScopes.has(key))issue(issues,'error','workflow-editor-route-duplicate',`workflows/${workflow.id}`,'同一分类范围存在多个编辑工作流。');editorScopes.add(key);
     }else{
       const rank=Object.values(scope??{}).filter(Boolean).length;
-      const candidates=workflow.mode==='external'&&scope?listCategoryPaths(config,scope).filter(path=>resolveGeometryProfile(config,path,'Point')?.enabled):workflow.outputs.flatMap(output=>workflowClassificationGroup(config,output).paths);
-      for(const path of [...new Map(candidates.filter(path=>!scope||pathMatchesScope(path,scope)).map(path=>[classificationPathKey(path),path])).values()]){
-        const key=rank+':'+classificationPathKey(path);if(editorScopes.has(key))issue(issues,'error','workflow-editor-route-duplicate',`workflows/${workflow.id}`,'分类 '+classificationPathKey(path)+' 存在同优先级编辑路由。');editorScopes.add(key);
+      const candidates=workflow.mode==='external'?(workflow.editor?.range?resolveClassificationScope(config,workflow.editor.range):scope?listCategoryPaths(config,scope):[]).filter(path=>resolveGeometryProfile(config,path,'Point')?.enabled):workflow.outputs.flatMap(output=>workflowClassificationGroup(config,output).paths);
+      for(const path of [...new Map(candidates.filter(path=>workflow.editor?.range?matchesClassificationRange(workflow.editor.range,path):!scope||pathMatchesScope(path,scope)).map(path=>[classificationPathKey(path),path])).values()]){
+        const exactRank=workflow.editor?.range?Math.max(0,...scopeRows(workflow.editor.range).filter(row=>row.condition==='include'&&pathMatchesScope(path,row.path)).map(row=>Object.values(row.path).filter(Boolean).length)):rank;const key=exactRank+':'+classificationPathKey(path);if(editorScopes.has(key))issue(issues,'error','workflow-editor-route-duplicate',`workflows/${workflow.id}`,'分类 '+classificationPathKey(path)+' 存在同优先级编辑路由。');editorScopes.add(key);
       }
     }
   }

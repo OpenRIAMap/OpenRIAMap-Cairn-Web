@@ -14,7 +14,7 @@ export function createPrefillAudit(path:ClassificationPath,field:FieldDefinition
 }
 type Audited={prefillAudit?:PrefillAudit};
 export function visitPrefillCopies(config:ConfigPackageV3,visit:(owner:Audited,path:string)=>void):void {
-  config.nodes.forEach(node=>{if(node.card?.mode==='fields')node.card.items.filter(item=>!item.inheritFrom).forEach(item=>visit(item,`nodes/${node.nodeId}/card/${item.id}`));if(node.fieldSettings?.search)visit(node.fieldSettings.search.subtitle,`nodes/${node.nodeId}/fieldSettings/search/subtitle`);});
+  config.nodes.forEach(node=>{if(node.card?.mode==='fields')node.card.items.filter(item=>!item.inheritFrom).forEach(item=>visit(item,`nodes/${node.nodeId}/card/${item.id}`));if(node.fieldSettings?.search)visit(node.fieldSettings.search.subtitle,`nodes/${node.nodeId}/fieldSettings/search/subtitle`);if(node.searchSettings)visit(node.searchSettings.subtitle,`nodes/${node.nodeId}/searchSettings/subtitle`);});
   config.workflows.forEach(w=>w.steps.forEach(s=>s.controls?.forEach(c=>{if(!c.optionsTableId)visit(c,`workflows/${w.id}/${c.id}`);c.group?.itemFields.filter(f=>!f.optionsTableId).forEach(f=>visit(f,`workflows/${w.id}/${c.id}/${f.key}`));})));
 }
 export function validatePrefillCopies(config:ConfigPackageV3,resolve:(config:ConfigPackageV3,path:ClassificationPath)=>FieldDefinition[]):ConfigValidationIssue[] {
@@ -23,7 +23,7 @@ export function validatePrefillCopies(config:ConfigPackageV3,resolve:(config:Con
     const audit=owner.prefillAudit;if(!audit)return;
     const fields=resolve(config,audit.source.path),field=fields.find(field=>field.fieldId===audit.source.fieldId)??fields.find(field=>field.key===audit.source.key);
     const source=Object.values(audit.source.path).filter(Boolean).join('/');
-    if(!field){issues.push({severity:config.contractRevision>=11?'warning':'error',code:'prefill-source-field-missing',path,field:audit.source.key,message:`预填来源 ${source} / ${audit.source.key} 已不存在；当前副本仍独立保存，请确认是否需要更新。`});return;}
+    if(!field){if(audit.confirmedFingerprint==='missing:'+canonical(audit.source))return;issues.push({severity:config.contractRevision>=11?'warning':'error',code:'prefill-source-field-missing',path,field:audit.source.key,message:`预填来源 ${source} / ${audit.source.key} 已不存在；当前副本仍独立保存，请确认是否需要更新。`});return;}
     const current=fieldFingerprint(field);
     if(current!==audit.fingerprint&&current!==audit.confirmedFingerprint)issues.push({severity:'warning',code:'prefill-copy-outdated',path,field:field.key,message:`来源 ${source} / ${field.key} 的定义、名称、类型或对照已变化；${path} 仍保留独立副本。请重新预填，或确认保留本次自定义副本。`});
   });return issues;
@@ -31,6 +31,6 @@ export function validatePrefillCopies(config:ConfigPackageV3,resolve:(config:Con
 export function confirmPrefillCopies(input:ConfigPackageV3,resolve:(config:ConfigPackageV3,path:ClassificationPath)=>FieldDefinition[],paths?:string[]):ConfigPackageV3 {
   const config=structuredClone(input);visitPrefillCopies(config,(owner,path)=>{
     if(paths&&!paths.includes(path))return;const audit=owner.prefillAudit;if(!audit)return;
-    const field=resolve(config,audit.source.path).find(field=>field.fieldId===audit.source.fieldId||field.key===audit.source.key);if(field)audit.confirmedFingerprint=fieldFingerprint(field);
+    const field=resolve(config,audit.source.path).find(field=>field.fieldId===audit.source.fieldId||field.key===audit.source.key);audit.confirmedFingerprint=field?fieldFingerprint(field):'missing:'+canonical(audit.source);
   });return config;
 }

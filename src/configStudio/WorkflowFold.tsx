@@ -14,11 +14,11 @@ export function locateWorkflowSetting(path:string):void{
  for(let parent:HTMLElement|null=target;parent;parent=parent.parentElement)if(parent instanceof HTMLDetailsElement)parent.open=true;
  requestAnimationFrame(()=>{target.scrollIntoView({block:'center'});target.querySelector<HTMLElement>('input,textarea,select,button')?.focus();});
 }
-export function WorkflowFold({title,foldKey,path,children}:{title:ReactNode;foldKey:string;path?:string;children:ReactNode}){
+export function WorkflowFold({title,foldKey,path,children,order}:{order?:ReactNode;title:ReactNode;foldKey:string;path?:string;children:ReactNode}){
  const context=useContext(Context),ref=useRef<HTMLDetailsElement>(null),full=path?`workflows/${context.workflowId}/${path}`:undefined;
  const errors=full?context.issues.filter(issue=>issue.severity==='error'&&(issue.path===full||issue.path.startsWith(full+'/'))):[];
  useLayoutEffect(()=>{const node=ref.current;if(!node)return;const focus=(event:FocusEvent)=>{if(event.target!==node.querySelector(':scope > summary'))node.open=true;};node.addEventListener('focusin',focus);return()=>node.removeEventListener('focusin',focus);},[]);
- return <details ref={ref} data-fold-key={'workflow:'+context.workflowId+':'+foldKey} data-workflow-path={full} className="cm-subsection cm-workflow-fold"><summary className="cursor-pointer font-medium">{title}{errors.length?<span className="ml-2 text-xs text-rose-700">{errors.length} 项错误</span>:null}</summary><div className="mt-3">{children}</div></details>;
+ return <details ref={ref} data-fold-key={'workflow:'+context.workflowId+':'+foldKey} data-workflow-path={full} className="cm-subsection cm-workflow-fold"><summary className="flex cursor-pointer items-center gap-2 font-medium">{title}{order}{errors.length?<span className="ml-2 text-xs text-rose-700">{errors.length} 项错误</span>:null}</summary><div className="mt-3">{children}</div></details>;
 }
 
 /** Indices only pair UI identities with this exact checkpoint; live keys are stable row IDs. */

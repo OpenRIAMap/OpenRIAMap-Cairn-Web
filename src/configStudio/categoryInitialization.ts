@@ -13,7 +13,7 @@ import { categoryDraftReport } from './categoryDraft';
 export type CategoryInitialization = {
   parentId?:string; code:string; labels:{zh:string;en:string};
   mode:'parent'|'template'|'blank';sourceId?:string;
-  sync:{fields:boolean;geometry:boolean;display:boolean;card:boolean};
+  sync:{fields:boolean;geometry:boolean;display:boolean;card:boolean;search?:boolean};
   geometry:GeometryKind|'';multiple:boolean;anchor:LabelAnchor;
 };
 export type CategoryInitializationReport={actions:string[];renamed:Record<string,string>};
@@ -74,6 +74,7 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
   const sourceType=source?.geometryType??(['Point','LineString','Polygon'] as const).find(type=>source&&resolveGeometryProfile(config,source.path,type)?.enabled);
   const sourceCapability=source&&sourceType?resolveGeometryProfile(config,source.path,sourceType):undefined;
   const sync=request.mode==='blank'?{fields:false,geometry:false,display:false,card:false}:request.sync;
+  if(config.contractRevision>=18&&!sync.fields&&(sync.display||sync.card||sync.search))throw Error('请先选择同步字段，才允许同步信息卡、渲染和搜索。');
   if(sync.geometry&&sourceType&&!sourceCapability)throw Error('来源分类没有可用的几何设置。');
   const geometry=sync.geometry?sourceType??'':request.geometry,multiple=Boolean(geometry)&&(sync.geometry?sourceCapability?.allowMultipleParts??false:request.multiple),anchor=multiple?(sync.geometry?sourceCapability?.anchor??'featureBbox':request.anchor):'featureBbox';
   if(geometry&&parent&&resolveCategoryNodes(config,parent.path).some(node=>node.geometryType&&node.geometryType!==geometry))throw Error(`几何 ${geometry} 与目标祖先固定几何冲突。`);
@@ -104,7 +105,8 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
   if(card.mode==='fields')card.items=card.items.map(item=>({...item,...(config.contractRevision>=10?{inheritFrom:undefined}:{}),id:newConfigId('card')}));
   const node:CategoryNode={nodeId:newConfigId('node'),path,classificationLabels:{...parent?.classificationLabels,[level]:{zh:request.labels.zh.trim()||code,en:request.labels.en}},children:[],inheritDown:source?structuredClone(inheritanceControls(source)):{fields:true,display:true,card:true},fields,...(geometry?{geometryType:geometry}:{}),geometryProfiles:geometry&&profile?{[geometry]:profile}:{},card};
   if(sync.fields&&source&&card.mode==='fields')for(const item of card.items)for(const property of ['fieldBinding','optionsFieldRef'] as const){const ref=item[property];if(!ref||ref.nodeId!==source.nodeId)continue;const matches=originals.filter(field=>field.fieldId===ref.fieldId);if(matches.length!==1)throw Error(`模板字段 ID ${ref.fieldId} 不存在或有歧义，不能复制引用。`);const original=matches[0],target=copies.get(original.key)??base.find(field=>field.key===pathRename(original.key,renamed));if(!target)throw Error(`模板引用 ${original.key} 未随字段同步，不能复制引用。`);item[property]={nodeId:node.nodeId,fieldId:target.fieldId};}
-  if(config.contractRevision>=10&&sync.fields&&source){const inherited=incomingNodeFieldSettings({...config,nodes:[...config.nodes,node]},node),copy=rewriteCategoryReferences(structuredClone(resolveNodeFieldSettings(config,source.path).value),renamed);if(inherited.structure&&copy.structure&&JSON.stringify(inherited.structure)!==JSON.stringify(copy.structure))throw Error('模板身份/绑定字段与父级固定包含关系冲突，无法增量合并。');node.fieldSettings={...copy};if(inherited.structure)delete node.fieldSettings.structure;if(inherited.search?.inheritance==='sealed')delete node.fieldSettings.search;}
+  if(config.contractRevision>=18&&source){const settings=resolveNodeFieldSettings(config,source.path).value;if(sync.display&&settings.structure)node.displaySettings={structure:rewriteCategoryReferences(structuredClone(settings.structure),renamed)};if(sync.search&&settings.search)node.searchSettings=rewriteCategoryReferences(structuredClone(settings.search),renamed);}
+  if(config.contractRevision>=10&&config.contractRevision<18&&sync.fields&&source){const inherited=incomingNodeFieldSettings({...config,nodes:[...config.nodes,node]},node),copy=rewriteCategoryReferences(structuredClone(resolveNodeFieldSettings(config,source.path).value),renamed);if(inherited.structure&&copy.structure&&JSON.stringify(inherited.structure)!==JSON.stringify(copy.structure))throw Error('模板身份/绑定字段与父级固定包含关系冲突，无法增量合并。');node.fieldSettings={...copy};if(inherited.structure)delete node.fieldSettings.structure;if(inherited.search?.inheritance==='sealed')delete node.fieldSettings.search;}
   if(config.contractRevision>=10&&parent&&inheritanceControls(parent).card)linkCardInheritance(node,resolveCardConfiguration(config,parent.path),parent.nodeId);
   const next=structuredClone(config);next.nodes.push(node);if(parent)next.nodes.find(item=>item.nodeId===parent.nodeId)!.children.push(node.nodeId);
   const available=new Set(resolveSelectableFields(next,path).map(field=>field.key));
@@ -115,7 +117,7 @@ export function initializeCategory(input:ConfigPackageV3,request:CategoryInitial
   // Card fallbackSources may intentionally read legacy raw aliases (e.g.
   // height -> Height). Preserve them exactly as the card validator permits;
   // primary card fields and render fallbacks still receive strict checks.
-  for(const dependency of new Set([...localDependencies([profile?.zoomPriority,node.fieldSettings]),...localDependencies(card,false)]))if(!available.has(dependency))throw Error(`未同步依赖字段 ${dependency}；请同步字段设计或调整初始化选择。`);
+  for(const dependency of new Set([...localDependencies([profile?.zoomPriority,node.fieldSettings,node.displaySettings,node.searchSettings]),...localDependencies(card,false)]))if(!available.has(dependency))throw Error(`未同步依赖字段 ${dependency}；请同步字段设计或调整初始化选择。`);
   for(const rule of profile?.zoomPriority.rules??[]){const visibility=rule.extensions?.visibility;if(visibility?.mode==='activeContextMember'&&visibility.activeContextMember?.bindingId){if(config.contractRevision>=10){const role=resolveNodeFieldSettings(next,path).value.structure;if(visibility.activeContextMember.bindingId!==STRUCTURE_CONTEXT_ID||!role?.enabled||role.role!=='member')throw Error('模板的附属可见性需要同步可用的附属身份与字段。');}else{const binding=next.contextBindings?.find(binding=>binding.id===visibility.activeContextMember?.bindingId);if(binding?.member?.classification.class!==path.class)throw Error('模板显示引用的上下文绑定不适用于目标 Class。');}}}
   next.workflows=syncSystemClassification(next).workflows;
   const fullValidation=validateConfigPackage(next),validation=options.allowUnfinishedGeometry?categoryDraftReport(fullValidation):fullValidation;if(!validation.valid)throw Error(validation.issues.filter(issue=>issue.severity==='error').map(issue=>`${issue.path}：${issue.message}`).join('\n'));const candidate=canonicalDictionaries(next);

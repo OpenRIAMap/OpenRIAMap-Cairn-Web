@@ -8,14 +8,14 @@ import {
   type DataSourceSelectionFailure,
 } from '@/core/dataSourceSelection';
 import { useLoadingStore } from '@/store/loadingStore';
-import { abortActiveRuleDatasetRequests, loadWorldRuleDataset } from '@/components/Rules/data/worldRuleDatasetLoader';
+import { abortActiveRuleDatasetRequests, loadWorldRuleDataset, applicationWorldDataset } from '@/components/Rules/data/worldRuleDatasetLoader';
 import { FormalReleaseReaderError } from '@/components/Rules/data/formalReleaseReader';
 import {
   getRuleDataSourceSelectionController,
   getRuleDataSourceSnapshot,
   type RuleDataSourceSnapshot,
 } from '@/components/Rules/data/formalDataSourceRuntime';
-import { removeRuleWorldCache } from '@/components/Rules/data/worldRuleCache';
+import { readRecoverableRuleWorldCache } from '@/components/Rules/data/worldRuleCache';
 import { loadMapSettings } from '@/lib/cookies';
 import type { RuleWorldDataset } from '@/components/Rules/data/sourceTypes';
 import type { LoadingProgress } from '@/lib/fetchWithMirror';
@@ -33,6 +33,7 @@ interface RuleDataState {
   applyDataSource: (sourceId: string, context: DataSourceSelectionContext) => Promise<void>;
   applyDataSourceTransport: () => Promise<void>;
   clearDataSourceFailure: () => void;
+  recoverLocalWorld: () => boolean;
 }
 
 const WORLD_LOADING_STAGES = [
@@ -47,6 +48,9 @@ const WORLD_LOADING_STAGES = [
   { name: 'world-layer-render', label: '正在生成地图图层' },
   { name: 'world-first-paint', label: '正在等待首帧显示' },
 ];
+// A late network result must never replace a deliberate local recovery.
+const requestEpochs = new Map<string, number>();
+function nextEpoch(world: string) { const epoch = (requestEpochs.get(world) ?? 0) + 1; requestEpochs.set(world, epoch); return epoch; }
 
 function currentWorldId(): string {
   return normalizeRuleSourceWorldId(String(loadMapSettings()?.currentWorld ?? ''));
@@ -88,6 +92,7 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
     const source = getRuleDataSourceSnapshot(worldId);
     const pending = get().pending[worldId];
     if (pending && get().pendingGeneration[worldId] === source.generation) return pending;
+    const epoch = nextEpoch(worldId);
 
     const ruleFlowId = `rule-world:${worldId}`;
     const { startLoading, updateStage, finishLoadingByFlow } = useLoadingStore.getState();
@@ -96,7 +101,7 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
 
     const promise = loadWorldRuleDataset(worldId, onProgress, source)
       .then((dataset) => {
-        if (!isCurrentSource(source)) return dataset;
+        if (!isCurrentSource(source) || requestEpochs.get(worldId) !== epoch) return dataset;
         set((state) => ({
           datasets: { ...state.datasets, [worldId]: dataset },
           loadingWorld: state.loadingWorld === worldId ? null : state.loadingWorld,
@@ -111,16 +116,15 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
       .catch((error) => {
         const failure = toDataSourceFailure(error, source, worldId);
         set((state) => {
-          const shouldClearPending = state.pendingGeneration[worldId] === source.generation;
+          const shouldClearPending = state.pendingGeneration[worldId] === source.generation && requestEpochs.get(worldId) === epoch;
           return {
             loadingWorld: shouldClearPending && state.loadingWorld === worldId ? null : state.loadingWorld,
             pending: shouldClearPending ? { ...state.pending, [worldId]: undefined } : state.pending,
             pendingGeneration: shouldClearPending ? { ...state.pendingGeneration, [worldId]: undefined } : state.pendingGeneration,
-            ...(isCurrentSource(source) ? { dataSource: source, dataSourceFailure: failure } : {}),
+            ...(isCurrentSource(source) && requestEpochs.get(worldId) === epoch ? { dataSource: source, dataSourceFailure: failure } : {}),
           };
         });
-        updateStage('world-ready', 'error', failure.message);
-        setTimeout(() => finishLoadingByFlow(ruleFlowId), 300);
+        if(requestEpochs.get(worldId)===epoch&&isCurrentSource(source)){updateStage('world-ready','error',failure.message);setTimeout(()=>finishLoadingByFlow(ruleFlowId),300);}
         throw error;
       });
 
@@ -150,6 +154,7 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
 
     for (const worldId of orderedIds) {
       const source=getRuleDataSourceSnapshot(worldId);
+      const epoch=nextEpoch(worldId);
       const onProgress = worldId === activeWorldId
         ? (progress: LoadingProgress) => {
             const state = useLoadingStore.getState();
@@ -160,7 +165,7 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
 
       try {
         const dataset = await loadWorldRuleDataset(worldId, onProgress, source);
-        if (!isCurrentSource(source)) return;
+        if (!isCurrentSource(source) || requestEpochs.get(worldId)!==epoch) continue;
         set((state) => ({
           datasets: { ...state.datasets, [worldId]: dataset },
           pending: { ...state.pending, [worldId]: undefined },
@@ -169,7 +174,7 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
           dataSource: source,
           dataSourceFailure: null,
         }));
-        if (worldId === activeWorldId) {
+        if (worldId === activeWorldId&&requestEpochs.get(worldId)===epoch) {
           const state = useLoadingStore.getState();
           if (state.isLoading && state.activeFlowId === activeFlowId && state.activeRuleWorldId === activeWorldId) {
             state.updateStage('world-ready', 'success', '等待地图首帧显示');
@@ -177,8 +182,8 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
         }
       } catch (error) {
         const failure = toDataSourceFailure(error, source, worldId);
-        if (isCurrentSource(source)) set({ dataSource: source, dataSourceFailure: failure });
-        if (worldId === activeWorldId) {
+        if (isCurrentSource(source)&&requestEpochs.get(worldId)===epoch) set({ dataSource: source, dataSourceFailure: failure });
+        if (worldId === activeWorldId&&requestEpochs.get(worldId)===epoch) {
           const state = useLoadingStore.getState();
           if (state.isLoading && state.activeFlowId === activeFlowId && state.activeRuleWorldId === activeWorldId) {
             state.updateStage('world-ready', 'error', failure.message);
@@ -201,7 +206,9 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
     try {
       await controller.apply(sourceId, context, {
         abortStaleLoads: () => abortActiveRuleDatasetRequests(affected),
-        clearSourceDependentCache: () => { for(const world of affected)removeRuleWorldCache(world); },
+        // Persistent caches are scoped by source and transport. Retain old complete
+        // snapshots until a validated replacement is written, including retries.
+        clearSourceDependentCache: () => undefined,
         clearInMemoryDatasets: () => {
           const source = getRuleDataSourceSnapshot(currentWorldId());
           set({
@@ -232,7 +239,6 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
     try {
       const affected=sourceGroupWorlds(currentWorldId());
       abortActiveRuleDatasetRequests(affected);
-      for(const world of affected)removeRuleWorldCache(world);
       const source = getRuleDataSourceSnapshot(currentWorldId());
       set({
         ...dropWorldState(get(),affected),
@@ -254,12 +260,28 @@ export const useRuleDataStore = create<RuleDataState>((set, get) => ({
     }
   },
   clearDataSourceFailure: () => set({ dataSourceFailure: null }),
+  recoverLocalWorld: () => {
+    const failure = get().dataSourceFailure;
+    if (!failure?.worldId) return false;
+    const world = normalizeRuleSourceWorldId(failure.worldId), source = getRuleDataSourceSnapshot(world);
+    if (source.sourceId !== failure.sourceId) return false;
+    const cached = readRecoverableRuleWorldCache(world, source);
+    if (!cached) return false;
+    nextEpoch(world);
+    abortActiveRuleDatasetRequests([world]);
+    const dataset = {...applicationWorldDataset(cached.dataset, source, world), localRecovery: {cachedAt: cached.meta.cachedAt, remoteConfirmed: false as const}};
+    const loading = useLoadingStore.getState();
+    loading.startLoading(WORLD_LOADING_STAGES, {flowId: `rule-local:${world}:${Date.now()}`, ruleWorldId: world});
+    set(state => ({datasets: {...state.datasets, [world]: dataset}, pending: {...state.pending, [world]: undefined}, pendingGeneration: {...state.pendingGeneration, [world]: undefined}, loadingWorld: null, dataSource: source, dataSourceFailure: null}));
+    loading.updateStage('world-ready', 'success', '已使用本地完整版本；尚未确认远端最新状态，等待地图首帧显示');
+    return true;
+  },
 }));
 
 function sourceGroupWorlds(worldId:string):string[]{const id=getRuleDataSourceSnapshot(worldId).resourceGroupId;return getApplicationSettings().worlds.filter(world=>getRuleDataSourceSnapshot(world.id).resourceGroupId===id).map(world=>world.id);}
 function dropWorldState(state:RuleDataState,ids:readonly string[]){return {datasets:Object.fromEntries(Object.entries(state.datasets).filter(([world])=>!ids.includes(world))),pending:Object.fromEntries(Object.entries(state.pending).filter(([world])=>!ids.includes(world))),pendingGeneration:Object.fromEntries(Object.entries(state.pendingGeneration).filter(([world])=>!ids.includes(world)))};}
 function sourceFingerprints():Map<string,string>{return new Map(getApplicationSettings().worlds.map(world=>{const source=getRuleDataSourceSnapshot(world.id);return [world.id,JSON.stringify([source.sourceId,source.transportId,source.generation])];}));}
 let appliedSources=sourceFingerprints();
-subscribeApplication(()=>{const next=sourceFingerprints(),affected=[...new Set([...appliedSources.keys(),...next.keys()])].filter(world=>next.get(world)!==appliedSources.get(world));appliedSources=next;if(!affected.length)return;abortActiveRuleDatasetRequests(affected);for(const world of affected)removeRuleWorldCache(world);const state=useRuleDataStore.getState();useRuleDataStore.setState({...dropWorldState(state,affected),...(state.loadingWorld&&affected.includes(state.loadingWorld)?{loadingWorld:null}:{}),dataSource:getRuleDataSourceSnapshot(currentWorldId()),dataSourceFailure:null});});
+subscribeApplication(()=>{const next=sourceFingerprints(),affected=[...new Set([...appliedSources.keys(),...next.keys()])].filter(world=>next.get(world)!==appliedSources.get(world));appliedSources=next;if(!affected.length)return;abortActiveRuleDatasetRequests(affected);for(const world of affected)nextEpoch(world);const state=useRuleDataStore.getState();useRuleDataStore.setState({...dropWorldState(state,affected),...(state.loadingWorld&&affected.includes(state.loadingWorld)?{loadingWorld:null}:{}),dataSource:getRuleDataSourceSnapshot(currentWorldId()),dataSourceFailure:null});});
 
 subscribeRuntimeConfiguration(()=>{useRuleDataStore.setState(state=>({datasets:Object.fromEntries(Object.entries(state.datasets).map(([key,dataset])=>[key,runtimeDatasetView(dataset)]))}));});

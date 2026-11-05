@@ -35,6 +35,7 @@ function matchCriteria(r: FeatureRecord, criteria: RuleButtonCriteria): boolean 
   }
 
   const kk = extractKindTriplet(r);
+  if(criteria.scope)return matchesButtonClassification({class:cls,...kk},{scope:criteria.scope});
   if(criteria.paths)return matchesButtonClassification({class:cls,...kk},{paths:criteria.paths});
 
   if (criteria.Kind && criteria.Kind.length > 0) {

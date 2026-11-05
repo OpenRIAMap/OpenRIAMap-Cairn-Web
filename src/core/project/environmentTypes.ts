@@ -74,6 +74,7 @@ export type CairnMapFormalDataSourceRuntimeConfig = CairnMapProjectTaggedConfig 
 export type CairnMapRuleButtonTone = import('./buttonVisualCatalog').ButtonTone;
 
 export type CairnMapRuleButtonCriteria = {
+  scope?: import('../../configStudio/classificationScope').ClassificationScope;
   paths?: Array<{class:string;kind?:string;skind?:string;skind2?:string}>;
   classCode?: string[];
   kind?: string[];

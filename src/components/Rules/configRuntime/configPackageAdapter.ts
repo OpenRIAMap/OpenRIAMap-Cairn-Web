@@ -1,3 +1,5 @@
+import {matchesClassificationRange} from '@/configStudio/classificationScope';
+import {resolveNodeFieldSettings} from '@/configStudio/nodeFieldSettings';
 import { uniqueImageTarget } from './imageTargetIndex';
 import { resolveLabelText } from '@/configStudio/labelTemplate';
 import {resolveMappedColor} from '../../../configStudio/renderScalar';
@@ -268,12 +270,26 @@ export function resolveConfigRuntimeContextForRecord(
  * Visibility is applied only to records participating in the active generic
  * relation.  Unrelated categories retain their own normal-map rendering.
  */
+export function configHostFloorViewEligible(config:ConfigPackageV3,host:FeatureRecord|undefined,zoom:number):boolean {
+  if(!host)return false;
+  const role=resolveNodeFieldSettings(config,pathFor(host)).value.structure;
+  return config.contractRevision>=18?role?.enabled===true&&role.role==='main'&&zoom>=(role.floorViewMinZoom??6):zoom>=(config.engine?.contextView?.minZoom??6);
+}
 export function isConfigRuntimeRecordVisible(
   config: ConfigPackageV3,
   record: FeatureRecord,
   ctx: RenderContext,
   store?: FeatureStore,
 ): boolean {
+  if(config.contractRevision>=18&&store){
+    const index=buildStructureIndex(config,store),role=index.roles.get(record);
+    if(role?.role==='member'){
+      const host=index.hostsByMember.get(record),ambiguous=index.diagnostics.some(issue=>issue.record===record.uid&&issue.code.includes('ambiguous'));
+      if(!host)return role.allowIndependentDisplay===true&&!ambiguous;
+      if(!ctx.inFloorView||ctx.activeBuildingUid!==host.uid||!configHostFloorViewEligible(config,host,ctx.zoomLevel))return false;
+      return role.visibility==='allMembers'||!ctx.activeFloorSelector||structureSelector(index,record)===ctx.activeFloorSelector;
+    }
+  }
   if (!ctx.inFloorView || !ctx.activeBuildingUid || !ctx.activeContextBindingId || !store) return true;
   if(config.contractRevision>=10){const index=buildStructureIndex(config,store),role=index.roles.get(record);if(role?.role!=='member')return true;const host=index.byUid.get(ctx.activeBuildingUid);if(!host||index.hostsByMember.get(record)!==host)return false;return role.visibility==='allMembers'||!ctx.activeFloorSelector||structureSelector(index,record)===ctx.activeFloorSelector;}
   const host = store.all.find((candidate) => candidate.uid === ctx.activeBuildingUid);
@@ -333,12 +349,12 @@ export function resolveColor(record: FeatureRecord, binding: RenderColorBinding 
   const targets = (record.featureInfo as Record<string, unknown>)?.__configRuntimeTargets;
   const targetId = String(featureValue(record, binding.targetIdField) ?? '');
   if (Array.isArray(targets)) {
-    const hit = targets.find((item) => item && typeof item === 'object'
-      && String((item as Record<string, unknown>).ID ?? '') === targetId) as Record<string, unknown> | undefined;
+    const candidates=targets.filter((item):item is Record<string,unknown>=>!!item&&typeof item==='object'&&String((item as Record<string,unknown>).ID??'')===targetId&&(((item as Record<string,unknown>).World==null||(item as Record<string,unknown>).World==='')||normalizeRuleSourceWorldId(String((item as Record<string,unknown>).World))===normalizeRuleSourceWorldId(String(featureValue(record,'World')??'')))&&(!binding.targetScope||matchesClassificationRange(binding.targetScope,{class:String((item as Record<string,unknown>).Class??''),kind:String((item as Record<string,unknown>).Kind??''),skind:String((item as Record<string,unknown>).SKind??''),skind2:String((item as Record<string,unknown>).SKind2??'')})));
+    const hit=candidates.length===1?candidates[0]:undefined;
     if (hit?.[binding.targetColorField] !== undefined) return normalizeColor(hit[binding.targetColorField] ?? binding.fallbackColor, fallback);
   }
-  const indexed = store?.all.find((candidate) => store.matchesReadScope(candidate, binding.target)
-    && String(featureValue(candidate, 'ID') ?? candidate.meta?.idValue ?? '') === targetId);
+  const matches=store?.all.filter(candidate=>normalizeRuleSourceWorldId(String(featureValue(candidate,'World')??''))===normalizeRuleSourceWorldId(String(featureValue(record,'World')??''))&&(binding.targetScope?matchesClassificationRange(binding.targetScope,pathFor(candidate)):store.matchesReadScope(candidate,binding.target))&&String(featureValue(candidate,'ID')??candidate.meta?.idValue??'')===targetId)??[];
+  const indexed=binding.targetScope?(matches.length===1?matches[0]:undefined):matches[0];
   if (indexed) return normalizeColor(featureValue(indexed, binding.targetColorField) ?? binding.fallbackColor, fallback);
   return normalizeColor(binding.fallbackColor, fallback);
 }
@@ -450,6 +466,7 @@ function passesVisibilityExtension(config: ConfigPackageV3, record: FeatureRecor
   const visibility = extensions?.visibility;
   if (!visibility || visibility.mode === 'inherit' || visibility.mode === 'always') return true;
   if (visibility.mode === 'activeContextMember') {
+    if(config.contractRevision>=18)return isConfigRuntimeRecordVisible(config,record,ctx,store);
     const spec = visibility.activeContextMember;
     if (!ctx.inFloorView || !ctx.activeBuildingUid || !ctx.activeContextBindingId || !store) return false;
     if (spec?.bindingId && spec.bindingId !== ctx.activeContextBindingId) return false;
