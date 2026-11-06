@@ -8,6 +8,7 @@ import { useSyncExternalStore } from 'react';
 import { isNativeConfigRevision } from '../../configStudio/contract';
 import { MAP_ZOOM_BOUNDS, TILE_ZOOM_BOUNDS } from '@/lib/mapZoom';
 import { Suspense, lazy, useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import {ReviewWorkspaceBoundary} from '../Review/ReviewWorkspaceBoundary';
 import MobileBottomSheet from '@/components/Mobile/MobileBottomSheet';
 import MobileQuickDock from '@/components/Mobile/MobileQuickDock';
 import MobileFeatureJsonPanel from '@/components/Mobile/MobileFeatureJsonPanel';
@@ -427,7 +428,20 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   const [workspaceInstanceKey, setWorkspaceInstanceKey] = useState(() => `mapping-${crypto.randomUUID()}`);
   const [reviewSession, setReviewSession] = useState<ReviewPackageSession | null>(null);
   const [, setReviewWorkspaceDirty] = useState(false);
-  const [pendingReviewPackage, setPendingReviewPackage] = useState<ReviewInboxItem | null>(null);
+  const [pendingReviewPackage, setPendingReviewPackage] = useState<{requestId:string;item:ReviewInboxItem}|null>(null);
+  const reviewLoadRef=useRef<{requestId:string;previous:ReviewPackageSession|null;resolve:(value:boolean)=>void;reject:(error:Error)=>void}>();
+  const handleReviewLoadResult=useCallback((requestId:string,error?:string)=>{
+    const request=reviewLoadRef.current;if(!request||request.requestId!==requestId)return;
+    reviewLoadRef.current=undefined;setPendingReviewPackage(null);
+    if(error){setReviewSession(request.previous);request.reject(Error(error));}else request.resolve(true);
+  },[]);
+  useEffect(()=>{
+    if(!pendingReviewPackage)return;
+    const id=pendingReviewPackage.requestId;
+    const timer=window.setTimeout(()=>handleReviewLoadResult(id,'审核编辑器准备超时，未确认应用成功。请检查网络后重试。'),90000);
+    return()=>window.clearTimeout(timer);
+  },[pendingReviewPackage,handleReviewLoadResult]);
+  useEffect(()=>()=>{reviewLoadRef.current?.resolve(false);reviewLoadRef.current=undefined;},[]);
   const [publicReleaseRecordsRefreshSignal, setPublicReleaseRecordsRefreshSignal] = useState(0);
 
   // 测绘激活态：用于禁止导航图选点（由 MeasuringModule / MeasurementToolsModule 派发）
@@ -567,6 +581,7 @@ useEffect(() => {
   }, [requestLegacyFeature]);
 
   const clearReviewWorkspaceState = useCallback(() => {
+    reviewLoadRef.current?.resolve(false);reviewLoadRef.current=undefined;
     setReviewSession(null);
     setReviewWorkspaceDirty(false);
     setPendingReviewPackage(null);
@@ -765,11 +780,13 @@ useEffect(() => {
     // panel disappearing and a MappingWorkspace appearing in its place.
     const ok = await (measuringModuleRef.current?.confirmReviewPackageReplacement?.('切换审核包') ?? Promise.resolve(true));
     if (!ok) return false;
-    setReviewSession(createReviewPackageSession(item));
-    setReviewWorkspaceDirty(false);
-    setPendingReviewPackage(item);
-    return true;
-  }, [activeWorkspace, reviewModuleLoaded]);
+    if(reviewLoadRef.current)throw Error('已有审核包正在加载，请等待完成。');
+    const requestId=crypto.randomUUID();
+    return await new Promise<boolean>((resolve,reject)=>{
+      reviewLoadRef.current={requestId,previous:reviewSession,resolve,reject};
+      setReviewSession(createReviewPackageSession(item));setReviewWorkspaceDirty(false);setPendingReviewPackage({requestId,item});
+    });
+  }, [activeWorkspace, reviewModuleLoaded,reviewSession]);
 
   const handleReviewSave = useCallback(async (artifact: ReviewWorkspaceSaveArtifact) => {
     const context = reviewSession?.submissionContext;
@@ -818,15 +835,6 @@ useEffect(() => {
     failWorkspaceAdmission(pendingWorkspaceAdmission);
   }, [activateWorkspaceTarget, failWorkspaceAdmission, featureDialogState.isOpen, featureDialogState.moduleKey, measuringModuleState, pendingWorkspaceAdmission, reviewModuleState]);
 
-  useEffect(() => {
-    if (moduleMode !== 'review' || !reviewModuleLoaded || !pendingReviewPackage) return;
-    const item = pendingReviewPackage;
-    const timer = window.setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('ria:reviewLoadPackageIntoWorkspace', { detail: item }));
-      setPendingReviewPackage(null);
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [moduleMode, pendingReviewPackage, reviewModuleLoaded]);
 
 
   // 规则图层“分组开关”（按 world 维度持久化）
@@ -2080,7 +2088,7 @@ case 'players':
           visible={true}
           activeButtonIds={activeRuleButtonIds}
           configRuntime={configRuntime}
-          bypassButtonFilter={nativeConfigRuntimeActive && configLab}
+          bypassButtonFilter={false}
         />
       )}
 
@@ -2537,7 +2545,7 @@ case 'players':
                 onRequestOpen={() => requestMeasuringModuleEntry('mtools')}
                 launcherSlot={() => null}
               /> : null}
-              {activeWorkspace === 'review' && moduleMode === 'review' && reviewModuleLoaded && reviewSession ? <LazyReviewWorkspace
+              {activeWorkspace === 'review' && moduleMode === 'review' && reviewModuleLoaded && reviewSession ? <ReviewWorkspaceBoundary requestId={pendingReviewPackage?.requestId} onFailure={handleReviewLoadResult}><LazyReviewWorkspace
                 key={`review-${workspaceInstanceKey}`}
                 ref={measuringModuleRef}
                 mapReady={mapReady}
@@ -2550,11 +2558,13 @@ case 'players':
                 onBecameActive={() => setMeasureToolsCloseSignal((value) => value + 1)}
                 launcherSlot={() => null}
                 reviewSession={reviewSession}
+                reviewLoadRequest={pendingReviewPackage??undefined}
+                onReviewLoadResult={handleReviewLoadResult}
                 onReviewDirtyChange={setReviewWorkspaceDirty}
                 onReviewSave={handleReviewSave}
                 onReviewExitRequested={closeReviewWorkspace}
                 onReviewPackageUpload={openriamapReviewPackageUploader.uploadPackage}
-              /> : null}
+              /></ReviewWorkspaceBoundary> : null}
               {activeWorkspace === 'mapping' && moduleMode === 'mapping' ? <LazyMappingWorkspace
                 key={`mapping-${workspaceInstanceKey}`}
                 ref={measuringModuleRef}

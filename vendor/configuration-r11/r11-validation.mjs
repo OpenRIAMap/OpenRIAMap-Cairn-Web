@@ -13590,7 +13590,7 @@ function mergeInheritedCard(parent, local, parentId) {
 function canonical(value) {
   return Array.isArray(value) ? "[" + value.map(canonical).join(",") + "]" : value && typeof value === "object" ? "{" + Object.entries(value).filter(([, v]) => v !== void 0).sort(([a], [b]) => a.localeCompare(b)).map(([key2, v]) => JSON.stringify(key2) + ":" + canonical(v)).join(",") + "}" : JSON.stringify(value);
 }
-function fieldFingerprint(field) {
+function legacyFieldFingerprint(field) {
   const text2 = canonical({ key: field.key, type: field.type, cardinality: field.cardinality, input: field.input, labels: field.labels, description: field.description, options: field.options, optionValueType: field.optionValueType, format: field.format });
   let a = 2166136261, b = 5381;
   for (let i = 0; i < text2.length; i++) {
@@ -13599,32 +13599,70 @@ function fieldFingerprint(field) {
   }
   return `field-v1-${(a >>> 0).toString(16).padStart(8, "0")}${(b >>> 0).toString(16).padStart(8, "0")}`;
 }
+function digest(value) {
+  const text2 = canonical(value);
+  let a = 2166136261, b = 5381;
+  for (let i = 0; i < text2.length; i++) {
+    a = Math.imul(a ^ text2.charCodeAt(i), 16777619);
+    b = Math.imul(b, 33) ^ text2.charCodeAt(i);
+  }
+  return (a >>> 0).toString(16).padStart(8, "0") + (b >>> 0).toString(16).padStart(8, "0");
+}
+function withoutAudit(value) {
+  return Array.isArray(value) ? value.map(withoutAudit) : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).filter(([key2]) => key2 !== "prefillAudit").map(([key2, item]) => [key2, withoutAudit(item)])) : value;
+}
+var semanticField = (field) => "field-v2-" + digest(withoutAudit(field));
 function visitPrefillCopies(config, visit) {
+  const seen = /* @__PURE__ */ new WeakSet();
+  const emit = (owner, path2) => {
+    if (seen.has(owner)) return;
+    seen.add(owner);
+    if (owner.prefillAudit) visit(owner, path2);
+  };
   config.nodes.forEach((node) => {
-    if (node.card?.mode === "fields") node.card.items.filter((item) => !item.inheritFrom).forEach((item) => visit(item, `nodes/${node.nodeId}/card/${item.id}`));
-    if (node.fieldSettings?.search) visit(node.fieldSettings.search.subtitle, `nodes/${node.nodeId}/fieldSettings/search/subtitle`);
-    if (node.searchSettings) visit(node.searchSettings.subtitle, `nodes/${node.nodeId}/searchSettings/subtitle`);
+    if (node.card?.mode === "fields") node.card.items.forEach((item) => emit(item, `nodes/${node.nodeId}/card/${item.id}`));
+    if (node.fieldSettings?.search) emit(node.fieldSettings.search.subtitle, `nodes/${node.nodeId}/fieldSettings/search/subtitle`);
+    if (node.searchSettings) emit(node.searchSettings.subtitle, `nodes/${node.nodeId}/searchSettings/subtitle`);
   });
   config.workflows.forEach((w) => w.steps.forEach((s) => s.controls?.forEach((c) => {
-    if (!c.optionsTableId) visit(c, `workflows/${w.id}/${c.id}`);
-    c.group?.itemFields.filter((f) => !f.optionsTableId).forEach((f) => visit(f, `workflows/${w.id}/${c.id}/${f.key}`));
+    emit(c, `workflows/${w.id}/${c.id}`);
+    c.group?.itemFields.forEach((f) => emit(f, `workflows/${w.id}/${c.id}/${f.key}`));
   })));
+  const walk = (value, path2) => {
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => {
+        const row2 = item;
+        walk(item, path2 + "/" + (row2?.nodeId ?? row2?.id ?? index));
+      });
+      return;
+    }
+    if (!value || typeof value !== "object") return;
+    if ("prefillAudit" in value) emit(value, path2);
+    for (const [key2, item] of Object.entries(value)) if (key2 !== "prefillAudit") walk(item, path2 ? path2 + "/" + key2 : key2);
+  };
+  walk(config, "");
 }
-function validatePrefillCopies(config, resolve) {
+function sourceField(config, audit, resolve) {
+  if (!config.nodes.some((node) => canonical(node.path) === canonical(audit.source.path))) return void 0;
+  const fields = resolve(config, audit.source.path);
+  return fields.find((field) => field.fieldId === audit.source.fieldId && field.key === audit.source.key);
+}
+function confirmation(owner, audit, field, path2) {
+  return "copy-v2-" + digest({ owner: path2, source: audit.source, state: field ? semanticField(field) : "missing", copy: withoutAudit(owner) });
+}
+function validatePrefillCopies(config, resolve, sourceConfig = config) {
   const issues = [];
   if (config.contractRevision < 10) return issues;
   visitPrefillCopies(config, (owner, path2) => {
     const audit = owner.prefillAudit;
-    if (!audit) return;
-    const fields = resolve(config, audit.source.path), field = fields.find((field2) => field2.fieldId === audit.source.fieldId) ?? fields.find((field2) => field2.key === audit.source.key);
-    const source = Object.values(audit.source.path).filter(Boolean).join("/");
+    const field = sourceField(sourceConfig, audit, resolve), source = Object.values(audit.source.path).filter(Boolean).join("/");
+    if (audit.confirmedFingerprint === confirmation(owner, audit, field, path2)) return;
     if (!field) {
-      if (audit.confirmedFingerprint === "missing:" + canonical(audit.source)) return;
       issues.push({ severity: config.contractRevision >= 11 ? "warning" : "error", code: "prefill-source-field-missing", path: path2, field: audit.source.key, message: `\u9884\u586B\u6765\u6E90 ${source} / ${audit.source.key} \u5DF2\u4E0D\u5B58\u5728\uFF1B\u5F53\u524D\u526F\u672C\u4ECD\u72EC\u7ACB\u4FDD\u5B58\uFF0C\u8BF7\u786E\u8BA4\u662F\u5426\u9700\u8981\u66F4\u65B0\u3002` });
       return;
     }
-    const current2 = fieldFingerprint(field);
-    if (current2 !== audit.fingerprint && current2 !== audit.confirmedFingerprint) issues.push({ severity: "warning", code: "prefill-copy-outdated", path: path2, field: field.key, message: `\u6765\u6E90 ${source} / ${field.key} \u7684\u5B9A\u4E49\u3001\u540D\u79F0\u3001\u7C7B\u578B\u6216\u5BF9\u7167\u5DF2\u53D8\u5316\uFF1B${path2} \u4ECD\u4FDD\u7559\u72EC\u7ACB\u526F\u672C\u3002\u8BF7\u91CD\u65B0\u9884\u586B\uFF0C\u6216\u786E\u8BA4\u4FDD\u7559\u672C\u6B21\u81EA\u5B9A\u4E49\u526F\u672C\u3002` });
+    const current2 = audit.fingerprint.startsWith("field-v2-") ? semanticField(field) : legacyFieldFingerprint(field);
+    if (audit.confirmedFingerprint || current2 !== audit.fingerprint) issues.push({ severity: "warning", code: audit.confirmedFingerprint && !audit.confirmedFingerprint.startsWith("copy-v2-") ? "prefill-confirmation-needs-refresh" : "prefill-copy-outdated", path: path2, field: field.key, message: `\u6765\u6E90 ${source} / ${field.key} \u7684\u5B9A\u4E49\u3001\u5F53\u524D\u526F\u672C\u6216\u786E\u8BA4\u4F9D\u636E\u9700\u91CD\u65B0\u6838\u5BF9\uFF1B${path2} \u4ECD\u4FDD\u7559\u72EC\u7ACB\u526F\u672C\u3002\u8BF7\u91CD\u65B0\u9884\u586B\uFF0C\u6216\u786E\u8BA4\u4FDD\u7559\u672C\u6B21\u81EA\u5B9A\u4E49\u526F\u672C\u3002` });
   });
   return issues;
 }
@@ -13694,13 +13732,6 @@ function validateNavigationConfiguration(config, fields) {
         const ref = byKey.get(key2)?.reference;
         if (ref && (ref.matchField !== matchField || !resolveClassificationScope(config, scopes).some((p) => p.class === ref.classCode))) add(base, `${node.nodeId} \u7684 ${key2} \u5F15\u7528\u76EE\u6807\u4E0E\u89D2\u8272\u8303\u56F4\u4E0D\u517C\u5BB9\u3002`, related);
       };
-      const domain = (key2, tableId) => {
-        const f = byKey.get(key2);
-        if (!f || f.type !== "enum") return;
-        const allowed = new Set(config.lookupTables?.find((t) => t.id === tableId)?.rows.map((r) => r.value));
-        const declared = effectiveOptionTable(config, f);
-        if (declared.rows.some((row2) => !allowed.has(row2.value))) add(base, `${node.nodeId} \u7684 ${key2} \u679A\u4E3E\u57DF\u8D85\u51FA\u7ED1\u5B9A\u529F\u80FD\u8868\u3002`, [...related, `lookupTables/${tableId}`]);
-      };
       field("Name", "string");
       if (role === "lines") {
         field("direction", "number", navigation);
@@ -13735,7 +13766,6 @@ function validateNavigationConfiguration(config, fields) {
         for (const key2 of ["TGT_x", "TGT_z", "TGTelevation"]) field(key2, "number");
         if (!byKey.has("TGTWarp") && !byKey.has("TGTcoordinate") && !(byKey.has("TGT_x") && byKey.has("TGT_z"))) add(base, `${node.nodeId} \u7F3A\u5C11 Warp \u6216\u76EE\u6807\u5750\u6807\u5B57\u6BB5\u3002`, related);
         reference("TGTWarp", nav.teleport.selectors.warpPoints, "WRPointI2D");
-        domain("hub", nav.teleport.hubTableId);
       }
       if (role === "warpPoints") field("WRPointI2D", "string", true);
       if (navigation) {
@@ -13853,8 +13883,6 @@ function validateNavigationRecords(config, records) {
       const excluded = key2 && records.filter((other) => world(other) === world(r) && String(other.WRPointI2D ?? other.wrPointI2D ?? "") === key2);
       if (key2 && target.length > 1) add(r, `Warp \u76EE\u6807 ${key2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/teleport`);
       else if (!(key2 && target.length === 1) && !explicit) add(r, excluded && excluded.length === 1 ? `Warp \u76EE\u6807 ${key2} \u4E0D\u5728\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u4F20\u9001\u8FB9\u3002` : `\u4F20\u9001\u76EE\u6807\u65E0\u6CD5\u89E3\u6790${key2 ? `\uFF1A${key2}` : ""}\u3002`, `${navBase}/teleport`, Boolean(excluded && excluded.length === 1));
-      const hub = String(r.hub ?? r.tags?.hub ?? "").trim();
-      if (hub && !config.lookupTables?.find((t) => t.id === nav.teleport.hubTableId)?.rows.some((row2) => row2.value === hub && row2.functionValue && typeof row2.functionValue === "object" && "world" in row2.functionValue && world({ World: row2.functionValue.world }) === world(r))) add(r, `hub ${hub} \u4E0D\u5728\u5F53\u524D\u4E16\u754C\u7684\u7ED1\u5B9A\u67A2\u7EBD\u8868\u4E2D\u3002`, `${navBase}/teleport`);
     }
   }
   return result;
@@ -25865,6 +25893,18 @@ function resolveSelectableFields(config, scope, options = {}) {
   const result = [...systemKeys.filter((key2) => !custom.has(key2)).map(systemFieldDefinition), ...common];
   return compiled ? cachedPathValue(compiled.selectable, cacheKey, freezeData(result)) : result;
 }
+function workflowQueryFieldKeys(config, search) {
+  const paths = search.targetRole === "main" ? config.nodes.filter((node) => {
+    const role = resolveNodeFieldSettings(config, node.path).value.structure;
+    return role?.enabled && role.role === "main";
+  }).map((node) => node.path) : search.scope ? resolveClassificationScope(config, search.scope) : listCategoryPaths(config, search.target);
+  const keys = /* @__PURE__ */ new Set();
+  for (const path2 of paths) {
+    for (const key2 of SYSTEM_FIELD_KEYS) if (config.contractRevision < 8 || !["Skind", "Skind2"].includes(key2)) keys.add(key2);
+    for (const field of resolveEffectiveFields(config, path2)) keys.add(field.key);
+  }
+  return [...keys];
+}
 function scopeCommonFields(config, scope) {
   const sets = resolveClassificationScope(config, scope).map((path2) => resolveSelectableFields(config, path2));
   return sets.length ? sets[0].filter((field) => sets.every((set) => set.some((other) => other.key === field.key && other.type === field.type && other.cardinality === field.cardinality))) : [];
@@ -26423,7 +26463,8 @@ function validateSearch(control, config, path2, issues) {
   if (search.targetRole && (config.contractRevision < 10 || !targets.length)) issue(issues, "error", "workflow-search-role-invalid", path2, "\u901A\u7528\u641C\u7D22\u9700\u8981 c10 \u4E14\u81F3\u5C11\u6709\u4E00\u4E2A\u542F\u7528\u7684\u4E3B\u7ED3\u6784\u5206\u7C7B\u3002");
   const selectable = new Set(search.targetRole ? targets.flatMap((node) => resolveSelectableFields(config, node.path).map((field) => field.key)).filter((key2) => targets.every((node) => resolveSelectableFields(config, node.path).some((field) => field.key === key2))) : (search.scope ? scopeCommonFields(config, search.scope) : resolveSelectableFields(config, search.target)).map((field) => field.key));
   if (!search.queryFields?.length) issue(issues, "error", "workflow-search-fields-required", path2, "\u641C\u7D22\u63A7\u4EF6\u81F3\u5C11\u9700\u8981\u9009\u62E9\u4E00\u4E2A\u53EF\u5339\u914D\u5B57\u6BB5\u3002");
-  for (const field of search.queryFields ?? []) if (!selectable.has(field)) issue(issues, "error", "workflow-search-field-invalid", path2, `\u641C\u7D22\u5B57\u6BB5 ${field} \u4E0D\u5728\u76EE\u6807\u5206\u7C7B\u7684\u6709\u6548\u5B57\u6BB5\u96C6\u4E2D\u3002`, { field });
+  const queryKeys = new Set(workflowQueryFieldKeys(config, search));
+  for (const field of search.queryFields ?? []) if (!queryKeys.has(field)) issue(issues, "error", "workflow-search-field-invalid", path2, `\u641C\u7D22\u5B57\u6BB5 ${field} \u4E0D\u5728\u76EE\u6807\u5206\u7C7B\u7684\u6709\u6548\u5B57\u6BB5\u96C6\u4E2D\u3002`, { field });
   if (!search.returnField || !selectable.has(search.returnField)) issue(issues, "error", "workflow-search-return-field-invalid", path2, "\u641C\u7D22\u63A7\u4EF6\u5FC5\u987B\u9009\u62E9\u4E00\u4E2A\u6709\u6548\u7684\u5355\u4E00\u8FD4\u56DE\u5B57\u6BB5\u3002", { field: search.returnField });
   const templateFields = [...String(search.displayTemplate ?? "").matchAll(/{{\s*([A-Za-z][A-Za-z0-9_.]*)\s*}}/g)].map((match) => match[1]);
   if (!templateFields.length) issue(issues, "error", "workflow-search-display-template-invalid", path2, "\u5C55\u793A\u683C\u5F0F\u5FC5\u987B\u81F3\u5C11\u5F15\u7528\u4E00\u4E2A\u5B57\u6BB5\uFF0C\u4F8B\u5982 {{ID}} ({{Name}})\u3002");
@@ -27168,7 +27209,7 @@ async function readRawNativePackage(file, options = {}) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-c18-production-1";
+var rulesVersion = "cairnmap-c18-production-2";
 var validateConfiguration = validateConfigPackage;
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));

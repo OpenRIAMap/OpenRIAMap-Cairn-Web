@@ -355,6 +355,14 @@ export function resolveSelectableFields(config: ConfigPackageV3, scope: Classifi
   return compiled ? cachedPathValue(compiled.selectable, cacheKey, freezeData(result)) : result;
 }
 
+/** Query matching tolerates absent fields; return/template resolution remains strict. */
+export function workflowQueryFieldKeys(config:ConfigPackageV3,search:SearchProfile):string[]{
+ const paths=search.targetRole==='main'?config.nodes.filter(node=>{const role=resolveNodeFieldSettings(config,node.path).value.structure;return role?.enabled&&role.role==='main';}).map(node=>node.path):search.scope?resolveClassificationScope(config,search.scope):listCategoryPaths(config,search.target);
+ const keys=new Set<string>();
+ for(const path of paths){for(const key of SYSTEM_FIELD_KEYS)if(config.contractRevision<8||!['Skind','Skind2'].includes(key))keys.add(key);for(const field of resolveEffectiveFields(config,path))keys.add(field.key);}
+ return [...keys];
+}
+
 export function scopeCommonFields(config:ConfigPackageV3,scope:import('./classificationScope').ClassificationRange):FieldDefinition[]{
  const sets=resolveClassificationScope(config,scope).map(path=>resolveSelectableFields(config,path));
  return sets.length?sets[0].filter(field=>sets.every(set=>set.some(other=>other.key===field.key&&other.type===field.type&&other.cardinality===field.cardinality))):[];
@@ -915,7 +923,8 @@ function validateSearch(control: Pick<WorkflowControl, 'kind' | 'search'>, confi
   if(search.targetRole&&(config.contractRevision<10||!targets.length))issue(issues,'error','workflow-search-role-invalid',path,'通用搜索需要 c10 且至少有一个启用的主结构分类。');
   const selectable = new Set(search.targetRole?targets.flatMap(node=>resolveSelectableFields(config,node.path).map(field=>field.key)).filter(key=>targets.every(node=>resolveSelectableFields(config,node.path).some(field=>field.key===key))):(search.scope?scopeCommonFields(config,search.scope):resolveSelectableFields(config,search.target)).map(field=>field.key));
   if (!search.queryFields?.length) issue(issues, 'error', 'workflow-search-fields-required', path, '搜索控件至少需要选择一个可匹配字段。');
-  for (const field of search.queryFields ?? []) if (!selectable.has(field)) issue(issues, 'error', 'workflow-search-field-invalid', path, `搜索字段 ${field} 不在目标分类的有效字段集中。`, { field });
+  const queryKeys=new Set(workflowQueryFieldKeys(config,search));
+  for (const field of search.queryFields ?? []) if (!queryKeys.has(field)) issue(issues, 'error', 'workflow-search-field-invalid', path, `搜索字段 ${field} 不在目标分类的有效字段集中。`, { field });
   if (!search.returnField || !selectable.has(search.returnField)) issue(issues, 'error', 'workflow-search-return-field-invalid', path, '搜索控件必须选择一个有效的单一返回字段。', { field: search.returnField });
   const templateFields = [...String(search.displayTemplate ?? '').matchAll(/{{\s*([A-Za-z][A-Za-z0-9_.]*)\s*}}/g)].map((match) => match[1]);
   if (!templateFields.length) issue(issues, 'error', 'workflow-search-display-template-invalid', path, '展示格式必须至少引用一个字段，例如 {{ID}} ({{Name}})。');
@@ -1182,7 +1191,7 @@ export function validateWorkflowDefinition(workflow: WorkflowDefinition, config:
   if (structure.length) return {schemaVersion:'cairnmap.config-validation-report.v3',valid:false,createdAt:new Date().toISOString(),issues:structure.map(item=>({severity:'error',code:'native-contract-structure-invalid',...item}))};
   validateWorkflow(workflow, config, issues);
   const scoped={...config,nodes:[],workflows:[workflow]};
-  issues.push(...validatePrefillCopies(scoped,(_config,path)=>resolveEffectiveFields(config,path)));
+  issues.push(...validatePrefillCopies(scoped,(_config,path)=>resolveEffectiveFields(config,path),config));
   issues.push(...validateLookupTables({...config,workflows:[workflow]},false));
   for(const error of standardTagTableErrors(config))issue(issues,'error','standard-tag-table-invalid',error.path,error.message);
   return {

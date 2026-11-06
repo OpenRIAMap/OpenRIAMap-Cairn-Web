@@ -185,6 +185,8 @@ export type MeasuringModuleProps = {
 
   /** ReviewEditor supplies this constant only at mount time. */
   reviewWorkspace?: true;
+  reviewLoadRequest?: {requestId:string;item:ReviewInboxItem};
+  onReviewLoadResult?: (requestId:string,error?:string)=>void;
   // ReviewWorkspace passes an immutable package session into its own mounted
   // editor instance. MappingWorkspace never supplies these Review bindings.
   reviewSession?: ReviewPackageSession | null;
@@ -247,6 +249,8 @@ const MappingEditorCore = forwardRef<MeasuringModuleHandle, MeasuringModuleProps
     onRequestOpen,
     launcherAnchorRef,
     reviewWorkspace,
+    reviewLoadRequest,
+    onReviewLoadResult,
     reviewSession = null,
     onReviewDirtyChange,
     onReviewSave,
@@ -2934,7 +2938,7 @@ if (editingLayerId === id) {
 // Batch import uses the current package native record contract.
 
 
-const runBatchImportFromText = (rawText: string, sourceLabel: string) => {
+const runBatchImportFromText = (rawText: string, sourceLabel: string,prepareOnly=false) => {
   if(writeBlocked()){window.alert('请先完成完整数组事务或恢复/完成分类切换，再导入。');return;}
   const text = String(rawText ?? '').trim();
   if (!text) return;
@@ -3045,10 +3049,12 @@ const runBatchImportFromText = (rawText: string, sourceLabel: string) => {
   }
 
   if (errors.length) {
+    if(prepareOnly)throw Error(errors.join('；'));
     alert(`批量导入部分失败：\n\n${errors.slice(0, 10).join('\n\n')}${errors.length > 10 ? `\n\n...(共 ${errors.length} 条错误)` : ''}`);
     return;
   }
 
+  if(prepareOnly)return newLayers;
   setLayers(prev => {
     const next = [...prev, ...newLayers];
     syncFixedRoot(next, editingLayerId);
@@ -3187,44 +3193,28 @@ const [reviewActionDirty, setReviewActionDirty] = useState(false);
 const [reviewSaveInProgress, setReviewSaveInProgress] = useState(false);
 const [reviewNotice, setReviewNotice] = useState<string | null>(null);
 
-const applyReviewInboxItemToWorkspace = (item: ReviewInboxItem) => {
-  if (!item) return;
-  onBecameActive?.();
-  clearAllLayers();
-  clearTempRuleOverrideIdsForWorld();
-  clearTempRuleDeleteIdsForWorld();
-  setTempMountAllActive(false);
-  resetFeatureSelectionState();
-  setImportPanelOpen(false);
-  setWorkflowRunning(false);
-  setMeasureDropdownOpen(false);
-  setMeasuringVariant('full');
-  setDrawing(false);
-  setDrawMode('none');
-  setTempPoints([]);
-  setRedoStack([]);
-  setEditingLayerId(null);
-  reviewBaselineSignatureRef.current = null;
-  reviewDirtyRef.current = false;
-  reviewJustLoadedRef.current = true;
-  onReviewDirtyChange?.(false);
-  setMeasuringActive(true);
-  applyParsedRelayPackage({
-    draft: buildRelayDraftFromReviewItem(item),
-    jsonItems: Array.isArray(item.features) ? item.features : [],
-  });
-};
-
-useEffect(() => {
-  if (!isReviewWorkspace) return;
-  const handler = (ev: Event) => {
-    const item = (ev as CustomEvent<ReviewInboxItem>).detail;
-    if (!item) return;
-    applyReviewInboxItemToWorkspace(item);
-  };
-  window.addEventListener('ria:reviewLoadPackageIntoWorkspace', handler as EventListener);
-  return () => window.removeEventListener('ria:reviewLoadPackageIntoWorkspace', handler as EventListener);
-}, [isReviewWorkspace, currentWorldId, onReviewDirtyChange]);
+const reviewAppliedRequest=useRef<string>();
+const reviewHandledRequest=useRef<string>();
+useEffect(()=>{
+ const request=reviewLoadRequest;
+ if(!isReviewWorkspace||!request||reviewHandledRequest.current===request.requestId||!mapReady||!projectionRef.current||!fixedRootRef.current)return;
+ reviewHandledRequest.current=request.requestId;
+ try {
+  if(writeBlocked())throw Error('当前编辑事务未结束，未替换审核包。');
+  const features=request.item.features??[];
+  const prepared=features.length?runBatchImportFromText(JSON.stringify(features),'审核包导入',true):[];
+  if(!prepared)throw Error('审核图层尚未就绪，未应用审核包。');
+  const draft=buildRelayDraftFromReviewItem(request.item);
+  // Prepare all records before committing the replacement to the editor.
+  onBecameActive?.();clearAllLayers();clearTempRuleOverrideIdsForWorld();clearTempRuleDeleteIdsForWorld();setTempMountAllActive(false);
+  resetFeatureSelectionState();setImportPanelOpen(false);setWorkflowRunning(false);setMeasureDropdownOpen(false);setMeasuringVariant('full');setDrawing(false);setDrawMode('none');setTempPoints([]);setRedoStack([]);setEditingLayerId(null);
+  reviewBaselineSignatureRef.current=null;reviewDirtyRef.current=false;reviewJustLoadedRef.current=true;onReviewDirtyChange?.(false);
+  setRelayPackageDraft(draft);setLayers(prepared);syncFixedRoot(prepared,null);setMeasuringActive(true);reviewAppliedRequest.current=request.requestId;
+ }catch(error){onReviewLoadResult?.(request.requestId,error instanceof Error?error.message:String(error));}
+},[isReviewWorkspace,reviewLoadRequest,mapReady,currentWorldId]);
+useEffect(()=>{
+ if(reviewLoadRequest&&measuringActive&&reviewAppliedRequest.current===reviewLoadRequest.requestId){reviewAppliedRequest.current=undefined;onReviewLoadResult?.(reviewLoadRequest.requestId);}
+},[reviewLoadRequest,measuringActive,layers,relayPackageDraft,onReviewLoadResult]);
 
 const applyMinimalFeatureEditPackage = (pkg: MinimalFeatureEditPackage) => {
   if(writeBlocked()){window.alert('当前编辑事务未结束，未替换要素编辑包。');return;}

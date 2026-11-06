@@ -1,3 +1,4 @@
+import {DiagnosticGroups} from './DiagnosticGroups';
 import { useState, type ReactNode } from 'react';
 import { ModuleHelp } from './ModuleHelp';
 import { prepareEngineCommit, type EngineDraft } from './engineTransaction';
@@ -36,6 +37,6 @@ export function EngineSettingsWorkspace({ config, draft, onDraftChange, onSave, 
     <p role="status" className="my-2 text-xs text-slate-600">{disabled ? '请先保存或放弃其他区域的编辑。' : busy ? '正在保存引擎…' : !draft ? '未修改' : report?.valid ? '核验通过，待保存' : '引擎草稿尚未保存，需核验后保存或放弃。'}{isolated ? ' 当前为整包候选，区域保存只暂存到候选。' : ''}</p>
     <fieldset disabled={disabled || busy}>{children(draft?.value ?? config.engine, value => { const baseline = draft?.baseline ?? config.engine; onDraftChange(stableConfigText(value) === stableConfigText(baseline) ? null : { baseline, value }); setReport(null); setError(''); })}</fieldset>
     {error ? <p role="alert" className="text-xs text-rose-700">{error}</p> : null}
-    {report ? <div aria-label="引擎核验报告" className="text-xs">{report.issues.map((issue, index) => <p key={index} className={issue.severity === 'error' ? 'text-rose-700' : 'text-amber-700'}>{issue.path}：{issue.message}</p>)}</div> : null}
+    {report ? <div aria-label="引擎核验报告" className="text-xs"><DiagnosticGroups report={report}/></div> : null}
   </section>;
 }
