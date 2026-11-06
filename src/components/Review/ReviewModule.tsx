@@ -108,7 +108,7 @@ async function localPrecheck(submission: ReviewSubmissionSnapshot, revision: Rev
   const warnings = findings.filter((item) => item.severity === 'warning').length;
   return {
     schemaVersion: 'cairn.review-package-precheck.v1',
-    decision: blockers ? 'blocked' : 'warning-confirmation-required',
+    decision: blockers ? 'blocked' : warnings ? 'warning-confirmation-required' : 'ready',
     submissionId: submission.submissionId,
     revisionId: revision.revisionId,
     stateVersion: submission.stateVersion,
@@ -191,8 +191,9 @@ export default function ReviewModule({ activeWorldId, onClose, onLoadPackage, ac
         packageName: submission.packageName || cached.file.name,
       },
     });
-    if (!loaded) return;
+    if (!loaded) return false;
     reportProgress?.({ stage: 'ready', message: '审核包已加载到审核工作区。' });
+    return true;
   }, [activeWorldId, onLoadPackage]);
 
   const runLocalPrecheck = useCallback(async (input: { submission: ReviewSubmissionSnapshot; revision: ReviewPackageRevision }) => {

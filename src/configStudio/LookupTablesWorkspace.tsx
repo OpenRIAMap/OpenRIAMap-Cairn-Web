@@ -1,3 +1,4 @@
+import {DiagnosticGroups} from './DiagnosticGroups';
 import { useState } from 'react';
 import type { ConfigPackageV3, ConfigValidationReport, MountedFeatureRecord } from './types';
 import { LookupTablesEditor } from './LookupTablesEditor';
@@ -34,6 +35,6 @@ export function LookupTablesWorkspace({ config, draft, onDraftChange, onSave, di
     <p role="status" className="my-2 text-xs text-slate-600">{disabled ? '请先保存或放弃分类／引擎草稿，或结束 Class 树编辑，再修改公共表格。' : busy ? '正在保存表格…' : !draft ? '未修改' : report?.valid ? '核验通过，待保存' : '表格草稿尚未保存，需核验后保存或放弃。'}{isolated ? ' 当前为整包候选，区域保存只暂存到候选。' : ''}</p>
     <fieldset disabled={disabled || busy}><LookupTablesEditor config={draft?.value ?? config} onChange={change}/></fieldset>
     {error ? <p role="alert" className="text-xs text-rose-700">{error}</p> : null}
-    {report ? <div aria-label="对照表核验报告" className="text-xs">{report.issues.map((issue, index) => <p key={index} className={issue.severity === 'error' ? 'text-rose-700' : 'text-amber-700'}>{issue.path}：{issue.message}</p>)}</div> : null}
+    {report ? <div aria-label="对照表核验报告" className="text-xs"><DiagnosticGroups report={report}/></div> : null}
   </section>;
 }

@@ -59,7 +59,7 @@ export type ReviewStatusBoardPanelProps = {
   onLoadRevision(
     input: { submission: ReviewSubmissionSnapshot; revision: ReviewPackageRevision },
     reportProgress?: (progress: ReviewWorkspaceLoadProgress) => void,
-  ): Promise<void> | void;
+  ): Promise<boolean | void> | boolean | void;
   onLocalPrecheck(input: { submission: ReviewSubmissionSnapshot; revision: ReviewPackageRevision }): Promise<ReviewPackagePrecheckReport> | ReviewPackagePrecheckReport;
   isRevisionCached(input: { submission: ReviewSubmissionSnapshot; revision: ReviewPackageRevision }): boolean;
   onClearRevisionCache?(input?: { submission: ReviewSubmissionSnapshot; revision: ReviewPackageRevision }): void;
@@ -177,10 +177,10 @@ function createEntry(submission: ReviewSubmissionSnapshot, existing?: ReviewStat
   };
 }
 
-function reportView(report: ReviewReleaseControlReport | ReviewPackagePrecheckReport | null, title: string) {
+function reportView(report: ReviewReleaseControlReport | ReviewPackagePrecheckReport | null, title: string, source='服务端') {
   if (!report) return null;
   const rawFindings = reviewReportFindings(report);
-  if(!reviewReportProtocolValid(report))rawFindings.push({code:'REPORT_PROTOCOL_INVALID',severity:'blocker',message:'服务端返回了阻断或警告状态，却没有具体原因。请重新检查并保留关联信息；当前禁止发布。'});
+  if(!reviewReportProtocolValid(report))rawFindings.push({code:'REPORT_PROTOCOL_INVALID',severity:'blocker',message:source+'返回了阻断或警告状态，却没有具体原因。请重新检查并保留关联信息；当前禁止发布。'});
   const localizedFindings = rawFindings.map((finding) => {
     const code = 'code' in finding ? finding.code : undefined;
     return {
@@ -402,7 +402,8 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     setBusy('load');
     setLoadProgress({ stage: 'requesting-download', message: '正在申请审核包下载…' });
     try {
-      await onLoadRevision({ submission: detail, revision }, setLoadProgress);
+      const loaded=await onLoadRevision({ submission: detail, revision }, setLoadProgress);
+      if(loaded===false){setMessage("已取消加载，原审核工作区保持。");return;}
       setMessage('审核包已下载并加载到审核工作区。');
     } catch (error) {
       setMessage(describeError(error));
@@ -763,7 +764,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
             <AppButton onClick={() => void packagePrecheck()} disabled={!revision || !revisionCached || busy !== null} className="w-full justify-center rounded-xl bg-blue-600 px-3 py-2 font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300">
               <ClipboardCheck className="h-4 w-4" />本地预检
             </AppButton>
-            {reportView(packageReport, '审核包本地预检报告')}
+            {reportView(packageReport, '审核包本地预检报告','本地预检')}
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 border-t border-gray-100 pt-3">
             <AppButton onClick={() => updateDraft(detail.submissionId, 'archived', 'archive')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-gray-100 px-2 py-2 text-xs text-gray-700 hover:bg-gray-200">

@@ -1,0 +1,35 @@
+<!doctype html><html lang="zh"><meta charset="UTF-8"><title>c18 follow-up acceptance</title><div id="root"></div><script type="module">
+import React,{useState,useEffect,useRef,lazy,Suspense} from 'react';
+import {createRoot} from 'react-dom/client';
+import L from 'leaflet';import 'leaflet/dist/leaflet.css';
+import '/src/styles/index.css';
+import {applyApplicationSettings} from '/src/core/project/applicationRuntime.ts';
+import {setRuntimeConfiguration} from '/src/configRuntime/runtimeDataView.ts';
+import {ClassificationScopeEditor} from '/src/configStudio/ClassificationScopeEditor.tsx';
+import {WorkflowAvailabilityEditor} from '/src/configStudio/WorkflowAvailabilityEditor.tsx';
+import {V3WorkflowEditor} from '/src/configStudio/V3WorkflowEditor.tsx';
+import {WorkflowFold,WorkflowFoldScope} from '/src/configStudio/WorkflowFold.tsx';
+import {FoldOrderControls} from '/src/configStudio/FoldOrderControls.tsx';
+import RuleButtonPanel from '/src/components/Rules/ButtonRule/RuleButtonPanel.tsx';
+import {createDynmapCRS,getWorldConfig} from '/src/lib/DynmapProjection.ts';
+import {createReviewPackageSession} from '/src/components/Review/reviewPackageSession.ts';
+const identity=await(await fetch('/configuration/current.json')).json(),config=await(await fetch(identity.configUrl)).json();
+applyApplicationSettings(config.application);setRuntimeConfiguration(config);
+const h=React.createElement,root=createRoot(document.getElementById('root'));
+window.__followup={config};
+function Scope(){const [value,setValue]=useState(config.application.navigation.rail.selectors.platforms);window.__followup.value=value;return h('main',{className:'config-editor cm-editor-design p-4'},h(ClassificationScopeEditor,{config,value,onChange:setValue,label:'站台导航参与范围'}));}
+function World(){const [value,setValue]=useState(config.application.workflowAvailability);window.__followup.value=value;return h('main',{className:'config-editor cm-editor-design p-4'},h(WorkflowAvailabilityEditor,{config,value,onChange:setValue}));}
+function Workflow(){const [value,setValue]=useState(config.workflows.find(w=>w.id==='v3-tpp_teleport'));window.__followup.value=value;return h('main',{className:'config-editor cm-editor-design p-4'},h(V3WorkflowEditor,{config,workflow:value,records:[],onChange:setValue}));}
+function Grip(){const [moves,setMoves]=useState(0);window.__followup.moves=moves;return h('main',{className:'config-editor cm-editor-design p-4'},h(WorkflowFoldScope,{workflowId:'test',issues:[]},h(WorkflowFold,{title:'工作流控件',foldKey:'test',order:h(FoldOrderControls,{scope:'test',container:'one',id:'a',index:1,count:3,label:'实际控件',onMove:()=>setMoves(v=>v+1),onStep:()=>setMoves(v=>v+1)})},h('input',{'aria-label':'正文'}))));}
+function Tooltip(){return h('div',{style:{position:'fixed',right:20,top:160,width:320,height:100,overflow:'auto'}},h(RuleButtonPanel,{activeButtonIds:[],onToggle:()=>{}}));}
+const Review=lazy(async()=>{await new Promise(resolve=>setTimeout(resolve,450));return import('/src/components/Review/ReviewWorkspace.tsx');});
+function ReviewTest(){
+ const map=useRef(null),projection=useRef(null),[ready,setReady]=useState(false),[request,setRequest]=useState(),[session,setSession]=useState(null),[completed,setCompleted]=useState(0),[error,setError]=useState('');
+ useEffect(()=>{const crs=createDynmapCRS(getWorldConfig('zth'));projection.current=crs.dynmapProjection;map.current=L.map('fixture-map',{crs,zoomControl:false}).setView([0,0],5);setReady(true);return()=>map.current.remove();},[]);
+ const item={packageId:'followup-review-test',packageName:'首次加载测试',operator:'test',note:'c18',features:[{ID:'ZTPPNOMNOM_followup',Name:'首次加载要素',World:'zth',Class:'TPT',Kind:'TPP',SKind:'NOM',SKind2:'NOM',Type:'Points',CoordP:[[0,64,0]],TGTcoordinate:{x:100,y:64,z:100}}],deleteMarks:[],pictures:[],pictureBindings:[]};
+ window.__followup.review={ready,completed,error};
+ return h(React.Fragment,null,h('div',{id:'fixture-map',style:{height:'100vh'}}),h('button',{style:{position:'fixed',top:8,left:300,zIndex:2200},onClick:()=>{setSession(createReviewPackageSession(item));setRequest({requestId:crypto.randomUUID(),item});}},'加载审核包一次'),h('button',{style:{position:'fixed',top:8,left:500,zIndex:2200},onClick:()=>setRequest({requestId:crypto.randomUUID(),item:{...item,features:[{...item.features[0],CoordP:[]}]}})},'加载非法审核包'),error?h('p',{role:'alert',style:{position:'fixed',top:40,zIndex:2200}},error):null,session?h(Suspense,{fallback:h('p',{style:{position:'fixed',top:40,zIndex:2200}},'等待审核编辑器')},h(Review,{mapReady:ready,leafletMapRef:map,projectionRef:projection,currentWorldId:'zth',configRuntime:config,reviewSession:session,reviewLoadRequest:request,onReviewLoadResult:(_id,error)=>{if(error)setError(error);else setCompleted(v=>v+1);setRequest(undefined);},onReviewDirtyChange:()=>{},launcherSlot:()=>null})):null);
+}
+window.__followup.show=name=>root.render(h(({scope:Scope,world:World,workflow:Workflow,grip:Grip,tooltip:Tooltip,review:ReviewTest})[name]));
+window.__followup.ready=true;
+</script></html>

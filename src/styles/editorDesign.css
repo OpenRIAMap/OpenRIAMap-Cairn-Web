@@ -262,3 +262,17 @@
 
 details[data-order-insert="before"]{border-top:3px solid #8b5cf6!important;box-shadow:0 -8px 0 #ede9fe;}
 details[data-order-insert="after"]{border-bottom:3px solid #8b5cf6!important;box-shadow:0 8px 0 #ede9fe;}
+
+/* Scope rows constrain full-width fields within their own columns. */
+.cm-scope-editor { container: cm-scope / inline-size; }
+.cm-scope-row { display:grid; grid-template-columns:5rem minmax(0,1fr) max-content; gap:.5rem; align-items:end; }
+.cm-scope-row.cm-scope-unsigned { grid-template-columns:minmax(0,1fr) max-content; }
+.cm-scope-path { min-width:0; container: cm-scope-path / inline-size; }
+.cm-scope-actions { display:flex; gap:.5rem; align-items:center; white-space:nowrap; padding-bottom:.3rem; }
+.config-editor.cm-editor-design .cm-scope-path .cm-flex-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }
+@container cm-scope-path (max-width:650px) { .config-editor.cm-editor-design .cm-scope-path .cm-flex-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@container cm-scope-path (max-width:320px) { .config-editor.cm-editor-design .cm-scope-path .cm-flex-grid { grid-template-columns:minmax(0,1fr); } }
+@container cm-scope (max-width:480px) { .cm-scope-row,.cm-scope-row.cm-scope-unsigned { grid-template-columns:minmax(0,1fr); } .cm-scope-row > label { max-width:5rem; } .cm-scope-actions { justify-content:flex-end; } }
+
+[data-order-row][data-order-insert="before"]{border-top:3px solid #8b5cf6;box-shadow:0 -5px 0 #ede9fe;}
+[data-order-row][data-order-insert="after"]{border-bottom:3px solid #8b5cf6;box-shadow:0 5px 0 #ede9fe;}

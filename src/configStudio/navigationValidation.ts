@@ -3,7 +3,6 @@ import type { ClassificationPath, ConfigPackageV3, ConfigValidationIssue, FieldD
 import { RAILWAY_ROLES, pathCovers, pathsMatch, rawClassification } from '../core/project/navigationDefinition';
 import type { RailwayRole } from '../core/project/navigationTypes';
 import { VALUE_SCHEMA_TEMPLATES, validateValueSchema } from './valueSchema';
-import { effectiveOptionTable } from './lookupTables';
 
 const sharedBase = 'application/preferences/railwayRoles', navBase = 'application/navigation';
 const stable = (value: unknown): string => JSON.stringify(value, (_key, row) => row && typeof row === 'object' && !Array.isArray(row) ? Object.fromEntries(Object.entries(row).sort(([a],[b]) => a.localeCompare(b))) : row);
@@ -47,13 +46,6 @@ export function validateNavigationConfiguration(config: ConfigPackageV3, fields:
         const ref = byKey.get(key)?.reference;
         if (ref && (ref.matchField !== matchField || !resolveClassificationScope(config,scopes).some(p => p.class === ref.classCode))) add(base, `${node.nodeId} 的 ${key} 引用目标与角色范围不兼容。`, related);
       };
-      const domain = (key: string, tableId: string) => {
-        const f = byKey.get(key);
-        if (!f || f.type !== 'enum') return;
-        const allowed = new Set(config.lookupTables?.find(t => t.id === tableId)?.rows.map(r => r.value));
-        const declared = effectiveOptionTable(config, f);
-        if (declared.rows.some(row => !allowed.has(row.value))) add(base, `${node.nodeId} 的 ${key} 枚举域超出绑定功能表。`, [...related, `lookupTables/${tableId}`]);
-      };
       field('Name','string');
       if (role === 'lines') { field('direction','number',navigation); field('color','string'); field('bureau','string'); field('line','string'); }
       if (role === 'platforms') { field('lines','json',true,'rail-lines'); field('Situation','boolean',navigation); field('Connect','boolean',navigation); }
@@ -68,7 +60,7 @@ export function validateNavigationConfiguration(config: ConfigPackageV3, fields:
         field('hub','string'); field('TGTWarp','string'); field('TGTcoordinate','json',false,'target-point');
         for (const key of ['TGT_x','TGT_z','TGTelevation']) field(key,'number');
         if (!byKey.has('TGTWarp') && !byKey.has('TGTcoordinate') && !(byKey.has('TGT_x') && byKey.has('TGT_z'))) add(base, `${node.nodeId} 缺少 Warp 或目标坐标字段。`, related);
-        reference('TGTWarp',nav.teleport.selectors.warpPoints,'WRPointI2D'); domain('hub',nav.teleport.hubTableId);
+        reference('TGTWarp',nav.teleport.selectors.warpPoints,'WRPointI2D');
       }
       if (role === 'warpPoints') field('WRPointI2D','string',true);
       if (navigation) {
@@ -166,8 +158,6 @@ export function validateNavigationRecords(config: ConfigPackageV3, records: Moun
       const excluded = key && records.filter(other => world(other) === world(r) && String(other.WRPointI2D ?? other.wrPointI2D ?? '') === key);
       if (key && target.length > 1) add(r, `Warp 目标 ${key} 不唯一。`, `${navBase}/teleport`);
       else if (!(key && target.length === 1) && !explicit) add(r, excluded && excluded.length === 1 ? `Warp 目标 ${key} 不在参与范围；排除该传送边。` : `传送目标无法解析${key ? `：${key}` : ''}。`, `${navBase}/teleport`, Boolean(excluded && excluded.length === 1));
-      const hub = String(r.hub ?? (r.tags as Record<string, unknown> | undefined)?.hub ?? '').trim();
-      if (hub && !config.lookupTables?.find(t => t.id === nav.teleport.hubTableId)?.rows.some(row => row.value === hub && row.functionValue && typeof row.functionValue === 'object' && 'world' in row.functionValue && world({World:row.functionValue.world}) === world(r))) add(r, `hub ${hub} 不在当前世界的绑定枢纽表中。`, `${navBase}/teleport`);
     }
   }
   return result;

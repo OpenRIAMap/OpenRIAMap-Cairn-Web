@@ -1,9 +1,10 @@
+import {DiagnosticGroups} from './DiagnosticGroups';
 import {editVersionName} from './editAudit';
 import { checkPublicationWebDeployment, type PublicationWebState } from './publicationDeployment';
 import {HelpLabel} from './SettingHelp';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ConfigDialog } from './ConfigDialog';
-import type { ConfigPackageV3, MountedFeatureRecord } from './types';
+import type { ConfigPackageV3, MountedFeatureRecord,ConfigValidationReport } from './types';
 import { validateConfigPackage } from './runtime';
 import { buildConfigPackageArchive, buildTemporaryConfigArchive, downloadConfigPackage } from './package';
 import {useWorkspaceState} from './ConfigBootstrap';
@@ -14,7 +15,7 @@ import { readDurableActiveConfig, stableConfigText } from './defaultConfigProvid
 import { CONFIGURATION_RULES_VERSION, readFormalIdentity, sha256Bytes, type ConfigurationIdentity } from '../configRuntime/formalConfiguration';
 
 type Gate = { snapshot: string; records: string; base: string; rules: string; run: WorkspaceValidation };
-type ServerResult = { jobId?:string; state?:string; revision?:number; configSha256?:string; report?:{valid:boolean;issues:Array<{severity:string;message:string}>}; identity?:ConfigurationIdentity; upload?:{url:string;headers?:Record<string,string>}; receipt?:string; error?:string; message?:string; diagnosticId?:string; actor?:string; summary?:string[]; manifestSha256?:string; archiveSha256?:string };
+type ServerResult = { jobId?:string; state?:string; revision?:number; configSha256?:string; report?:ConfigValidationReport; identity?:ConfigurationIdentity; upload?:{url:string;headers?:Record<string,string>}; receipt?:string; error?:string; message?:string; diagnosticId?:string; actor?:string; summary?:string[]; manifestSha256?:string; archiveSha256?:string };
 async function command(operation: string, body: Record<string, unknown> = {}): Promise<ServerResult> {
   const response = await fetch('/api/config-publication', { method:'POST', credentials:'same-origin', headers:{'content-type':'application/json'}, body:JSON.stringify({operation,...body}) });
   const result = await response.json() as ServerResult;
@@ -160,7 +161,7 @@ export function GlobalPackageControls({ config, validationBaseline, records = []
       <p className="text-sm">下载保留正式基线 r，以保存检查点时间标识本机稿。正式上传由服务端分配新的 r。</p>
       {!valid?<p role="alert" className="text-rose-700">全局核验已失效，请关闭并重新核验。</p>:null}
       <div className="flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-2" disabled={busy||!valid} onClick={()=>void download()}>下载配置整包</button><button type="button" className="rounded bg-violet-600 px-3 py-2 text-white" disabled={busy||!valid} onClick={()=>void login()}>重新登录并准备上传</button>{authenticated?<button type="button" className="rounded border px-3 py-2" disabled={busy||!valid} onClick={()=>void preflight()}>再次核验</button>:null}</div>
-      {server?<section className="space-y-2 rounded border bg-slate-50 p-3"><p>操作者：{server.actor??'等待服务端确认'} · 服务端阶段：{server.state}</p><p>候选：r{server.revision} · {server.jobId}</p><p className="break-all text-xs">JSON SHA-256: {server.configSha256}</p><p className="break-all text-xs">Manifest SHA-256: {server.manifestSha256}</p><p className="break-all text-xs">ZIP SHA-256: {server.archiveSha256}</p>{server.summary?.map((item,index)=><p key={index} className="text-xs">{item}</p>)}{server.report?.issues.map((issue,index)=><p key={index} className={issue.severity==='error'?'text-rose-700':'text-amber-800'}>{issue.message}</p>)}{warning?<HelpLabel context="GlobalPackageControls" className="flex gap-2"><input type="checkbox" checked={warningsAccepted} onChange={event=>setWarningsAccepted(event.target.checked)}/>已检查以上警告</HelpLabel>:null}<button type="button" className="rounded border px-3 py-2" disabled={busy} onClick={()=>void refresh()}>查询进度</button><button type="button" className="ml-2 rounded bg-emerald-600 px-3 py-2 text-white disabled:bg-slate-300" disabled={busy||!valid||!authenticated||server.report?.valid!==true||!server.receipt||warning&&!warningsAccepted} onClick={()=>void publish()}>上传并发布</button></section>:null}
+      {server?<section className="space-y-2 rounded border bg-slate-50 p-3"><p>操作者：{server.actor??'等待服务端确认'} · 服务端阶段：{server.state}</p><p>候选：r{server.revision} · {server.jobId}</p><p className="break-all text-xs">JSON SHA-256: {server.configSha256}</p><p className="break-all text-xs">Manifest SHA-256: {server.manifestSha256}</p><p className="break-all text-xs">ZIP SHA-256: {server.archiveSha256}</p>{server.summary?.map((item,index)=><p key={index} className="text-xs">{item}</p>)}{server.report?<DiagnosticGroups report={server.report}/>:null}{warning?<HelpLabel context="GlobalPackageControls" className="flex gap-2"><input type="checkbox" checked={warningsAccepted} onChange={event=>setWarningsAccepted(event.target.checked)}/>已检查以上警告</HelpLabel>:null}<button type="button" className="rounded border px-3 py-2" disabled={busy} onClick={()=>void refresh()}>查询进度</button><button type="button" className="ml-2 rounded bg-emerald-600 px-3 py-2 text-white disabled:bg-slate-300" disabled={busy||!valid||!authenticated||server.report?.valid!==true||!server.receipt||warning&&!warningsAccepted} onClick={()=>void publish()}>上传并发布</button></section>:null}
       {server?.state==='complete'?<section className="space-y-2 rounded border bg-slate-50 p-3 text-sm" role="status"><p>{webChecking?'正在确认最终 Web 部署…':web?.message??'服务端发布完成，等待确认最终 Web 部署。'}</p><button type="button" className="rounded border px-3 py-2" disabled={webChecking} onClick={()=>setWebCheck(value=>value+1)}>检查最终 Web 部署</button></section>:null}
       <p role="status" className="text-sm">{message}</p>
     </ConfigDialog>

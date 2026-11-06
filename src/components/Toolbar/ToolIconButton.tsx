@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react';
+import {useCallback,useRef,useState,type CSSProperties,type ReactNode} from 'react';
+import {ToolButtonTooltip} from './ToolButtonTooltip';
 import AppButton from '@/components/ui/AppButton';
 
 import { BUTTON_TONES, type ButtonTone as Tone } from '@/core/project/buttonVisualCatalog';
@@ -28,6 +29,7 @@ export default function ToolIconButton({
   className = '',
   type = 'button',
 }: ToolIconButtonProps) {
+  const anchor=useRef<HTMLButtonElement>(null),[hint,setHint]=useState(false),closeHint=useCallback(()=>setHint(false),[]);
   const base =
     'relative group flex flex-col items-center justify-center h-9 w-9 p-1.5 transition-colors';
   const inactive = 'bg-white/90 text-gray-600 hover:bg-gray-100';
@@ -38,7 +40,12 @@ export default function ToolIconButton({
   const stateCls = disabled ? disabledCls : active ? activeCls : inactive;
 
   return (
-    <AppButton
+    <><AppButton
+      ref={anchor}
+      onMouseEnter={()=>setHint(true)}
+      onMouseLeave={()=>{if(document.activeElement!==anchor.current)closeHint();}}
+      onFocus={()=>setHint(true)}
+      onBlur={closeHint}
       style={style}
       type={type}
       onClick={disabled ? undefined : onClick}
@@ -48,9 +55,7 @@ export default function ToolIconButton({
       disabled={disabled}
     >
       {icon}
-      <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 text-xs bg-gray-800 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-        {label}
-      </span>
-    </AppButton>
+
+    </AppButton>{hint&&!disabled?<ToolButtonTooltip anchor={anchor} label={label} onClose={closeHint}/>:null}</>
   );
 }

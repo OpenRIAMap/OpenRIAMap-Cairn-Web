@@ -1,3 +1,4 @@
+import {DiagnosticGroups} from './DiagnosticGroups';
 import {editVersionName} from './editAudit';
 import {WorkflowAvailabilityEditor} from './WorkflowAvailabilityEditor';
 import {locateWorkflowSetting,workflowRowIdentities,restoreWorkflowRows} from './WorkflowFold';
@@ -146,7 +147,7 @@ export function WorkflowWorkbench({ config, onChange, onDraftStateChange, record
     <p className="mt-2 text-sm text-slate-500">先选择后读取，或新建/导入为独立草稿；核验通过后才能保存到当前配置包。保存或放弃草稿后，才能切换设计标签。{isolated ? ' 当前为整包候选，工作流保存只暂存到候选；其他模块的问题仍须在顶部整包核验时处理。' : ''}</p>
     {report ? <section className={`mt-3 rounded border p-3 text-sm ${report.valid ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}`}>
       <strong>{report.valid ? '工作流核验通过' : `发现 ${report.issues.length} 项问题`}</strong>
-      {report.issues.length ? <ul className="mt-2 list-disc pl-5 text-xs">{report.issues.map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.code}：{issue.message}<button type="button" className="ml-2 rounded border px-2 py-1" onClick={()=>locateWorkflowSetting(issue.path)}>定位</button>{issue.code==='prefill-copy-outdated'&&draft?<button type="button" className="ml-2 rounded border px-2 py-1" onClick={()=>{const next=confirmPrefillCopies({...draftConfig,workflows:[draft]},resolveEffectiveFields,[issue.path]);setDraft(next.workflows[0]);setReport(null);}}>确认保留本次副本</button>:null}</li>)}</ul> : null}
+      {report.issues.length ? <DiagnosticGroups report={report} onLocate={locateWorkflowSetting} onConfirm={draft?paths=>{const next=confirmPrefillCopies({...draftConfig,workflows:[draft]},resolveEffectiveFields,paths);setDraft(next.workflows[0]);setReport(null);}:undefined}/> : null}
     </section> : null}
     {draft
       ? <div className="mt-4"><V3WorkflowEditor config={draftConfig} workflow={draft} records={records} onChange={(next) => { setDraft(next); setReport(null); }} /></div>

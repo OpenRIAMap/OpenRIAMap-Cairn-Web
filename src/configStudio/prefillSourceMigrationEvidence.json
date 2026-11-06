@@ -1,0 +1,5519 @@
+{
+  "projectId": "openriamap-ria",
+  "evidence": "Approved classification-restructure-20261024 migration table; template field IDs explicitly paired; full effective field definitions (including inherited/public sources) compared before repair.",
+  "sourceSnapshot": "src/configStudio/defaults/r11-r7.config.json",
+  "sourceSha256": "982e1c0b6dc004dd90ee1ff92cd502dfb0f77a9ef4c53bb5a707a2c188460d7e",
+  "migrationTable": "逐分类基线与迁移对照-v1.0.md",
+  "migrationTableSha256": "427e9dcfe5dcb97aea16805abb43340a637057a8113eb90c9799752bb9f33786",
+  "targetSnapshotSha256": "bf6729556069808fccc68448df7b21ece897732a47edf41d117beef31cdf7e52",
+  "rows": [
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBZ"
+      },
+      "beforeField": {
+        "fieldId": "ISG-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "地物面名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-d298c950-ad4d-4d60-87b5-1e176c77bfe6"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBZ"
+      },
+      "beforeField": {
+        "fieldId": "ISG-Situation",
+        "key": "Situation",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "状态(Situation)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Situation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-dc6150db-320d-4b21-a973-c74d77859506"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBZ"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.nomenclator",
+        "key": "tags.nomenclator",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "命名者",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-535111d8-ba32-43dc-ae2c-e7d0a50d36df"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBZ"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-d3f871e3-47d1-494c-af37-b9fba3a33f8d"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBZ"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-e86590d9-50dc-486c-bdab-a07f663d4c84"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBZ"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.Land",
+        "key": "tags.Land",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属地理单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-ffad4196-edae-49b6-b570-0003867e0feb"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBZ"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.Adm",
+        "key": "tags.Adm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属聚落",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-cd478ad8-0b1e-45a3-a3af-32e121a396ea"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBZ"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.UAdm",
+        "key": "tags.UAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "上级行政/聚落单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-fec685d2-12c5-469e-bc12-b1772af804ff"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBZ"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.GAdm",
+        "key": "tags.GAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "行政/聚落组",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-e233316f-7070-48ef-9fd4-8a697612887d"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBZ"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.Pop",
+        "key": "tags.Pop",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "相关成员/人口",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-b80230bb-56f5-4301-83cd-b124045eec63"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "ADM",
+        "skind": "DBZ"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBZ"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.YTime",
+        "key": "tags.YTime",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "规划/年代",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-12a9281c-1bc7-4d99-b229-5375982d22d0"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LAD"
+      },
+      "beforeField": {
+        "fieldId": "ISG-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "地物面名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-1a1b3fb3-ee84-4b57-9eee-b9fe188d496b"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LAD"
+      },
+      "beforeField": {
+        "fieldId": "ISG-Situation",
+        "key": "Situation",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "状态(Situation)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Situation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-ca6de26a-dcf7-4482-bb60-832c744b7504"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LAD"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.nomenclator",
+        "key": "tags.nomenclator",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "命名者",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-7de18d1c-740f-49cd-8025-290cca66a6b0"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LAD"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-d237df8c-2e28-4499-8e9d-184f41c2f9d0"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LAD"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-9f8e187f-53fa-4490-8c8b-237ee5540b93"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LAD"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.Land",
+        "key": "tags.Land",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属地理单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-5300a900-2dc3-4ed0-9f46-469304869a70"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LAD"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.Adm",
+        "key": "tags.Adm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属聚落",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-fc316d8d-db2b-4fd4-ab1e-c1a1355f1fab"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LAD"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.UAdm",
+        "key": "tags.UAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "上级行政/聚落单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-8c80a7ab-70eb-4290-b940-a87f49163016"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LAD"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.GAdm",
+        "key": "tags.GAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "行政/聚落组",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-1772bfb8-e6e2-4ea0-992a-c8fc83cc4e9a"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LAD"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.Pop",
+        "key": "tags.Pop",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "相关成员/人口",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-e4015146-74c8-44f3-84ae-0a1c66532a15"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LAD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LAD"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.YTime",
+        "key": "tags.YTime",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "规划/年代",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-e81fa069-ef04-4036-984a-680b96506b68"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAG"
+      },
+      "beforeField": {
+        "fieldId": "ISG-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "地物面名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-407ad3a8-3377-4c88-b42c-0f0aaf877fe6"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAG"
+      },
+      "beforeField": {
+        "fieldId": "ISG-Situation",
+        "key": "Situation",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "状态(Situation)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Situation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-0b2af03b-44cf-407c-a8a8-004e0d517e4c"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAG"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.nomenclator",
+        "key": "tags.nomenclator",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "命名者",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-6db8d114-115b-427e-a8f5-cf749f0f80e1"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAG"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-8c87c1e8-f836-4646-8465-3c81751f88cc"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAG"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-d4c1522b-72ed-4dfc-9c7c-89b35f827587"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAG"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.Land",
+        "key": "tags.Land",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属地理单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-e6b6fd67-d437-456d-8d57-29c20723d6c1"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAG"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.Adm",
+        "key": "tags.Adm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属聚落",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-00ef5f4f-622c-49d4-bcc9-07dd5059e4aa"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAG"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.UAdm",
+        "key": "tags.UAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "上级行政/聚落单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-f9fc1c58-8a47-47de-ae74-79eee6dc0419"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAG"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.GAdm",
+        "key": "tags.GAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "行政/聚落组",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-90670dfa-e2df-4f8f-846c-24e79d0d88f5"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAG"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.Pop",
+        "key": "tags.Pop",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "相关成员/人口",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-18781006-88cc-457d-b112-3ab1932040dc"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "LIS"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAG"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.YTime",
+        "key": "tags.YTime",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "规划/年代",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-9612a8bb-f58a-4900-9213-070b2f9ae455"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "LWB"
+      },
+      "beforeField": {
+        "fieldId": "ISG-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "地物面名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-f03f4744-631a-43eb-8020-d46a31e03e6b"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "LWB"
+      },
+      "beforeField": {
+        "fieldId": "ISG-Situation",
+        "key": "Situation",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "状态(Situation)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Situation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-dde11a0d-1adc-418c-8a2d-5c66d275a9e6"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "LWB"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.nomenclator",
+        "key": "tags.nomenclator",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "命名者",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-e3c170bb-4640-4901-a623-ff7f0181892b"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "LWB"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-01bf40ab-fe30-45fe-a2ce-7ef28112ba40"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "LWB"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-1bf169e3-345b-49e7-b0c2-be54ff2643c5"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "LWB"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.Land",
+        "key": "tags.Land",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属地理单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-dd02b003-03f3-4e86-a8bd-e4f6bf09e0b1"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "LWB"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.Adm",
+        "key": "tags.Adm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属聚落",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-d8b30f34-ca41-4230-a135-105ce3ff26cc"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "LWB"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.UAdm",
+        "key": "tags.UAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "上级行政/聚落单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-17fbd0ba-a86f-4dad-a4ce-c7901ceaf6c9"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "LWB"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.GAdm",
+        "key": "tags.GAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "行政/聚落组",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-61f5dc76-c003-469f-bd50-9ad992c189e2"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "LWB"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.Pop",
+        "key": "tags.Pop",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "相关成员/人口",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-0f0a8914-eefa-42a7-b77e-8cdc0bec8db1"
+    },
+    {
+      "beforePath": {
+        "class": "ISG",
+        "kind": "NGF",
+        "skind": "WTB"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "LWB"
+      },
+      "beforeField": {
+        "fieldId": "ISG-registry-tags.YTime",
+        "key": "tags.YTime",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "规划/年代",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-8db72ffb-f2ff-4427-8819-8f97d94dfb0e"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "ADM",
+        "skind": "DBL"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "线要素名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-9573da0c-5016-407b-a37a-9349fa4b06b9"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "ADM",
+        "skind": "DBL"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-Situation",
+        "key": "Situation",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "状态(Situation)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Situation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-59ffd4a4-5d45-4420-8882-1425bae66991"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "ADM",
+        "skind": "DBL"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.nomenclator",
+        "key": "tags.nomenclator",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "命名者",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-60933f3e-1ca9-4587-baa7-cd67a2a5a2ee"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "ADM",
+        "skind": "DBL"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-46762113-3124-4bd4-810e-329ece69531f"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "ADM",
+        "skind": "DBL"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-abe24ad7-cc88-407e-be8a-daa72f4b4e28"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "ADM",
+        "skind": "DBL"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.BNgf1",
+        "key": "tags.BNgf1",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "边界侧自然地物1",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-9fb2d35c-e656-4510-9bfd-8d698285a63a"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "ADM",
+        "skind": "DBL"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.BNgf2",
+        "key": "tags.BNgf2",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "边界侧自然地物2",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-56b64509-8ac5-4e28-a917-c5cc343e49c7"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "ADM",
+        "skind": "DBL"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.Land",
+        "key": "tags.Land",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属地理单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-f5b7a5d7-4e4a-4765-af1f-ee21589dff3b"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "ADM",
+        "skind": "DBL"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.BAdm1",
+        "key": "tags.BAdm1",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "边界侧行政/聚落1",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-42072d6f-8334-4649-a08a-825cc70a0169"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "ADM",
+        "skind": "DBL"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.BAdm2",
+        "key": "tags.BAdm2",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "边界侧行政/聚落2",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-86b67557-7271-4402-b744-892f9fcb2253"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "ADM",
+        "skind": "DBL"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.GAdm",
+        "key": "tags.GAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "行政/聚落组",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-9d3c3f8f-8515-4b98-a82e-986bec3d2aad"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "BOD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "线要素名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-bf86a02f-41a2-45b1-8f73-d0f67cd9d9cf"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "BOD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-Situation",
+        "key": "Situation",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "状态(Situation)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Situation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-b608e5a0-c7fd-47a9-8185-2dcbc2cf33b6"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "BOD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.nomenclator",
+        "key": "tags.nomenclator",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "命名者",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-c197881e-399a-4b8c-be58-b69d4c9a0f0b"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "BOD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-975d52c0-bd81-47ff-b07c-55cb16e3bedd"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "BOD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-73bffef4-b92c-47cb-98ed-b48cad9b3f17"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "BOD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.BNgf1",
+        "key": "tags.BNgf1",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "边界侧自然地物1",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-d7966f00-89c7-4f08-88a4-7bef932a36c6"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "BOD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.BNgf2",
+        "key": "tags.BNgf2",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "边界侧自然地物2",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-1215ab55-1902-472f-bfad-0c58dac30153"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "BOD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.Land",
+        "key": "tags.Land",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属地理单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-3997efa6-92ca-4adf-8c69-8c6bb8a2ea02"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "BOD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.BAdm1",
+        "key": "tags.BAdm1",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "边界侧行政/聚落1",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-f7fb4f78-6814-40f9-b822-d14255b19a2a"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "BOD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.BAdm2",
+        "key": "tags.BAdm2",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "边界侧行政/聚落2",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-d70cdbea-28dd-4536-9460-ee7365004cf2"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "BOD"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.GAdm",
+        "key": "tags.GAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "行政/聚落组",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-c1053b22-5425-4396-bdb8-435fe294621d"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "WTR"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "WTL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "线要素名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-11eef980-3329-432e-921a-7ff50dfa5366"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "WTR"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "WTL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-Situation",
+        "key": "Situation",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "状态(Situation)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Situation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-d082a3c7-0d97-4c65-a49d-b446f644e56f"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "WTR"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "WTL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.nomenclator",
+        "key": "tags.nomenclator",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "命名者",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-bcd0c5ab-d095-4a8a-8ece-344bebbf0d86"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "WTR"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "WTL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-436dfa0d-bca5-4d0b-83cd-dd0cf4974e4a"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "WTR"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "WTL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-f8a5c814-6961-428e-9f6a-022b591446ab"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "WTR"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "WTL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.BNgf1",
+        "key": "tags.BNgf1",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "边界侧自然地物1",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-f728d55e-0c83-4ca2-a6ab-a8aa2ef944f6"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "WTR"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "WTL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.BNgf2",
+        "key": "tags.BNgf2",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "边界侧自然地物2",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-0c210fec-cb2b-444f-bb58-b2fd33ae3455"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "WTR"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "WTL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.Land",
+        "key": "tags.Land",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属地理单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-6c1d6f40-998e-44bf-8692-67da52a6dfbb"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "WTR"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "WTL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.BAdm1",
+        "key": "tags.BAdm1",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "边界侧行政/聚落1",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-0f6512a5-fcef-4807-9da1-6b7f041c0773"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "WTR"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "WTL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.BAdm2",
+        "key": "tags.BAdm2",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "边界侧行政/聚落2",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-ff54d68e-c0e2-4dfa-85b7-fdd965de74b6"
+    },
+    {
+      "beforePath": {
+        "class": "ISL",
+        "kind": "NGF",
+        "skind": "WTR"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "WTR",
+        "skind": "WTL"
+      },
+      "beforeField": {
+        "fieldId": "ISL-registry-tags.GAdm",
+        "key": "tags.GAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "行政/聚落组",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-b6850183-03f5-467e-8618-3fc1be1b566b"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "要素点名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-0c69acb0-e8b4-4075-a7fc-52b74eafb342"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-Situation",
+        "key": "Situation",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "状态(Situation)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Situation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-dbd1f0b3-a854-4f25-b77f-3a63085d9fed"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-elevation",
+        "key": "elevation",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "高度(y)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "elevation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-1caf336a-9e6e-402d-857a-9162ed829dec"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-tags.nomenclator",
+        "key": "tags.nomenclator",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "命名者",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-b1cfc940-a073-4f93-8697-6295585ec5d3"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-tags.Land",
+        "key": "tags.Land",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属地理单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-5f27a11f-7a3c-44eb-a979-fb60cf407ada"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-tags.UAdm",
+        "key": "tags.UAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属行政/聚落单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-a236f7d7-de56-448e-be4e-cfe5fc12566c"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-tags.Pop",
+        "key": "tags.Pop",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "相关成员",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-d909803f-766c-470e-9f47-cbb092738483"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-extensions.character.event",
+        "key": "extensions.character.event",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "事件或类型",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-a4ef7e98-f83b-4903-92c1-31a04a17bbeb"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-924db6ed-02e3-4c96-9680-c137dfbc77ce"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "ADM",
+        "skind": "DBP"
+      },
+      "afterPath": {
+        "class": "ADM",
+        "kind": "DBP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-2eb493fa-5191-4f57-8260-2e10c320d651"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "要素点名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-1f61f4f0-a5f6-461c-95fe-e481670e2abc"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-Situation",
+        "key": "Situation",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "状态(Situation)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Situation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-0c4a6dc6-64ca-4c8c-b7d7-ffa5fbb5aeaa"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-elevation",
+        "key": "elevation",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "高度(y)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "elevation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-6e46ad24-021a-43bf-a710-0fc227f17a68"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-tags.nomenclator",
+        "key": "tags.nomenclator",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "命名者",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-cbd5c973-8b0d-4dbe-b566-e2c8b4c9dd02"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-tags.Land",
+        "key": "tags.Land",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属地理单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-b3a67a55-a873-43f1-b9be-2bd6133585a3"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-tags.UAdm",
+        "key": "tags.UAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属行政/聚落单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-3639bdec-17e8-4123-81a5-8e848ff3a15a"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-tags.Pop",
+        "key": "tags.Pop",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "相关成员",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-825bea83-692b-4364-80d4-97aa2e123e63"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-extensions.character.event",
+        "key": "extensions.character.event",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "事件或类型",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-58c5fe3b-6fe0-4b2e-8af2-e2ca1c7b3897"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-0c59d863-0811-4ae3-b5e3-0f4fd8ac76eb"
+    },
+    {
+      "beforePath": {
+        "class": "ISP",
+        "kind": "NGF",
+        "skind": "SCP"
+      },
+      "afterPath": {
+        "class": "NGF",
+        "kind": "LIS",
+        "skind": "LAP"
+      },
+      "beforeField": {
+        "fieldId": "ISP-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        },
+        "inheritance": "sealed"
+      },
+      "afterFieldId": "field-a1c4ef24-3316-4fd9-ab43-728888de8ffa"
+    },
+    {
+      "beforePath": {
+        "class": "PFB"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PFB"
+      },
+      "beforeField": {
+        "fieldId": "PFB-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "站台轮廓名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        }
+      },
+      "afterFieldId": "field-9e969635-3dbb-4f9a-812f-9f49f320f004"
+    },
+    {
+      "beforePath": {
+        "class": "PFB"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PFB"
+      },
+      "beforeField": {
+        "fieldId": "PFB-LineID",
+        "key": "LineID",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "线路ID(LineID)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "LineID",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-741b47bc-213b-4723-a537-45fff12b0b63"
+    },
+    {
+      "beforePath": {
+        "class": "PFB"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PFB"
+      },
+      "beforeField": {
+        "fieldId": "PFB-elevation",
+        "key": "elevation",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "高度(y)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "elevation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-228534aa-1d3e-430e-bb4a-dbd1911f59f8"
+    },
+    {
+      "beforePath": {
+        "class": "PFB"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PFB"
+      },
+      "beforeField": {
+        "fieldId": "PFB-height",
+        "key": "height",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "高度(height)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "height",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-962b66a3-a848-41a3-b532-f9ccc11ad4d1"
+    },
+    {
+      "beforePath": {
+        "class": "PFB"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PFB"
+      },
+      "beforeField": {
+        "fieldId": "PFB-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-c49ae6f7-ff24-4959-9e54-a3de1f5085e3"
+    },
+    {
+      "beforePath": {
+        "class": "PFB"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PFB"
+      },
+      "beforeField": {
+        "fieldId": "PFB-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-832776b8-a53c-4b5f-9a8f-9fda9560345a"
+    },
+    {
+      "beforePath": {
+        "class": "PLF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PLF"
+      },
+      "beforeField": {
+        "fieldId": "PLF-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "站台名称",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        }
+      },
+      "afterFieldId": "field-9803346e-95c5-4063-82e8-78d8ced28f16"
+    },
+    {
+      "beforePath": {
+        "class": "PLF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PLF"
+      },
+      "beforeField": {
+        "fieldId": "PLF-elevation",
+        "key": "elevation",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "高度(y)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "elevation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-a2083708-55f2-4a30-8641-f2d0d1ef7a85"
+    },
+    {
+      "beforePath": {
+        "class": "PLF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PLF"
+      },
+      "beforeField": {
+        "fieldId": "PLF-Situation",
+        "key": "Situation",
+        "type": "boolean",
+        "cardinality": "single",
+        "input": "toggle",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "站台是否启用(Situation)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Situation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-79c699a4-4996-4347-a202-cbc4ef89a9f9"
+    },
+    {
+      "beforePath": {
+        "class": "PLF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PLF"
+      },
+      "beforeField": {
+        "fieldId": "PLF-Connect",
+        "key": "Connect",
+        "type": "boolean",
+        "cardinality": "single",
+        "input": "toggle",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "外部连接功能(Connect)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Connect",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-9d7db3c5-b289-4195-ae6f-714252c77c61"
+    },
+    {
+      "beforePath": {
+        "class": "PLF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PLF"
+      },
+      "beforeField": {
+        "fieldId": "PLF-runtime-lines",
+        "key": "lines",
+        "type": "json",
+        "cardinality": "single",
+        "input": "json",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "lines",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 运行时显示逻辑迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-77c6e8e2-8dea-4d23-bbdf-b670122c308d"
+    },
+    {
+      "beforePath": {
+        "class": "PLF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PLF"
+      },
+      "beforeField": {
+        "fieldId": "PLF-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-085cf47b-c36b-4759-a802-a709f79871c4"
+    },
+    {
+      "beforePath": {
+        "class": "PLF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "PLF"
+      },
+      "beforeField": {
+        "fieldId": "PLF-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-048547b8-868e-490a-96fa-9dc6a1b7f9ca"
+    },
+    {
+      "beforePath": {
+        "class": "RLE"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "RLE"
+      },
+      "beforeField": {
+        "fieldId": "RLE-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "线路名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        }
+      },
+      "afterFieldId": "field-46b8d559-79e7-4fb0-86cd-aef47f532de9"
+    },
+    {
+      "beforePath": {
+        "class": "RLE"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "RLE"
+      },
+      "beforeField": {
+        "fieldId": "RLE-bureau",
+        "key": "bureau",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "路局代码",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "bureau",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-a4a54847-f4e7-43d4-86eb-1abb9e4c7a68"
+    },
+    {
+      "beforePath": {
+        "class": "RLE"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "RLE"
+      },
+      "beforeField": {
+        "fieldId": "RLE-line",
+        "key": "line",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "线路编号",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "line",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-ade6f700-963c-4301-b595-3d03c2ffe70a"
+    },
+    {
+      "beforePath": {
+        "class": "RLE"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "RLE"
+      },
+      "beforeField": {
+        "fieldId": "RLE-color",
+        "key": "color",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "标准色号(color)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "color",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-eee53725-0631-4825-bb57-6ad72a0dc3db"
+    },
+    {
+      "beforePath": {
+        "class": "RLE"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "RLE"
+      },
+      "beforeField": {
+        "fieldId": "RLE-direction",
+        "key": "direction",
+        "type": "enum",
+        "cardinality": "single",
+        "input": "select",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "方向(direction)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "direction",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        },
+        "optionValueType": "number",
+        "optionTable": {
+          "valueType": "number",
+          "rows": [
+            {
+              "value": "0",
+              "label": {
+                "zh": "下行",
+                "en": ""
+              }
+            },
+            {
+              "value": "1",
+              "label": {
+                "zh": "上行",
+                "en": ""
+              }
+            },
+            {
+              "value": "2",
+              "label": {
+                "zh": "其他",
+                "en": ""
+              }
+            },
+            {
+              "value": "3",
+              "label": {
+                "zh": "展示线",
+                "en": ""
+              }
+            },
+            {
+              "value": "4",
+              "label": {
+                "zh": "联络线",
+                "en": ""
+              }
+            },
+            {
+              "value": "5",
+              "label": {
+                "zh": "股道",
+                "en": ""
+              }
+            },
+            {
+              "value": "6",
+              "label": {
+                "zh": "支线",
+                "en": ""
+              }
+            },
+            {
+              "value": "7",
+              "label": {
+                "zh": "无方向联络线",
+                "en": ""
+              }
+            }
+          ]
+        },
+        "options": [
+          {
+            "value": "0",
+            "label": {
+              "zh": "下行",
+              "en": ""
+            }
+          },
+          {
+            "value": "1",
+            "label": {
+              "zh": "上行",
+              "en": ""
+            }
+          },
+          {
+            "value": "2",
+            "label": {
+              "zh": "其他",
+              "en": ""
+            }
+          },
+          {
+            "value": "3",
+            "label": {
+              "zh": "展示线",
+              "en": ""
+            }
+          },
+          {
+            "value": "4",
+            "label": {
+              "zh": "联络线",
+              "en": ""
+            }
+          },
+          {
+            "value": "5",
+            "label": {
+              "zh": "股道",
+              "en": ""
+            }
+          },
+          {
+            "value": "6",
+            "label": {
+              "zh": "支线",
+              "en": ""
+            }
+          },
+          {
+            "value": "7",
+            "label": {
+              "zh": "无方向联络线",
+              "en": ""
+            }
+          }
+        ]
+      },
+      "afterFieldId": "field-b0fab2a5-99fc-467c-b5e3-acfb2dc7f932"
+    },
+    {
+      "beforePath": {
+        "class": "RLE"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "RLE"
+      },
+      "beforeField": {
+        "fieldId": "RLE-startplf",
+        "key": "startplf",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "起点站台名(startplf)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "startplf",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-55177ef1-99be-4970-b2a5-86c57ed83ab9"
+    },
+    {
+      "beforePath": {
+        "class": "RLE"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "RLE"
+      },
+      "beforeField": {
+        "fieldId": "RLE-endplf",
+        "key": "endplf",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "终点站台名(endplf)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "endplf",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-1c0ba430-0e09-413e-abfb-fd3d09baae56"
+    },
+    {
+      "beforePath": {
+        "class": "RLE"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "RLE"
+      },
+      "beforeField": {
+        "fieldId": "RLE-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-f042148e-73dd-4dc9-babf-8d03ccf89bea"
+    },
+    {
+      "beforePath": {
+        "class": "RLE"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "RLE"
+      },
+      "beforeField": {
+        "fieldId": "RLE-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-c0c5b9a3-9cbd-4de2-8689-2d1f67b0d945"
+    },
+    {
+      "beforePath": {
+        "class": "SBP"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "SBP"
+      },
+      "beforeField": {
+        "fieldId": "SBP-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "车站建筑名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        }
+      },
+      "afterFieldId": "field-d378e7ad-38a6-4946-bd9e-314893a8ee9b"
+    },
+    {
+      "beforePath": {
+        "class": "SBP"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "SBP"
+      },
+      "beforeField": {
+        "fieldId": "SBP-elevation",
+        "key": "elevation",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "高度(y)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "elevation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-3695937e-6a8d-46a0-96f9-4d6b43352ccd"
+    },
+    {
+      "beforePath": {
+        "class": "SBP"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "SBP"
+      },
+      "beforeField": {
+        "fieldId": "SBP-runtime-iconUrl",
+        "key": "iconUrl",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "iconUrl",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 运行时显示逻辑迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-ff088015-2c8d-464f-878e-a593f71e654f"
+    },
+    {
+      "beforePath": {
+        "class": "SBP"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "SBP"
+      },
+      "beforeField": {
+        "fieldId": "SBP-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-8abdc47e-7e6a-4150-8fb4-5f14ad2fe4de"
+    },
+    {
+      "beforePath": {
+        "class": "SBP"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "SBP"
+      },
+      "beforeField": {
+        "fieldId": "SBP-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-998e4960-aa3c-48a3-a394-190db82c4090"
+    },
+    {
+      "beforePath": {
+        "class": "SBP"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "SBP"
+      },
+      "beforeField": {
+        "fieldId": "SBP-registry-Floors",
+        "key": "Floors",
+        "type": "json",
+        "cardinality": "single",
+        "input": "json",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "包含楼层",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-e32eeb04-d98b-47b3-b9b1-ae94752afea0"
+    },
+    {
+      "beforePath": {
+        "class": "SBP"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "SBP"
+      },
+      "beforeField": {
+        "fieldId": "SBP-registry-stations",
+        "key": "stations",
+        "type": "json",
+        "cardinality": "single",
+        "input": "json",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "包含车站",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-3d9558dc-50e8-4b1a-8f36-35d00f45fae1"
+    },
+    {
+      "beforePath": {
+        "class": "STA"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STA"
+      },
+      "beforeField": {
+        "fieldId": "STA-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "车站名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        }
+      },
+      "afterFieldId": "field-929ff3f8-117e-4da5-bc07-b9699ae181b8"
+    },
+    {
+      "beforePath": {
+        "class": "STA"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STA"
+      },
+      "beforeField": {
+        "fieldId": "STA-STBuilding",
+        "key": "STBuilding",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "车站所属车站建体(STBuilding)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "STBuilding",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-019c4336-3fb0-4760-8f8b-16628137dec6"
+    },
+    {
+      "beforePath": {
+        "class": "STA"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STA"
+      },
+      "beforeField": {
+        "fieldId": "STA-elevation",
+        "key": "elevation",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "高度(y)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "elevation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-206e85ea-30d1-47d0-ab76-a7dcafec63fe"
+    },
+    {
+      "beforePath": {
+        "class": "STA"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STA"
+      },
+      "beforeField": {
+        "fieldId": "STA-runtime-platforms",
+        "key": "platforms",
+        "type": "json",
+        "cardinality": "single",
+        "input": "json",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "platforms",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 运行时显示逻辑迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-78aff337-7c51-4c36-baf5-a07984f08765"
+    },
+    {
+      "beforePath": {
+        "class": "STA"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STA"
+      },
+      "beforeField": {
+        "fieldId": "STA-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-90826901-8db5-4bc1-93a8-c90a5052b972"
+    },
+    {
+      "beforePath": {
+        "class": "STA"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STA"
+      },
+      "beforeField": {
+        "fieldId": "STA-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-33552721-f4f1-4646-bb67-8d862d5eab6b"
+    },
+    {
+      "beforePath": {
+        "class": "STB"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STB"
+      },
+      "beforeField": {
+        "fieldId": "STB-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "车站建筑名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        }
+      },
+      "afterFieldId": "field-967de70a-6eed-42ee-98ea-96e8810bd4a7"
+    },
+    {
+      "beforePath": {
+        "class": "STB"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STB"
+      },
+      "beforeField": {
+        "fieldId": "STB-elevation",
+        "key": "elevation",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "高度(y)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "elevation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-9f49617f-a081-426c-90ac-81c522531a8e"
+    },
+    {
+      "beforePath": {
+        "class": "STB"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STB"
+      },
+      "beforeField": {
+        "fieldId": "STB-height",
+        "key": "height",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "建筑高度(height)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "height",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-1855c5f0-b74d-4e67-a77f-0e4cf6df6a92"
+    },
+    {
+      "beforePath": {
+        "class": "STB"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STB"
+      },
+      "beforeField": {
+        "fieldId": "STB-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-4a9bf47a-5a25-4af4-a74f-277256af9a81"
+    },
+    {
+      "beforePath": {
+        "class": "STB"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STB"
+      },
+      "beforeField": {
+        "fieldId": "STB-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-8b334e47-8685-46df-b334-ea9f1c0ca606"
+    },
+    {
+      "beforePath": {
+        "class": "STB"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STB"
+      },
+      "beforeField": {
+        "fieldId": "STB-registry-Floors",
+        "key": "Floors",
+        "type": "json",
+        "cardinality": "single",
+        "input": "json",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "包含楼层",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-f307b5bd-01b5-4ecf-83e8-a95ee7af05db"
+    },
+    {
+      "beforePath": {
+        "class": "STF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STF"
+      },
+      "beforeField": {
+        "fieldId": "STF-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "楼层名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        }
+      },
+      "afterFieldId": "field-cb1ad7e0-55a7-40d6-9b5c-8eb0622b187a"
+    },
+    {
+      "beforePath": {
+        "class": "STF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STF"
+      },
+      "beforeField": {
+        "fieldId": "STF-NofFloor",
+        "key": "NofFloor",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "楼层名(NofFloor)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "NofFloor",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-2ca7da95-22f6-431c-9e23-1e6bad83598e"
+    },
+    {
+      "beforePath": {
+        "class": "STF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STF"
+      },
+      "beforeField": {
+        "fieldId": "STF-staBuildingID",
+        "key": "staBuildingID",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属车站建筑(staBuildingID)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "staBuildingID",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-dc8c4110-ac00-4d8f-9e6e-0bb77ee250fa"
+    },
+    {
+      "beforePath": {
+        "class": "STF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STF"
+      },
+      "beforeField": {
+        "fieldId": "STF-Situation",
+        "key": "Situation",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "状态(Situation)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Situation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-4e0675fa-7c49-4f38-b9c5-2cb025f7431e"
+    },
+    {
+      "beforePath": {
+        "class": "STF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STF"
+      },
+      "beforeField": {
+        "fieldId": "STF-elevation",
+        "key": "elevation",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "高度(y)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "elevation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-503f8acb-4023-4892-a787-f2efb9ae6ced"
+    },
+    {
+      "beforePath": {
+        "class": "STF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STF"
+      },
+      "beforeField": {
+        "fieldId": "STF-height",
+        "key": "height",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "层高(height)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "height",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-34fb0eb7-2bed-4387-8d2d-9f406edc08e1"
+    },
+    {
+      "beforePath": {
+        "class": "STF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STF"
+      },
+      "beforeField": {
+        "fieldId": "STF-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-7c4da7b8-6934-4821-bab4-c96d828acf09"
+    },
+    {
+      "beforePath": {
+        "class": "STF"
+      },
+      "afterPath": {
+        "class": "RIL",
+        "kind": "STF"
+      },
+      "beforeField": {
+        "fieldId": "STF-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-ae8354d1-ead7-4c3d-9d4a-d975cae0b629"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "传送点名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        }
+      },
+      "afterFieldId": "field-e1f9adc8-246d-482b-97a7-df5ed993200d"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-hub",
+        "key": "hub",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "emptyValue": "preserve",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "枢纽(hub)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "hub",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-c0735170-d512-495f-884d-e23ce89eb721"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-TGTWarp",
+        "key": "TGTWarp",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "目标Warp(TGTWarp)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "TGTWarp",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-2b9d7f39-2d0d-4b51-960e-abf5db343ee7"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-TGT_x",
+        "key": "TGT_x",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "目标点X(TGT_x)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "TGT_x",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-15745083-cc41-4cee-9657-c061f61b53fa"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-TGT_z",
+        "key": "TGT_z",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "目标点Z(TGT_z)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "TGT_z",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-4ea63abd-96ed-4dd1-93c0-e6c2f2e31390"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-elevation",
+        "key": "elevation",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "传送点高度(y)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "elevation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-29032b5e-98b0-4c0a-98ed-49ba7a50238b"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-TGTelevation",
+        "key": "TGTelevation",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "目标点高度(TGTelevation)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "TGTelevation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-da20d3e3-bc1a-42ce-adce-53d7d2786e35"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-runtime-TGTcoordinate.x",
+        "key": "TGTcoordinate.x",
+        "requiredWhen": [
+          {
+            "kind": "fieldPresent",
+            "field": "TGTWarp",
+            "present": false
+          }
+        ],
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "TGTcoordinate.x",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 运行时显示逻辑迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-a0f3ec5b-8394-4808-bbdc-2ec0d2735a68"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-runtime-TGTcoordinate.y",
+        "key": "TGTcoordinate.y",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "TGTcoordinate.y",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 运行时显示逻辑迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-7971f54f-9c1b-4ee2-9d89-0d948b98f189"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-runtime-TGTcoordinate.z",
+        "key": "TGTcoordinate.z",
+        "requiredWhen": [
+          {
+            "kind": "fieldPresent",
+            "field": "TGTWarp",
+            "present": false
+          }
+        ],
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "TGTcoordinate.z",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 运行时显示逻辑迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-ac4b3366-c4fa-4160-96d5-2591d168afba"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-registry-tags.Land",
+        "key": "tags.Land",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属地理单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-41b8a490-5fa5-43e3-bf04-c64fe9f5e649"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-registry-tags.UAdm",
+        "key": "tags.UAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属聚落(地标点)",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-d829cc1c-23ba-452f-a2e7-721c8a8862b1"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-registry-tags.UAdmG",
+        "key": "tags.UAdmG",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属聚落(区划)",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-d1e81c63-234a-43de-9aad-9437ce40751e"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-f6158a2d-5959-4919-8dce-9464f3e914e0"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-330aab0c-0cd3-444d-ab3f-0e32cc9696d3"
+    },
+    {
+      "beforePath": {
+        "class": "TPP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "TPP"
+      },
+      "beforeField": {
+        "fieldId": "TPP-TGTcoordinate",
+        "key": "TGTcoordinate",
+        "type": "json",
+        "cardinality": "single",
+        "input": "json",
+        "labels": {
+          "zh": "目标坐标",
+          "en": ""
+        },
+        "description": {
+          "zh": "目标点绘制返回的单点坐标对象。",
+          "en": ""
+        },
+        "coordinateFormat": "pointObject"
+      },
+      "afterFieldId": "field-56ee590d-6d4f-411e-9760-ba0b40dff92c"
+    },
+    {
+      "beforePath": {
+        "class": "WRP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "WRP"
+      },
+      "beforeField": {
+        "fieldId": "WRP-WRPointI2D",
+        "key": "WRPointI2D",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "Warp点游戏内ID(WRPointI2D)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "WRPointI2D",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-36d8a097-ca52-4a05-b29c-bfe8bca85338"
+    },
+    {
+      "beforePath": {
+        "class": "WRP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "WRP"
+      },
+      "beforeField": {
+        "fieldId": "WRP-Name",
+        "key": "Name",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": true,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "Warp点名",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "Name",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": true
+        }
+      },
+      "afterFieldId": "field-b76de77a-9af4-4b62-beb8-91596b57cb33"
+    },
+    {
+      "beforePath": {
+        "class": "WRP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "WRP"
+      },
+      "beforeField": {
+        "fieldId": "WRP-hub",
+        "key": "hub",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "emptyValue": "preserve",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "枢纽(hub)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "hub",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-9765aa51-1be3-4310-94bf-0408c640b564"
+    },
+    {
+      "beforePath": {
+        "class": "WRP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "WRP"
+      },
+      "beforeField": {
+        "fieldId": "WRP-elevation",
+        "key": "elevation",
+        "type": "number",
+        "cardinality": "single",
+        "input": "text",
+        "required": false,
+        "validateExistingData": false,
+        "labels": {
+          "zh": "高度(y)",
+          "en": ""
+        },
+        "description": {
+          "zh": "",
+          "en": ""
+        },
+        "sourceRuntimeField": "elevation",
+        "scenes": {
+          "workflow": true,
+          "editor": true,
+          "infocard": true,
+          "search": false
+        }
+      },
+      "afterFieldId": "field-9c593fe8-52e5-47fc-98e9-0948c453116a"
+    },
+    {
+      "beforePath": {
+        "class": "WRP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "WRP"
+      },
+      "beforeField": {
+        "fieldId": "WRP-registry-tags.Land",
+        "key": "tags.Land",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属地理单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-8e23640b-ce95-4c3c-b242-541722ef4c22"
+    },
+    {
+      "beforePath": {
+        "class": "WRP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "WRP"
+      },
+      "beforeField": {
+        "fieldId": "WRP-registry-tags.UAdm",
+        "key": "tags.UAdm",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属行政/聚落单元",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-96d1ca37-40a9-4c14-9f73-f79bf47d2633"
+    },
+    {
+      "beforePath": {
+        "class": "WRP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "WRP"
+      },
+      "beforeField": {
+        "fieldId": "WRP-registry-tags.UAdmG",
+        "key": "tags.UAdmG",
+        "scope": "tags",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "所属聚落(区划)",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-ca2eab99-1086-4450-9cae-2db4b1a9e170"
+    },
+    {
+      "beforePath": {
+        "class": "WRP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "WRP"
+      },
+      "beforeField": {
+        "fieldId": "WRP-registry-extensions.link.wiki",
+        "key": "extensions.link.wiki",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "WIKI链接",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-01aae323-9e9d-40b1-8bad-e35005481353"
+    },
+    {
+      "beforePath": {
+        "class": "WRP"
+      },
+      "afterPath": {
+        "class": "TPT",
+        "kind": "WRP"
+      },
+      "beforeField": {
+        "fieldId": "WRP-registry-extensions.character.brief",
+        "key": "extensions.character.brief",
+        "scope": "extensions",
+        "type": "string",
+        "cardinality": "single",
+        "input": "text",
+        "validateExistingData": false,
+        "labels": {
+          "zh": "简介",
+          "en": ""
+        },
+        "description": {
+          "zh": "由 V1 信息卡注册表迁移的可编辑字段。",
+          "en": ""
+        }
+      },
+      "afterFieldId": "field-f385815c-e73c-49e1-9355-db870eef5768"
+    }
+  ]
+}
