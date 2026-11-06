@@ -8,6 +8,7 @@ import { defaultLookupTables } from '../../configStudio/lookupTables';
 import { validateStructuredValue, valueSchemaTemplate } from '../../configStudio/valueSchema';
 import { validateNavigationRecords } from '../../configStudio/navigationValidation';
 import { readNavigationGeometry } from './navigationGeometry';
+import {teleportNodeAvailable} from './teleportAvailability';
 
 export type NavigationContext = {
   configuration?: ConfigPackageV3;
@@ -74,6 +75,7 @@ export function assertNavigationInput(context:NavigationContext,items:Record<str
     const id=String(record.ID??'').trim();
     if(!id||ids.has(id))throw Error(`导航数据 ID 缺失或重复：${id||'空'}。`);ids.add(id);
     const scalar=(key:string,type:'number'|'boolean'|'string')=>{const value=record[key];if(value!==undefined&&(typeof value!==type||type==='number'&&!Number.isFinite(value)))throw Error(`${id}/${key} 需要有限的 ${type} 值。`);};
+    if(teleport||warp){scalar('Situation','boolean');if(warp){const key=String(record.WRPointI2D??record.wrPointI2D??'').trim();if(!key||warps.has(key))throw Error(`Warp 定位键缺失或重复：${key||id}。`);warps.add(key);}if(!teleportNodeAvailable(record))continue;}
     if(rail&&matches('lines',record)){scalar('direction','number');if(record.direction!==undefined&&(!Number.isInteger(record.direction)||Number(record.direction)<0||Number(record.direction)>7))throw Error(`${id}/direction 需要 0–7 整数。`);}
     if(rail&&matches('stationAreas',record))scalar('STBuilding','string');
     if(road){scalar('Level','number');for(const key of ['Oneway','Enter','Exit','SelfJunction'])scalar(key,'boolean');}
@@ -92,7 +94,6 @@ export function assertNavigationInput(context:NavigationContext,items:Record<str
       if(Array.isArray(record.Mode))for(const row of record.Mode){const code=typeof row==='string'?row:Array.isArray(row)?String(row[0]??''):row&&typeof row==='object'?String(row.code??row.tgt??row.ID??row.id??''):'';if(!codes!.has(code))throw Error(`${id}/Mode 的 ${code} 不在绑定的出行方式表中。`);}
     }
     if(teleport)templates.push(['TGTcoordinate','target-point']);
-    if(warp){const key=String(record.WRPointI2D??record.wrPointI2D??'').trim();if(!key||warps.has(key))throw Error(`Warp 定位键缺失或重复：${key||id}。`);warps.add(key);}
     for(const [key,template] of templates)if(record[key]!==undefined){const errors=validateStructuredValue(record[key],valueSchemaTemplate(template),`${id}/${key}`);if(errors.length)throw Error(errors[0]);}
   }
   const config=context.configuration;

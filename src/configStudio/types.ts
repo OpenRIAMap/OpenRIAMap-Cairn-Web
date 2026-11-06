@@ -1024,8 +1024,10 @@ export type ConfigValidationReport = {
   valid: boolean;
   createdAt: string;
   issues: ConfigValidationIssue[];
+  designNotes?: ConfigDesignNote[];
   summary?: { configuration: number; parity: number; mountedData: number; affectedFeatures: number };
 };
+export type ConfigDesignNote = Omit<ConfigValidationIssue,'severity'> & {originalSeverity:'warning';checkStage:'output';sourceSlot:string;outputId:string;classification:ClassificationPath;groupRoot:string};
 export type MountedFeatureRecord = Record<string, unknown> & {
   ID?: string;
   Name?: string;

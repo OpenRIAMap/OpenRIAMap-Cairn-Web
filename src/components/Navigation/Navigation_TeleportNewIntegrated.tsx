@@ -24,6 +24,7 @@ import { normalizeRuleSourceWorldId, type WorldRuleDataSource } from '@/componen
 import { loadEffectiveRuleItemsForWorld } from '@/components/Rules/data/effectiveRuleItems';
 import type { RouteHighlightData, RouteStyledSegment, RouteStationMarker } from '@/components/Map/RouteHighlightLayer';
 import { getHubReturnPoint } from './teleportHubReturnPoints';
+import {teleportNodeAvailable,teleportAvailabilitySignature} from '@/core/project/teleportAvailability';
 
 // ------------------------------
 // types
@@ -201,7 +202,7 @@ class MinHeap<T> {
 // load & parse TPP
 // ------------------------------
 
-const TPP_CACHE: Record<string, { points: TeleportPoint[]; loadedAt: number; key: string }> = {};
+const TPP_CACHE: Record<string, { points: TeleportPoint[]; loadedAt: number; key: string; excluded:number }> = {};
 
 
 
@@ -210,18 +211,20 @@ async function loadTeleportPoints(worldId: string, opt: {
   dataSourceOverride?: Partial<WorldRuleDataSource>;
   filesOverride?: string[];
   fetcher?: (url: string) => Promise<any[]>;
-}): Promise<{ points: TeleportPoint[]; signature: string }> {
+}): Promise<{ points: TeleportPoint[]; signature: string; excluded:number }> {
   const context=opt.navigationContext??captureNavigationContext();
   const wid = normalizeRuleSourceWorldId(worldId);
   const effective = await loadEffectiveRuleItemsForWorld(wid, { fetcher: opt.fetcher });
 
-  const cacheKey = `${wid}::${effective.signature}::nav=${context.graphSignature}`;
+  const state=teleportAvailabilitySignature(effective.items,item=>matchesRaw(context.settings.teleport.selectors.warpPoints,item)||matchesRaw(context.settings.teleport.selectors.teleportPoints,item));
+  const cacheKey = `${wid}::${effective.signature}::nav=${context.graphSignature}::availability=${state}`;
   const cached = TPP_CACHE[wid];
-  if (cached && cached.key === cacheKey) return { points: cached.points, signature: cacheKey };
+  if (cached && cached.key === cacheKey) return { points: cached.points, signature: cacheKey,excluded:cached.excluded };
 
   assertNavigationInput(context,effective.items,'teleport');
   const allItems = effective.items;
   const wrpMap = new Map<string, { coord: Coordinate; elevation?: number }>();
+  const disabledWarps=new Set<string>();let excluded=0;
   const tppRaw: any[] = [];
 
   for (const item of allItems) {
@@ -229,6 +232,7 @@ async function loadTeleportPoints(worldId: string, opt: {
 
     if (matchesRaw(context.settings.teleport.selectors.warpPoints,item)) {
       const i2d = String((item as any).WRPointI2D ?? (item as any).wrPointI2D ?? '').trim();
+      if(!teleportNodeAvailable(item)){if(i2d)disabledWarps.add(i2d);continue;}
       const c = navigationPoint(item);
       if (!i2d) throw Error(`${String(item.ID ?? 'Warp')} 缺少 Warp 定位键。`);
       const cy = Number((c as any).y);
@@ -239,7 +243,7 @@ async function loadTeleportPoints(worldId: string, opt: {
     }
 
     if (matchesRaw(context.settings.teleport.selectors.teleportPoints,item)) {
-      tppRaw.push(item);
+      if(teleportNodeAvailable(item))tppRaw.push(item);else excluded++;
     }
   }
 
@@ -252,6 +256,9 @@ async function loadTeleportPoints(worldId: string, opt: {
     const c = navigationPoint(item);
 
     const warp = String((item as any).TGTWarp ?? (item as any).tgtWarp ?? '').trim();
+    // A deliberately disabled named destination is not a missing lookup: do
+    // not reactivate this edge through its legacy coordinate fallback.
+    if(warp&&disabledWarps.has(warp)){excluded++;continue;}
     let tgt: Coordinate | null = null;
 
     if (warp && wrpMap.has(warp)) {
@@ -279,8 +286,8 @@ async function loadTeleportPoints(worldId: string, opt: {
     out.push({ id, name, hub, src, tgt });
   }
 
-  TPP_CACHE[wid] = { points: out, loadedAt: Date.now(), key: cacheKey };
-  return { points: out, signature: cacheKey };
+  TPP_CACHE[wid] = { points: out, loadedAt: Date.now(), key: cacheKey,excluded };
+  return { points: out, signature: cacheKey,excluded };
 }
 
 // ------------------------------
@@ -418,7 +425,7 @@ export async function computeTeleportNewPlanFromCoords(opt: NavigationTeleportCo
   if (!tps.length) {
     return {
       ok: false,
-      reason: '未加载到任何 TPP 传送点（请确认当前世界数据集或兼容 public 数据可用）',
+      reason: teleportLoad.excluded?`当前没有可用传送边：${teleportLoad.excluded} 个传送点或其 Warp 目标已明确停用。`:'未加载到任何 TPP 传送点（请确认当前世界数据集或兼容 public 数据可用）',
       worldId,
       totalTimeSeconds: 0,
       totalDistance: 0,
@@ -454,7 +461,7 @@ export async function computeTeleportNewPlanFromCoords(opt: NavigationTeleportCo
   // build/reuse internal graph cache (unique nodes + kNN)
   // ------------------------------
 
-  const graphKey = `${dsKey}::hub-v2::knn=${knn}`;
+  const graphKey = `${dsKey}::hub-v2-state-v1::knn=${knn}`;
   let g = TELEPORT_GRAPH_CACHE[worldId];
 
 
@@ -688,6 +695,6 @@ export async function rebuildTeleportNewCacheForWorld(
   }
   const loaded = await loadTeleportPoints(wid, { fetcher: opt?.fetcher });
   const knn=Number.isFinite(opt?.knn)?Number(opt!.knn):24;
-  const graphKey=`teleport::${wid}::sig=${loaded.signature}::hub-v2::knn=${knn}`;
+  const graphKey=`teleport::${wid}::sig=${loaded.signature}::hub-v2-state-v1::knn=${knn}`;
   TELEPORT_GRAPH_CACHE[wid]=buildTeleportInternalGraph(loaded.points,graphKey,knn);
 }

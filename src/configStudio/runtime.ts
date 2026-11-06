@@ -1,5 +1,7 @@
+import {stableConfigText} from '../configRuntime/configurationFingerprint';
 import {classificationScopeProblems,resolveClassificationScope,matchesClassificationRange,scopeRows} from './classificationScope';
 import {validateWorkflowSupplies} from './workflowSupplyValidation';
+import {partitionWorkflowDesignNotes} from './workflowDesignNotes';
 import {workflowClassificationGroup} from './workflowClassificationGroup';
 import { isWorldGroups } from '../core/project/applicationResources';
 import { validateWorkflowWrites,workflowConditionsDisjoint,workflowCandidateConstraint } from './workflowPreflight';
@@ -40,6 +42,7 @@ import type {
   ContextBinding,
   ConfigPackageV3,
   ConfigValidationIssue,
+  ConfigDesignNote,
   ConfigValidationReport,
   FieldDefinition,
   FieldScope,
@@ -366,6 +369,16 @@ export function workflowQueryFieldKeys(config:ConfigPackageV3,search:SearchProfi
 export function scopeCommonFields(config:ConfigPackageV3,scope:import('./classificationScope').ClassificationRange):FieldDefinition[]{
  const sets=resolveClassificationScope(config,scope).map(path=>resolveSelectableFields(config,path));
  return sets.length?sets[0].filter(field=>sets.every(set=>set.some(other=>other.key===field.key&&other.type===field.type&&other.cardinality===field.cardinality))):[];
+}
+
+/** Source-side return/template fields, including runtime system fields. Empty
+ * legacy targets never turn into an unrestricted search. Query fields use a
+ * separate union; returned values require compatible type/cardinality. */
+export function workflowSearchFields(config:ConfigPackageV3,search:SearchProfile):FieldDefinition[]{
+ const paths=search.targetRole==='main'?config.nodes.filter(n=>{const role=resolveNodeFieldSettings(config,n.path).value.structure;return role?.enabled&&role.role==='main';}).map(n=>n.path):search.scope?resolveClassificationScope(config,search.scope):search.target.class&&hasCategoryNode(config,search.target)?[search.target]:[];
+ const sets=paths.map(p=>resolveSelectableFields(config,p).map(f=>f.fieldId.startsWith('system-Coord')?{...f,type:'json' as const,input:'json' as const}:f));
+ const signature=(f:FieldDefinition)=>stableConfigText([f.type,f.cardinality,f.optionValueType,f.coordinateFormat,f.valueSchema]);
+ return sets.length?sets[0].filter(f=>sets.every(set=>set.some(other=>other.key===f.key&&signature(other)===signature(f)))):[];
 }
 
 /** Display/Card resolve independently and only propagate through their own switch. */
@@ -921,7 +934,7 @@ function validateSearch(control: Pick<WorkflowControl, 'kind' | 'search'>, confi
   }
   const targets=search.targetRole==='main'?config.nodes.filter(node=>{const role=resolveNodeFieldSettings(config,node.path).value.structure;return role?.enabled&&role.role==='main';}):[];
   if(search.targetRole&&(config.contractRevision<10||!targets.length))issue(issues,'error','workflow-search-role-invalid',path,'通用搜索需要 c10 且至少有一个启用的主结构分类。');
-  const selectable = new Set(search.targetRole?targets.flatMap(node=>resolveSelectableFields(config,node.path).map(field=>field.key)).filter(key=>targets.every(node=>resolveSelectableFields(config,node.path).some(field=>field.key===key))):(search.scope?scopeCommonFields(config,search.scope):resolveSelectableFields(config,search.target)).map(field=>field.key));
+  const selectable = new Set(workflowSearchFields(config,search).map(field=>field.key));
   if (!search.queryFields?.length) issue(issues, 'error', 'workflow-search-fields-required', path, '搜索控件至少需要选择一个可匹配字段。');
   const queryKeys=new Set(workflowQueryFieldKeys(config,search));
   for (const field of search.queryFields ?? []) if (!queryKeys.has(field)) issue(issues, 'error', 'workflow-search-field-invalid', path, `搜索字段 ${field} 不在目标分类的有效字段集中。`, { field });
@@ -972,7 +985,7 @@ export function validateWorkflowOutput(output: WorkflowOutput, _outputIndex: num
     const control=controlsFor(workflow).find(control=>control.slot===assignment.expression.trim());
     if (config.contractRevision<15&&reachable&&control && field && (control.fieldSource||config.contractRevision>=8)) {
       const leaf=control.kind==='group'?control.group?.itemFields[0]:control;
-      const returned=leaf&&(leaf.kind==='featureSearch'||leaf.kind==='coarseSearch')&&leaf.search?resolveSelectableFields(config,leaf.search.target).find(field=>field.key===leaf.search!.returnField):undefined;
+      const returned=leaf&&(leaf.kind==='featureSearch'||leaf.kind==='coarseSearch')&&leaf.search?workflowSearchFields(config,leaf.search).find(field=>field.key===leaf.search!.returnField):undefined;
       const actualType=control.kind==='group'&&control.group?.storage==='object'?'json':leaf?.kind==='select'?leaf.optionValueType??'string':leaf?.kind==='json'?'json':leaf?.valueNormalization==='trim'||leaf?.valueNormalization==='abbr'?'string':leaf?.kind==='number'||leaf?.valueNormalization==='number'?'number':leaf?.kind==='toggle'?'boolean':returned?returned.type==='enum'?returned.optionValueType??'string':returned.type==='reference'?'string':returned.type:'string';
       const actualMultiple=control.kind==='group'||returned?.cardinality==='multiple';
       const expectedType=field.type==='enum'?field.optionValueType??'string':field.type==='reference'?'string':field.type;
@@ -1001,7 +1014,7 @@ function validateWorkflowValueCondition(condition: import('./types').WorkflowVal
   if (condition.operator==='in' && (!condition.values?.length || condition.values.some(value=>!['string','number','boolean'].includes(typeof value)))) issue(issues,'error','workflow-value-condition-invalid',path,'属于条件必须包含有效比较值。');
 }
 
-function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3, issues: ConfigValidationIssue[]): void {
+function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3, issues: ConfigValidationIssue[],designNotes:ConfigDesignNote[]=[]): void {
   if(config.contractRevision>=16&&workflow.mode==='external'){
     const declared={...config,workflows:config.workflows.some(row=>row.id===workflow.id)?config.workflows.map(row=>row.id===workflow.id?workflow:row):[...config.workflows,workflow]};
     for(const error of externalBindingIssues(declared).filter(error=>error.path.startsWith('workflows/'+workflow.id+'/')))issue(issues,'error','external-binding-invalid',error.path,error.message);
@@ -1177,7 +1190,7 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
   }
   // r6/r7 factory capture overrides are an explicitly recognised old drawing
   // representation. Analyse its lossless r8 view, without editing the source.
-  if(config.contractRevision>=15){for(const output of workflow.outputs)for(const path of workflowClassificationGroup(config,output).paths){const candidate={outputId:output.id,classification:path};issues.push(...[...validateWorkflowWrites(workflow,target=>resolveEffectiveFields(config,target),candidate),...validateWorkflowSupplies(workflow,resolveEffectiveFields(config,path),candidate)].map(item=>({...item,message:'['+classificationPathKey(path)+'] '+item.message})));}}
+  if(config.contractRevision>=15){for(const output of workflow.outputs)for(const path of workflowClassificationGroup(config,output).paths){const candidate={outputId:output.id,classification:path},fields=resolveEffectiveFields(config,path);const findings=[...validateWorkflowWrites(workflow,target=>resolveEffectiveFields(config,target),candidate,search=>workflowSearchFields(config,search)),...validateWorkflowSupplies(workflow,fields,candidate)].map(item=>({...item,message:'['+classificationPathKey(path)+'] '+item.message}));const partition=config.contractRevision>=18?partitionWorkflowDesignNotes(workflow,fields,candidate,findings):{issues:findings,notes:[]};issues.push(...partition.issues);designNotes.push(...partition.notes);}}
   else issues.push(...validateWorkflowWrites(config.contractRevision<8?migrateWorkflowDrawings(workflow):workflow, path => resolveSelectableFields(config,path)));
 }
 
@@ -1187,9 +1200,10 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
 export function validateWorkflowDefinition(workflow: WorkflowDefinition, config: ConfigPackageV3): ConfigValidationReport {
   workflowValidationRuns++;
   const issues: ConfigValidationIssue[] = [];
+  const designNotes:ConfigDesignNote[]=[];
   const structure = validateNativeStructure({...config,workflows:[workflow]});
   if (structure.length) return {schemaVersion:'cairnmap.config-validation-report.v3',valid:false,createdAt:new Date().toISOString(),issues:structure.map(item=>({severity:'error',code:'native-contract-structure-invalid',...item}))};
-  validateWorkflow(workflow, config, issues);
+  validateWorkflow(workflow, config, issues,designNotes);
   const scoped={...config,nodes:[],workflows:[workflow]};
   issues.push(...validatePrefillCopies(scoped,(_config,path)=>resolveEffectiveFields(config,path),config));
   issues.push(...validateLookupTables({...config,workflows:[workflow]},false));
@@ -1199,6 +1213,7 @@ export function validateWorkflowDefinition(workflow: WorkflowDefinition, config:
     valid: !issues.some((item) => item.severity === 'error'),
     createdAt: new Date().toISOString(),
     issues,
+    ...(designNotes.length?{designNotes}:{}),
     summary: { configuration: issues.length, parity: 0, mountedData: 0, affectedFeatures: 0 },
   };
 }
@@ -1350,6 +1365,7 @@ function validateContextBindings(config: ConfigPackageV3, issues: ConfigValidati
 export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: MountedFeatureRecord[] = []): ConfigValidationReport {
   packageValidationRuns++;
   const issues: ConfigValidationIssue[] = [];
+  const designNotes:ConfigDesignNote[]=[];
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: false, createdAt: new Date().toISOString(), issues: structure.map(item => ({ severity: 'error', code: 'native-contract-structure-invalid', ...item })) };
   for(const error of externalBindingIssues(config).filter(error=>error.path.startsWith('nodes/')))issue(issues,'error','external-reference-invalid',error.path,error.message);
@@ -1450,7 +1466,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   for (const workflow of config.workflows) {
     if (workflowIds.has(workflow.id)) issue(issues, 'error', 'workflow-id-duplicate', `workflows/${workflow.id}`, '工作流 ID 重复。');
     workflowIds.add(workflow.id);
-    validateWorkflow(workflow, config, issues);
+    validateWorkflow(workflow, config, issues,designNotes);
   }
   const editorScopes=new Set<string>();
   for(const workflow of config.workflows.filter(w=>w.editor?.enabled)){
@@ -1480,7 +1496,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   issues.push(...mounted);
   const configuration = issues.filter((item) => !item.code.startsWith('mounted-') && !item.code.startsWith('v1-parity')).length;
   const parity = issues.filter((item) => item.code.startsWith('v1-parity')).length;
-  return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: !issues.some((item) => item.severity === 'error'), createdAt: new Date().toISOString(), issues, summary: { configuration, parity, mountedData: mounted.length, affectedFeatures: mounted.reduce((total, item) => total + (item.affectedFeatures?.length ?? 0), 0) } };
+  return { schemaVersion: 'cairnmap.config-validation-report.v3', valid: !issues.some((item) => item.severity === 'error'), createdAt: new Date().toISOString(), issues,...(designNotes.length?{designNotes}:{}), summary: { configuration, parity, mountedData: mounted.length, affectedFeatures: mounted.reduce((total, item) => total + (item.affectedFeatures?.length ?? 0), 0) } };
 }
 
 export function createBundledConfigPackage(): ConfigPackageV3 {

@@ -19,4 +19,4 @@ for(const path of [...paths].sort()){
 }
 const sha=(value:Buffer)=>createHash('sha256').update(value).digest('hex');
 const evidence={projectId:target.projectId,evidence:'Approved classification-restructure-20261024 migration table; template field IDs explicitly paired; full effective field definitions (including inherited/public sources) compared before repair.',sourceSnapshot:sourceFile,sourceSha256:sha(raw),migrationTable:tableFile.split(/[\\/]/).pop(),migrationTableSha256:sha(table),targetSnapshotSha256:sha(targetRaw),rows};
-fs.writeFileSync('src/configStudio/prefillSourceMigrationEvidence.json',JSON.stringify(evidence,null,2)+'\n');console.log(JSON.stringify({identities:rows.length,paths:new Set(rows.map(row=>pathText(row.beforePath))).size}));
+fs.writeFileSync('docs/90_roadmap-and-history/c18-followup-20261106/prefillSourceMigrationEvidence.json',JSON.stringify(evidence,null,2)+'\n');console.log(JSON.stringify({identities:rows.length,paths:new Set(rows.map(row=>pathText(row.beforePath))).size}));

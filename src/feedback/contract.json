@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "cairnmap.feedback-catalog.v1",
+  "webPath": "src/feedback/remoteFeedbackCatalog.json",
+  "publicServices": [
+    "review-submission-service.mjs",
+    "review-release-preflight-service.mjs",
+    "review-release-preflight.mjs",
+    "configuration-review-preflight.mjs",
+    "configuration-publication.mjs"
+  ],
+  "catalogSha256": "a7e0374d7c708ced3c931d2840c47a2093cb8d0775790e29540ef4082be982e1"
+}

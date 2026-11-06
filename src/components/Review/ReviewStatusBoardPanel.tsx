@@ -1,3 +1,6 @@
+import {getApplicationSettings} from '@/core/project/applicationRuntime';
+import {remoteError,remoteState,type FeedbackLanguage} from '@/feedback/remoteFeedback';
+import {RemoteFinding} from '@/feedback/RemoteFinding';
 import {reviewReportFindings,reviewReportProtocolValid} from './reviewReportFindings';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -74,9 +77,7 @@ export type ReviewStatusBoardPanelProps = {
 
 const createId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 
-function stateLabel(state: string) {
-  return ({ pending: '待审核', approved: '已通过', rejected: '已打回', archived: '已归档', queued: '已排队', running: '发布中', 'mirror-pending': '镜像等待中', mirrored: '已镜像', 'archive-pending': '等待归档', archiving: '正在归档', completed: '发布完成', 'rebase-required': '需要重新检查', 'mirror-recovery-required': '镜像需恢复', 'archive-recovery-required': '归档需恢复', failed: '失败' } as Record<string, string>)[state] ?? state;
-}
+function stateLabel(state:string){return remoteState(state,getApplicationSettings().preferences.language);}
 
 function stateTone(state: string) {
   return ({ pending: 'bg-amber-100 text-amber-800', approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 text-red-700', archived: 'bg-gray-200 text-gray-700' } as Record<string, string>)[state] ?? 'bg-blue-100 text-blue-700';
@@ -107,9 +108,9 @@ function describeError(error: unknown) {
   if (error instanceof ReviewOperationError) {
     const correlation = error.correlationId ? `（关联 ID：${error.correlationId}）` : '';
     const details = error.details.length ? ` ${error.details.join('；')}` : '';
-    return `${error.code}：${error.message}${correlation}${details}`;
+    return `${remoteError(error.code+': '+error.message,getApplicationSettings().preferences.language)}${correlation}${details}`;
   }
-  return error instanceof Error ? error.message : String(error);
+  return remoteError(error,getApplicationSettings().preferences.language);
 }
 
 function normalizeGate(value: ReviewReleaseGateSnapshot | null | undefined) {
@@ -130,38 +131,6 @@ function publishConfirmationFailureMessage(error: unknown): string {
   return `发布未进入执行队列：${describeError(error)}。已刷新 Release Gate。`;
 }
 
-function reviewDecisionLabel(decision: string | undefined): string {
-  return ({
-    ready: '可继续',
-    pending: '后台核验中',
-    failed: '检查失败',
-    'in-progress': '已有任务正在进行',
-    'warning-confirmation-required': '需要人工确认',
-    blocked: '已阻断',
-    stale: '状态已过期',
-  } as Record<string, string>)[decision ?? ''] ?? '无结论';
-}
-
-function reviewFindingLabel(code: string, fallback?: string): string {
-  if (fallback?.trim()) return fallback.trim();
-  return ({
-    PACKAGE_INVALID: '审核包包含无效的要素或删除标识。',
-    UPSERT_DUPLICATE: '审核包中存在重复的要素更新或删除目标。',
-    DELETE_TARGET_MISSING: '删除目标不存在于当前正式数据中。',
-    DELETE_TARGET_AMBIGUOUS: '删除目标匹配多个要素；请补充世界和分类。',
-    SOURCE_SNAPSHOT_UNAVAILABLE: '当前正式数据快照不可用或不完整。',
-    SUBMISSION_STATE_CHANGED: '审核包状态已被其他操作更新。',
-    RELEASE_IN_PROGRESS: '当前已有发布正在进行。',
-    BASE_RELEASE_CHANGED: '该包基于较早的正式版本，将按当前正式数据继续核验。',
-    UPSERT_OVERWRITES_CURRENT: '该要素会覆盖当前同世界、同分类、同 ID 的要素。',
-    DELETE_EXISTING_TARGET: '删除目标存在；确认后将从正式数据中移除。',
-    SOURCE_FINGERPRINT_UNAVAILABLE: '当前或待更新要素缺少内容指纹，无法精确比较覆盖差异。',
-    BATCH_TARGET_OVERLAP: '另一已选审核包更新同一要素；请确认发布顺序。',
-    BATCH_DELETE_TARGET_OVERLAP: '另一已选审核包删除同一目标；请仅保留一个版本。',
-    PRECHECK_STALE: '预检结果已过期，请重新执行预检。',
-  } as Record<string, string>)[code] ?? fallback ?? '未提供阻断或警告说明。';
-}
-
 function createEntry(submission: ReviewSubmissionSnapshot, existing?: ReviewStatusBoardEntry): ReviewStatusBoardEntry {
   if (existing) return existing;
   const state = ['pending', 'approved', 'rejected', 'archived'].includes(submission.state)
@@ -177,23 +146,16 @@ function createEntry(submission: ReviewSubmissionSnapshot, existing?: ReviewStat
   };
 }
 
-function reportView(report: ReviewReleaseControlReport | ReviewPackagePrecheckReport | null, title: string, source='服务端') {
+function reportView(report: ReviewReleaseControlReport | ReviewPackagePrecheckReport | null, title: string, source='服务端',language:FeedbackLanguage='zh') {
   if (!report) return null;
   const rawFindings = reviewReportFindings(report);
   if(!reviewReportProtocolValid(report))rawFindings.push({code:'REPORT_PROTOCOL_INVALID',severity:'blocker',message:source+'返回了阻断或警告状态，却没有具体原因。请重新检查并保留关联信息；当前禁止发布。'});
-  const localizedFindings = rawFindings.map((finding) => {
-    const code = 'code' in finding ? finding.code : undefined;
-    return {
-      ...finding,
-      key: code ?? finding.message ?? 'finding',
-      message: (finding.packageId?finding.packageId+'：':'')+(code ? reviewFindingLabel(code, finding.message) : finding.message ?? '未提供阻断或警告说明。'),
-    };
-  });
   return <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
-    <div className="font-semibold">{title}：{reviewDecisionLabel(report.decision)}</div>
-    {localizedFindings.length ? <div className="mt-2 space-y-1">{localizedFindings.map((finding, index) => <div key={`${finding.key}-${index}`} className={finding.severity === 'blocker' ? 'text-red-700' : finding.severity === 'warning' ? 'text-amber-700' : 'text-gray-600'}>• {finding.message}</div>)}</div> : <div className="mt-1 text-gray-500">未发现阻断或警告项。</div>}
+    <div className="font-semibold">{title}：{remoteState(report.decision??'',language)}</div>
+    {rawFindings.length?<div className="mt-2 space-y-1">{rawFindings.map((finding,index)=><div key={index} className={finding.severity==='blocker'?'text-red-700':finding.severity==='warning'?'text-amber-700':'text-gray-600'}>{finding.packageId?finding.packageId+'：':''}<RemoteFinding code={finding.code??'REMOTE_DIAGNOSTIC'} message={finding.message} language={language} details={finding}/></div>)}</div>:<div className="mt-1 text-gray-500">{language==='zh'?'未发现阻断或警告项。':'No blockers or warnings.'}</div>}
   </div>;
 }
+
 function progressText(progress: ReviewWorkspaceLoadProgress) {
   if (!progress.totalBytes || progress.completedBytes === undefined) return progress.message;
   return `${progress.message} ${Math.min(100, Math.round((progress.completedBytes / progress.totalBytes) * 100))}%`;
@@ -726,7 +688,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
           {historicalArchiveCandidates.length ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3"><div className="flex items-center justify-between gap-2"><div><div className="font-semibold text-amber-900">历史归档整理</div><p className="mt-1 text-xs text-amber-800">仅维护者可为明确选中的旧包创建迁移计划；不发布正式地图数据。</p></div><span className="text-xs text-amber-800">候选 {historicalArchiveCandidates.length}</span></div><div className="mt-2 flex items-center justify-between"><button type="button" className="text-xs text-amber-900 underline" onClick={() => setHistoricalArchiveSelectedIds(new Set(historicalArchiveCandidates.map((item) => item.submissionId)))}>全选历史包</button><AppButton disabled={!historicalArchiveSelectedIds.size || busy !== null || !actor.roles.includes('maintainer')} onClick={reconcileHistoricalArchives} className="justify-center rounded-xl bg-amber-600 px-3 py-2 text-xs text-white hover:bg-amber-700 disabled:bg-amber-300"><Archive className="h-3.5 w-3.5" />整理已选历史归档</AppButton></div>{!actor.roles.includes('maintainer') ? <p className="mt-2 text-xs text-amber-800">当前身份不是维护者，不能创建归档整理任务。</p> : null}</div> : null}
           <div className="grid grid-cols-3 gap-2 border-t border-gray-100 pt-3"><AppButton disabled={!selectedEntries.length || busy !== null} onClick={() => void saveStatus()} className="justify-center rounded-xl bg-orange-600 px-2 py-2 text-xs text-white hover:bg-orange-700 disabled:bg-orange-300"><CheckCircle2 className="h-3.5 w-3.5" />保存状态</AppButton><AppButton disabled={!selectedEntries.length || dirty || busy !== null} onClick={() => void releasePrecheck()} className="justify-center rounded-xl bg-blue-600 px-2 py-2 text-xs text-white hover:bg-blue-700 disabled:bg-blue-300"><ClipboardCheck className="h-3.5 w-3.5" />发布前检查</AppButton><AppButton disabled={!publishReady || busy !== null} onClick={() => void publish()} className="justify-center rounded-xl bg-green-600 px-2 py-2 text-xs text-white hover:bg-green-700 disabled:bg-green-300"><Send className="h-3.5 w-3.5" />发布</AppButton></div>
           {dirty ? <p className="text-xs text-amber-700">状态灯有未保存的本地修改；请先保存状态。</p> : null}
-          {reportView(releaseReport, '发布前检查报告')}
+          {reportView(releaseReport, '发布前检查报告','服务端',getApplicationSettings().preferences.language)}
         </div>
       </div>
     </DraggablePanel>
@@ -764,7 +726,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
             <AppButton onClick={() => void packagePrecheck()} disabled={!revision || !revisionCached || busy !== null} className="w-full justify-center rounded-xl bg-blue-600 px-3 py-2 font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300">
               <ClipboardCheck className="h-4 w-4" />本地预检
             </AppButton>
-            {reportView(packageReport, '审核包本地预检报告','本地预检')}
+            {reportView(packageReport, '审核包本地预检报告','本地预检',getApplicationSettings().preferences.language)}
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 border-t border-gray-100 pt-3">
             <AppButton onClick={() => updateDraft(detail.submissionId, 'archived', 'archive')} disabled={!canEditDetailLamp || busy !== null} className="justify-center rounded-xl bg-gray-100 px-2 py-2 text-xs text-gray-700 hover:bg-gray-200">

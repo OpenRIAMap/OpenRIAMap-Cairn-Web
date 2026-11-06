@@ -4,7 +4,7 @@ import {resolveWorkflowFields} from './fieldReuse';
 import type {ClassificationPath,ConfigPackageV3,WorkflowControl,WorkflowDefinition} from './types';
 import {annotationEqual,annotationsForOutput,type AnnotationRow,type WorkflowAnnotations} from './workflowAnnotations';
 import {parseWorkflowExpression,workflowExpressionTokens,evaluateWorkflowExpression,isSafeWorkflowTarget} from './workflowExpression';
-import {pathMatchesScope,classificationPathKey,readRecordPath,hasCategoryNode,resolveEffectiveFields} from './runtime';
+import {pathMatchesScope,classificationPathKey,readRecordPath,hasCategoryNode,resolveEffectiveFields,workflowSearchFields} from './runtime';
 import {coerceWorkflowValues} from './workflowValues';
 import {normalizeRuleSourceWorldId} from '../core/project/worldIdentity';
 import {readMultipartGeometry,type MultipartGeometry} from '../core/geometry/multipartGeometry';
@@ -42,7 +42,7 @@ export function compileWorkflowEditPlan(workflow:WorkflowDefinition,config:Confi
    const id='explicit-backfill-'+index;
    // Analyse an actual slot-to-target write without adding a second live writer.
    const proposed={...workflow,outputs:workflow.outputs.map(item=>item.id===output.id?{...item,assignments:[{id,target:binding.target,expression:binding.slot}]}:item)};
-   for(const classification of classifications)for(const issue of validateWorkflowWrites(proposed,path=>resolveEffectiveFields(config,path),{outputId:output.id,classification}))if(issue.severity==='error'&&issue.path.endsWith('/assignments/'+id))errors.push('['+classificationPathKey(classification)+'] 回填映射：'+issue.message);
+   for(const classification of classifications)for(const issue of validateWorkflowWrites(proposed,path=>resolveEffectiveFields(config,path),{outputId:output.id,classification},search=>workflowSearchFields(config,search)))if(issue.severity==='error'&&issue.path.endsWith('/assignments/'+id))errors.push('['+classificationPathKey(classification)+'] 回填映射：'+issue.message);
  }
  const removed=controls.filter(c=>c.slot&&idOnly.has(c.slot)&&!needed.has(c.slot)),kept=controls.filter(c=>!removed.includes(c));
  for(const control of kept)if(control.slot&&!bindings.some(b=>b.slot===control.slot)&&!['classificationPicker','tagsExtensions'].includes(control.kind))errors.push(`控件 ${control.slot}（${control.label.zh}）缺少可逆直接赋值或明确回填映射。`);
@@ -63,7 +63,7 @@ export function hydrateWorkflowEdit(plan:WorkflowEditPlan,record:Record<string,u
  const classification=recordClassification(record);if(plan.workflow.editor?.range?!plan.classifications.some(path=>classificationPathKey(path)===classificationPathKey(classification)):!pathMatchesScope(classification,plan.scope)||Boolean(plan.workflow.outputs[0].classificationGroup)&&!plan.classifications.some(path=>classificationPathKey(path)===classificationPathKey(classification)))throw Error('记录不在编辑工作流的作用范围内。');
  const slots:Record<string,unknown>={EDIT_ID:record.ID};
  for(const control of plan.controls){if(control.kind==='classificationPicker'){slots[control.slot??control.id]=JSON.stringify(classification);continue;}if(control.kind==='tagsExtensions'){slots[control.id]=residualAnnotations(plan,record);continue;}
-   if(!control.slot)continue;const values=plan.bindings.filter(b=>b.slot===control.slot).map(b=>readRecordPath(record,b.target));if(values.some(v=>!annotationEqual(v,values[0])))throw Error(`槽位 ${control.slot} 的多个回填目标具有不同值，不能猜测。`);slots[control.slot]=structuredClone(values[0]);
+   if(!control.slot)continue;const values=plan.bindings.filter(b=>b.slot===control.slot).map(b=>readRecordPath(record,b.target));if(values.some(v=>!annotationEqual(v,values[0])))throw Error(`槽位 ${control.slot} 的多个回填目标具有不同值，不能猜测。`);const statusDefault=values[0]===undefined&&control.kind==='toggle'&&control.required!==true&&control.defaultValue===true&&plan.bindings.some(b=>b.slot===control.slot&&b.target==='Situation');slots[control.slot]=statusDefault?true:structuredClone(values[0]);
  }
  const draft={slots,classification,initialSlots:structuredClone(slots)},filled=workflowEditSlots(plan,record,draft);
  return {...draft,slots:filled,initialSlots:structuredClone(filled)};

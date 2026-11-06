@@ -58,6 +58,14 @@ try{
  const reverse=await query(point(100000),point(0));assert(!reverse.ok||reverse.totalTimeSeconds>plan.totalTimeSeconds);
  records.find(r=>r.ID==='C')!.hub='changed-hub';release++;rebuild();const changed=await query(point(1000));assert.equal(changed.usedHub,'changed-hub');
  records.find(r=>r.ID==='C')!.CoordP=[[5000,64,0]];release++;rebuild();const moved=await query(point(1000));assert.equal(moved.usedHub,undefined);
+ // Explicitly disabled sources and destinations cannot enter any hub or
+ // nearest-24 expansion, and a named disabled Warp never uses TGTcoordinate.
+ records=[tp('state-a',0,0,100000,0,'state-hub')];release++;rebuild();assert((await query()).ok);
+ records[0].Situation=false;release++;rebuild();const disabled=await query();assert(!disabled.ok);assert.match(disabled.reason??'',/停用/);
+ delete records[0].Situation;release++;rebuild();assert((await query()).ok);
+ records[0].TGTWarp='named-warp';records.push({ID:'warp-state',Name:'warp',World:'zth',Class:'WRP',Kind:'NOM',SKind:'NOM',Type:'Points',CoordP:[[100000,64,0]],WRPointI2D:'named-warp',Situation:false});release++;rebuild();assert(!(await query()).ok,'explicit disabled Warp must not fall back to valid legacy coordinates');
+ records[1].Situation=true;release++;rebuild();assert((await query()).ok);
+ records.push({...tp('other-route',0,0,100000,0),Situation:true});records[1].Situation=false;release++;rebuild();const alternate=await query();assert(alternate.ok);assert(alternate.segments.some(s=>s.kind==='teleport'&&s.tpId==='other-route'));
  const metrics=[];
  for(const hub of [undefined,'dense-hub']){
   records=Array.from({length:600},(_,i)=>tp('dense-'+i,(i%30)*10,Math.floor(i/30)*10,100000+i*10,0,hub));release++;rebuild();const before=performance.now(),memory=process.memoryUsage().heapUsed;

@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8"><title>Workflow feedback acceptance</title><div id="root"></div><script type="module">
+import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import '/src/styles/index.css';
+import {RichTextEditor,RichTextView} from '/src/configStudio/RichTextComponents.tsx';
+import {DiagnosticGroups} from '/src/configStudio/DiagnosticGroups.tsx';
+import {RemoteFinding} from '/src/feedback/RemoteFinding.tsx';
+import {validateConfigPackage} from '/src/configStudio/runtime.ts';
+const h=React.createElement,identity=await(await fetch('/configuration/current.json')).json(),config=await(await fetch(identity.configUrl)).json(),report=validateConfigPackage(config);
+function App(){const [value,setValue]=useState({paragraphs:[{runs:[{text:'link text',link:'https://example.com/old'},{text:' plain'}]}]}),[language,setLanguage]=useState('zh');window.__feedback={value,report};return h('main',{className:'config-editor cm-editor-design p-4'},h(RichTextEditor,{value,onChange:setValue,label:'链接测试'}),h('div',{id:'runtime-preview'},h(RichTextView,{value})),h('button',{onClick:()=>setLanguage(language==='zh'?'en':'zh')},'切换反馈语言'),h(RemoteFinding,{code:'DELETE_EXISTING_TARGET',message:'This delete entry resolves to an existing current feature and requires confirmation.',language}),h(DiagnosticGroups,{report,language}));}
+createRoot(document.getElementById('root')).render(h(App));
+</script>
