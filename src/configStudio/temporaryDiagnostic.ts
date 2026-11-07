@@ -2,6 +2,7 @@ import { sha256Bytes, VALIDATOR_FINGERPRINT, RESOURCE_FINGERPRINT } from '../con
 import { CONFIGURATION_RULES_VERSION } from '../configRuntime/formalConfiguration';
 import {readMigrationReport} from './migrationAttachment';
 import type { ConfigPackageV3, ConfigValidationReport } from './types';
+import {validDesignNotes} from './workflowDesignNotes';
 
 export const TEMPORARY_REPORT_PATH = 'reports/temporary-validation.json';
 export type TemporaryDiagnostic = {
@@ -20,6 +21,7 @@ export function readTemporaryDiagnostic(value: unknown): TemporaryDiagnostic | u
   if (v.report.schemaVersion!=='cairnmap.config-validation-report.v3' || typeof v.report.valid!=='boolean' || !Number.isFinite(Date.parse(v.report.createdAt)) || !Array.isArray(v.report.issues) || v.report.issues.length>100000) return;
   if (v.report.issues.some(issue=>!issue || !['error','warning'].includes(issue.severity) || [issue.code,issue.path,issue.message].some(item=>typeof item!=='string') || issue.affectedFeatures!==undefined && (!Array.isArray(issue.affectedFeatures) || issue.affectedFeatures.some(feature=>!feature || typeof feature.id!=='string' || feature.name!==undefined&&typeof feature.name!=='string')))) return;
   if (v.report.valid === v.report.issues.some(issue=>issue.severity==='error')) return;
+  if(!validDesignNotes(v.report.designNotes))return;
   return {...v,migration:readMigrationReport(v.migration)};
 }
 export async function diagnosticMismatch(diagnostic: TemporaryDiagnostic, config: ConfigPackageV3, rawBytes: Uint8Array): Promise<string | undefined> {

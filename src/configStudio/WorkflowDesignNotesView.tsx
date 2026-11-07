@@ -1,0 +1,6 @@
+import type {ConfigDesignNote} from './types';
+export function WorkflowDesignNotesView({notes,locale='zh',onLocate}:{notes?:ConfigDesignNote[];locale?:'zh'|'en';onLocate?:(path:string)=>void}){
+ if(!notes?.length)return null;
+ const groups=new Map<string,ConfigDesignNote[]>();for(const n of notes){const rows=groups.get(n.groupRoot)??[];rows.push(n);groups.set(n.groupRoot,rows);}
+ return <details className="rounded border border-sky-200 bg-sky-50 p-2 text-xs text-slate-700" aria-label="工作流设计期说明"><summary>{locale==='en'?'Workflow design notes':'工作流设计期说明'} · {groups.size} / {notes.length}</summary><p className="my-2">{locale==='en'?'These dynamic JSON values are checked against their target structure before actual output is saved. Notes do not require publication confirmation.':'以下动态 JSON 在实际保存输出前按目标结构严格检查；这些说明不要求发布警告确认。'}</p>{[...groups].map(([root,items])=><details key={root} className="my-1 rounded border bg-white p-2"><summary>{root} · {items.length}</summary><p>{[...new Set(items.map(n=>Object.values(n.classification).filter(Boolean).join('/')))].join('、')}</p><ul>{items.map((n,i)=><li key={i} className="my-1 break-all"><code>{n.code}</code> · {n.path}<p>{n.message}</p>{onLocate?<button type="button" className="rounded border px-2" onClick={()=>onLocate(n.path)}>{locale==='en'?'Locate':'定位'}</button>:null}</li>)}</ul></details>)}</details>;
+}

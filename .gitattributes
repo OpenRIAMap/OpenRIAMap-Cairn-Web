@@ -134,3 +134,6 @@ docs/90_roadmap-and-history/runtime-v32-production-promotion-20261017/*.log text
 # Review checksums cover these exact UTF-8 bytes on every checkout platform.
 /docs/90_roadmap-and-history/halo-rules-workflow-c15-20261023/review-candidate/*.json text eol=lf
 /docs/90_roadmap-and-history/halo-rules-workflow-c15-20261023/review-candidate/SHA256SUMS.txt text eol=lf
+
+# Feedback catalog manifest pins exact UTF-8 LF bytes.
+/src/feedback/*.json text eol=lf

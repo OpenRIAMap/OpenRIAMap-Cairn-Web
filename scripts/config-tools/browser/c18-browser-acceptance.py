@@ -82,8 +82,11 @@ assert b.evaluate('Object.keys(localStorage).filter(key=>key.includes('+json.dum
 record('A13: readiness, queued once/always notices, explicit dismiss and durable do-not-remind keys')
 
 b.evaluate('window.__c18.showDiagnostics()');b.wait('document.body.innerText.includes("real-error")')
-assert b.evaluate('document.querySelectorAll("details").length')<15
-assert b.evaluate('[...document.querySelectorAll("details")].find(e=>e.textContent.includes("real-error")).open')
+# Raw diagnostic details are nested disclosure widgets, not problem groups.
+# Count the actual groups and retain bounds on the initially rendered rows.
+assert b.evaluate('document.querySelectorAll("#root > div > details").length')<15
+assert b.evaluate('[...document.querySelectorAll("#root > div > details")].every(e=>e.querySelectorAll(":scope > ul > li").length<=10)')
+assert b.evaluate('[...document.querySelectorAll("#root > div > details")].find(e=>e.querySelector("summary").textContent.includes("real-error")).open')
 record('A15: 120 diagnostics grouped and bounded; actual errors remain expanded')
 b.screenshot('c18-diagnostics-grouped.png')
 assert not b.errors,b.errors

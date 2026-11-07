@@ -1,7 +1,7 @@
 import { validateStructuredValue } from './valueSchema';
 import {fieldFormatErrors} from './fieldValueValidation';
 import type { ValueSchema } from './types';
-import type { ClassificationPath, ConfigValidationIssue, FieldDefinition, WorkflowControl, WorkflowDefinition, WorkflowGroupField, WorkflowValueCondition } from './types';
+import type { ClassificationPath, ConfigValidationIssue, FieldDefinition, SearchProfile, WorkflowControl, WorkflowDefinition, WorkflowGroupField, WorkflowValueCondition } from './types';
 import { evaluateWorkflowExpression, parseWorkflowExpression, workflowExpressionTokens, WORKFLOW_SYSTEM_TOKENS, type WorkflowExpression } from './workflowExpression';
 
 type Scalar = string | number | boolean;
@@ -96,7 +96,7 @@ function fieldShape(field?: FieldDefinition): Shape {
 
 /** Pure AST analysis shared by module, package, export and activation validation.
  * Unknown JSON remains a warning; known incompatible values cannot be enabled. */
-export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (path: ClassificationPath) => FieldDefinition[], candidate?:{outputId:string;classification:ClassificationPath}): ConfigValidationIssue[] {
+export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (path: ClassificationPath) => FieldDefinition[], candidate?:{outputId:string;classification:ClassificationPath},searchFields?:(search:SearchProfile)=>FieldDefinition[]): ConfigValidationIssue[] {
   const issues: ConfigValidationIssue[] = [];
   const base = `workflows/${workflow.id}`;
   const add = (code: string, path: string, message: string, severity: 'error' | 'warning' = 'error') => issues.push({ severity, code, path, message });
@@ -116,7 +116,7 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
     if (control.valueNormalization === 'trim' || control.valueNormalization === 'abbr') return shape('string');
     if (control.kind === 'number' || control.valueNormalization === 'number') return shape('number');
     if (control.kind === 'toggle') return shape('boolean');
-    if ((control.kind === 'featureSearch' || control.kind === 'coarseSearch') && control.search) return fieldShape(fields(control.search.target).find(field => field.key === control.search!.returnField));
+    if ((control.kind === 'featureSearch' || control.kind === 'coarseSearch') && control.search) return fieldShape((searchFields?searchFields(control.search):fields(control.search.target)).find(field => field.key === control.search!.returnField));
     return shape('string');
   };
   for (const step of workflow.steps) {

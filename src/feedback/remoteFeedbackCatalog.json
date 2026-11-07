@@ -1,0 +1,646 @@
+{
+  "PACKAGE_INVALID": {
+    "zh": "审核包包含无效的要素、图片或删除标识，请展开原始详情。",
+    "en": ""
+  },
+  "UPSERT_DUPLICATE": {
+    "zh": "审核包中存在重复的要素更新或删除目标。",
+    "en": ""
+  },
+  "DELETE_TARGET_MISSING": {
+    "zh": "删除目标不存在于当前正式数据中。",
+    "en": ""
+  },
+  "DELETE_TARGET_AMBIGUOUS": {
+    "zh": "删除目标匹配多个要素，请补充世界和分类。",
+    "en": ""
+  },
+  "SOURCE_SNAPSHOT_UNAVAILABLE": {
+    "zh": "当前正式数据快照不可用或不完整。",
+    "en": ""
+  },
+  "SUBMISSION_STATE_CHANGED": {
+    "zh": "审核包状态已被其他操作更新。",
+    "en": ""
+  },
+  "RELEASE_IN_PROGRESS": {
+    "zh": "当前已有发布正在进行。",
+    "en": ""
+  },
+  "BASE_RELEASE_CHANGED": {
+    "zh": "该包基于较早的正式版本，将按当前正式数据继续核验。",
+    "en": ""
+  },
+  "UPSERT_OVERWRITES_CURRENT": {
+    "zh": "此项将覆盖当前同世界、同分类、同 ID 的要素。",
+    "en": ""
+  },
+  "DELETE_EXISTING_TARGET": {
+    "zh": "删除目标存在，确认后将从正式数据中移除。",
+    "en": ""
+  },
+  "SOURCE_FINGERPRINT_UNAVAILABLE": {
+    "zh": "当前或待更新要素缺少内容指纹，无法精确比较覆盖差异。",
+    "en": ""
+  },
+  "BATCH_TARGET_OVERLAP": {
+    "zh": "另一已选审核包更新同一要素，请确认发布顺序。",
+    "en": ""
+  },
+  "BATCH_DELETE_TARGET_OVERLAP": {
+    "zh": "另一已选审核包删除同一目标，请仅保留一个版本。",
+    "en": ""
+  },
+  "PRECHECK_STALE": {
+    "zh": "预检结果已过期，请重新执行预检。",
+    "en": ""
+  },
+  "CURRENT_SOURCE_CHANGED": {
+    "zh": "预检期间正式数据或世界绑定发生变化，请重新检查。",
+    "en": ""
+  },
+  "CONFIGURATION_VALIDATION_PENDING": {
+    "zh": "后台正在按当前正式配置核验，请等待完成后更新检查结果。",
+    "en": ""
+  },
+  "CONFIGURATION_VALIDATION_FAILED": {
+    "zh": "后台配置核验失败或超时，请按原始详情中的任务编号检查 Worker 日志。",
+    "en": ""
+  },
+  "CONFIGURATION_INVALID": {
+    "zh": "审核包未通过当前正式配置核验，请查看原始详情中的字段和要素地址。",
+    "en": ""
+  },
+  "REPORT_PROTOCOL_INVALID": {
+    "zh": "服务端返回了阻断或警告状态，却未提供具体原因；当前禁止发布，请保留关联信息并重试。",
+    "en": ""
+  },
+  "configuration-preflight-receipt-stale": {
+    "zh": "发布确认已过期或规则已更新，请重新执行服务端核验。",
+    "en": ""
+  },
+  "configuration-preflight-receipt-invalid": {
+    "zh": "发布确认凭据无效，请重新核验。",
+    "en": ""
+  },
+  "configuration-active-baseline-changed": {
+    "zh": "正式配置基线已改变，请重新取得基线并检查当前编辑稿。",
+    "en": ""
+  },
+  "configuration-publication-disabled": {
+    "zh": "配置发布服务尚未启用。",
+    "en": ""
+  },
+  "configuration-fresh-login-required": {
+    "zh": "需要重新登录并确认本次配置候选。",
+    "en": ""
+  },
+  "configuration-request-id-invalid": {
+    "zh": "配置发布请求编号无效。",
+    "en": ""
+  },
+  "configuration-upload-descriptor-invalid": {
+    "zh": "配置上传描述、大小或摘要无效。",
+    "en": ""
+  },
+  "configuration-project-binding-mismatch": {
+    "zh": "配置项目与发布目标不一致。",
+    "en": ""
+  },
+  "configuration-idempotency-conflict": {
+    "zh": "同一请求编号已用于另一项发布。",
+    "en": ""
+  },
+  "configuration-idempotency-content-conflict": {
+    "zh": "同一发布请求的内容已改变，请重新准备候选。",
+    "en": ""
+  },
+  "configuration-job-context-mismatch": {
+    "zh": "发布任务与当前账号、候选或基线不一致。",
+    "en": ""
+  },
+  "configuration-server-preflight-required": {
+    "zh": "请先完成服务端配置核验。",
+    "en": ""
+  },
+  "configuration-warning-confirmation-required": {
+    "zh": "请先检查并确认配置核验警告。",
+    "en": ""
+  },
+  "configuration-operation-invalid": {
+    "zh": "配置发布操作无效。",
+    "en": ""
+  },
+  "configuration-recovery-confirmation-invalid": {
+    "zh": "原发布任务的确认记录或摘要无效，不能恢复。",
+    "en": ""
+  },
+  "configuration-confirmed-rules-version-incompatible": {
+    "zh": "原发布确认的核验规则不兼容，不能直接恢复。",
+    "en": ""
+  },
+  "configuration-recovery-input-invalid": {
+    "zh": "发布恢复输入无效。",
+    "en": ""
+  },
+  "configuration-recovery-pin-invalid": {
+    "zh": "发布恢复锁定的身份或摘要无效。",
+    "en": ""
+  },
+  "configuration-archive-hash-mismatch": {
+    "zh": "配置归档摘要不一致。",
+    "en": ""
+  },
+  "configuration-final-snapshot-mismatch": {
+    "zh": "最终配置快照与已确认候选不一致。",
+    "en": ""
+  },
+  "configuration-final-identity-mismatch": {
+    "zh": "最终配置身份与已确认候选不一致。",
+    "en": ""
+  },
+  "configuration-recovery-context-mismatch": {
+    "zh": "发布恢复上下文与原任务不一致。",
+    "en": ""
+  },
+  "configuration-recovery-state-invalid": {
+    "zh": "当前任务状态不允许恢复。",
+    "en": ""
+  },
+  "configuration-recovery-failure-not-retryable": {
+    "zh": "此失败不能通过原任务重试恢复。",
+    "en": ""
+  },
+  "configuration-worker-job-invalid": {
+    "zh": "后台配置任务格式无效。",
+    "en": ""
+  },
+  "configuration-activation-recovery-mismatch": {
+    "zh": "配置激活恢复状态不一致。",
+    "en": ""
+  },
+  "configuration-state-changed": {
+    "zh": "配置发布状态已改变，请查询最新进度。",
+    "en": ""
+  },
+  "configuration-recovery-state-changed": {
+    "zh": "恢复期间任务状态已改变，请查询最新进度。",
+    "en": ""
+  },
+  "configuration-map-deployment-timeout": {
+    "zh": "等待 Web 部署超时，请检查部署状态后恢复原发布任务。",
+    "en": ""
+  },
+  "configuration-review-job-invalid": {
+    "zh": "后台审核配置任务格式无效。",
+    "en": ""
+  },
+  "configuration-review-revision-mismatch": {
+    "zh": "后台核验的审核包版本或摘要不一致。",
+    "en": ""
+  },
+  "review-package-release-candidate-missing": {
+    "zh": "审核包缺少可发布的候选内容。",
+    "en": ""
+  },
+  "review-revision-receipt-attestation-invalid": {
+    "zh": "审核包上传回执或核验凭证无效。",
+    "en": ""
+  },
+  "review-release-gate-changed": {
+    "zh": "发布闸门状态已改变，请刷新后重新执行发布前检查。",
+    "en": ""
+  },
+  "review-release-precheck-stale": {
+    "zh": "发布前检查已过期，请重新检查。",
+    "en": ""
+  },
+  "review-release-lock-conflict": {
+    "zh": "发布锁被其他任务占用，请查询进度后重试。",
+    "en": ""
+  },
+  "review-release-job-lock-conflict": {
+    "zh": "发布任务锁冲突，请查询已有任务进度。",
+    "en": ""
+  },
+  "review-release-decision-anchor-stale": {
+    "zh": "审核决策对应旧版本，请重新保存状态并检查。",
+    "en": ""
+  },
+  "review-precheck-blocked": {
+    "zh": "发布前检查存在阻断项，请先处理报告中的问题。",
+    "en": ""
+  },
+  "review-precheck-confirmation-required": {
+    "zh": "发布前检查有警告，需要人工确认。",
+    "en": ""
+  },
+  "review-release-current-release-changed": {
+    "zh": "正式数据已改变，请重新进行发布前检查。",
+    "en": ""
+  },
+  "review-release-selection-state-changed": {
+    "zh": "已选审核包状态发生变化，请刷新列表后重新选择。",
+    "en": ""
+  },
+  "review-release-selection-empty": {
+    "zh": "尚未选择可发布的审核包。",
+    "en": ""
+  },
+  "review-release-initiator-not-publishable": {
+    "zh": "当前账号无权发起此次发布。",
+    "en": ""
+  },
+  "review-revision-conflict": {
+    "zh": "审核包版本冲突，请刷新后重新编辑。",
+    "en": ""
+  },
+  "review-state-changed": {
+    "zh": "审核状态已改变，请刷新后重试。",
+    "en": ""
+  },
+  "review-status-board-changed": {
+    "zh": "审核状态板已改变，请读取最新状态后再保存。",
+    "en": ""
+  },
+  "review-revision-edit-not-authorized": {
+    "zh": "当前账号无权编辑此审核包版本。",
+    "en": ""
+  },
+  "review-submission-not-editable": {
+    "zh": "当前审核包状态不允许编辑。",
+    "en": ""
+  },
+  "review-revision-reservation-expired": {
+    "zh": "审核包上传保留凭据已过期，请重新准备上传。",
+    "en": ""
+  },
+  "review-revision-reservation-mismatch": {
+    "zh": "审核包上传与保留凭据不一致。",
+    "en": ""
+  },
+  "review-revision-reserved": {
+    "zh": "该审核包已有保留中的上传版本。",
+    "en": ""
+  },
+  "review-revision-verification-lock-conflict": {
+    "zh": "该审核包正在核验，请稍后查询。",
+    "en": ""
+  },
+  "review-package-receipt-missing": {
+    "zh": "审核包缺少有效上传回执。",
+    "en": ""
+  },
+  "save-must-use-revision-upload-complete": {
+    "zh": "请先完成新版本上传，再保存审核状态。",
+    "en": ""
+  },
+  "review-archive-reconciliation-not-authorized": {
+    "zh": "当前账号无权整理历史归档。",
+    "en": ""
+  },
+  "review-archive-reconciliation-plan-changed": {
+    "zh": "历史归档整理计划已改变，请重新预检。",
+    "en": ""
+  },
+  "review-archive-reconciliation-selection-changed": {
+    "zh": "历史归档选择已改变，请重新预检。",
+    "en": ""
+  },
+  "review-release-archive-reconcile-mirror-not-complete": {
+    "zh": "镜像尚未完成，不能确认归档。",
+    "en": ""
+  },
+  "review-release-archive-reconcile-not-applied": {
+    "zh": "归档整理尚未执行。",
+    "en": ""
+  },
+  "review-release-archive-reconcile-not-needed": {
+    "zh": "当前发布无需再次整理归档。",
+    "en": ""
+  },
+  "review-release-archive-reconcile-authorization-invalid": {
+    "zh": "归档整理授权无效。",
+    "en": ""
+  },
+  "review-release-archive-reconcile-identity-invalid": {
+    "zh": "归档整理身份不一致。",
+    "en": ""
+  },
+  "review-release-control-commit-missing": {
+    "zh": "发布缺少控制记录提交。",
+    "en": ""
+  },
+  "review-release-archive-reference-missing": {
+    "zh": "发布缺少归档引用。",
+    "en": ""
+  },
+  "review-release-decision-anchor-missing": {
+    "zh": "发布缺少审核决策锚点。",
+    "en": ""
+  },
+  "review-release-revision-missing": {
+    "zh": "发布缺少指定审核包版本。",
+    "en": ""
+  },
+  "review-submission-actor-invalid": {
+    "zh": "审核提交账号身份无效。",
+    "en": ""
+  },
+  "invalid-public-review-release-download": {
+    "zh": "公开发布记录的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-public-review-release-feed-limit": {
+    "zh": "公开发布记录的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-archive-reconciliation-confirmation": {
+    "zh": "历史归档整理的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-archive-reconciliation-progress": {
+    "zh": "历史归档整理的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-archive-reconciliation-selection": {
+    "zh": "历史归档整理的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-release-confirmation": {
+    "zh": "发布记录的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-release-feed-limit": {
+    "zh": "发布记录的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-release-id": {
+    "zh": "发布记录的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-release-selection": {
+    "zh": "发布记录的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-revision-download-request": {
+    "zh": "审核包版本的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-revision-multipart-parts": {
+    "zh": "审核包版本的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-revision-upload-progress": {
+    "zh": "审核包版本的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-revision-upload-request": {
+    "zh": "审核包版本的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-status-board-entry": {
+    "zh": "审核状态板的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-status-board-save": {
+    "zh": "审核状态板的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-submission-limit": {
+    "zh": "审核包的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-submission-request": {
+    "zh": "审核包的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "invalid-review-submission-state-version": {
+    "zh": "审核包的请求参数无效，请查看原始详情。",
+    "en": ""
+  },
+  "operation-time-store-not-configured": {
+    "zh": "操作时间存储尚未配置，请联系维护者。",
+    "en": ""
+  },
+  "public-review-release-download-not-ready": {
+    "zh": "公开发布记录尚未准备就绪，请稍后查询。",
+    "en": ""
+  },
+  "public-review-release-feed-not-configured": {
+    "zh": "公开发布记录尚未配置，请联系维护者。",
+    "en": ""
+  },
+  "public-review-release-not-found": {
+    "zh": "公开发布记录不存在或无法读取。",
+    "en": ""
+  },
+  "review-archive-reconciliation-not-configured": {
+    "zh": "历史归档整理尚未配置，请联系维护者。",
+    "en": ""
+  },
+  "review-archive-reconciliation-not-found": {
+    "zh": "历史归档整理不存在或无法读取。",
+    "en": ""
+  },
+  "review-decision-anchor-not-configured": {
+    "zh": "审核决策锚点尚未配置，请联系维护者。",
+    "en": ""
+  },
+  "review-preflight-not-configured": {
+    "zh": "审核预检尚未配置，请联系维护者。",
+    "en": ""
+  },
+  "review-release-anchor-not-configured": {
+    "zh": "发布锚点尚未配置，请联系维护者。",
+    "en": ""
+  },
+  "review-release-archive-reconcile-not-configured": {
+    "zh": "发布记录尚未配置，请联系维护者。",
+    "en": ""
+  },
+  "review-release-download-not-configured": {
+    "zh": "发布记录尚未配置，请联系维护者。",
+    "en": ""
+  },
+  "review-release-download-not-ready": {
+    "zh": "发布记录尚未准备就绪，请稍后查询。",
+    "en": ""
+  },
+  "review-release-not-found": {
+    "zh": "发布记录不存在或无法读取。",
+    "en": ""
+  },
+  "review-revision-download-not-configured": {
+    "zh": "审核包版本尚未配置，请联系维护者。",
+    "en": ""
+  },
+  "review-revision-not-found": {
+    "zh": "审核包版本不存在或无法读取。",
+    "en": ""
+  },
+  "review-status-board-not-configured": {
+    "zh": "审核状态板尚未配置，请联系维护者。",
+    "en": ""
+  },
+  "review-submission-not-found": {
+    "zh": "审核包不存在或无法读取。",
+    "en": ""
+  },
+  "ready": {
+    "zh": "可继续",
+    "en": "Ready"
+  },
+  "pending": {
+    "zh": "后台核验中",
+    "en": "Pending"
+  },
+  "failed": {
+    "zh": "失败",
+    "en": "Failed"
+  },
+  "blocked": {
+    "zh": "已阻断",
+    "en": "Blocked"
+  },
+  "warning-confirmation-required": {
+    "zh": "需要人工确认",
+    "en": "Confirmation required"
+  },
+  "in-progress": {
+    "zh": "已有任务正在进行",
+    "en": "In progress"
+  },
+  "stale": {
+    "zh": "状态已过期",
+    "en": "Stale"
+  },
+  "validated": {
+    "zh": "核验通过",
+    "en": "Validated"
+  },
+  "queued": {
+    "zh": "已排队",
+    "en": "Queued"
+  },
+  "preparing": {
+    "zh": "准备发布",
+    "en": "Preparing"
+  },
+  "awaiting-deployment": {
+    "zh": "等待部署",
+    "en": "Awaiting deployment"
+  },
+  "retrying": {
+    "zh": "等待重试",
+    "en": "Retrying"
+  },
+  "complete": {
+    "zh": "发布完成",
+    "en": "Complete"
+  },
+  "active": {
+    "zh": "已激活",
+    "en": "Active"
+  },
+  "active-receipt-pending": {
+    "zh": "已激活，等待回执",
+    "en": "Active, receipt pending"
+  },
+  "running": {
+    "zh": "发布中",
+    "en": "Running"
+  },
+  "completed": {
+    "zh": "发布完成",
+    "en": "Completed"
+  },
+  "mirror-pending": {
+    "zh": "等待镜像",
+    "en": "Mirror pending"
+  },
+  "mirrored": {
+    "zh": "镜像完成",
+    "en": "Mirrored"
+  },
+  "archive-pending": {
+    "zh": "等待归档",
+    "en": "Archive pending"
+  },
+  "archiving": {
+    "zh": "归档中",
+    "en": "Archiving"
+  },
+  "rebase-required": {
+    "zh": "需要重新检查",
+    "en": "Recheck required"
+  },
+  "mirror-recovery-required": {
+    "zh": "镜像需恢复",
+    "en": "Mirror recovery required"
+  },
+  "archive-recovery-required": {
+    "zh": "归档需恢复",
+    "en": "Archive recovery required"
+  },
+  "approved": {
+    "zh": "已通过",
+    "en": "Approved"
+  },
+  "rejected": {
+    "zh": "已打回",
+    "en": "Rejected"
+  },
+  "archived": {
+    "zh": "已归档",
+    "en": "Archived"
+  },
+  "configuration-record-invalid": {
+    "zh": "要素记录未通过当前正式配置核验，请查看原始详情中的具体原因。",
+    "en": ""
+  },
+  "configuration-record-world-mismatch": {
+    "zh": "要素所属世界与本次标准包的世界不一致。",
+    "en": ""
+  },
+  "configuration-record-type-mismatch": {
+    "zh": "要素几何类型与当前分类要求不一致。",
+    "en": ""
+  },
+  "configuration-semantic-validation-failed": {
+    "zh": "配置未通过服务端语义核验，请查看完整核验报告。",
+    "en": ""
+  },
+  "configuration-media-policy": {
+    "zh": "图片绑定方式不符合当前配置的图片控制策略。",
+    "en": ""
+  },
+  "configuration-batch-invalid": {
+    "zh": "批量记录未通过当前正式配置核验。",
+    "en": ""
+  },
+  "configuration-navigation-relations-invalid": {
+    "zh": "导航关联未通过当前正式配置核验。",
+    "en": ""
+  },
+  "review-control-invalid-response": {
+    "zh": "审核服务返回了无效响应，请保留关联编号后重试。",
+    "en": ""
+  },
+  "review-precheck-invalid-response": {
+    "zh": "预检服务返回了无效报告；当前不能发布。",
+    "en": ""
+  },
+  "configuration-publication-failed": {
+    "zh": "配置发布失败，请按原始详情检查任务并恢复。",
+    "en": ""
+  },
+  "review-release-failed": {
+    "zh": "数据发布失败，请按原始详情检查原任务。",
+    "en": ""
+  },
+  "review-release-network-error": {
+    "zh": "审核服务连接失败，请检查网络后查询原任务。",
+    "en": ""
+  }
+}

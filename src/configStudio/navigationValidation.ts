@@ -3,6 +3,7 @@ import type { ClassificationPath, ConfigPackageV3, ConfigValidationIssue, FieldD
 import { RAILWAY_ROLES, pathCovers, pathsMatch, rawClassification } from '../core/project/navigationDefinition';
 import type { RailwayRole } from '../core/project/navigationTypes';
 import { VALUE_SCHEMA_TEMPLATES, validateValueSchema } from './valueSchema';
+import {teleportNodeAvailable} from '../core/project/teleportAvailability';
 
 const sharedBase = 'application/preferences/railwayRoles', navBase = 'application/navigation';
 const stable = (value: unknown): string => JSON.stringify(value, (_key, row) => row && typeof row === 'object' && !Array.isArray(row) ? Object.fromEntries(Object.entries(row).sort(([a],[b]) => a.localeCompare(b))) : row);
@@ -47,6 +48,7 @@ export function validateNavigationConfiguration(config: ConfigPackageV3, fields:
         if (ref && (ref.matchField !== matchField || !resolveClassificationScope(config,scopes).some(p => p.class === ref.classCode))) add(base, `${node.nodeId} 的 ${key} 引用目标与角色范围不兼容。`, related);
       };
       field('Name','string');
+      if(role==='teleportPoints'||role==='warpPoints')field('Situation','boolean');
       if (role === 'lines') { field('direction','number',navigation); field('color','string'); field('bureau','string'); field('line','string'); }
       if (role === 'platforms') { field('lines','json',true,'rail-lines'); field('Situation','boolean',navigation); field('Connect','boolean',navigation); }
       if (role === 'stationAreas') { field('platforms','json',true,'rail-platforms'); field('STBuilding','string',true); reference('STBuilding',shared.stations); }
@@ -126,6 +128,7 @@ export function validateNavigationRecords(config: ConfigPackageV3, records: Moun
   for (const r of records) {
     const isRoad = pathsMatch(nav.road.selectors.roads, rawClassification(r)), isWarp = pathsMatch(nav.teleport.selectors.warpPoints, rawClassification(r)), isTeleport = pathsMatch(nav.teleport.selectors.teleportPoints, rawClassification(r));
     if ((RAILWAY_ROLES.some(key => role(r, key)) || isRoad || isWarp || isTeleport) && (ids.get(`${world(r)}/${r.ID}`)?.length ?? 0) > 1) add(r, '同世界 ID 重复，无法唯一解析。', navBase);
+    if((isWarp||isTeleport)&&r.Situation!==undefined&&typeof r.Situation!=='boolean')add(r,'Situation 必须为布尔值；省略时按可用处理。',`${navBase}/teleport`);
     if(role(r,'stations')&&(ids.get(`${world(r)}/${stationKey(r)}`)?.length??0)>1)add(r,'同世界车站规范建筑 ID 重复。',sharedBase);
     if (role(r, 'platforms')) for (const id of refs(r, 'lines')) if (id) check(r, id, 'lines');
     if (role(r, 'stationAreas')) { for (const id of refs(r, 'platforms')) if (id) check(r, id, 'platforms'); if (r.STBuilding) check(r, String(r.STBuilding), 'stations'); }
@@ -151,12 +154,13 @@ export function validateNavigationRecords(config: ConfigPackageV3, records: Moun
       const key = String(r.WRPointI2D ?? r.wrPointI2D ?? '').trim();
       if (!key || (warps.get(`${world(r)}/${key}`)?.length ?? 0) > 1) add(r, '同世界 Warp 定位键缺失或重复。', `${navBase}/teleport`);
     }
-    if (isTeleport) {
+    if (isTeleport&&teleportNodeAvailable(r)) {
       const key = String(r.TGTWarp ?? r.tgtWarp ?? '').trim();
       const target = warps.get(`${world(r)}/${key}`) ?? [];
       const explicit = coordinate(r.TGTcoordinate) || finite(r.TGT_x) && finite(r.TGT_z);
       const excluded = key && records.filter(other => world(other) === world(r) && String(other.WRPointI2D ?? other.wrPointI2D ?? '') === key);
       if (key && target.length > 1) add(r, `Warp 目标 ${key} 不唯一。`, `${navBase}/teleport`);
+      else if(key&&target.length===1&&!teleportNodeAvailable(target[0]))add(r,`Warp 目标 ${key} 已停用；排除该传送边。`,`${navBase}/teleport`,true);
       else if (!(key && target.length === 1) && !explicit) add(r, excluded && excluded.length === 1 ? `Warp 目标 ${key} 不在参与范围；排除该传送边。` : `传送目标无法解析${key ? `：${key}` : ''}。`, `${navBase}/teleport`, Boolean(excluded && excluded.length === 1));
     }
   }

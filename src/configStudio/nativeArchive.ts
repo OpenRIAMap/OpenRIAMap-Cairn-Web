@@ -1,3 +1,4 @@
+import {validDesignNotes} from './workflowDesignNotes';
 import JSZip from 'jszip';
 import {CONFIG_IMPORT_LIMITS,importProgress,inspectConfigZip,parseConfigJson,safeArchivePath,type ConfigImportOptions} from './archivePolicy';
 const isRecord=(value:unknown):value is Record<string,any>=>!!value&&typeof value==='object'&&!Array.isArray(value);
@@ -31,6 +32,8 @@ export async function readRawNativePackage(file: File, options:ConfigImportOptio
   for(const name of entries.keys())if(name!=='manifest.json'&&!name.endsWith('/')&&!declared.has(name))throw Error(`配置包包含未声明附加文件 ${name}；请重新导出，不能将其隐式应用。`);
   const raw=parseConfigJson(new TextDecoder('utf-8',{fatal:true}).decode(bodies.get('config.json')));
   if(!isRecord(raw)||['packageId','projectId','revision','contractRevision','sourceManifestSha256'].some(key=>manifest[key]!==raw[key]))throw Error('manifest 与 config 的包身份、revision 或契约不一致。');
+  const report=parseConfigJson(new TextDecoder('utf-8',{fatal:true}).decode(bodies.get('reports/validation-report.json')));
+  if(!isRecord(report)||!validDesignNotes(report.designNotes))throw Error('核验报告的设计期说明结构无效。');
   importProgress(options,'迁移与检查配置结构');
   return raw;
 }

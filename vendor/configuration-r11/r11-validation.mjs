@@ -9830,6 +9830,16 @@ function classificationScopeProblems(scope, config) {
   return problems;
 }
 
+// src/configRuntime/configurationFingerprint.ts
+function stableConfigText(value) {
+  if (Array.isArray(value)) return "[" + value.map((item) => stableConfigText(item) ?? "null").join(",") + "]";
+  if (value && typeof value === "object") {
+    const record = value;
+    return "{" + Object.keys(record).sort().filter((key2) => record[key2] !== void 0).map((key2) => JSON.stringify(key2) + ":" + stableConfigText(record[key2])).join(",") + "}";
+  }
+  return JSON.stringify(value);
+}
+
 // src/configStudio/workflowExpression.ts
 var WORKFLOW_FUNCTIONS = [
   { name: "join", label: "\u53EF\u9009\u6BB5\u62FC\u63A5", signature: 'join("_",A,B)', description: "\u4EE5\u5206\u9694\u7B26\u8FDE\u63A5\u975E\u7A7A\u7247\u6BB5\uFF0C\u4FDD\u7559 0 \u548C false\u3002", min: 2, max: 4096 },
@@ -10549,7 +10559,7 @@ function fieldShape(field) {
   if (field.cardinality === "multiple") return { kinds: ["array"], item: result };
   return result;
 }
-function validateWorkflowWrites(workflow, fields, candidate) {
+function validateWorkflowWrites(workflow, fields, candidate, searchFields) {
   const issues = [];
   const base = `workflows/${workflow.id}`;
   const add = (code, path2, message, severity = "error") => issues.push({ severity, code, path: path2, message });
@@ -10569,7 +10579,7 @@ function validateWorkflowWrites(workflow, fields, candidate) {
     if (control.valueNormalization === "trim" || control.valueNormalization === "abbr") return shape("string");
     if (control.kind === "number" || control.valueNormalization === "number") return shape("number");
     if (control.kind === "toggle") return shape("boolean");
-    if ((control.kind === "featureSearch" || control.kind === "coarseSearch") && control.search) return fieldShape(fields(control.search.target).find((field) => field.key === control.search.returnField));
+    if ((control.kind === "featureSearch" || control.kind === "coarseSearch") && control.search) return fieldShape((searchFields ? searchFields(control.search) : fields(control.search.target)).find((field) => field.key === control.search.returnField));
     return shape("string");
   };
   for (const step of workflow.steps) {
@@ -10863,6 +10873,36 @@ function validateWorkflowSupplies(workflow, fields, candidate) {
 function evaluateWorkflowExpressionNode(node, system) {
   const text2 = (value) => value.kind === "literal" ? JSON.stringify(value.value) : value.kind === "token" ? value.name : value.kind === "concat" ? value.parts.map(text2).join("+") : value.kind === "join" ? `join(${value.args.map(text2).join(",")})` : `${value.name}(${value.args.map(text2).join(",")})`;
   return evaluateWorkflowExpression(text2(node), {}, system);
+}
+
+// src/configStudio/workflowDesignNotes.ts
+var dynamicCodes = /* @__PURE__ */ new Set(["workflow-expression-format-unknown", "workflow-value-schema-unknown", "workflow-expression-type-unknown", "workflow-required-field-coverage-unknown"]);
+function partitionWorkflowDesignNotes(workflow, fields, candidate, issues) {
+  const output = workflow.outputs.find((o) => o.id === candidate.outputId), notes = [], remaining = [];
+  const controls = workflow.steps.flatMap((s) => s.controls ?? []);
+  for (const issue2 of issues) {
+    const assignmentId = /\/assignments\/([^/]+)$/.exec(issue2.path)?.[1], requiredKey = /\/required\/(.+)$/.exec(issue2.path)?.[1];
+    const matches = output?.assignments.filter((a) => assignmentId ? a.id === assignmentId : requiredKey && (requiredKey === a.target || requiredKey.startsWith(a.target + "."))) ?? [];
+    let slot;
+    if (issue2.severity === "warning" && dynamicCodes.has(issue2.code) && matches.length === 1) {
+      try {
+        const ast = parseWorkflowExpression(matches[0].expression);
+        if (ast.kind === "token" && controls.some((c) => c.slot === ast.name && c.kind === "json") && fields.some((f) => f.key === matches[0].target && (f.valueSchema || f.coordinateFormat))) slot = ast.name;
+      } catch {
+      }
+    }
+    if (!slot) {
+      remaining.push(issue2);
+      continue;
+    }
+    const { severity: _severity, ...original } = issue2;
+    notes.push({ ...original, originalSeverity: "warning", checkStage: "output", sourceSlot: slot, outputId: candidate.outputId, classification: candidate.classification, groupRoot: `workflows/${workflow.id}/outputs/${candidate.outputId}/assignments/${matches[0].id}` });
+  }
+  return { issues: remaining, notes };
+}
+function validDesignNotes(value) {
+  if (value === void 0) return true;
+  return Array.isArray(value) && value.length <= 1e5 && value.every((n) => n && typeof n === "object" && dynamicCodes.has(n.code) && n.checkStage === "output" && n.originalSeverity === "warning" && ["code", "path", "message", "sourceSlot", "outputId", "groupRoot"].every((k) => typeof n[k] === "string" && n[k].length <= 2e4) && n.classification && typeof n.classification.class === "string");
 }
 
 // src/core/project/applicationResources.ts
@@ -13437,7 +13477,7 @@ function compileWorkflowEditPlan(workflow, config) {
   if (config.contractRevision >= 15) for (const [index, binding] of explicit.entries()) {
     const id2 = "explicit-backfill-" + index;
     const proposed = { ...workflow, outputs: workflow.outputs.map((item) => item.id === output.id ? { ...item, assignments: [{ id: id2, target: binding.target, expression: binding.slot }] } : item) };
-    for (const classification of classifications) for (const issue2 of validateWorkflowWrites(proposed, (path2) => resolveEffectiveFields(config, path2), { outputId: output.id, classification })) if (issue2.severity === "error" && issue2.path.endsWith("/assignments/" + id2)) errors.push("[" + classificationPathKey(classification) + "] \u56DE\u586B\u6620\u5C04\uFF1A" + issue2.message);
+    for (const classification of classifications) for (const issue2 of validateWorkflowWrites(proposed, (path2) => resolveEffectiveFields(config, path2), { outputId: output.id, classification }, (search) => workflowSearchFields(config, search))) if (issue2.severity === "error" && issue2.path.endsWith("/assignments/" + id2)) errors.push("[" + classificationPathKey(classification) + "] \u56DE\u586B\u6620\u5C04\uFF1A" + issue2.message);
   }
   const removed = controls.filter((c) => c.slot && idOnly.has(c.slot) && !needed.has(c.slot)), kept = controls.filter((c) => !removed.includes(c));
   for (const control of kept) if (control.slot && !bindings.some((b) => b.slot === control.slot) && !["classificationPicker", "tagsExtensions"].includes(control.kind)) errors.push(`\u63A7\u4EF6 ${control.slot}\uFF08${control.label.zh}\uFF09\u7F3A\u5C11\u53EF\u9006\u76F4\u63A5\u8D4B\u503C\u6216\u660E\u786E\u56DE\u586B\u6620\u5C04\u3002`);
@@ -13491,7 +13531,8 @@ function hydrateWorkflowEdit(plan, record) {
     if (!control.slot) continue;
     const values2 = plan.bindings.filter((b) => b.slot === control.slot).map((b) => readRecordPath(record, b.target));
     if (values2.some((v) => !annotationEqual(v, values2[0]))) throw Error(`\u69FD\u4F4D ${control.slot} \u7684\u591A\u4E2A\u56DE\u586B\u76EE\u6807\u5177\u6709\u4E0D\u540C\u503C\uFF0C\u4E0D\u80FD\u731C\u6D4B\u3002`);
-    slots[control.slot] = structuredClone(values2[0]);
+    const statusDefault = values2[0] === void 0 && control.kind === "toggle" && control.required !== true && control.defaultValue === true && plan.bindings.some((b) => b.slot === control.slot && b.target === "Situation");
+    slots[control.slot] = statusDefault ? true : structuredClone(values2[0]);
   }
   const draft = { slots, classification, initialSlots: structuredClone(slots) }, filled = workflowEditSlots(plan, record, draft);
   return { ...draft, slots: filled, initialSlots: structuredClone(filled) };
@@ -13679,6 +13720,9 @@ function rawClassification(value) {
   return { class: String(value.Class ?? value.class ?? "").trim(), kind: value.Kind, skind: value.SKind ?? value.Skind, skind2: value.SKind2 ?? value.Skind2 };
 }
 
+// src/core/project/teleportAvailability.ts
+var teleportNodeAvailable = (record) => record.Situation !== false;
+
 // src/configStudio/navigationValidation.ts
 var sharedBase = "application/preferences/railwayRoles";
 var navBase = "application/navigation";
@@ -13733,6 +13777,7 @@ function validateNavigationConfiguration(config, fields) {
         if (ref && (ref.matchField !== matchField || !resolveClassificationScope(config, scopes).some((p) => p.class === ref.classCode))) add(base, `${node.nodeId} \u7684 ${key2} \u5F15\u7528\u76EE\u6807\u4E0E\u89D2\u8272\u8303\u56F4\u4E0D\u517C\u5BB9\u3002`, related);
       };
       field("Name", "string");
+      if (role === "teleportPoints" || role === "warpPoints") field("Situation", "boolean");
       if (role === "lines") {
         field("direction", "number", navigation);
         field("color", "string");
@@ -13844,6 +13889,7 @@ function validateNavigationRecords(config, records) {
   for (const r of records) {
     const isRoad = pathsMatch(nav.road.selectors.roads, rawClassification(r)), isWarp = pathsMatch(nav.teleport.selectors.warpPoints, rawClassification(r)), isTeleport = pathsMatch(nav.teleport.selectors.teleportPoints, rawClassification(r));
     if ((RAILWAY_ROLES.some((key2) => role(r, key2)) || isRoad || isWarp || isTeleport) && (ids.get(`${world(r)}/${r.ID}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C ID \u91CD\u590D\uFF0C\u65E0\u6CD5\u552F\u4E00\u89E3\u6790\u3002", navBase);
+    if ((isWarp || isTeleport) && r.Situation !== void 0 && typeof r.Situation !== "boolean") add(r, "Situation \u5FC5\u987B\u4E3A\u5E03\u5C14\u503C\uFF1B\u7701\u7565\u65F6\u6309\u53EF\u7528\u5904\u7406\u3002", `${navBase}/teleport`);
     if (role(r, "stations") && (ids.get(`${world(r)}/${stationKey(r)}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C\u8F66\u7AD9\u89C4\u8303\u5EFA\u7B51 ID \u91CD\u590D\u3002", sharedBase);
     if (role(r, "platforms")) {
       for (const id2 of refs(r, "lines")) if (id2) check(r, id2, "lines");
@@ -13876,12 +13922,13 @@ function validateNavigationRecords(config, records) {
       const key2 = String(r.WRPointI2D ?? r.wrPointI2D ?? "").trim();
       if (!key2 || (warps.get(`${world(r)}/${key2}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C Warp \u5B9A\u4F4D\u952E\u7F3A\u5931\u6216\u91CD\u590D\u3002", `${navBase}/teleport`);
     }
-    if (isTeleport) {
+    if (isTeleport && teleportNodeAvailable(r)) {
       const key2 = String(r.TGTWarp ?? r.tgtWarp ?? "").trim();
       const target = warps.get(`${world(r)}/${key2}`) ?? [];
       const explicit = coordinate(r.TGTcoordinate) || finite(r.TGT_x) && finite(r.TGT_z);
       const excluded = key2 && records.filter((other) => world(other) === world(r) && String(other.WRPointI2D ?? other.wrPointI2D ?? "") === key2);
       if (key2 && target.length > 1) add(r, `Warp \u76EE\u6807 ${key2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/teleport`);
+      else if (key2 && target.length === 1 && !teleportNodeAvailable(target[0])) add(r, `Warp \u76EE\u6807 ${key2} \u5DF2\u505C\u7528\uFF1B\u6392\u9664\u8BE5\u4F20\u9001\u8FB9\u3002`, `${navBase}/teleport`, true);
       else if (!(key2 && target.length === 1) && !explicit) add(r, excluded && excluded.length === 1 ? `Warp \u76EE\u6807 ${key2} \u4E0D\u5728\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u4F20\u9001\u8FB9\u3002` : `\u4F20\u9001\u76EE\u6807\u65E0\u6CD5\u89E3\u6790${key2 ? `\uFF1A${key2}` : ""}\u3002`, `${navBase}/teleport`, Boolean(excluded && excluded.length === 1));
     }
   }
@@ -25909,6 +25956,15 @@ function scopeCommonFields(config, scope) {
   const sets = resolveClassificationScope(config, scope).map((path2) => resolveSelectableFields(config, path2));
   return sets.length ? sets[0].filter((field) => sets.every((set) => set.some((other) => other.key === field.key && other.type === field.type && other.cardinality === field.cardinality))) : [];
 }
+function workflowSearchFields(config, search) {
+  const paths = search.targetRole === "main" ? config.nodes.filter((n) => {
+    const role = resolveNodeFieldSettings(config, n.path).value.structure;
+    return role?.enabled && role.role === "main";
+  }).map((n) => n.path) : search.scope ? resolveClassificationScope(config, search.scope) : search.target.class && hasCategoryNode(config, search.target) ? [search.target] : [];
+  const sets = paths.map((p) => resolveSelectableFields(config, p).map((f) => f.fieldId.startsWith("system-Coord") ? { ...f, type: "json", input: "json" } : f));
+  const signature = (f) => stableConfigText([f.type, f.cardinality, f.optionValueType, f.coordinateFormat, f.valueSchema]);
+  return sets.length ? sets[0].filter((f) => sets.every((set) => set.some((other) => other.key === f.key && signature(other) === signature(f)))) : [];
+}
 function resolveInheritedValue(config, path2, branch, read) {
   let result;
   let inherited = true;
@@ -26461,7 +26517,7 @@ function validateSearch(control, config, path2, issues) {
     return role?.enabled && role.role === "main";
   }) : [];
   if (search.targetRole && (config.contractRevision < 10 || !targets.length)) issue(issues, "error", "workflow-search-role-invalid", path2, "\u901A\u7528\u641C\u7D22\u9700\u8981 c10 \u4E14\u81F3\u5C11\u6709\u4E00\u4E2A\u542F\u7528\u7684\u4E3B\u7ED3\u6784\u5206\u7C7B\u3002");
-  const selectable = new Set(search.targetRole ? targets.flatMap((node) => resolveSelectableFields(config, node.path).map((field) => field.key)).filter((key2) => targets.every((node) => resolveSelectableFields(config, node.path).some((field) => field.key === key2))) : (search.scope ? scopeCommonFields(config, search.scope) : resolveSelectableFields(config, search.target)).map((field) => field.key));
+  const selectable = new Set(workflowSearchFields(config, search).map((field) => field.key));
   if (!search.queryFields?.length) issue(issues, "error", "workflow-search-fields-required", path2, "\u641C\u7D22\u63A7\u4EF6\u81F3\u5C11\u9700\u8981\u9009\u62E9\u4E00\u4E2A\u53EF\u5339\u914D\u5B57\u6BB5\u3002");
   const queryKeys = new Set(workflowQueryFieldKeys(config, search));
   for (const field of search.queryFields ?? []) if (!queryKeys.has(field)) issue(issues, "error", "workflow-search-field-invalid", path2, `\u641C\u7D22\u5B57\u6BB5 ${field} \u4E0D\u5728\u76EE\u6807\u5206\u7C7B\u7684\u6709\u6548\u5B57\u6BB5\u96C6\u4E2D\u3002`, { field });
@@ -26517,7 +26573,7 @@ function validateWorkflowOutput(output, _outputIndex, workflow, config, slots, i
     const control = controlsFor(workflow).find((control2) => control2.slot === assignment.expression.trim());
     if (config.contractRevision < 15 && reachable && control && field && (control.fieldSource || config.contractRevision >= 8)) {
       const leaf = control.kind === "group" ? control.group?.itemFields[0] : control;
-      const returned = leaf && (leaf.kind === "featureSearch" || leaf.kind === "coarseSearch") && leaf.search ? resolveSelectableFields(config, leaf.search.target).find((field2) => field2.key === leaf.search.returnField) : void 0;
+      const returned = leaf && (leaf.kind === "featureSearch" || leaf.kind === "coarseSearch") && leaf.search ? workflowSearchFields(config, leaf.search).find((field2) => field2.key === leaf.search.returnField) : void 0;
       const actualType = control.kind === "group" && control.group?.storage === "object" ? "json" : leaf?.kind === "select" ? leaf.optionValueType ?? "string" : leaf?.kind === "json" ? "json" : leaf?.valueNormalization === "trim" || leaf?.valueNormalization === "abbr" ? "string" : leaf?.kind === "number" || leaf?.valueNormalization === "number" ? "number" : leaf?.kind === "toggle" ? "boolean" : returned ? returned.type === "enum" ? returned.optionValueType ?? "string" : returned.type === "reference" ? "string" : returned.type : "string";
       const actualMultiple = control.kind === "group" || returned?.cardinality === "multiple";
       const expectedType = field.type === "enum" ? field.optionValueType ?? "string" : field.type === "reference" ? "string" : field.type;
@@ -26546,7 +26602,7 @@ function validateWorkflowValueCondition(condition, tokens, path2, issues) {
   if (condition.operator === "equals" && !["string", "number", "boolean"].includes(typeof condition.value)) issue(issues, "error", "workflow-value-condition-invalid", path2, "\u76F8\u7B49\u6761\u4EF6\u5FC5\u987B\u6709\u6709\u6548\u6BD4\u8F83\u503C\u3002");
   if (condition.operator === "in" && (!condition.values?.length || condition.values.some((value) => !["string", "number", "boolean"].includes(typeof value)))) issue(issues, "error", "workflow-value-condition-invalid", path2, "\u5C5E\u4E8E\u6761\u4EF6\u5FC5\u987B\u5305\u542B\u6709\u6548\u6BD4\u8F83\u503C\u3002");
 }
-function validateWorkflow(workflow, config, issues) {
+function validateWorkflow(workflow, config, issues, designNotes = []) {
   if (config.contractRevision >= 16 && workflow.mode === "external") {
     const declared = { ...config, workflows: config.workflows.some((row2) => row2.id === workflow.id) ? config.workflows.map((row2) => row2.id === workflow.id ? workflow : row2) : [...config.workflows, workflow] };
     for (const error of externalBindingIssues(declared).filter((error2) => error2.path.startsWith("workflows/" + workflow.id + "/"))) issue(issues, "error", "external-binding-invalid", error.path, error.message);
@@ -26740,8 +26796,11 @@ function validateWorkflow(workflow, config, issues) {
   }
   if (config.contractRevision >= 15) {
     for (const output of workflow.outputs) for (const path2 of workflowClassificationGroup(config, output).paths) {
-      const candidate = { outputId: output.id, classification: path2 };
-      issues.push(...[...validateWorkflowWrites(workflow, (target) => resolveEffectiveFields(config, target), candidate), ...validateWorkflowSupplies(workflow, resolveEffectiveFields(config, path2), candidate)].map((item) => ({ ...item, message: "[" + classificationPathKey(path2) + "] " + item.message })));
+      const candidate = { outputId: output.id, classification: path2 }, fields = resolveEffectiveFields(config, path2);
+      const findings = [...validateWorkflowWrites(workflow, (target) => resolveEffectiveFields(config, target), candidate, (search) => workflowSearchFields(config, search)), ...validateWorkflowSupplies(workflow, fields, candidate)].map((item) => ({ ...item, message: "[" + classificationPathKey(path2) + "] " + item.message }));
+      const partition = config.contractRevision >= 18 ? partitionWorkflowDesignNotes(workflow, fields, candidate, findings) : { issues: findings, notes: [] };
+      issues.push(...partition.issues);
+      designNotes.push(...partition.notes);
     }
   } else issues.push(...validateWorkflowWrites(config.contractRevision < 8 ? migrateWorkflowDrawings(workflow) : workflow, (path2) => resolveSelectableFields(config, path2)));
 }
@@ -26880,6 +26939,7 @@ function validateContextBindings(config, issues) {
 function validateConfigPackage(config, mountedRecords = []) {
   packageValidationRuns++;
   const issues = [];
+  const designNotes = [];
   const structure = validateNativeStructure(config);
   if (structure.length) return { schemaVersion: "cairnmap.config-validation-report.v3", valid: false, createdAt: (/* @__PURE__ */ new Date()).toISOString(), issues: structure.map((item) => ({ severity: "error", code: "native-contract-structure-invalid", ...item })) };
   for (const error of externalBindingIssues(config).filter((error2) => error2.path.startsWith("nodes/"))) issue(issues, "error", "external-reference-invalid", error.path, error.message);
@@ -27002,7 +27062,7 @@ function validateConfigPackage(config, mountedRecords = []) {
   for (const workflow of config.workflows) {
     if (workflowIds.has(workflow.id)) issue(issues, "error", "workflow-id-duplicate", `workflows/${workflow.id}`, "\u5DE5\u4F5C\u6D41 ID \u91CD\u590D\u3002");
     workflowIds.add(workflow.id);
-    validateWorkflow(workflow, config, issues);
+    validateWorkflow(workflow, config, issues, designNotes);
   }
   const editorScopes = /* @__PURE__ */ new Set();
   for (const workflow of config.workflows.filter((w) => w.editor?.enabled)) {
@@ -27043,7 +27103,7 @@ function validateConfigPackage(config, mountedRecords = []) {
   issues.push(...mounted);
   const configuration = issues.filter((item) => !item.code.startsWith("mounted-") && !item.code.startsWith("v1-parity")).length;
   const parity = issues.filter((item) => item.code.startsWith("v1-parity")).length;
-  return { schemaVersion: "cairnmap.config-validation-report.v3", valid: !issues.some((item) => item.severity === "error"), createdAt: (/* @__PURE__ */ new Date()).toISOString(), issues, summary: { configuration, parity, mountedData: mounted.length, affectedFeatures: mounted.reduce((total, item) => total + (item.affectedFeatures?.length ?? 0), 0) } };
+  return { schemaVersion: "cairnmap.config-validation-report.v3", valid: !issues.some((item) => item.severity === "error"), createdAt: (/* @__PURE__ */ new Date()).toISOString(), issues, ...designNotes.length ? { designNotes } : {}, summary: { configuration, parity, mountedData: mounted.length, affectedFeatures: mounted.reduce((total, item) => total + (item.affectedFeatures?.length ?? 0), 0) } };
 }
 
 // src/configStudio/workflowClassificationGroup.ts
@@ -27078,16 +27138,6 @@ function workflowClassificationGroup(config, output) {
 var outputAcceptsClassification = (config, output, path2) => workflowClassificationGroup(config, output).paths.some((candidate) => same(candidate, path2));
 function recordClassificationEligible(config, path2, geometry) {
   return hasCategoryNode(config, path2) && (config.contractRevision >= 15 || !hasDescendants(config, path2)) && Boolean(resolveGeometryProfile(config, path2, geometry)?.enabled);
-}
-
-// src/configRuntime/configurationFingerprint.ts
-function stableConfigText(value) {
-  if (Array.isArray(value)) return "[" + value.map((item) => stableConfigText(item) ?? "null").join(",") + "]";
-  if (value && typeof value === "object") {
-    const record = value;
-    return "{" + Object.keys(record).sort().filter((key2) => record[key2] !== void 0).map((key2) => JSON.stringify(key2) + ":" + stableConfigText(record[key2])).join(",") + "}";
-  }
-  return JSON.stringify(value);
 }
 
 // src/configRuntime/classificationCompatibility.ts
@@ -27204,12 +27254,14 @@ async function readRawNativePackage(file, options = {}) {
   for (const name of entries.keys()) if (name !== "manifest.json" && !name.endsWith("/") && !declared.has(name)) throw Error(`\u914D\u7F6E\u5305\u5305\u542B\u672A\u58F0\u660E\u9644\u52A0\u6587\u4EF6 ${name}\uFF1B\u8BF7\u91CD\u65B0\u5BFC\u51FA\uFF0C\u4E0D\u80FD\u5C06\u5176\u9690\u5F0F\u5E94\u7528\u3002`);
   const raw = parseConfigJson(new TextDecoder("utf-8", { fatal: true }).decode(bodies.get("config.json")));
   if (!isRecord(raw) || ["packageId", "projectId", "revision", "contractRevision", "sourceManifestSha256"].some((key2) => manifest[key2] !== raw[key2])) throw Error("manifest \u4E0E config \u7684\u5305\u8EAB\u4EFD\u3001revision \u6216\u5951\u7EA6\u4E0D\u4E00\u81F4\u3002");
+  const report = parseConfigJson(new TextDecoder("utf-8", { fatal: true }).decode(bodies.get("reports/validation-report.json")));
+  if (!isRecord(report) || !validDesignNotes(report.designNotes)) throw Error("\u6838\u9A8C\u62A5\u544A\u7684\u8BBE\u8BA1\u671F\u8BF4\u660E\u7ED3\u6784\u65E0\u6548\u3002");
   importProgress(options, "\u8FC1\u79FB\u4E0E\u68C0\u67E5\u914D\u7F6E\u7ED3\u6784");
   return raw;
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-c18-production-2";
+var rulesVersion = "cairnmap-c18-production-3";
 var validateConfiguration = validateConfigPackage;
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));

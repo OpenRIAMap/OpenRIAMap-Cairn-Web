@@ -1,5 +1,4 @@
 import type { ClassificationPath, ConfigPackageV3, ConfigValidationIssue, FieldDefinition, PrefillAudit } from './types';
-import migrationEvidence from './prefillSourceMigrationEvidence.json';
 
 function canonical(value:unknown):string {
   return Array.isArray(value)?'['+value.map(canonical).join(',')+']':value&&typeof value==='object'?'{'+Object.entries(value).filter(([,v])=>v!==undefined).sort(([a],[b])=>a.localeCompare(b)).map(([key,v])=>JSON.stringify(key)+':'+canonical(v)).join(',')+'}':JSON.stringify(value);
@@ -46,31 +45,4 @@ export function validatePrefillCopies(config:ConfigPackageV3,resolve:(config:Con
 }
 export function confirmPrefillCopies(input:ConfigPackageV3,resolve:(config:ConfigPackageV3,path:ClassificationPath)=>FieldDefinition[],paths?:string[]):ConfigPackageV3 {
  const config=structuredClone(input);visitPrefillCopies(config,(owner,path)=>{if(paths&&!paths.includes(path))return;const audit=owner.prefillAudit!;audit.confirmedFingerprint=confirmation(owner,audit,sourceField(config,audit,resolve),path);});return config;
-}
-export type PrefillRepair={owner:string;before:PrefillAudit['source'];after?:PrefillAudit['source'];status:'repairable'|'changed'|'unresolved'|'unchanged';reason:string;originalFingerprint?:string;originalConfirmation?:string;copy?:unknown;previousDefinition?:unknown;currentDefinition?:unknown};
-/** An explicit project migration preview. Never invoked as an activation-time alias. */
-export function previewPrefillSourceRepairs(config:ConfigPackageV3,resolve:(config:ConfigPackageV3,path:ClassificationPath)=>FieldDefinition[]):PrefillRepair[]{
- const changes:PrefillRepair[]=[];if(config.projectId!=='openriamap-ria')return changes;
- visitPrefillCopies(config,(owner,path)=>{
-  const audit=owner.prefillAudit!,existing=sourceField(config,audit,resolve),before=structuredClone(audit.source),context={owner:path,before,originalFingerprint:audit.fingerprint,originalConfirmation:audit.confirmedFingerprint,copy:withoutAudit(owner)};
-  if(existing){changes.push({...context,after:before,currentDefinition:existing,status:'unchanged',reason:'原来源仍可解析，保持原指定；副本变化仍由正常核验检查。'});return;}
-  const known=migrationEvidence.rows.filter(row=>canonical(row.beforePath)===canonical(before.path));
-  const targets=new Map(known.map(row=>[canonical(row.afterPath),row.afterPath]));
-  const target=targets.size===1?[...targets.values()][0] as ClassificationPath:undefined;
-  if(!target||!config.nodes.some(node=>canonical(node.path)===canonical(target))){changes.push({...context,status:'unresolved',reason:'没有已核实的唯一搬迁路径，保留原件待核对。'});return;}
-  const evidence=migrationEvidence.rows.find(row=>canonical(row.beforePath)===canonical(before.path)&&row.beforeField.fieldId===before.fieldId&&row.beforeField.key===before.key&&canonical(row.afterPath)===canonical(target));
-  const candidates=resolve(config,target).filter(field=>field.fieldId===(evidence?.afterFieldId??audit.source.fieldId)&&field.key===audit.source.key);
-  if(candidates.length!==1){changes.push({...context,status:'unresolved',reason:'目标字段身份或 Key 无法唯一对应，不按同名猜测。'});return;}
-  const field=candidates[0],previous=evidence?.beforeField as FieldDefinition|undefined;
-  const fingerprintMatches=(audit.fingerprint.startsWith('field-v2-')?semanticField(previous??field):legacyFieldFingerprint(previous??field))===audit.fingerprint;
-  const semanticDefinition=(value:FieldDefinition)=>withoutAudit({...value,fieldId:undefined});
-  // v1 omitted constraints/defaults/references. It alone cannot prove equality.
-  const fullDefinitionMatches=previous?canonical(semanticDefinition(previous))===canonical(semanticDefinition(field)):audit.fingerprint.startsWith('field-v2-');
-  const same=fingerprintMatches&&fullDefinitionMatches;
-  changes.push({owner:path,before,after:{path:structuredClone(target),fieldId:field.fieldId,key:field.key},status:same?'repairable':'changed',originalFingerprint:audit.fingerprint,originalConfirmation:audit.confirmedFingerprint,copy:withoutAudit(owner),previousDefinition:previous,currentDefinition:field,reason:same?'已核实分类模板搬迁与字段身份重映射；完整原定义（含约束、默认值、引用）一致，只修来源身份。':'来源可定位，但完整定义存在差异或历史证据不足；保留副本，不自动确认。'});
- });return changes;
-}
-export function applyPrefillSourceRepairs(input:ConfigPackageV3,resolve:(config:ConfigPackageV3,path:ClassificationPath)=>FieldDefinition[]):ConfigPackageV3{
- const changes=new Map(previewPrefillSourceRepairs(input,resolve).filter(item=>item.status==='repairable'&&item.after).map(item=>[item.owner,item]));
- const config=structuredClone(input);visitPrefillCopies(config,(owner,path)=>{const repair=changes.get(path);if(repair?.after)owner.prefillAudit={...owner.prefillAudit!,source:structuredClone(repair.after),fingerprint:semanticField(repair.currentDefinition as FieldDefinition),confirmedFingerprint:undefined};});return config;
 }
