@@ -58,7 +58,7 @@ import {
   compareFloorDisplayOrder,
   formatFloorDisplayLabel,
 } from "@/components/Rules/rendering/order/floorDisplayOrder";
-import { makeLabelDivIcon, labelStyleSignature } from "@/components/Rules/rendering/labelStyles";
+import { makeLabelDivIcon, labelStyleSignature, textLabelMeasurementFont } from "@/components/Rules/rendering/labelStyles";
 import {
   createHighlightLayerForFeature,
   makeClickableLabelMarker,
@@ -3512,7 +3512,7 @@ export default function RuleDrivenLayer(props: Props) {
         const nativeBundle = cacheRef.current.get(r.uid);
         if (nativeBundle && displayPlan.geometry.midpoint) {
           const pointDisplay:FeatureDisplayPlan={...displayPlan,geometry:{...displayPlan.geometry,render:'point',midpoint:false}};
-          const pane=configRuntime?.contractRevision===19?c19GeometryPane(map,configRuntime,rule.symbol?.pane,false,displayPlan.geometry.zIndex??0,true):hiddenSymbol.pane;
+          const pane=configRuntime&&configRuntime.contractRevision>=19?c19GeometryPane(map,configRuntime,rule.symbol?.pane,false,displayPlan.geometry.zIndex??0,true):hiddenSymbol.pane;
           const pointSymbol={...hiddenSymbol,pane,label:undefined,point:()=>({
             ...typeof hiddenSymbol.point==='function'?hiddenSymbol.point(r,context,store):hiddenSymbol.point,pane,
           })};
@@ -3651,8 +3651,9 @@ export default function RuleDrivenLayer(props: Props) {
             configRuntime,
             map,
           );
+          const authoredFont=configRuntime&&configRuntime.contractRevision>=19?textLabelMeasurementFont(labelPlan.styleKey,labelFontFamily):undefined;
           const requests = rawRequests.map((rawReq) => applyAdvancedLineTextBudget(
-            mergeDisplayCollisionIntoLabelRequest(rawReq, displayPlan),
+            mergeDisplayCollisionIntoLabelRequest(authoredFont?{...rawReq,font:authoredFont}:rawReq, displayPlan),
             displayPlan,
             advancedLineTextBudget,
           ));

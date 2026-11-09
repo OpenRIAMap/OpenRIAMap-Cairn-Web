@@ -1,3 +1,4 @@
+import { textLabelMeasurementFont } from '../../../src/components/Rules/rendering/labelStyles';
 import { createRoot } from 'react-dom/client';
 import type { Map as LeafletMap } from 'leaflet';
 import { ConfigRuntimePreview } from '../../../src/configStudio/ConfigRuntimePreview';
@@ -63,6 +64,9 @@ const mount=(areaZ:number,pointZ:number,count:number)=>{
   root.render(<ConfigRuntimePreview config={candidate} node={candidateArea} scenario="smallPolygon" fixture={{features:features(count)}} onMapReady={value=>{map=value;}} onRuntimeError={error=>errors.push(error.message)}/>);
 };
 Object.assign(window,{runC19RenderChecks:async()=>{
+  if(textLabelMeasurementFont({key:'gm-wtb-15',bold:true,italic:true},'Arial')!=='italic 800 15px Arial'||
+     textLabelMeasurementFont('gm-outline-bold-17','Arial')!=='800 17px Arial'||
+     textLabelMeasurementFont('gm-bw-15','Arial')!=='700 15px Arial')throw Error('Label collision measurement must use the displayed font');
   const begin=performance.now();
   mount(800,700,2);
   await wait(()=>Boolean(getArea()?.getAttribute('d')?.includes('L')&&getShape('#00bb00')&&getShape('#0022ee')));

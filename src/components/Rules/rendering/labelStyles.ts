@@ -76,6 +76,17 @@ export function labelStyleSignature(value: LabelStyleKeyInput): string {
   return JSON.stringify(value);
 }
 
+/** Match the HTML text families when building the collision measurement. */
+export function textLabelMeasurementFont(value:LabelStyleKeyInput|undefined,fontFamily:string):string|undefined{
+  const key=typeof value==='string'?value:value?.key;
+  const match=key?.match(/^(gm-outline(?:-bold)?|gm-bw|gm-wtb|structure-label)(?:-(\d+(?:\.\d+)?))?$/);
+  if(!match)return;
+  const options=typeof value==='object'?value:undefined;
+  const size=Number(match[2])||(match[1].startsWith('gm-outline')?17:match[1]==='structure-label'?12:15);
+  const weight=options?.bold||match[1]==='gm-outline-bold'?800:700;
+  return `${options?.italic?'italic ':''}${weight} ${size}px ${fontFamily}`;
+}
+
 function escapeHtml(s: string): string {
   return String(s ?? '').replace(/[<>&"]/g, (m) => {
     if (m === '<') return '&lt;';
