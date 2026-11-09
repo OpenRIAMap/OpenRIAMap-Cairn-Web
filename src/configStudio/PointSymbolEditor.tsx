@@ -1,3 +1,5 @@
+import { AppearanceRows, SymbolBehaviorEditor } from './C19AppearanceEditor';
+import { defaultSymbolBehavior, mapSymbolItems } from './c19Render';
 import {HaloEditor} from './HaloEditor';
 import {defaultHalo} from './halo';
 import { r12PointStyle } from './r12Migration';
@@ -16,7 +18,7 @@ export const defaultIconItem = (contractRevision=12): IconItem => ({ ...(contrac
 const presentation = (contractRevision=12): ImagePresentation => ({ ...(contractRevision>=14?{halo:defaultHalo()}:{}), sizePx: { width: 24, height: 24 }, placement: defaultSymbolPlacement() });
 type Context = SymbolEditorContext & { ruleId: string; geometry: GeometryKind };
 function ImagePresentationEditor({ config,path,fields,value, onChange }: SymbolEditorContext & { value: ImagePresentation; onChange: (value: ImagePresentation) => void }) {
-  return <div className="space-y-2"><div className="cm-flex-grid gap-2"><NumericSetting label="图片宽 px" value={value.sizePx.width} min={1} max={2048} onChange={width => onChange({ ...value, sizePx: { ...value.sizePx, width } })} /><NumericSetting label="图片高 px" value={value.sizePx.height} min={1} max={2048} onChange={height => onChange({ ...value, sizePx: { ...value.sizePx, height } })} /></div><SymbolPlacementEditor value={value.placement} onChange={placement => onChange({ ...value, placement })} /><HaloEditor config={config} path={path} fields={fields.map(f=>f.key)} value={value.halo} onChange={halo=>onChange({...value,halo})}/></div>;
+  return <div className="space-y-2"><div className="cm-flex-grid gap-2"><NumericSetting label="图片宽 px" value={value.sizePx.width} min={1} max={2048} onChange={width => onChange({ ...value, sizePx: { ...value.sizePx, width } })} /><NumericSetting label="图片高 px" value={value.sizePx.height} min={1} max={2048} onChange={height => onChange({ ...value, sizePx: { ...value.sizePx, height } })} /></div><SymbolPlacementEditor value={value.placement} onChange={placement => onChange({ ...value, placement })} /><HaloEditor config={config} path={path} fields={fields.map(f=>f.key)} value={value.halo} onChange={halo=>onChange({...value,halo})}/>{config.contractRevision>=19?<SymbolBehaviorEditor value={value.behavior} onChange={behavior=>onChange({...value,behavior})}/>:null}</div>;
 }
 function ImageEditor({ config,path,fields,ruleId,geometry, value, onChange, drafts }: Context & { value: ImageSource; onChange: (value: ImageSource) => void; drafts: MutableRefObject<Partial<Record<ImageSource['mode'], ImageSource>>> }) {
   const entries = value.mode === 'valueMap' ? value.entries : [], keys = usePreviewRowKeys(entries);
@@ -43,20 +45,31 @@ function IconSourceEditor(props: Context & { value: Extract<PointSymbol, { kind:
 }
 function FallbackEditor(props: Context & { value: BasePointStyle; onChange: (value: BasePointStyle) => void }) {
   const preview = useMappingPreview([{ id: 'fallback', pins: [] }]);
-  return <fieldset className="cm-subsection space-y-3"><legend className="px-1 font-medium">显示效果（回退）</legend><p className="text-xs text-slate-500">仅在图标／图片缺失或加载失败时使用。Label 和整体符号偏移继续遵循规则。</p><button type="button" aria-pressed={preview.active === 'fallback'} className="rounded border px-3 py-1 text-xs" onClick={() => preview.toggle('fallback')}>{preview.active === 'fallback' ? '取消回退预览' : '显示回退效果'}</button><BasePointStyleEditor {...props} /></fieldset>;
+  return <fieldset className="cm-subsection space-y-3"><legend className="px-1 font-medium">显示效果（回退）</legend><p className="text-xs text-slate-500">仅在图标／图片缺失或加载失败时使用。Label 和整体符号偏移继续遵循规则。</p><button type="button" aria-pressed={preview.active === 'fallback'} className="rounded border px-3 py-1 text-xs" onClick={() => preview.toggle('fallback')}>{preview.active === 'fallback' ? '取消回退预览' : '显示回退效果'}</button><BasePointStyleEditor {...props} />{props.config.contractRevision>=19?<SymbolBehaviorEditor value={props.value.behavior} onChange={behavior=>props.onChange({...props.value,behavior})}/>:null}</fieldset>;
 }
 export function PointSymbolEditor(props: Context & { value: RenderStyle; onChange: (value: RenderStyle) => void }) {
   const { value: style, onChange } = props, symbol = style.pointSymbol ?? { kind: 'shape' as const, shape: basePointFromLegacy(style) }, drafts = useRef<Partial<Record<PointSymbol['kind'], PointSymbol>>>({});
   const imageDrafts=useRef<Partial<Record<ImageSource['mode'],ImageSource>>>({}), iconDrafts=useRef<Partial<Record<'single'|'valueMap',Extract<PointSymbol,{kind:'icon'}>['icon']>>>({});
   const set = (pointSymbol: PointSymbol) => {
     const { halo:_halo,pointShape: _shape, icon: _icon, size: _size, weight: _weight, stroke: _stroke, fill: _fill, strokeOpacity: _opacity, fillOpacity: _fillOpacity, lineCap: _cap, lineJoin: _join, ...other } = style;
-    onChange({ ...other, pointSymbol });
+    if(props.config.contractRevision>=19&&pointSymbol.kind==='shape')pointSymbol={...pointSymbol,mode:pointSymbol.mapping?'valueMap':'fixed'};
+    onChange({ ...other, pointSymbol: props.config.contractRevision>=19?mapSymbolItems(pointSymbol,item=>({...item,behavior:item.behavior??defaultSymbolBehavior()})):pointSymbol });
   };
   if (!style.pointSymbol && style.icon?.fallback === 'hide') return <section className="cm-subsection space-y-2" role="alert"><p>旧图片配置使用 hide 回退。c12 需要明确确认基础点回退；确认后可以调整完整回退样式。</p><button type="button" className="rounded border px-3 py-1" onClick={() => onChange(r12PointStyle(style,true))}>确认改用基础点回退并保留图片配置</button></section>;
   return <section className="cm-subsection space-y-3" aria-label="点状显示效果"><h5 className="font-medium">显示效果</h5><SelectSetting label="点状显示" value={symbol.kind} choices={[["shape", '基础形状'], ["icon", '图标'], ["externalImage", '外部图片']]} onChange={kind => {
     drafts.current[symbol.kind] = structuredClone(symbol); const prior = drafts.current[kind]; if (prior) { set(structuredClone(prior)); return; }
     const fallback = symbol.kind === 'shape' ? symbol.shape : symbol.fallback;
     set(kind === 'shape' ? { kind, shape: structuredClone(fallback) } : kind === 'icon' ? { kind, icon: { mode: 'single', item: defaultIconItem(props.config.contractRevision) }, fallback: structuredClone(fallback) } : { kind, image: { mode: 'fixed', ...(props.config.contractRevision>=17?{sourceForm:'url' as const}:{}), url: '', presentation: presentation(props.config.contractRevision) }, fallback: structuredClone(fallback) });
-  }} />{symbol.kind === 'shape' ? <BasePointStyleEditor {...props} value={symbol.shape} onChange={shape => set({ ...symbol, shape })} /> : <>{symbol.kind === 'icon' ? <IconSourceEditor {...props} drafts={iconDrafts} value={symbol.icon} onChange={icon => set({ ...symbol, icon })} /> : <ImageEditor {...props} drafts={imageDrafts} value={symbol.image} onChange={image => set({ ...symbol, image })} />}<RulePreviewScope ruleId={props.ruleId} geometry={props.geometry} fallback><FallbackEditor {...props} value={symbol.fallback} onChange={fallback => set({ ...symbol, fallback })} /></RulePreviewScope></>}
+  }} />{symbol.kind === 'shape' ? <ShapeAppearance {...props} symbol={symbol} onChange={set}/> : <>{symbol.kind === 'icon' ? <IconSourceEditor {...props} drafts={iconDrafts} value={symbol.icon} onChange={icon => set({ ...symbol, icon })} /> : <ImageEditor {...props} drafts={imageDrafts} value={symbol.image} onChange={image => set({ ...symbol, image })} />}<RulePreviewScope ruleId={props.ruleId} geometry={props.geometry} fallback><FallbackEditor {...props} value={symbol.fallback} onChange={fallback => set({ ...symbol, fallback })} /></RulePreviewScope></>}
   </section>;
+}
+
+function ShapeAppearance({ symbol, onChange, ...props }: Context & {symbol:Extract<PointSymbol,{kind:'shape'}>;onChange:(symbol:PointSymbol)=>void}) {
+  const c19 = props.config.contractRevision >= 19;
+  const render = (value:BasePointStyle,change:(item:BasePointStyle)=>void)=><><BasePointStyleEditor {...props} value={value} onChange={change}/>{c19?<SymbolBehaviorEditor value={value.behavior} onChange={behavior=>change({...value,behavior})}/>:null}</>;
+  return <div className="space-y-2">
+    {c19?<SelectSetting label="形状设置" value={symbol.mapping?'valueMap':'fixed'} choices={ [['fixed','固定'],['valueMap','字段分类映射']] } onChange={mode=>onChange({...symbol,mapping:mode==='valueMap'?{field:'',entries:[]}:undefined})}/>:null}
+    {symbol.mapping?<><AppearanceRows fields={props.fields} value={symbol.mapping} create={()=>structuredClone(symbol.shape)} render={render} onChange={mapping=>onChange({...symbol,mapping})}/><h6 className="font-medium">基础形状回退</h6></>:null}
+    {render(symbol.shape,shape=>onChange({...symbol,shape}))}
+  </div>;
 }

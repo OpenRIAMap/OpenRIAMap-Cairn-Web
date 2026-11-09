@@ -49,6 +49,7 @@ export type LabelStyleKeyInput =
       /** Only honoured by text-only GM/structure families. */
       italic?: boolean;
       underline?: boolean;
+      bold?: boolean;
       fontSize?: number;
       customPill?: ResolvedCustomPill;
     };
@@ -73,6 +74,17 @@ export function labelStyleSignature(value: LabelStyleKeyInput): string {
       p.textColor, p.backgroundColor, p.strokeColor, value.rotateDeg, value.writingMode]);
   }
   return JSON.stringify(value);
+}
+
+/** Match the HTML text families when building the collision measurement. */
+export function textLabelMeasurementFont(value:LabelStyleKeyInput|undefined,fontFamily:string):string|undefined{
+  const key=typeof value==='string'?value:value?.key;
+  const match=key?.match(/^(gm-outline(?:-bold)?|gm-bw|gm-wtb|structure-label)(?:-(\d+(?:\.\d+)?))?$/);
+  if(!match)return;
+  const options=typeof value==='object'?value:undefined;
+  const size=Number(match[2])||(match[1].startsWith('gm-outline')?17:match[1]==='structure-label'?12:15);
+  const weight=options?.bold||match[1]==='gm-outline-bold'?800:700;
+  return `${options?.italic?'italic ':''}${weight} ${size}px ${fontFamily}`;
 }
 
 function escapeHtml(s: string): string {
@@ -284,7 +296,7 @@ export function renderLabelHtml(styleKey: LabelStyleKeyInput, text: string, opts
         ${dot}
         <span style="
           color:${gm.fill};
-          font-weight:${gm.fontWeight};
+          font-weight:${keyObj?.bold ? 800 : gm.fontWeight};
           font-size:${gm.fontSize}px;
           line-height:1.1;
           text-shadow:${shadow};
@@ -407,7 +419,7 @@ export function renderLabelHtml(styleKey: LabelStyleKeyInput, text: string, opts
       : parseSizeSuffix(String(styleKeyStr), 'structure-label-');
 
   if (structureSize !== null) {
-    const fontWeight = 700;
+    const fontWeight = keyObj?.bold ? 800 : 700;
     const haloOffset = roundTo(clamp(structureSize * 0.105, 1.05, 1.7), 0.05);
     const haloBlur = roundTo(clamp(structureSize * 0.055, 0.55, 1.05), 0.05);
     const halo = '#ffffff';

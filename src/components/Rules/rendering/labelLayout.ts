@@ -123,6 +123,8 @@ export type LineTextMode = "rotatedLabel" | "textPath" | "auto";
 export type TextPathFallbackMode = "rotatedLabel" | "hide" | "svgStraightLabel";
 
 export type LabelDeclutterConfig = {
+  preferCenterCandidate?: boolean;
+  explicitCollisionTargets?: boolean;
   /** 布局策略（预留，当前实现 greedy） */
   strategy?: LabelDeclutterStrategy;
 
@@ -846,12 +848,19 @@ function incomingBlockTarget(
   }
 }
 
+function matchesCollisionTargets(targets: readonly string[], identity: { collisionRole?: unknown; collisionGroup?: string }, object?: DisplayCollisionTarget): boolean {
+  if (object === 'symbol' || object === 'geometry') return targets.includes(object);
+  const role = normalizeCollisionRole(identity.collisionRole);
+  return targets.includes('role:' + role) || Boolean(identity.collisionGroup && targets.includes('group:' + identity.collisionGroup));
+}
+
 function doesBlockerExplicitlyBlock(
   blocker: IndexedRect,
   item: LayoutItem,
 ): boolean | undefined {
   const blocks = blocker.collisionBlocks;
   if (!Array.isArray(blocks) || blocks.length === 0) return undefined;
+  if (item.req.declutter?.explicitCollisionTargets) return matchesCollisionTargets(blocks, item);
   const incomingTarget = incomingBlockTarget(item);
   return !!incomingTarget && blocks.includes(incomingTarget);
 }
@@ -868,7 +877,7 @@ function shouldCollisionBlock(item: LayoutItem, blocker: IndexedRect): boolean {
   if (
     Array.isArray(item.collisionCollideWith) &&
     item.collisionCollideWith.length > 0 &&
-    !item.collisionCollideWith.includes(target)
+    !(item.req.declutter?.explicitCollisionTargets ? matchesCollisionTargets(item.collisionCollideWith, blocker, target) : item.collisionCollideWith.includes(target))
   ) {
     return false;
   }
@@ -1087,7 +1096,7 @@ function movePreferredCandidateFirst(
 function isStructureCenterLabelRequest(req: LabelRequest): boolean {
   const declutter = req.declutter ?? {};
   const collisionGroup = declutter.collisionGroup ?? declutter.groupKey;
-  return req.placement === "center" && collisionGroup === "structureLabel";
+  return req.placement === "center" && (declutter.explicitCollisionTargets ? declutter.preferCenterCandidate === true : collisionGroup === "structureLabel");
 }
 
 function moveCenterBeforeCachedStructureCandidate(
@@ -1206,7 +1215,7 @@ export function layoutLabelsOnMap(
         geometrySignature: req.geometrySignature,
       }),
       collisionRole: normalizeCollisionRole(decl.collisionRole),
-      collisionGroup: decl.collisionGroup ?? decl.groupKey,
+      collisionGroup: decl.explicitCollisionTargets ? decl.collisionGroup : decl.collisionGroup ?? decl.groupKey,
       hidePolicy: decl.hidePolicy,
       collisionAllowOverlap: !!decl.collisionAllowOverlap,
       collisionCollideWith: Array.isArray(decl.collisionCollideWith)

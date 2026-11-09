@@ -13,7 +13,10 @@ export function haloProblems(value: HaloSettings | undefined, required = false):
 }
 export function symbolHalos(symbol?: PointSymbol): Array<{path:string;value?:HaloSettings}> {
   if (!symbol) return [];
-  if (symbol.kind==='shape') return [{path:'shape/halo',value:symbol.shape.halo}];
+  if (symbol.kind==='shape') return [
+    {path:'shape/halo',value:symbol.shape.halo},
+    ...symbol.mapping?.entries.map((row,index)=>({path:`mapping/entries/${index}/item/halo`,value:row.item.halo}))??[],
+  ];
   const rows:Array<{path:string;value?:HaloSettings}>=[{path:'fallback/halo',value:symbol.fallback.halo}];
   if(symbol.kind==='icon') {
     if(symbol.icon.mode==='single')rows.push({path:'icon/item/halo',value:symbol.icon.item.halo});

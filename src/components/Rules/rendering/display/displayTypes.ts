@@ -70,6 +70,7 @@ export type DisplayGeometryRenderMode =
 
 export type DisplayGeometryConfig = {
   render: DisplayGeometryRenderMode;
+  midpoint?: boolean;
 
   zIndex?: number;
 
@@ -531,13 +532,15 @@ export type DisplayCollisionTarget =
   | 'importantLabel'
   | 'optionalLabel'
   | 'softLabel'
-  | 'geometry';
+  | 'geometry'
+  | import('@/configStudio/types').RenderCollisionIdentity;
 
 export type DisplayCollisionBlockTarget =
   | 'optionalLabel'
   | 'softLabel'
   | 'poiLabel'
-  | 'structureLabel';
+  | 'structureLabel'
+  | import('@/configStudio/types').RenderCollisionIdentity;
 
 export type DisplayHidePolicy =
   | 'hide'

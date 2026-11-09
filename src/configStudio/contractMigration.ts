@@ -5,6 +5,7 @@ import {migrateC15Nodes,migrateC15Workflow} from './c15Migration';
 import {migrateC16Nodes,migrateC16Workflow} from './c16Migration';
 import {migrateC17Nodes} from './c17Migration';
 import {migrateC18Nodes,migrateC18Workflow,migrateC18Application,migrateC18Ranges} from './c18Migration';
+import {migrateC19Render} from './c19Migration';
 import {syncWorkflowClassification} from './systemClassification';
 import type {CategoryNode,ConfigPackageV3,GeometryKind,GeometryProfile,RenderStyle,WorkflowDefinition} from './types';
 
@@ -86,6 +87,13 @@ export const MIGRATION_STEPS:readonly MigrationStep[]=[{
     migrateC18Ranges(document,changes);
     changes.push({id:'c17-c18:identity',kind:'converted',component:'contract',path:'contractRevision',message:'c17 → c18；配置发布修订 r 保持为正式基线。',before:17,after:18});
   },
+},{
+  from:18,to:19,kinds:['package','node','classTree','workflow'],
+  apply(document,changes,context){
+    const full = 'schemaVersion' in document && document.schemaVersion === 'cairnmap.config-package.v3';
+    if (document.nodes) migrateC19Render(document.nodes, full ? document as ConfigPackageV3 : undefined, full ? undefined : context, changes);
+    changes.push({id:'c18-c19:identity',kind:'converted',component:'contract',path:'contractRevision',message:'c18 → c19；配置发布修订 r 保持正式基线。',before:18,after:19});
+  },
 }];
 
 /** Injected registries are for window/chain tests; production always uses known capabilities. */
@@ -113,7 +121,7 @@ export function migrateContract<T extends Document>(input:T,target:number,kind:M
   };
   check(document);
   for(const step of chain){step.apply(document,changes,context);document.contractRevision=step.to;check(document);}
-  return {document,report:{schemaVersion:'cairnmap.contract-migration.v1',source:input.contractRevision,target,steps:chain.map(step=>`c${step.from} → c${step.to}`),migratorVersion:'c18-1',changes,dismissed:[]}};
+  return {document,report:{schemaVersion:'cairnmap.contract-migration.v1',source:input.contractRevision,target,steps:chain.map(step=>`c${step.from} → c${step.to}`),migratorVersion:target>=19?'c19-1':'c18-1',changes,dismissed:[]}};
 }
 export function migratePackageToContract(input:ConfigPackageV3,target:number=CONTRACT_CAPABILITIES.latest){
   if(!isNativeConfigRevision(input.contractRevision))throw Error('未知契约，不能升级。');

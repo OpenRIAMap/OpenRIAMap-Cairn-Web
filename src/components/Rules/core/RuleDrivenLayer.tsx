@@ -10,6 +10,7 @@ import { usesScriptAwareGlyphs } from '../rendering/label/lineScriptMetrics';
 import {resolveNodeFieldSettings} from '@/configStudio/nodeFieldSettings';
 import {recordWorld,recordPath} from '@/configStudio/structureRoleIndex';
 import {normalizeRuleSourceWorldId} from '@/components/Rules/data/ruleDataSources';
+import { externalLayersFor } from '../../../configStudio/c19Render';
 import { isNativeConfigRevision } from '../../../configStudio/contract';
 import { featureLabelParts, componentLabelId, filterFeatureGeometryParts } from '@/components/Rules/rendering/multipartLabels';
 import {bindGeometryHalo,nativeImageIcon} from '../rendering/geometryHalo';
@@ -57,7 +58,7 @@ import {
   compareFloorDisplayOrder,
   formatFloorDisplayLabel,
 } from "@/components/Rules/rendering/order/floorDisplayOrder";
-import { makeLabelDivIcon, labelStyleSignature } from "@/components/Rules/rendering/labelStyles";
+import { makeLabelDivIcon, labelStyleSignature, textLabelMeasurementFont } from "@/components/Rules/rendering/labelStyles";
 import {
   createHighlightLayerForFeature,
   makeClickableLabelMarker,
@@ -179,6 +180,7 @@ type Props = {
 const Y_FOR_DISPLAY = -64;
 
 type LayerBundle = {
+  midpoint?: LayerBundle;
   nativeSymbol?: { screenOffsetPx?: { x: number; y: number }; followLabelAnchor?: boolean; visibility?: 'independent' | 'withLabel' };
   nativeSymbolOrigins?: L.LatLng[];
   nativeMainParts?: L.Layer[];
@@ -203,6 +205,7 @@ type LayerBundle = {
 };
 
 function nativeSymbolParts(bundle: LayerBundle, proxy = false): L.Layer[] {
+  if (bundle.midpoint) return nativeSymbolParts(bundle.midpoint, proxy);
   const layer = proxy ? bundle.hitProxy : bundle.main;
   if (!layer) return [];
   const key = proxy ? 'nativeHitParts' : 'nativeMainParts';
@@ -227,6 +230,7 @@ function placeNativeSymbol(map: L.Map, bundle: LayerBundle, anchor?: L.LatLng, p
   });
 }
 function setNativeSymbolVisible(root: L.LayerGroup, bundle: LayerBundle, visible: boolean, partIndex?: number) {
+  if (bundle.midpoint) return setNativeSymbolVisible(root, bundle.midpoint, visible, partIndex);
   for (const proxy of [false, true]) {
     const group = proxy ? bundle.hitProxy : bundle.main;
     if (!group) continue;
@@ -236,6 +240,29 @@ function setNativeSymbolVisible(root: L.LayerGroup, bundle: LayerBundle, visible
       if (visible) { group.addLayer(layer); root.addLayer(group); } else group.removeLayer(layer);
     } else if (visible) root.addLayer(group); else root.removeLayer(group);
   }
+}
+
+function removeMidpoint(root:L.LayerGroup, bundle:LayerBundle) {
+  if (!bundle.midpoint) return;
+  root.removeLayer(bundle.midpoint.main);
+  if (bundle.midpoint.hitProxy) root.removeLayer(bundle.midpoint.hitProxy);
+  bundle.midpoint = undefined;
+}
+
+function c19GeometryPane(map:L.Map, config:ConfigPackageV3, original:string|undefined, point:boolean, z:number, midpoint=false):string {
+  const layers=externalLayersFor(config), names=config.engine?.paneDefaults;
+  const height=original===names?.['overlay-top']?layers.highlightPath:original===names?.['point-top']?layers.topPoint:
+    original===names?.point||!original&&point?layers.point:layers.path;
+  const band='ria-c19-geometry-'+height;
+  const parent=map.getPane(band)??map.createPane(band);
+  parent.style.zIndex=String(height);
+  // Cross-renderer ties always paint the path first. Separate inner layers keep
+  // this tie independent of which geometry happens to enter the viewport first.
+  const symbol=point||midpoint;
+  const pane=band+'-z'+z+(symbol?'-symbol':'-path');
+  const element=map.getPane(pane)??map.createPane(pane,parent);
+  element.style.zIndex=String(z*2+(symbol?1:0));
+  return pane;
 }
 
 type LineAuditMutableRow = LineLabelAuditRow & {
@@ -817,14 +844,14 @@ function nativeHitProxySignature(kind: string, tolerance: number, baseSize: numb
   return enabled ? `${kind}:${tolerance}:${baseSize}` : undefined;
 }
 
-function createNativePointHitProxy(latlngs: L.LatLng[], radius: number, iconPlan?: { iconSize?: [number, number]; iconAnchor?: [number, number]; hitIconSize?:[number,number];hitIconAnchor?:[number,number] }, tolerance = 0): L.Layer {
+function createNativePointHitProxy(latlngs: L.LatLng[], radius: number, iconPlan?: { iconSize?: [number, number]; iconAnchor?: [number, number]; hitIconSize?:[number,number];hitIconAnchor?:[number,number] }, tolerance = 0, sharedPane?: string): L.Layer {
   if (iconPlan) {
     const bounds = iconBoundsAtAnchor({ x: 0, y: 0 }, iconPlan.hitIconSize??iconPlan.iconSize ?? [24, 24], iconPlan.hitIconAnchor??iconPlan.iconAnchor ?? [12, 12], tolerance);
-    const makeIcon = (latlng: L.LatLng) => L.marker(latlng, { pane: 'ria-point', interactive: true, icon: L.divIcon({ className: 'ria-config-hit-proxy', iconSize: [bounds.w, bounds.h], iconAnchor: [-bounds.x, -bounds.y], html: '<span style="display:block;width:100%;height:100%;background:transparent"></span>' }) });
+    const makeIcon = (latlng: L.LatLng) => L.marker(latlng, { pane: sharedPane ?? 'ria-point', interactive: true, icon: L.divIcon({ className: 'ria-config-hit-proxy', iconSize: [bounds.w, bounds.h], iconAnchor: [-bounds.x, -bounds.y], html: '<span style="display:block;width:100%;height:100%;background:transparent"></span>' }) });
     return latlngs.length === 1 ? makeIcon(latlngs[0]) : L.featureGroup(latlngs.map(makeIcon));
   }
   const make = (latlng: L.LatLng) => L.circleMarker(latlng, {
-    pane: 'ria-point-top',
+    pane: sharedPane ?? 'ria-point-top',
     radius: Math.max(5, radius),
     color: '#000000',
     weight: 1,
@@ -2609,21 +2636,13 @@ export default function RuleDrivenLayer(props: Props) {
       p.style.zIndex = String(z);
     };
 
-    // 线/面默认层（接近 Leaflet overlayPane 的 400）
-    ensurePane("ria-overlay", 410);
-
-    // 高亮线/面（在 overlay 之上、点之下）
-    ensurePane("ria-overlay-top", 640);
-
-    // 点层：永远在面/线之上
-    ensurePane("ria-point", 650);
-
-    // 更“顶”的点层（你可以在规则里指定把某些点强制压到最上）
-    ensurePane("ria-point-top", 660);
-
-    // label 层：比点再高一点
-    ensurePane("ria-label", 670);
-  }, [mapReady, map]);
+    const layers = externalLayersFor(configRuntime);
+    ensurePane("ria-overlay", layers.path);
+    ensurePane("ria-overlay-top", layers.highlightPath);
+    ensurePane("ria-point", layers.point);
+    ensurePane("ria-point-top", layers.topPoint);
+    ensurePane("ria-label", layers.featureLabel);
+  }, [mapReady, map, configRuntime]);
 
   // (4) 选择“当前激活建筑” + 生成楼层 options
   useEffect(() => {
@@ -3061,7 +3080,7 @@ export default function RuleDrivenLayer(props: Props) {
             nativeSymbolDensityAllowed.add(candidate.uid);
             continue;
           }
-          if (plan.geometry.render !== 'point' && candidate.type !== 'Points' || plan.geometry.render === 'none' || selectedFeature?.uid === candidate.uid && density?.preserveSelected !== false || plan.collision.role === 'required' && density?.preserveRequired !== false) { nativeSymbolDensityAllowed.add(candidate.uid); continue; }
+          if (plan.geometry.render !== 'point' && !plan.geometry.midpoint && candidate.type !== 'Points' || plan.geometry.render === 'none' || selectedFeature?.uid === candidate.uid && density?.preserveSelected !== false || plan.collision.role === 'required' && density?.preserveRequired !== false) { nativeSymbolDensityAllowed.add(candidate.uid); continue; }
           const centers = candidate.type === 'Points'
             ? (candidate.multipartGeometry?.type === 'Point' ? candidate.multipartGeometry.parts : candidate.p3 ? [candidate.p3] : []).map(point => projection.locationToLatLng(point.x,point.y,point.z))
             : pointRepresentationLatLngs(candidate, projection, plan.anchor.multipartMode ?? 'featureBbox', plan.anchor);
@@ -3347,7 +3366,7 @@ export default function RuleDrivenLayer(props: Props) {
         // ✅ 新增：把点符号当作“硬占用区”，用于 label 避让
         const symbolAnchors = r.type === 'Points'
           ? (r.multipartGeometry?.type === 'Point' ? r.multipartGeometry.parts : r.p3 ? [r.p3] : []).map((point) => projection.locationToLatLng(point.x, point.y, point.z))
-          : displayPlan.geometry?.render === 'point' ? pointRepresentationLatLngs(r, projection, displayPlan.anchor?.multipartMode ?? 'featureBbox', displayPlan.anchor) : [];
+          : (displayPlan.geometry?.render === 'point' || displayPlan.geometry?.midpoint) ? pointRepresentationLatLngs(r, projection, displayPlan.anchor?.multipartMode ?? 'featureBbox', displayPlan.anchor) : [];
         for (const [symbolIndex, symbolAnchor] of (labelOnly || symbolDensityBlocked ? [] : symbolAnchors).entries()) {
           if (nativeSymbolPartBudget.has(r.uid) && !nativeSymbolPartBudget.get(r.uid)!.has(symbolIndex)) continue;
           const pt = map.latLngToContainerPoint(symbolAnchor);
@@ -3404,7 +3423,7 @@ export default function RuleDrivenLayer(props: Props) {
         );
 
         // labelOnly：主几何不显示且不可交互（交互只发生在 label 上）
-        const hiddenSymbol = labelOnly
+        let hiddenSymbol = labelOnly
           ? ({
               ...(rule.symbol as any),
               pathStyle: () => ({
@@ -3428,8 +3447,17 @@ export default function RuleDrivenLayer(props: Props) {
             } as any)
           : (rule.symbol as any);
 
-        if (configRuntime && typeof rule.symbol?.pane === 'string' && !map.getPane(rule.symbol.pane)) {
-          const pane = map.createPane(rule.symbol.pane); pane.style.zIndex = String(r.type === 'Points' || displayPlan.geometry.render === 'point' ? 650 : 400);
+        if (configRuntime && configRuntime.contractRevision>=19) {
+          const point = r.type==='Points'||displayPlan.geometry.render==='point';
+          const pane=c19GeometryPane(map,configRuntime,hiddenSymbol.pane,point,displayPlan.geometry.zIndex??0);
+          const previous=hiddenSymbol;
+          hiddenSymbol={...previous,pane,
+            pathStyle:()=>({...typeof previous.pathStyle==='function'?previous.pathStyle(r,context,store):previous.pathStyle,pane}),
+            point:()=>({...typeof previous.point==='function'?previous.point(r,context,store):previous.point,pane}),
+          };
+        }
+        if (configRuntime && typeof rule.symbol?.pane === 'string'  && !map.getPane(rule.symbol.pane)) {
+          const pane = map.createPane(rule.symbol.pane); const layers=externalLayersFor(configRuntime); pane.style.zIndex = String(r.type === 'Points' || displayPlan.geometry.render === 'point' ? layers.point : layers.path);
         }
         // 确保 layer 存在
         const existing = cacheRef.current.get(r.uid);
@@ -3482,6 +3510,17 @@ export default function RuleDrivenLayer(props: Props) {
         }
 
         const nativeBundle = cacheRef.current.get(r.uid);
+        if (nativeBundle && displayPlan.geometry.midpoint) {
+          const pointDisplay:FeatureDisplayPlan={...displayPlan,geometry:{...displayPlan.geometry,render:'point',midpoint:false}};
+          const pane=configRuntime&&configRuntime.contractRevision>=19?c19GeometryPane(map,configRuntime,rule.symbol?.pane,false,displayPlan.geometry.zIndex??0,true):hiddenSymbol.pane;
+          const pointSymbol={...hiddenSymbol,pane,label:undefined,point:()=>({
+            ...typeof hiddenSymbol.point==='function'?hiddenSymbol.point(r,context,store):hiddenSymbol.point,pane,
+          })};
+          const current=nativeBundle.midpoint;
+          if (current) updateLayerBundle(current,r,pointSymbol,context,store,projection,root,handleLabelClick,viewportWorldRectXZ,assistPickActive,deletePickActive,pointDisplay,featureInteractionSuppressed);
+          else nativeBundle.midpoint=createLayerBundle(r,pointSymbol,context,store,projection,handleLabelClick,viewportWorldRectXZ,assistPickActive,deletePickActive,pointDisplay,featureInteractionSuppressed)??undefined;
+          setNativeSymbolVisible(root,nativeBundle,true);
+        } else if (nativeBundle) removeMidpoint(root,nativeBundle);
         if (configRuntime && nativeBundle) {
           const bindHover = (layer: L.Layer) => {
             if (stateHoverBoundRef.current.has(layer)) return;
@@ -3490,7 +3529,7 @@ export default function RuleDrivenLayer(props: Props) {
             layer.on('mouseout', () => { if (stateHoverEnabledRef.current.get(r.uid)) setHoveredUid(value => value === r.uid ? null : value); });
             if (layer instanceof L.LayerGroup) layer.eachLayer(bindHover);
           };
-          [nativeBundle.main, nativeBundle.hitProxy, nativeBundle.label].filter(Boolean).forEach(layer => bindHover(layer!));
+          [nativeBundle.main, nativeBundle.hitProxy, nativeBundle.midpoint?.main, nativeBundle.midpoint?.hitProxy, nativeBundle.label].filter(Boolean).forEach(layer => bindHover(layer!));
           const state = isDeletionMarked ? 'deletionMarked' : isEditing ? 'editing' : isSearchFocus ? 'searchResult' : isSelectedFeature ? 'selected' : isHovered ? 'hover' : undefined;
           if (state) {
             const visual = resolveConfigInteractionVisual(configRuntime, r, context, state, store);
@@ -3499,7 +3538,7 @@ export default function RuleDrivenLayer(props: Props) {
           }
         }
         const nativeSymbolPlan = typeof rule.symbol?.point === 'function' ? rule.symbol.point(r, context, store) : rule.symbol?.point;
-        if (nativeBundle && configRuntime && (r.type === 'Points' || displayPlan.geometry.render === 'point')) {
+        if (nativeBundle && configRuntime && (r.type === 'Points' || displayPlan.geometry.render === 'point' || displayPlan.geometry.midpoint)) {
           nativeBundle.nativeSymbol = nativeSymbolPlan as LayerBundle['nativeSymbol'];
           placeNativeSymbol(map, nativeBundle, undefined);
         }
@@ -3507,7 +3546,7 @@ export default function RuleDrivenLayer(props: Props) {
         // LabelLayout：仅对声明了 labelPlan.declutter 的规则生效；其余 label 走旧逻辑
         if (nativeBundle?.nativeSymbol) {
           if (nativeSymbolPartBudget.has(r.uid)) nativeSymbolParts(nativeBundle).forEach((_,index) => setNativeSymbolVisible(root, nativeBundle, nativeSymbolPartBudget.get(r.uid)!.has(index), index));
-          else if (symbolDensityBlocked) { root.removeLayer(nativeBundle.main); if (nativeBundle.hitProxy) root.removeLayer(nativeBundle.hitProxy); }
+          else if (symbolDensityBlocked) setNativeSymbolVisible(root,nativeBundle,false);
         }
         const rawLabelPlan = rule.symbol?.label;
         const labelPlan =
@@ -3521,8 +3560,7 @@ export default function RuleDrivenLayer(props: Props) {
           clearBundleLabel(nativeBundle, root, true);
         }
         if (nativeBundle?.nativeSymbol?.visibility === 'withLabel' && (!labelPlan?.enabled || !resolveLabelTextForAudit(r, labelPlan, context, store))) {
-          root.removeLayer(nativeBundle.main);
-          if (nativeBundle.hitProxy) root.removeLayer(nativeBundle.hitProxy);
+          setNativeSymbolVisible(root,nativeBundle,false);
         }
         if (auditRow) {
           const labelText = resolveLabelTextForAudit(
@@ -3613,8 +3651,9 @@ export default function RuleDrivenLayer(props: Props) {
             configRuntime,
             map,
           );
+          const authoredFont=configRuntime&&configRuntime.contractRevision>=19?textLabelMeasurementFont(labelPlan.styleKey,labelFontFamily):undefined;
           const requests = rawRequests.map((rawReq) => applyAdvancedLineTextBudget(
-            mergeDisplayCollisionIntoLabelRequest(rawReq, displayPlan),
+            mergeDisplayCollisionIntoLabelRequest(authoredFont?{...rawReq,font:authoredFont}:rawReq, displayPlan),
             displayPlan,
             advancedLineTextBudget,
           ));
@@ -4294,6 +4333,7 @@ export default function RuleDrivenLayer(props: Props) {
       // 移除不应显示的
       for (const [uid, bundle] of cacheRef.current.entries()) {
         if (shouldShow.has(uid)) continue;
+        removeMidpoint(root,bundle);
         if (root.hasLayer(bundle.main)) root.removeLayer(bundle.main);
         if (bundle.hitProxy && root.hasLayer(bundle.hitProxy))
           root.removeLayer(bundle.hitProxy);
@@ -4567,7 +4607,7 @@ function createLayerBundle(
         hitProxy = createNativePointHitProxy(
           multipartPoints.map((point) => projection.locationToLatLng(point.x, point.y, point.z)),
           pointProxyRadius,
-          plan?.kind === 'icon' ? plan : undefined, pointTolerance,
+          plan?.kind === 'icon' ? plan : undefined, pointTolerance, mainPane.startsWith('ria-c19-geometry-')?mainPane:undefined,
         );
         hitProxySignature = nativeHitProxySignature('point', pointTolerance, pointProxyRadius, true);
         bindNativeHitProxy(hitProxy, r, {
@@ -4661,7 +4701,7 @@ function createLayerBundle(
     let hitProxy: L.Layer | undefined;
     let hitProxySignature: string | undefined;
     if (nativePointHitEnabled) {
-      hitProxy = createNativePointHitProxy([latlng], pointProxyRadius, plan?.kind === 'icon' ? plan : undefined, pointTolerance);
+      hitProxy = createNativePointHitProxy([latlng], pointProxyRadius, plan?.kind === 'icon' ? plan : undefined, pointTolerance, mainPane.startsWith('ria-c19-geometry-')?mainPane:undefined);
       hitProxySignature = nativeHitProxySignature('point', pointTolerance, pointProxyRadius, true);
       bindNativeHitProxy(hitProxy, r, {
         deletePickTarget,
@@ -4741,7 +4781,7 @@ function createLayerBundle(
     let hitProxy: L.Layer | undefined;
     let hitProxySignature: string | undefined;
     if (nativePointHitEnabled) {
-      hitProxy = createNativePointHitProxy(centers, pointProxyRadius, plan?.kind === 'icon' ? plan : undefined, pointTolerance);
+      hitProxy = createNativePointHitProxy(centers, pointProxyRadius, plan?.kind === 'icon' ? plan : undefined, pointTolerance, mainPane.startsWith('ria-c19-geometry-')?mainPane:undefined);
       hitProxySignature = nativeHitProxySignature('point-representation', pointTolerance, pointProxyRadius, true);
       bindNativeHitProxy(hitProxy, r, {
         deletePickTarget,
@@ -4817,7 +4857,7 @@ function createLayerBundle(
         r.type,
         lineLatLngs as L.LatLngExpression[],
         polygonLatLngs as L.LatLngExpression[],
-        'ria-overlay-top',
+        mainPane.startsWith('ria-c19-geometry-')?mainPane:'ria-overlay-top',
         Number((style as any)?.weight ?? 0),
         pathTolerance,
         pickModeActive?undefined:clickPlan?.geom,
@@ -5379,7 +5419,7 @@ function resolveStructureLabelDisplayPlanForContext(
 function buildLabelRequests(r: FeatureRecord, labelPlan: any, ctx: RenderContext, store: FeatureStore, projection: DynmapProjection, pointLatLng?: L.LatLng, realViewport?: WorldRectXZ | null, layoutViewport?: WorldRectXZ | null, displayPlan?: FeatureDisplayPlan | null, config?: ConfigPackageV3, map?: L.Map): LabelRequest[] {
   const mode = displayPlan?.anchor?.multipartMode ?? 'featureBbox';
   return featureLabelParts(r, mode).flatMap(({ record, partIndex }) => {
-    const anchor = displayPlan?.geometry?.render === 'point'
+    const anchor = displayPlan?.geometry?.render === 'point' || displayPlan?.geometry?.midpoint
       ? pointRepresentationLatLngs(record, projection, mode, displayPlan?.anchor)[0]
       : record.type === 'Points'
         ? (partIndex === undefined && record.multipartGeometry?.parts.length && record.multipartGeometry.parts.length > 1 ? pointRepresentationLatLngs(record, projection, 'featureBbox')[0] : record.p3 ? projection.locationToLatLng(record.p3.x, record.p3.y, record.p3.z) : pointLatLng)

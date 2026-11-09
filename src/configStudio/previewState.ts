@@ -66,7 +66,7 @@ export function buildPreview(config: ConfigPackageV3, node: CategoryNode, base: 
   if (result.status !== 'satisfiable') return { fixture: { features: [] }, error: `预览未应用：${result.status === 'unsatisfiable' ? '条件与映射行存在冲突。' : result.reason}` };
   for (const [field, value] of Object.entries(result.values)) previewWrite(selected, field, value);
   const winner = profile?.zoomPriority.rules.filter(rule => { const range = renderRuleRange(rule); return zoom >= range.min && zoom <= range.max && matchesRenderFields(rule.when?.fields, field => previewRead(selected, field)); }).slice(-1)[0];
-  const unapplied = mappings.filter(item => item.ruleId && item.ruleId !== winner?.id);
+  const unapplied = mappings.filter(item => item.ruleId && item.ruleId.replace(/:midpoint$/,'') !== winner?.id);
   const nameOverridden = !Object.is(selected.Name, name.value);
   const fallback = mappings.find(item => item.fallback && item.ruleId);
   let previewConfig = config;
@@ -75,7 +75,12 @@ export function buildPreview(config: ConfigPackageV3, node: CategoryNode, base: 
     // Resolve inheritance first: the preview copy is isolated, never saved.
     const own = previewConfig.nodes.find(item => item.nodeId === node.nodeId)!;
     const cloned = structuredClone(profile);
-    for (const rule of cloned.zoomPriority.rules) if (rule.id === fallback.ruleId && rule.style?.pointSymbol && rule.style.pointSymbol.kind !== 'shape') rule.style.pointSymbol = { kind: 'shape', shape: structuredClone(rule.style.pointSymbol.fallback) };
+    for (const preview of mappings.filter(item=>item.fallback&&item.ruleId)) {
+      const rule=cloned.zoomPriority.rules.find(row=>row.id===preview.ruleId!.replace(/:midpoint$/,''));
+      const style=preview.ruleId!.endsWith(':midpoint')?rule?.style?.midpoint:rule?.style;
+      if(style?.pointSymbol&&style.pointSymbol.kind!=='shape')
+        style.pointSymbol={kind:'shape',...(config.contractRevision>=19?{mode:'fixed' as const}:{}),shape:structuredClone(style.pointSymbol.fallback)};
+    }
     own.geometryProfiles[geometry] = cloned;
   }
   return { fixture, previewConfig, note: [name.description, nameOverridden ? 'Name 已由启用条件／映射行覆盖' : '', mappings.length ? `临时映射 ${mappings.length} 组；仍按真实末项命中规则显示` : '', unapplied.length ? `其中 ${unapplied.length} 组所在规则未命中或被覆盖；当前生效：${winner?.id ?? '无'}` : ''].filter(Boolean).join('；') };

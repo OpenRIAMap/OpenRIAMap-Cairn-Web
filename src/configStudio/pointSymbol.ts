@@ -38,7 +38,7 @@ export function pointSymbolReach(symbol?: PointSymbol): number {
   const base = (value: BasePointStyle) => value.size + value.weight + haloWidth(value.halo);
   const image = (width: number, height: number, placement: SymbolPlacement) => { const anchor = placementAnchor(placement,width,height); return Math.max(Math.abs(anchor[0]),Math.abs(width-anchor[0]),Math.abs(anchor[1]),Math.abs(height-anchor[1])); };
   let result: number;
-  if (symbol.kind === 'shape') result = base(symbol.shape);
+  if (symbol.kind === 'shape') result = Math.max(base(symbol.shape), ...symbol.mapping?.entries.map(row=>base(row.item))??[]);
   else if (symbol.kind === 'icon') { const items = symbol.icon.mode === 'single' ? [symbol.icon.item] : symbol.icon.entries.map(row => row.item); result = Math.max(base(symbol.fallback), ...items.map(item => image(item.sizePx,item.sizePx,item.placement)+haloWidth(item.halo))); }
   else { const items = symbol.image.mode === 'valueMap' ? symbol.image.entries.map(row => row.presentation) : [symbol.image.presentation]; result = Math.max(base(symbol.fallback), ...items.map(item => image(item.sizePx.width,item.sizePx.height,item.placement)+haloWidth(item.halo))); }
   reachCache.set(symbol,result); return result;
@@ -60,13 +60,20 @@ export function pointSymbolProblems(value: PointSymbol, fields: FieldDefinition[
     if (p.anchor.mode !== 'custom' && (p.anchor.x !== undefined || p.anchor.y !== undefined)) fail(at, '预设锚点不能同时保存另一套自定义坐标。');
     if ([p.anchor.x ?? 0,p.anchor.y ?? 0,p.offsetPx.x,p.offsetPx.y].every(finite) && !placementAnchor(p,2048,2048).every(finite)) fail(at,'组合锚点与偏移计算超出有限数值范围。');
   };
+  const behavior = (item: {behavior?: import('./types').SymbolBehavior}, at: string) => {
+    const offsets = item.behavior?.offsetPx;
+    if (config.contractRevision>=19 && (!offsets || !finite(offsets.x) || !finite(offsets.y)))
+      fail(at+'/behavior','需要完整的符号偏移、锚点和可见性设置。');
+  };
   const base = (p: BasePointStyle | undefined, at: string) => {
     if (!p) { fail(at, '缺少完整基础点样式。'); return; }
+    behavior(p,at);
     if (!range(p.size, 0, 512) || !range(p.weight, 0, 72)) fail(at, '基础点大小／描边宽度超出范围。');
     if (!['circle','square','triangle','regular4','regular5','regular6'].includes(p.pointShape)) fail(at, '回退仅允许基础点形状。');
     if (!range(p.strokeOpacity, 0, 1) || !range(p.fillOpacity, 0, 1)) fail(at, '基础点透明度必须介于 0–1。');
   };
   const item = (p: IconItem, at: string) => {
+    behavior(p,at);
     if (p.library !== 'pinhead' || !supportedIconId(p.id)) fail(at, '图标不在固定 Pinhead 清单中。');
     if (!config.resources?.iconLibraries.some(r => r.library === 'pinhead' && r.version === ICON_LIBRARY.version && r.manifestSha256 === ICON_LIBRARY.manifestSha256)) fail(at, '配置未声明受支持的 Pinhead 版本及资源摘要。');
     if (!range(p.sizePx, 1, 512) || !range(p.foregroundOpacity, 0, 1)) fail(at, '图标大小或透明度无效。');
@@ -87,7 +94,12 @@ export function pointSymbolProblems(value: PointSymbol, fields: FieldDefinition[
       inspect(entry, row);
     });
   };
-  if (value.kind === 'shape') base(value.shape, 'shape');
+  if (value.kind === 'shape') {
+    base(value.shape, 'shape');
+    if(config.contractRevision>=19?value.mode!==(value.mapping?'valueMap':'fixed'):Boolean(value.mode||value.mapping))
+      fail('mode','固定形状和字段映射必须使用契约允许的模式。');
+    if(value.mapping) rows(value.mapping.field,value.mapping.entries,'mapping',(row,at)=>base(row.item,at+'/item'));
+  }
   else if (value.kind === 'icon') {
     base(value.fallback, 'fallback');
     if (value.icon.mode === 'single') item(value.icon.item, 'icon/item');
@@ -95,6 +107,7 @@ export function pointSymbolProblems(value: PointSymbol, fields: FieldDefinition[
   } else if (value.kind === 'externalImage') {
     base(value.fallback, 'fallback'); const source = value.image;
     const presentation = (p: import('./types').ImagePresentation, at: string) => {
+      behavior(p,at);
       if (!range(p.sizePx.width, 1, 2048) || !range(p.sizePx.height, 1, 2048)) fail(at, '图片宽高须介于 1–2048px。');
       placement(p.placement, at + '/placement');
     };
@@ -121,7 +134,10 @@ export function pointSymbolBindings(value?: PointSymbol): Array<{ path: string; 
   if (!value) return [];
   const result: Array<{ path: string; value: RenderColorBinding }> = [];
   const base = (p: BasePointStyle, at: string) => { result.push({ path: at + '/stroke', value: p.stroke }, { path: at + '/fill', value: p.fill }); };
-  if (value.kind === 'shape') base(value.shape, 'shape');
+  if (value.kind === 'shape') {
+    base(value.shape, 'shape');
+    value.mapping?.entries.forEach((row,index)=>base(row.item,`mapping/entries/${index}/item`));
+  }
   else {
     base(value.fallback, 'fallback');
     if (value.kind === 'icon') {

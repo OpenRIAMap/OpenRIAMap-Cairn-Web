@@ -1,5 +1,6 @@
 import {addC14ProfileDefaults} from './contractMigration';
 import {initializeC15Profile} from './c15Migration';
+import { defaultSymbolBehavior, mapSymbolItems } from './c19Render';
 import { r12RenderRule } from './r12Migration';
 import type { ConfigPackageV3, GeometryKind, GeometryProfile, ZoomPriorityRule } from './types';
 import { orderFactoryWorkflowForms } from './workflowFormMigration';
@@ -32,6 +33,7 @@ export function editableGeometryProfile(geometry: GeometryKind, revision: number
   profile.zoomPriority.rules = profile.zoomPriority.rules.map(rule => normalizeEditedRenderRule(revision>=12?r12RenderRule(rule,geometry):rule, revision));
   if(revision>=14)addC14ProfileDefaults(profile,geometry);
   if(revision>=15)initializeC15Profile(profile,geometry);
+  if(revision>=19)profile.zoomPriority.rules=profile.zoomPriority.rules.map(rule=>prepareRenderRule(rule,geometry,revision));
   return profile;
 }
 export function prepareRenderRule(rule:ZoomPriorityRule,geometry:GeometryKind,revision:number):ZoomPriorityRule{
@@ -39,5 +41,18 @@ export function prepareRenderRule(rule:ZoomPriorityRule,geometry:GeometryKind,re
   profile.zoomPriority.rules=[revision>=12?r12RenderRule(rule,geometry):rule];
   if(revision>=14)addC14ProfileDefaults(profile,geometry);
   if(revision>=15)initializeC15Profile(profile,geometry);
-  return profile.zoomPriority.rules[0];
+  const prepared=profile.zoomPriority.rules[0];
+  if(revision>=19){
+    if(prepared.extensions&&geometry==='Point'&&prepared.geometryStack)prepared.geometryStack.zLevel+=1000;
+    delete prepared.extensions;
+    if(prepared.label){
+      prepared.label.mode??='fixed';
+      delete prepared.label.collision.hideWhenColliding;
+    }
+    for(const style of [prepared.style,prepared.style?.midpoint])if(style?.pointSymbol){
+      if(style.pointSymbol.kind==='shape')style.pointSymbol.mode??='fixed';
+      style.pointSymbol=mapSymbolItems(style.pointSymbol,item=>({...item,behavior:item.behavior??defaultSymbolBehavior()}));
+    }
+  }
+  return prepared;
 }

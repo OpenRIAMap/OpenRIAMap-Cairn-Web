@@ -2,7 +2,7 @@ import generated from './native-contract-schema.generated.json';
 import {symbolHalos} from './halo';
 import {imageSourceFormProblems} from './imageLibrary';
 import type {ConfigPackageV3,RenderStyle} from './types';
-type Schema = { ref?: string; type?: string; const?: unknown; anyOf?: Schema[]; tuple?: Schema[]; items?: Schema; properties?: Record<string, Schema>; required?: string[]; additionalProperties?: Schema };
+type Schema = { ref?: string; type?: string; prefix?: string; const?: unknown; anyOf?: Schema[]; tuple?: Schema[]; items?: Schema; properties?: Record<string, Schema>; required?: string[]; additionalProperties?: Schema };
 export type NativeStructureIssue = { path: string; message: string };
 /** Strict executable shape generated from the same TypeScript contract used
  * by editors. Legacy/source metadata and explicitly unknown values retain
@@ -38,7 +38,7 @@ export function validateNativeStructure(value: unknown): NativeStructureIssue[] 
       }
       return issues.slice(0,100);
     }
-    return typeof value === schema.type && (schema.type !== 'number' || Number.isFinite(value)) ? [] : [{ path, message: `配置值必须为有效的 ${schema.type}。` }];
+    return typeof value === schema.type && (schema.type !== 'number' || Number.isFinite(value)) && (schema.prefix === undefined || typeof value === 'string' && value.startsWith(schema.prefix)) ? [] : [{ path, message: `配置值必须为有效的 ${schema.type}。` }];
   };
   const issues=inspect(value, generated.root, 'config', 0);
   if(issues.length)return issues;

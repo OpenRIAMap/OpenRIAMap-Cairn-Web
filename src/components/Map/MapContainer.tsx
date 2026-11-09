@@ -2128,6 +2128,7 @@ case 'players':
     worldId={currentWorld}
     visible={showPlayers}
     players={players}
+    externalLayers={configRuntime?.application?.externalLayers}
     onPlayerClick={handlePlayerClick}
   />
 )}

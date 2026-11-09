@@ -6,7 +6,7 @@ import type { PreviewPin } from './conditionWitness';
 import { solveConditionWitness } from './conditionWitness';
 import { resolveGeometryProfile } from './runtime';
 import { ConfigRuntimePreview, makeConfigPreviewFixture, PREVIEW_SCENARIOS } from './ConfigRuntimePreview';
-import { buildPreview, chooseConditionZoom, toggleMapping, previewWrite, type MappingPreview, type PreviewNameMode } from './previewState';
+import { buildPreview, chooseConditionZoom, pinsConflict, toggleMapping, previewWrite, type MappingPreview, type PreviewNameMode } from './previewState';
 import { HelpLabel } from './SettingHelp';
 
 type Scope = { ruleId: string; geometry: GeometryKind; pins?: PreviewPin[]; fallback?: boolean };
@@ -28,7 +28,13 @@ export function RuntimePreviewProvider({ config, node, scenario, onShow, childre
   const [name, setName] = useState<PreviewNameMode>('zh'), [notice, setNotice] = useState('');
   const [zoom, setZoom] = useState(4), [zoomRequest, setZoomRequest] = useState({ value: 4, token: 0 });
   useEffect(() => { const value = PREVIEW_SCENARIOS.find(item => item.id === scenario)?.zoom ?? 4; setMappings([]); setCondition(undefined); setNotice(''); setZoom(value); setZoomRequest(v => ({ value, token: v.token + 1 })); }, [node?.nodeId, scenario, resetKey]);
-  const chooseMapping = useCallback((next: MappingPreview) => { setMappings(current => toggleMapping(current, next)); setNotice(''); onShow(); }, [onShow]);
+  const chooseMapping = useCallback((next: MappingPreview) => {
+    if(config.contractRevision>=19&&mappings.some(item=>item.group!==next.group&&pinsConflict(item.pins,next.pins))){
+      setNotice('该映射与其他已开启的预览行设置了冲突字段值。请先取消冲突行。');
+      return;
+    }
+    setMappings(current=>toggleMapping(current,next));setNotice('');onShow();
+  },[config.contractRevision,mappings,onShow]);
   const removeMapping = useCallback((group: string) => setMappings(current => current.some(item => item.group === group) ? current.filter(item => item.group !== group) : current), []);
   const syncMapping = useCallback((group: string, rows: Array<{ id: string; pins: PreviewPin[] }>) => setMappings(current => {
     const item = current.find(item => item.group === group); if (!item) return current;
