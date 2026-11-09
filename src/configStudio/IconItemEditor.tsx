@@ -1,4 +1,5 @@
 import { SymbolBehaviorEditor } from './C19AppearanceEditor';
+import { defaultSymbolBehavior } from './c19Render';
 import {HaloEditor} from './HaloEditor';
 import { unreachableLocalMappingRows } from './localMappingConstraints';
 import { resolveGeometryProfile } from './runtime';
@@ -30,7 +31,9 @@ function IconDraft({ config, path, fields, value, onChange, onConfirm, onCancel 
   const scope=useRulePreviewScope();
   const color = usePreviewColor(), asset = pinheadPath(value.id);
   const svg = asset.phase === 'success' ? composeIconSvg(value, asset.value!, color,config.contractRevision>=15) : undefined;
-  const symbol={ kind:'icon' as const,icon:{mode:'single' as const,item:value},fallback:basePointFromLegacy({},config.contractRevision)};
+  const fallback = basePointFromLegacy({}, config.contractRevision);
+  if (config.contractRevision >= 19) fallback.behavior = defaultSymbolBehavior();
+  const symbol = { kind: 'icon' as const, icon: { mode: 'single' as const, item: value }, fallback };
   const canvas=iconCanvas(value),previewAnchor=placementAnchor(value.placement,value.sizePx,value.sizePx),left=Math.min(0,-previewAnchor[0]-canvas.padding),top=Math.min(0,-previewAnchor[1]-canvas.padding);
   const previewFrame={w:Math.max(0,value.sizePx-previewAnchor[0]+canvas.padding)-left+32,h:Math.max(0,value.sizePx-previewAnchor[1]+canvas.padding)-top+32,x:16-left,y:16-top};
   const issues = pointSymbolProblems(symbol, fields, config);
