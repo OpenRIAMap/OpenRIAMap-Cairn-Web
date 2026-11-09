@@ -10,6 +10,7 @@ import { validCssColor } from './cssColor';
 import { customPillErrors, pillColorBindings } from './customPill';
 import {haloProblems,haloColorBindings} from './halo';
 import { pointSymbolProblems, pointSymbolBindings, ICON_LIBRARY } from './pointSymbol';
+import { BUILTIN_DENSITY_GROUP_NAMES, C19_EXTERNAL_LAYERS, labelModifierCapabilities, materializeC19Rule, resolveLogicModules } from './c19Render';
 import { unreachableLocalMappingRows } from './localMappingConstraints';
 let packageValidationRuns=0,workflowValidationRuns=0;
 /** Read-only QA counters: history pagination must never validate/compile trees. */
@@ -667,7 +668,7 @@ function validateRuleExtensions(rule: ZoomPriorityRule, geometry: GeometryKind, 
     ['collideWith', extensions.collision?.collideWith, ['symbol','requiredLabel','importantLabel','optionalLabel','softLabel','geometry']],
     ['blocks', extensions.collision?.blocks, ['optionalLabel','softLabel','poiLabel','structureLabel']],
   ];
-  for (const [name, values, allowed] of lists) if (values && (new Set(values).size !== values.length || values.some(value => !allowed.includes(value)))) issue(issues, 'error', 'extension-list-invalid', `${rulePath}/${name}`, '策略列表存在重复或未知值。');
+  for (const [name, values, allowed] of lists) if (values && (new Set(values).size !== values.length || values.some(value => !allowed.includes(value) && !(config.contractRevision >= 19 && (name === 'collideWith' || name === 'blocks'))))) issue(issues, 'error', 'extension-list-invalid', `${rulePath}/${name}`, '策略列表存在重复或未知值。');
   const density = extensions.density;
   if (density && density.mode !== 'inherit' && density.mode !== 'override') issue(issues, 'error', 'density-mode-invalid', rulePath, '密度预算必须选择继承或本规则覆盖。');
   if (density?.mode === 'override') {
@@ -755,7 +756,48 @@ function validateProfile(profile: GeometryProfile, geometry: GeometryKind, path:
       for (const message of validateRenderFields(rule.when?.fields, resolveSelectableFields(config, sourcePath), resolveSelectableFields(config, sourcePath).map(field => field.key), config.contractRevision)) issue(issues, 'error', 'render-field-condition-invalid', `${rulePath}/when/fields`, message);
     } else if (rule.when) issue(issues, 'error', 'render-match-revision-invalid', rulePath, '组合规则需要原生 c7；旧包请先无损迁移。');
     if (!rule.representation) issue(issues, 'error', 'render-representation-required', rulePath, '渲染规则必须选择显示种类。');
-    else if (!['hidden', 'geometry', 'point', 'labelOnly'].includes(rule.representation)) issue(issues, 'error', 'render-representation-invalid', rulePath, '未知显示种类。');
+    else if (!['hidden', 'geometry', 'point', 'labelOnly', 'geometryWithPoint'].includes(rule.representation)) issue(issues, 'error', 'render-representation-invalid', rulePath, '未知显示种类。');
+    if (config.contractRevision >= 19) {
+      const template = config.engine?.renderTemplates?.find(item => item.id === rule.logic?.templateId);
+      if (!template || template.geometry !== geometry) issue(issues,'error','render-template-reference',rulePath+'/logic','请选择与源几何一致的模板。');
+      if (rule.extensions || rule.geometryStack?.pane) issue(issues,'error','render-c19-legacy-authority',rulePath,'c19 规则只能通过模板和模块覆写配置扩展逻辑。');
+      const modules = resolveLogicModules(config, geometry, rule);
+      validateC19Modules(modules, geometry, config, rulePath + '/logic', issues);
+      const effective = materializeC19Rule(config, geometry, rule, min ?? 0);
+      if (rule.style?.symbolAnchor || rule.style?.symbolOffsetPx || rule.style?.symbolVisibility) issue(issues,'error','render-c19-symbol-behavior',rulePath+'/style','请在具体符号中配置行为。');
+      if (rule.representation === 'geometryWithPoint' && (geometry !== 'Polygon' || !rule.style?.midpoint?.pointSymbol))
+        issue(issues,'error','render-midpoint-geometry',rulePath+'/style/midpoint','组合显示需要面几何和完整的中点符号。');
+      if (rule.style?.midpoint && (geometry !== 'Polygon' || rule.representation !== 'geometryWithPoint'))
+        issue(issues,'error','render-midpoint-mode',rulePath+'/style/midpoint','中点外观只用于面及其中点。');
+      const midpoint = rule.style?.midpoint?.pointSymbol;
+      if (midpoint) {
+        for(const row of pointSymbolProblems(midpoint,resolveSelectableFields(config,sourcePath),config))issue(issues,'error','point-symbol-invalid',rulePath+'/style/midpoint/'+row.path,row.message);
+        for(const row of pointSymbolBindings(midpoint))validateRenderColorBinding(row.value,config,sourcePath,rulePath+'/style/midpoint/'+row.path,issues);
+      }
+      const label = rule.label;
+      if (label) {
+        if(label.collision.hideWhenColliding!==undefined||label.collision.collisionGroup!==undefined||label.collision.densityLimit!==undefined)
+          issue(issues,'error','render-c19-legacy-collision',rulePath+'/label/collision','碰撞失败策略、分组与全屏额度由模板及 M7 覆写配置。');
+        const selectedFields = resolveSelectableFields(config, sourcePath);
+        const mapping = label.mapping;
+        if(label.mode!==(mapping?'valueMap':'fixed'))
+          issue(issues,'error','render-label-mode-invalid',rulePath+'/label/mode','Label 模式必须与固定外观或字段映射一致。');
+        if (mapping) validateAppearanceMapping(mapping, selectedFields, rulePath+'/label/mapping', issues);
+        for (const [appearance,index] of [label, ...mapping?.entries.map(row=>row.item) ?? []].map((value,index)=>[value,index] as const)) {
+          const path = index ? rulePath+'/label/mapping/entries/'+(index-1) : rulePath+'/label';
+          const allowed = labelModifierCapabilities(geometry, appearance, effective.extensions);
+          for (const key of ['bold','italic','underline'] as const) if (appearance.style?.modifiers?.[key] && !allowed[key])
+            issue(issues,'error','render-label-modifier-unsupported',path+'/style/modifiers/'+key,'当前文字渲染路径不支持此修饰。');
+          if (geometry !== 'Point' && (appearance.withDot || appearance.dotAnchorMode))
+            issue(issues,'error','render-label-dot-geometry',path,'附加圆点仅用于源几何为 Point 的 Label。');
+          if (appearance.fallbackValueFormats?.NofFloor === 'floorLabel')
+            issue(issues,'error','render-label-floor-fallback',path,'NofFloor 回退使用原文。');
+          if (index) validateRuleLabel({ ...rule, label:{ ...appearance, collision:label.collision } },path,config,sourcePath,issues);
+        }
+      }
+      validateRuleExtensions(effective, geometry, rulePath, config, sourcePath, issues);
+    } else if (rule.logic || rule.style?.midpoint || rule.label?.mapping || rule.label?.mode || rule.representation === 'geometryWithPoint')
+      issue(issues,'error','render-c19-required',rulePath,'模板和新外观需要 c19。');
     if (rule.representation === 'labelOnly' && config.contractRevision < 6) issue(issues, 'error', 'render-contract-capability-invalid', rulePath, '仅标签显示需要最低原生契约 c6 或更新版本。');
     if (min !== undefined && max !== undefined && min > max) issue(issues, 'error', 'zoom-interval-invalid', rulePath, '显示区间必须符合下界 ≤ Zoom ≤ 上界。');
     intervals.push({ id: rule.id, min: min ?? -Infinity, max: max ?? Infinity });
@@ -801,7 +843,7 @@ function validateProfile(profile: GeometryProfile, geometry: GeometryKind, path:
     if (metric && !allowedMetrics(geometry).has(metric.kind)) issue(issues, 'error', 'dynamic-priority-metric-geometry-invalid', rulePath, `${metric.kind} 不适用于 ${geometry}。`);
     if (metric && (!Number.isFinite(metric.multiplier) || (metric.divisor !== undefined && (!Number.isFinite(metric.divisor) || metric.divisor === 0)) || (metric.min !== undefined && metric.max !== undefined && metric.min > metric.max))) issue(issues, 'error', 'dynamic-priority-invalid', rulePath, '动态优先级的倍率、除数或上下界无效。');
     if (metric?.kind === 'field' && !numericMetricField(config,sourcePath,metric.field)) issue(issues, 'error', 'dynamic-priority-field-required', rulePath, '字段型动态优先级需要存在的单值数值字段或数值枚举字段。');
-    validateRuleExtensions({ ...rule, extensions: resolveRenderExtensions(config, geometry, rule.extensions) }, geometry, rulePath, config, sourcePath, issues);
+    if (config.contractRevision < 19) validateRuleExtensions({ ...rule, extensions: resolveRenderExtensions(config, geometry, rule.extensions) }, geometry, rulePath, config, sourcePath, issues);
     const overrideIds = new Set<string>();
     for (const [overrideIndex, override] of (rule.conditionalOverrides ?? []).entries()) {
       const overridePath = `${rulePath}/conditionalOverrides/${override.id || overrideIndex + 1}`;
@@ -1264,6 +1306,76 @@ function validateInteractionShape(visual: import('./types').InteractionVisual, p
   if (visual.dashArray && !/^\d+(?:\.\d+)?(?:[ ,]+\d+(?:\.\d+)?)*$/.test(visual.dashArray)) issue(issues, 'error', 'interaction-dash-invalid', path, '虚线必须为非负数字序列。');
 }
 
+function validateAppearanceMapping(mapping: import('./types').AppearanceMapping<unknown>, fields: FieldDefinition[], path: string, issues: ConfigValidationIssue[]): void {
+  const field = fields.find(item => item.key === mapping.field);
+  if (!field || !mapping.entries.length) issue(issues,'error','render-mapping-field',path,'选择有效字段并填写至少一条映射。');
+  const values = new Set<string|number|boolean>();
+  for (const [index,row] of mapping.entries.entries()) {
+    if (row.value === '' || values.has(row.value) || field && scalarValueErrors(field,row.value).length)
+      issue(issues,'error','render-mapping-value',path+'/entries/'+index,'映射值必须非空、类型匹配且唯一。');
+    values.add(row.value);
+  }
+}
+
+function validateC19Modules(modules: import('./types').RenderLogicModules, geometry: GeometryKind, config: ConfigPackageV3, path: string, issues: ConfigValidationIssue[]): void {
+  const groups = config.engine?.densityGroups ?? [];
+  const c = modules.collision;
+  if (c.groupId !== undefined && !groups.some(group=>group.id===c.groupId) || c.density?.enabled && !c.groupId)
+    issue(issues,'error','density-group-reference',path+'/collision/groupId','格内预算需要有效的所属密度组。');
+  for (const target of [...c.collision?.blocks ?? [], ...c.collision?.collideWith ?? []]) {
+    if (!['symbol','geometry','role:ignore','role:soft','role:optional','role:important','role:required'].includes(target)
+      && !(target.startsWith('group:') && groups.some(group=>group.id===target.slice(6))))
+      issue(issues,'error','collision-target-reference',path+'/collision','未登记或无效的碰撞目标：'+target);
+  }
+  if (c.screenBudget && (!c.screenBudget.id.trim() || !Number.isSafeInteger(c.screenBudget.limit) || c.screenBudget.limit < 1))
+    issue(issues,'error','screen-budget-invalid',path+'/collision/screenBudget','全屏配额需要共享 ID 和正整数上限。');
+  if (geometry !== 'LineString' && modules.line.lineLabel || geometry !== 'Polygon' && modules.candidates.polygonCandidates)
+    issue(issues,'error','render-module-geometry',path,'模板含不适用于源几何的模块参数。');
+  if (modules.visibility.visibility?.coincidentPoint?.precision !== undefined)
+    issue(issues,'error','render-point-precision',path+'/visibility','重合点统一使用 X/Z 三位小数。');
+}
+
+function validateC19Engine(config: ConfigPackageV3, issues: ConfigValidationIssue[]): void {
+  const engine = config.engine!;
+  if (engine.renderDefaults || !engine.renderTemplates || !engine.densityGroups || !engine.missingRenderRule)
+    issue(issues,'error','render-registries-required','engine','c19 使用模板、密度组和无规则处理。');
+  const layers = config.application?.externalLayers;
+  if (config.application && (!layers || Object.keys(C19_EXTERNAL_LAYERS).some(key => !Number.isSafeInteger(layers[key as keyof typeof layers]))))
+    issue(issues,'error','render-external-layer-invalid','application/externalLayers','七类外部层级均须为有限整数。');
+  const ids = new Set<string>();
+  for (const group of engine.densityGroups ?? []) {
+    const path='engine/densityGroups/'+group.id;
+    if (!/^[A-Za-z0-9_-]+$/.test(group.id) || ids.has(group.id) || !group.name.zh.trim() && !group.name.en.trim())
+      issue(issues,'error','density-group-id',path,'密度组需要唯一 ID 和名称。');
+    ids.add(group.id);
+    const zooms = new Set<number>();
+    const grids = [group.defaultGrid];
+    for (const segment of group.zoomGrids) {
+      if (!Number.isInteger(segment.minZoom) || !Number.isInteger(segment.maxZoom) || segment.minZoom < 0 || segment.maxZoom > 8 || segment.minZoom > segment.maxZoom) {
+        issue(issues,'error','density-grid-range',path,'Zoom 分段须为 0–8 的闭区间。');
+        continue;
+      }
+      for(let zoom=segment.minZoom;zoom<=segment.maxZoom;zoom++){
+        if(zooms.has(zoom))issue(issues,'error','density-grid-overlap',path,'Zoom 分段不能重叠。');
+        zooms.add(zoom);
+      }
+      grids.push(segment.grid);
+    }
+    for(const grid of grids)if(!Number.isSafeInteger(grid.gridSizePx)||grid.gridSizePx<1||
+      [grid.maxLabelsPerGrid,grid.maxSymbolsPerGrid].some(limit=>limit!==undefined&&(!Number.isSafeInteger(limit)||limit<1)))
+      issue(issues,'error','density-grid-spec',path,'网格尺寸和已设置的格内上限必须为正整数。');
+  }
+  for (const id of Object.keys(BUILTIN_DENSITY_GROUP_NAMES)) if (!ids.has(id)) issue(issues,'error','density-group-protected','engine/densityGroups','缺少受保护的分组 '+id+'。');
+  ids.clear();
+  for (const template of engine.renderTemplates ?? []) {
+    const path = 'engine/renderTemplates/'+template.id;
+    if (!/^[A-Za-z0-9_-]+$/.test(template.id) || ids.has(template.id) || !template.name.zh.trim() && !template.name.en.trim())
+      issue(issues,'error','render-template-id',path,'模板需要唯一 ID 和名称。');
+    ids.add(template.id);
+    validateC19Modules(template.modules,template.geometry,config,path,issues);
+  }
+}
+
 function validateEngine(config: ConfigPackageV3, issues: ConfigValidationIssue[]): void {
   const engine = config.engine;
   if (!engine) {
@@ -1273,15 +1385,17 @@ function validateEngine(config: ConfigPackageV3, issues: ConfigValidationIssue[]
   if (engine.world.field !== 'World' || engine.world.assignment !== 'activeWorld' || engine.world.required !== true) issue(issues, 'error', 'world-system-field-invalid', 'engine/world', 'World 必须是由当前世界自动赋值的必填系统字段。');
   const contextView = engine.contextView;
   if (!contextView
-    || !Number.isFinite(contextView.minZoom)
-    || contextView.minZoom < 0
-    || contextView.minZoom > 8
+    || config.contractRevision < 19 && (!Number.isFinite(contextView.minZoom) || contextView.minZoom! < 0 || contextView.minZoom! > 8)
+    || config.contractRevision >= 19 && contextView.minZoom !== undefined
     || !Number.isFinite(contextView.activationRadiusPx)
     || contextView.activationRadiusPx < 0
     || !Number.isFinite(contextView.retainRadiusPx)
     || contextView.retainRadiusPx < contextView.activationRadiusPx) {
-    issue(issues, 'error', 'context-view-default-invalid', 'engine/contextView', '包含关系视角必须提供 0–8 的进入 Zoom，以及不小于进入半径的保持半径。');
+    issue(issues, 'error', 'context-view-default-invalid', 'engine/contextView', config.contractRevision >= 19 ? 'c19 包含关系视角只保存激活半径与保持半径，保持半径不得更小。' : '包含关系视角必须提供 0–8 的进入 Zoom，以及不小于进入半径的保持半径。');
   }
+  if (config.contractRevision >= 19) validateC19Engine(config, issues);
+  else if (engine.renderTemplates || engine.densityGroups || engine.missingRenderRule || config.application?.externalLayers)
+    issue(issues,'error','render-c19-required','engine','模板、密度组及外部层级需要 c19。');
   for (const [key, value] of Object.entries(engine.screenGateDefaults)) {
     if (value !== undefined && (!Number.isFinite(value) || Number(value) < 0)) issue(issues, 'error', 'screen-gate-default-invalid', `engine/screenGateDefaults/${key}`, '全局屏幕阈值必须是非负数。');
   }

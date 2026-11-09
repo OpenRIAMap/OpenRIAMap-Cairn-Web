@@ -49,10 +49,10 @@ function createPlayerAvatarHtml(playerName: string, size: number = 32, worldId: 
 const PLAYER_TOOLTIP_PANE = 'ria-player-tooltip';
 const PLAYER_TOOLTIP_PANE_Z = 900;
 
-function ensurePlayerTooltipPane(map: L.Map) {
+function ensurePlayerTooltipPane(map: L.Map, level=PLAYER_TOOLTIP_PANE_Z) {
   let pane = map.getPane(PLAYER_TOOLTIP_PANE);
   if (!pane) pane = map.createPane(PLAYER_TOOLTIP_PANE);
-  pane.style.zIndex = String(PLAYER_TOOLTIP_PANE_Z);
+  pane.style.zIndex = String(level);
   pane.style.pointerEvents = 'none';
   return pane;
 }
@@ -63,6 +63,7 @@ interface PlayerLayerProps {
   worldId: string;
   visible?: boolean;
   players?: Player[];
+  externalLayers?: import('../../configStudio/types').ExternalRenderLayers;
   onPlayerClick?: (player: Player) => void;
 }
 
@@ -72,6 +73,7 @@ export function PlayerLayer({
   worldId,
   visible = true,
   players,
+  externalLayers,
   onPlayerClick,
 }: PlayerLayerProps) {
   const [internalPlayers, setInternalPlayers] = useState<Player[]>([]);
@@ -138,8 +140,10 @@ export function PlayerLayer({
   // 玩家 hover tooltip 使用专用 Leaflet pane，确保高于规则 symbol / label。
   useEffect(() => {
     if (!map) return;
-    ensurePlayerTooltipPane(map);
-  }, [map]);
+    ensurePlayerTooltipPane(map,externalLayers?.playerTooltip);
+    const avatar=map.getPane('ria-player-avatar')??map.createPane('ria-player-avatar');
+    avatar.style.zIndex=String(externalLayers?.playerAvatar??600);
+  }, [map,externalLayers]);
 
   // 渲染玩家图层内容
   useEffect(() => {
@@ -168,7 +172,7 @@ export function PlayerLayer({
         iconAnchor: [(markerSize + 6) / 2, (markerSize + 6) / 2],
       });
 
-      const marker = L.marker(latLng, { icon: markerIcon });
+      const marker = L.marker(latLng, { icon: markerIcon, pane:'ria-player-avatar' });
 
       // 玩家 tooltip
       const healthBar = `${'❤'.repeat(Math.ceil(player.health / 2))}`;

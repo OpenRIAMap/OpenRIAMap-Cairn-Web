@@ -67,7 +67,7 @@ export function mergeDisplayCollisionIntoDeclutter(
     ...declutter,
     priority: priority ?? declutter.priority,
     allowHide,
-    groupKey: plan.collision?.group ?? declutter.groupKey,
+    groupKey: declutter.explicitCollisionTargets ? declutter.groupKey : plan.collision?.group ?? declutter.groupKey,
     collisionRole: plan.collision?.role,
     collisionGroup: plan.collision?.group,
     hidePolicy: plan.collision?.hidePolicy,
@@ -77,7 +77,9 @@ export function mergeDisplayCollisionIntoDeclutter(
     minSpacingPx: isFiniteNumber(plan.collision?.paddingPx) ? plan.collision.paddingPx : declutter.minSpacingPx,
 
     // RB_SLU_6: pass DisplayPlan density semantics into labelLayout.
-    densityEnabled: plan.density?.enabled ?? declutter.densityEnabled,
+    densityEnabled: declutter.explicitCollisionTargets
+      ? plan.density?.enabled === true && isFiniteNumber(plan.density.maxLabelsPerGrid)
+      : plan.density?.enabled ?? declutter.densityEnabled,
     densityGridSizePx: isFiniteNumber(plan.density?.gridSizePx) ? plan.density.gridSizePx : declutter.densityGridSizePx,
     densityMaxLabelsPerGrid: isFiniteNumber(plan.density?.maxLabelsPerGrid)
       ? plan.density.maxLabelsPerGrid

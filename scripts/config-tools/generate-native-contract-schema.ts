@@ -14,6 +14,10 @@ function schema(type: ts.Type): unknown {
   if (type.isStringLiteral() || type.isNumberLiteral()) return { const: type.value };
   if (type.flags & ts.TypeFlags.BooleanLiteral) return { const: checker.typeToString(type) === 'true' };
   if (type.flags & ts.TypeFlags.String) return { type: 'string' };
+  if (type.flags & ts.TypeFlags.TemplateLiteral) {
+    const template = type as ts.TemplateLiteralType;
+    return { type: 'string', prefix: template.texts[0] };
+  }
   if (type.flags & ts.TypeFlags.Number) return { type: 'number' };
   if (type.flags & ts.TypeFlags.Boolean) return { type: 'boolean' };
   if (type.isUnion()) return { anyOf: type.types.filter(value => !(value.flags & ts.TypeFlags.Undefined)).map(schema) };

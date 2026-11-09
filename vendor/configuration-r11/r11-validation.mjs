@@ -9777,15 +9777,15 @@ function validateMediaPolicy(config, incoming, existing) {
 }
 
 // src/configStudio/contract.ts
-var NATIVE_CONFIG_REVISION = 18;
+var NATIVE_CONFIG_REVISION = 19;
 var CONTRACT_CAPABILITIES = {
   latest: NATIVE_CONFIG_REVISION,
-  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
-  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
-  category: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
-  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
-  publication: [11, 12, 13, 14, 15, 16, 17, 18],
-  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17], [17, 18]] }
+  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+  category: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+  publication: [11, 12, 13, 14, 15, 16, 17, 18, 19],
+  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17], [17, 18], [18, 19]] }
 };
 var supportsContract = (capability, value) => typeof value === "number" && CONTRACT_CAPABILITIES[capability].includes(value);
 function isNativeConfigRevision(value) {
@@ -11139,7 +11139,10 @@ function haloProblems(value, required = false) {
 }
 function symbolHalos(symbol) {
   if (!symbol) return [];
-  if (symbol.kind === "shape") return [{ path: "shape/halo", value: symbol.shape.halo }];
+  if (symbol.kind === "shape") return [
+    { path: "shape/halo", value: symbol.shape.halo },
+    ...symbol.mapping?.entries.map((row2, index) => ({ path: `mapping/entries/${index}/item/halo`, value: row2.item.halo })) ?? []
+  ];
   const rows = [{ path: "fallback/halo", value: symbol.fallback.halo }];
   if (symbol.kind === "icon") {
     if (symbol.icon.mode === "single") rows.push({ path: "icon/item/halo", value: symbol.icon.item.halo });
@@ -11226,16 +11229,23 @@ function pointSymbolProblems(value, fields, config) {
     if (p.anchor.mode !== "custom" && (p.anchor.x !== void 0 || p.anchor.y !== void 0)) fail(at, "\u9884\u8BBE\u951A\u70B9\u4E0D\u80FD\u540C\u65F6\u4FDD\u5B58\u53E6\u4E00\u5957\u81EA\u5B9A\u4E49\u5750\u6807\u3002");
     if ([p.anchor.x ?? 0, p.anchor.y ?? 0, p.offsetPx.x, p.offsetPx.y].every(finite) && !placementAnchor(p, 2048, 2048).every(finite)) fail(at, "\u7EC4\u5408\u951A\u70B9\u4E0E\u504F\u79FB\u8BA1\u7B97\u8D85\u51FA\u6709\u9650\u6570\u503C\u8303\u56F4\u3002");
   };
+  const behavior = (item2, at) => {
+    const offsets = item2.behavior?.offsetPx;
+    if (config.contractRevision >= 19 && (!offsets || !finite(offsets.x) || !finite(offsets.y)))
+      fail(at + "/behavior", "\u9700\u8981\u5B8C\u6574\u7684\u7B26\u53F7\u504F\u79FB\u3001\u951A\u70B9\u548C\u53EF\u89C1\u6027\u8BBE\u7F6E\u3002");
+  };
   const base = (p, at) => {
     if (!p) {
       fail(at, "\u7F3A\u5C11\u5B8C\u6574\u57FA\u7840\u70B9\u6837\u5F0F\u3002");
       return;
     }
+    behavior(p, at);
     if (!range(p.size, 0, 512) || !range(p.weight, 0, 72)) fail(at, "\u57FA\u7840\u70B9\u5927\u5C0F\uFF0F\u63CF\u8FB9\u5BBD\u5EA6\u8D85\u51FA\u8303\u56F4\u3002");
     if (!["circle", "square", "triangle", "regular4", "regular5", "regular6"].includes(p.pointShape)) fail(at, "\u56DE\u9000\u4EC5\u5141\u8BB8\u57FA\u7840\u70B9\u5F62\u72B6\u3002");
     if (!range(p.strokeOpacity, 0, 1) || !range(p.fillOpacity, 0, 1)) fail(at, "\u57FA\u7840\u70B9\u900F\u660E\u5EA6\u5FC5\u987B\u4ECB\u4E8E 0\u20131\u3002");
   };
   const item = (p, at) => {
+    behavior(p, at);
     if (p.library !== "pinhead" || !supportedIconId(p.id)) fail(at, "\u56FE\u6807\u4E0D\u5728\u56FA\u5B9A Pinhead \u6E05\u5355\u4E2D\u3002");
     if (!config.resources?.iconLibraries.some((r) => r.library === "pinhead" && r.version === ICON_LIBRARY.version && r.manifestSha256 === ICON_LIBRARY.manifestSha256)) fail(at, "\u914D\u7F6E\u672A\u58F0\u660E\u53D7\u652F\u6301\u7684 Pinhead \u7248\u672C\u53CA\u8D44\u6E90\u6458\u8981\u3002");
     if (!range(p.sizePx, 1, 512) || !range(p.foregroundOpacity, 0, 1)) fail(at, "\u56FE\u6807\u5927\u5C0F\u6216\u900F\u660E\u5EA6\u65E0\u6548\u3002");
@@ -11257,8 +11267,12 @@ function pointSymbolProblems(value, fields, config) {
       inspect(entry, row2);
     });
   };
-  if (value.kind === "shape") base(value.shape, "shape");
-  else if (value.kind === "icon") {
+  if (value.kind === "shape") {
+    base(value.shape, "shape");
+    if (config.contractRevision >= 19 ? value.mode !== (value.mapping ? "valueMap" : "fixed") : Boolean(value.mode || value.mapping))
+      fail("mode", "\u56FA\u5B9A\u5F62\u72B6\u548C\u5B57\u6BB5\u6620\u5C04\u5FC5\u987B\u4F7F\u7528\u5951\u7EA6\u5141\u8BB8\u7684\u6A21\u5F0F\u3002");
+    if (value.mapping) rows(value.mapping.field, value.mapping.entries, "mapping", (row2, at) => base(row2.item, at + "/item"));
+  } else if (value.kind === "icon") {
     base(value.fallback, "fallback");
     if (value.icon.mode === "single") item(value.icon.item, "icon/item");
     else rows(value.icon.field, value.icon.entries, "icon", (row2, at) => item(row2.item, at + "/item"));
@@ -11266,6 +11280,7 @@ function pointSymbolProblems(value, fields, config) {
     base(value.fallback, "fallback");
     const source = value.image;
     const presentation = (p, at) => {
+      behavior(p, at);
       if (!range(p.sizePx.width, 1, 2048) || !range(p.sizePx.height, 1, 2048)) fail(at, "\u56FE\u7247\u5BBD\u9AD8\u987B\u4ECB\u4E8E 1\u20132048px\u3002");
       placement(p.placement, at + "/placement");
     };
@@ -11297,8 +11312,10 @@ function pointSymbolBindings(value) {
   const base = (p, at) => {
     result.push({ path: at + "/stroke", value: p.stroke }, { path: at + "/fill", value: p.fill });
   };
-  if (value.kind === "shape") base(value.shape, "shape");
-  else {
+  if (value.kind === "shape") {
+    base(value.shape, "shape");
+    value.mapping?.entries.forEach((row2, index) => base(row2.item, `mapping/entries/${index}/item`));
+  } else {
     base(value.fallback, "fallback");
     if (value.kind === "icon") {
       const item = (p, at) => {
@@ -11311,6 +11328,87 @@ function pointSymbolBindings(value) {
   }
   for (const row2 of symbolHalos(value)) if (row2.value) result.push({ path: row2.path + "/color", value: row2.value.color });
   return result;
+}
+
+// src/configStudio/c19Render.ts
+var C19_EXTERNAL_LAYERS = {
+  path: 650,
+  highlightPath: 655,
+  point: 650,
+  topPoint: 660,
+  featureLabel: 670,
+  playerAvatar: 600,
+  playerTooltip: 900
+};
+var HISTORICAL_EXTERNAL_LAYERS = { ...C19_EXTERNAL_LAYERS, path: 410, highlightPath: 640 };
+var LOGIC_MODULE_NAMES = {
+  admission: "\u5C4F\u5E55\u51C6\u5165\u3001\u7ED8\u5236\u5BB9\u5668\u4E0E\u547D\u4E2D",
+  text: "\u6587\u5B57\u7EA6\u675F\u4E0E\u901A\u7528\u5931\u8D25\u5904\u7406",
+  visibility: "\u8DE8\u8981\u7D20\u53EF\u89C1\u6027\u4E0E\u4E0A\u4E0B\u6587\u5173\u7CFB",
+  candidates: "\u951A\u70B9\u3001\u65B9\u5411\u4E0E\u51E0\u4F55\u5019\u9009",
+  stability: "\u7A33\u5B9A\u6027\u4E0E\u5E03\u5C40\u7F13\u5B58",
+  line: "\u8D34\u7EBF\u6587\u5B57\u7B97\u6CD5",
+  collision: "\u78B0\u649E\u4E0E\u5BC6\u5EA6\u54CD\u5E94",
+  priority: "\u663E\u793A\u6743\u91CD\u5408\u6210",
+  interaction: "\u4EA4\u4E92\u89C6\u89C9"
+};
+var LOGIC_MODULES = Object.keys(LOGIC_MODULE_NAMES);
+function emptyLogicModules() {
+  return { admission: {}, text: {}, visibility: {}, candidates: {}, stability: {}, line: {}, collision: {}, priority: {}, interaction: {} };
+}
+var BUILTIN_DENSITY_GROUP_NAMES = {
+  surfaceLabel: ["\u5730\u8868\u6807\u7B7E", "Surface"],
+  networkLabel: ["\u7F51\u7EDC\u6807\u7B7E", "Network"],
+  structureLabel: ["\u7ED3\u6784\u6807\u7B7E", "Structure"],
+  transportLabel: ["\u4EA4\u901A\u8BBE\u65BD\u6807\u7B7E", "Transport"],
+  poiLabel: ["\u5174\u8DA3\u70B9\u6807\u7B7E", "Points of interest"],
+  indoorLabel: ["\u5BA4\u5185\u6807\u7B7E", "Indoor"]
+};
+function densityGridAt(group, zoom) {
+  return group.zoomGrids.find((range) => zoom >= range.minZoom && zoom <= range.maxZoom)?.grid ?? group.defaultGrid;
+}
+function resolveLogicModules(config, geometry, rule) {
+  const template = config.engine?.renderTemplates?.find((item) => item.id === rule.logic?.templateId && item.geometry === geometry);
+  return { ...emptyLogicModules(), ...template?.modules, ...rule.logic?.overrides };
+}
+function logicExtensions(modules, grid) {
+  const { density, collision } = modules.collision;
+  return {
+    ...modules.admission,
+    ...modules.text,
+    ...modules.visibility,
+    ...modules.candidates,
+    ...modules.stability,
+    ...modules.interaction,
+    collision,
+    lineLabel: modules.line.lineLabel ? { profile: "standard", ...modules.line.lineLabel } : void 0,
+    ...density ? { density: { ...density, ...grid, mode: "override", enabled: density.enabled === true && Boolean(grid) } } : {}
+  };
+}
+function materializeC19Rule(config, geometry, rule, zoom) {
+  const modules = resolveLogicModules(config, geometry, rule);
+  const group = config.engine?.densityGroups?.find((item) => item.id === modules.collision.groupId);
+  const extensions = logicExtensions(modules, group && densityGridAt(group, zoom));
+  const priority = modules.priority.priority ? { base: rule.priority?.base, ...modules.priority.priority } : rule.priority;
+  const label = rule.label;
+  return {
+    ...rule,
+    extensions,
+    priority,
+    ...label ? { label: { ...label, collision: {
+      ...label.collision,
+      collisionGroup: group?.id,
+      hideWhenColliding: extensions.collision?.hidePolicy !== "forceShow",
+      densityLimit: modules.collision.screenBudget?.limit
+    } } } : {}
+  };
+}
+function labelModifierCapabilities(geometry, appearance, extensions) {
+  const family = appearance.style?.family ?? "gm-outline";
+  const text2 = ["gm-bw", "gm-outline", "gm-wtb", "structure-label"].includes(family);
+  const line = extensions?.lineLabel;
+  const svg = geometry === "LineString" && Boolean(line && (line.advancedTextEnabled || line.cjkGlyphPathMode && line.cjkGlyphPathMode !== "off" || line.textMode !== "rotatedLabel" || line.cjkVerticalRenderMode === "svgVertical"));
+  return { italic: text2 && !svg, underline: text2 && !svg, bold: text2 && (!svg || family === "gm-outline") };
 }
 
 // src/configStudio/renderBooleanFormula.ts
@@ -14189,7 +14287,11 @@ var native_contract_schema_generated_default = {
       type: "object",
       properties: {
         minZoom: {
-          type: "number"
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
         },
         activationRadiusPx: {
           type: "number"
@@ -14199,7 +14301,6 @@ var native_contract_schema_generated_default = {
         }
       },
       required: [
-        "minZoom",
         "activationRadiusPx",
         "retainRadiusPx"
       ]
@@ -15920,6 +16021,25 @@ var native_contract_schema_generated_default = {
                   },
                   {
                     const: "geometry"
+                  },
+                  {
+                    const: "role:ignore"
+                  },
+                  {
+                    const: "role:soft"
+                  },
+                  {
+                    const: "role:optional"
+                  },
+                  {
+                    const: "role:important"
+                  },
+                  {
+                    const: "role:required"
+                  },
+                  {
+                    type: "string",
+                    prefix: "group:"
                   }
                 ]
               }
@@ -15937,6 +16057,25 @@ var native_contract_schema_generated_default = {
                   },
                   {
                     const: "softLabel"
+                  },
+                  {
+                    const: "role:ignore"
+                  },
+                  {
+                    const: "role:soft"
+                  },
+                  {
+                    const: "role:optional"
+                  },
+                  {
+                    const: "role:important"
+                  },
+                  {
+                    const: "role:required"
+                  },
+                  {
+                    type: "string",
+                    prefix: "group:"
                   },
                   {
                     const: "poiLabel"
@@ -15991,6 +16130,16 @@ var native_contract_schema_generated_default = {
     t32: {
       type: "object",
       properties: {
+        preferCenterCandidate: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
         enabled: {
           anyOf: [
             {
@@ -16777,6 +16926,1632 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
+    t42: {
+      type: "object",
+      properties: {
+        Point: {
+          anyOf: [
+            {
+              const: "geometryOnly"
+            },
+            {
+              const: "hidden"
+            },
+            {
+              const: "debugDefault"
+            },
+            {
+              const: "legacyDefault"
+            }
+          ]
+        },
+        LineString: {
+          anyOf: [
+            {
+              const: "geometryOnly"
+            },
+            {
+              const: "hidden"
+            },
+            {
+              const: "debugDefault"
+            },
+            {
+              const: "legacyDefault"
+            }
+          ]
+        },
+        Polygon: {
+          anyOf: [
+            {
+              const: "geometryOnly"
+            },
+            {
+              const: "hidden"
+            },
+            {
+              const: "debugDefault"
+            },
+            {
+              const: "legacyDefault"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t45: {
+      type: "object",
+      properties: {
+        screenGate: {
+          anyOf: [
+            {
+              ref: "t23"
+            }
+          ]
+        },
+        pane: {
+          anyOf: [
+            {
+              const: "auto"
+            },
+            {
+              const: "overlay"
+            },
+            {
+              const: "overlay-top"
+            },
+            {
+              const: "point"
+            },
+            {
+              const: "point-top"
+            }
+          ]
+        },
+        hitTolerancePx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t47: {
+      type: "object",
+      properties: {
+        maxChars: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        multiline: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        maxLines: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        suffix: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        abbreviationEnabled: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t48: {
+      type: "object",
+      properties: {
+        whenNoLabelText: {
+          anyOf: [
+            {
+              const: "showID"
+            },
+            {
+              const: "placeholder"
+            },
+            {
+              const: "hideLabel"
+            },
+            {
+              const: "showClassKind"
+            }
+          ]
+        },
+        whenGeometryInvalid: {
+          anyOf: [
+            {
+              const: "skip"
+            },
+            {
+              const: "showErrorMarker"
+            },
+            {
+              const: "debugOnly"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t46: {
+      type: "object",
+      properties: {
+        labelText: {
+          anyOf: [
+            {
+              ref: "t47"
+            }
+          ]
+        },
+        fallback: {
+          anyOf: [
+            {
+              ref: "t48"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t49: {
+      type: "object",
+      properties: {
+        visibility: {
+          anyOf: [
+            {
+              ref: "t35"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t51: {
+      type: "object",
+      properties: {
+        strategy: {
+          anyOf: [
+            {
+              const: "inherit"
+            },
+            {
+              const: "featureCenter"
+            },
+            {
+              const: "interior"
+            },
+            {
+              const: "visibleInterior"
+            },
+            {
+              const: "lineCenter"
+            },
+            {
+              const: "lineCandidates"
+            }
+          ]
+        },
+        candidates: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                anyOf: [
+                  {
+                    const: "C"
+                  },
+                  {
+                    const: "N"
+                  },
+                  {
+                    const: "S"
+                  },
+                  {
+                    const: "E"
+                  },
+                  {
+                    const: "W"
+                  },
+                  {
+                    const: "NE"
+                  },
+                  {
+                    const: "NW"
+                  },
+                  {
+                    const: "SE"
+                  },
+                  {
+                    const: "SW"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        offsetPx: {
+          anyOf: [
+            {
+              ref: "t27"
+            }
+          ]
+        },
+        candidateOffsetsPx: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                ref: "t28"
+              }
+            }
+          ]
+        },
+        allowOutsideGeometry: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        requireInsideGeometry: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t52: {
+      type: "object",
+      properties: {
+        preferViewportCenter: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        weightMode: {
+          anyOf: [
+            {
+              const: "none"
+            },
+            {
+              const: "distanceToCenter"
+            }
+          ]
+        },
+        weightedSwitchThreshold: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        reuseBonus: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        viewportPreference: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        edgePenalty: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        mode: {
+          anyOf: [
+            {
+              const: "inherit"
+            },
+            {
+              const: "none"
+            },
+            {
+              const: "fixedInterior"
+            },
+            {
+              const: "autoInteriorGrid"
+            },
+            {
+              const: "largeFeatureGrid"
+            },
+            {
+              const: "viewportAwareCandidateSet"
+            },
+            {
+              const: "gridByWorldUnits"
+            }
+          ]
+        },
+        count: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        gridSize: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        gridMinSize: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        maxCandidates: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        scanMax: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        overflow: {
+          anyOf: [
+            {
+              const: "rankedPrune"
+            },
+            {
+              const: "seededPrune"
+            }
+          ]
+        },
+        preferPreviousCandidate: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        allowViewportFallback: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        minScreenAreaPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t50: {
+      type: "object",
+      properties: {
+        anchor: {
+          anyOf: [
+            {
+              ref: "t51"
+            }
+          ]
+        },
+        polygonCandidates: {
+          anyOf: [
+            {
+              ref: "t52"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t53: {
+      type: "object",
+      properties: {
+        stability: {
+          anyOf: [
+            {
+              ref: "t32"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t55: {
+      type: "object",
+      properties: {
+        mode: {
+          anyOf: [
+            {
+              const: "free"
+            },
+            {
+              const: "strictOnLine"
+            }
+          ]
+        },
+        preferPreviousCandidate: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        endpointPaddingRatio: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        endpointPaddingMinPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        maxTurnAngleDeg: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        minLengthPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textMode: {
+          anyOf: [
+            {
+              const: "auto"
+            },
+            {
+              const: "rotatedLabel"
+            },
+            {
+              const: "textPath"
+            }
+          ]
+        },
+        anchorSamples: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        candidateSpacing: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        candidateMinSpacing: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        candidateMax: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        shortThresholdMultiplier: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        longMode: {
+          anyOf: [
+            {
+              const: "evenSplit"
+            }
+          ]
+        },
+        candidateHysteresisPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textPathMinLengthPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textPathPaddingPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textPathMaxAngleDeltaDeg: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textPathMaxTotalBendDeg: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textPathPreferReadableDirection: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        textPathFallback: {
+          anyOf: [
+            {
+              const: "hide"
+            },
+            {
+              const: "rotatedLabel"
+            },
+            {
+              const: "svgStraightLabel"
+            }
+          ]
+        },
+        textPathCollisionPaddingPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textPathLetterSpacingPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textPathCurvedLetterSpacingPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textPathCurvedSpacingMinBendDeg: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        orientationPolicy: {
+          anyOf: [
+            {
+              const: "autoCjkUpright"
+            },
+            {
+              const: "alwaysTextPath"
+            },
+            {
+              const: "alwaysRotated"
+            },
+            {
+              const: "scriptAware"
+            }
+          ]
+        },
+        textPathLengthMode: {
+          anyOf: [
+            {
+              const: "fixed"
+            },
+            {
+              const: "actualText"
+            }
+          ]
+        },
+        textPathVerticalAngleThresholdDeg: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textPathVerticalLengthRatio: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        candidateOrdering: {
+          anyOf: [
+            {
+              const: "startToEnd"
+            },
+            {
+              const: "centerOut"
+            }
+          ]
+        },
+        candidateWeightMode: {
+          anyOf: [
+            {
+              const: "none"
+            },
+            {
+              const: "distanceToCenter"
+            }
+          ]
+        },
+        candidateSwitchThreshold: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        candidateReuseBonus: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        candidateViewportPreference: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        candidateEdgePenalty: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        centerWeightMode: {
+          anyOf: [
+            {
+              const: "none"
+            },
+            {
+              const: "distanceToCenter"
+            }
+          ]
+        },
+        centerSwitchThreshold: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        centerReuseBonus: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        cjkVerticalRenderMode: {
+          anyOf: [
+            {
+              const: "auto"
+            },
+            {
+              const: "legacyVertical"
+            },
+            {
+              const: "svgVertical"
+            }
+          ]
+        },
+        svgVerticalCjkMinLengthPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        svgVerticalCjkLetterSpacingPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        advancedTextEnabled: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        advancedTextBudgetGroup: {
+          anyOf: [
+            {
+              const: "network"
+            },
+            {
+              const: "none"
+            },
+            {
+              const: "surface"
+            }
+          ]
+        },
+        advancedTextMaxLabels: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        advancedTextMaxCandidatesPerPass: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        cjkGlyphRotationPolicy: {
+          anyOf: [
+            {
+              const: "uprightWhenSteep"
+            },
+            {
+              const: "followLine"
+            },
+            {
+              const: "alwaysUpright"
+            }
+          ]
+        },
+        cjkGlyphUprightAngleThresholdDeg: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        cjkGlyphPathMode: {
+          anyOf: [
+            {
+              const: "auto"
+            },
+            {
+              const: "off"
+            },
+            {
+              const: "force"
+            }
+          ]
+        },
+        cjkGlyphSpacingPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        cjkGlyphCollisionPaddingPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        cjkGlyphMinPathLengthPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        cjkGlyphMaxCount: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        cjkGlyphMaxAngleDeltaDeg: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        cjkGlyphMaxTotalBendDeg: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        cjkGlyphPreferReadableDirection: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        cjkGlyphAllowTextPathFallback: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        textPathHalfLengthMultiplier: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textPathMinHalfLengthWorld: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textPathMaxHalfLengthWorld: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textPathMaxHalfLengthRatio: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        textCollisionRectMode: {
+          anyOf: [
+            {
+              const: "pathBox"
+            },
+            {
+              const: "textBox"
+            },
+            {
+              const: "compactTextBox"
+            }
+          ]
+        },
+        cjkGlyphCompactMode: {
+          anyOf: [
+            {
+              const: "auto"
+            },
+            {
+              const: "off"
+            }
+          ]
+        },
+        cjkGlyphMinAdvanceScale: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        cjkGlyphFallbackMode: {
+          anyOf: [
+            {
+              const: "hide"
+            },
+            {
+              const: "rotatedLabel"
+            },
+            {
+              const: "simpleLineLabel"
+            },
+            {
+              const: "textPathIfAllowed"
+            }
+          ]
+        },
+        simpleFallbackEnabled: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        simpleFallbackRotate: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        repositionMode: {
+          anyOf: [
+            {
+              const: "off"
+            },
+            {
+              const: "chainageSearch"
+            }
+          ]
+        },
+        repositionAttemptsPerDirection: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        repositionStepMode: {
+          anyOf: [
+            {
+              const: "labelSpan"
+            },
+            {
+              const: "fixedWorld"
+            },
+            {
+              const: "fixedPx"
+            }
+          ]
+        },
+        repositionFailure: {
+          anyOf: [
+            {
+              const: "hide"
+            },
+            {
+              const: "simpleLineLabel"
+            }
+          ]
+        },
+        repositionStrictSvg: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        avoidLineGeometry: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        avoidPolygonGeometry: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        avoidPointSymbols: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        repositionCollisionScope: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                anyOf: [
+                  {
+                    const: "lineLabel"
+                  },
+                  {
+                    const: "surfaceLabel"
+                  },
+                  {
+                    const: "pointLabel"
+                  },
+                  {
+                    const: "pointSymbol"
+                  },
+                  {
+                    const: "requiredLabel"
+                  },
+                  {
+                    const: "selectedLabel"
+                  },
+                  {
+                    const: "searchResultLabel"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        viewportRectMode: {
+          anyOf: [
+            {
+              const: "auto"
+            },
+            {
+              const: "rawMetrics"
+            },
+            {
+              const: "anchorNormalized"
+            }
+          ]
+        },
+        viewportCandidateMode: {
+          anyOf: [
+            {
+              const: "off"
+            },
+            {
+              const: "stableFirstViewportFallback"
+            }
+          ]
+        },
+        viewportCandidateBufferPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        viewportCandidateMaxTargets: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        viewportCandidateMinIntervalPx: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t54: {
+      type: "object",
+      properties: {
+        lineLabel: {
+          anyOf: [
+            {
+              ref: "t55"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t57: {
+      type: "object",
+      properties: {
+        enabled: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        reduceOrder: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                anyOf: [
+                  {
+                    const: "geometryOnly"
+                  },
+                  {
+                    const: "hideSoftLabels"
+                  },
+                  {
+                    const: "abbreviateOptionalLabels"
+                  },
+                  {
+                    const: "hideOptionalLabels"
+                  },
+                  {
+                    const: "hideSymbols"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        importanceField: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        preserveSelected: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        preserveRequired: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t58: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string"
+        },
+        limit: {
+          type: "number"
+        }
+      },
+      required: [
+        "id",
+        "limit"
+      ]
+    },
+    t56: {
+      type: "object",
+      properties: {
+        collision: {
+          anyOf: [
+            {
+              ref: "t30"
+            }
+          ]
+        },
+        groupId: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        density: {
+          anyOf: [
+            {
+              ref: "t57"
+            }
+          ]
+        },
+        screenBudget: {
+          anyOf: [
+            {
+              ref: "t58"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t61: {
+      type: "object",
+      properties: {
+        kind: {
+          anyOf: [
+            {
+              const: "field"
+            },
+            {
+              const: "area"
+            },
+            {
+              const: "length"
+            },
+            {
+              const: "partCount"
+            }
+          ]
+        },
+        field: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        multiplier: {
+          type: "number"
+        },
+        divisor: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        rounding: {
+          anyOf: [
+            {
+              const: "none"
+            },
+            {
+              const: "floor"
+            },
+            {
+              const: "round"
+            },
+            {
+              const: "ceil"
+            }
+          ]
+        },
+        min: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        max: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        }
+      },
+      required: [
+        "kind",
+        "multiplier",
+        "rounding"
+      ]
+    },
+    t60: {
+      type: "object",
+      properties: {
+        mode: {
+          anyOf: [
+            {
+              const: "add"
+            },
+            {
+              const: "replace"
+            }
+          ]
+        },
+        metric: {
+          anyOf: [
+            {
+              ref: "t61"
+            }
+          ]
+        }
+      },
+      required: [
+        "mode"
+      ]
+    },
+    t59: {
+      type: "object",
+      properties: {
+        priority: {
+          anyOf: [
+            {
+              ref: "t60"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t62: {
+      type: "object",
+      properties: {
+        interaction: {
+          anyOf: [
+            {
+              ref: "t40"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t44: {
+      type: "object",
+      properties: {
+        admission: {
+          ref: "t45"
+        },
+        text: {
+          ref: "t46"
+        },
+        visibility: {
+          ref: "t49"
+        },
+        candidates: {
+          ref: "t50"
+        },
+        stability: {
+          ref: "t53"
+        },
+        line: {
+          ref: "t54"
+        },
+        collision: {
+          ref: "t56"
+        },
+        priority: {
+          ref: "t59"
+        },
+        interaction: {
+          ref: "t62"
+        }
+      },
+      required: [
+        "admission",
+        "text",
+        "visibility",
+        "candidates",
+        "stability",
+        "line",
+        "collision",
+        "priority",
+        "interaction"
+      ]
+    },
+    t43: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string"
+        },
+        geometry: {
+          anyOf: [
+            {
+              const: "Point"
+            },
+            {
+              const: "LineString"
+            },
+            {
+              const: "Polygon"
+            }
+          ]
+        },
+        name: {
+          ref: "t1"
+        },
+        description: {
+          ref: "t1"
+        },
+        modules: {
+          ref: "t44"
+        }
+      },
+      required: [
+        "id",
+        "geometry",
+        "name",
+        "description",
+        "modules"
+      ]
+    },
+    t64: {
+      type: "object",
+      properties: {
+        gridSizePx: {
+          type: "number"
+        },
+        maxLabelsPerGrid: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        maxSymbolsPerGrid: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        }
+      },
+      required: [
+        "gridSizePx"
+      ]
+    },
+    t65: {
+      type: "object",
+      properties: {
+        minZoom: {
+          type: "number"
+        },
+        maxZoom: {
+          type: "number"
+        },
+        grid: {
+          ref: "t64"
+        }
+      },
+      required: [
+        "minZoom",
+        "maxZoom",
+        "grid"
+      ]
+    },
+    t63: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string"
+        },
+        name: {
+          ref: "t1"
+        },
+        description: {
+          ref: "t1"
+        },
+        defaultGrid: {
+          ref: "t64"
+        },
+        zoomGrids: {
+          type: "array",
+          items: {
+            ref: "t65"
+          }
+        }
+      },
+      required: [
+        "id",
+        "name",
+        "description",
+        "defaultGrid",
+        "zoomGrids"
+      ]
+    },
     t2: {
       type: "object",
       properties: {
@@ -16801,6 +18576,33 @@ var native_contract_schema_generated_default = {
               ref: "t21"
             }
           ]
+        },
+        missingRenderRule: {
+          anyOf: [
+            {
+              ref: "t42"
+            }
+          ]
+        },
+        renderTemplates: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                ref: "t43"
+              }
+            }
+          ]
+        },
+        densityGroups: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                ref: "t63"
+              }
+            }
+          ]
         }
       },
       required: [
@@ -16811,7 +18613,7 @@ var native_contract_schema_generated_default = {
         "paneDefaults"
       ]
     },
-    t44: {
+    t68: {
       type: "object",
       properties: {
         value: {
@@ -16826,7 +18628,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t43: {
+    t67: {
       type: "object",
       properties: {
         id: {
@@ -16838,7 +18640,7 @@ var native_contract_schema_generated_default = {
         options: {
           type: "array",
           items: {
-            ref: "t44"
+            ref: "t68"
           }
         }
       },
@@ -16848,7 +18650,7 @@ var native_contract_schema_generated_default = {
         "options"
       ]
     },
-    t46: {
+    t70: {
       type: "object",
       properties: {
         key: {
@@ -16890,7 +18692,7 @@ var native_contract_schema_generated_default = {
         "type"
       ]
     },
-    t45: {
+    t69: {
       type: "object",
       properties: {
         id: {
@@ -16914,7 +18716,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t46"
+                ref: "t70"
               }
             }
           ]
@@ -16925,7 +18727,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t42: {
+    t66: {
       type: "object",
       properties: {
         optionSets: {
@@ -16933,7 +18735,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t43"
+                ref: "t67"
               }
             }
           ]
@@ -16941,37 +18743,37 @@ var native_contract_schema_generated_default = {
         cardLayouts: {
           type: "array",
           items: {
-            ref: "t45"
+            ref: "t69"
           }
         },
         cardComponents: {
           type: "array",
           items: {
-            ref: "t45"
+            ref: "t69"
           }
         },
         displayProfiles: {
           type: "array",
           items: {
-            ref: "t45"
+            ref: "t69"
           }
         },
         specialDisplayLogic: {
           type: "array",
           items: {
-            ref: "t45"
+            ref: "t69"
           }
         },
         workflowControls: {
           type: "array",
           items: {
-            ref: "t45"
+            ref: "t69"
           }
         },
         workflowBlocks: {
           type: "array",
           items: {
-            ref: "t45"
+            ref: "t69"
           }
         }
       },
@@ -16984,7 +18786,7 @@ var native_contract_schema_generated_default = {
         "workflowBlocks"
       ]
     },
-    t50: {
+    t74: {
       type: "object",
       properties: {
         valueType: {
@@ -17003,7 +18805,7 @@ var native_contract_schema_generated_default = {
         rows: {
           type: "array",
           items: {
-            ref: "t44"
+            ref: "t68"
           }
         }
       },
@@ -17012,7 +18814,7 @@ var native_contract_schema_generated_default = {
         "rows"
       ]
     },
-    t49: {
+    t73: {
       type: "object",
       properties: {
         kind: {
@@ -17050,7 +18852,7 @@ var native_contract_schema_generated_default = {
         valueTable: {
           anyOf: [
             {
-              ref: "t50"
+              ref: "t74"
             }
           ]
         },
@@ -17067,7 +18869,7 @@ var native_contract_schema_generated_default = {
         "type"
       ]
     },
-    t52: {
+    t76: {
       type: "object",
       properties: {
         id: {
@@ -17094,7 +18896,7 @@ var native_contract_schema_generated_default = {
         "z"
       ]
     },
-    t51: {
+    t75: {
       type: "object",
       properties: {
         world: {
@@ -17106,7 +18908,7 @@ var native_contract_schema_generated_default = {
         returnPoints: {
           type: "array",
           items: {
-            ref: "t52"
+            ref: "t76"
           }
         }
       },
@@ -17116,7 +18918,7 @@ var native_contract_schema_generated_default = {
         "returnPoints"
       ]
     },
-    t48: {
+    t72: {
       type: "object",
       properties: {
         value: {
@@ -17131,10 +18933,10 @@ var native_contract_schema_generated_default = {
               type: "number"
             },
             {
-              ref: "t49"
+              ref: "t73"
             },
             {
-              ref: "t51"
+              ref: "t75"
             }
           ]
         }
@@ -17144,7 +18946,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t47: {
+    t71: {
       type: "object",
       properties: {
         id: {
@@ -17185,7 +18987,7 @@ var native_contract_schema_generated_default = {
         rows: {
           type: "array",
           items: {
-            ref: "t48"
+            ref: "t72"
           }
         }
       },
@@ -17197,7 +18999,7 @@ var native_contract_schema_generated_default = {
         "rows"
       ]
     },
-    t55: {
+    t79: {
       type: "object",
       properties: {
         zh: {
@@ -17212,7 +19014,7 @@ var native_contract_schema_generated_default = {
         "en"
       ]
     },
-    t56: {
+    t80: {
       type: "object",
       properties: {
         x: {
@@ -17231,7 +19033,7 @@ var native_contract_schema_generated_default = {
         "z"
       ]
     },
-    t57: {
+    t81: {
       type: "object",
       properties: {
         id: {
@@ -17272,7 +19074,7 @@ var native_contract_schema_generated_default = {
         "tilescale"
       ]
     },
-    t58: {
+    t82: {
       type: "object",
       properties: {
         baseUrl: {
@@ -17329,7 +19131,7 @@ var native_contract_schema_generated_default = {
         "retryDelay"
       ]
     },
-    t54: {
+    t78: {
       type: "object",
       properties: {
         id: {
@@ -17342,7 +19144,7 @@ var native_contract_schema_generated_default = {
           type: "number"
         },
         label: {
-          ref: "t55"
+          ref: "t79"
         },
         enabled: {
           type: "boolean"
@@ -17351,7 +19153,7 @@ var native_contract_schema_generated_default = {
           type: "boolean"
         },
         center: {
-          ref: "t56"
+          ref: "t80"
         },
         mapLink: {
           type: "string"
@@ -17373,21 +19175,21 @@ var native_contract_schema_generated_default = {
         projection: {
           anyOf: [
             {
-              ref: "t57"
+              ref: "t81"
             }
           ]
         },
         tiles: {
           anyOf: [
             {
-              ref: "t58"
+              ref: "t82"
             }
           ]
         },
         projectionOverride: {
           anyOf: [
             {
-              ref: "t57"
+              ref: "t81"
             }
           ]
         }
@@ -17403,7 +19205,7 @@ var native_contract_schema_generated_default = {
         "mapLink"
       ]
     },
-    t60: {
+    t84: {
       type: "object",
       properties: {},
       required: [],
@@ -17414,7 +19216,7 @@ var native_contract_schema_generated_default = {
         }
       }
     },
-    t63: {
+    t87: {
       type: "object",
       properties: {
         class: {
@@ -17446,7 +19248,7 @@ var native_contract_schema_generated_default = {
         "class"
       ]
     },
-    t62: {
+    t86: {
       type: "object",
       properties: {
         scope: {
@@ -17461,7 +19263,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t63"
+                ref: "t87"
               }
             }
           ]
@@ -17509,7 +19311,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t65: {
+    t89: {
       type: "object",
       properties: {
         targetId: {
@@ -17534,7 +19336,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t64: {
+    t88: {
       type: "object",
       properties: {
         exclusiveWith: {
@@ -17562,7 +19364,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t65"
+                ref: "t89"
               }
             }
           ]
@@ -17600,7 +19402,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t61: {
+    t85: {
       type: "object",
       properties: {
         id: {
@@ -17660,17 +19462,17 @@ var native_contract_schema_generated_default = {
           ]
         },
         criteria: {
-          ref: "t62"
+          ref: "t86"
         },
         behavior: {
           anyOf: [
             {
-              ref: "t64"
+              ref: "t88"
             }
           ]
         },
         names: {
-          ref: "t55"
+          ref: "t79"
         },
         size: {
           anyOf: [
@@ -17699,7 +19501,7 @@ var native_contract_schema_generated_default = {
         "group"
       ]
     },
-    t59: {
+    t83: {
       type: "object",
       properties: {
         storageKey: {
@@ -17721,12 +19523,12 @@ var native_contract_schema_generated_default = {
           }
         },
         byWorld: {
-          ref: "t60"
+          ref: "t84"
         },
         items: {
           type: "array",
           items: {
-            ref: "t61"
+            ref: "t85"
           }
         }
       },
@@ -17739,14 +19541,14 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t67: {
+    t91: {
       type: "object",
       properties: {
         id: {
           type: "string"
         },
         label: {
-          ref: "t55"
+          ref: "t79"
         },
         enabled: {
           type: "boolean"
@@ -17789,7 +19591,7 @@ var native_contract_schema_generated_default = {
         "transport"
       ]
     },
-    t68: {
+    t92: {
       type: "object",
       properties: {
         sourceIds: {
@@ -17815,14 +19617,14 @@ var native_contract_schema_generated_default = {
         "branch"
       ]
     },
-    t70: {
+    t94: {
       type: "object",
       properties: {
         id: {
           type: "string"
         },
         label: {
-          ref: "t55"
+          ref: "t79"
         },
         baseUrl: {
           type: "string"
@@ -17838,7 +19640,7 @@ var native_contract_schema_generated_default = {
         "default"
       ]
     },
-    t69: {
+    t93: {
       type: "object",
       properties: {
         storageKey: {
@@ -17853,7 +19655,7 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t70"
+            ref: "t94"
           }
         }
       },
@@ -17863,7 +19665,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t66: {
+    t90: {
       type: "object",
       properties: {
         storageKey: {
@@ -17891,14 +19693,14 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t67"
+            ref: "t91"
           }
         },
         github: {
-          ref: "t68"
+          ref: "t92"
         },
         linkModes: {
-          ref: "t69"
+          ref: "t93"
         }
       },
       required: [
@@ -17911,7 +19713,7 @@ var native_contract_schema_generated_default = {
         "linkModes"
       ]
     },
-    t74: {
+    t98: {
       type: "object",
       properties: {
         name: {
@@ -17936,7 +19738,7 @@ var native_contract_schema_generated_default = {
         "name"
       ]
     },
-    t73: {
+    t97: {
       type: "object",
       properties: {
         baseUrlTemplate: {
@@ -18008,7 +19810,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         attribution: {
-          ref: "t74"
+          ref: "t98"
         },
         maxRetries: {
           anyOf: [
@@ -18031,20 +19833,20 @@ var native_contract_schema_generated_default = {
         "attribution"
       ]
     },
-    t72: {
+    t96: {
       type: "object",
       properties: {
         id: {
           type: "string"
         },
         label: {
-          ref: "t55"
+          ref: "t79"
         },
         enabled: {
           type: "boolean"
         },
         sources: {
-          ref: "t66"
+          ref: "t90"
         },
         dataPathTemplate: {
           type: "string"
@@ -18053,7 +19855,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         tiles: {
-          ref: "t73"
+          ref: "t97"
         }
       },
       required: [
@@ -18066,7 +19868,7 @@ var native_contract_schema_generated_default = {
         "tiles"
       ]
     },
-    t75: {
+    t99: {
       type: "object",
       properties: {},
       required: [],
@@ -18074,7 +19876,7 @@ var native_contract_schema_generated_default = {
         type: "string"
       }
     },
-    t71: {
+    t95: {
       type: "object",
       properties: {
         kind: {
@@ -18093,11 +19895,11 @@ var native_contract_schema_generated_default = {
         groups: {
           type: "array",
           items: {
-            ref: "t72"
+            ref: "t96"
           }
         },
         bindings: {
-          ref: "t75"
+          ref: "t99"
         }
       },
       required: [
@@ -18107,7 +19909,7 @@ var native_contract_schema_generated_default = {
         "bindings"
       ]
     },
-    t77: {
+    t101: {
       type: "object",
       properties: {
         id: {
@@ -18193,7 +19995,7 @@ var native_contract_schema_generated_default = {
         "exclusiveWith"
       ]
     },
-    t78: {
+    t102: {
       type: "object",
       properties: {
         endpoint: {
@@ -18227,17 +20029,17 @@ var native_contract_schema_generated_default = {
         "requestTimeoutMs"
       ]
     },
-    t76: {
+    t100: {
       type: "object",
       properties: {
         items: {
           type: "array",
           items: {
-            ref: "t77"
+            ref: "t101"
           }
         },
         players: {
-          ref: "t78"
+          ref: "t102"
         }
       },
       required: [
@@ -18245,7 +20047,7 @@ var native_contract_schema_generated_default = {
         "players"
       ]
     },
-    t80: {
+    t104: {
       type: "object",
       properties: {
         start: {
@@ -18264,7 +20066,7 @@ var native_contract_schema_generated_default = {
         "logout"
       ]
     },
-    t81: {
+    t105: {
       type: "object",
       properties: {
         oauthClientId: {
@@ -18291,7 +20093,7 @@ var native_contract_schema_generated_default = {
         "brokerSecret"
       ]
     },
-    t79: {
+    t103: {
       type: "object",
       properties: {
         enabled: {
@@ -18304,7 +20106,7 @@ var native_contract_schema_generated_default = {
           const: "openriamap-review-v1"
         },
         auth: {
-          ref: "t80"
+          ref: "t104"
         },
         control: {
           type: "string"
@@ -18316,7 +20118,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         serverReferences: {
-          ref: "t81"
+          ref: "t105"
         }
       },
       required: [
@@ -18330,7 +20132,7 @@ var native_contract_schema_generated_default = {
         "serverReferences"
       ]
     },
-    t83: {
+    t107: {
       type: "object",
       properties: {
         homepageLimit: {
@@ -18349,7 +20151,7 @@ var native_contract_schema_generated_default = {
         "debounceMs"
       ]
     },
-    t84: {
+    t108: {
       type: "object",
       properties: {
         transferWalkSpeed: {
@@ -18372,7 +20174,7 @@ var native_contract_schema_generated_default = {
         "normalPlatformTransferCost"
       ]
     },
-    t86: {
+    t110: {
       type: "object",
       properties: {
         lines: {
@@ -18435,14 +20237,14 @@ var native_contract_schema_generated_default = {
         "stations"
       ]
     },
-    t85: {
+    t109: {
       type: "object",
       properties: {
         schemaVersion: {
           const: "cairnmap.railway-roles.v1"
         },
         selectors: {
-          ref: "t86"
+          ref: "t110"
         }
       },
       required: [
@@ -18450,7 +20252,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t87: {
+    t111: {
       type: "object",
       properties: {
         logicalInitialZoom: {
@@ -18477,7 +20279,7 @@ var native_contract_schema_generated_default = {
         "dragging"
       ]
     },
-    t88: {
+    t112: {
       type: "object",
       properties: {
         position: {
@@ -18499,7 +20301,7 @@ var native_contract_schema_generated_default = {
         "compact"
       ]
     },
-    t89: {
+    t113: {
       type: "object",
       properties: {
         allowUpload: {
@@ -18514,7 +20316,7 @@ var native_contract_schema_generated_default = {
         "allowExternalLink"
       ]
     },
-    t82: {
+    t106: {
       type: "object",
       properties: {
         language: {
@@ -18528,32 +20330,32 @@ var native_contract_schema_generated_default = {
           ]
         },
         search: {
-          ref: "t83"
+          ref: "t107"
         },
         navigation: {
           anyOf: [
             {
-              ref: "t84"
+              ref: "t108"
             }
           ]
         },
         railwayRoles: {
           anyOf: [
             {
-              ref: "t85"
+              ref: "t109"
             }
           ]
         },
         map: {
-          ref: "t87"
+          ref: "t111"
         },
         toolbar: {
-          ref: "t88"
+          ref: "t112"
         },
         pictureControls: {
           anyOf: [
             {
-              ref: "t89"
+              ref: "t113"
             }
           ]
         }
@@ -18565,7 +20367,7 @@ var native_contract_schema_generated_default = {
         "toolbar"
       ]
     },
-    t91: {
+    t115: {
       type: "object",
       properties: {
         enabled: {
@@ -18575,10 +20377,10 @@ var native_contract_schema_generated_default = {
           ref: "t1"
         },
         parameters: {
-          ref: "t84"
+          ref: "t108"
         },
         selectors: {
-          ref: "t86"
+          ref: "t110"
         }
       },
       required: [
@@ -18588,7 +20390,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t93: {
+    t117: {
       type: "object",
       properties: {
         teleportPoints: {
@@ -18623,7 +20425,7 @@ var native_contract_schema_generated_default = {
         "warpPoints"
       ]
     },
-    t92: {
+    t116: {
       type: "object",
       properties: {
         enabled: {
@@ -18636,7 +20438,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         selectors: {
-          ref: "t93"
+          ref: "t117"
         }
       },
       required: [
@@ -18646,7 +20448,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t95: {
+    t119: {
       type: "object",
       properties: {
         roads: {
@@ -18667,7 +20469,7 @@ var native_contract_schema_generated_default = {
         "roads"
       ]
     },
-    t94: {
+    t118: {
       type: "object",
       properties: {
         enabled: {
@@ -18680,7 +20482,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         selectors: {
-          ref: "t95"
+          ref: "t119"
         }
       },
       required: [
@@ -18690,7 +20492,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t96: {
+    t120: {
       type: "object",
       properties: {
         elytraSpeed: {
@@ -18705,23 +20507,23 @@ var native_contract_schema_generated_default = {
         "walkSpeed"
       ]
     },
-    t90: {
+    t114: {
       type: "object",
       properties: {
         schemaVersion: {
           const: "cairnmap.navigation.v1"
         },
         rail: {
-          ref: "t91"
+          ref: "t115"
         },
         teleport: {
-          ref: "t92"
+          ref: "t116"
         },
         road: {
-          ref: "t94"
+          ref: "t118"
         },
         common: {
-          ref: "t96"
+          ref: "t120"
         }
       },
       required: [
@@ -18732,7 +20534,7 @@ var native_contract_schema_generated_default = {
         "common"
       ]
     },
-    t101: {
+    t125: {
       type: "object",
       properties: {
         text: {
@@ -18794,13 +20596,13 @@ var native_contract_schema_generated_default = {
         "text"
       ]
     },
-    t100: {
+    t124: {
       type: "object",
       properties: {
         runs: {
           type: "array",
           items: {
-            ref: "t101"
+            ref: "t125"
           }
         }
       },
@@ -18808,13 +20610,13 @@ var native_contract_schema_generated_default = {
         "runs"
       ]
     },
-    t99: {
+    t123: {
       type: "object",
       properties: {
         paragraphs: {
           type: "array",
           items: {
-            ref: "t100"
+            ref: "t124"
           }
         }
       },
@@ -18822,7 +20624,7 @@ var native_contract_schema_generated_default = {
         "paragraphs"
       ]
     },
-    t98: {
+    t122: {
       type: "object",
       properties: {
         id: {
@@ -18845,7 +20647,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         content: {
-          ref: "t99"
+          ref: "t123"
         }
       },
       required: [
@@ -18856,13 +20658,13 @@ var native_contract_schema_generated_default = {
         "content"
       ]
     },
-    t97: {
+    t121: {
       type: "object",
       properties: {
         items: {
           type: "array",
           items: {
-            ref: "t98"
+            ref: "t122"
           }
         }
       },
@@ -18870,7 +20672,42 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t53: {
+    t126: {
+      type: "object",
+      properties: {
+        path: {
+          type: "number"
+        },
+        highlightPath: {
+          type: "number"
+        },
+        point: {
+          type: "number"
+        },
+        topPoint: {
+          type: "number"
+        },
+        featureLabel: {
+          type: "number"
+        },
+        playerAvatar: {
+          type: "number"
+        },
+        playerTooltip: {
+          type: "number"
+        }
+      },
+      required: [
+        "path",
+        "highlightPath",
+        "point",
+        "topPoint",
+        "featureLabel",
+        "playerAvatar",
+        "playerTooltip"
+      ]
+    },
+    t77: {
       type: "object",
       properties: {
         schemaVersion: {
@@ -18879,56 +20716,63 @@ var native_contract_schema_generated_default = {
         worlds: {
           type: "array",
           items: {
-            ref: "t54"
+            ref: "t78"
           }
         },
         buttons: {
-          ref: "t59"
+          ref: "t83"
         },
         sources: {
           anyOf: [
             {
-              ref: "t66"
+              ref: "t90"
             },
             {
-              ref: "t71"
+              ref: "t95"
             }
           ]
         },
         modules: {
-          ref: "t76"
+          ref: "t100"
         },
         review: {
-          ref: "t79"
+          ref: "t103"
         },
         preferences: {
-          ref: "t82"
+          ref: "t106"
         },
         navigation: {
           anyOf: [
             {
-              ref: "t90"
+              ref: "t114"
             }
           ]
         },
         workflowAvailability: {
           anyOf: [
             {
-              ref: "t60"
+              ref: "t84"
             }
           ]
         },
         announcements: {
           anyOf: [
             {
-              ref: "t97"
+              ref: "t121"
             }
           ]
         },
         about: {
           anyOf: [
             {
-              ref: "t99"
+              ref: "t123"
+            }
+          ]
+        },
+        externalLayers: {
+          anyOf: [
+            {
+              ref: "t126"
             }
           ]
         }
@@ -18943,7 +20787,7 @@ var native_contract_schema_generated_default = {
         "preferences"
       ]
     },
-    t103: {
+    t128: {
       type: "object",
       properties: {
         library: {
@@ -18962,13 +20806,13 @@ var native_contract_schema_generated_default = {
         "manifestSha256"
       ]
     },
-    t102: {
+    t127: {
       type: "object",
       properties: {
         iconLibraries: {
           type: "array",
           items: {
-            ref: "t103"
+            ref: "t128"
           }
         }
       },
@@ -18976,7 +20820,7 @@ var native_contract_schema_generated_default = {
         "iconLibraries"
       ]
     },
-    t105: {
+    t130: {
       type: "object",
       properties: {
         class: {
@@ -19010,7 +20854,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t106: {
+    t131: {
       type: "object",
       properties: {
         fields: {
@@ -19039,7 +20883,7 @@ var native_contract_schema_generated_default = {
         "card"
       ]
     },
-    t107: {
+    t132: {
       type: "object",
       properties: {
         fields: {
@@ -19095,7 +20939,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t108: {
+    t133: {
       type: "object",
       properties: {
         fields: {
@@ -19157,7 +21001,7 @@ var native_contract_schema_generated_default = {
         "card"
       ]
     },
-    t110: {
+    t135: {
       type: "object",
       properties: {
         kind: {
@@ -19168,7 +21012,7 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t111: {
+    t136: {
       type: "object",
       properties: {
         kind: {
@@ -19193,7 +21037,7 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t112: {
+    t137: {
       type: "object",
       properties: {
         kind: {
@@ -19229,7 +21073,7 @@ var native_contract_schema_generated_default = {
         "scope"
       ]
     },
-    t113: {
+    t138: {
       type: "object",
       properties: {
         kind: {
@@ -19248,7 +21092,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t114: {
+    t139: {
       type: "object",
       properties: {
         kind: {
@@ -19270,7 +21114,7 @@ var native_contract_schema_generated_default = {
         "values"
       ]
     },
-    t115: {
+    t140: {
       type: "object",
       properties: {
         kind: {
@@ -19289,15 +21133,15 @@ var native_contract_schema_generated_default = {
         "present"
       ]
     },
-    t117: {
+    t142: {
       type: "object",
       properties: {},
       required: [],
       additionalProperties: {
-        ref: "t116"
+        ref: "t141"
       }
     },
-    t116: {
+    t141: {
       type: "object",
       properties: {
         type: {
@@ -19324,7 +21168,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t116"
+                ref: "t141"
               }
             }
           ]
@@ -19332,7 +21176,7 @@ var native_contract_schema_generated_default = {
         properties: {
           anyOf: [
             {
-              ref: "t117"
+              ref: "t142"
             }
           ]
         },
@@ -19349,7 +21193,7 @@ var native_contract_schema_generated_default = {
         items: {
           anyOf: [
             {
-              ref: "t116"
+              ref: "t141"
             }
           ]
         },
@@ -19407,7 +21251,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t118: {
+    t143: {
       type: "object",
       properties: {
         registryKey: {
@@ -19425,7 +21269,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t119: {
+    t144: {
       type: "object",
       properties: {
         workflow: {
@@ -19471,7 +21315,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t120: {
+    t145: {
       type: "object",
       properties: {
         classCode: {
@@ -19493,7 +21337,7 @@ var native_contract_schema_generated_default = {
         "matchField"
       ]
     },
-    t109: {
+    t134: {
       type: "object",
       properties: {
         fieldId: {
@@ -19596,22 +21440,22 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t110"
+                    ref: "t135"
                   },
                   {
-                    ref: "t111"
+                    ref: "t136"
                   },
                   {
-                    ref: "t112"
+                    ref: "t137"
                   },
                   {
-                    ref: "t113"
+                    ref: "t138"
                   },
                   {
-                    ref: "t114"
+                    ref: "t139"
                   },
                   {
-                    ref: "t115"
+                    ref: "t140"
                   }
                 ]
               }
@@ -19629,7 +21473,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t44"
+                ref: "t68"
               }
             }
           ]
@@ -19644,7 +21488,7 @@ var native_contract_schema_generated_default = {
         optionTable: {
           anyOf: [
             {
-              ref: "t50"
+              ref: "t74"
             }
           ]
         },
@@ -19699,14 +21543,14 @@ var native_contract_schema_generated_default = {
         valueSchema: {
           anyOf: [
             {
-              ref: "t116"
+              ref: "t141"
             }
           ]
         },
         optionSource: {
           anyOf: [
             {
-              ref: "t118"
+              ref: "t143"
             }
           ]
         },
@@ -19738,14 +21582,14 @@ var native_contract_schema_generated_default = {
         scenes: {
           anyOf: [
             {
-              ref: "t119"
+              ref: "t144"
             }
           ]
         },
         reference: {
           anyOf: [
             {
-              ref: "t120"
+              ref: "t145"
             }
           ]
         },
@@ -19780,7 +21624,7 @@ var native_contract_schema_generated_default = {
         "description"
       ]
     },
-    t122: {
+    t147: {
       type: "object",
       properties: {
         enabled: {
@@ -19850,7 +21694,7 @@ var native_contract_schema_generated_default = {
         "role"
       ]
     },
-    t126: {
+    t151: {
       type: "object",
       properties: {
         path: {
@@ -19869,11 +21713,11 @@ var native_contract_schema_generated_default = {
         "key"
       ]
     },
-    t125: {
+    t150: {
       type: "object",
       properties: {
         source: {
-          ref: "t126"
+          ref: "t151"
         },
         fingerprint: {
           type: "string"
@@ -19891,7 +21735,7 @@ var native_contract_schema_generated_default = {
         "fingerprint"
       ]
     },
-    t124: {
+    t149: {
       type: "object",
       properties: {
         mode: {
@@ -19953,7 +21797,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t44"
+                ref: "t68"
               }
             }
           ]
@@ -19961,7 +21805,7 @@ var native_contract_schema_generated_default = {
         prefillAudit: {
           anyOf: [
             {
-              ref: "t125"
+              ref: "t150"
             }
           ]
         }
@@ -19970,7 +21814,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t127: {
+    t152: {
       type: "object",
       properties: {
         mode: {
@@ -20035,7 +21879,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t123: {
+    t148: {
       type: "object",
       properties: {
         enabled: {
@@ -20065,10 +21909,10 @@ var native_contract_schema_generated_default = {
           ]
         },
         subtitle: {
-          ref: "t124"
+          ref: "t149"
         },
         extension: {
-          ref: "t127"
+          ref: "t152"
         }
       },
       required: [
@@ -20078,40 +21922,40 @@ var native_contract_schema_generated_default = {
         "extension"
       ]
     },
-    t121: {
+    t146: {
       type: "object",
       properties: {
         structure: {
           anyOf: [
             {
-              ref: "t122"
+              ref: "t147"
             }
           ]
         },
         search: {
           anyOf: [
             {
-              ref: "t123"
+              ref: "t148"
             }
           ]
         }
       },
       required: []
     },
-    t128: {
+    t153: {
       type: "object",
       properties: {
         structure: {
           anyOf: [
             {
-              ref: "t122"
+              ref: "t147"
             }
           ]
         }
       },
       required: []
     },
-    t131: {
+    t156: {
       type: "object",
       properties: {
         weight: {
@@ -20145,7 +21989,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t132: {
+    t157: {
       type: "object",
       properties: {
         zLevel: {
@@ -20170,80 +22014,7 @@ var native_contract_schema_generated_default = {
         "zLevel"
       ]
     },
-    t135: {
-      type: "object",
-      properties: {
-        kind: {
-          anyOf: [
-            {
-              const: "field"
-            },
-            {
-              const: "area"
-            },
-            {
-              const: "length"
-            },
-            {
-              const: "partCount"
-            }
-          ]
-        },
-        field: {
-          anyOf: [
-            {
-              type: "string"
-            }
-          ]
-        },
-        multiplier: {
-          type: "number"
-        },
-        divisor: {
-          anyOf: [
-            {
-              type: "number"
-            }
-          ]
-        },
-        rounding: {
-          anyOf: [
-            {
-              const: "none"
-            },
-            {
-              const: "floor"
-            },
-            {
-              const: "round"
-            },
-            {
-              const: "ceil"
-            }
-          ]
-        },
-        min: {
-          anyOf: [
-            {
-              type: "number"
-            }
-          ]
-        },
-        max: {
-          anyOf: [
-            {
-              type: "number"
-            }
-          ]
-        }
-      },
-      required: [
-        "kind",
-        "multiplier",
-        "rounding"
-      ]
-    },
-    t134: {
+    t159: {
       type: "object",
       properties: {
         role: {
@@ -20276,7 +22047,14 @@ var native_contract_schema_generated_default = {
           ]
         },
         hideWhenColliding: {
-          type: "boolean"
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
         },
         densityLimit: {
           anyOf: [
@@ -20288,7 +22066,7 @@ var native_contract_schema_generated_default = {
         metric: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t61"
             }
           ]
         },
@@ -20302,11 +22080,10 @@ var native_contract_schema_generated_default = {
       },
       required: [
         "role",
-        "basePriority",
-        "hideWhenColliding"
+        "basePriority"
       ]
     },
-    t133: {
+    t158: {
       type: "object",
       properties: {
         visible: {
@@ -20327,28 +22104,28 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t110"
+                ref: "t135"
               },
               {
-                ref: "t111"
+                ref: "t136"
               },
               {
-                ref: "t112"
+                ref: "t137"
               },
               {
-                ref: "t113"
+                ref: "t138"
               },
               {
-                ref: "t114"
+                ref: "t139"
               },
               {
-                ref: "t115"
+                ref: "t140"
               }
             ]
           }
         },
         collision: {
-          ref: "t134"
+          ref: "t159"
         }
       },
       required: [
@@ -20358,7 +22135,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t139: {
+    t163: {
       type: "object",
       properties: {
         min: {
@@ -20373,7 +22150,7 @@ var native_contract_schema_generated_default = {
         "max"
       ]
     },
-    t141: {
+    t165: {
       type: "object",
       properties: {
         kind: {
@@ -20462,7 +22239,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t143: {
+    t167: {
       type: "object",
       properties: {
         id: {
@@ -20484,16 +22261,16 @@ var native_contract_schema_generated_default = {
         condition: {
           anyOf: [
             {
-              ref: "t113"
+              ref: "t138"
             },
             {
-              ref: "t114"
+              ref: "t139"
             },
             {
-              ref: "t115"
+              ref: "t140"
             },
             {
-              ref: "t141"
+              ref: "t165"
             }
           ]
         }
@@ -20504,7 +22281,7 @@ var native_contract_schema_generated_default = {
         "condition"
       ]
     },
-    t144: {
+    t168: {
       type: "object",
       properties: {
         id: {
@@ -20519,7 +22296,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t142: {
+    t166: {
       type: "object",
       properties: {
         expression: {
@@ -20538,7 +22315,7 @@ var native_contract_schema_generated_default = {
         terms: {
           type: "array",
           items: {
-            ref: "t143"
+            ref: "t167"
           }
         },
         groups: {
@@ -20546,7 +22323,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t144"
+                ref: "t168"
               }
             }
           ]
@@ -20557,7 +22334,7 @@ var native_contract_schema_generated_default = {
         "terms"
       ]
     },
-    t140: {
+    t164: {
       type: "object",
       properties: {
         op: {
@@ -20578,19 +22355,19 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t113"
+                ref: "t138"
               },
               {
-                ref: "t114"
-              },
-              {
-                ref: "t115"
+                ref: "t139"
               },
               {
                 ref: "t140"
               },
               {
-                ref: "t141"
+                ref: "t164"
+              },
+              {
+                ref: "t165"
               }
             ]
           }
@@ -20598,7 +22375,7 @@ var native_contract_schema_generated_default = {
         formula: {
           anyOf: [
             {
-              ref: "t142"
+              ref: "t166"
             }
           ]
         }
@@ -20608,16 +22385,16 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t138: {
+    t162: {
       type: "object",
       properties: {
         zoom: {
-          ref: "t139"
+          ref: "t163"
         },
         fields: {
           anyOf: [
             {
-              ref: "t140"
+              ref: "t164"
             }
           ]
         }
@@ -20626,7 +22403,7 @@ var native_contract_schema_generated_default = {
         "zoom"
       ]
     },
-    t146: {
+    t170: {
       type: "object",
       properties: {
         enabled: {
@@ -20661,7 +22438,7 @@ var native_contract_schema_generated_default = {
         "color"
       ]
     },
-    t147: {
+    t171: {
       type: "object",
       properties: {
         enabled: {
@@ -20700,7 +22477,7 @@ var native_contract_schema_generated_default = {
         "showInner"
       ]
     },
-    t148: {
+    t172: {
       type: "object",
       properties: {
         x: {
@@ -20715,13 +22492,68 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t150: {
+    t176: {
       type: "object",
       properties: {
+        x: {
+          type: "number"
+        },
+        y: {
+          type: "number"
+        }
+      },
+      required: [
+        "x",
+        "y"
+      ]
+    },
+    t175: {
+      type: "object",
+      properties: {
+        offsetPx: {
+          ref: "t176"
+        },
+        anchor: {
+          anyOf: [
+            {
+              const: "geometry"
+            },
+            {
+              const: "label"
+            }
+          ]
+        },
+        visibility: {
+          anyOf: [
+            {
+              const: "independent"
+            },
+            {
+              const: "withLabel"
+            }
+          ]
+        }
+      },
+      required: [
+        "offsetPx",
+        "anchor",
+        "visibility"
+      ]
+    },
+    t174: {
+      type: "object",
+      properties: {
+        behavior: {
+          anyOf: [
+            {
+              ref: "t175"
+            }
+          ]
+        },
         halo: {
           anyOf: [
             {
-              ref: "t146"
+              ref: "t170"
             }
           ]
         },
@@ -20836,14 +22668,77 @@ var native_contract_schema_generated_default = {
         "fillOpacity"
       ]
     },
-    t149: {
+    t178: {
+      type: "object",
+      properties: {
+        value: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "number"
+            },
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        item: {
+          ref: "t174"
+        }
+      },
+      required: [
+        "value",
+        "item"
+      ]
+    },
+    t177: {
+      type: "object",
+      properties: {
+        field: {
+          type: "string"
+        },
+        entries: {
+          type: "array",
+          items: {
+            ref: "t178"
+          }
+        }
+      },
+      required: [
+        "field",
+        "entries"
+      ]
+    },
+    t173: {
       type: "object",
       properties: {
         kind: {
           const: "shape"
         },
+        mode: {
+          anyOf: [
+            {
+              const: "valueMap"
+            },
+            {
+              const: "fixed"
+            }
+          ]
+        },
         shape: {
-          ref: "t150"
+          ref: "t174"
+        },
+        mapping: {
+          anyOf: [
+            {
+              ref: "t177"
+            }
+          ]
         }
       },
       required: [
@@ -20851,7 +22746,7 @@ var native_contract_schema_generated_default = {
         "shape"
       ]
     },
-    t154: {
+    t182: {
       type: "object",
       properties: {
         shape: {
@@ -20938,7 +22833,7 @@ var native_contract_schema_generated_default = {
         "strokeOpacity"
       ]
     },
-    t156: {
+    t184: {
       type: "object",
       properties: {
         mode: {
@@ -20994,7 +22889,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t157: {
+    t185: {
       type: "object",
       properties: {
         x: {
@@ -21009,14 +22904,14 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t155: {
+    t183: {
       type: "object",
       properties: {
         anchor: {
-          ref: "t156"
+          ref: "t184"
         },
         offsetPx: {
-          ref: "t157"
+          ref: "t185"
         }
       },
       required: [
@@ -21024,13 +22919,20 @@ var native_contract_schema_generated_default = {
         "offsetPx"
       ]
     },
-    t153: {
+    t181: {
       type: "object",
       properties: {
+        behavior: {
+          anyOf: [
+            {
+              ref: "t175"
+            }
+          ]
+        },
         halo: {
           anyOf: [
             {
-              ref: "t146"
+              ref: "t170"
             }
           ]
         },
@@ -21068,12 +22970,12 @@ var native_contract_schema_generated_default = {
         plate: {
           anyOf: [
             {
-              ref: "t154"
+              ref: "t182"
             }
           ]
         },
         placement: {
-          ref: "t155"
+          ref: "t183"
         }
       },
       required: [
@@ -21085,14 +22987,14 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t152: {
+    t180: {
       type: "object",
       properties: {
         mode: {
           const: "single"
         },
         item: {
-          ref: "t153"
+          ref: "t181"
         }
       },
       required: [
@@ -21100,7 +23002,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t159: {
+    t187: {
       type: "object",
       properties: {
         value: {
@@ -21120,7 +23022,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         item: {
-          ref: "t153"
+          ref: "t181"
         }
       },
       required: [
@@ -21128,7 +23030,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t158: {
+    t186: {
       type: "object",
       properties: {
         mode: {
@@ -21140,7 +23042,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t159"
+            ref: "t187"
           }
         }
       },
@@ -21150,7 +23052,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t151: {
+    t179: {
       type: "object",
       properties: {
         kind: {
@@ -21159,15 +23061,15 @@ var native_contract_schema_generated_default = {
         icon: {
           anyOf: [
             {
-              ref: "t152"
+              ref: "t180"
             },
             {
-              ref: "t158"
+              ref: "t186"
             }
           ]
         },
         fallback: {
-          ref: "t150"
+          ref: "t174"
         }
       },
       required: [
@@ -21176,7 +23078,7 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t163: {
+    t191: {
       type: "object",
       properties: {
         width: {
@@ -21191,19 +23093,26 @@ var native_contract_schema_generated_default = {
         "height"
       ]
     },
-    t162: {
+    t190: {
       type: "object",
       properties: {
         sizePx: {
-          ref: "t163"
+          ref: "t191"
         },
         placement: {
-          ref: "t155"
+          ref: "t183"
         },
         halo: {
           anyOf: [
             {
-              ref: "t146"
+              ref: "t170"
+            }
+          ]
+        },
+        behavior: {
+          anyOf: [
+            {
+              ref: "t175"
             }
           ]
         }
@@ -21213,14 +23122,14 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t161: {
+    t189: {
       type: "object",
       properties: {
         mode: {
           const: "fixed"
         },
         presentation: {
-          ref: "t162"
+          ref: "t190"
         },
         url: {
           type: "string"
@@ -21242,7 +23151,7 @@ var native_contract_schema_generated_default = {
         "url"
       ]
     },
-    t164: {
+    t192: {
       type: "object",
       properties: {
         mode: {
@@ -21252,7 +23161,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t162"
+          ref: "t190"
         }
       },
       required: [
@@ -21261,7 +23170,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t165: {
+    t193: {
       type: "object",
       properties: {
         mode: {
@@ -21274,7 +23183,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t162"
+          ref: "t190"
         }
       },
       required: [
@@ -21284,7 +23193,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t167: {
+    t195: {
       type: "object",
       properties: {
         value: {
@@ -21304,7 +23213,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         presentation: {
-          ref: "t162"
+          ref: "t190"
         },
         url: {
           type: "string"
@@ -21326,7 +23235,7 @@ var native_contract_schema_generated_default = {
         "url"
       ]
     },
-    t166: {
+    t194: {
       type: "object",
       properties: {
         mode: {
@@ -21338,7 +23247,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t167"
+            ref: "t195"
           }
         }
       },
@@ -21348,7 +23257,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t160: {
+    t188: {
       type: "object",
       properties: {
         kind: {
@@ -21357,21 +23266,21 @@ var native_contract_schema_generated_default = {
         image: {
           anyOf: [
             {
-              ref: "t161"
+              ref: "t189"
             },
             {
-              ref: "t164"
+              ref: "t192"
             },
             {
-              ref: "t165"
+              ref: "t193"
             },
             {
-              ref: "t166"
+              ref: "t194"
             }
           ]
         },
         fallback: {
-          ref: "t150"
+          ref: "t174"
         }
       },
       required: [
@@ -21380,7 +23289,28 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t168: {
+    t196: {
+      type: "object",
+      properties: {
+        pointSymbol: {
+          anyOf: [
+            {
+              ref: "t173"
+            },
+            {
+              ref: "t179"
+            },
+            {
+              ref: "t188"
+            }
+          ]
+        }
+      },
+      required: [
+        "pointSymbol"
+      ]
+    },
+    t197: {
       type: "object",
       properties: {
         source: {
@@ -21426,23 +23356,23 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t145: {
+    t169: {
       type: "object",
       properties: {
         halo: {
           anyOf: [
             {
-              ref: "t146"
+              ref: "t170"
             },
             {
-              ref: "t147"
+              ref: "t171"
             }
           ]
         },
         symbolOffsetPx: {
           anyOf: [
             {
-              ref: "t148"
+              ref: "t172"
             }
           ]
         },
@@ -21491,20 +23421,27 @@ var native_contract_schema_generated_default = {
         pointSymbol: {
           anyOf: [
             {
-              ref: "t149"
+              ref: "t173"
             },
             {
-              ref: "t151"
+              ref: "t179"
             },
             {
-              ref: "t160"
+              ref: "t188"
+            }
+          ]
+        },
+        midpoint: {
+          anyOf: [
+            {
+              ref: "t196"
             }
           ]
         },
         icon: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t197"
             }
           ]
         },
@@ -21619,7 +23556,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t171: {
+    t200: {
       type: "object",
       properties: {
         italic: {
@@ -21655,7 +23592,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t172: {
+    t201: {
       type: "object",
       properties: {
         lineHeightRatio: {
@@ -21742,7 +23679,7 @@ var native_contract_schema_generated_default = {
         "strokeWidth"
       ]
     },
-    t170: {
+    t199: {
       type: "object",
       properties: {
         family: {
@@ -21779,7 +23716,7 @@ var native_contract_schema_generated_default = {
         modifiers: {
           anyOf: [
             {
-              ref: "t171"
+              ref: "t200"
             }
           ]
         },
@@ -21805,7 +23742,7 @@ var native_contract_schema_generated_default = {
         pill: {
           anyOf: [
             {
-              ref: "t172"
+              ref: "t201"
             }
           ]
         }
@@ -21815,7 +23752,7 @@ var native_contract_schema_generated_default = {
         "size"
       ]
     },
-    t173: {
+    t202: {
       type: "object",
       properties: {},
       required: [],
@@ -21830,7 +23767,7 @@ var native_contract_schema_generated_default = {
         ]
       }
     },
-    t169: {
+    t205: {
       type: "object",
       properties: {
         visible: {
@@ -21839,7 +23776,7 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t199"
             }
           ]
         },
@@ -21930,7 +23867,7 @@ var native_contract_schema_generated_default = {
         fallbackValueFormats: {
           anyOf: [
             {
-              ref: "t173"
+              ref: "t202"
             }
           ]
         },
@@ -22008,8 +23945,274 @@ var native_contract_schema_generated_default = {
             }
           ]
         },
+        candidatePlacement: {
+          anyOf: [
+            {
+              const: "relativeToPlacement"
+            },
+            {
+              const: "aroundAnchor"
+            }
+          ]
+        }
+      },
+      required: [
+        "visible"
+      ]
+    },
+    t204: {
+      type: "object",
+      properties: {
+        value: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "number"
+            },
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        item: {
+          ref: "t205"
+        }
+      },
+      required: [
+        "value",
+        "item"
+      ]
+    },
+    t203: {
+      type: "object",
+      properties: {
+        field: {
+          type: "string"
+        },
+        entries: {
+          type: "array",
+          items: {
+            ref: "t204"
+          }
+        }
+      },
+      required: [
+        "field",
+        "entries"
+      ]
+    },
+    t198: {
+      type: "object",
+      properties: {
+        visible: {
+          type: "boolean"
+        },
+        style: {
+          anyOf: [
+            {
+              ref: "t199"
+            }
+          ]
+        },
+        font: {
+          anyOf: [
+            {
+              const: "blue"
+            },
+            {
+              const: "whiteBlackOutline"
+            },
+            {
+              const: "capsule"
+            }
+          ]
+        },
+        size: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        italic: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        underline: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        source: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        sourceMode: {
+          anyOf: [
+            {
+              const: "single"
+            },
+            {
+              const: "combined"
+            }
+          ]
+        },
+        template: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        fallbackSources: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                type: "string"
+              }
+            }
+          ]
+        },
+        valueFormat: {
+          anyOf: [
+            {
+              const: "plain"
+            },
+            {
+              const: "floorLabel"
+            }
+          ]
+        },
+        fallbackValueFormats: {
+          anyOf: [
+            {
+              ref: "t202"
+            }
+          ]
+        },
+        placement: {
+          anyOf: [
+            {
+              const: "N"
+            },
+            {
+              const: "S"
+            },
+            {
+              const: "E"
+            },
+            {
+              const: "W"
+            },
+            {
+              const: "NE"
+            },
+            {
+              const: "NW"
+            },
+            {
+              const: "SE"
+            },
+            {
+              const: "SW"
+            },
+            {
+              const: "center"
+            },
+            {
+              const: "aboveLine"
+            },
+            {
+              const: "belowLine"
+            },
+            {
+              const: "near"
+            }
+          ]
+        },
+        offsetY: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        offsetX: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        withDot: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        dotAnchorMode: {
+          anyOf: [
+            {
+              const: "anchorRight"
+            },
+            {
+              const: "inline"
+            }
+          ]
+        },
+        candidatePlacement: {
+          anyOf: [
+            {
+              const: "relativeToPlacement"
+            },
+            {
+              const: "aroundAnchor"
+            }
+          ]
+        },
         collision: {
-          ref: "t134"
+          ref: "t159"
+        },
+        mode: {
+          anyOf: [
+            {
+              const: "valueMap"
+            },
+            {
+              const: "fixed"
+            }
+          ]
+        },
+        mapping: {
+          anyOf: [
+            {
+              ref: "t203"
+            }
+          ]
         }
       },
       required: [
@@ -22017,7 +24220,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t175: {
+    t207: {
       type: "object",
       properties: {
         point: {
@@ -22073,18 +24276,102 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t174: {
+    t206: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t175"
+          ref: "t207"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t177: {
+    t209: {
+      type: "object",
+      properties: {
+        admission: {
+          anyOf: [
+            {
+              ref: "t45"
+            }
+          ]
+        },
+        text: {
+          anyOf: [
+            {
+              ref: "t46"
+            }
+          ]
+        },
+        visibility: {
+          anyOf: [
+            {
+              ref: "t49"
+            }
+          ]
+        },
+        candidates: {
+          anyOf: [
+            {
+              ref: "t50"
+            }
+          ]
+        },
+        stability: {
+          anyOf: [
+            {
+              ref: "t53"
+            }
+          ]
+        },
+        line: {
+          anyOf: [
+            {
+              ref: "t54"
+            }
+          ]
+        },
+        collision: {
+          anyOf: [
+            {
+              ref: "t56"
+            }
+          ]
+        },
+        priority: {
+          anyOf: [
+            {
+              ref: "t59"
+            }
+          ]
+        },
+        interaction: {
+          anyOf: [
+            {
+              ref: "t62"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t208: {
+      type: "object",
+      properties: {
+        templateId: {
+          type: "string"
+        },
+        overrides: {
+          ref: "t209"
+        }
+      },
+      required: [
+        "templateId",
+        "overrides"
+      ]
+    },
+    t211: {
       type: "object",
       properties: {
         mode: {
@@ -22107,7 +24394,7 @@ var native_contract_schema_generated_default = {
         metric: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t61"
             }
           ]
         }
@@ -22116,7 +24403,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t176: {
+    t210: {
       type: "object",
       properties: {
         id: {
@@ -22127,22 +24414,22 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t110"
+                ref: "t135"
               },
               {
-                ref: "t111"
+                ref: "t136"
               },
               {
-                ref: "t112"
+                ref: "t137"
               },
               {
-                ref: "t113"
+                ref: "t138"
               },
               {
-                ref: "t114"
+                ref: "t139"
               },
               {
-                ref: "t115"
+                ref: "t140"
               }
             ]
           }
@@ -22160,34 +24447,37 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "labelOnly"
+            },
+            {
+              const: "geometryWithPoint"
             }
           ]
         },
         style: {
           anyOf: [
             {
-              ref: "t145"
+              ref: "t169"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t198"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t132"
+              ref: "t157"
             }
           ]
         },
         priority: {
           anyOf: [
             {
-              ref: "t177"
+              ref: "t211"
             }
           ]
         },
@@ -22204,13 +24494,13 @@ var native_contract_schema_generated_default = {
         "when"
       ]
     },
-    t179: {
+    t213: {
       type: "object",
       properties: {},
       required: [],
       additionalProperties: {}
     },
-    t180: {
+    t214: {
       type: "object",
       properties: {
         preserveFallback: {
@@ -22233,55 +24523,55 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t178: {
+    t212: {
       type: "object",
       properties: {
         predicates: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         },
         visibility: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         },
         geometry: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         },
         symbol: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         },
         collision: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         },
         selection: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         },
@@ -22298,14 +24588,14 @@ var native_contract_schema_generated_default = {
         legacyRuntime: {
           anyOf: [
             {
-              ref: "t180"
+              ref: "t214"
             }
           ]
         }
       },
       required: []
     },
-    t137: {
+    t161: {
       type: "object",
       properties: {
         id: {
@@ -22324,7 +24614,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t138"
+              ref: "t162"
             }
           ]
         },
@@ -22355,34 +24645,37 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "labelOnly"
+            },
+            {
+              const: "geometryWithPoint"
             }
           ]
         },
         style: {
           anyOf: [
             {
-              ref: "t145"
+              ref: "t169"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t198"
             }
           ]
         },
         interaction: {
           anyOf: [
             {
-              ref: "t174"
+              ref: "t206"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t132"
+              ref: "t157"
             }
           ]
         },
@@ -22393,12 +24686,19 @@ var native_contract_schema_generated_default = {
             }
           ]
         },
+        logic: {
+          anyOf: [
+            {
+              ref: "t208"
+            }
+          ]
+        },
         conditionalOverrides: {
           anyOf: [
             {
               type: "array",
               items: {
-                ref: "t176"
+                ref: "t210"
               }
             }
           ]
@@ -22406,7 +24706,7 @@ var native_contract_schema_generated_default = {
         advanced: {
           anyOf: [
             {
-              ref: "t178"
+              ref: "t212"
             }
           ]
         },
@@ -22446,7 +24746,7 @@ var native_contract_schema_generated_default = {
         priority: {
           anyOf: [
             {
-              ref: "t177"
+              ref: "t211"
             }
           ]
         }
@@ -22455,13 +24755,13 @@ var native_contract_schema_generated_default = {
         "id"
       ]
     },
-    t136: {
+    t160: {
       type: "object",
       properties: {
         rules: {
           type: "array",
           items: {
-            ref: "t137"
+            ref: "t161"
           }
         }
       },
@@ -22469,18 +24769,18 @@ var native_contract_schema_generated_default = {
         "rules"
       ]
     },
-    t181: {
+    t215: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t175"
+          ref: "t207"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t182: {
+    t216: {
       type: "object",
       properties: {
         ruleIds: {
@@ -22508,7 +24808,7 @@ var native_contract_schema_generated_default = {
         "specialLogicKeys"
       ]
     },
-    t130: {
+    t155: {
       type: "object",
       properties: {
         renderState: {
@@ -22547,38 +24847,38 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t131"
+              ref: "t156"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t132"
+              ref: "t157"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t133"
+              ref: "t158"
             }
           ]
         },
         zoomPriority: {
-          ref: "t136"
+          ref: "t160"
         },
         interaction: {
           anyOf: [
             {
-              ref: "t181"
+              ref: "t215"
             }
           ]
         },
         legacyDisplay: {
           anyOf: [
             {
-              ref: "t182"
+              ref: "t216"
             }
           ]
         }
@@ -22589,34 +24889,34 @@ var native_contract_schema_generated_default = {
         "zoomPriority"
       ]
     },
-    t129: {
+    t154: {
       type: "object",
       properties: {
         Point: {
           anyOf: [
             {
-              ref: "t130"
+              ref: "t155"
             }
           ]
         },
         LineString: {
           anyOf: [
             {
-              ref: "t130"
+              ref: "t155"
             }
           ]
         },
         Polygon: {
           anyOf: [
             {
-              ref: "t130"
+              ref: "t155"
             }
           ]
         }
       },
       required: []
     },
-    t183: {
+    t217: {
       type: "object",
       properties: {
         enabled: {
@@ -22651,7 +24951,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t186: {
+    t220: {
       type: "object",
       properties: {
         nodeId: {
@@ -22666,7 +24966,7 @@ var native_contract_schema_generated_default = {
         "fieldId"
       ]
     },
-    t187: {
+    t221: {
       type: "object",
       properties: {
         nodeId: {
@@ -22681,7 +24981,7 @@ var native_contract_schema_generated_default = {
         "itemId"
       ]
     },
-    t188: {
+    t222: {
       type: "object",
       properties: {
         colorSource: {
@@ -22776,7 +25076,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t189: {
+    t223: {
       type: "object",
       properties: {
         targetRole: {
@@ -22854,7 +25154,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t185: {
+    t219: {
       type: "object",
       properties: {
         id: {
@@ -22863,14 +25163,14 @@ var native_contract_schema_generated_default = {
         fieldBinding: {
           anyOf: [
             {
-              ref: "t186"
+              ref: "t220"
             }
           ]
         },
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t186"
+              ref: "t220"
             }
           ]
         },
@@ -22884,7 +25184,7 @@ var native_contract_schema_generated_default = {
         optionTable: {
           anyOf: [
             {
-              ref: "t50"
+              ref: "t74"
             }
           ]
         },
@@ -22904,14 +25204,14 @@ var native_contract_schema_generated_default = {
         inheritFrom: {
           anyOf: [
             {
-              ref: "t187"
+              ref: "t221"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t125"
+              ref: "t150"
             }
           ]
         },
@@ -23018,7 +25318,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t44"
+                ref: "t68"
               }
             }
           ]
@@ -23026,14 +25326,14 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t188"
+              ref: "t222"
             }
           ]
         },
         relation: {
           anyOf: [
             {
-              ref: "t189"
+              ref: "t223"
             }
           ]
         }
@@ -23045,7 +25345,7 @@ var native_contract_schema_generated_default = {
         "renderer"
       ]
     },
-    t190: {
+    t224: {
       type: "object",
       properties: {
         enabled: {
@@ -23115,7 +25415,7 @@ var native_contract_schema_generated_default = {
         "includeSystem"
       ]
     },
-    t184: {
+    t218: {
       type: "object",
       properties: {
         mode: {
@@ -23124,13 +25424,13 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t185"
+            ref: "t219"
           }
         },
         remaining: {
           anyOf: [
             {
-              ref: "t190"
+              ref: "t224"
             }
           ]
         }
@@ -23140,7 +25440,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t191: {
+    t225: {
       type: "object",
       properties: {
         mode: {
@@ -23152,7 +25452,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         }
@@ -23162,7 +25462,7 @@ var native_contract_schema_generated_default = {
         "layoutId"
       ]
     },
-    t192: {
+    t226: {
       type: "object",
       properties: {
         mode: {
@@ -23174,7 +25474,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         }
@@ -23184,7 +25484,7 @@ var native_contract_schema_generated_default = {
         "componentKey"
       ]
     },
-    t193: {
+    t227: {
       type: "object",
       properties: {
         classCode: {
@@ -23213,7 +25513,7 @@ var native_contract_schema_generated_default = {
         source: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         }
@@ -23223,7 +25523,7 @@ var native_contract_schema_generated_default = {
         "displayRuleIds"
       ]
     },
-    t104: {
+    t129: {
       type: "object",
       properties: {
         nodeId: {
@@ -23235,7 +25535,7 @@ var native_contract_schema_generated_default = {
         classificationLabels: {
           anyOf: [
             {
-              ref: "t105"
+              ref: "t130"
             }
           ]
         },
@@ -23248,48 +25548,48 @@ var native_contract_schema_generated_default = {
         inheritDown: {
           anyOf: [
             {
-              ref: "t106"
+              ref: "t131"
             }
           ]
         },
         receiveFromParent: {
           anyOf: [
             {
-              ref: "t107"
+              ref: "t132"
             }
           ]
         },
         policies: {
           anyOf: [
             {
-              ref: "t108"
+              ref: "t133"
             }
           ]
         },
         fields: {
           type: "array",
           items: {
-            ref: "t109"
+            ref: "t134"
           }
         },
         fieldSettings: {
           anyOf: [
             {
-              ref: "t121"
+              ref: "t146"
             }
           ]
         },
         displaySettings: {
           anyOf: [
             {
-              ref: "t128"
+              ref: "t153"
             }
           ]
         },
         searchSettings: {
           anyOf: [
             {
-              ref: "t123"
+              ref: "t148"
             }
           ]
         },
@@ -23307,32 +25607,32 @@ var native_contract_schema_generated_default = {
           ]
         },
         geometryProfiles: {
-          ref: "t129"
+          ref: "t154"
         },
         containment: {
           anyOf: [
             {
-              ref: "t183"
+              ref: "t217"
             }
           ]
         },
         card: {
           anyOf: [
             {
-              ref: "t184"
+              ref: "t218"
             },
             {
-              ref: "t191"
+              ref: "t225"
             },
             {
-              ref: "t192"
+              ref: "t226"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t193"
+              ref: "t227"
             }
           ]
         }
@@ -23345,7 +25645,7 @@ var native_contract_schema_generated_default = {
         "geometryProfiles"
       ]
     },
-    t195: {
+    t229: {
       type: "object",
       properties: {
         classification: {
@@ -23360,7 +25660,7 @@ var native_contract_schema_generated_default = {
         "referenceField"
       ]
     },
-    t194: {
+    t228: {
       type: "object",
       properties: {
         id: {
@@ -23370,10 +25670,10 @@ var native_contract_schema_generated_default = {
           ref: "t1"
         },
         host: {
-          ref: "t195"
+          ref: "t229"
         },
         member: {
-          ref: "t195"
+          ref: "t229"
         },
         memberSelectorField: {
           anyOf: [
@@ -23408,7 +25708,7 @@ var native_contract_schema_generated_default = {
         "profile"
       ]
     },
-    t198: {
+    t232: {
       type: "object",
       properties: {
         slot: {
@@ -23423,7 +25723,7 @@ var native_contract_schema_generated_default = {
         "target"
       ]
     },
-    t197: {
+    t231: {
       type: "object",
       properties: {
         enabled: {
@@ -23458,7 +25758,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t198"
+                ref: "t232"
               }
             }
           ]
@@ -23468,7 +25768,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t199: {
+    t233: {
       type: "object",
       properties: {
         required: {
@@ -23479,20 +25779,13 @@ var native_contract_schema_generated_default = {
         "required"
       ]
     },
-    t203: {
+    t237: {
       type: "object",
       properties: {
         placeholder: {
           anyOf: [
             {
               type: "string"
-            }
-          ]
-        },
-        reference: {
-          anyOf: [
-            {
-              ref: "t120"
             }
           ]
         },
@@ -23503,6 +25796,13 @@ var native_contract_schema_generated_default = {
             },
             {
               const: true
+            }
+          ]
+        },
+        reference: {
+          anyOf: [
+            {
+              ref: "t145"
             }
           ]
         },
@@ -23549,7 +25849,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t44"
+                ref: "t68"
               }
             }
           ]
@@ -23594,22 +25894,22 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t110"
+                    ref: "t135"
                   },
                   {
-                    ref: "t111"
+                    ref: "t136"
                   },
                   {
-                    ref: "t112"
+                    ref: "t137"
                   },
                   {
-                    ref: "t113"
+                    ref: "t138"
                   },
                   {
-                    ref: "t114"
+                    ref: "t139"
                   },
                   {
-                    ref: "t115"
+                    ref: "t140"
                   }
                 ]
               }
@@ -23647,7 +25947,7 @@ var native_contract_schema_generated_default = {
         "input"
       ]
     },
-    t202: {
+    t236: {
       type: "object",
       properties: {
         nodeId: {
@@ -23657,7 +25957,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         snapshot: {
-          ref: "t203"
+          ref: "t237"
         },
         overrides: {
           type: "array",
@@ -23673,7 +25973,7 @@ var native_contract_schema_generated_default = {
         "overrides"
       ]
     },
-    t204: {
+    t238: {
       type: "object",
       properties: {
         token: {
@@ -23739,7 +26039,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t204"
+                ref: "t238"
               }
             }
           ]
@@ -23749,7 +26049,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t204"
+                ref: "t238"
               }
             }
           ]
@@ -23760,7 +26060,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t205: {
+    t239: {
       type: "object",
       properties: {
         registryKey: {
@@ -23771,7 +26071,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t207: {
+    t241: {
       type: "object",
       properties: {
         matcher: {
@@ -23810,7 +26110,7 @@ var native_contract_schema_generated_default = {
         "maxResults"
       ]
     },
-    t206: {
+    t240: {
       type: "object",
       properties: {
         target: {
@@ -23944,7 +26244,7 @@ var native_contract_schema_generated_default = {
         coarse: {
           anyOf: [
             {
-              ref: "t207"
+              ref: "t241"
             }
           ]
         }
@@ -23954,27 +26254,27 @@ var native_contract_schema_generated_default = {
         "cacheScope"
       ]
     },
-    t209: {
+    t243: {
       type: "object",
       properties: {
         optionTable: {
           anyOf: [
             {
-              ref: "t50"
+              ref: "t74"
             }
           ]
         },
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t186"
+              ref: "t220"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t125"
+              ref: "t150"
             }
           ]
         },
@@ -24034,7 +26334,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t44"
+                ref: "t68"
               }
             }
           ]
@@ -24064,7 +26364,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t206"
+              ref: "t240"
             }
           ]
         },
@@ -24103,7 +26403,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t202"
+              ref: "t236"
             }
           ]
         },
@@ -24112,7 +26412,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t204"
+                ref: "t238"
               }
             }
           ]
@@ -24140,13 +26440,13 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t208: {
+    t242: {
       type: "object",
       properties: {
         itemFields: {
           type: "array",
           items: {
-            ref: "t209"
+            ref: "t243"
           }
         },
         storage: {
@@ -24188,7 +26488,7 @@ var native_contract_schema_generated_default = {
         "itemFields"
       ]
     },
-    t210: {
+    t244: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -24203,27 +26503,27 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t201: {
+    t235: {
       type: "object",
       properties: {
         optionTable: {
           anyOf: [
             {
-              ref: "t50"
+              ref: "t74"
             }
           ]
         },
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t186"
+              ref: "t220"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t125"
+              ref: "t150"
             }
           ]
         },
@@ -24325,7 +26625,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t202"
+              ref: "t236"
             }
           ]
         },
@@ -24366,7 +26666,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t204"
+                ref: "t238"
               }
             }
           ]
@@ -24376,7 +26676,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t44"
+                ref: "t68"
               }
             }
           ]
@@ -24391,7 +26691,7 @@ var native_contract_schema_generated_default = {
         optionSource: {
           anyOf: [
             {
-              ref: "t205"
+              ref: "t239"
             }
           ]
         },
@@ -24413,7 +26713,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t206"
+              ref: "t240"
             }
           ]
         },
@@ -24444,7 +26744,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t204"
+              ref: "t238"
             }
           ]
         },
@@ -24461,14 +26761,14 @@ var native_contract_schema_generated_default = {
         group: {
           anyOf: [
             {
-              ref: "t208"
+              ref: "t242"
             }
           ]
         },
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t210"
+              ref: "t244"
             }
           ]
         },
@@ -24482,7 +26782,7 @@ var native_contract_schema_generated_default = {
         legacyBlock: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         }
@@ -24494,7 +26794,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t211: {
+    t245: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -24509,7 +26809,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t213: {
+    t247: {
       type: "object",
       properties: {
         id: {
@@ -24534,7 +26834,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t204"
+              ref: "t238"
             }
           ]
         }
@@ -24545,7 +26845,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t214: {
+    t248: {
       type: "object",
       properties: {
         outputId: {
@@ -24571,7 +26871,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t212: {
+    t246: {
       type: "object",
       properties: {
         enabledFromThisPage: {
@@ -24623,7 +26923,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t213"
+                ref: "t247"
               }
             }
           ]
@@ -24673,7 +26973,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t214"
+                ref: "t248"
               }
             }
           ]
@@ -24681,7 +26981,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t200: {
+    t234: {
       type: "object",
       properties: {
         id: {
@@ -24721,7 +27021,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t201"
+                ref: "t235"
               }
             }
           ]
@@ -24766,7 +27066,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t204"
+              ref: "t238"
             }
           ]
         },
@@ -24780,21 +27080,21 @@ var native_contract_schema_generated_default = {
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t211"
+              ref: "t245"
             }
           ]
         },
         drawing: {
           anyOf: [
             {
-              ref: "t212"
+              ref: "t246"
             }
           ]
         },
         legacyPage: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         }
@@ -24805,7 +27105,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t217: {
+    t251: {
       type: "object",
       properties: {
         id: {
@@ -24841,13 +27141,13 @@ var native_contract_schema_generated_default = {
         "path"
       ]
     },
-    t216: {
+    t250: {
       type: "object",
       properties: {
         selectors: {
           type: "array",
           items: {
-            ref: "t217"
+            ref: "t251"
           }
         }
       },
@@ -24855,7 +27155,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t218: {
+    t252: {
       type: "object",
       properties: {
         id: {
@@ -24870,7 +27170,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t204"
+              ref: "t238"
             }
           ]
         }
@@ -24881,7 +27181,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t219: {
+    t253: {
       type: "object",
       properties: {
         selected: {
@@ -24922,7 +27222,7 @@ var native_contract_schema_generated_default = {
         "selected"
       ]
     },
-    t215: {
+    t249: {
       type: "object",
       properties: {
         id: {
@@ -24938,25 +27238,25 @@ var native_contract_schema_generated_default = {
         classificationGroup: {
           anyOf: [
             {
-              ref: "t216"
+              ref: "t250"
             }
           ]
         },
         assignments: {
           type: "array",
           items: {
-            ref: "t218"
+            ref: "t252"
           }
         },
         when: {
           anyOf: [
             {
-              ref: "t204"
+              ref: "t238"
             }
           ]
         },
         geometry: {
-          ref: "t219"
+          ref: "t253"
         }
       },
       required: [
@@ -24965,13 +27265,13 @@ var native_contract_schema_generated_default = {
         "geometry"
       ]
     },
-    t222: {
+    t256: {
       type: "object",
       properties: {
         selectors: {
           type: "array",
           items: {
-            ref: "t217"
+            ref: "t251"
           }
         }
       },
@@ -24979,7 +27279,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t221: {
+    t255: {
       type: "object",
       properties: {
         role: {
@@ -25011,7 +27311,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         classificationGroup: {
-          ref: "t222"
+          ref: "t256"
         }
       },
       required: [
@@ -25019,7 +27319,7 @@ var native_contract_schema_generated_default = {
         "classificationGroup"
       ]
     },
-    t224: {
+    t258: {
       type: "object",
       properties: {
         workflowId: {
@@ -25034,14 +27334,14 @@ var native_contract_schema_generated_default = {
         "bindingId"
       ]
     },
-    t223: {
+    t257: {
       type: "object",
       properties: {
         bindingId: {
           type: "string"
         },
         source: {
-          ref: "t224"
+          ref: "t258"
         },
         classificationGroup: {
           type: "undefined"
@@ -25055,13 +27355,13 @@ var native_contract_schema_generated_default = {
         "source"
       ]
     },
-    t226: {
+    t260: {
       type: "object",
       properties: {
         selectors: {
           type: "array",
           items: {
-            ref: "t217"
+            ref: "t251"
           }
         }
       },
@@ -25069,7 +27369,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t227: {
+    t261: {
       type: "object",
       properties: {
         scope: {
@@ -25155,7 +27455,7 @@ var native_contract_schema_generated_default = {
         "cacheScope"
       ]
     },
-    t225: {
+    t259: {
       type: "object",
       properties: {
         bindingId: {
@@ -25165,10 +27465,10 @@ var native_contract_schema_generated_default = {
           type: "undefined"
         },
         classificationGroup: {
-          ref: "t226"
+          ref: "t260"
         },
         search: {
-          ref: "t227"
+          ref: "t261"
         }
       },
       required: [
@@ -25177,7 +27477,7 @@ var native_contract_schema_generated_default = {
         "search"
       ]
     },
-    t220: {
+    t254: {
       type: "object",
       properties: {
         componentKey: {
@@ -25228,7 +27528,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t221"
+                ref: "t255"
               }
             }
           ]
@@ -25240,10 +27540,10 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t223"
+                    ref: "t257"
                   },
                   {
-                    ref: "t225"
+                    ref: "t259"
                   }
                 ]
               }
@@ -25256,7 +27556,7 @@ var native_contract_schema_generated_default = {
         "reason"
       ]
     },
-    t228: {
+    t262: {
       type: "object",
       properties: {
         runtimeMode: {
@@ -25276,21 +27576,21 @@ var native_contract_schema_generated_default = {
         output: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         },
         source: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t213"
             }
           ]
         }
       },
       required: []
     },
-    t196: {
+    t230: {
       type: "object",
       properties: {
         id: {
@@ -25322,14 +27622,14 @@ var native_contract_schema_generated_default = {
         editor: {
           anyOf: [
             {
-              ref: "t197"
+              ref: "t231"
             }
           ]
         },
         actor: {
           anyOf: [
             {
-              ref: "t199"
+              ref: "t233"
             }
           ]
         },
@@ -25343,13 +27643,13 @@ var native_contract_schema_generated_default = {
         steps: {
           type: "array",
           items: {
-            ref: "t200"
+            ref: "t234"
           }
         },
         outputs: {
           type: "array",
           items: {
-            ref: "t215"
+            ref: "t249"
           }
         },
         assignments: {
@@ -25357,7 +27657,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t218"
+                ref: "t252"
               }
             }
           ]
@@ -25365,14 +27665,14 @@ var native_contract_schema_generated_default = {
         external: {
           anyOf: [
             {
-              ref: "t220"
+              ref: "t254"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t228"
+              ref: "t262"
             }
           ]
         }
@@ -25385,7 +27685,7 @@ var native_contract_schema_generated_default = {
         "outputs"
       ]
     },
-    t230: {
+    t264: {
       type: "object",
       properties: {
         kind: {
@@ -25442,7 +27742,7 @@ var native_contract_schema_generated_default = {
         "status"
       ]
     },
-    t229: {
+    t263: {
       type: "object",
       properties: {
         schemaVersion: {
@@ -25458,7 +27758,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t230"
+            ref: "t264"
           }
         },
         generatedAt: {
@@ -25526,6 +27826,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: 18
+            },
+            {
+              const: 19
             }
           ]
         },
@@ -25556,14 +27859,14 @@ var native_contract_schema_generated_default = {
           ]
         },
         registries: {
-          ref: "t42"
+          ref: "t66"
         },
         lookupTables: {
           anyOf: [
             {
               type: "array",
               items: {
-                ref: "t47"
+                ref: "t71"
               }
             }
           ]
@@ -25571,21 +27874,21 @@ var native_contract_schema_generated_default = {
         application: {
           anyOf: [
             {
-              ref: "t53"
+              ref: "t77"
             }
           ]
         },
         resources: {
           anyOf: [
             {
-              ref: "t102"
+              ref: "t127"
             }
           ]
         },
         nodes: {
           type: "array",
           items: {
-            ref: "t104"
+            ref: "t129"
           }
         },
         contextBindings: {
@@ -25593,7 +27896,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t194"
+                ref: "t228"
               }
             }
           ]
@@ -25601,13 +27904,13 @@ var native_contract_schema_generated_default = {
         workflows: {
           type: "array",
           items: {
-            ref: "t196"
+            ref: "t230"
           }
         },
         parity: {
           anyOf: [
             {
-              ref: "t229"
+              ref: "t263"
             }
           ]
         }
@@ -25659,7 +27962,7 @@ function validateNativeStructure(value) {
       }
       return issues2.slice(0, 100);
     }
-    return typeof value2 === schema.type && (schema.type !== "number" || Number.isFinite(value2)) ? [] : [{ path: path2, message: `\u914D\u7F6E\u503C\u5FC5\u987B\u4E3A\u6709\u6548\u7684 ${schema.type}\u3002` }];
+    return typeof value2 === schema.type && (schema.type !== "number" || Number.isFinite(value2)) && (schema.prefix === void 0 || typeof value2 === "string" && value2.startsWith(schema.prefix)) ? [] : [{ path: path2, message: `\u914D\u7F6E\u503C\u5FC5\u987B\u4E3A\u6709\u6548\u7684 ${schema.type}\u3002` }];
   };
   const issues = inspect(value, native_contract_schema_generated_default.root, "config", 0);
   if (issues.length) return issues;
@@ -26247,7 +28550,7 @@ function validateRuleExtensions(rule, geometry, rulePath, config, sourcePath, is
     ["collideWith", extensions.collision?.collideWith, ["symbol", "requiredLabel", "importantLabel", "optionalLabel", "softLabel", "geometry"]],
     ["blocks", extensions.collision?.blocks, ["optionalLabel", "softLabel", "poiLabel", "structureLabel"]]
   ];
-  for (const [name, values2, allowed] of lists) if (values2 && (new Set(values2).size !== values2.length || values2.some((value) => !allowed.includes(value)))) issue(issues, "error", "extension-list-invalid", `${rulePath}/${name}`, "\u7B56\u7565\u5217\u8868\u5B58\u5728\u91CD\u590D\u6216\u672A\u77E5\u503C\u3002");
+  for (const [name, values2, allowed] of lists) if (values2 && (new Set(values2).size !== values2.length || values2.some((value) => !allowed.includes(value) && !(config.contractRevision >= 19 && (name === "collideWith" || name === "blocks"))))) issue(issues, "error", "extension-list-invalid", `${rulePath}/${name}`, "\u7B56\u7565\u5217\u8868\u5B58\u5728\u91CD\u590D\u6216\u672A\u77E5\u503C\u3002");
   const density = extensions.density;
   if (density && density.mode !== "inherit" && density.mode !== "override") issue(issues, "error", "density-mode-invalid", rulePath, "\u5BC6\u5EA6\u9884\u7B97\u5FC5\u987B\u9009\u62E9\u7EE7\u627F\u6216\u672C\u89C4\u5219\u8986\u76D6\u3002");
   if (density?.mode === "override") {
@@ -26335,7 +28638,48 @@ function validateProfile(profile, geometry, path2, config, sourcePath, issues) {
       for (const message of validateRenderFields(rule.when?.fields, resolveSelectableFields(config, sourcePath), resolveSelectableFields(config, sourcePath).map((field) => field.key), config.contractRevision)) issue(issues, "error", "render-field-condition-invalid", `${rulePath}/when/fields`, message);
     } else if (rule.when) issue(issues, "error", "render-match-revision-invalid", rulePath, "\u7EC4\u5408\u89C4\u5219\u9700\u8981\u539F\u751F c7\uFF1B\u65E7\u5305\u8BF7\u5148\u65E0\u635F\u8FC1\u79FB\u3002");
     if (!rule.representation) issue(issues, "error", "render-representation-required", rulePath, "\u6E32\u67D3\u89C4\u5219\u5FC5\u987B\u9009\u62E9\u663E\u793A\u79CD\u7C7B\u3002");
-    else if (!["hidden", "geometry", "point", "labelOnly"].includes(rule.representation)) issue(issues, "error", "render-representation-invalid", rulePath, "\u672A\u77E5\u663E\u793A\u79CD\u7C7B\u3002");
+    else if (!["hidden", "geometry", "point", "labelOnly", "geometryWithPoint"].includes(rule.representation)) issue(issues, "error", "render-representation-invalid", rulePath, "\u672A\u77E5\u663E\u793A\u79CD\u7C7B\u3002");
+    if (config.contractRevision >= 19) {
+      const template = config.engine?.renderTemplates?.find((item) => item.id === rule.logic?.templateId);
+      if (!template || template.geometry !== geometry) issue(issues, "error", "render-template-reference", rulePath + "/logic", "\u8BF7\u9009\u62E9\u4E0E\u6E90\u51E0\u4F55\u4E00\u81F4\u7684\u6A21\u677F\u3002");
+      if (rule.extensions || rule.geometryStack?.pane) issue(issues, "error", "render-c19-legacy-authority", rulePath, "c19 \u89C4\u5219\u53EA\u80FD\u901A\u8FC7\u6A21\u677F\u548C\u6A21\u5757\u8986\u5199\u914D\u7F6E\u6269\u5C55\u903B\u8F91\u3002");
+      const modules = resolveLogicModules(config, geometry, rule);
+      validateC19Modules(modules, geometry, config, rulePath + "/logic", issues);
+      const effective = materializeC19Rule(config, geometry, rule, min ?? 0);
+      if (rule.style?.symbolAnchor || rule.style?.symbolOffsetPx || rule.style?.symbolVisibility) issue(issues, "error", "render-c19-symbol-behavior", rulePath + "/style", "\u8BF7\u5728\u5177\u4F53\u7B26\u53F7\u4E2D\u914D\u7F6E\u884C\u4E3A\u3002");
+      if (rule.representation === "geometryWithPoint" && (geometry !== "Polygon" || !rule.style?.midpoint?.pointSymbol))
+        issue(issues, "error", "render-midpoint-geometry", rulePath + "/style/midpoint", "\u7EC4\u5408\u663E\u793A\u9700\u8981\u9762\u51E0\u4F55\u548C\u5B8C\u6574\u7684\u4E2D\u70B9\u7B26\u53F7\u3002");
+      if (rule.style?.midpoint && (geometry !== "Polygon" || rule.representation !== "geometryWithPoint"))
+        issue(issues, "error", "render-midpoint-mode", rulePath + "/style/midpoint", "\u4E2D\u70B9\u5916\u89C2\u53EA\u7528\u4E8E\u9762\u53CA\u5176\u4E2D\u70B9\u3002");
+      const midpoint = rule.style?.midpoint?.pointSymbol;
+      if (midpoint) {
+        for (const row2 of pointSymbolProblems(midpoint, resolveSelectableFields(config, sourcePath), config)) issue(issues, "error", "point-symbol-invalid", rulePath + "/style/midpoint/" + row2.path, row2.message);
+        for (const row2 of pointSymbolBindings(midpoint)) validateRenderColorBinding(row2.value, config, sourcePath, rulePath + "/style/midpoint/" + row2.path, issues);
+      }
+      const label = rule.label;
+      if (label) {
+        if (label.collision.hideWhenColliding !== void 0 || label.collision.collisionGroup !== void 0 || label.collision.densityLimit !== void 0)
+          issue(issues, "error", "render-c19-legacy-collision", rulePath + "/label/collision", "\u78B0\u649E\u5931\u8D25\u7B56\u7565\u3001\u5206\u7EC4\u4E0E\u5168\u5C4F\u989D\u5EA6\u7531\u6A21\u677F\u53CA M7 \u8986\u5199\u914D\u7F6E\u3002");
+        const selectedFields = resolveSelectableFields(config, sourcePath);
+        const mapping = label.mapping;
+        if (label.mode !== (mapping ? "valueMap" : "fixed"))
+          issue(issues, "error", "render-label-mode-invalid", rulePath + "/label/mode", "Label \u6A21\u5F0F\u5FC5\u987B\u4E0E\u56FA\u5B9A\u5916\u89C2\u6216\u5B57\u6BB5\u6620\u5C04\u4E00\u81F4\u3002");
+        if (mapping) validateAppearanceMapping(mapping, selectedFields, rulePath + "/label/mapping", issues);
+        for (const [appearance, index2] of [label, ...mapping?.entries.map((row2) => row2.item) ?? []].map((value, index3) => [value, index3])) {
+          const path3 = index2 ? rulePath + "/label/mapping/entries/" + (index2 - 1) : rulePath + "/label";
+          const allowed2 = labelModifierCapabilities(geometry, appearance, effective.extensions);
+          for (const key2 of ["bold", "italic", "underline"]) if (appearance.style?.modifiers?.[key2] && !allowed2[key2])
+            issue(issues, "error", "render-label-modifier-unsupported", path3 + "/style/modifiers/" + key2, "\u5F53\u524D\u6587\u5B57\u6E32\u67D3\u8DEF\u5F84\u4E0D\u652F\u6301\u6B64\u4FEE\u9970\u3002");
+          if (geometry !== "Point" && (appearance.withDot || appearance.dotAnchorMode))
+            issue(issues, "error", "render-label-dot-geometry", path3, "\u9644\u52A0\u5706\u70B9\u4EC5\u7528\u4E8E\u6E90\u51E0\u4F55\u4E3A Point \u7684 Label\u3002");
+          if (appearance.fallbackValueFormats?.NofFloor === "floorLabel")
+            issue(issues, "error", "render-label-floor-fallback", path3, "NofFloor \u56DE\u9000\u4F7F\u7528\u539F\u6587\u3002");
+          if (index2) validateRuleLabel({ ...rule, label: { ...appearance, collision: label.collision } }, path3, config, sourcePath, issues);
+        }
+      }
+      validateRuleExtensions(effective, geometry, rulePath, config, sourcePath, issues);
+    } else if (rule.logic || rule.style?.midpoint || rule.label?.mapping || rule.label?.mode || rule.representation === "geometryWithPoint")
+      issue(issues, "error", "render-c19-required", rulePath, "\u6A21\u677F\u548C\u65B0\u5916\u89C2\u9700\u8981 c19\u3002");
     if (rule.representation === "labelOnly" && config.contractRevision < 6) issue(issues, "error", "render-contract-capability-invalid", rulePath, "\u4EC5\u6807\u7B7E\u663E\u793A\u9700\u8981\u6700\u4F4E\u539F\u751F\u5951\u7EA6 c6 \u6216\u66F4\u65B0\u7248\u672C\u3002");
     if (min !== void 0 && max !== void 0 && min > max) issue(issues, "error", "zoom-interval-invalid", rulePath, "\u663E\u793A\u533A\u95F4\u5FC5\u987B\u7B26\u5408\u4E0B\u754C \u2264 Zoom \u2264 \u4E0A\u754C\u3002");
     intervals.push({ id: rule.id, min: min ?? -Infinity, max: max ?? Infinity });
@@ -26381,7 +28725,7 @@ function validateProfile(profile, geometry, path2, config, sourcePath, issues) {
     if (metric && !allowedMetrics(geometry).has(metric.kind)) issue(issues, "error", "dynamic-priority-metric-geometry-invalid", rulePath, `${metric.kind} \u4E0D\u9002\u7528\u4E8E ${geometry}\u3002`);
     if (metric && (!Number.isFinite(metric.multiplier) || metric.divisor !== void 0 && (!Number.isFinite(metric.divisor) || metric.divisor === 0) || metric.min !== void 0 && metric.max !== void 0 && metric.min > metric.max)) issue(issues, "error", "dynamic-priority-invalid", rulePath, "\u52A8\u6001\u4F18\u5148\u7EA7\u7684\u500D\u7387\u3001\u9664\u6570\u6216\u4E0A\u4E0B\u754C\u65E0\u6548\u3002");
     if (metric?.kind === "field" && !numericMetricField(config, sourcePath, metric.field)) issue(issues, "error", "dynamic-priority-field-required", rulePath, "\u5B57\u6BB5\u578B\u52A8\u6001\u4F18\u5148\u7EA7\u9700\u8981\u5B58\u5728\u7684\u5355\u503C\u6570\u503C\u5B57\u6BB5\u6216\u6570\u503C\u679A\u4E3E\u5B57\u6BB5\u3002");
-    validateRuleExtensions({ ...rule, extensions: resolveRenderExtensions(config, geometry, rule.extensions) }, geometry, rulePath, config, sourcePath, issues);
+    if (config.contractRevision < 19) validateRuleExtensions({ ...rule, extensions: resolveRenderExtensions(config, geometry, rule.extensions) }, geometry, rulePath, config, sourcePath, issues);
     const overrideIds = /* @__PURE__ */ new Set();
     for (const [overrideIndex, override] of (rule.conditionalOverrides ?? []).entries()) {
       const overridePath = `${rulePath}/conditionalOverrides/${override.id || overrideIndex + 1}`;
@@ -26850,6 +29194,71 @@ function validateInteractionShape(visual, path2, issues) {
   if (visual.outline && (!visual.outline.color?.trim() || !Number.isFinite(visual.outline.width) || visual.outline.width < 0 || !Number.isFinite(visual.outline.opacity) || visual.outline.opacity < 0 || visual.outline.opacity > 1)) issue(issues, "error", "interaction-outline-invalid", path2, "\u5916\u63CF\u8FB9\u53C2\u6570\u65E0\u6548\u3002");
   if (visual.dashArray && !/^\d+(?:\.\d+)?(?:[ ,]+\d+(?:\.\d+)?)*$/.test(visual.dashArray)) issue(issues, "error", "interaction-dash-invalid", path2, "\u865A\u7EBF\u5FC5\u987B\u4E3A\u975E\u8D1F\u6570\u5B57\u5E8F\u5217\u3002");
 }
+function validateAppearanceMapping(mapping, fields, path2, issues) {
+  const field = fields.find((item) => item.key === mapping.field);
+  if (!field || !mapping.entries.length) issue(issues, "error", "render-mapping-field", path2, "\u9009\u62E9\u6709\u6548\u5B57\u6BB5\u5E76\u586B\u5199\u81F3\u5C11\u4E00\u6761\u6620\u5C04\u3002");
+  const values2 = /* @__PURE__ */ new Set();
+  for (const [index, row2] of mapping.entries.entries()) {
+    if (row2.value === "" || values2.has(row2.value) || field && scalarValueErrors(field, row2.value).length)
+      issue(issues, "error", "render-mapping-value", path2 + "/entries/" + index, "\u6620\u5C04\u503C\u5FC5\u987B\u975E\u7A7A\u3001\u7C7B\u578B\u5339\u914D\u4E14\u552F\u4E00\u3002");
+    values2.add(row2.value);
+  }
+}
+function validateC19Modules(modules, geometry, config, path2, issues) {
+  const groups = config.engine?.densityGroups ?? [];
+  const c = modules.collision;
+  if (c.groupId !== void 0 && !groups.some((group) => group.id === c.groupId) || c.density?.enabled && !c.groupId)
+    issue(issues, "error", "density-group-reference", path2 + "/collision/groupId", "\u683C\u5185\u9884\u7B97\u9700\u8981\u6709\u6548\u7684\u6240\u5C5E\u5BC6\u5EA6\u7EC4\u3002");
+  for (const target of [...c.collision?.blocks ?? [], ...c.collision?.collideWith ?? []]) {
+    if (!["symbol", "geometry", "role:ignore", "role:soft", "role:optional", "role:important", "role:required"].includes(target) && !(target.startsWith("group:") && groups.some((group) => group.id === target.slice(6))))
+      issue(issues, "error", "collision-target-reference", path2 + "/collision", "\u672A\u767B\u8BB0\u6216\u65E0\u6548\u7684\u78B0\u649E\u76EE\u6807\uFF1A" + target);
+  }
+  if (c.screenBudget && (!c.screenBudget.id.trim() || !Number.isSafeInteger(c.screenBudget.limit) || c.screenBudget.limit < 1))
+    issue(issues, "error", "screen-budget-invalid", path2 + "/collision/screenBudget", "\u5168\u5C4F\u914D\u989D\u9700\u8981\u5171\u4EAB ID \u548C\u6B63\u6574\u6570\u4E0A\u9650\u3002");
+  if (geometry !== "LineString" && modules.line.lineLabel || geometry !== "Polygon" && modules.candidates.polygonCandidates)
+    issue(issues, "error", "render-module-geometry", path2, "\u6A21\u677F\u542B\u4E0D\u9002\u7528\u4E8E\u6E90\u51E0\u4F55\u7684\u6A21\u5757\u53C2\u6570\u3002");
+  if (modules.visibility.visibility?.coincidentPoint?.precision !== void 0)
+    issue(issues, "error", "render-point-precision", path2 + "/visibility", "\u91CD\u5408\u70B9\u7EDF\u4E00\u4F7F\u7528 X/Z \u4E09\u4F4D\u5C0F\u6570\u3002");
+}
+function validateC19Engine(config, issues) {
+  const engine = config.engine;
+  if (engine.renderDefaults || !engine.renderTemplates || !engine.densityGroups || !engine.missingRenderRule)
+    issue(issues, "error", "render-registries-required", "engine", "c19 \u4F7F\u7528\u6A21\u677F\u3001\u5BC6\u5EA6\u7EC4\u548C\u65E0\u89C4\u5219\u5904\u7406\u3002");
+  const layers = config.application?.externalLayers;
+  if (config.application && (!layers || Object.keys(C19_EXTERNAL_LAYERS).some((key2) => !Number.isSafeInteger(layers[key2]))))
+    issue(issues, "error", "render-external-layer-invalid", "application/externalLayers", "\u4E03\u7C7B\u5916\u90E8\u5C42\u7EA7\u5747\u987B\u4E3A\u6709\u9650\u6574\u6570\u3002");
+  const ids = /* @__PURE__ */ new Set();
+  for (const group of engine.densityGroups ?? []) {
+    const path2 = "engine/densityGroups/" + group.id;
+    if (!/^[A-Za-z0-9_-]+$/.test(group.id) || ids.has(group.id) || !group.name.zh.trim() && !group.name.en.trim())
+      issue(issues, "error", "density-group-id", path2, "\u5BC6\u5EA6\u7EC4\u9700\u8981\u552F\u4E00 ID \u548C\u540D\u79F0\u3002");
+    ids.add(group.id);
+    const zooms = /* @__PURE__ */ new Set();
+    const grids = [group.defaultGrid];
+    for (const segment of group.zoomGrids) {
+      if (!Number.isInteger(segment.minZoom) || !Number.isInteger(segment.maxZoom) || segment.minZoom < 0 || segment.maxZoom > 8 || segment.minZoom > segment.maxZoom) {
+        issue(issues, "error", "density-grid-range", path2, "Zoom \u5206\u6BB5\u987B\u4E3A 0\u20138 \u7684\u95ED\u533A\u95F4\u3002");
+        continue;
+      }
+      for (let zoom = segment.minZoom; zoom <= segment.maxZoom; zoom++) {
+        if (zooms.has(zoom)) issue(issues, "error", "density-grid-overlap", path2, "Zoom \u5206\u6BB5\u4E0D\u80FD\u91CD\u53E0\u3002");
+        zooms.add(zoom);
+      }
+      grids.push(segment.grid);
+    }
+    for (const grid of grids) if (!Number.isSafeInteger(grid.gridSizePx) || grid.gridSizePx < 1 || [grid.maxLabelsPerGrid, grid.maxSymbolsPerGrid].some((limit) => limit !== void 0 && (!Number.isSafeInteger(limit) || limit < 1)))
+      issue(issues, "error", "density-grid-spec", path2, "\u7F51\u683C\u5C3A\u5BF8\u548C\u5DF2\u8BBE\u7F6E\u7684\u683C\u5185\u4E0A\u9650\u5FC5\u987B\u4E3A\u6B63\u6574\u6570\u3002");
+  }
+  for (const id2 of Object.keys(BUILTIN_DENSITY_GROUP_NAMES)) if (!ids.has(id2)) issue(issues, "error", "density-group-protected", "engine/densityGroups", "\u7F3A\u5C11\u53D7\u4FDD\u62A4\u7684\u5206\u7EC4 " + id2 + "\u3002");
+  ids.clear();
+  for (const template of engine.renderTemplates ?? []) {
+    const path2 = "engine/renderTemplates/" + template.id;
+    if (!/^[A-Za-z0-9_-]+$/.test(template.id) || ids.has(template.id) || !template.name.zh.trim() && !template.name.en.trim())
+      issue(issues, "error", "render-template-id", path2, "\u6A21\u677F\u9700\u8981\u552F\u4E00 ID \u548C\u540D\u79F0\u3002");
+    ids.add(template.id);
+    validateC19Modules(template.modules, template.geometry, config, path2, issues);
+  }
+}
 function validateEngine(config, issues) {
   const engine = config.engine;
   if (!engine) {
@@ -26858,9 +29267,12 @@ function validateEngine(config, issues) {
   }
   if (engine.world.field !== "World" || engine.world.assignment !== "activeWorld" || engine.world.required !== true) issue(issues, "error", "world-system-field-invalid", "engine/world", "World \u5FC5\u987B\u662F\u7531\u5F53\u524D\u4E16\u754C\u81EA\u52A8\u8D4B\u503C\u7684\u5FC5\u586B\u7CFB\u7EDF\u5B57\u6BB5\u3002");
   const contextView = engine.contextView;
-  if (!contextView || !Number.isFinite(contextView.minZoom) || contextView.minZoom < 0 || contextView.minZoom > 8 || !Number.isFinite(contextView.activationRadiusPx) || contextView.activationRadiusPx < 0 || !Number.isFinite(contextView.retainRadiusPx) || contextView.retainRadiusPx < contextView.activationRadiusPx) {
-    issue(issues, "error", "context-view-default-invalid", "engine/contextView", "\u5305\u542B\u5173\u7CFB\u89C6\u89D2\u5FC5\u987B\u63D0\u4F9B 0\u20138 \u7684\u8FDB\u5165 Zoom\uFF0C\u4EE5\u53CA\u4E0D\u5C0F\u4E8E\u8FDB\u5165\u534A\u5F84\u7684\u4FDD\u6301\u534A\u5F84\u3002");
+  if (!contextView || config.contractRevision < 19 && (!Number.isFinite(contextView.minZoom) || contextView.minZoom < 0 || contextView.minZoom > 8) || config.contractRevision >= 19 && contextView.minZoom !== void 0 || !Number.isFinite(contextView.activationRadiusPx) || contextView.activationRadiusPx < 0 || !Number.isFinite(contextView.retainRadiusPx) || contextView.retainRadiusPx < contextView.activationRadiusPx) {
+    issue(issues, "error", "context-view-default-invalid", "engine/contextView", config.contractRevision >= 19 ? "c19 \u5305\u542B\u5173\u7CFB\u89C6\u89D2\u53EA\u4FDD\u5B58\u6FC0\u6D3B\u534A\u5F84\u4E0E\u4FDD\u6301\u534A\u5F84\uFF0C\u4FDD\u6301\u534A\u5F84\u4E0D\u5F97\u66F4\u5C0F\u3002" : "\u5305\u542B\u5173\u7CFB\u89C6\u89D2\u5FC5\u987B\u63D0\u4F9B 0\u20138 \u7684\u8FDB\u5165 Zoom\uFF0C\u4EE5\u53CA\u4E0D\u5C0F\u4E8E\u8FDB\u5165\u534A\u5F84\u7684\u4FDD\u6301\u534A\u5F84\u3002");
   }
+  if (config.contractRevision >= 19) validateC19Engine(config, issues);
+  else if (engine.renderTemplates || engine.densityGroups || engine.missingRenderRule || config.application?.externalLayers)
+    issue(issues, "error", "render-c19-required", "engine", "\u6A21\u677F\u3001\u5BC6\u5EA6\u7EC4\u53CA\u5916\u90E8\u5C42\u7EA7\u9700\u8981 c19\u3002");
   for (const [key2, value] of Object.entries(engine.screenGateDefaults)) {
     if (value !== void 0 && (!Number.isFinite(value) || Number(value) < 0)) issue(issues, "error", "screen-gate-default-invalid", `engine/screenGateDefaults/${key2}`, "\u5168\u5C40\u5C4F\u5E55\u9608\u503C\u5FC5\u987B\u662F\u975E\u8D1F\u6570\u3002");
   }
@@ -27261,7 +29673,7 @@ async function readRawNativePackage(file, options = {}) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-c18-production-3";
+var rulesVersion = "cairnmap-c19-production-1";
 var validateConfiguration = validateConfigPackage;
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));

@@ -49,6 +49,7 @@ export type LabelStyleKeyInput =
       /** Only honoured by text-only GM/structure families. */
       italic?: boolean;
       underline?: boolean;
+      bold?: boolean;
       fontSize?: number;
       customPill?: ResolvedCustomPill;
     };
@@ -284,7 +285,7 @@ export function renderLabelHtml(styleKey: LabelStyleKeyInput, text: string, opts
         ${dot}
         <span style="
           color:${gm.fill};
-          font-weight:${gm.fontWeight};
+          font-weight:${keyObj?.bold ? 800 : gm.fontWeight};
           font-size:${gm.fontSize}px;
           line-height:1.1;
           text-shadow:${shadow};
@@ -407,7 +408,7 @@ export function renderLabelHtml(styleKey: LabelStyleKeyInput, text: string, opts
       : parseSizeSuffix(String(styleKeyStr), 'structure-label-');
 
   if (structureSize !== null) {
-    const fontWeight = 700;
+    const fontWeight = keyObj?.bold ? 800 : 700;
     const haloOffset = roundTo(clamp(structureSize * 0.105, 1.05, 1.7), 0.05);
     const haloBlur = roundTo(clamp(structureSize * 0.055, 0.55, 1.05), 0.05);
     const halo = '#ffffff';

@@ -96,7 +96,7 @@ export type PrefillAudit = {
 
 export type LabelRole = 'ignore' | 'soft' | 'optional' | 'important' | 'required';
 export type LabelAnchor = 'perPart' | 'featureBbox';
-export type DisplayRepresentation = 'hidden' | 'geometry' | 'point' | 'labelOnly';
+export type DisplayRepresentation = 'hidden' | 'geometry' | 'point' | 'labelOnly' | 'geometryWithPoint';
 export type PriorityMetric = 'area' | 'length' | 'partCount' | 'field';
 
 /** A colour may be literal, read from the feature itself, or resolved through
@@ -127,7 +127,14 @@ export type SymbolPlacement = {
   anchor: { mode: 'center' | 'topCenter' | 'bottomCenter' | 'leftCenter' | 'rightCenter' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight' | 'custom'; x?: number; y?: number };
   offsetPx: { x: number; y: number };
 };
+export type SymbolBehavior = {
+  offsetPx: { x: number; y: number };
+  anchor: 'geometry' | 'label';
+  visibility: 'independent' | 'withLabel';
+};
+export type AppearanceMapping<T> = { field: string; entries: Array<{ value: string | number | boolean; item: T }> };
 export type BasePointStyle = {
+  behavior?: SymbolBehavior;
   halo?: HaloSettings;
   pointShape: RenderPointShape; size: number; weight: number;
   lineCap: 'butt' | 'round' | 'square'; lineJoin: 'miter' | 'round' | 'bevel';
@@ -135,13 +142,14 @@ export type BasePointStyle = {
   strokeOpacity: number; fillOpacity: number;
 };
 export type IconItem = {
+  behavior?: SymbolBehavior;
   halo?: HaloSettings;
   library: 'pinhead'; id: string; sizePx: number;
   foreground: RenderColorBinding; foregroundOpacity: number;
   plate?: { shape: 'circle' | 'square' | 'roundedRect' | 'pin'; paddingPx: number; radiusPx?: number; fill: RenderColorBinding; stroke: RenderColorBinding; strokeWidthPx: number; fillOpacity: number; strokeOpacity: number };
   placement: SymbolPlacement;
 };
-export type ImagePresentation = { sizePx: { width: number; height: number }; placement: SymbolPlacement; halo?: HaloSettings };
+export type ImagePresentation = { sizePx: { width: number; height: number }; placement: SymbolPlacement; halo?: HaloSettings; behavior?: SymbolBehavior };
 export type ImageSourceForm = 'url' | 'library';
 /** Optional only to represent historical contracts. c17 requires this property. */
 export type ImageReference = { url: string; sourceForm?: ImageSourceForm };
@@ -151,7 +159,7 @@ export type ImageSource =
   | { mode: 'externalFieldUrl'; targetIdField: string; targetUrlField: string; presentation: ImagePresentation }
   | { mode: 'valueMap'; field: string; entries: Array<{ value: string | number | boolean; presentation: ImagePresentation } & ImageReference> };
 export type PointSymbol =
-  | { kind: 'shape'; shape: BasePointStyle }
+  | { kind: 'shape'; mode?: 'fixed' | 'valueMap'; shape: BasePointStyle; mapping?: AppearanceMapping<BasePointStyle> }
   | { kind: 'icon'; icon: { mode: 'single'; item: IconItem } | { mode: 'valueMap'; field: string; entries: Array<{ value: string | number | boolean; item: IconItem }> }; fallback: BasePointStyle }
   | { kind: 'externalImage'; image: ImageSource; fallback: BasePointStyle };
 export type CustomPillSettings = {
@@ -197,6 +205,7 @@ export type RenderStyle = {
   pointShape?: RenderPointShape;
   /** r12 point appearance: exactly one active branch, including per-item placement. */
   pointSymbol?: PointSymbol;
+  midpoint?: { pointSymbol: PointSymbol };
   /** An authored external icon overrides pointShape for this Zoom rule. */
   icon?: RenderPointIcon;
   size?: number;
@@ -209,7 +218,7 @@ export type RenderStyle = {
   lineCap?: 'butt' | 'round' | 'square';
   lineJoin?: 'miter' | 'round' | 'bevel';
 };
-export type RenderLabelStyle = {
+export type RenderLabelAppearance = {
   visible: boolean;
   /** The V3.2-native label description. */
   style?: RenderLabelVisualStyle;
@@ -243,7 +252,12 @@ export type RenderLabelStyle = {
   offsetX?: number;
   withDot?: boolean;
   dotAnchorMode?: 'anchorRight' | 'inline';
+  candidatePlacement?: 'relativeToPlacement' | 'aroundAnchor';
+};
+export type RenderLabelStyle = RenderLabelAppearance & {
   collision: LabelCollisionPolicy;
+  mode?: 'fixed' | 'valueMap';
+  mapping?: AppearanceMapping<RenderLabelAppearance>;
 };
 /**
  * V1 has a long tail of rendering switches.  They stay in every render rule,
@@ -388,13 +402,16 @@ export type RenderPolygonCandidateExtension = {
 };
 export type RenderCollisionExtension = {
   boundsAdjustment?: { x?: number; y?: number; width?: number; height?: number };
-  collideWith?: Array<'symbol' | 'requiredLabel' | 'importantLabel' | 'optionalLabel' | 'softLabel' | 'geometry'>;
-  blocks?: Array<'optionalLabel' | 'softLabel' | 'poiLabel' | 'structureLabel'>;
+  collideWith?: Array<'symbol' | 'requiredLabel' | 'importantLabel' | 'optionalLabel' | 'softLabel' | 'geometry' | RenderCollisionIdentity>;
+  blocks?: Array<'optionalLabel' | 'softLabel' | 'poiLabel' | 'structureLabel' | RenderCollisionIdentity>;
   allowOverlap?: boolean;
   paddingPx?: number;
   hidePolicy?: 'hide' | 'abbreviateThenHide' | 'forceShow' | 'showWithoutBlocking' | 'geometryOnly';
 };
+// Namespaced identities are checked against the role and group registries.
+export type RenderCollisionIdentity = `role:${LabelRole}` | `group:${string}`;
 export type RenderStabilityExtension = {
+  preferCenterCandidate?: boolean;
   enabled?: boolean;
   cacheKey?: 'featureID' | 'featureID+zoomBucket' | 'featureID+mode' | 'custom';
   zoomBucketSize?: number;
@@ -504,7 +521,7 @@ export type LabelCollisionPolicy = {
   role: LabelRole;
   basePriority: number;
   collisionGroup?: string;
-  hideWhenColliding: boolean;
+  hideWhenColliding?: boolean;
   densityLimit?: number;
   /** Collision metric belongs here, separately from geometry/display ordering. */
   metric?: RenderPriority['metric'];
@@ -524,6 +541,36 @@ export type RenderPriority = {
     min?: number;
     max?: number;
   };
+};
+
+export type DensityGrid = { gridSizePx: number; maxLabelsPerGrid?: number; maxSymbolsPerGrid?: number };
+export type RenderDensityGroup = {
+  id: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  defaultGrid: DensityGrid;
+  zoomGrids: Array<{ minZoom: number; maxZoom: number; grid: DensityGrid }>;
+};
+export type RenderLogicModules = {
+  admission: Pick<RenderRuleExtensions, 'screenGate' | 'pane' | 'hitTolerancePx'>;
+  text: { labelText?: Omit<NonNullable<RenderRuleExtensions['labelText']>, 'minChars' | 'emptyBehavior' | 'opacity'>; fallback?: Pick<RenderFallbackExtension,'whenNoLabelText' | 'whenGeometryInvalid'> };
+  visibility: { visibility?: RenderVisibilityExtension };
+  candidates: { anchor?: Omit<RenderAnchorExtension,'candidatePlacement' | 'preferViewportCenter'>; polygonCandidates?: Omit<RenderPolygonCandidateExtension,'switchThreshold'> };
+  stability: { stability?: RenderStabilityExtension };
+  line: { lineLabel?: Omit<RenderLineLabelExtension,'profile'> };
+  collision: {
+    collision?: RenderCollisionExtension;
+    groupId?: string;
+    density?: Omit<RenderDensityExtension,'mode' | 'gridSizePx' | 'maxLabelsPerGrid' | 'maxSymbolsPerGrid'>;
+    screenBudget?: { id: string; limit: number };
+  };
+  priority: { priority?: Omit<RenderPriority,'base'> };
+  interaction: { interaction?: Partial<Record<InteractionState, Partial<InteractionVisual>>> };
+};
+export type RenderLogicTemplate = { id: string; geometry: GeometryKind; name: LocalizedText; description: LocalizedText; modules: RenderLogicModules };
+export type ExternalRenderLayers = {
+  path: number; highlightPath: number; point: number; topPoint: number;
+  featureLabel: number; playerAvatar: number; playerTooltip: number;
 };
 /** Conditional values remain inside a single Zoom rule.  They are used for
  * true V1 branches such as RLE direction labels; they never become a second
@@ -557,6 +604,7 @@ export type ZoomPriorityRule = {
   geometryStack?: GeometryStackPolicy;
   /** V3.2 native, typed exceptions for this particular Zoom interval. */
   extensions?: RenderRuleExtensions;
+  logic?: { templateId: string; overrides: Partial<RenderLogicModules> };
   /** Field-driven overrides still belong to this one Zoom interval. */
   conditionalOverrides?: RenderRuleConditionalOverride[];
   advanced?: AdvancedRenderRule;
@@ -662,7 +710,7 @@ export type ConfigEngineSettings = {
    * category may be a host or a member.
    */
   contextView: {
-    minZoom: number;
+    minZoom?: number;
     activationRadiusPx: number;
     retainRadiusPx: number;
   };
@@ -677,6 +725,9 @@ export type ConfigEngineSettings = {
   };
   paneDefaults: Record<Exclude<ConfigPane, 'auto'>, string>;
   renderDefaults?: Partial<Record<GeometryKind, RenderRuleExtensions>>;
+  missingRenderRule?: Partial<Record<GeometryKind, NonNullable<RenderFallbackExtension['whenRuleMissing']>>>;
+  renderTemplates?: RenderLogicTemplate[];
+  densityGroups?: RenderDensityGroup[];
 };
 
 /**
@@ -973,7 +1024,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */

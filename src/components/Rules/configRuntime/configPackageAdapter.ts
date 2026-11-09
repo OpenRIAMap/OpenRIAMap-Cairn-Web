@@ -28,6 +28,7 @@ import type {
 } from '@/configStudio/types';
 import { createDefaultGeometryProfile } from '@/configStudio/v32Defaults';
 import { isCompiledConfigRuntime, resolveGeometryProfile, resolveZoomRule, resolveRenderExtensions } from '@/configStudio/runtime';
+import { mappedLabel, materializeC19Rule, resolvedBasePoint, resolveLogicModules } from '@/configStudio/c19Render';
 import { buildV3CardSections } from '@/configStudio/V3CardRenderer';
 import type { FeatureStore } from '@/components/Rules/data/featureStore';
 import type { FeatureRecord, RenderContext, RenderRule } from '@/components/Rules/rendering/renderPrimitives';
@@ -65,7 +66,10 @@ function runtimeBinding(config: ConfigPackageV3, record: FeatureRecord, ctx: Ren
   const geometry = geometryFor(record);
   const profile = resolveGeometryProfile(config, pathFor(record), geometry);
   const resolved = profile ? activeRuleFor(profile, record, ctx,config.contractRevision) : undefined;
-  const active = resolved ? { ...resolved, extensions: resolveRenderExtensions(config, geometry, resolved.extensions) } : undefined;
+  const prepared = resolved ? config.contractRevision >= 19
+    ? materializeC19Rule(config, geometry, resolved, ctx.zoomLevel)
+    : { ...resolved, extensions: resolveRenderExtensions(config, geometry, resolved.extensions) } : undefined;
+  const active = prepared?.label?.mapping ? { ...prepared, label: mappedLabel(prepared.label, field => featureValue(record, field)) } : prepared;
   const binding: RuntimeBinding = { geometry, profile, active, visuals: {} };
   if (compiled) {
     if (!cache) { cache = new WeakMap(); bindingCache.set(config, cache); }
@@ -84,7 +88,7 @@ export function configRuntimeViewportReach(config: ConfigPackageV3, record: Feat
   const offsets = active?.extensions?.anchor?.candidateOffsetsPx ?? [];
   return Math.max(1024, textLength * fontSize * 2 + Math.abs(label?.offsetX ?? 0) + Math.abs(label?.offsetY ?? 0)
     + Math.abs(style?.symbolOffsetPx?.x ?? 0) + Math.abs(style?.symbolOffsetPx?.y ?? 0)
-    + haloWidth(style?.halo) + pointSymbolReach(style?.pointSymbol) + (style?.size ?? 0) + (style?.weight ?? 0) + Math.max(0, ...(style?.icon?.size ?? []), ...(style?.icon?.anchor ?? []).map(Math.abs))
+    + haloWidth(style?.halo) + pointSymbolReach(style?.pointSymbol ?? style?.midpoint?.pointSymbol) + (style?.size ?? 0) + (style?.weight ?? 0) + Math.max(0, ...(style?.icon?.size ?? []), ...(style?.icon?.anchor ?? []).map(Math.abs))
     + Math.max(0, ...offsets.map(offset => Math.abs(offset.x) + Math.abs(offset.y))) + (active?.extensions?.hitTolerancePx ?? 0));
 }
 
@@ -523,9 +527,9 @@ function paneFor(config: ConfigPackageV3, geometry: GeometryKind, pane: ConfigPa
   return geometry === 'Point' ? defaults.point : defaults.overlay;
 }
 
-function labelStyleKey(style: RenderLabelVisualStyle, record: FeatureRecord, store?: FeatureStore): unknown {
-  const modifiers = style.modifiers?.italic || style.modifiers?.underline
-    ? { italic: Boolean(style.modifiers?.italic), underline: Boolean(style.modifiers?.underline) }
+function labelStyleKey(style: RenderLabelVisualStyle, record: FeatureRecord, store?: FeatureStore, c19=false): unknown {
+  const modifiers = style.modifiers?.italic || style.modifiers?.underline || c19&&style.modifiers?.bold&&style.family!=='gm-outline'
+    ? { italic: Boolean(style.modifiers?.italic), underline: Boolean(style.modifiers?.underline), ...(c19&&style.modifiers?.bold&&style.family!=='gm-outline'?{bold:true}:{}) }
     : undefined;
   const keyForFamily: Record<Exclude<LabelStyleFamily, 'rle-line-color' | 'rle-pill-color' | 'custom_pill_1'>, string> = {
     'gm-bw': `gm-bw-${style.size}`,
@@ -633,7 +637,8 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
   if (featureWorld !== activeWorld) return null;
 
   let resolved = binding.active;
-  if (!resolved && resolveRenderExtensions(config, geometry).fallback?.whenRuleMissing === 'geometryOnly') {
+  const missingRule = config.contractRevision >= 19 ? config.engine.missingRenderRule?.[geometry] : resolveRenderExtensions(config, geometry).fallback?.whenRuleMissing;
+  if (!resolved && missingRule === 'geometryOnly') {
     const base = createDefaultGeometryProfile(geometry).zoomPriority.rules[0];
     resolved = { ...base, extensions: resolveRenderExtensions(config, geometry, base.extensions), label: base.label ? { ...base.label, visible: false } : undefined };
   }
@@ -645,8 +650,9 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
   if (!active || active.representation === 'hidden' || !active.style || !active.geometryStack) return null;
 
   const authoredStyle = active.style;
-  const pointSymbol = authoredStyle.pointSymbol;
-  const basePoint = pointSymbol?.kind === 'shape' ? pointSymbol.shape : pointSymbol?.fallback;
+  const composite = active.representation === 'geometryWithPoint';
+  const pointSymbol = composite ? authoredStyle.midpoint?.pointSymbol : authoredStyle.pointSymbol;
+  const basePoint = pointSymbol && resolvedBasePoint(pointSymbol, field=>featureValue(record,field));
   const style = basePoint ? { ...authoredStyle, ...basePoint } : authoredStyle;
   const label = active.label ?? {
     visible: false,
@@ -663,7 +669,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
   const stroke = resolveColor(record, style.stroke, '#334155', store);
   const fill = resolveColor(record, style.fill, stroke, store);
   const hitTolerancePx = active.extensions?.hitTolerancePx ?? config.engine.interactionBaselines[geometry].hitTolerancePx;
-  const pathStyle = {
+  const pointPathStyle = {
     color: stroke,
     weight: style.weight ?? (geometry === 'LineString' ? 3 : 2),
     opacity: style.strokeOpacity,
@@ -676,7 +682,22 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
     interactive: pathInteractive,
     halo:haloWidth(style.halo)>0?{widthPx:haloWidth(style.halo),color:resolveColor(record,style.halo!.color,'#ffffff',store),cutout:config.contractRevision>=15,showInner:geometry==='Polygon'&&'showInner' in style.halo!&&style.halo!.showInner===true}:undefined,
   };
-  const labelKey = labelStyleKey(nativeLabelStyle, record, store);
+  const pathStyle = composite ? {
+    ...pointPathStyle,
+    color: resolveColor(record, authoredStyle.stroke, '#334155', store),
+    weight: authoredStyle.weight ?? 2,
+    opacity: authoredStyle.strokeOpacity,
+    fillColor: resolveColor(record, authoredStyle.fill, '#334155', store),
+    fillOpacity: authoredStyle.fillOpacity ?? 0.25,
+    dashArray: dashArray[authoredStyle.dashPreset ?? 'solid'],
+    lineCap: authoredStyle.lineCap ?? 'round',
+    lineJoin: authoredStyle.lineJoin ?? 'round',
+    halo: haloWidth(authoredStyle.halo) > 0 ? {
+      widthPx:haloWidth(authoredStyle.halo),color:resolveColor(record,authoredStyle.halo!.color,'#ffffff',store),
+      cutout:true,showInner:'showInner' in authoredStyle.halo!&&authoredStyle.halo!.showInner===true,
+    } : undefined,
+  } : pointPathStyle;
+  const labelKey = labelStyleKey(nativeLabelStyle, record, store, config.contractRevision>=19);
   const screenGate = active.extensions?.screenGate;
   const minScreenAreaPx = geometry === 'Polygon'
     ? (screenGate?.mode === 'override' ? screenGate.minScreenAreaPx : active.representation === 'labelOnly' ? 0 : config.engine.screenGateDefaults.polygonMinScreenAreaPx)
@@ -701,12 +722,13 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
   const pointPlan = style.icon && iconSource
     ? { kind: 'icon' as const, iconUrlFrom: style.icon.source, iconSize: style.icon.size, iconAnchor: style.icon.anchor, pane, zIndexOffset: active.geometryStack.zLevel + (active.geometryStack.zIndexOffset ?? 0) + ruleDisplayPriority }
     : style.pointShape === 'circle' || !style.pointShape
-      ? { kind: 'circle' as const, radius: style.size ?? Math.max(4, Number(style.weight ?? 2) * 3), style: pathStyle, pane, zIndexOffset: active.geometryStack.zLevel + (active.geometryStack.zIndexOffset ?? 0) + ruleDisplayPriority }
-      : { kind: 'shape' as const, shape: style.pointShape, radius: style.size ?? Math.max(4, Number(style.weight ?? 2) * 3), style: pathStyle, pane, zIndexOffset: active.geometryStack.zLevel + (active.geometryStack.zIndexOffset ?? 0) + ruleDisplayPriority };
+      ? { kind: 'circle' as const, radius: style.size ?? Math.max(4, Number(style.weight ?? 2) * 3), style: pointPathStyle, pane, zIndexOffset: active.geometryStack.zLevel + (active.geometryStack.zIndexOffset ?? 0) + ruleDisplayPriority }
+      : { kind: 'shape' as const, shape: style.pointShape, radius: style.size ?? Math.max(4, Number(style.weight ?? 2) * 3), style: pointPathStyle, pane, zIndexOffset: active.geometryStack.zLevel + (active.geometryStack.zIndexOffset ?? 0) + ruleDisplayPriority };
   const selectedVisual = resolveConfigInteractionVisual(config, record, ctx, 'selected', store);
-  let nativePointPlan: Record<string, unknown> = { ...pointPlan, screenOffsetPx: style.symbolOffsetPx, followLabelAnchor: style.symbolAnchor === 'label', visibility: style.symbolVisibility };
-  if(nativePointPlan.kind==='circle'){const authored=Number(nativePointPlan.radius);const radius=config.contractRevision>=15?Math.max(0,authored):pathStyle.halo?Math.max(2,authored):Math.max(1,Math.round(authored));nativePointPlan={...nativePointPlan,kind:'shape',shape:'circle',radius,halo:pathStyle.halo};}
-  else if(pathStyle.halo)nativePointPlan={...nativePointPlan,halo:pathStyle.halo};
+  let behavior = basePoint?.behavior;
+  let nativePointPlan: Record<string, unknown> = { ...pointPlan };
+  if(nativePointPlan.kind==='circle'){const authored=Number(nativePointPlan.radius);const radius=config.contractRevision>=15?Math.max(0,authored):pointPathStyle.halo?Math.max(2,authored):Math.max(1,Math.round(authored));nativePointPlan={...nativePointPlan,kind:'shape',shape:'circle',radius,halo:pointPathStyle.halo};}
+  else if(pointPathStyle.halo)nativePointPlan={...nativePointPlan,halo:pointPathStyle.halo};
   if (pointSymbol && pointSymbol.kind !== 'shape') {
     let url: string | undefined, size: [number, number] | undefined, anchor: [number, number] | undefined;
     let status: 'pending' | 'success' | 'failure' = 'failure';
@@ -718,6 +740,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
       if (item) {
         const asset = pinheadPath(item.id); status = asset.phase; assetReason = asset.reason;
         if (asset.phase === 'success' && asset.value) {
+          behavior = item.behavior ?? behavior;
           url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(composeIconSvg(item, asset.value, (binding, fallback) => resolveColor(record, binding, fallback, store),config.contractRevision>=15));
           const canvas=iconCanvas(item);hitIconSize=[item.sizePx,item.sizePx];hitIconAnchor=placementAnchor(item.placement,...hitIconSize);
           size=[canvas.size,canvas.size];anchor=[hitIconAnchor[0]+canvas.padding,hitIconAnchor[1]+canvas.padding];haloInsetPx=canvas.padding;
@@ -742,13 +765,15 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
       if(formProblems.length)assetReason=formProblems.map(issue=>issue.message).join('；');
       if (!formProblems.length && acceptableImageUrl(candidate) && presentation) {
         const asset = externalImageAsset(candidate); status = asset.phase; assetReason = asset.reason;
-        if (status === 'success') { imageHalo=haloWidth(presentation.halo)>0?{widthPx:haloWidth(presentation.halo),color:resolveColor(record,presentation.halo!.color,'#ffffff',store),cutout:config.contractRevision>=15}:undefined; url = candidate; size = [presentation.sizePx.width, presentation.sizePx.height]; anchor = placementAnchor(presentation.placement, ...size); }
+        if (status === 'success') { behavior = presentation.behavior ?? behavior; imageHalo=haloWidth(presentation.halo)>0?{widthPx:haloWidth(presentation.halo),color:resolveColor(record,presentation.halo!.color,'#ffffff',store),cutout:config.contractRevision>=15}:undefined; url = candidate; size = [presentation.sizePx.width, presentation.sizePx.height]; anchor = placementAnchor(presentation.placement, ...size); }
       } else assetReason ??= '图片来源为空或地址不合法';
     }
     if (status === 'pending') nativePointPlan = { ...nativePointPlan, kind: 'shape',shape:'circle', radius: 0,halo:undefined,imageHalo:undefined, style: { ...pathStyle, opacity: 0, fillOpacity: 0, weight: 0, interactive: false }, assetStatus: status };
     else if (status === 'success' && url && size && anchor) nativePointPlan = { ...nativePointPlan, kind: 'icon', halo:undefined,iconUrl: url, iconUrlFrom: undefined, iconSize: size, iconAnchor: anchor, imageHalo,hitIconSize,hitIconAnchor,haloInsetPx,assetStatus: status };
     else nativePointPlan = { ...nativePointPlan, assetStatus: 'failure', assetReason: assetReason ?? '图像资源缺失，使用规则回退' };
   }
+  nativePointPlan = { ...nativePointPlan, screenOffsetPx:behavior?.offsetPx ?? style.symbolOffsetPx, followLabelAnchor:(behavior?.anchor ?? style.symbolAnchor)==='label', visibility:behavior?.visibility ?? style.symbolVisibility };
+  const screenBudget = config.contractRevision >= 19 ? resolveLogicModules(config, geometry, active).collision.screenBudget : undefined;
 
   return {
     name: `config-v32:${path.class}:${geometry}:${active.id}`,
@@ -763,7 +788,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
         enabled: label.visible,
         textFrom: (candidate: FeatureRecord) => {
           return resolveLabelText(label, source => featureValue(candidate, source), (value, format) => format === 'floorLabel' ? fmtFloorLabel(value) : value,
-            () => fallback?.whenNoLabelText === 'showID' ? String(featureValue(candidate, 'ID') ?? '') : fallback?.whenNoLabelText === 'showClassKind' ? [path.class,path.kind,path.skind,path.skind2].filter(Boolean).join('/') : fallback?.whenNoLabelText === 'placeholder' ? '—' : '');
+            () => fallback?.whenNoLabelText === 'showID' ? String(featureValue(candidate, 'ID') ?? '') : fallback?.whenNoLabelText === 'showClassKind' ? [path.class,path.kind,path.skind,path.skind2].filter(Boolean).join('/') : fallback?.whenNoLabelText === 'placeholder' ? '—' : '', config.contractRevision >= 19);
         },
         ...(labelText?.maxChars !== undefined ? { maxChars: labelText.maxChars, abbreviation: { enabled: labelText.abbreviationEnabled !== false, maxChars: labelText.maxChars, suffix: labelText.suffix ?? '…' } } : {}),
         ...(labelText?.minChars !== undefined ? { minChars: labelText.minChars } : {}),
@@ -775,7 +800,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
         ...(label.offsetY !== undefined ? { offsetY: label.offsetY } : {}),
         offsetX: label.offsetX ?? 0,
         screenOffsets: true,
-        candidatePlacement: anchor?.candidatePlacement,
+        candidatePlacement: label.candidatePlacement ?? anchor?.candidatePlacement,
         ...(config.contractRevision >= 6 && label.withDot ? { withDot: true, dotAnchorMode: label.dotAnchorMode ?? 'inline' } : {}),
         // A decoration may accompany a genuine Point symbol in r6. Structures
         // represented by points use the native symbol/Label coupling instead.
@@ -783,14 +808,15 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
         declutter: {
           enabled: label.collision.hideWhenColliding,
           ...(anchor?.candidates ? { candidates: anchor.candidates } : {}),
-          group: label.collision.collisionGroup ?? 'config-runtime',
+          group: screenBudget?.id ?? label.collision.collisionGroup ?? 'config-runtime',
+          ...(config.contractRevision>=19 ? { preferCenterCandidate: stability?.preferCenterCandidate === true, explicitCollisionTargets: true } : {}),
           priority: collisionPriority,
           role: label.collision.role,
           maxPerScreen: label.collision.densityLimit,
         },
       },
       labelClick: {
-        enabled: Boolean(triggers.label || pathInteractive),
+        enabled: Boolean(triggers.label || pathInteractive || composite && triggers.point),
         ...(config.contractRevision>=15?{labelEnabled:Boolean(triggers.label)}:{}),
         mode: active.representation === 'labelOnly' ? 'labelOnly' : 'normal',
         labelStyleKey: labelKey as any,
@@ -800,7 +826,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
         pointPinStyleKey: 'pin-blue',
         nativeVisual: selectedVisual,
         openCard: true,
-        geom: { ...(config.contractRevision>=15&&geometry==='Polygon'&&!pointLike?{boundary:Boolean(triggers.boundary),interior:Boolean(triggers.interior)}:{}),point: (geometry === 'Point' || active.representation === 'point') && pathInteractive, path: geometry !== 'Point' && active.representation !== 'point' && pathInteractive },
+        geom: { ...(config.contractRevision>=15&&geometry==='Polygon'&&!pointLike?{boundary:Boolean(triggers.boundary),interior:Boolean(triggers.interior)}:{}),point: composite ? Boolean(triggers.point) : (geometry === 'Point' || active.representation === 'point') && pathInteractive, path: geometry !== 'Point' && active.representation !== 'point' && pathInteractive },
       },
     },
     display: {
@@ -809,11 +835,12 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
       visibility: { minZoom: active.minZoom, maxZoom: active.maxZoom, minScreenAreaPx, minScreenLengthPx },
       geometry: {
         render: renderMode(geometry, active),
+        ...(composite ? { midpoint: true } : {}),
         zIndex: active.geometryStack.zLevel,
-        stroke,
+        stroke: pathStyle.color,
         strokeWidth: pathStyle.weight,
         strokeOpacity: pathStyle.opacity,
-        fill,
+        fill: pathStyle.fillColor,
         fillOpacity: pathStyle.fillOpacity,
         dashArray: pathStyle.dashArray,
         lineCap: pathStyle.lineCap,
