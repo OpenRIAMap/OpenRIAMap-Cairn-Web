@@ -102,3 +102,4 @@ jobs:
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c18-audit-acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/workflow-feedback-acceptance.py
           "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c19_render_acceptance.py
+          "$RUNNER_TEMP/studio-browser-venv/bin/python" scripts/config-tools/browser/c19_studio_followup_acceptance.py

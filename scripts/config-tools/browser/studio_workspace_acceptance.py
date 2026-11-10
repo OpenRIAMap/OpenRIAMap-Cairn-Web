@@ -44,6 +44,16 @@ def upload(path):
     root=b.call('DOM.getDocument')['root']['nodeId'];node=b.call('DOM.querySelector',{'nodeId':root,'selector':'main header input[type=file]'})['nodeId'];b.call('DOM.setFileInputFiles',{'nodeId':node,'files':[str(path.resolve())]})
 def click_inside(selector,text):
     b.evaluate("Array.from(document.querySelector("+json.dumps(selector)+").querySelectorAll('button')).find(x=>x.textContent.trim()==="+json.dumps(text)+").click()")
+def open_common_engine():
+    panel='document.querySelector("details[data-fold-key=feature-global-settings]")'
+    if b.evaluate('Boolean('+panel+') && !'+panel+'.open'):
+        b.click('要素全局设置')
+    b.click('引擎参数')
+def common_engine_action(label):
+    if b.evaluate('Boolean(document.querySelector("[data-engine-section=common]"))'):
+        click_inside('[data-engine-section=common]', label)
+    else:
+        b.click(label+'引擎')
 def wait_zip(previous):
     until=time.time()+30
     while time.time()<until:
@@ -62,9 +72,9 @@ try:
     assert not b.evaluate("document.body.innerText.includes('已保留旧配置恢复副本')")
     checks.append('fresh current formal document; no legacy backup panel, meaningless cache or prevalidated outputs')
 
-    b.click('引擎参数');original=state()['config']['engine']['contextView']['activationRadiusPx']
+    open_common_engine();original=state()['config']['engine']['contextView']['activationRadiusPx']
     fill("Array.from(document.querySelectorAll('label')).find(x=>x.textContent.includes('激活半径 px')).querySelector('input')",original+3)
-    b.wait("Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='保存引擎')?.disabled===false")
+    b.wait("Array.from(document.querySelectorAll('button')).some(x=>!x.disabled&&(x.textContent==='保存引擎'||x.textContent==='保存'&&x.closest('[data-engine-section=common]')))")
     assert disabled('全局核验') and disabled('临时保存和下载')
     b.click('关闭');b.wait("Boolean(document.querySelector('[aria-label=\"退出配置编辑\"]'))")
     b.click('确认，缓存并退出');b.wait("!location.search.includes('workspace=')",40)
@@ -137,10 +147,10 @@ try:
 
     # A checkpoint failure must not trap a valid in-memory edit behind the
     # region-save gate; users can still download an explicit diagnostic copy.
-    b.click('引擎参数')
+    open_common_engine()
     fill("Array.from(document.querySelectorAll('label')).find(x=>x.textContent.includes('激活半径 px')).querySelector('input')",original+2)
     b.evaluate("window.originalWorkspacePut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){if(this.name==='workspace'&&key==='configuration')throw new DOMException('Acceptance quota','QuotaExceededError');return window.originalWorkspacePut.call(this,value,key)}")
-    b.click('核验引擎');b.click('保存引擎')
+    common_engine_action('核验');common_engine_action('保存')
     b.wait("Array.from(document.querySelectorAll('main header button')).find(x=>x.textContent==='全局核验').disabled===false")
     b.click('全局核验');b.wait("Array.from(document.querySelectorAll('main header button')).find(x=>x.textContent==='临时保存和下载').disabled===false",30)
     before={p.name:p.stat().st_mtime_ns for p in downloads.glob('*.zip')};b.click('临时保存和下载');b.click('确认临时保存并下载')
