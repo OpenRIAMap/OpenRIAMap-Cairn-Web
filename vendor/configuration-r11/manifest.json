@@ -1,7 +1,7 @@
 {
   "schemaVersion": "cairnmap.validation-kernel.v1",
   "rulesVersion": "cairnmap-c19-production-1",
-  "sha256": "e4ca07d502200f6d800ec607bb148efd61ca2d2234aa3719716b6fe45b23c275",
+  "sha256": "87e7e76c2567fe0e3b87c2515b53076b673790be9397ff9f526b99289efa8e8a",
   "sourceTextEol": "LF",
   "sources": {
     ".cairn/formal-data-source-runtime.json": "9a925beb75448ec20bd50503df9b97f1b5b2d0104598c34bdbb4cdf292b0fb38",
@@ -78,7 +78,7 @@
     "project-config/packages/openriamap-ria/environment/ruleButtons.json": "57f42999ea08bdbd4be021dbd248b6860fd0cfbecd9e2d528f22d72043239a74",
     "project-config/packages/openriamap-ria/environment/sourceLinkModes.json": "31eaf13b6d376d98193a32f9a8fcf3870f933ac0e222b9d53534293e70e93bbd",
     "project-config/packages/openriamap-ria/environment/worlds.json": "e5b9ee2d1c32f68e0666c39c86e7a950effbe7e85c3a7dd416ffbcb15be7d22e",
-    "scripts/config-tools/server-validation-entry.ts": "f61fd63c82f9baaa4b4685717aedd2cd9da5d12d2f84497aa7955bfb0baec3f7",
+    "scripts/config-tools/server-validation-entry.ts": "ed09825e3f32d2f116112231b2473cced6817e5b1274df7c4347836a8e4c4463",
     "src/configRuntime/classificationCompatibility.ts": "eaaac9b6cc14d2d16908a0b2765b65fb2ee939435a3e058e60f19edbfb8e044c",
     "src/configRuntime/configurationFingerprint.ts": "a640d3ab03042ea234f63e20ddf8e3f873364903c8bfb1df97bc9ab38f1d1af9",
     "src/configStudio/archivePolicy.ts": "552b3da2bb87ac3d4ab32411793f88f8a93f1a966e870b1466fa903a3bb1657b",
@@ -107,7 +107,7 @@
     "src/configStudio/native-contract-schema.generated.json": "33a4133d816493f915d77ece13a9eda496d76b2534083435fc8105c7493179ed",
     "src/configStudio/nativeArchive.ts": "a5f2ce63d756d8dd44ae465ae6b3d34b80811c5afa3c0edbf0857ced897dc8be",
     "src/configStudio/nativeContractValidation.ts": "7958da9af8339919e1322aa69a87cbc7c36074c1e435b434ee3286276e23fd1a",
-    "src/configStudio/navigationValidation.ts": "c54097b5d09bf30e73718c02d9b3961f2c5d7baf99e1e6be0814fb85118db28b",
+    "src/configStudio/navigationValidation.ts": "936b9bc023f7578743d6ad04e261317d0c303a845c6d051f77c5195c8c863b53",
     "src/configStudio/nodeFieldSettings.ts": "52f8672fb52188aa83e389ad800553dcbb0acbc1dbd38565b4700362ed95652f",
     "src/configStudio/optionalFieldValues.ts": "86e0fdb7d6d31c400f983bc535ca87a0789a08c8616f0cccd0f16a73cc32d997",
     "src/configStudio/pinhead-capabilities.generated.json": "56d3afe075a3a6c611f965996cbdaed8a08eec935998d46b12c6e2116e2fb030",

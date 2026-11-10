@@ -31,6 +31,13 @@ const confirmation = normalizeReviewControlRequest({
 }, { principalId: 'alice' });
 assert.equal(confirmation.attemptId, 'attempt-demo-001');
 assert.equal(confirmation.precheckReportSha256, 'b'.repeat(64));
+assert.equal(confirmation.acceptedWriteDeleteReportSha256, undefined);
+const acknowledged = { operation: 'publish-confirm', request, attemptId: 'attempt-demo-001',
+  expectedGateVersion: 2, precheckReportSha256: 'b'.repeat(64), acceptedWriteDeleteReportSha256: 'b'.repeat(64) };
+assert.equal(normalizeReviewControlRequest(acknowledged,{principalId:'alice'}).acceptedWriteDeleteReportSha256,'b'.repeat(64));
+assert.throws(()=>normalizeReviewControlRequest({...acknowledged,acceptedWriteDeleteReportSha256:'wrong'},{principalId:'alice'}),/invalid-review-release-confirmation/);
+assert.equal(normalizeReviewControlRequest({operation:'publish-precheck',request,expectedBoardVersion:2,selectedSubmissionIds:['submission-1'],
+  replaceAttemptId:'attempt-demo-001'},{principalId:'alice'}).replaceAttemptId,'attempt-demo-001');
 assert.equal(normalizeReviewControlRequest({ operation: 'release-gate' }, { principalId: 'alice' }).operation, 'release-gate');
 for (const operation of ['release-progress', 'release-detail', 'release-download-request', 'release-archive-reconcile']) {
   const release = normalizeReviewControlRequest({ operation, releaseId: 'review-aaaaaaaaaaaaaaaaaaaa' }, { principalId: 'alice' });

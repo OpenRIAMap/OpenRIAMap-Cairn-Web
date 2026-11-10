@@ -10,11 +10,12 @@ import { File } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import JSZip from 'jszip';
 import { readRawNativePackage } from '../../src/configStudio/nativeArchive';
-import { validateConfigPackage, resolveGeometryProfile, hasCategoryNode } from '../../src/configStudio/runtime';
+import { validateConfigPackage, resolveGeometryProfile, hasCategoryNode, readRecordPath } from '../../src/configStudio/runtime';
 import { readMultipartGeometry, validateMultipartGeometry } from '../../src/core/geometry/multipartGeometry';
 import { recordCategory } from '../../src/configStudio/multipartPolicy';
 import {validateV3WorkflowRecords} from '../../src/configStudio/workflowKernel';
 import {assertStructureTargets} from '../../src/configStudio/structureCommit';
+import {resolveNodeFieldSettings} from '../../src/configStudio/nodeFieldSettings';
 import type { ConfigPackageV3, MountedFeatureRecord } from '../../src/configStudio/types';
 
 export const rulesVersion='cairnmap-c19-production-1';
@@ -49,13 +50,33 @@ export function validateIncomingRecord(config:ConfigPackageV3,record:MountedFeat
   const output={id:'incoming-record',...(config.contractRevision>=15?{classificationGroup:{selectors:[{id:'record',mode:'self' as const,path:classification}]}}:{classification}),geometry:{selected:geometry},assignments:[]};
   return validateV3WorkflowRecords(config,{outputs:[output]} as any,[{outputId:output.id,classification,geometry,record}] as any).map(issue=>issue.message);
 }
-export function validateIncomingBatch(config:ConfigPackageV3,created:MountedFeatureRecord[],existing:MountedFeatureRecord[],deletes:Array<{worldId:string;classCode:string;featureId:string}>=[]):void {
+export function validateIncomingBatch(config:ConfigPackageV3,created:MountedFeatureRecord[],existing:MountedFeatureRecord[],deletes:Array<{worldId:string;classCode:string;featureId:string}>=[],options:{checkAffectedStructures?:boolean}={}):void {
   const identity=(record:MountedFeatureRecord)=>`${worldId(config,record.World)}:${record.ID}`;
-  const current=new Set<string>();for(const record of created){const key=identity(record);if(current.has(key))throw Error('configuration-record-id-duplicate');current.add(key);}
-  const surviving=existing.filter(record=>readableClassification(config,recordCategory(record))&&!deletes.some(item=>item.worldId===worldId(config,record.World)&&item.classCode===record.Class&&item.featureId===record.ID)).filter(record=>{
-    const update=created.find(next=>identity(next)===identity(record));if(update&&update.Class!==record.Class)throw Error('configuration-record-id-collision');return !update;
+  const writes=new Map<string,MountedFeatureRecord>();
+  for(const record of created){
+    const key=identity(record);
+    if(writes.has(key))throw Error('configuration-record-id-duplicate');
+    writes.set(key,record);
+  }
+  const removed=new Set(deletes.map(item=>JSON.stringify([item.worldId,item.classCode,item.featureId])));
+  const surviving=existing.filter(record=>readableClassification(config,recordCategory(record))&&!removed.has(JSON.stringify([worldId(config,record.World),record.Class,record.ID]))).filter(record=>{
+    const update=writes.get(identity(record));if(update&&update.Class!==record.Class)throw Error('configuration-record-id-collision');return !update;
   });
-  assertStructureTargets(config,created,surviving);
-  const navigationIssues=validateNavigationRecords(config,[...surviving,...created]).filter(issue=>issue.severity==='error');
+  const final=[...surviving,...created];
+  if(options.checkAffectedStructures){
+    const touched=new Set([...writes.keys(),...deletes.map(item=>`${item.worldId}:${item.featureId}`)]);
+    const issues=final.flatMap(record=>{
+      const role=resolveNodeFieldSettings(config,recordCategory(record)).value.structure;
+      if(!role?.enabled||role.role!=='member')return [];
+      const target=role.hostField?readRecordPath(record,role.hostField):undefined;
+      const targetId=typeof target==='string'?target:undefined;
+      const world=worldId(config,record.World);
+      if(writes.get(identity(record))!==record&&!touched.has(`${world}:${targetId}`))return [];
+      try {assertStructureTargets(config,[record],final.filter(row=>row!==record));return [];}
+      catch(error){return [{message:(error as Error).message,worldId:world,targetId,businessKey:targetId,affectedFeatures:[{id:String(record.ID)}]}];}
+    });
+    if(issues.length)throw Object.assign(Error('configuration-batch-structure-invalid'),{issues});
+  }else assertStructureTargets(config,created,surviving);
+  const navigationIssues=validateNavigationRecords(config,final,options.checkAffectedStructures).filter(issue=>issue.severity==='error');
   if(navigationIssues.length)throw Object.assign(Error('configuration-navigation-relations-invalid'),{issues:navigationIssues});
 }

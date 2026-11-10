@@ -176,6 +176,7 @@ export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = 
     runReleasePrecheck: (request: ReviewReleaseControlRequest, _actor: ReviewAuthorizationContext) => requestControl<ReviewReleaseControlReport>(fetcher, {
       operation: 'publish-precheck',
       precheckProtocol: request.precheckProtocol,
+      replaceAttemptId: request.replaceAttemptId,
       selectedSubmissionIds: request.selectedSubmissionIds,
       expectedBoardVersion: request.expectedBoardVersion,
       request: request.request,
@@ -185,6 +186,7 @@ export function createRiaReviewSubmissionAdapter(fetcher: ReviewWorkflowFetch = 
       attemptId: request.attemptId,
       expectedGateVersion: request.expectedGateVersion,
       precheckReportSha256: request.precheckReportSha256,
+      acceptedWriteDeleteReportSha256: request.acceptedWriteDeleteReportSha256,
       request: request.request,
     }),
     runArchiveReconciliationPrecheck: (input: { selectedSubmissionIds: readonly string[] }, _actor: ReviewAuthorizationContext) => requestControl<{ decision: 'ready' | 'blocked' | string; plan?: ReviewArchiveReconciliationPlan; blockers?: Array<{ submissionId: string; code: string }> }>(fetcher, {

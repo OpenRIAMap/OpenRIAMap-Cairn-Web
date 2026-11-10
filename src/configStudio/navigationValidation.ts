@@ -102,13 +102,13 @@ export function validateNavigationConfiguration(config: ConfigPackageV3, fields:
 }
 
 /** Data-level diagnostics cover only the supplied world/source snapshot. */
-export function validateNavigationRecords(config: ConfigPackageV3, records: MountedFeatureRecord[]): ConfigValidationIssue[] {
+export function validateNavigationRecords(config: ConfigPackageV3, records: MountedFeatureRecord[], includeIssueTargets=false): ConfigValidationIssue[] {
   const app = config.application, nav = app?.navigation, shared = app?.preferences.railwayRoles?.selectors;
   if (config.contractRevision < 13 || !nav || !shared) return [];
   const result: ConfigValidationIssue[] = [], ids = new Map<string, MountedFeatureRecord[]>(), warps = new Map<string, MountedFeatureRecord[]>();
   const world = (r: MountedFeatureRecord) => app!.worlds.find(w => [w.id, w.prefix, String(w.numericCode), w.label.zh, w.label.en].includes(String(r.World)))?.id ?? String(r.World ?? '');
   const role = (r: MountedFeatureRecord, key: RailwayRole) => pathsMatch(shared[key], rawClassification(r));
-  const add = (r: MountedFeatureRecord, message: string, path: string, warning = false) => result.push({ severity: warning ? 'warning' : 'error', code: 'mounted-navigation-invalid', path, message, relatedPaths: [sharedBase, navBase,...(path.startsWith(`${navBase}/road`)?[`lookupTables/${nav.road.travelModesTableId}`]:path.startsWith(`${navBase}/teleport`)?[`lookupTables/${nav.teleport.hubTableId}`]:[]),...config.nodes.filter(n=>pathCovers(n.path,rawClassification(r))).map(n=>`nodes/${n.nodeId}`)], affectedFeatures: [{ id: String(r.ID ?? ''), name: String(r.Name ?? r.ID ?? '') }] } as ConfigValidationIssue);
+  const add = (r: MountedFeatureRecord, message: string, path: string, warning = false, metadata: Pick<ConfigValidationIssue,'targetId'|'businessKey'> = {}) => result.push({ ...(includeIssueTargets?{worldId:world(r),...metadata}:{}),severity: warning ? 'warning' : 'error', code: 'mounted-navigation-invalid', path, message, relatedPaths: [sharedBase, navBase,...(path.startsWith(`${navBase}/road`)?[`lookupTables/${nav.road.travelModesTableId}`]:path.startsWith(`${navBase}/teleport`)?[`lookupTables/${nav.teleport.hubTableId}`]:[]),...config.nodes.filter(n=>pathCovers(n.path,rawClassification(r))).map(n=>`nodes/${n.nodeId}`)], affectedFeatures: [{ id: String(r.ID ?? ''), name: String(r.Name ?? r.ID ?? '') }] } as ConfigValidationIssue);
   const insert = (map: Map<string, MountedFeatureRecord[]>, key: string, r: MountedFeatureRecord) => { const rows = map.get(key) ?? []; rows.push(r); map.set(key, rows); };
   const stationKey = (r: MountedFeatureRecord) => String(r.staBuildingID ?? (r.Type === 'Points' || r.Class === 'SBP' ? r.staBuildingPointId ?? r.ID : r.staBuildingId ?? r.buildingID ?? r.BuildingID ?? r.buildingId ?? r.ID) ?? '');
   for (const r of records) {
@@ -119,7 +119,7 @@ export function validateNavigationRecords(config: ConfigPackageV3, records: Moun
   const refs = (r: MountedFeatureRecord, key: string) => Array.isArray(r[key]) ? (r[key] as unknown[]).map(v => typeof v === 'object' && v ? String((v as { ID?: unknown }).ID ?? '') : String(v)) : [];
   const check = (r: MountedFeatureRecord, id: string, target: RailwayRole) => {
     const candidates = ids.get(`${world(r)}/${id}`) ?? [];
-    if (candidates.length !== 1 || !role(candidates[0], target)) add(r, `铁路关联 ${id} 缺失、重复或角色不符。`, sharedBase);
+    if (candidates.length !== 1 || !role(candidates[0], target)) add(r, `铁路关联 ${id} 缺失、重复或角色不符。`, sharedBase, false, {targetId:id,businessKey:id});
     else if (nav.rail.enabled && RAILWAY_ROLES.some(k => pathsMatch(nav.rail.selectors[k], rawClassification(r))) && !pathsMatch(nav.rail.selectors[target], rawClassification(candidates[0]))) add(r, `关联 ${id} 不在导航参与范围；仅排除该导航边。`, `${navBase}/rail`, true);
   };
   const finite = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
@@ -129,7 +129,7 @@ export function validateNavigationRecords(config: ConfigPackageV3, records: Moun
     const isRoad = pathsMatch(nav.road.selectors.roads, rawClassification(r)), isWarp = pathsMatch(nav.teleport.selectors.warpPoints, rawClassification(r)), isTeleport = pathsMatch(nav.teleport.selectors.teleportPoints, rawClassification(r));
     if ((RAILWAY_ROLES.some(key => role(r, key)) || isRoad || isWarp || isTeleport) && (ids.get(`${world(r)}/${r.ID}`)?.length ?? 0) > 1) add(r, '同世界 ID 重复，无法唯一解析。', navBase);
     if((isWarp||isTeleport)&&r.Situation!==undefined&&typeof r.Situation!=='boolean')add(r,'Situation 必须为布尔值；省略时按可用处理。',`${navBase}/teleport`);
-    if(role(r,'stations')&&(ids.get(`${world(r)}/${stationKey(r)}`)?.length??0)>1)add(r,'同世界车站规范建筑 ID 重复。',sharedBase);
+    if(role(r,'stations')&&(ids.get(`${world(r)}/${stationKey(r)}`)?.length??0)>1)add(r,'同世界车站规范建筑 ID 重复。',sharedBase,false,{businessKey:stationKey(r)});
     if (role(r, 'platforms')) for (const id of refs(r, 'lines')) if (id) check(r, id, 'lines');
     if (role(r, 'stationAreas')) { for (const id of refs(r, 'platforms')) if (id) check(r, id, 'platforms'); if (r.STBuilding) check(r, String(r.STBuilding), 'stations'); }
     if (role(r, 'stations')) for (const key of ['Stations', 'stations', 'stationsgroup', 'stationsGroup', 'StationsGroup', 'Stationsgroup']) for (const id of refs(r, key)) if (id) check(r, id, 'stationAreas');
@@ -145,23 +145,23 @@ export function validateNavigationRecords(config: ConfigPackageV3, records: Moun
         const id = typeof v === 'string' ? v : Array.isArray(v) ? String(v[0] ?? '') : String(row.tgt ?? row.Tgt ?? row.ID ?? row.id ?? '');
         if (!id) continue;
         const candidates = ids.get(`${world(r)}/${id}`) ?? [];
-        if (!candidates.length) add(r, `${key} 目标 ${id} 不存在。`, `${navBase}/road`);
-        else if (candidates.length !== 1) add(r, `${key} 目标 ${id} 不唯一。`, `${navBase}/road`);
+        if (!candidates.length) add(r, `${key} 目标 ${id} 不存在。`, `${navBase}/road`,false,{targetId:id,businessKey:id});
+        else if (candidates.length !== 1) add(r, `${key} 目标 ${id} 不唯一。`, `${navBase}/road`,false,{targetId:id,businessKey:id});
         else if (!pathsMatch(nav.road.selectors.roads, rawClassification(candidates[0]))) add(r, `${key} 目标 ${id} 不在道路参与范围；排除该连接。`, `${navBase}/road`, true);
       }
     }
     if (isWarp) {
       const key = String(r.WRPointI2D ?? r.wrPointI2D ?? '').trim();
-      if (!key || (warps.get(`${world(r)}/${key}`)?.length ?? 0) > 1) add(r, '同世界 Warp 定位键缺失或重复。', `${navBase}/teleport`);
+      if (!key || (warps.get(`${world(r)}/${key}`)?.length ?? 0) > 1) add(r, '同世界 Warp 定位键缺失或重复。', `${navBase}/teleport`,false,{businessKey:key});
     }
     if (isTeleport&&teleportNodeAvailable(r)) {
       const key = String(r.TGTWarp ?? r.tgtWarp ?? '').trim();
       const target = warps.get(`${world(r)}/${key}`) ?? [];
       const explicit = coordinate(r.TGTcoordinate) || finite(r.TGT_x) && finite(r.TGT_z);
       const excluded = key && records.filter(other => world(other) === world(r) && String(other.WRPointI2D ?? other.wrPointI2D ?? '') === key);
-      if (key && target.length > 1) add(r, `Warp 目标 ${key} 不唯一。`, `${navBase}/teleport`);
+      if (key && target.length > 1) add(r, `Warp 目标 ${key} 不唯一。`, `${navBase}/teleport`,false,{businessKey:key});
       else if(key&&target.length===1&&!teleportNodeAvailable(target[0]))add(r,`Warp 目标 ${key} 已停用；排除该传送边。`,`${navBase}/teleport`,true);
-      else if (!(key && target.length === 1) && !explicit) add(r, excluded && excluded.length === 1 ? `Warp 目标 ${key} 不在参与范围；排除该传送边。` : `传送目标无法解析${key ? `：${key}` : ''}。`, `${navBase}/teleport`, Boolean(excluded && excluded.length === 1));
+      else if (!(key && target.length === 1) && !explicit) add(r, excluded && excluded.length === 1 ? `Warp 目标 ${key} 不在参与范围；排除该传送边。` : `传送目标无法解析${key ? `：${key}` : ''}。`, `${navBase}/teleport`, Boolean(excluded && excluded.length === 1),{businessKey:key});
     }
   }
   return result;
