@@ -229,7 +229,7 @@ try:
         assert '#111827' in json.dumps(copied['geometryProfiles'])
         assert '显示取色回退' in b.evaluate('Array.from(document.querySelectorAll("details")).find(e=>e.querySelector("summary")?.textContent==="分类创建报告")?.textContent')
     b.click('核验')
-    assert not b.evaluate('Array.from(document.querySelectorAll("button")).find(e=>e.textContent.trim()==="保存")?.disabled')
+    assert not b.evaluate('Array.from(document.querySelectorAll("button")).find(e=>e.textContent.trim()==="保存"&&!e.closest("[data-engine-section]"))?.disabled')
     b.screenshot('display-only-template-fallback.png')
     b.click('放弃草稿')
     assert state()['active']==baseline

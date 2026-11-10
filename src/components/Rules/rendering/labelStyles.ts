@@ -460,7 +460,6 @@ export function renderLabelHtml(styleKey: LabelStyleKeyInput, text: string, opts
           line-height:1.05;
           letter-spacing:0.01em;
           font-style:${italic ? 'italic' : 'normal'};
-          text-decoration:${underline ? 'underline' : 'none'};
           -webkit-font-smoothing:antialiased;
           text-rendering:geometricPrecision;
         ">
@@ -477,6 +476,7 @@ export function renderLabelHtml(styleKey: LabelStyleKeyInput, text: string, opts
             position:relative;
             display:inline-block;
             color:#0f172a;
+            text-decoration:${underline ? 'underline' : 'none'};
             pointer-events:none;
             user-select:none;
           ">${safe}</span>

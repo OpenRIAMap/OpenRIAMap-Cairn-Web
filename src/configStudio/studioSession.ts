@@ -2,13 +2,15 @@ export type StudioTab = 'general' | 'features' | 'workflows';
 import type { ConfigPackageV3 } from './types';
 import type { EngineDraft } from './engineTransaction';
 import type { WorkflowEditingSession } from './WorkflowWorkbench';
+import type { RegistryCreation } from './C19RegistryEditors';
+import type { RegistrySection } from './registryReferences';
 export type ClassTreeSession={classCode:string;baseline:ConfigPackageV3;staged:ConfigPackageV3;changes:string[]};
 export type PackageCandidate = { baseline: ConfigPackageV3; config: ConfigPackageV3; source: 'migration' | 'import' | 'recovery' | 'editing' };
 export type FeatureDraftScope = 'package' | 'category';
-export type StudioEditingSession={draft:ConfigPackageV3|null;draftScope?:FeatureDraftScope;tree:ClassTreeSession|null;selectedId:string;editing:boolean;baseline:ConfigPackageV3;generalDrafts?:import('./GeneralRulesEditor').GeneralDrafts;lookupDraft?:import('./lookupTableTransaction').LookupTableDraft|null;engineDraft?:EngineDraft|null;packageCandidate?:PackageCandidate|null;activeTab?:StudioTab;workflowSession?:WorkflowEditingSession|null;detailsByTab?:Partial<Record<StudioTab,string[]|number[]>>;categoryCreation?:import('./CategoryCreationPanel').CategoryCreationDraft|null;editorExpanded?:boolean;scenario?:import('./types').PreviewScenario};
+export type StudioEditingSession={draft:ConfigPackageV3|null;draftScope?:FeatureDraftScope;tree:ClassTreeSession|null;selectedId:string;editing:boolean;baseline:ConfigPackageV3;generalDrafts?:import('./GeneralRulesEditor').GeneralDrafts;lookupDraft?:import('./lookupTableTransaction').LookupTableDraft|null;engineDraft?:EngineDraft|null;packageCandidate?:PackageCandidate|null;activeTab?:StudioTab;workflowSession?:WorkflowEditingSession|null;detailsByTab?:Partial<Record<StudioTab,string[]|number[]>>;categoryCreation?:import('./CategoryCreationPanel').CategoryCreationDraft|null;registryCreation?:RegistryCreation|null;registrySelection?:Partial<Record<RegistrySection,string>>;editorExpanded?:boolean;scenario?:import('./types').PreviewScenario};
 
 export function hasStudioDraft(session?: StudioEditingSession): boolean {
-  return Boolean(session && (session.draft || session.tree || session.editing || session.lookupDraft || session.engineDraft || session.packageCandidate || (session.workflowSession?.draft || session.workflowSession?.creation||session.workflowSession?.availability) || session.categoryCreation || Object.keys(session.generalDrafts ?? {}).length));
+  return Boolean(session && (session.draft || session.tree || session.editing || session.lookupDraft || session.engineDraft || session.packageCandidate || (session.workflowSession?.draft || session.workflowSession?.creation||session.workflowSession?.availability) || session.categoryCreation || session.registryCreation || Object.keys(session.generalDrafts ?? {}).length));
 }
 
 export function recoverPackageCandidate(session?: StudioEditingSession): PackageCandidate | null {
