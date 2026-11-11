@@ -81,6 +81,12 @@ const createId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 
 function stateLabel(state:string){return remoteState(state,getApplicationSettings().preferences.language);}
 
+function reviewStatusLabel(state: ReviewStatusBoardEntry['state']) {
+  const language = getApplicationSettings().preferences.language;
+  if (state === 'pending') return language === 'zh' ? '待审核' : 'Awaiting review';
+  return remoteState(state, language);
+}
+
 function stateTone(state: string) {
   return ({ pending: 'bg-amber-100 text-amber-800', approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 text-red-700', archived: 'bg-gray-200 text-gray-700' } as Record<string, string>)[state] ?? 'bg-blue-100 text-blue-700';
 }
@@ -89,7 +95,7 @@ function isStatusLampState(state: string): state is ReviewStatusBoardEntry['stat
   return ['pending', 'approved', 'rejected', 'archived'].includes(state);
 }
 
-function displayState(submission: ReviewSubmissionSnapshot, entry?: ReviewStatusBoardEntry): string {
+function displayState(submission: ReviewSubmissionSnapshot, entry?: ReviewStatusBoardEntry): ReviewStatusBoardEntry['state'] {
   // A review lamp is an independent reviewer decision. Publication lifecycle
   // is displayed separately and must never overwrite the saved lamp.
   return entry?.state ?? (isStatusLampState(submission.state) ? submission.state : 'pending');
@@ -305,7 +311,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       setMessage('审核状态灯操作缺少决定类型。');
       return;
     }
-    const actionLabel = ({ approve: '通过', reject: '打回', 'request-changes': '要求修改', archive: '归档', reopen: '恢复待审' } as Record<string, string>)[decisionAction ?? ''] ?? stateLabel(state);
+    const actionLabel = ({ approve: '通过', reject: '打回', 'request-changes': '要求修改', archive: '归档', reopen: '恢复待审' } as Record<string, string>)[decisionAction ?? ''] ?? reviewStatusLabel(state);
     const selectedRevision = selected.revisions.find((item) => item.revisionId === revisionId) ?? selected.revisions.find((item) => item.revisionId === selected.currentRevisionId);
     setConfirmationReason(reason ?? '');
     setPendingConfirmation({
@@ -729,7 +735,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
             return <button key={submission.submissionId} type="button" onClick={() => selectDetail(submission)} className={`w-full rounded-2xl border p-3 text-left ${historical ? 'border-amber-300 bg-amber-50 hover:border-amber-500' : 'border-blue-200 bg-blue-50 hover:border-blue-400'}`}><div className="flex gap-3"><input aria-label={`${historical ? '选择历史归档整理' : '选择发布'} ${submission.packageName}`} type="checkbox" checked={checked} onClick={(event) => event.stopPropagation()} onChange={() => {
               if (historical) setHistoricalArchiveSelectedIds((previous) => { const next = new Set(previous); if (next.has(submission.submissionId)) next.delete(submission.submissionId); else next.add(submission.submissionId); return next; });
               else setSelectedIds((previous) => { const next = new Set(previous); if (next.has(submission.submissionId)) next.delete(submission.submissionId); else next.add(submission.submissionId); return next; });
-            }} /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><span className="truncate font-semibold text-gray-900">{submission.packageName}</span><span className={`shrink-0 rounded-full px-2 py-1 text-xs ${historical ? 'bg-amber-100 text-amber-800' : stateTone(shownState)}`}>{historical ? '历史归档待整理' : stateLabel(shownState)}</span></div><div className="mt-1 text-xs text-gray-500">{submission.submissionId}</div><div className="mt-2 text-xs text-gray-600">决策版本：{entry?.decisionRevisionId ?? '未选择'} · 共 {submission.revisions.length} 个版本</div>{historical ? <div className="mt-2 text-xs text-amber-800">该旧包已有“归档”状态灯但缺少归档完成回执，不能参与普通发布；请使用下方“历史归档整理”。</div> : isPublicationLifecycleState(submission.state) ? <div className="mt-2 text-xs text-amber-700">发布生命周期：{stateLabel(submission.state)}。状态灯仍可记录，但不会重新发布、回滚数据或创建新版本。</div> : null}</div></div></button>;
+            }} /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><span className="truncate font-semibold text-gray-900">{submission.packageName}</span><span className={`shrink-0 rounded-full px-2 py-1 text-xs ${historical ? 'bg-amber-100 text-amber-800' : stateTone(shownState)}`}>{historical ? '历史归档待整理' : reviewStatusLabel(shownState)}</span></div><div className="mt-1 text-xs text-gray-500">{submission.submissionId}</div><div className="mt-2 text-xs text-gray-600">决策版本：{entry?.decisionRevisionId ?? '未选择'} · 共 {submission.revisions.length} 个版本</div>{historical ? <div className="mt-2 text-xs text-amber-800">该旧包已有“归档”状态灯但缺少归档完成回执，不能参与普通发布；请使用下方“历史归档整理”。</div> : isPublicationLifecycleState(submission.state) ? <div className="mt-2 text-xs text-amber-700">发布生命周期：{stateLabel(submission.state)}。状态灯仍可记录，但不会重新发布、回滚数据或创建新版本。</div> : null}</div></div></button>;
           })}</div>
           {historicalArchiveCandidates.length ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3"><div className="flex items-center justify-between gap-2"><div><div className="font-semibold text-amber-900">历史归档整理</div><p className="mt-1 text-xs text-amber-800">仅维护者可为明确选中的旧包创建迁移计划；不发布正式地图数据。</p></div><span className="text-xs text-amber-800">候选 {historicalArchiveCandidates.length}</span></div><div className="mt-2 flex items-center justify-between"><button type="button" className="text-xs text-amber-900 underline" onClick={() => setHistoricalArchiveSelectedIds(new Set(historicalArchiveCandidates.map((item) => item.submissionId)))}>全选历史包</button><AppButton disabled={!historicalArchiveSelectedIds.size || busy !== null || !actor.roles.includes('maintainer')} onClick={reconcileHistoricalArchives} className="justify-center rounded-xl bg-amber-600 px-3 py-2 text-xs text-white hover:bg-amber-700 disabled:bg-amber-300"><Archive className="h-3.5 w-3.5" />整理已选历史归档</AppButton></div>{!actor.roles.includes('maintainer') ? <p className="mt-2 text-xs text-amber-800">当前身份不是维护者，不能创建归档整理任务。</p> : null}</div> : null}
           <div className="grid grid-cols-3 gap-2 border-t border-gray-100 pt-3"><AppButton disabled={!selectedEntries.length || busy !== null} onClick={() => void saveStatus()} className="justify-center rounded-xl bg-orange-600 px-2 py-2 text-xs text-white hover:bg-orange-700 disabled:bg-orange-300"><CheckCircle2 className="h-3.5 w-3.5" />保存状态</AppButton><AppButton disabled={!selectedEntries.length || dirty || busy !== null} onClick={() => void releasePrecheck()} className="justify-center rounded-xl bg-blue-600 px-2 py-2 text-xs text-white hover:bg-blue-700 disabled:bg-blue-300"><ClipboardCheck className="h-3.5 w-3.5" />发布前检查</AppButton><AppButton disabled={!publishReady || busy !== null} onClick={() => void publish()} className="justify-center rounded-xl bg-green-600 px-2 py-2 text-xs text-white hover:bg-green-700 disabled:bg-green-300"><Send className="h-3.5 w-3.5" />发布</AppButton></div>
