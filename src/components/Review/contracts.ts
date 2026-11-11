@@ -244,6 +244,7 @@ export type ReviewReleaseGateSnapshot = {
   state: ReviewReleaseGateState;
   /** False when the authority has never persisted a release gate. */
   initialized?: boolean;
+  owner?: { principalId: string };
   /** Omitted for an uninitialized gate so UI never invents an epoch timestamp. */
   updatedAt?: string;
   acquiredAt?: string;
@@ -452,6 +453,7 @@ export type ReviewReleaseControlReport = {
   gate?: ReviewReleaseGateSnapshot;
   report?: {
     reportSha256?: string;
+    requiresWriteDeleteConfirmation?: boolean;
     findings?: Array<{ code?: string; severity?: 'blocker' | 'warning' | 'info' | string; message?: string }>;
     reports?: unknown[];
     staleReason?: string;
@@ -462,6 +464,7 @@ export type ReviewReleaseControlReport = {
 
 export type ReviewReleaseControlRequest = {
   precheckProtocol?: 'pending-v2';
+  replaceAttemptId?: string;
   selectedSubmissionIds: readonly string[];
   expectedBoardVersion: number;
   request: ReviewSubmissionRequest;
@@ -471,6 +474,7 @@ export type ReviewReleaseConfirmationRequest = {
   attemptId: string;
   expectedGateVersion: number;
   precheckReportSha256: string;
+  acceptedWriteDeleteReportSha256?: string;
   request: ReviewSubmissionRequest;
 };
 

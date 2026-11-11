@@ -1,4 +1,88 @@
 {
+  "BATCH_CONFIGURATION_INVALID": {
+    "zh": "合并后的要素或关联未通过正式配置核验。",
+    "en": "The combined feature data or relations failed validation against the published configuration."
+  },
+  "review-batch-job-invalid": {
+    "zh": "后台批次核验任务身份无效，请重新检查。",
+    "en": "The background batch validation job identity is invalid. Run the precheck again."
+  },
+  "review-batch-revision-changed": {
+    "zh": "审核包修订或文件已变化，请重新检查。",
+    "en": "A selected package revision or file changed. Run the precheck again."
+  },
+  "review-history-manifest-invalid": {
+    "zh": "历史发布清单无法核对。",
+    "en": "The historical release manifest could not be verified."
+  },
+  "review-history-feature-invalid": {
+    "zh": "历史要素指纹无效。",
+    "en": "The historical feature fingerprint is invalid."
+  },
+  "review-history-feature-duplicate": {
+    "zh": "历史快照含重复的要素身份。",
+    "en": "The historical snapshot contains a duplicate feature identity."
+  },
+  "review-history-feature-count-mismatch": {
+    "zh": "历史快照的要素数量无法核对。",
+    "en": "The historical snapshot’s feature count could not be verified."
+  },
+  "BATCH_DUPLICATE_UPSERT_ID": {
+    "zh": "同一世界的同一 ID 被多个包写入。请修改这些包，或取消勾选其中的包，只保留一个写入后重新检查。",
+    "en": "Multiple packages write this ID in the same world. Edit or deselect packages until only one write remains, then run the precheck again."
+  },
+  "BATCH_DUPLICATE_DELETE_MERGED": {
+    "zh": "多个包删除同一正式要素，将合并为一次删除。",
+    "en": "The packages’ deletions of the same feature will be merged into one."
+  },
+  "BATCH_UPDATE_DELETE_CONFLICT": {
+    "zh": "此要素同时被写入和删除。确认后执行删除，并跳过其他包对此要素的写入、图片和链接。",
+    "en": "A write and a deletion target this feature. Confirmation deletes it and skips the other packages’ writes, pictures and links."
+  },
+  "BATCH_EXISTING_ID_COLLISION": {
+    "zh": "该世界的这个 ID 已由另一 Class 使用。请修正要素 ID，或明确删除旧分类的正式记录后重检。",
+    "en": "The ID is already used by another Class in this world. Correct the ID or explicitly delete the old record and run the precheck again."
+  },
+  "BATCH_CLASS_REPLACEMENT": {
+    "zh": "本批次删除旧 Class 的记录，并保留新 Class 的记录。",
+    "en": "This batch deletes the old Class record and keeps the new Class record."
+  },
+  "BATCH_HISTORY_UNAVAILABLE": {
+    "zh": "无法核对该包的历史基线。当前正式数据仍按常规核验。",
+    "en": "This package’s historical baseline could not be verified. Checks against the current published data still apply."
+  },
+  "BATCH_BASELINE_TARGET_OCCUPIED": {
+    "zh": "该 ID 在制包后已被正式数据占用，请检查本次操作的影响。",
+    "en": "This ID was occupied after the package baseline. Review the effect of the pending operation."
+  },
+  "BATCH_BASELINE_TARGET_CHANGED": {
+    "zh": "此目标在制包后发生过变化，请检查本次操作的影响。",
+    "en": "This target changed after the package baseline. Review the effect of the pending operation."
+  },
+  "BATCH_BASELINE_TARGET_REMOVED": {
+    "zh": "此目标在制包后已删除。若继续发布对此目标的写入，可能会重新创建该要素。",
+    "en": "This target was deleted after the package baseline. Publishing a write to it may recreate the feature."
+  },
+  "BATCH_CONFIGURATION_PENDING": {
+    "zh": "正在按正式配置核验合并后的要素和关联。",
+    "en": "Checking the combined features and their relations against the published configuration."
+  },
+  "BATCH_CONFIGURATION_FAILED": {
+    "zh": "后台批次核验未能完成，请查看原始详情后重新检查。",
+    "en": "Background batch validation did not complete. See the original details before retrying."
+  },
+  "review-release-write-delete-confirmation-required": {
+    "zh": "此批次需要明确确认写删冲突。请刷新应用、重新检查并勾选确认。",
+    "en": "This batch requires explicit confirmation of write–delete conflicts. Reload the app, run the precheck and acknowledge the outcome."
+  },
+  "relay-base-release-stale": {
+    "zh": "正式数据基线已变化，请重新进行发布前检查。",
+    "en": "The published data baseline changed. Run the release precheck again."
+  },
+  "review-batch-plan-changed": {
+    "zh": "批次、核验凭据或正式基线已变化，请重新执行发布前检查。",
+    "en": "The batch, receipt, or published baseline changed. Run the release precheck again."
+  },
   "PACKAGE_INVALID": {
     "zh": "审核包包含无效的要素、图片或删除标识，请展开原始详情。",
     "en": ""

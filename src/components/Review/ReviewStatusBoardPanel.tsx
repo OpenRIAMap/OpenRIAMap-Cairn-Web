@@ -1,7 +1,7 @@
 import {getApplicationSettings} from '@/core/project/applicationRuntime';
 import {remoteError,remoteState,type FeedbackLanguage} from '@/feedback/remoteFeedback';
 import {RemoteFinding} from '@/feedback/RemoteFinding';
-import {reviewReportFindings,reviewReportProtocolValid} from './reviewReportFindings';
+import {reviewReportFindings,reviewReportProtocolValid,type ReviewFindingTarget,type ReviewFindingView} from './reviewReportFindings';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Archive, CheckCircle2, ClipboardCheck, FileDown, FileText, RefreshCw, RotateCcw, Send, ShieldCheck, XCircle } from 'lucide-react';
@@ -48,6 +48,8 @@ type PendingReviewConfirmation = {
   confirmLabel: string;
   tone?: 'blue' | 'green' | 'orange' | 'rose';
   reasonLabel?: string;
+  writeDeleteFindings?: ReviewFindingView[];
+  releaseConfirmation?: boolean;
   onConfirm: (reason: string) => Promise<void> | void;
 };
 
@@ -146,13 +148,34 @@ function createEntry(submission: ReviewSubmissionSnapshot, existing?: ReviewStat
   };
 }
 
+function ReviewFindingDetails({finding,language}:{finding:ReviewFindingView;language:FeedbackLanguage}) {
+  const zh=language==='zh';
+  const action:Record<string,string>=zh?{create:'新增',update:'修改',write:'写入',delete:'删除'}:{create:'Create',update:'Update',write:'Write',delete:'Delete'};
+  const target=(row:ReviewFindingTarget)=>[row.worldId,row.classCode,row.featureId].filter(Boolean).join(' / ');
+  return <>
+    {finding.target ? <div className="font-semibold break-words">{target(finding.target)}</div> : null}
+    {finding.businessKey ? <div>{zh?'业务键':'Business key'} · {finding.businessKey}</div> : null}
+    <div>{finding.packageId?finding.packageId+'：':''}<RemoteFinding code={finding.code??'REMOTE_DIAGNOSTIC'} message={finding.message} language={language} details={finding}/></div>
+    {finding.code==='BATCH_CONFIGURATION_INVALID' ? <div className="mt-1 break-words">{finding.message}</div> : null}
+    {finding.operations?.length ? <ul className="mt-1 list-disc space-y-1 pl-5">{finding.operations.map((row,index)=><li key={index} className="break-words">
+      {[row.action&&(action[row.action]??row.action),target(row),row.packageName??row.submissionId,row.packageName&&row.submissionId,row.revisionId].filter(Boolean).join(' · ')}
+    </li>)}</ul> : null}
+    {(finding.formalTargets??finding.currentTargets)?.map((row,index)=><div key={index} className="break-words">{zh?'正式数据':'Published data'} · {target(row)}</div>)}
+    {finding.sourceReleaseId||finding.currentReleaseId ? <div className="mt-1 break-words">
+      {[finding.sourceReleaseId&&`${zh?'源基线':'Source baseline'} ${finding.sourceReleaseId}`,finding.currentReleaseId&&`${zh?'当前基线':'Current baseline'} ${finding.currentReleaseId}`].filter(Boolean).join(' · ')}
+      {finding.before!==undefined||finding.after!==undefined ? <div>{finding.before?target(finding.before):'—'} → {finding.after?target(finding.after):'—'}</div> : null}
+    </div> : null}
+    {finding.baselineChanges?.length ? <div className="ml-2 mt-1 space-y-2 border-l border-amber-300 pl-2">{finding.baselineChanges.map((row,index)=><ReviewFindingDetails key={index} finding={row} language={language}/>)}</div> : null}
+  </>;
+}
+
 function reportView(report: ReviewReleaseControlReport | ReviewPackagePrecheckReport | null, title: string, source='服务端',language:FeedbackLanguage='zh') {
   if (!report) return null;
   const rawFindings = reviewReportFindings(report);
   if(!reviewReportProtocolValid(report))rawFindings.push({code:'REPORT_PROTOCOL_INVALID',severity:'blocker',message:source+'返回了阻断或警告状态，却没有具体原因。请重新检查并保留关联信息；当前禁止发布。'});
   return <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
     <div className="font-semibold">{title}：{remoteState(report.decision??'',language)}</div>
-    {rawFindings.length?<div className="mt-2 space-y-1">{rawFindings.map((finding,index)=><div key={index} className={finding.severity==='blocker'?'text-red-700':finding.severity==='warning'?'text-amber-700':'text-gray-600'}>{finding.packageId?finding.packageId+'：':''}<RemoteFinding code={finding.code??'REMOTE_DIAGNOSTIC'} message={finding.message} language={language} details={finding}/></div>)}</div>:<div className="mt-1 text-gray-500">{language==='zh'?'未发现阻断或警告项。':'No blockers or warnings.'}</div>}
+    {rawFindings.length?<div className="mt-2 space-y-1">{rawFindings.map((finding,index)=><div key={index} className={finding.severity==='blocker'?'text-red-700':finding.severity==='warning'?'text-amber-700':'text-gray-600'}><ReviewFindingDetails finding={finding} language={language}/></div>)}</div>:<div className="mt-1 text-gray-500">{language==='zh'?'未发现阻断或警告项。':'No blockers or warnings.'}</div>}
   </div>;
 }
 
@@ -181,6 +204,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   const [loadProgress, setLoadProgress] = useState<ReviewWorkspaceLoadProgress | null>(null);
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingReviewConfirmation | null>(null);
   const [confirmationReason, setConfirmationReason] = useState('');
+  const [writeDeleteAcknowledged,setWriteDeleteAcknowledged] = useState(false);
   const recoveredReleaseActorRef = useRef<string | null>(null);
 
   const detail = submissions.find((submission) => submission.submissionId === detailId) ?? null;
@@ -196,11 +220,18 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   const selectedEntries = useMemo(() => draft.filter((entry) => selectedIds.has(entry.submissionId) && !submissions.some((item) => item.submissionId === entry.submissionId && isHistoricalArchiveCandidate(item, entry))), [draft, selectedIds, submissions]);
   const historicalArchiveCandidates = useMemo(() => submissions.filter((submission) => isHistoricalArchiveCandidate(submission, draft.find((entry) => entry.submissionId === submission.submissionId))), [draft, submissions]);
   const dirty = board ? isReviewStatusBoardDirty({ baseBoardVersion: board.boardVersion, entries: draft }, board) : false;
-  const publishReady = reviewReportProtocolValid(releaseReport)&&(releaseReport?.decision === 'ready' || releaseReport?.decision === 'warning-confirmation-required');
+  const [releaseReportKey,setReleaseReportKey]=useState<string>();
+
   const precheckGeneration=useRef(0);
   const ongoingPrecheck=useRef<{key:string;request:Parameters<typeof releaseControl.runReleasePrecheck>[0]}>();
   const selectedKey=selectedEntries.map(entry=>entry.submissionId+':'+entry.decisionRevisionId).join('|');
-  useEffect(()=>{return()=>{precheckGeneration.current++;};},[selectedKey,board?.boardVersion]);
+  const selectionVersionKey=selectedKey+':'+board?.boardVersion;
+  const publishReady=!dirty&&releaseReportKey===selectionVersionKey&&reviewReportProtocolValid(releaseReport)&&
+    (releaseReport?.decision==='ready'||releaseReport?.decision==='warning-confirmation-required');
+  useEffect(()=>{
+    setReleaseReportKey(undefined);
+    return()=>{precheckGeneration.current++;};
+  },[selectionVersionKey]);
 
   const selectDetail = useCallback((submission: ReviewSubmissionSnapshot) => {
     if (activeWorkspaceSubmissionId && activeWorkspaceSubmissionId !== submission.submissionId) {
@@ -450,7 +481,8 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       }catch{/* Session storage is optional; server identity checks remain authoritative. */}
       const gate = normalizeGate(await releaseControl.getReleaseGate(actor));
       setReleaseGate(gate);
-      if (isReviewReleaseGateLeaseActive(gate)&&!(gate.state==='prechecking'&&ongoingPrecheck.current?.key===selectedKey+':'+board.boardVersion)) { setMessage('当前已有发布进行中，请稍后刷新 Release Gate。'); return; }
+      const canReplace=gate.owner?.principalId===actor.principalId&&['prechecking','awaiting-confirmation'].includes(gate.state);
+      if(isReviewReleaseGateLeaseActive(gate)&&!canReplace){setMessage('当前已有发布进行中，请稍后刷新 Release Gate。');return;}
       if (isReviewReleaseGateLeaseExpired(gate)) setMessage(null);
       const remote = await submissionAdapter.getStatusBoard(actor);
       const differences = compareReviewStatusBoards(draft, remote.entries).filter((difference) => difference.kind !== 'unchanged');
@@ -465,16 +497,16 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       }
       const generation=++precheckGeneration.current;
       const key=selectedKey+':'+board.boardVersion;
-      const request=ongoingPrecheck.current?.key===key?ongoingPrecheck.current.request:{precheckProtocol:'pending-v2' as const,selectedSubmissionIds:selectedEntries.map(entry=>entry.submissionId),expectedBoardVersion:board.boardVersion,request:{requestId:createId('release-precheck'),correlationId:createId('release-correlation'),idempotencyKey:createId('release-idempotency'),submissionId:owner.submissionId,targetRevisionId:approved.decisionRevisionId!,expectedStateVersion:owner.stateVersion,action:'publish' as const,occurredAt:new Date().toISOString(),actor}};
+      const request=ongoingPrecheck.current?.key===key?ongoingPrecheck.current.request:{precheckProtocol:'pending-v2' as const,replaceAttemptId:canReplace?gate.attemptId??undefined:undefined,selectedSubmissionIds:selectedEntries.map(entry=>entry.submissionId),expectedBoardVersion:board.boardVersion,request:{requestId:createId('release-precheck'),correlationId:createId('release-correlation'),idempotencyKey:createId('release-idempotency'),submissionId:owner.submissionId,targetRevisionId:approved.decisionRevisionId!,expectedStateVersion:owner.stateVersion,action:'publish' as const,occurredAt:new Date().toISOString(),actor}};
       ongoingPrecheck.current={key,request};
       try{sessionStorage.setItem(sessionKey,JSON.stringify({key,request,savedAt:Date.now()}));}catch{/* The current page can still resume without storage. */}
       let pendingResult=false;
-      for(const delay of [0,1000,2000,4000,8000,10000,15000]){
+      for(const delay of [0,1000,2000,4000,8000,10000,...Array<number>(12).fill(15000)]){
         if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
         if(generation!==precheckGeneration.current)return;
         const result=await releaseControl.runReleasePrecheck(request,actor);
         if(generation!==precheckGeneration.current)return;
-        setReleaseReport(result);setReleaseGate(normalizeGate(result.gate));
+        setReleaseReport(result);setReleaseReportKey(key);setReleaseGate(normalizeGate(result.gate));
         pendingResult=result.decision==='pending';
         if(!pendingResult){ongoingPrecheck.current=undefined;try{sessionStorage.removeItem(sessionKey);}catch{/* optional storage */}setMessage(result.decision==='ready'?'发布前检查通过。':null);break;}
         setMessage('后台正在按当前正式配置核验；保持本次选择，完成后自动更新报告。');
@@ -493,9 +525,18 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     const approved = selectedEntries.find((entry) => entry.state === 'approved' && entry.decisionRevisionId);
     const owner = approved && submissions.find((item) => item.submissionId === approved.submissionId);
     if (!approved || !owner) return;
+    const needsWriteDeleteConfirmation=releaseReport.report.requiresWriteDeleteConfirmation;
+    const writeDeleteFindings=reviewReportFindings(releaseReport).filter(finding=>finding.code==='BATCH_UPDATE_DELETE_CONFLICT');
+    if(needsWriteDeleteConfirmation&&!writeDeleteFindings.length){
+      setMessage('发布前报告缺少写删冲突详情，请重新检查。');
+      return;
+    }
     setConfirmationReason('');
+    setWriteDeleteAcknowledged(false);
     setPendingConfirmation({
       title: '确认发布结果',
+      releaseConfirmation:true,
+      ...(needsWriteDeleteConfirmation?{writeDeleteFindings}:{}),
       message: '确认发布？服务端会再次校验 Release Gate、当前正式数据和已保存的审核状态。发布进入队列后页面将不再锁定，但发布不会因关闭页面而取消。',
       confirmLabel: '确认发布',
       tone: 'green',
@@ -505,10 +546,15 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
           const result = await releaseControl.confirmRelease({
             attemptId: releaseReport.gate!.attemptId!, expectedGateVersion: releaseReport.gate!.gateVersion,
             precheckReportSha256: releaseReport.report!.reportSha256!,
+            ...(needsWriteDeleteConfirmation?{acceptedWriteDeleteReportSha256:releaseReport.report!.reportSha256!}:{}),
             request: { requestId: createId('publish'), correlationId: createId('publish-correlation'), idempotencyKey: createId('publish-idempotency'), submissionId: owner.submissionId, targetRevisionId: approved.decisionRevisionId!, expectedStateVersion: owner.stateVersion, action: 'publish', occurredAt: new Date().toISOString(), actor },
           }, actor);
           setReleaseReport(result);
           setReleaseGate(normalizeGate(result.gate));
+          if(result.decision==='stale'){
+            setMessage('正式数据或审核状态已变化，请重新执行发布前检查。');
+            return;
+          }
           if (result.release?.releaseId) {
             setActiveReleaseId(result.release.releaseId);
             setReleaseProgress({ releaseId: result.release.releaseId, state: result.release.state ?? 'queueing' });
@@ -688,7 +734,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
           {historicalArchiveCandidates.length ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3"><div className="flex items-center justify-between gap-2"><div><div className="font-semibold text-amber-900">历史归档整理</div><p className="mt-1 text-xs text-amber-800">仅维护者可为明确选中的旧包创建迁移计划；不发布正式地图数据。</p></div><span className="text-xs text-amber-800">候选 {historicalArchiveCandidates.length}</span></div><div className="mt-2 flex items-center justify-between"><button type="button" className="text-xs text-amber-900 underline" onClick={() => setHistoricalArchiveSelectedIds(new Set(historicalArchiveCandidates.map((item) => item.submissionId)))}>全选历史包</button><AppButton disabled={!historicalArchiveSelectedIds.size || busy !== null || !actor.roles.includes('maintainer')} onClick={reconcileHistoricalArchives} className="justify-center rounded-xl bg-amber-600 px-3 py-2 text-xs text-white hover:bg-amber-700 disabled:bg-amber-300"><Archive className="h-3.5 w-3.5" />整理已选历史归档</AppButton></div>{!actor.roles.includes('maintainer') ? <p className="mt-2 text-xs text-amber-800">当前身份不是维护者，不能创建归档整理任务。</p> : null}</div> : null}
           <div className="grid grid-cols-3 gap-2 border-t border-gray-100 pt-3"><AppButton disabled={!selectedEntries.length || busy !== null} onClick={() => void saveStatus()} className="justify-center rounded-xl bg-orange-600 px-2 py-2 text-xs text-white hover:bg-orange-700 disabled:bg-orange-300"><CheckCircle2 className="h-3.5 w-3.5" />保存状态</AppButton><AppButton disabled={!selectedEntries.length || dirty || busy !== null} onClick={() => void releasePrecheck()} className="justify-center rounded-xl bg-blue-600 px-2 py-2 text-xs text-white hover:bg-blue-700 disabled:bg-blue-300"><ClipboardCheck className="h-3.5 w-3.5" />发布前检查</AppButton><AppButton disabled={!publishReady || busy !== null} onClick={() => void publish()} className="justify-center rounded-xl bg-green-600 px-2 py-2 text-xs text-white hover:bg-green-700 disabled:bg-green-300"><Send className="h-3.5 w-3.5" />发布</AppButton></div>
           {dirty ? <p className="text-xs text-amber-700">状态灯有未保存的本地修改；请先保存状态。</p> : null}
-          {reportView(releaseReport, '发布前检查报告','服务端',getApplicationSettings().preferences.language)}
+          {reportView(releaseReportKey===selectionVersionKey||releaseReport?.decision==='queued'?releaseReport:null, '发布前检查报告','服务端',getApplicationSettings().preferences.language)}
         </div>
       </div>
     </DraggablePanel>
@@ -752,6 +798,9 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     ) : null}
     {activeReleaseId ? <DraggablePanel id="review-release-progress" defaultPosition={{ x: 660, y: 430 }} zIndex={REVIEW_LAYER.releaseProgress} constrainExpandedToViewport><div className="w-[390px] overflow-hidden rounded-2xl border border-blue-200 bg-white shadow-xl" data-draggable-proxy-close="true"><div className="border-b border-slate-200 px-4 py-3"><h3 className="text-lg font-bold text-slate-900" data-draggable-title>发布进度</h3><button type="button" data-draggable-close className="sr-only" aria-label="关闭" onClick={() => setActiveReleaseId(null)} /></div><div className="space-y-3 p-4"><div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900"><div className="font-semibold">{releaseProgress ? stateLabel(releaseProgress.state) : '正在读取发布状态'}</div><div className="mt-1 break-all text-xs text-blue-800">发布 ID：{activeReleaseId}</div></div><div className="h-2 overflow-hidden rounded bg-slate-100"><div className={`h-full rounded bg-blue-500 ${releaseProgress?.state === 'completed' ? 'w-full' : 'w-3/5 animate-pulse'}`} /></div><div className="grid grid-cols-2 gap-2 text-xs text-slate-600"><div>正式版本：{releaseProgress?.formalVersion ?? '等待发布'}</div><div>归档：{releaseProgress?.archive?.state ?? '等待归档'}</div></div>{releaseProgress?.error ? <div className="whitespace-pre-wrap rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{releaseProgress.error}</div> : <p className="text-xs leading-5 text-slate-500">进入队列后页面可以继续操作；关闭页面不会取消发布；刷新或重新进入后会从服务端恢复该发布。</p>}</div></div></DraggablePanel> : null}
     {loadProgress ? <div className="fixed inset-0 flex items-center justify-center bg-black/40" style={{ zIndex: REVIEW_LAYER.confirmation }} role="dialog" aria-live="polite"><div className="w-[420px] max-w-[90vw] rounded-2xl border border-gray-200 bg-white shadow-xl"><div className="border-b border-gray-200 px-4 py-3 text-sm font-bold text-gray-900">正在加载审核包</div><div className="px-4 py-4 text-sm text-gray-700">{progressText(loadProgress)}</div><div className="px-4 pb-4"><div className="h-2 overflow-hidden rounded bg-gray-100"><div className="h-full w-3/5 animate-pulse rounded bg-blue-600" /></div></div></div></div> : null}
-    {pendingConfirmation && typeof document !== 'undefined' ? createPortal(<div className="fixed inset-0 flex items-center justify-center bg-slate-950/45 p-4" style={{ zIndex: REVIEW_LAYER.confirmation }} role="dialog" aria-modal="true" aria-labelledby="review-confirmation-title"><div className="w-full max-w-[510px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"><div className="flex items-center justify-between border-b border-slate-200 px-5 py-4"><h3 id="review-confirmation-title" className="text-lg font-bold text-slate-900">{pendingConfirmation.title}</h3><button type="button" className="text-sm text-slate-500 hover:text-slate-800" onClick={() => { setPendingConfirmation(null); setConfirmationReason(''); }}>取消</button></div><div className="space-y-4 px-5 py-5"><p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{pendingConfirmation.message}</p>{pendingConfirmation.reasonLabel ? <label className="block text-sm font-medium text-slate-700">{pendingConfirmation.reasonLabel}<textarea autoFocus value={confirmationReason} onChange={(event) => setConfirmationReason(event.target.value)} rows={4} className="mt-2 w-full resize-y rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="请填写原因；该文字会随发布记录保留。" /></label> : null}</div><div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4"><AppButton onClick={() => { setPendingConfirmation(null); setConfirmationReason(''); }} className="rounded-xl bg-white px-4 py-2 text-sm text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100">取消</AppButton><AppButton onClick={() => { const action = pendingConfirmation; const reason = confirmationReason; setPendingConfirmation(null); setConfirmationReason(''); void Promise.resolve(action.onConfirm(reason)); }} className={`rounded-xl px-4 py-2 text-sm text-white ${pendingConfirmation.tone === 'rose' ? 'bg-rose-600 hover:bg-rose-700' : pendingConfirmation.tone === 'green' ? 'bg-green-600 hover:bg-green-700' : pendingConfirmation.tone === 'orange' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'}`}>{pendingConfirmation.confirmLabel}</AppButton></div></div></div>, document.body) : null}
+    {pendingConfirmation && typeof document !== 'undefined' ? createPortal(<div className="fixed inset-0 flex items-center justify-center bg-slate-950/45 p-4" style={{ zIndex: REVIEW_LAYER.confirmation }} role="dialog" aria-modal="true" aria-labelledby="review-confirmation-title"><div className="w-full max-w-[510px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"><div className="flex items-center justify-between border-b border-slate-200 px-5 py-4"><h3 id="review-confirmation-title" className="text-lg font-bold text-slate-900">{pendingConfirmation.title}</h3><button type="button" className="text-sm text-slate-500 hover:text-slate-800" onClick={() => { setPendingConfirmation(null); setConfirmationReason(''); }}>取消</button></div><div className="max-h-[65vh] overflow-auto space-y-4 px-5 py-5"><p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{pendingConfirmation.message}</p>{pendingConfirmation.writeDeleteFindings ? <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        {pendingConfirmation.writeDeleteFindings.map((finding,index)=><ReviewFindingDetails key={index} finding={finding} language={getApplicationSettings().preferences.language}/>)}
+        <label className="flex items-start gap-2 font-semibold"><input type="checkbox" className="mt-1" checked={writeDeleteAcknowledged} onChange={event=>setWriteDeleteAcknowledged(event.target.checked)}/>{getApplicationSettings().preferences.language==='zh'?'确认删除所列要素，并跳过其他包对此要素的写入、图片和链接。':'Confirm deletion of the listed features and skip the other packages’ writes, pictures and links.'}</label>
+      </div> : null}{pendingConfirmation.reasonLabel ? <label className="block text-sm font-medium text-slate-700">{pendingConfirmation.reasonLabel}<textarea autoFocus value={confirmationReason} onChange={(event) => setConfirmationReason(event.target.value)} rows={4} className="mt-2 w-full resize-y rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="请填写原因；该文字会随发布记录保留。" /></label> : null}</div><div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4"><AppButton onClick={() => { setPendingConfirmation(null); setConfirmationReason(''); }} className="rounded-xl bg-white px-4 py-2 text-sm text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100">取消</AppButton><AppButton disabled={(Boolean(pendingConfirmation.writeDeleteFindings)&&!writeDeleteAcknowledged)||(!publishReady&&pendingConfirmation.releaseConfirmation)} onClick={() => { const action = pendingConfirmation; const reason = confirmationReason; setPendingConfirmation(null); setConfirmationReason(''); void Promise.resolve(action.onConfirm(reason)); }} className={`rounded-xl px-4 py-2 text-sm text-white ${pendingConfirmation.tone === 'rose' ? 'bg-rose-600 hover:bg-rose-700' : pendingConfirmation.tone === 'green' ? 'bg-green-600 hover:bg-green-700' : pendingConfirmation.tone === 'orange' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'}`}>{pendingConfirmation.confirmLabel}</AppButton></div></div></div>, document.body) : null}
   </>;
 }

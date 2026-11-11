@@ -161,6 +161,7 @@ export function normalizeReviewControlRequest(input, actor) {
     return {
       operation,
       ...(input.precheckProtocol==='pending-v2'?{precheckProtocol:'pending-v2'}:{}),
+      ...(input.replaceAttemptId!==undefined?{replaceAttemptId:requireString(input.replaceAttemptId,'invalid-review-release-selection')}:{}),
       request: requireRequest(input.request, { versioned: true }),
       selectedSubmissionIds: input.selectedSubmissionIds.map((value) => requireString(value, 'invalid-review-release-selection')),
       expectedBoardVersion: input.expectedBoardVersion,
@@ -175,6 +176,9 @@ export function normalizeReviewControlRequest(input, actor) {
       attemptId: requireString(input.attemptId, 'invalid-review-release-confirmation'),
       expectedGateVersion: input.expectedGateVersion,
       precheckReportSha256: requireSha256(input.precheckReportSha256, 'invalid-review-release-confirmation'),
+      ...(input.acceptedWriteDeleteReportSha256 !== undefined ? {
+        acceptedWriteDeleteReportSha256: requireSha256(input.acceptedWriteDeleteReportSha256, 'invalid-review-release-confirmation'),
+      } : {}),
       actor,
     };
   }

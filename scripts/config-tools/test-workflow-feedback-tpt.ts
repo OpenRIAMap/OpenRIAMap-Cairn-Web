@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import {validateConfigPackage,workflowSearchFields,resolveEffectiveFields} from '../../src/configStudio/runtime';
 import {resolveWorkflowFields} from '../../src/configStudio/fieldReuse';
 import {validateV3WorkflowRecords} from '../../src/configStudio/workflowKernel';
+import {validateIncomingBatch} from './server-validation-entry';
 import {validDesignNotes} from '../../src/configStudio/workflowDesignNotes';
 import {remoteFeedback,remoteError} from '../../src/feedback/remoteFeedback';
 import {teleportNodeAvailable,teleportAvailabilitySignature} from '../../src/core/project/teleportAvailability';
@@ -38,4 +39,17 @@ assert.equal(teleportNodeAvailable({}),true);assert.equal(teleportNodeAvailable(
 const items=[{ID:'a',Situation:true}];const sig=teleportAvailabilitySignature(items,()=>true);items[0].Situation=false;assert.notEqual(sig,teleportAvailabilitySignature(items,()=>true));
 assert.match(remoteFeedback('DELETE_EXISTING_TARGET','raw English','zh'),/确认后/);assert.equal(remoteFeedback('DELETE_EXISTING_TARGET','raw English','en'),'raw English');
 assert.equal(remoteFeedback('future-code','reason','zh'),'reason');assert.match(remoteError('configuration-preflight-receipt-stale','zh'),/过期/);
+const c19=JSON.parse(fs.readFileSync('public/configuration/releases/a8952271420dabf94d930eb0ba19499da18a891ca39a71cb512432a7f062cac5/config.json','utf8')) as ConfigPackageV3;
+const warp={Class:'TPT',Kind:'WRP',SKind:'ZTH',SKind2:'LAKz',Type:'Point',World:'zth',WRPointI2D:'batch-warp'};
+const left={...warp,ID:'left-warp'},right={...warp,ID:'right-warp'};
+assert.doesNotThrow(()=>validateIncomingBatch(c19,[left],[]));
+assert.doesNotThrow(()=>validateIncomingBatch(c19,[right],[]));
+assert.throws(()=>validateIncomingBatch(c19,[left,right],[],[],{checkAffectedStructures:true}),error=>{
+  const issues=(error as {issues:Array<{worldId:string;businessKey:string;affectedFeatures:Array<{id:string}>}>}).issues;
+  assert.deepEqual(issues.map(issue=>[issue.worldId,issue.businessKey,issue.affectedFeatures[0].id]),[
+    ['zth','batch-warp','left-warp'],['zth','batch-warp','right-warp'],
+  ]);
+  return true;
+});
+assert.doesNotThrow(()=>validateIncomingBatch(c19,[left,{...right,WRPointI2D:'other-warp'}],[],[],{checkAffectedStructures:true}));
 console.log(JSON.stringify({valid:report.valid,warnings:report.issues.length,designNotes:report.designNotes?.length,originalUnchanged:true}));

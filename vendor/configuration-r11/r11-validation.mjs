@@ -13957,13 +13957,13 @@ function validateNavigationConfiguration(config, fields) {
   }
   return issues;
 }
-function validateNavigationRecords(config, records) {
+function validateNavigationRecords(config, records, includeIssueTargets = false) {
   const app = config.application, nav = app?.navigation, shared = app?.preferences.railwayRoles?.selectors;
   if (config.contractRevision < 13 || !nav || !shared) return [];
   const result = [], ids = /* @__PURE__ */ new Map(), warps = /* @__PURE__ */ new Map();
   const world = (r) => app.worlds.find((w) => [w.id, w.prefix, String(w.numericCode), w.label.zh, w.label.en].includes(String(r.World)))?.id ?? String(r.World ?? "");
   const role = (r, key2) => pathsMatch(shared[key2], rawClassification(r));
-  const add = (r, message, path2, warning = false) => result.push({ severity: warning ? "warning" : "error", code: "mounted-navigation-invalid", path: path2, message, relatedPaths: [sharedBase, navBase, ...path2.startsWith(`${navBase}/road`) ? [`lookupTables/${nav.road.travelModesTableId}`] : path2.startsWith(`${navBase}/teleport`) ? [`lookupTables/${nav.teleport.hubTableId}`] : [], ...config.nodes.filter((n) => pathCovers(n.path, rawClassification(r))).map((n) => `nodes/${n.nodeId}`)], affectedFeatures: [{ id: String(r.ID ?? ""), name: String(r.Name ?? r.ID ?? "") }] });
+  const add = (r, message, path2, warning = false, metadata = {}) => result.push({ ...includeIssueTargets ? { worldId: world(r), ...metadata } : {}, severity: warning ? "warning" : "error", code: "mounted-navigation-invalid", path: path2, message, relatedPaths: [sharedBase, navBase, ...path2.startsWith(`${navBase}/road`) ? [`lookupTables/${nav.road.travelModesTableId}`] : path2.startsWith(`${navBase}/teleport`) ? [`lookupTables/${nav.teleport.hubTableId}`] : [], ...config.nodes.filter((n) => pathCovers(n.path, rawClassification(r))).map((n) => `nodes/${n.nodeId}`)], affectedFeatures: [{ id: String(r.ID ?? ""), name: String(r.Name ?? r.ID ?? "") }] });
   const insert = (map, key2, r) => {
     const rows = map.get(key2) ?? [];
     rows.push(r);
@@ -13978,7 +13978,7 @@ function validateNavigationRecords(config, records) {
   const refs = (r, key2) => Array.isArray(r[key2]) ? r[key2].map((v) => typeof v === "object" && v ? String(v.ID ?? "") : String(v)) : [];
   const check = (r, id2, target) => {
     const candidates = ids.get(`${world(r)}/${id2}`) ?? [];
-    if (candidates.length !== 1 || !role(candidates[0], target)) add(r, `\u94C1\u8DEF\u5173\u8054 ${id2} \u7F3A\u5931\u3001\u91CD\u590D\u6216\u89D2\u8272\u4E0D\u7B26\u3002`, sharedBase);
+    if (candidates.length !== 1 || !role(candidates[0], target)) add(r, `\u94C1\u8DEF\u5173\u8054 ${id2} \u7F3A\u5931\u3001\u91CD\u590D\u6216\u89D2\u8272\u4E0D\u7B26\u3002`, sharedBase, false, { targetId: id2, businessKey: id2 });
     else if (nav.rail.enabled && RAILWAY_ROLES.some((k) => pathsMatch(nav.rail.selectors[k], rawClassification(r))) && !pathsMatch(nav.rail.selectors[target], rawClassification(candidates[0]))) add(r, `\u5173\u8054 ${id2} \u4E0D\u5728\u5BFC\u822A\u53C2\u4E0E\u8303\u56F4\uFF1B\u4EC5\u6392\u9664\u8BE5\u5BFC\u822A\u8FB9\u3002`, `${navBase}/rail`, true);
   };
   const finite = (v) => typeof v === "number" && Number.isFinite(v);
@@ -13988,7 +13988,7 @@ function validateNavigationRecords(config, records) {
     const isRoad = pathsMatch(nav.road.selectors.roads, rawClassification(r)), isWarp = pathsMatch(nav.teleport.selectors.warpPoints, rawClassification(r)), isTeleport = pathsMatch(nav.teleport.selectors.teleportPoints, rawClassification(r));
     if ((RAILWAY_ROLES.some((key2) => role(r, key2)) || isRoad || isWarp || isTeleport) && (ids.get(`${world(r)}/${r.ID}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C ID \u91CD\u590D\uFF0C\u65E0\u6CD5\u552F\u4E00\u89E3\u6790\u3002", navBase);
     if ((isWarp || isTeleport) && r.Situation !== void 0 && typeof r.Situation !== "boolean") add(r, "Situation \u5FC5\u987B\u4E3A\u5E03\u5C14\u503C\uFF1B\u7701\u7565\u65F6\u6309\u53EF\u7528\u5904\u7406\u3002", `${navBase}/teleport`);
-    if (role(r, "stations") && (ids.get(`${world(r)}/${stationKey(r)}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C\u8F66\u7AD9\u89C4\u8303\u5EFA\u7B51 ID \u91CD\u590D\u3002", sharedBase);
+    if (role(r, "stations") && (ids.get(`${world(r)}/${stationKey(r)}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C\u8F66\u7AD9\u89C4\u8303\u5EFA\u7B51 ID \u91CD\u590D\u3002", sharedBase, false, { businessKey: stationKey(r) });
     if (role(r, "platforms")) {
       for (const id2 of refs(r, "lines")) if (id2) check(r, id2, "lines");
     }
@@ -14011,23 +14011,23 @@ function validateNavigationRecords(config, records) {
         const id2 = typeof v === "string" ? v : Array.isArray(v) ? String(v[0] ?? "") : String(row2.tgt ?? row2.Tgt ?? row2.ID ?? row2.id ?? "");
         if (!id2) continue;
         const candidates = ids.get(`${world(r)}/${id2}`) ?? [];
-        if (!candidates.length) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5B58\u5728\u3002`, `${navBase}/road`);
-        else if (candidates.length !== 1) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/road`);
+        if (!candidates.length) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5B58\u5728\u3002`, `${navBase}/road`, false, { targetId: id2, businessKey: id2 });
+        else if (candidates.length !== 1) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/road`, false, { targetId: id2, businessKey: id2 });
         else if (!pathsMatch(nav.road.selectors.roads, rawClassification(candidates[0]))) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5728\u9053\u8DEF\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u8FDE\u63A5\u3002`, `${navBase}/road`, true);
       }
     }
     if (isWarp) {
       const key2 = String(r.WRPointI2D ?? r.wrPointI2D ?? "").trim();
-      if (!key2 || (warps.get(`${world(r)}/${key2}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C Warp \u5B9A\u4F4D\u952E\u7F3A\u5931\u6216\u91CD\u590D\u3002", `${navBase}/teleport`);
+      if (!key2 || (warps.get(`${world(r)}/${key2}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C Warp \u5B9A\u4F4D\u952E\u7F3A\u5931\u6216\u91CD\u590D\u3002", `${navBase}/teleport`, false, { businessKey: key2 });
     }
     if (isTeleport && teleportNodeAvailable(r)) {
       const key2 = String(r.TGTWarp ?? r.tgtWarp ?? "").trim();
       const target = warps.get(`${world(r)}/${key2}`) ?? [];
       const explicit = coordinate(r.TGTcoordinate) || finite(r.TGT_x) && finite(r.TGT_z);
       const excluded = key2 && records.filter((other) => world(other) === world(r) && String(other.WRPointI2D ?? other.wrPointI2D ?? "") === key2);
-      if (key2 && target.length > 1) add(r, `Warp \u76EE\u6807 ${key2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/teleport`);
+      if (key2 && target.length > 1) add(r, `Warp \u76EE\u6807 ${key2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/teleport`, false, { businessKey: key2 });
       else if (key2 && target.length === 1 && !teleportNodeAvailable(target[0])) add(r, `Warp \u76EE\u6807 ${key2} \u5DF2\u505C\u7528\uFF1B\u6392\u9664\u8BE5\u4F20\u9001\u8FB9\u3002`, `${navBase}/teleport`, true);
-      else if (!(key2 && target.length === 1) && !explicit) add(r, excluded && excluded.length === 1 ? `Warp \u76EE\u6807 ${key2} \u4E0D\u5728\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u4F20\u9001\u8FB9\u3002` : `\u4F20\u9001\u76EE\u6807\u65E0\u6CD5\u89E3\u6790${key2 ? `\uFF1A${key2}` : ""}\u3002`, `${navBase}/teleport`, Boolean(excluded && excluded.length === 1));
+      else if (!(key2 && target.length === 1) && !explicit) add(r, excluded && excluded.length === 1 ? `Warp \u76EE\u6807 ${key2} \u4E0D\u5728\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u4F20\u9001\u8FB9\u3002` : `\u4F20\u9001\u76EE\u6807\u65E0\u6CD5\u89E3\u6790${key2 ? `\uFF1A${key2}` : ""}\u3002`, `${navBase}/teleport`, Boolean(excluded && excluded.length === 1), { businessKey: key2 });
     }
   }
   return result;
@@ -29709,21 +29709,40 @@ function validateIncomingRecord(config, record, expectedWorld) {
   const output = { id: "incoming-record", ...config.contractRevision >= 15 ? { classificationGroup: { selectors: [{ id: "record", mode: "self", path: classification }] } } : { classification }, geometry: { selected: geometry }, assignments: [] };
   return validateV3WorkflowRecords(config, { outputs: [output] }, [{ outputId: output.id, classification, geometry, record }]).map((issue2) => issue2.message);
 }
-function validateIncomingBatch(config, created, existing, deletes = []) {
+function validateIncomingBatch(config, created, existing, deletes = [], options = {}) {
   const identity2 = (record) => `${worldId(config, record.World)}:${record.ID}`;
-  const current2 = /* @__PURE__ */ new Set();
+  const writes = /* @__PURE__ */ new Map();
   for (const record of created) {
     const key2 = identity2(record);
-    if (current2.has(key2)) throw Error("configuration-record-id-duplicate");
-    current2.add(key2);
+    if (writes.has(key2)) throw Error("configuration-record-id-duplicate");
+    writes.set(key2, record);
   }
-  const surviving = existing.filter((record) => readableClassification(config, recordCategory(record)) && !deletes.some((item) => item.worldId === worldId(config, record.World) && item.classCode === record.Class && item.featureId === record.ID)).filter((record) => {
-    const update = created.find((next) => identity2(next) === identity2(record));
+  const removed = new Set(deletes.map((item) => JSON.stringify([item.worldId, item.classCode, item.featureId])));
+  const surviving = existing.filter((record) => readableClassification(config, recordCategory(record)) && !removed.has(JSON.stringify([worldId(config, record.World), record.Class, record.ID]))).filter((record) => {
+    const update = writes.get(identity2(record));
     if (update && update.Class !== record.Class) throw Error("configuration-record-id-collision");
     return !update;
   });
-  assertStructureTargets(config, created, surviving);
-  const navigationIssues = validateNavigationRecords(config, [...surviving, ...created]).filter((issue2) => issue2.severity === "error");
+  const final = [...surviving, ...created];
+  if (options.checkAffectedStructures) {
+    const touched = /* @__PURE__ */ new Set([...writes.keys(), ...deletes.map((item) => `${item.worldId}:${item.featureId}`)]);
+    const issues = final.flatMap((record) => {
+      const role = resolveNodeFieldSettings(config, recordCategory(record)).value.structure;
+      if (!role?.enabled || role.role !== "member") return [];
+      const target = role.hostField ? readRecordPath(record, role.hostField) : void 0;
+      const targetId = typeof target === "string" ? target : void 0;
+      const world = worldId(config, record.World);
+      if (writes.get(identity2(record)) !== record && !touched.has(`${world}:${targetId}`)) return [];
+      try {
+        assertStructureTargets(config, [record], final.filter((row2) => row2 !== record));
+        return [];
+      } catch (error) {
+        return [{ message: error.message, worldId: world, targetId, businessKey: targetId, affectedFeatures: [{ id: String(record.ID) }] }];
+      }
+    });
+    if (issues.length) throw Object.assign(Error("configuration-batch-structure-invalid"), { issues });
+  } else assertStructureTargets(config, created, surviving);
+  const navigationIssues = validateNavigationRecords(config, final, options.checkAffectedStructures).filter((issue2) => issue2.severity === "error");
   if (navigationIssues.length) throw Object.assign(Error("configuration-navigation-relations-invalid"), { issues: navigationIssues });
 }
 export {

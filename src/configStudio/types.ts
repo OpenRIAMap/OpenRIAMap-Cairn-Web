@@ -1068,6 +1068,9 @@ export type ConfigValidationIssue = {
   /** Related configuration paths used by isolated-region dependency validation. */
   relatedPaths?: string[];
   affectedFeatures?: AffectedFeature[];
+  worldId?: string;
+  businessKey?: string;
+  targetId?: string;
   count?: number;
 };
 export type ConfigValidationReport = {
