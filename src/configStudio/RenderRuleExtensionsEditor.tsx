@@ -58,7 +58,7 @@ export function RenderRuleExtensionsEditor({ geometry, rule, onChange, config, f
   const setVisibilityMode = (mode: NonNullable<typeof visibility>['mode']) => {
     if (mode === 'sameId') patch({ ...ext, visibility: { mode, sameId: { target: { class: '' }, sourceField: 'ID', targetField: 'ID', behavior: 'hideIfExists' } } });
     else if (mode === 'coincidentPoint') patch({ ...ext, visibility: { mode, coincidentPoint: { target: { class: '' }, behavior: 'hideIfExists', ...(part?{}:{precision:1000}) } } });
-    else if (mode === 'lineContainmentChoice') patch({ ...ext, visibility: { mode, lineContainmentChoice: { field: fields[0] ?? 'direction', primaryValue: '3', overlayValues: ['0', '1'], switchZoom: 8, precision: 1000 } } });
+    else if (mode === 'lineContainmentChoice') patch({ ...ext, visibility: { mode, lineContainmentChoice: { field: fields[0] ?? 'direction', primaryValue: '3', overlayValues: ['0', '1'], switchZoom: 8 } } });
     else if (mode === 'activeContextMember') patch({ ...ext, visibility: { mode, activeContextMember: { requireSelector: true } } });
     else patch({ ...ext, visibility: { mode } });
   };

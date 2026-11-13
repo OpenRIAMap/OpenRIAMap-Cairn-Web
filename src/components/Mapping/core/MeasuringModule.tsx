@@ -1205,6 +1205,7 @@ const [tempMountIdCheckText, setTempMountIdCheckText] = useState('正在对比�
 const [tempMountConflictOpen, setTempMountConflictOpen] = useState(false);
 const [tempMountConflictText, setTempMountConflictText] = useState<string>('');
 const [tempMountConflictAllowOverride, setTempMountConflictAllowOverride] = useState(false);
+const [tempMountFormatBlocked, setTempMountFormatBlocked] = useState(false);
 const [tempMountPendingLayers, setTempMountPendingLayers] = useState<LayerType[] | null>(null);
 const [tempMountPendingOverrideIds, setTempMountPendingOverrideIds] = useState<string[]>([]);
 
@@ -2468,6 +2469,7 @@ const checkTempMountBusinessJson = (records: Parameters<typeof validateBusinessJ
       .filter(Boolean).join(' ');
   });
   setTempMountConflictText('专用 JSON 格式核验未通过，请返回修正后再挂载。\n' + messages.join('\n'));
+  setTempMountFormatBlocked(true);
   setTempMountConflictAllowOverride(false);
   setTempMountPendingLayers(null);
   setTempMountPendingOverrideIds([]);
@@ -4086,6 +4088,7 @@ const workflowBridge: WorkflowBridge = {
     setTempMountConflictOpen(false);
     setTempMountConflictText('');
     setTempMountConflictAllowOverride(false);
+    setTempMountFormatBlocked(false);
     setTempMountPendingLayers(null);
     setTempMountPendingOverrideIds([]);
   };
@@ -5602,7 +5605,7 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
       <div className="fixed inset-0 z-[9998] bg-black/40" />
       <DraggablePanel id="temp-mount-conflict" defaultPosition={{ x: 420, y: 220 }} zIndex={9999}>
         <AppCard className="w-[560px] max-w-[90vw] max-h-[70vh] overflow-hidden border">
-          <div className="px-4 py-3 border-b font-bold text-sm">ID 冲突提示</div>
+          <div className="px-4 py-3 border-b font-bold text-sm">{tempMountFormatBlocked ? '临时挂载核验' : 'ID 冲突提示'}</div>
           <div className="px-4 py-3 text-sm text-gray-800 whitespace-pre-wrap overflow-y-auto max-h-[calc(70vh-96px)]">
             {tempMountConflictText}
           </div>
@@ -5631,7 +5634,7 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
     {/* 移动端：底部面板（固定高度 + 纵向滚动） */}
     <div className="sm:hidden fixed inset-0 z-[9999] bg-black/40 flex items-end">
       <AppCard className="w-full max-h-[70vh] overflow-hidden border rounded-t-2xl">
-        <div className="px-4 py-3 border-b font-bold text-sm">ID 冲突提示</div>
+        <div className="px-4 py-3 border-b font-bold text-sm">{tempMountFormatBlocked ? '临时挂载核验' : 'ID 冲突提示'}</div>
         <div className="px-4 py-3 text-sm text-gray-800 whitespace-pre-wrap overflow-y-auto max-h-[calc(70vh-96px)]">
           {tempMountConflictText}
         </div>
