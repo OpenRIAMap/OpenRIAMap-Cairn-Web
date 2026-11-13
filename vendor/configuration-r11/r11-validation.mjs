@@ -9777,15 +9777,15 @@ function validateMediaPolicy(config, incoming, existing) {
 }
 
 // src/configStudio/contract.ts
-var NATIVE_CONFIG_REVISION = 19;
+var NATIVE_CONFIG_REVISION = 20;
 var CONTRACT_CAPABILITIES = {
   latest: NATIVE_CONFIG_REVISION,
-  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
-  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
-  category: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
-  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
-  publication: [11, 12, 13, 14, 15, 16, 17, 18, 19],
-  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17], [17, 18], [18, 19]] }
+  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+  category: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+  publication: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17], [17, 18], [18, 19], [19, 20]] }
 };
 var supportsContract = (capability, value) => typeof value === "number" && CONTRACT_CAPABILITIES[capability].includes(value);
 function isNativeConfigRevision(value) {
@@ -9944,10 +9944,10 @@ function parseWorkflowExpression(source) {
       }
       throw new Error("\u6587\u672C\u7F3A\u5C11\u7ED3\u675F\u5F15\u53F7\u3002");
     }
-    const number3 = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/.exec(source.slice(cursor));
-    if (number3) {
-      cursor += number3[0].length;
-      const value = Number(number3[0]);
+    const number4 = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/.exec(source.slice(cursor));
+    if (number4) {
+      cursor += number4[0].length;
+      const value = Number(number4[0]);
       if (!Number.isFinite(value)) throw new Error("\u6570\u503C\u65E0\u6548\u3002");
       return { kind: "literal", value };
     }
@@ -9998,19 +9998,19 @@ function workflowExpressionTokens(expression) {
   return [...new Set((expression.kind === "join" || expression.kind === "call" ? expression.args : expression.parts).flatMap(workflowExpressionTokens))];
 }
 function evaluateWorkflowExpression(source, slots, system) {
-  const text2 = (value) => value == null ? "" : typeof value === "string" ? value : JSON.stringify(value);
+  const text3 = (value) => value == null ? "" : typeof value === "string" ? value : JSON.stringify(value);
   const run = (expression) => {
     if (expression.kind === "literal") return expression.value;
     if (expression.kind === "token") return Object.prototype.hasOwnProperty.call(system, expression.name) ? system[expression.name] : Object.prototype.hasOwnProperty.call(slots, expression.name) ? slots[expression.name] : void 0;
-    if (expression.kind === "concat") return expression.parts.map((part) => text2(run(part))).join("");
+    if (expression.kind === "concat") return expression.parts.map((part) => text3(run(part))).join("");
     if (expression.kind === "call") {
       const values2 = expression.args.map(run);
       const value = values2[0];
       const numeric2 = (raw) => {
         if (raw == null || typeof raw === "string" && !raw.trim()) throw new Error("\u6570\u503C\u53C2\u6570\u5C1A\u672A\u586B\u5199\u3002");
-        const number3 = Number(raw);
-        if (!Number.isFinite(number3)) throw new Error("\u6570\u503C\u53C2\u6570\u65E0\u6548\u3002");
-        return number3;
+        const number4 = Number(raw);
+        if (!Number.isFinite(number4)) throw new Error("\u6570\u503C\u53C2\u6570\u65E0\u6548\u3002");
+        return number4;
       };
       const finite = (value2) => {
         if (!Number.isFinite(value2)) throw new Error("\u8BA1\u7B97\u7ED3\u679C\u8D85\u51FA\u6709\u9650\u6570\u503C\u8303\u56F4\u3002");
@@ -10030,15 +10030,15 @@ function evaluateWorkflowExpression(source, slots, system) {
         case "coalesce":
           return values2.find((item) => item != null && !(typeof item === "string" && !item.trim()));
         case "text":
-          return text2(value);
+          return text3(value);
         case "number":
           return numeric2(value);
         case "trim":
-          return text2(value).trim();
+          return text3(value).trim();
         case "upper":
-          return text2(value).toUpperCase();
+          return text3(value).toUpperCase();
         case "lower":
-          return text2(value).toLowerCase();
+          return text3(value).toLowerCase();
         case "abs":
           return Math.abs(numeric2(value));
         case "round":
@@ -10068,7 +10068,7 @@ function evaluateWorkflowExpression(source, slots, system) {
       }
     }
     const [separator, ...parts] = expression.args;
-    return parts.map(run).filter((value) => value != null && String(value).trim()).map(text2).join(text2(run(separator)));
+    return parts.map(run).filter((value) => value != null && String(value).trim()).map(text3).join(text3(run(separator)));
   };
   return run(parseWorkflowExpression(source));
 }
@@ -10159,12 +10159,24 @@ function validateValueSchema(schema) {
   };
   return visit(schema, 0).slice(0, 20);
 }
-function validateStructuredValue(value, schema, path2 = "value") {
+function validateStructuredValue(value, schema, path2 = "value", reportBranchDetails = false) {
   if (validateValueSchema(schema).length) return [`${path2}\uFF1A\u5B57\u6BB5\u503C\u7ED3\u6784\u58F0\u660E\u65E0\u6548\u3002`];
   let budget = 2e4;
   const visit = (v, s, p, depth) => {
     if (--budget < 0 || depth > 24) return [`${p}\uFF1A\u503C\u68C0\u67E5\u8D85\u8FC7\u89C4\u6A21\u9650\u5236\u3002`];
-    if (s.anyOf && !s.anyOf.some((branch) => visit(v, branch, p, depth + 1).length === 0)) return [`${p}\uFF1A\u4E0D\u7B26\u5408\u4EFB\u4F55\u5141\u8BB8\u7684\u7ED3\u6784\u3002`];
+    if (s.anyOf) {
+      const branches2 = [];
+      let matched = false;
+      for (const branch of s.anyOf) {
+        const errors = visit(v, branch, p, depth + 1);
+        if (!errors.length) {
+          matched = true;
+          break;
+        }
+        if (reportBranchDetails && errors.every((message) => message.startsWith(p + "/"))) branches2.push(errors);
+      }
+      if (!matched) return branches2.sort((a, b) => a.length - b.length)[0] ?? [`${p}\uFF1A\u4E0D\u7B26\u5408\u4EFB\u4F55\u5141\u8BB8\u7684\u7ED3\u6784\u3002`];
+    }
     if (s.type && (s.type === "array" ? !Array.isArray(v) : s.type === "object" ? !v || typeof v !== "object" || Array.isArray(v) : typeof v !== s.type)) return [`${p}\uFF1A\u9700\u8981 ${s.type}\u3002`];
     if (typeof v === "number" && (!Number.isFinite(v) || s.minimum !== void 0 && v < s.minimum || s.exclusiveMinimum !== void 0 && v <= s.exclusiveMinimum)) return [`${p}\uFF1A\u6570\u503C\u65E0\u6548\u6216\u8D8A\u754C\u3002`];
     if (s.enum && !s.enum.includes(v)) return [`${p}\uFF1A\u503C\u4E0D\u5728\u5141\u8BB8\u679A\u4E3E\u4E2D\u3002`];
@@ -10654,8 +10666,8 @@ function validateWorkflowWrites(workflow, fields, candidate, searchFields) {
       writers.push({ target: binding.target, path: path2, conditions });
       const field = targetFields.find((field2) => field2.key === binding.target);
       if (candidate && field?.valueSchema) {
-        const number3 = shape("number"), point = { kinds: ["array"], item: number3 };
-        const actual = binding.value === "height" ? number3 : step.drawing?.returnFormat === "pointObject" ? { kinds: ["object"], properties: { x: number3, y: number3, z: number3 }, requiredProperties: ["x", "y", "z"] } : { kinds: ["array"], item: step.geometry?.[0] === "Point" ? point : step.geometry?.[0] === "LineString" ? { kinds: ["array"], item: point } : { kinds: ["array"], item: { kinds: ["array"], item: point } } };
+        const number4 = shape("number"), point = { kinds: ["array"], item: number4 };
+        const actual = binding.value === "height" ? number4 : step.drawing?.returnFormat === "pointObject" ? { kinds: ["object"], properties: { x: number4, y: number4, z: number4 }, requiredProperties: ["x", "y", "z"] } : { kinds: ["array"], item: step.geometry?.[0] === "Point" ? point : step.geometry?.[0] === "LineString" ? { kinds: ["array"], item: point } : { kinds: ["array"], item: { kinds: ["array"], item: point } } };
         const match = shapeFitsSchema(actual, field.valueSchema);
         if (match === false) add("workflow-drawing-value-schema-conflict", path2, `${field.key} \u7684\u7ED8\u5236\u8FD4\u56DE\u7ED3\u6784\u4E0E\u5B57\u6BB5\u7ED3\u6784\u6A21\u677F\u51B2\u7A81\u3002`);
         else if (match === void 0) add("workflow-drawing-value-schema-unknown", path2, `${field.key} \u7684\u7ED8\u5236\u5177\u4F53\u503C\u9700\u8BD5\u8FD0\u884C\u6838\u5BF9\uFF1B\u5B9E\u9645\u4FDD\u5B58\u4ECD\u4F1A\u68C0\u67E5\u5B57\u6BB5\u7ED3\u6784\u7EA6\u675F\u3002`, "warning");
@@ -10871,8 +10883,8 @@ function validateWorkflowSupplies(workflow, fields, candidate) {
   return issues;
 }
 function evaluateWorkflowExpressionNode(node, system) {
-  const text2 = (value) => value.kind === "literal" ? JSON.stringify(value.value) : value.kind === "token" ? value.name : value.kind === "concat" ? value.parts.map(text2).join("+") : value.kind === "join" ? `join(${value.args.map(text2).join(",")})` : `${value.name}(${value.args.map(text2).join(",")})`;
-  return evaluateWorkflowExpression(text2(node), {}, system);
+  const text3 = (value) => value.kind === "literal" ? JSON.stringify(value.value) : value.kind === "token" ? value.name : value.kind === "concat" ? value.parts.map(text3).join("+") : value.kind === "join" ? `join(${value.args.map(text3).join(",")})` : `${value.name}(${value.args.map(text3).join(",")})`;
+  return evaluateWorkflowExpression(text3(node), {}, system);
 }
 
 // src/configStudio/workflowDesignNotes.ts
@@ -11118,8 +11130,8 @@ function customPillErrors(size, value) {
   const errors = [];
   if (!Number.isFinite(size) || size < 6 || size > 72) errors.push({ key: "size", message: "\u80F6\u56CA\u5B57\u53F7\u5FC5\u987B\u4ECB\u4E8E 6\u201372px\u3002" });
   for (const key2 of ["lineHeightRatio", "paddingYRatio", "paddingXRatio", "radiusRatio"]) {
-    const number3 = value[key2];
-    if (!Number.isFinite(number3) || number3 > 10 || number3 < 0 || key2 === "lineHeightRatio" && number3 === 0)
+    const number4 = value[key2];
+    if (!Number.isFinite(number4) || number4 > 10 || number4 < 0 || key2 === "lineHeightRatio" && number4 === 0)
       errors.push({ key: key2, message: `${key2} \u5FC5\u987B\u662F${key2 === "lineHeightRatio" ? "\u5927\u4E8E 0" : "\u975E\u8D1F"}\u4E14\u4E0D\u8D85\u8FC7 10 \u7684\u6709\u9650\u6570\u5B57\u3002` });
   }
   if (!Number.isFinite(value.strokeWidth) || value.strokeWidth < 0 || value.strokeWidth > 72)
@@ -11405,23 +11417,23 @@ function materializeC19Rule(config, geometry, rule, zoom) {
 }
 function labelModifierCapabilities(geometry, appearance, extensions) {
   const family = appearance.style?.family ?? "gm-outline";
-  const text2 = ["gm-bw", "gm-outline", "gm-wtb", "structure-label"].includes(family);
+  const text3 = ["gm-bw", "gm-outline", "gm-wtb", "structure-label"].includes(family);
   const line = extensions?.lineLabel;
   const svg = geometry === "LineString" && Boolean(line && (line.advancedTextEnabled || line.cjkGlyphPathMode && line.cjkGlyphPathMode !== "off" || line.textMode !== "rotatedLabel" || line.cjkVerticalRenderMode === "svgVertical"));
-  return { italic: text2 && !svg, underline: text2 && !svg, bold: text2 && (!svg || family === "gm-outline") };
+  return { italic: text3 && !svg, underline: text3 && !svg, bold: text3 && (!svg || family === "gm-outline") };
 }
 
 // src/configStudio/renderBooleanFormula.ts
 var cache2 = /* @__PURE__ */ new WeakMap();
-function parse(text2, known) {
-  if (text2.length > 16384) throw Error("\u6761\u4EF6\u516C\u5F0F\u8D85\u8FC7 16 KiB\u3002");
+function parse(text3, known) {
+  if (text3.length > 16384) throw Error("\u6761\u4EF6\u516C\u5F0F\u8D85\u8FC7 16 KiB\u3002");
   const tokens = [];
   const re = /\s*([A-Z][A-Z0-9_]*|[()])/igy;
   let offset = 0;
-  while (offset < text2.length) {
-    if (!text2.slice(offset).trim()) break;
+  while (offset < text3.length) {
+    if (!text3.slice(offset).trim()) break;
     re.lastIndex = offset;
-    const token = re.exec(text2);
+    const token = re.exec(text3);
     if (!token) throw Error(`\u6761\u4EF6\u516C\u5F0F\u5728\u7B2C ${offset + 1} \u4E2A\u5B57\u7B26\u65E0\u6548\u3002`);
     tokens.push(token[1].toUpperCase());
     offset = re.lastIndex;
@@ -11486,7 +11498,7 @@ function compileRenderFormula(formula) {
     }
     return ast2.kind === "not" ? { ...ast2, child: resolve(ast2.child, stack, depth + 1) } : { ...ast2, left: resolve(ast2.left, stack, depth + 1), right: resolve(ast2.right, stack, depth + 1) };
   };
-  for (const [id2, text2] of groups) if (!compiledGroups.has(id2)) compiledGroups.set(id2, resolve(parse(text2, known), /* @__PURE__ */ new Set([id2]), 0));
+  for (const [id2, text3] of groups) if (!compiledGroups.has(id2)) compiledGroups.set(id2, resolve(parse(text3, known), /* @__PURE__ */ new Set([id2]), 0));
   const ast = resolve(parse(formula.expression, known), /* @__PURE__ */ new Set(), 0);
   if (Object.isFrozen(formula)) cache2.set(formula, ast);
   return ast;
@@ -11616,7 +11628,7 @@ function candidateDomain(field, facts, seed, respectRequired) {
       if (lower !== void 0) values2.push(strict ? nextNumber(lower, 1) : lower);
       values2.push(0);
       const numbers = literals.flatMap((value) => typeof value === "number" ? [value] : typeof value === "string" && value.trim() && Number.isFinite(Number(value)) ? [Number(value)] : []);
-      for (const number3 of numbers) values2.push(number3, nextNumber(number3, 1), nextNumber(number3, -1));
+      for (const number4 of numbers) values2.push(number4, nextNumber(number4, 1), nextNumber(number4, -1));
     }
     if (!type || type === "string") {
       if (!required) values2.push("");
@@ -11851,7 +11863,7 @@ function validateApplication(input, classCodes) {
     if (!world.tiles.filteredBaseUrl.startsWith("/") || world.tiles.filteredBaseUrl.startsWith("//")) url(world.tiles.filteredBaseUrl, path2 + "/tiles/filteredBaseUrl");
     const projection = world.projection;
     if (projection.id !== "dynmap-flat" || projection.worldToMap.length !== 9 || projection.mapToWorld.length !== 9 || ![...projection.worldToMap, ...projection.mapToWorld].every(Number.isFinite)) fail(path2, "\u6295\u5F71\u5FC5\u987B\u4F7F\u7528\u6CE8\u518C\u7684 dynmap-flat \u548C\u4E24\u7EC4 9 \u9879\u6709\u9650\u53C2\u6570\u3002");
-    if (![projection.mapzoomin, projection.mapzoomout, projection.tilescale, world.tiles.extraZoomLevels].every((number3) => Number.isSafeInteger(number3) && number3 >= 0 && number3 <= 16)) fail(path2, "\u6295\u5F71/\u74E6\u7247\u7F29\u653E\u53C2\u6570\u987B\u4E3A 0\u201316 \u6574\u6570\u3002");
+    if (![projection.mapzoomin, projection.mapzoomout, projection.tilescale, world.tiles.extraZoomLevels].every((number4) => Number.isSafeInteger(number4) && number4 >= 0 && number4 <= 16)) fail(path2, "\u6295\u5F71/\u74E6\u7247\u7F29\u653E\u53C2\u6570\u987B\u4E3A 0\u201316 \u6574\u6570\u3002");
     if (!Number.isInteger(world.tiles.minNativeZoom) || !Number.isInteger(world.tiles.maxNativeZoom) || world.tiles.minNativeZoom > world.tiles.maxNativeZoom || world.tiles.minNativeZoom < value.preferences.map.leafletOffset || world.tiles.maxNativeZoom > 8 + value.preferences.map.leafletOffset) fail(path2, "\u539F\u751F\u74E6\u7247\u8303\u56F4\u5FC5\u987B\u4F4D\u4E8E\u903B\u8F91 Zoom \u6620\u5C04\u5185\u4E14\u4E0B\u9650\u4E0D\u5927\u4E8E\u4E0A\u9650\u3002");
     if (!Number.isInteger(world.tiles.maxRetries) || world.tiles.maxRetries < 0 || world.tiles.maxRetries > 10 || !Number.isFinite(world.tiles.retryDelay) || world.tiles.retryDelay < 0) fail(path2, "\u74E6\u7247\u91CD\u8BD5\u6B21\u6570/\u95F4\u9694\u65E0\u6548\u3002");
   }
@@ -11932,9 +11944,9 @@ function validateApplication(input, classCodes) {
   if (!Number.isInteger(preferences.map.leafletOffset) || Math.abs(preferences.map.leafletOffset) > 8 || !Number.isInteger(preferences.map.logicalInitialZoom) || preferences.map.logicalInitialZoom < 0 || preferences.map.logicalInitialZoom > 8) fail("preferences/map", "\u903B\u8F91 Zoom \u4E3A 0\u20138\uFF0C\u6620\u5C04\u504F\u79FB\u987B\u4E3A -8\u20138 \u6574\u6570\u3002");
   for (const count of [preferences.search.homepageLimit, preferences.search.navigationLimit]) if (!Number.isInteger(count) || count < 1 || count > 200) fail("preferences/search", "\u7ED3\u679C\u6570\u91CF\u987B\u4E3A 1\u2013200 \u6574\u6570\u3002");
   if (!Number.isFinite(preferences.search.debounceMs) || preferences.search.debounceMs < 0 || preferences.search.debounceMs > 2e3) fail("preferences/search", "\u5EF6\u8FDF\u987B\u4E3A 0\u20132000ms\u3002");
-  for (const [key2, number3] of Object.entries(value.preferences.navigation ?? {})) if (!Number.isFinite(number3) || number3 < 0 || key2 !== "normalPlatformTransferCost" && number3 === 0) fail("preferences/navigation/" + key2, "\u5BFC\u822A\u901F\u5EA6/\u7CFB\u6570\u5FC5\u987B\u4E3A\u6B63\u6709\u9650\u6570\u503C\uFF0C\u6362\u4E58\u6210\u672C\u53EF\u4E3A\u96F6\u3002");
+  for (const [key2, number4] of Object.entries(value.preferences.navigation ?? {})) if (!Number.isFinite(number4) || number4 < 0 || key2 !== "normalPlatformTransferCost" && number4 === 0) fail("preferences/navigation/" + key2, "\u5BFC\u822A\u901F\u5EA6/\u7CFB\u6570\u5FC5\u987B\u4E3A\u6B63\u6709\u9650\u6570\u503C\uFF0C\u6362\u4E58\u6210\u672C\u53EF\u4E3A\u96F6\u3002");
   if (value.navigation) {
-    for (const [key2, number3] of Object.entries({ ...value.navigation.rail.parameters, ...value.navigation.common })) if (typeof number3 !== "number" || !Number.isFinite(number3) || number3 < 0 || key2 !== "normalPlatformTransferCost" && number3 === 0) fail("navigation/" + key2, "\u5BFC\u822A\u901F\u5EA6\uFF0F\u9664\u6570\u5FC5\u987B\u4E3A\u6B63\u6709\u9650\u6570\u503C\uFF0C\u540C\u53F0\u6210\u672C\u53EF\u4E3A\u96F6\u3002");
+    for (const [key2, number4] of Object.entries({ ...value.navigation.rail.parameters, ...value.navigation.common })) if (typeof number4 !== "number" || !Number.isFinite(number4) || number4 < 0 || key2 !== "normalPlatformTransferCost" && number4 === 0) fail("navigation/" + key2, "\u5BFC\u822A\u901F\u5EA6\uFF0F\u9664\u6570\u5FC5\u987B\u4E3A\u6B63\u6709\u9650\u6570\u503C\uFF0C\u540C\u53F0\u6210\u672C\u53EF\u4E3A\u96F6\u3002");
     for (const key2 of ["rail", "teleport", "road"]) if (!(value.navigation[key2].name.zh.trim() || value.navigation[key2].name.en.trim())) fail("navigation/" + key2 + "/name", "\u5BFC\u822A\u663E\u793A\u540D\u79F0\u81F3\u5C11\u586B\u5199\u4E00\u79CD\u8BED\u8A00\u3002");
     if (value.preferences.navigation) fail("navigation", "r13 \u5BFC\u822A\u53C2\u6570\u4E0D\u80FD\u4E0E\u65E7\u5BFC\u822A\u53C2\u6570\u5E76\u5B58\u3002");
     if (!value.preferences.railwayRoles) fail("preferences/railwayRoles", "\u65B0\u5BFC\u822A\u9700\u8981\u72EC\u7ACB\u7684\u5171\u4EAB\u94C1\u8DEF\u89D2\u8272\u5B9A\u4E49\u3002");
@@ -12779,8 +12791,8 @@ function coerceWorkflowValues(workflow, raw) {
     if (control.valueNormalization === "abbr") slots[control.slot] = String(value).trim().replace(/\s+/g, "").replace(/[^A-Za-z0-9_-]/g, "");
     else if (control.valueNormalization === "trim") slots[control.slot] = String(value).replace(/\r\n?/g, "\n").trim();
     else if ((control.valueNormalization === "number" || control.kind === "number") && String(value).trim()) {
-      const number3 = Number(value);
-      if (Number.isFinite(number3)) slots[control.slot] = number3;
+      const number4 = Number(value);
+      if (Number.isFinite(number4)) slots[control.slot] = number4;
     }
   }
   return slots;
@@ -13022,8 +13034,8 @@ function rowValue(row2) {
 function assembleAnnotations(value) {
   const result = { tags: {}, extensions: {} };
   for (const namespace of ["tags", "extensions"]) {
-    const text2 = value?.advancedText?.[namespace];
-    const advanced = text2?.trim() ? JSON.parse(text2) : value?.advanced?.[namespace];
+    const text3 = value?.advancedText?.[namespace];
+    const advanced = text3?.trim() ? JSON.parse(text3) : value?.advanced?.[namespace];
     if (advanced !== void 0) {
       if (!plain2(advanced)) throw new Error(`${namespace} \u9AD8\u7EA7\u6570\u636E\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002`);
       if (namespace === "extensions" && Object.values(advanced).some((group) => !plain2(group))) throw new Error("\u6269\u5C55\u9AD8\u7EA7\u5BF9\u8C61\u7684\u6BCF\u4E2A\u7EC4\u5FC5\u987B\u662F\u5B57\u6BB5\u5BF9\u8C61\u3002");
@@ -13167,8 +13179,8 @@ function finalizeV3WorkflowRecord(config, output, raw, options) {
     const field = fields.get(path2);
     if (value === "" && !preserved.has(path2) && !(field && recordFieldRequired(field, input)) && field?.emptyValue !== "preserve") return void 0;
     if (field?.type === "number" && !isBlankFieldValue(value)) {
-      const number3 = Number(value);
-      return Number.isFinite(number3) ? number3 : value;
+      const number4 = Number(value);
+      return Number.isFinite(number4) ? number4 : value;
     }
     if (field?.type === "boolean" && typeof value === "string") return value === "true" ? true : value === "false" ? false : value;
     return value;
@@ -13730,20 +13742,20 @@ function canonical(value) {
   return Array.isArray(value) ? "[" + value.map(canonical).join(",") + "]" : value && typeof value === "object" ? "{" + Object.entries(value).filter(([, v]) => v !== void 0).sort(([a], [b]) => a.localeCompare(b)).map(([key2, v]) => JSON.stringify(key2) + ":" + canonical(v)).join(",") + "}" : JSON.stringify(value);
 }
 function legacyFieldFingerprint(field) {
-  const text2 = canonical({ key: field.key, type: field.type, cardinality: field.cardinality, input: field.input, labels: field.labels, description: field.description, options: field.options, optionValueType: field.optionValueType, format: field.format });
+  const text3 = canonical({ key: field.key, type: field.type, cardinality: field.cardinality, input: field.input, labels: field.labels, description: field.description, options: field.options, optionValueType: field.optionValueType, format: field.format });
   let a = 2166136261, b = 5381;
-  for (let i = 0; i < text2.length; i++) {
-    a = Math.imul(a ^ text2.charCodeAt(i), 16777619);
-    b = Math.imul(b, 33) ^ text2.charCodeAt(i);
+  for (let i = 0; i < text3.length; i++) {
+    a = Math.imul(a ^ text3.charCodeAt(i), 16777619);
+    b = Math.imul(b, 33) ^ text3.charCodeAt(i);
   }
   return `field-v1-${(a >>> 0).toString(16).padStart(8, "0")}${(b >>> 0).toString(16).padStart(8, "0")}`;
 }
 function digest(value) {
-  const text2 = canonical(value);
+  const text3 = canonical(value);
   let a = 2166136261, b = 5381;
-  for (let i = 0; i < text2.length; i++) {
-    a = Math.imul(a ^ text2.charCodeAt(i), 16777619);
-    b = Math.imul(b, 33) ^ text2.charCodeAt(i);
+  for (let i = 0; i < text3.length; i++) {
+    a = Math.imul(a ^ text3.charCodeAt(i), 16777619);
+    b = Math.imul(b, 33) ^ text3.charCodeAt(i);
   }
   return (a >>> 0).toString(16).padStart(8, "0") + (b >>> 0).toString(16).padStart(8, "0");
 }
@@ -13806,6 +13818,23 @@ function validatePrefillCopies(config, resolve, sourceConfig = config) {
   return issues;
 }
 
+// src/configRuntime/classificationCompatibility.ts
+var indexes = /* @__PURE__ */ new WeakMap();
+var key = (path2) => JSON.stringify([path2.class, path2.kind ?? "", path2.skind ?? "", path2.skind2 ?? ""]);
+function readableClassification(config, raw) {
+  let paths = Object.isFrozen(config) ? indexes.get(config) : void 0;
+  if (!paths) {
+    paths = new Set(config.nodes.map((node) => key(node.path)));
+    if (Object.isFrozen(config)) indexes.set(config, paths);
+  }
+  if (paths.has(key(raw))) return raw;
+  if (raw.class === "ROD" && raw.kind && (!raw.skind || raw.skind === "NOM") && (!raw.skind2 || raw.skind2 === "NOM")) {
+    const candidate = { class: raw.class, kind: raw.kind };
+    if (paths.has(key(candidate))) return candidate;
+  }
+  return void 0;
+}
+
 // src/core/project/navigationDefinition.ts
 var RAILWAY_ROLES = ["lines", "platforms", "stationAreas", "stations"];
 function pathCovers(scope, path2) {
@@ -13816,6 +13845,110 @@ function pathsMatch(paths, path2) {
 }
 function rawClassification(value) {
   return { class: String(value.Class ?? value.class ?? "").trim(), kind: value.Kind, skind: value.SKind ?? value.Skind, skind2: value.SKind2 ?? value.Skind2 };
+}
+
+// src/configStudio/businessJsonValidation.ts
+var stationReferenceFields = ["Stations", "stations", "stationsgroup", "stationsGroup", "StationsGroup", "Stationsgroup"];
+var railLineFields = ["lines", "Lines", "LINES", "LINEs"];
+var railPlatformFields = ["platforms", "Platforms", "PLFS", "PLFs"];
+var connectFields = ["ConnectL", "connectL"];
+var blacklistFields = ["Blacklist", "blacklist"];
+var modeFields = ["Mode", "mode"];
+function firstBusinessField(record, names2) {
+  for (const name of names2) if (record[name] != null) return record[name];
+  return void 0;
+}
+var text2 = { type: "string" };
+var number3 = { type: "number" };
+var textOrNumber = { anyOf: [text2, number3] };
+var tradeItems = {
+  type: "array",
+  items: { type: "object", required: ["Name", "Count"], properties: {
+    Name: text2,
+    Count: textOrNumber,
+    Img: text2,
+    ItemID: text2,
+    Brief: text2
+  } }
+};
+var tradeSchema = {
+  type: "array",
+  items: { type: "object", required: ["OfferItems", "ReceiveItems"], properties: {
+    TradeNum: textOrNumber,
+    Note: textOrNumber,
+    OfferItems: tradeItems,
+    ReceiveItems: tradeItems
+  } }
+};
+var businessJsonTemplateByField = {
+  ...Object.fromEntries(railLineFields.map((key2) => [key2, "rail-lines"])),
+  ...Object.fromEntries(railPlatformFields.map((key2) => [key2, "rail-platforms"])),
+  ...Object.fromEntries(stationReferenceFields.map((key2) => [key2, "rail-stations"])),
+  ...Object.fromEntries(connectFields.map((key2) => [key2, "road-connections"])),
+  ...Object.fromEntries(blacklistFields.map((key2) => [key2, "road-blacklist"])),
+  ...Object.fromEntries(modeFields.map((key2) => [key2, "road-modes"])),
+  TGTcoordinate: "target-point"
+};
+function validateBusinessJsonRecords(config, records) {
+  if (config.contractRevision < 20 || !records.length) return [];
+  const shared = config.application?.preferences.railwayRoles?.selectors;
+  const nav = config.application?.navigation;
+  const tradePaths = new Set(config.workflows.filter((workflow) => ["tradePointWorkflow", "tradePointEditor"].includes(workflow.external?.componentKey ?? "")).flatMap((workflow) => {
+    try {
+      return externalRolePaths(config, workflow, "tradePoint").map(classificationPathKey);
+    } catch {
+      return [];
+    }
+  }));
+  const checksByPath = /* @__PURE__ */ new Map();
+  const result = [];
+  for (const record of records) {
+    const raw = recordCategory(record);
+    const path2 = readableClassification(config, raw) ?? raw;
+    const pathKey = classificationPathKey(path2);
+    let checks = checksByPath.get(pathKey);
+    if (!checks) {
+      const selected = [];
+      const add = (keys) => {
+        for (const key2 of keys) selected.push([key2, VALUE_SCHEMA_TEMPLATES[businessJsonTemplateByField[key2]].schema]);
+      };
+      const card = resolveCardConfiguration(config, path2, false);
+      if (tradePaths.has(pathKey) || card?.mode === "component" && card.componentKey === "TRP") {
+        selected.push(["Trade", tradeSchema], ["trade", tradeSchema]);
+      }
+      const inRailRole = (role) => shared && pathsMatch(shared[role], path2) || nav && pathsMatch(nav.rail.selectors[role], path2);
+      if (inRailRole("platforms")) add(railLineFields);
+      if (inRailRole("stationAreas")) add(railPlatformFields);
+      if (inRailRole("stations")) add(stationReferenceFields);
+      if (nav && pathsMatch(nav.road.selectors.roads, path2)) {
+        add(connectFields);
+        add(blacklistFields);
+        add(modeFields);
+      }
+      if (nav && pathsMatch(nav.teleport.selectors.teleportPoints, path2)) add(["TGTcoordinate"]);
+      checks = selected;
+      checksByPath.set(pathKey, selected);
+    }
+    const id2 = String(record.ID ?? "");
+    const worldId2 = config.application?.worlds.find((world) => [world.id, world.prefix, String(world.numericCode), world.label.zh, world.label.en].includes(String(record.World)))?.id;
+    for (const [field, schema] of checks) {
+      if (record[field] === void 0) continue;
+      for (const message of validateStructuredValue(record[field], schema, field, true)) {
+        const separator = message.indexOf("\uFF1A");
+        const location = message.slice(0, separator);
+        result.push({
+          severity: "error",
+          code: "business-json-invalid",
+          field,
+          worldId: worldId2,
+          path: "mounted/" + id2 + "/" + location,
+          message,
+          affectedFeatures: [{ id: id2, name: String(record.Name ?? id2) }]
+        });
+      }
+    }
+  }
+  return result;
 }
 
 // src/core/project/teleportAvailability.ts
@@ -13868,7 +14001,7 @@ function validateNavigationConfiguration(config, fields) {
         }
         const type = f.type === "enum" ? f.optionValueType ?? "string" : f.type === "reference" ? "string" : f.type;
         if (type !== kind || f.cardinality !== "single") add(base, `${node.nodeId} \u7684 ${key2} \u9700\u8981\u5355\u503C ${kind}\u3002`, related);
-        if (template && type === "json") shape2(f, template, base, related);
+        if (config.contractRevision < 20 && template && type === "json") shape2(f, template, base, related);
       };
       const reference = (key2, scopes, matchField = "ID") => {
         const ref = byKey.get(key2)?.reference;
@@ -13975,7 +14108,8 @@ function validateNavigationRecords(config, records, includeIssueTargets = false)
     if (role(r, "stations") && stationKey(r) !== String(r.ID)) insert(ids, `${world(r)}/${stationKey(r)}`, r);
     if (pathsMatch(nav.teleport.selectors.warpPoints, rawClassification(r))) insert(warps, `${world(r)}/${r.WRPointI2D ?? r.wrPointI2D ?? ""}`, r);
   }
-  const refs = (r, key2) => Array.isArray(r[key2]) ? r[key2].map((v) => typeof v === "object" && v ? String(v.ID ?? "") : String(v)) : [];
+  const refs = (value) => Array.isArray(value) ? value.map((v) => typeof v === "object" && v ? String(v.ID ?? "") : String(v)) : [];
+  const field = (record, keys) => config.contractRevision >= 20 ? firstBusinessField(record, keys) : record[keys[0]];
   const check = (r, id2, target) => {
     const candidates = ids.get(`${world(r)}/${id2}`) ?? [];
     if (candidates.length !== 1 || !role(candidates[0], target)) add(r, `\u94C1\u8DEF\u5173\u8054 ${id2} \u7F3A\u5931\u3001\u91CD\u590D\u6216\u89D2\u8272\u4E0D\u7B26\u3002`, sharedBase, false, { targetId: id2, businessKey: id2 });
@@ -13990,30 +14124,35 @@ function validateNavigationRecords(config, records, includeIssueTargets = false)
     if ((isWarp || isTeleport) && r.Situation !== void 0 && typeof r.Situation !== "boolean") add(r, "Situation \u5FC5\u987B\u4E3A\u5E03\u5C14\u503C\uFF1B\u7701\u7565\u65F6\u6309\u53EF\u7528\u5904\u7406\u3002", `${navBase}/teleport`);
     if (role(r, "stations") && (ids.get(`${world(r)}/${stationKey(r)}`)?.length ?? 0) > 1) add(r, "\u540C\u4E16\u754C\u8F66\u7AD9\u89C4\u8303\u5EFA\u7B51 ID \u91CD\u590D\u3002", sharedBase, false, { businessKey: stationKey(r) });
     if (role(r, "platforms")) {
-      for (const id2 of refs(r, "lines")) if (id2) check(r, id2, "lines");
+      for (const id2 of refs(field(r, railLineFields))) if (id2) check(r, id2, "lines");
     }
     if (role(r, "stationAreas")) {
-      for (const id2 of refs(r, "platforms")) if (id2) check(r, id2, "platforms");
+      for (const id2 of refs(field(r, railPlatformFields))) if (id2) check(r, id2, "platforms");
       if (r.STBuilding) check(r, String(r.STBuilding), "stations");
     }
     if (role(r, "stations")) {
-      for (const key2 of ["Stations", "stations", "stationsgroup", "stationsGroup", "StationsGroup", "Stationsgroup"]) for (const id2 of refs(r, key2)) if (id2) check(r, id2, "stationAreas");
+      for (const key2 of stationReferenceFields) for (const id2 of refs(r[key2])) if (id2) check(r, id2, "stationAreas");
     }
     if (role(r, "lines") && r.direction !== void 0 && (!finite(r.direction) || !Number.isInteger(r.direction) || Number(r.direction) < 0 || Number(r.direction) > 7)) add(r, "direction \u5FC5\u987B\u4E3A 0\u20137 \u6574\u6570\u3002", `${navBase}/rail`);
     if (isRoad) {
       if (r.Speed !== void 0 && (!finite(r.Speed) || Number(r.Speed) <= 0)) add(r, "\u9053\u8DEF Speed \u5FC5\u987B\u4E3A\u6B63\u6709\u9650\u6570\u3002", `${navBase}/road`);
-      if (Array.isArray(r.Mode)) for (const v of r.Mode) {
+      const mode = field(r, modeFields);
+      if (Array.isArray(mode)) for (const v of mode) {
         const code = typeof v === "string" ? v : Array.isArray(v) ? String(v[0] ?? "") : v && typeof v === "object" ? String(v.code ?? v.tgt ?? v.ID ?? v.id ?? "") : "";
         if (!codes.has(code)) add(r, `\u9053\u8DEF Mode ${code} \u4E0D\u5728\u7ED1\u5B9A\u901F\u5EA6\u8868\u4E2D\u3002`, `${navBase}/road`);
       }
-      for (const key2 of ["ConnectL", "Blacklist"]) if (Array.isArray(r[key2])) for (const v of r[key2]) {
-        const row2 = v && typeof v === "object" ? v : {};
-        const id2 = typeof v === "string" ? v : Array.isArray(v) ? String(v[0] ?? "") : String(row2.tgt ?? row2.Tgt ?? row2.ID ?? row2.id ?? "");
-        if (!id2) continue;
-        const candidates = ids.get(`${world(r)}/${id2}`) ?? [];
-        if (!candidates.length) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5B58\u5728\u3002`, `${navBase}/road`, false, { targetId: id2, businessKey: id2 });
-        else if (candidates.length !== 1) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/road`, false, { targetId: id2, businessKey: id2 });
-        else if (!pathsMatch(nav.road.selectors.roads, rawClassification(candidates[0]))) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5728\u9053\u8DEF\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u8FDE\u63A5\u3002`, `${navBase}/road`, true);
+      for (const keys of [connectFields, blacklistFields]) {
+        const value = field(r, keys), key2 = keys[0];
+        if (!Array.isArray(value)) continue;
+        for (const v of value) {
+          const row2 = v && typeof v === "object" ? v : {};
+          const id2 = typeof v === "string" ? v : Array.isArray(v) ? String(v[0] ?? "") : String(row2.tgt ?? row2.Tgt ?? row2.ID ?? row2.id ?? "");
+          if (!id2) continue;
+          const candidates = ids.get(`${world(r)}/${id2}`) ?? [];
+          if (!candidates.length) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5B58\u5728\u3002`, `${navBase}/road`, false, { targetId: id2, businessKey: id2 });
+          else if (candidates.length !== 1) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u552F\u4E00\u3002`, `${navBase}/road`, false, { targetId: id2, businessKey: id2 });
+          else if (!pathsMatch(nav.road.selectors.roads, rawClassification(candidates[0]))) add(r, `${key2} \u76EE\u6807 ${id2} \u4E0D\u5728\u9053\u8DEF\u53C2\u4E0E\u8303\u56F4\uFF1B\u6392\u9664\u8BE5\u8FDE\u63A5\u3002`, `${navBase}/road`, true);
+        }
       }
     }
     if (isWarp) {
@@ -27829,6 +27968,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: 19
+            },
+            {
+              const: 20
             }
           ]
         },
@@ -27930,6 +28072,92 @@ var native_contract_schema_generated_default = {
   }
 };
 
+// src/configStudio/c20Migration.ts
+function visitC20RetiredSettings(source, visit) {
+  const inspectPrecision = (extensions, path2) => {
+    const spec = extensions?.visibility?.lineContainmentChoice;
+    if (!spec || spec.precision === void 0) return;
+    visit({
+      path: path2 + "/visibility/lineContainmentChoice/precision",
+      before: spec.precision,
+      message: spec.precision === 1e3 ? "\u7EBF\u8DEF\u5339\u914D\u6CBF\u7528 X/Z \u4E09\u4F4D\u5C0F\u6570\u3002" : "\u7EBF\u8DEF\u5339\u914D\u7EDF\u4E00\u4E3A X/Z \u4E09\u4F4D\u5C0F\u6570\uFF0C\u539F\u7CBE\u5EA6\u4E0D\u540C\uFF0C\u4E3B\u7EBF\u548C\u8986\u76D6\u7EBF\u9009\u62E9\u53EF\u80FD\u53D8\u5316\u3002",
+      remove: () => {
+        delete spec.precision;
+      }
+    });
+  };
+  const inspectLabel = (label, path2) => {
+    if (!label?.fallbackValueFormats) return;
+    visit({
+      path: path2 + "/fallbackValueFormats",
+      before: label.fallbackValueFormats,
+      message: "\u56DE\u9000\u6765\u6E90\u91C7\u7528\u7F3A\u7701\u683C\u5F0F " + (label.valueFormat ?? "plain") + "\uFF0CNofFloor \u59CB\u7EC8\u6309\u539F\u503C\u663E\u793A\u3002",
+      remove: () => {
+        delete label.fallbackValueFormats;
+      }
+    });
+  };
+  for (const [templates, path2] of [
+    [source.engine?.renderTemplates, "engine/renderTemplates"],
+    [source.renderDependencies?.templates, "renderDependencies/templates"]
+  ]) for (const template of templates ?? []) inspectPrecision(template.modules.visibility, path2 + "/" + template.id + "/modules/visibility");
+  for (const node of source.nodes ?? []) {
+    const path2 = "nodes/" + node.nodeId;
+    for (const field of node.fields) {
+      const at = path2 + "/fields/" + field.fieldId;
+      if (field.valueSchema !== void 0) {
+        const key2 = Object.prototype.hasOwnProperty.call(businessJsonTemplateByField, field.key) ? businessJsonTemplateByField[field.key] : void 0;
+        const schema = key2 ? VALUE_SCHEMA_TEMPLATES[key2].schema : void 0;
+        const equivalent = schema !== void 0 && stableConfigText(field.valueSchema) === stableConfigText(schema);
+        visit({
+          path: at + "/valueSchema",
+          before: field.valueSchema,
+          unresolved: !equivalent,
+          message: equivalent ? "\u5B57\u6BB5\u4EC5\u58F0\u660E JSON \u7C7B\u578B\uFF0C\u5185\u90E8\u7ED3\u6784\u6539\u7531\u4E1A\u52A1\u6838\u9A8C\u3002" : "\u6B64\u81EA\u5B9A\u4E49 JSON \u7ED3\u6784\u4E0E\u5DF2\u77E5\u4E1A\u52A1\u683C\u5F0F\u4E0D\u7B49\u4EF7\uFF0C\u8BF7\u5728\u539F\u5951\u7EA6\u6838\u5BF9\u540E\u518D\u8FC1\u79FB\u3002",
+          remove: () => {
+            delete field.valueSchema;
+          }
+        });
+      }
+      if (field.key === "TGTcoordinate" && field.coordinateFormat !== void 0) {
+        const equivalent = field.coordinateFormat === "pointObject";
+        visit({
+          path: at + "/coordinateFormat",
+          before: field.coordinateFormat,
+          unresolved: !equivalent,
+          message: equivalent ? "\u76EE\u6807\u5750\u6807\u5BF9\u8C61\u683C\u5F0F\u6539\u7531\u4F20\u9001\u6A21\u5757\u6838\u9A8C\u3002" : "\u76EE\u6807\u5750\u6807\u4F7F\u7528\u4E86\u975E\u6807\u51C6\u683C\u5F0F\uFF0C\u8BF7\u6838\u5BF9\u540E\u518D\u8FC1\u79FB\u3002",
+          remove: () => {
+            delete field.coordinateFormat;
+          }
+        });
+      }
+    }
+    if (node.card?.mode === "fields") for (const item of node.card.items) {
+      const relation = item.relation;
+      if (relation?.fallbackDisplay === void 0) continue;
+      visit({
+        path: path2 + "/card/items/" + item.id + "/relation/fallbackDisplay",
+        before: relation.fallbackDisplay,
+        message: relation.fallbackDisplay === "unknown" ? "\u5173\u8054\u76EE\u6807\u67E5\u627E\u5931\u8D25\u65F6\uFF0C\u6539\u4E3A\u663E\u793A\u539F\u5173\u8054\u503C\u3002" : "\u5173\u8054\u76EE\u6807\u67E5\u627E\u5931\u8D25\u65F6\u7EDF\u4E00\u663E\u793A\u539F\u5173\u8054\u503C\u3002",
+        remove: () => {
+          delete relation.fallbackDisplay;
+        }
+      });
+    }
+    for (const [geometry, profile] of Object.entries(node.geometryProfiles)) for (const rule of profile?.zoomPriority.rules ?? []) {
+      const at = path2 + "/geometryProfiles/" + geometry + "/rules/" + rule.id;
+      inspectPrecision(rule.logic?.overrides.visibility, at + "/logic/overrides/visibility");
+      inspectPrecision(rule.extensions, at + "/extensions");
+      inspectLabel(rule.label, at + "/label");
+      for (const [index, row2] of (rule.label?.mapping?.entries ?? []).entries()) inspectLabel(row2.item, at + "/label/mapping/entries/" + index + "/item");
+      for (const branch of rule.conditionalOverrides ?? []) {
+        inspectPrecision(branch.extensions, at + "/conditionalOverrides/" + branch.id + "/extensions");
+        inspectLabel(branch.label, at + "/conditionalOverrides/" + branch.id + "/label");
+      }
+    }
+  }
+}
+
 // src/configStudio/nativeContractValidation.ts
 function validateNativeStructure(value) {
   const definitions = native_contract_schema_generated_default.definitions;
@@ -27968,6 +28196,9 @@ function validateNativeStructure(value) {
   if (issues.length) return issues;
   const config = value;
   const c15 = config.contractRevision >= 15;
+  if (config.contractRevision >= 20) visitC20RetiredSettings(config, (item) => {
+    issues.push({ path: "config/" + item.path, message: "\u6B64\u914D\u7F6E\u952E\u5DF2\u5728 c20 \u9000\u5F79\uFF0C\u8BF7\u901A\u8FC7\u65E7\u5951\u7EA6\u8FC1\u79FB\u5BFC\u5165\u3002" });
+  });
   if (config.contractRevision < 18) {
     if (config.application?.workflowAvailability || config.application?.announcements || config.application?.about || config.application?.preferences.pictureControls) issues.push({ path: "config/application", message: "\u516C\u544A\u3001\u5173\u4E8E\u3001\u4E16\u754C\u5DE5\u4F5C\u6D41\u548C\u56FE\u7247\u63A7\u5236\u6700\u4F4E\u8981\u6C42 c18\u3002" });
     for (const node of config.nodes) if (node.displaySettings || node.searchSettings || node.inheritDown?.search !== void 0 || node.receiveFromParent?.search !== void 0) issues.push({ path: "config/nodes/" + node.nodeId, message: "\u72EC\u7ACB\u641C\u7D22\u4E0E\u7ED3\u6784\u8F6F\u7EE7\u627F\u6700\u4F4E\u8981\u6C42 c18\u3002" });
@@ -29510,7 +29741,7 @@ function validateConfigPackage(config, mountedRecords = []) {
     const value = readRecordPath(record, field.key);
     if (value !== void 0 && value !== null) for (const message of validateStructuredValue(value, field.valueSchema, field.key)) mounted.push({ severity: "error", code: "mounted-field-structure-invalid", path: "mounted/" + String(record.ID ?? "") + "/" + field.key, message, relatedPaths: config.nodes.filter((n) => n.fields.some((f) => f.key === field.key)).map((n) => "nodes/" + n.nodeId), affectedFeatures: [{ id: String(record.ID ?? ""), name: String(record.Name ?? record.ID ?? "") }] });
   }
-  mounted.push(...validateNavigationRecords(config, mountedRecords));
+  mounted.push(...validateBusinessJsonRecords(config, mountedRecords), ...validateNavigationRecords(config, mountedRecords));
   mounted.push(...validateMountedStructureRoles(config, mountedRecords));
   issues.push(...mounted);
   const configuration = issues.filter((item) => !item.code.startsWith("mounted-") && !item.code.startsWith("v1-parity")).length;
@@ -29552,23 +29783,6 @@ function recordClassificationEligible(config, path2, geometry) {
   return hasCategoryNode(config, path2) && (config.contractRevision >= 15 || !hasDescendants(config, path2)) && Boolean(resolveGeometryProfile(config, path2, geometry)?.enabled);
 }
 
-// src/configRuntime/classificationCompatibility.ts
-var indexes = /* @__PURE__ */ new WeakMap();
-var key = (path2) => JSON.stringify([path2.class, path2.kind ?? "", path2.skind ?? "", path2.skind2 ?? ""]);
-function readableClassification(config, raw) {
-  let paths = Object.isFrozen(config) ? indexes.get(config) : void 0;
-  if (!paths) {
-    paths = new Set(config.nodes.map((node) => key(node.path)));
-    if (Object.isFrozen(config)) indexes.set(config, paths);
-  }
-  if (paths.has(key(raw))) return raw;
-  if (raw.class === "ROD" && raw.kind && (!raw.skind || raw.skind === "NOM") && (!raw.skind2 || raw.skind2 === "NOM")) {
-    const candidate = { class: raw.class, kind: raw.kind };
-    if (paths.has(key(candidate))) return candidate;
-  }
-  return void 0;
-}
-
 // scripts/config-tools/server-validation-entry.ts
 var import_jszip2 = __toESM(require_lib3(), 1);
 import { File } from "node:buffer";
@@ -29583,9 +29797,9 @@ function importProgress(options, stage) {
   options.signal?.throwIfAborted();
   options.onProgress?.(stage);
 }
-function parseConfigJson(text2) {
+function parseConfigJson(text3) {
   let depth = 0, quoted = false, escape2 = false;
-  for (const char of text2) {
+  for (const char of text3) {
     if (quoted) {
       if (escape2) escape2 = false;
       else if (char === "\\") escape2 = true;
@@ -29595,7 +29809,7 @@ function parseConfigJson(text2) {
       if (++depth > CONFIG_IMPORT_LIMITS.jsonDepth) throw Error(`JSON \u5D4C\u5957\u6DF1\u5EA6\u8D85\u8FC7\u5BFC\u5165\u9884\u7B97 ${CONFIG_IMPORT_LIMITS.jsonDepth}\uFF1B\u8BF7\u79BB\u7EBF\u68C0\u67E5\u540E\u62C6\u9664\u65E0\u6548\u5D4C\u5957\u3002`);
     } else if (char === "}" || char === "]") depth--;
   }
-  return JSON.parse(text2);
+  return JSON.parse(text3);
 }
 function safeArchivePath(path2) {
   return Boolean(path2) && !/[\\\x00-\x1f:]/.test(path2) && !path2.startsWith("/") && path2.split("/").every((part, index, parts) => part !== "." && part !== ".." && (part !== "" || index === parts.length - 1));
@@ -29673,7 +29887,7 @@ async function readRawNativePackage(file, options = {}) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-c19-production-1";
+var rulesVersion = "cairnmap-c20-production-1";
 var validateConfiguration = validateConfigPackage;
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));
@@ -29724,6 +29938,8 @@ function validateIncomingBatch(config, created, existing, deletes = [], options 
     return !update;
   });
   const final = [...surviving, ...created];
+  const businessJsonIssues = validateBusinessJsonRecords(config, created);
+  if (businessJsonIssues.length) throw Object.assign(Error("configuration-batch-business-json-invalid: " + businessJsonIssues.slice(0, 5).map((issue2) => issue2.path + " \xB7 " + issue2.message).join(" / ")), { issues: businessJsonIssues });
   if (options.checkAffectedStructures) {
     const touched = /* @__PURE__ */ new Set([...writes.keys(), ...deletes.map((item) => `${item.worldId}:${item.featureId}`)]);
     const issues = final.flatMap((record) => {
@@ -29749,6 +29965,7 @@ export {
   CONTRACT_CAPABILITIES,
   stableConfigText as configurationSnapshotText,
   rulesVersion,
+  validateBusinessJsonRecords,
   validateConfiguration,
   validateConfigurationArchive,
   validateIncomingBatch,

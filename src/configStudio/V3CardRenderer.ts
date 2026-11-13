@@ -63,7 +63,7 @@ function labelFor(item: CardItem, config?: ConfigPackageV3, record?: FeatureReco
   return item.label?.zh?.trim() || item.label?.en?.trim() || item.source;
 }
 
-function relationTarget(item: CardItem) {
+function relationTarget(item: CardItem, contractRevision: number) {
   const target = item.relation?.targetClassification;
   return {
     ...(item.relation?.targetRole?{structureRole:item.relation.targetRole}:{}),
@@ -74,7 +74,8 @@ function relationTarget(item: CardItem) {
     skind2: target?.skind2,
     matchField: item.relation?.targetMatchField || 'ID',
     displayField: item.relation?.targetDisplayField || 'Name',
-    fallbackDisplay: item.relation?.fallbackDisplay || 'raw',
+    ...(contractRevision >= 20 && item.relation?.clickable === false ? { clickable: false } : {}),
+    ...(contractRevision < 20 ? { fallbackDisplay: item.relation?.fallbackDisplay || 'raw' } : {}),
   } as const;
 }
 
@@ -109,9 +110,11 @@ function rowFor(item: CardItem, record: FeatureRecord, config: ConfigPackageV3, 
 
   if (item.renderer === 'relationLink') {
     const values = relationValues(raw, item);
-    if (!values.length) return item.hideWhenEmpty === false ? { label, value: '' } : undefined;
-    if (item.relation?.clickable === false) return { label, value: item.relation?.multiple || values.length > 1 ? values.join(', ') : values[0] };
-    const target = relationTarget(item);
+    if (!values.length) return item.hideWhenEmpty === false
+      ? { label, value: config.contractRevision < 20 ? '' : language === 'en' ? 'Unknown' : '未知' }
+      : undefined;
+    if (config.contractRevision < 20 && item.relation?.clickable === false) return { label, value: item.relation?.multiple || values.length > 1 ? values.join(', ') : values[0] };
+    const target = relationTarget(item, config.contractRevision);
     if (item.relation?.multiple || values.length > 1) {
       return { label, value: makeFeatureLinkList(values.map((targetId) => makeFeatureLink(targetId, undefined, target))) };
     }

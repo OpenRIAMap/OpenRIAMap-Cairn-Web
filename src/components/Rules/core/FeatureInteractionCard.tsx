@@ -610,9 +610,9 @@ export default function FeatureInteractionCard(props: Props) {
 
                   textNode = (
                     <span
-                      style={{ color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                      style={v.linkTarget?.clickable === false ? undefined : { color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
                       title={id || undefined}
-                      onClick={(e) => {
+                      onClick={v.linkTarget?.clickable === false ? undefined : (e) => {
                         e.stopPropagation();
                         if (!id) return;
                         try {
@@ -637,9 +637,9 @@ export default function FeatureInteractionCard(props: Props) {
                         return (
                           <span
                             key={`${id}-${idx}`}
-                            style={{ color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                            style={item.linkTarget?.clickable === false ? undefined : { color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
                             title={id || undefined}
-                            onClick={(e) => {
+                            onClick={item.linkTarget?.clickable === false ? undefined : (e) => {
                               e.stopPropagation();
                               if (!id) return;
                               try {
@@ -751,9 +751,9 @@ export default function FeatureInteractionCard(props: Props) {
 
                         textNode = (
                           <span
-                            style={{ color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                            style={v.linkTarget?.clickable === false ? undefined : { color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
                             title={id || undefined}
-                            onClick={(e) => {
+                            onClick={v.linkTarget?.clickable === false ? undefined : (e) => {
                               e.stopPropagation();
                               if (!id) return;
                               try {
@@ -778,9 +778,9 @@ export default function FeatureInteractionCard(props: Props) {
                               return (
                                 <span
                                   key={`${id}-${idx}`}
-                                  style={{ color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                                  style={item.linkTarget?.clickable === false ? undefined : { color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
                                   title={id || undefined}
-                                  onClick={(e) => {
+                                  onClick={item.linkTarget?.clickable === false ? undefined : (e) => {
                                     e.stopPropagation();
                                     if (!id) return;
                                     try {

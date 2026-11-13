@@ -162,7 +162,8 @@ function ReviewFindingDetails({finding,language}:{finding:ReviewFindingView;lang
     {finding.target ? <div className="font-semibold break-words">{target(finding.target)}</div> : null}
     {finding.businessKey ? <div>{zh?'业务键':'Business key'} · {finding.businessKey}</div> : null}
     <div>{finding.packageId?finding.packageId+'：':''}<RemoteFinding code={finding.code??'REMOTE_DIAGNOSTIC'} message={finding.message} language={language} details={finding}/></div>
-    {finding.code==='BATCH_CONFIGURATION_INVALID' ? <div className="mt-1 break-words">{finding.message}</div> : null}
+    {finding.code==='BATCH_CONFIGURATION_INVALID' || finding.code==='CONFIGURATION_INVALID' && finding.message.startsWith('configuration-batch-business-json-invalid:')
+      ? <div className="mt-1 break-words">{finding.message}</div> : null}
     {finding.operations?.length ? <ul className="mt-1 list-disc space-y-1 pl-5">{finding.operations.map((row,index)=><li key={index} className="break-words">
       {[row.action&&(action[row.action]??row.action),target(row),row.packageName??row.submissionId,row.packageName&&row.submissionId,row.revisionId].filter(Boolean).join(' · ')}
     </li>)}</ul> : null}

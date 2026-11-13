@@ -445,15 +445,14 @@ function lineCoordinateKeys(record: FeatureRecord, precision: number): string[] 
 
 const lineChoiceCache = new WeakMap<FeatureStore, Map<string, 'primary' | 'overlay'>>();
 
-function lineContainmentChoice(record: FeatureRecord, extension: NonNullable<RenderRuleExtensions['visibility']>['lineContainmentChoice'], store?: FeatureStore): 'primary' | 'overlay' | undefined {
+function lineContainmentChoice(record: FeatureRecord, extension: NonNullable<RenderRuleExtensions['visibility']>['lineContainmentChoice'], precision: number, store?: FeatureStore): 'primary' | 'overlay' | undefined {
   if (!extension || !store) return undefined;
   const path = pathFor(record);
-  const cacheKey = `${path.class}|${extension.field}|${extension.primaryValue}|${extension.overlayValues.join(',')}|${extension.precision ?? 1000}`;
+  const cacheKey = `${path.class}|${extension.field}|${extension.primaryValue}|${extension.overlayValues.join(',')}|${precision}`;
   const cache = lineChoiceCache.get(store) ?? new Map<string, 'primary' | 'overlay'>();
   if (!lineChoiceCache.has(store)) lineChoiceCache.set(store, cache);
   const existing = cache.get(cacheKey);
   if (existing) return existing;
-  const precision = extension.precision ?? 1000;
   const primary = store.all.filter((candidate) => pathFor(candidate).class === path.class
     && String(featureValue(candidate, extension.field) ?? '').trim() === extension.primaryValue)
     .map((candidate) => new Set(lineCoordinateKeys(candidate, precision)));
@@ -510,7 +509,7 @@ function passesVisibilityExtension(config: ConfigPackageV3, record: FeatureRecor
   if (!spec) return true;
   const direction = String(featureValue(record, spec.field) ?? '').trim();
   if (ctx.zoomLevel < spec.switchZoom) return direction === spec.primaryValue;
-  const choice = lineContainmentChoice(record, spec, store);
+  const choice = lineContainmentChoice(record, spec, config.contractRevision >= 20 ? 1000 : spec.precision ?? 1000, store);
   return choice === 'overlay' ? spec.overlayValues.includes(direction) : direction === spec.primaryValue;
 }
 
@@ -788,7 +787,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
         enabled: label.visible,
         textFrom: (candidate: FeatureRecord) => {
           return resolveLabelText(label, source => featureValue(candidate, source), (value, format) => format === 'floorLabel' ? fmtFloorLabel(value) : value,
-            () => fallback?.whenNoLabelText === 'showID' ? String(featureValue(candidate, 'ID') ?? '') : fallback?.whenNoLabelText === 'showClassKind' ? [path.class,path.kind,path.skind,path.skind2].filter(Boolean).join('/') : fallback?.whenNoLabelText === 'placeholder' ? '—' : '', config.contractRevision >= 19);
+            () => fallback?.whenNoLabelText === 'showID' ? String(featureValue(candidate, 'ID') ?? '') : fallback?.whenNoLabelText === 'showClassKind' ? [path.class,path.kind,path.skind,path.skind2].filter(Boolean).join('/') : fallback?.whenNoLabelText === 'placeholder' ? '—' : '', config.contractRevision >= 19, config.contractRevision < 20);
         },
         ...(labelText?.maxChars !== undefined ? { maxChars: labelText.maxChars, abbreviation: { enabled: labelText.abbreviationEnabled !== false, maxChars: labelText.maxChars, suffix: labelText.suffix ?? '…' } } : {}),
         ...(labelText?.minChars !== undefined ? { minChars: labelText.minChars } : {}),

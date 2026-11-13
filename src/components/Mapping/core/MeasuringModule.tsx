@@ -27,6 +27,7 @@ import 'leaflet/dist/leaflet.css';
 
 
 import {layerToJsonText,type FeatureKey,type DrawMode} from '@/components/Common/featurePrimitives';
+import {validateBusinessJsonRecords} from '@/configStudio/businessJsonValidation';
 import {mergeEditorDraftIntoFeatureInfo,type WorkflowEditorDraftValues,type WorkflowEditorUnparsedEntry} from '@/components/Common/workflowEditorParser';
 import type {ProjectedRegistryScene} from '@/components/Common/formProjection';
 import {CategoryPathPicker} from '@/configStudio/CategoryPathPicker';
@@ -1204,6 +1205,7 @@ const [tempMountIdCheckText, setTempMountIdCheckText] = useState('正在对比�
 const [tempMountConflictOpen, setTempMountConflictOpen] = useState(false);
 const [tempMountConflictText, setTempMountConflictText] = useState<string>('');
 const [tempMountConflictAllowOverride, setTempMountConflictAllowOverride] = useState(false);
+const [tempMountFormatBlocked, setTempMountFormatBlocked] = useState(false);
 const [tempMountPendingLayers, setTempMountPendingLayers] = useState<LayerType[] | null>(null);
 const [tempMountPendingOverrideIds, setTempMountPendingOverrideIds] = useState<string[]>([]);
 
@@ -2457,10 +2459,33 @@ const getTempMountedEntryByLayer = (layerId: number): TempRuleSource | undefined
   return found as any;
 };
 
+const checkTempMountBusinessJson = (records: Parameters<typeof validateBusinessJsonRecords>[1]) => {
+  if (!configRuntime) return true;
+  const issues = validateBusinessJsonRecords(configRuntime, records);
+  if (!issues.length) return true;
+  const messages = issues.map(issue => {
+    const feature = issue.affectedFeatures?.[0];
+    return [feature?.name, feature?.id && feature.id !== feature.name ? '(' + feature.id + ')' : '', issue.message]
+      .filter(Boolean).join(' ');
+  });
+  setTempMountConflictText('专用 JSON 格式核验未通过，请返回修正后再挂载。\n' + messages.join('\n'));
+  setTempMountFormatBlocked(true);
+  setTempMountConflictAllowOverride(false);
+  setTempMountPendingLayers(null);
+  setTempMountPendingOverrideIds([]);
+  setTempMountConflictOpen(true);
+  return false;
+};
+
+const checkTempMountLayers = (layerList: LayerType[]) => checkTempMountBusinessJson(layerList.flatMap(layer =>
+  layer.visible && layer.jsonInfo?.featureInfo ? [layer.jsonInfo.featureInfo] : []));
+
 const setTempMountedEnabledForLayer = (layerId: number, enabled: boolean) => {
   const uid = getLayerTempUid(layerId);
   const all = readTempRuleSources();
   const prev = Array.isArray(all?.[currentWorldId]) ? (all[currentWorldId] as any[]) : [];
+  const source = prev.find(item => item?.uid === uid);
+  if (enabled && !checkTempMountBusinessJson(source?.items ?? [])) return;
   const next = prev.map((x) => {
     if (x && typeof x === 'object' && String((x as any).uid) === uid) {
       return { ...(x as any), enabled: Boolean(enabled) };
@@ -4063,6 +4088,7 @@ const workflowBridge: WorkflowBridge = {
     setTempMountConflictOpen(false);
     setTempMountConflictText('');
     setTempMountConflictAllowOverride(false);
+    setTempMountFormatBlocked(false);
     setTempMountPendingLayers(null);
     setTempMountPendingOverrideIds([]);
   };
@@ -4072,6 +4098,7 @@ const workflowBridge: WorkflowBridge = {
       cancelTempMountConflict();
       return;
     }
+    if (!checkTempMountLayers(tempMountPendingLayers)) return;
 
     // 写入覆盖屏蔽列表：固定数据源中同 ID 的要素在挂载期间不可读
     const all = readTempRuleOverrideIds();
@@ -4103,6 +4130,8 @@ const workflowBridge: WorkflowBridge = {
       return;
     }
 
+    if (!checkTempMountLayers(layerList)) return;
+
     // 未挂载：先做“全局数据库（RULE_DATA_SOURCES 全文件）”ID 重复性检查
     const candidates: TempLayerIdCandidate[] = layerList
       .map((l) => ({
@@ -4119,10 +4148,6 @@ const workflowBridge: WorkflowBridge = {
     }, 1000);
 
     try {
-      // 新挂载：先清理上一次残留的覆盖屏蔽列表
-      clearTempRuleOverrideIdsForWorld();
-      clearTempRuleDeleteIdsForWorld();
-
       setTempMountIdCheckText('正在读取全局数据库要素索引...');
       const res = await checkTempMountIdConflictsDetailed({ worldId: currentWorldId, candidates });
       if (res.messages.length > 0) {
@@ -4154,6 +4179,8 @@ const workflowBridge: WorkflowBridge = {
     }
 
     // 通过检查：批量挂载所有图层（仅用于测试显示/去重/关联）
+    if (!checkTempMountLayers(layerList)) return;
+    clearTempRuleOverrideIdsForWorld();
     syncTempRuleDeleteIdsForCurrentWorld();
     mountAllLayersToTempSources(layerList);
     setTempMountAllActive(true);
@@ -5578,7 +5605,7 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
       <div className="fixed inset-0 z-[9998] bg-black/40" />
       <DraggablePanel id="temp-mount-conflict" defaultPosition={{ x: 420, y: 220 }} zIndex={9999}>
         <AppCard className="w-[560px] max-w-[90vw] max-h-[70vh] overflow-hidden border">
-          <div className="px-4 py-3 border-b font-bold text-sm">ID 冲突提示</div>
+          <div className="px-4 py-3 border-b font-bold text-sm">{tempMountFormatBlocked ? '临时挂载核验' : 'ID 冲突提示'}</div>
           <div className="px-4 py-3 text-sm text-gray-800 whitespace-pre-wrap overflow-y-auto max-h-[calc(70vh-96px)]">
             {tempMountConflictText}
           </div>
@@ -5607,7 +5634,7 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
     {/* 移动端：底部面板（固定高度 + 纵向滚动） */}
     <div className="sm:hidden fixed inset-0 z-[9999] bg-black/40 flex items-end">
       <AppCard className="w-full max-h-[70vh] overflow-hidden border rounded-t-2xl">
-        <div className="px-4 py-3 border-b font-bold text-sm">ID 冲突提示</div>
+        <div className="px-4 py-3 border-b font-bold text-sm">{tempMountFormatBlocked ? '临时挂载核验' : 'ID 冲突提示'}</div>
         <div className="px-4 py-3 text-sm text-gray-800 whitespace-pre-wrap overflow-y-auto max-h-[calc(70vh-96px)]">
           {tempMountConflictText}
         </div>

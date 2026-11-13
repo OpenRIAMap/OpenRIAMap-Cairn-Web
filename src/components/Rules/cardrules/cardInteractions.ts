@@ -34,6 +34,7 @@ export type CardFeatureLinkTarget = {
 
   /** 多值字段标记。 */
   multiple?: boolean;
+  clickable?: boolean;
 
   /** 找不到目标时如何显示。 */
   fallbackDisplay?: 'raw' | 'unknown';
