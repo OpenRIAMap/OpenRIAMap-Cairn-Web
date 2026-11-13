@@ -21,14 +21,14 @@ const bytes = readFileSync('public/configuration/releases/'+sourceSha256+'/confi
 assert.equal(createHash('sha256').update(bytes).digest('hex'),sourceSha256);
 const source = JSON.parse(bytes.toString()) as ConfigPackageV3;
 assert.equal(source.contractRevision,18);
-const { config, report } = migratePackageToContract(source);
+const { config, report } = migratePackageToContract(source,19);
 assert.equal(config.revision,source.revision);
 assert.equal(config.contractRevision,19);
 assert.equal(config.engine?.renderTemplates?.length,11);
 assert.equal(config.engine?.contextView.minZoom,undefined);
 assert.equal(config.application?.externalLayers?.path,650);
 assert.equal(config.application?.externalLayers?.highlightPath,655);
-assert.equal(stableConfigText(migratePackageToContract(config).config),stableConfigText(config));
+assert.equal(stableConfigText(migratePackageToContract(config,19).config),stableConfigText(config));
 
 let count=0;
 for(const [index,node] of config.nodes.entries())for(const [kind,profile] of Object.entries(node.geometryProfiles)){
@@ -81,7 +81,7 @@ const oldDensity=conflictingSource.nodes.flatMap(node=>Object.values(node.geomet
   rule.when?.zoom.min===6&&rule.label?.visible&&rule.label.collision.collisionGroup==='structureLabel'&&rule.extensions?.density?.maxLabelsPerGrid===3,
 )!.extensions!.density!;
 oldDensity.maxLabelsPerGrid=9;
-assert.ok(migratePackageToContract(conflictingSource).report.changes.some(item=>item.kind==='unresolved'&&item.path.includes('densityGroups/structureLabel')));
+assert.ok(migratePackageToContract(conflictingSource,19).report.changes.some(item=>item.kind==='unresolved'&&item.path.includes('densityGroups/structureLabel')));
 const polygon = config.nodes.find(node => node.nodeId === 'class-bud-nom')!.geometryProfiles.Polygon!;
 const originalPoint = polygon.zoomPriority.rules.find(rule => rule.representation === 'point')!;
 const originalArea = polygon.zoomPriority.rules.find(rule => rule.representation === 'geometry')!;

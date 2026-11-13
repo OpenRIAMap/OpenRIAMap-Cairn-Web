@@ -2,6 +2,8 @@ export {validateMediaPolicy} from '../../src/configStudio/mediaPolicy';
 import {CONTRACT_CAPABILITIES,supportsContract} from '../../src/configStudio/contract';
 export {CONTRACT_CAPABILITIES};
 import {recordClassificationEligible} from '../../src/configStudio/workflowClassificationGroup';
+import { validateBusinessJsonRecords } from '../../src/configStudio/businessJsonValidation';
+export { validateBusinessJsonRecords };
 import { validateNavigationRecords } from '../../src/configStudio/navigationValidation';
 export {stableConfigText as configurationSnapshotText} from '../../src/configRuntime/configurationFingerprint';
 import {readableClassification} from '../../src/configRuntime/classificationCompatibility';
@@ -18,7 +20,7 @@ import {assertStructureTargets} from '../../src/configStudio/structureCommit';
 import {resolveNodeFieldSettings} from '../../src/configStudio/nodeFieldSettings';
 import type { ConfigPackageV3, MountedFeatureRecord } from '../../src/configStudio/types';
 
-export const rulesVersion='cairnmap-c19-production-1';
+export const rulesVersion='cairnmap-c20-production-1';
 export const validateConfiguration=validateConfigPackage;
 export async function validateConfigurationArchive(bytes:Uint8Array) {
   const config=await readRawNativePackage(new File([bytes], 'configuration.zip') as unknown as globalThis.File) as ConfigPackageV3;
@@ -63,6 +65,9 @@ export function validateIncomingBatch(config:ConfigPackageV3,created:MountedFeat
     const update=writes.get(identity(record));if(update&&update.Class!==record.Class)throw Error('configuration-record-id-collision');return !update;
   });
   const final=[...surviving,...created];
+  const businessJsonIssues=validateBusinessJsonRecords(config,created);
+  if(businessJsonIssues.length)throw Object.assign(Error('configuration-batch-business-json-invalid: '+businessJsonIssues.slice(0,5)
+    .map(issue=>issue.path+' · '+issue.message).join(' / ')),{issues:businessJsonIssues});
   if(options.checkAffectedStructures){
     const touched=new Set([...writes.keys(),...deletes.map(item=>`${item.worldId}:${item.featureId}`)]);
     const issues=final.flatMap(record=>{

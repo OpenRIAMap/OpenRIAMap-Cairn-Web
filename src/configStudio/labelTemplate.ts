@@ -34,12 +34,12 @@ export function evaluateLabelTemplate(tokens:readonly LabelToken[],read:(path:st
   let result='';for(const token of tokens){const text=token.kind==='literal'?token.value:labelScalar(read(token.value));if(text===undefined)return undefined;result+=text;if(result.length>16384)return undefined;}return result.trim()||undefined;
 }
 /** All native geometry, collision and click plans receive this one resolved text. */
-export function resolveLabelText(label:RenderLabelStyle,read:(path:string)=>unknown,format:(value:string,kind?:'plain'|'floorLabel')=>string,fallback:()=>string, rawFloorFallback=false):string {
+export function resolveLabelText(label:RenderLabelStyle,read:(path:string)=>unknown,format:(value:string,kind?:'plain'|'floorLabel')=>string,fallback:()=>string, rawFloorFallback=false, useLegacyFallbackFormats=true):string {
   if(label.sourceMode==='combined'){
     const text=evaluateLabelTemplate(labelTemplateTokens(label),read);if(text!==undefined)return format(text,label.valueFormat);
   } else {
     if(!label.source)return 'Null';const text=labelScalar(read(label.source));if(text!==undefined)return format(text,label.valueFormat);
   }
-  for(const source of label.fallbackSources??[]){const text=labelScalar(read(source));if(text!==undefined)return format(text,rawFloorFallback&&source==='NofFloor'?'plain':label.fallbackValueFormats?.[source]??label.valueFormat);}
+  for(const source of label.fallbackSources??[]){const text=labelScalar(read(source));if(text!==undefined)return format(text,rawFloorFallback&&source==='NofFloor'?'plain':(useLegacyFallbackFormats?label.fallbackValueFormats?.[source]:undefined)??label.valueFormat);}
   return fallback();
 }

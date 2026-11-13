@@ -4,6 +4,7 @@ import { RAILWAY_ROLES, pathCovers, pathsMatch, rawClassification } from '../cor
 import type { RailwayRole } from '../core/project/navigationTypes';
 import { VALUE_SCHEMA_TEMPLATES, validateValueSchema } from './valueSchema';
 import {teleportNodeAvailable} from '../core/project/teleportAvailability';
+import { blacklistFields, connectFields, firstBusinessField, modeFields, railLineFields, railPlatformFields, stationReferenceFields } from './businessJsonValidation';
 
 const sharedBase = 'application/preferences/railwayRoles', navBase = 'application/navigation';
 const stable = (value: unknown): string => JSON.stringify(value, (_key, row) => row && typeof row === 'object' && !Array.isArray(row) ? Object.fromEntries(Object.entries(row).sort(([a],[b]) => a.localeCompare(b))) : row);
@@ -41,7 +42,7 @@ export function validateNavigationConfiguration(config: ConfigPackageV3, fields:
         if (!f) { if (required) add(base, `${node.nodeId} 缺少 ${key} 字段定义。`, related); return; }
         const type = f.type === 'enum' ? f.optionValueType ?? 'string' : f.type === 'reference' ? 'string' : f.type;
         if (type !== kind || f.cardinality !== 'single') add(base, `${node.nodeId} 的 ${key} 需要单值 ${kind}。`, related);
-        if (template && type === 'json') shape(f, template, base, related);
+        if (config.contractRevision < 20 && template && type === 'json') shape(f, template, base, related);
       };
       const reference = (key: string, scopes: ClassificationRange, matchField = 'ID') => {
         const ref = byKey.get(key)?.reference;
@@ -116,7 +117,8 @@ export function validateNavigationRecords(config: ConfigPackageV3, records: Moun
     if(role(r,'stations')&&stationKey(r)!==String(r.ID))insert(ids,`${world(r)}/${stationKey(r)}`,r);
     if (pathsMatch(nav.teleport.selectors.warpPoints, rawClassification(r))) insert(warps, `${world(r)}/${r.WRPointI2D ?? r.wrPointI2D ?? ''}`, r);
   }
-  const refs = (r: MountedFeatureRecord, key: string) => Array.isArray(r[key]) ? (r[key] as unknown[]).map(v => typeof v === 'object' && v ? String((v as { ID?: unknown }).ID ?? '') : String(v)) : [];
+  const refs = (value: unknown) => Array.isArray(value) ? value.map(v => typeof v === 'object' && v ? String((v as { ID?: unknown }).ID ?? '') : String(v)) : [];
+  const field = (record: MountedFeatureRecord, keys: string[]) => config.contractRevision >= 20 ? firstBusinessField(record, keys) : record[keys[0]];
   const check = (r: MountedFeatureRecord, id: string, target: RailwayRole) => {
     const candidates = ids.get(`${world(r)}/${id}`) ?? [];
     if (candidates.length !== 1 || !role(candidates[0], target)) add(r, `铁路关联 ${id} 缺失、重复或角色不符。`, sharedBase, false, {targetId:id,businessKey:id});
@@ -130,24 +132,29 @@ export function validateNavigationRecords(config: ConfigPackageV3, records: Moun
     if ((RAILWAY_ROLES.some(key => role(r, key)) || isRoad || isWarp || isTeleport) && (ids.get(`${world(r)}/${r.ID}`)?.length ?? 0) > 1) add(r, '同世界 ID 重复，无法唯一解析。', navBase);
     if((isWarp||isTeleport)&&r.Situation!==undefined&&typeof r.Situation!=='boolean')add(r,'Situation 必须为布尔值；省略时按可用处理。',`${navBase}/teleport`);
     if(role(r,'stations')&&(ids.get(`${world(r)}/${stationKey(r)}`)?.length??0)>1)add(r,'同世界车站规范建筑 ID 重复。',sharedBase,false,{businessKey:stationKey(r)});
-    if (role(r, 'platforms')) for (const id of refs(r, 'lines')) if (id) check(r, id, 'lines');
-    if (role(r, 'stationAreas')) { for (const id of refs(r, 'platforms')) if (id) check(r, id, 'platforms'); if (r.STBuilding) check(r, String(r.STBuilding), 'stations'); }
-    if (role(r, 'stations')) for (const key of ['Stations', 'stations', 'stationsgroup', 'stationsGroup', 'StationsGroup', 'Stationsgroup']) for (const id of refs(r, key)) if (id) check(r, id, 'stationAreas');
+    if (role(r, 'platforms')) for (const id of refs(field(r, railLineFields))) if (id) check(r, id, 'lines');
+    if (role(r, 'stationAreas')) { for (const id of refs(field(r, railPlatformFields))) if (id) check(r, id, 'platforms'); if (r.STBuilding) check(r, String(r.STBuilding), 'stations'); }
+    if (role(r, 'stations')) for (const key of stationReferenceFields) for (const id of refs(r[key])) if (id) check(r, id, 'stationAreas');
     if (role(r, 'lines') && r.direction !== undefined && (!finite(r.direction) || !Number.isInteger(r.direction) || Number(r.direction) < 0 || Number(r.direction) > 7)) add(r, 'direction 必须为 0–7 整数。', `${navBase}/rail`);
     if (isRoad) {
       if (r.Speed !== undefined && (!finite(r.Speed) || Number(r.Speed) <= 0)) add(r, '道路 Speed 必须为正有限数。', `${navBase}/road`);
-      if (Array.isArray(r.Mode)) for (const v of r.Mode) {
+      const mode = field(r, modeFields);
+      if (Array.isArray(mode)) for (const v of mode) {
         const code = typeof v === 'string' ? v : Array.isArray(v) ? String(v[0] ?? '') : v && typeof v === 'object' ? String((v as Record<string, unknown>).code ?? (v as Record<string, unknown>).tgt ?? (v as Record<string, unknown>).ID ?? (v as Record<string, unknown>).id ?? '') : '';
         if (!codes.has(code)) add(r, `道路 Mode ${code} 不在绑定速度表中。`, `${navBase}/road`);
       }
-      for (const key of ['ConnectL', 'Blacklist']) if (Array.isArray(r[key])) for (const v of r[key] as unknown[]) {
-        const row = v && typeof v === 'object' ? v as Record<string, unknown> : {};
-        const id = typeof v === 'string' ? v : Array.isArray(v) ? String(v[0] ?? '') : String(row.tgt ?? row.Tgt ?? row.ID ?? row.id ?? '');
-        if (!id) continue;
-        const candidates = ids.get(`${world(r)}/${id}`) ?? [];
-        if (!candidates.length) add(r, `${key} 目标 ${id} 不存在。`, `${navBase}/road`,false,{targetId:id,businessKey:id});
-        else if (candidates.length !== 1) add(r, `${key} 目标 ${id} 不唯一。`, `${navBase}/road`,false,{targetId:id,businessKey:id});
-        else if (!pathsMatch(nav.road.selectors.roads, rawClassification(candidates[0]))) add(r, `${key} 目标 ${id} 不在道路参与范围；排除该连接。`, `${navBase}/road`, true);
+      for (const keys of [connectFields, blacklistFields]) {
+        const value = field(r, keys), key = keys[0];
+        if (!Array.isArray(value)) continue;
+        for (const v of value) {
+          const row = v && typeof v === 'object' ? v as Record<string, unknown> : {};
+          const id = typeof v === 'string' ? v : Array.isArray(v) ? String(v[0] ?? '') : String(row.tgt ?? row.Tgt ?? row.ID ?? row.id ?? '');
+          if (!id) continue;
+          const candidates = ids.get(`${world(r)}/${id}`) ?? [];
+          if (!candidates.length) add(r, `${key} 目标 ${id} 不存在。`, `${navBase}/road`,false,{targetId:id,businessKey:id});
+          else if (candidates.length !== 1) add(r, `${key} 目标 ${id} 不唯一。`, `${navBase}/road`,false,{targetId:id,businessKey:id});
+          else if (!pathsMatch(nav.road.selectors.roads, rawClassification(candidates[0]))) add(r, `${key} 目标 ${id} 不在道路参与范围；排除该连接。`, `${navBase}/road`, true);
+        }
       }
     }
     if (isWarp) {

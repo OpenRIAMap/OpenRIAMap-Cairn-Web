@@ -32,12 +32,21 @@ export function validateValueSchema(schema: ValueSchema): string[] {
   };
   return visit(schema, 0).slice(0, 20);
 }
-export function validateStructuredValue(value: unknown, schema: ValueSchema, path = 'value'): string[] {
+export function validateStructuredValue(value: unknown, schema: ValueSchema, path = 'value', reportBranchDetails = false): string[] {
   if (validateValueSchema(schema).length) return [`${path}：字段值结构声明无效。`];
   let budget = 20000;
   const visit = (v: unknown, s: ValueSchema, p: string, depth: number): string[] => {
     if (--budget < 0 || depth > 24) return [`${p}：值检查超过规模限制。`];
-    if (s.anyOf && !s.anyOf.some(branch => visit(v, branch, p, depth + 1).length === 0)) return [`${p}：不符合任何允许的结构。`];
+    if (s.anyOf) {
+      const branches: string[][] = [];
+      let matched = false;
+      for (const branch of s.anyOf) {
+        const errors = visit(v, branch, p, depth + 1);
+        if (!errors.length) { matched = true; break; }
+        if (reportBranchDetails && errors.every(message => message.startsWith(p + '/'))) branches.push(errors);
+      }
+      if (!matched) return branches.sort((a, b) => a.length - b.length)[0] ?? [`${p}：不符合任何允许的结构。`];
+    }
     if (s.type && (s.type === 'array' ? !Array.isArray(v) : s.type === 'object' ? !v || typeof v !== 'object' || Array.isArray(v) : typeof v !== s.type)) return [`${p}：需要 ${s.type}。`];
     if (typeof v === 'number' && (!Number.isFinite(v) || s.minimum !== undefined && v < s.minimum || s.exclusiveMinimum !== undefined && v <= s.exclusiveMinimum)) return [`${p}：数值无效或越界。`];
     if (s.enum && !s.enum.includes(v as string | number | boolean)) return [`${p}：值不在允许枚举中。`];

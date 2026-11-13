@@ -1,4 +1,5 @@
 import generated from './native-contract-schema.generated.json';
+import {visitC20RetiredSettings} from './c20Migration';
 import {symbolHalos} from './halo';
 import {imageSourceFormProblems} from './imageLibrary';
 import type {ConfigPackageV3,RenderStyle} from './types';
@@ -44,6 +45,9 @@ export function validateNativeStructure(value: unknown): NativeStructureIssue[] 
   if(issues.length)return issues;
   const config=value as ConfigPackageV3;
   const c15=config.contractRevision>=15;
+  if(config.contractRevision>=20)visitC20RetiredSettings(config, item => {
+    issues.push({path:'config/'+item.path,message:'此配置键已在 c20 退役，请通过旧契约迁移导入。'});
+  });
   if(config.contractRevision<18){
     if(config.application?.workflowAvailability||config.application?.announcements||config.application?.about||config.application?.preferences.pictureControls)issues.push({path:'config/application',message:'公告、关于、世界工作流和图片控制最低要求 c18。'});
     for(const node of config.nodes)if(node.displaySettings||node.searchSettings||node.inheritDown?.search!==undefined||node.receiveFromParent?.search!==undefined)issues.push({path:'config/nodes/'+node.nodeId,message:'独立搜索与结构软继承最低要求 c18。'});

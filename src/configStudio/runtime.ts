@@ -29,6 +29,7 @@ import {standardTagTableErrors} from './standardTagFields';
 import { mergeInheritedCard } from './cardInheritance';
 import { validatePrefillCopies } from './prefillAudit';
 import { resolveNodeFieldSettings,validateNodeFieldSettings } from './nodeFieldSettings';
+import { validateBusinessJsonRecords } from './businessJsonValidation';
 import { validateNavigationConfiguration, validateNavigationRecords } from './navigationValidation';
 import { validateStructuredValue, validateValueSchema } from './valueSchema';
 import { STRUCTURE_CONTEXT_ID,validateMountedStructureRoles } from './structureRoleIndex';
@@ -1605,7 +1606,7 @@ export function validateConfigPackage(config: ConfigPackageV3, mountedRecords: M
   else for (const entry of config.parity.entries.filter((item) => item.status === 'unsupported')) issue(issues, 'warning', 'v1-parity-unsupported-pending', `parity/${entry.kind}/${entry.id}`, `V1 配置 ${entry.id} 尚未迁移：${entry.details ?? '未说明原因'}。`);
   const mounted = aggregateMountedIssues(mountedRecords, config);
   for(const record of mountedRecords)for(const field of resolveEffectiveFields(config,{class:String(record.Class??''),kind:record.Kind as string|undefined,skind:(record.SKind??record.Skind) as string|undefined,skind2:(record.SKind2??record.Skind2) as string|undefined}))if(field.valueSchema){const value=readRecordPath(record,field.key);if(value!==undefined&&value!==null)for(const message of validateStructuredValue(value,field.valueSchema,field.key))mounted.push({severity:'error',code:'mounted-field-structure-invalid',path:'mounted/'+String(record.ID??'')+'/'+field.key,message,relatedPaths:config.nodes.filter(n=>n.fields.some(f=>f.key===field.key)).map(n=>'nodes/'+n.nodeId),affectedFeatures:[{id:String(record.ID??''),name:String(record.Name??record.ID??'')}]});}
-  mounted.push(...validateNavigationRecords(config,mountedRecords));
+  mounted.push(...validateBusinessJsonRecords(config,mountedRecords),...validateNavigationRecords(config,mountedRecords));
   mounted.push(...validateMountedStructureRoles(config,mountedRecords));
   issues.push(...mounted);
   const configuration = issues.filter((item) => !item.code.startsWith('mounted-') && !item.code.startsWith('v1-parity')).length;
