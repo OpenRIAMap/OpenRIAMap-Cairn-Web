@@ -51,6 +51,27 @@ const label = { visible: true, source: 'Name', fallbackSources: ['NofFloor', 'Co
 const format = (value: unknown, key?: string) => key === 'floorLabel' ? value + 'F' : String(value);
 assert.equal(resolveLabelText(label, key => ({ NofFloor: 2, Code: 3 })[key as 'NofFloor' | 'Code'], format, () => '', true, false), '2');
 assert.equal(resolveLabelText(label, key => key === 'Code' ? 3 : undefined, format, () => '', true, false), '3F');
+assert.equal(resolveLabelText(label, key => key === 'Name' ? 1 : 3, format, () => '', true, false), '1F');
+
+const cards = structuredClone(config);
+const cardNode = cards.nodes.find(node => node.path.class === 'BUD' && !node.path.kind)!;
+cardNode.card = { mode: 'fields', items: [
+  { id: 'relation', label: { zh: '关联', en: 'Relation' }, source: 'Related', renderer: 'relationLink', visible: true,
+    hideWhenEmpty: false, relation: { multiple: true, clickable: false, targetDisplayField: 'Name' } },
+  { id: 'hidden-relation', source: 'Missing', renderer: 'relationLink', visible: true, hideWhenEmpty: true },
+] };
+const rowsFor = (related?: string[]) => buildV3CardSections(cards, {
+  uid: 'test-building', featureInfo: { Class: 'BUD', ID: 'test-building', Related: related }, meta: { Class: 'BUD' },
+} as FeatureRecord)?.mainRows ?? [];
+assert.deepEqual(rowsFor(), [{ label: '关联', value: '未知' }]);
+cards.application!.preferences.language = 'en';
+assert.deepEqual(rowsFor(), [{ label: 'Relation', value: 'Unknown' }]);
+assert.deepEqual(rowsFor(['match', 'missing']).map(row => row.value), [{
+  kind: 'featureLinkList', items: ['match', 'missing'].map(targetId => ({
+    kind: 'featureLink', targetId, text: undefined,
+    linkTarget: { classCode: undefined, kind: undefined, skind: undefined, skind2: undefined, matchField: 'ID', displayField: 'Name', clickable: false },
+  })),
+}]);
 
 const rail = source.nodes.find(node => node.path.class === 'RIL' && !node.path.kind)!;
 const category = await createCategoryArtifact(source, rail.nodeId, 'classTree');
@@ -86,6 +107,7 @@ const invalidRows = [
 const issues = validateBusinessJsonRecords(config, invalidRows);
 assert.deepEqual(new Set(issues.map(issue => issue.field)), new Set(['Trade', 'lines', 'platforms', 'Stations', 'ConnectL', 'Blacklist', 'Mode', 'TGTcoordinate']));
 assert.ok(issues.some(issue => issue.path === 'mounted/teleport/TGTcoordinate/z'));
+assert.ok(issues.some(issue => issue.path === 'mounted/platform/lines/0/Available'));
 assert.deepEqual(validateBusinessJsonRecords(source, invalidRows), []);
 assert.deepEqual(server.validateBusinessJsonRecords(config, validRows), []);
 assert.deepEqual(server.validateBusinessJsonRecords(config, invalidRows), issues);
