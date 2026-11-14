@@ -287,8 +287,8 @@ function LayerControlButtons({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-1">
-        {hasExtra ? <div className="flex flex-wrap items-center gap-1">{children}</div> : null}
+      <div className="cm-layer-control-buttons flex flex-wrap items-center gap-1">
+        {hasExtra ? <div className="cm-layer-control-extras flex flex-wrap items-center gap-1">{children}</div> : null}
         <ToolIconButton
           label="淡化背景"
           icon={<Moon className="w-5 h-5" />}

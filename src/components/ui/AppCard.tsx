@@ -7,7 +7,7 @@ type AppCardProps = HTMLAttributes<HTMLDivElement> & {
 
 export default function AppCard({ className = '', children, ...rest }: AppCardProps) {
   const base =
-    'bg-white rounded-2xl border border-gray-200/70 shadow-[0_12px_30px_rgba(0,0,0,0.12)]';
+    'cm-app-card bg-white rounded-2xl border border-gray-200/70 shadow-[0_12px_30px_rgba(0,0,0,0.12)]';
 
   return (
     <div className={`${base} ${className}`.trim()} {...rest}>

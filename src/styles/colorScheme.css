@@ -1,0 +1,82 @@
+html[data-color-scheme] { background: var(--cm-page-bg); }
+.cm-sidebar-layout .leaflet-container.cm-sidebar-map {
+  background-color: var(--cm-map-background, #ddd);
+}
+:root[data-color-scheme="dark"] {
+  --cm-map-background: var(--cm-page-bg);
+  --cm-dark-link: #a8ccfa;
+  --cm-dark-positive: #a1e1b9;
+  --cm-dark-warning: #f8d397;
+  --cm-dark-negative: #ffb1b7;
+  --cm-dark-secondary: #cbbdff;
+  --cm-editor-border: var(--cm-panel-line);
+  --cm-editor-line: var(--cm-panel-line);
+  --cm-editor-surface: var(--cm-panel-header);
+  --cm-editor-card: var(--cm-panel-bg);
+  --cm-editor-group: var(--cm-panel-selected);
+  --cm-editor-muted: var(--cm-panel-muted);
+}
+:root[data-color-scheme="dark"] :is(body, #root) {
+  background-color: var(--cm-page-bg);
+  color: var(--cm-panel-ink);
+}
+:root[data-color-scheme="dark"] .cm-app-card,
+:root[data-color-scheme="dark"] :is(.bg-white, .bg-white\/90, .bg-white\/95, .bg-white\/92, .bg-white\/85) {
+  background-color: var(--cm-panel-bg);
+}
+:root[data-color-scheme="dark"] :is(.bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100, .bg-slate-50\/80, .bg-black\/5) {
+  background-color: var(--cm-panel-header);
+}
+:root[data-color-scheme="dark"] :is(.bg-gray-200, .bg-gray-300, .bg-slate-200, .bg-slate-300, .bg-neutral-100, .bg-zinc-100) {
+  background-color: var(--cm-panel-selected);
+}
+:root[data-color-scheme="dark"] :is(.bg-gray-800, .bg-slate-700, .hover\:bg-gray-800:hover, .hover\:bg-slate-800:hover) {
+  background-color: var(--cm-panel-selected);
+}
+:root[data-color-scheme="dark"] :is(.bg-gray-900, .bg-slate-950) {
+  background-color: var(--cm-page-bg);
+}
+:root[data-color-scheme="dark"] :is(.bg-gray-950\/45, .bg-slate-950\/45) { background-color: rgb(0 0 0 / 45%); }
+:root[data-color-scheme="dark"] .bg-slate-950\/55 { background-color: rgb(0 0 0 / 55%); }
+:root[data-color-scheme="dark"] .bg-gray-900\/80 { background-color: rgb(0 0 0 / 80%); }
+:root[data-color-scheme="dark"] :is(.bg-blue-50, .bg-sky-50, .bg-blue-100, .bg-sky-100, .bg-cyan-50, .bg-cyan-100) { background-color: #263f52; }
+:root[data-color-scheme="dark"] :is(.bg-indigo-50, .bg-indigo-100, .bg-purple-50, .bg-purple-100, .bg-violet-50, .bg-violet-100) { background-color: #393353; }
+:root[data-color-scheme="dark"] :is(.bg-green-50, .bg-green-100, .bg-emerald-50, .bg-emerald-100) { background-color: #254539; }
+:root[data-color-scheme="dark"] :is(.bg-yellow-50, .bg-yellow-100, .bg-orange-50, .bg-orange-100, .bg-amber-50, .bg-amber-50\/60, .bg-amber-100) { background-color: #483b2b; }
+:root[data-color-scheme="dark"] :is(.bg-red-50, .bg-red-100, .bg-rose-50, .bg-rose-50\/60, .bg-rose-100) { background-color: #4c3039; }
+:root[data-color-scheme="dark"] :is(.text-black, .text-black\/90, .text-slate-900, .text-gray-900, .text-slate-800, .text-gray-800, .text-neutral-800) { color: var(--cm-panel-ink); }
+:root[data-color-scheme="dark"] :is(.text-black\/60, .text-black\/70, .text-gray-400, .text-gray-500, .text-gray-600, .text-gray-700, .text-slate-400, .text-slate-500, .text-slate-600, .text-slate-700) { color: var(--cm-panel-muted); }
+:root[data-color-scheme="dark"] :is(.text-blue-600, .text-blue-700, .text-blue-800, .text-blue-900, .text-sky-600, .text-sky-700, .text-sky-800, .text-cyan-600, .text-cyan-700, .text-cyan-800) { color: var(--cm-dark-link); }
+:root[data-color-scheme="dark"] :is(.text-purple-600, .text-purple-700, .text-purple-800, .text-violet-600, .text-violet-700, .text-indigo-600, .text-indigo-700, .text-indigo-800) { color: var(--cm-dark-secondary); }
+:root[data-color-scheme="dark"] :is(.text-green-600, .text-green-700, .text-green-800, .text-green-900, .text-emerald-600, .text-emerald-700, .text-emerald-800) { color: var(--cm-dark-positive); }
+:root[data-color-scheme="dark"] :is(.text-yellow-700, .text-yellow-800, .text-orange-600, .text-orange-700, .text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900) { color: var(--cm-dark-warning); }
+:root[data-color-scheme="dark"] :is(.text-red-600, .text-red-700, .text-red-800, .text-rose-600, .text-rose-700, .text-rose-800, .text-rose-900) { color: var(--cm-dark-negative); }
+:root[data-color-scheme="dark"] :is(.border-gray-100, .border-gray-200, .border-gray-200\/70, .border-gray-300, .border-slate-100, .border-slate-200, .border-slate-300, .border-black\/10, .border-black\/15, .border-t, .border-b, .border) { border-color: var(--cm-panel-line); }
+:root[data-color-scheme="dark"] :is(.border-blue-100, .border-blue-200, .border-indigo-100, .border-purple-200) { border-color: #54647e; }
+:root[data-color-scheme="dark"] :is(.border-amber-200, .border-amber-300, .border-orange-200) { border-color: #806747; }
+:root[data-color-scheme="dark"] :is(.border-rose-200, .border-red-200) { border-color: #87545e; }
+:root[data-color-scheme="dark"] :is(.border-green-200, .border-emerald-200) { border-color: #4a7864; }
+:root[data-color-scheme="dark"] :is(input:not([type=checkbox],[type=radio],[type=range],[type=color],[type=file],[type=hidden]), textarea, select) {
+  background-color: var(--cm-panel-header);
+  color: var(--cm-panel-ink);
+  border-color: var(--cm-panel-line);
+}
+:root[data-color-scheme="dark"] :is(input, textarea)::placeholder { color: var(--cm-panel-muted); }
+:root[data-color-scheme="dark"] :is(.disabled\:bg-slate-100, .disabled\:bg-slate-200, .disabled\:bg-slate-300, .disabled\:bg-gray-200, .disabled\:bg-gray-300, .disabled\:bg-blue-300, .disabled\:bg-indigo-300, .disabled\:bg-orange-300, .disabled\:bg-green-300):disabled {
+  background-color: var(--cm-panel-selected);
+  color: var(--cm-panel-muted);
+}
+:root[data-color-scheme="dark"] :is(.hover\:bg-white, .hover\:bg-gray-50, .hover\:bg-gray-100, .hover\:bg-gray-200, .hover\:bg-slate-50, .hover\:bg-slate-100, .hover\:bg-blue-50, .hover\:bg-blue-100, .hover\:bg-rose-50):hover {
+  background-color: var(--cm-panel-selected);
+}
+:root[data-color-scheme="dark"] :is(.hover\:text-gray-800, .hover\:text-gray-600, .hover\:text-slate-900):hover { color: var(--cm-panel-ink); }
+:root[data-color-scheme="dark"] .leaflet-container :is(.leaflet-control-zoom a, .leaflet-control-attribution, .leaflet-popup-content-wrapper, .leaflet-popup-tip, .coord-display) {
+  background: var(--cm-panel-bg) !important;
+  color: var(--cm-panel-ink) !important;
+  border-color: var(--cm-panel-line);
+}
+:root[data-color-scheme="dark"] .leaflet-control-attribution a { color: var(--cm-dark-link); }
+:root[data-color-scheme="dark"] .cm-player-card-heading { background-color: var(--cm-panel-header); color: var(--cm-panel-ink); }
+@media (max-width: 639px) {
+  :root[data-color-scheme="dark"] .cm-mobile-sheet { background-color: var(--cm-panel-bg); }
+}

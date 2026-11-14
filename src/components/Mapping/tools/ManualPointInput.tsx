@@ -147,7 +147,7 @@ export default function ManualPointInput({ enabled = true, activeMode = 'none', 
       </AppButton>
 
 {open && (
-  <DraggablePanel id="manual-point-input" defaultPosition={{ x: 380, y: 120 }}>
+  <DraggablePanel id="manual-point-input" inWorkspaceSidebar defaultPosition={{ x: 380, y: 120 }}>
     <div className="bg-white border rounded shadow-md w-80">
       <div className="flex items-center justify-between px-3 py-2 border-b">
         <div className="text-sm font-semibold">手动输入</div>

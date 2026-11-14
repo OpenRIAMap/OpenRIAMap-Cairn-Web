@@ -20,7 +20,7 @@ import { prepareNativeWorkflowCommit } from '@/configStudio/nativeWorkflowCommit
 import { validateConfigPackage,resolveGeometryProfile } from '@/configStudio/runtime';
 import type { ClassificationPath,ConfigPackageV3, WorkflowDefinition } from '@/configStudio/types';
 import type { V3WorkflowRunResult } from '@/configStudio/V3WorkflowRunner';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type ChangeEvent, type RefObject, useCallback } from 'react';
+import { forwardRef, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState, type ChangeEvent, type RefObject, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -45,6 +45,7 @@ import WorkflowStyleEditPanel from '@/components/Mapping/Editor/WorkflowStyleEdi
 
 import type { DynmapProjection } from '@/lib/DynmapProjection';
 import { DraggablePanel } from '@/components/DraggablePanel/DraggablePanel';
+import { WorkspaceSidebarContext } from '@/components/DraggablePanel/WorkspaceSidebarContext';
 import { useDesktopWindowStackLayer } from '@/components/DraggablePanel/desktopWindowStack';
 import BlockingFullscreenModal from '@/components/Common/BlockingFullscreenModal';
 import { EyeOff, MousePointerClick, Pencil, Upload, Trash2, X } from 'lucide-react';
@@ -1308,6 +1309,9 @@ useEffect(() => {
 
 
 // 下拉菜单开关（仅再次点击“测绘”主按钮才收回）
+const workspaceSidebar = useContext(WorkspaceSidebarContext);
+const layersInSidebar = Boolean(workspaceSidebar?.enabled);
+const workspaceMapRight = workspaceSidebar?.mapRight;
 const [measureDropdownOpen, setMeasureDropdownOpen] = useState(false);
 const [measureDropdownDesktop, setMeasureDropdownDesktop] = useState(false);
 const [measureDropdownRect, setMeasureDropdownRect] = useState<{ top: number; right: number } | null>(null);
@@ -1351,13 +1355,17 @@ useEffect(() => {
   focusMeasureDropdown();
 
   const handleViewportChange = () => updateMeasureDropdownRect();
+  const anchor = launcherAnchorRef?.current;
+  const observer = anchor ? new ResizeObserver(handleViewportChange) : null;
+  if (anchor) observer?.observe(anchor);
   window.addEventListener('resize', handleViewportChange);
   window.addEventListener('scroll', handleViewportChange, true);
   return () => {
+    observer?.disconnect();
     window.removeEventListener('resize', handleViewportChange);
     window.removeEventListener('scroll', handleViewportChange, true);
   };
-}, [focusMeasureDropdown, measureDropdownDesktop, measureDropdownOpen]);
+}, [focusMeasureDropdown, measureDropdownDesktop, measureDropdownOpen, workspaceMapRight]);
 
 useEffect(() => {
   const next = openSignal ?? 0;
@@ -2636,7 +2644,7 @@ useEffect(() => {
 }, [layers.length, tempMountAllActive, tempMountUiVersion, measuringActive, layerMgrListMaxHeight]);
 
 useEffect(() => {
-  if (!measuringActive) return;
+  if (!measuringActive || layersInSidebar) return;
 
   let frame = 0;
   const updateListMaxHeight = () => {
@@ -2675,6 +2683,7 @@ useEffect(() => {
     if (frame) window.cancelAnimationFrame(frame);
   };
 }, [
+  layersInSidebar,
   measuringActive,
   layers.length,
   tempMountAllActive,
@@ -4284,7 +4293,7 @@ const workflowBridge: WorkflowBridge = {
   <AppCard className={`w-96 overflow-hidden border ${isReviewWorkspace ? 'flex h-[70vh] max-h-[70vh] flex-col' : ''}`} style={{ maxHeight: '70vh' }}>
       <div ref={layerMgrCardRef} className={isReviewWorkspace ? 'flex min-h-0 flex-1 flex-col' : undefined}>
       {/* 标题栏（拖拽区域：前 48px） */}
-      <div className="flex items-center justify-between px-4 py-3 border-b">
+      <div className="cm-panel-title-bar flex items-center justify-between px-4 py-3 border-b">
         <h3 className="font-bold text-gray-800" data-draggable-title>{isReviewWorkspace ? '审核图层管理' : '图层'}</h3>
         <AppButton
           onClick={closeMeasuringUI}
@@ -4522,7 +4531,7 @@ const workflowBridge: WorkflowBridge = {
             <div className={isReviewWorkspace ? 'min-h-0 flex-1 px-3 pb-3' : 'px-3 pb-3'}>
               <div
                 ref={layerMgrBodyRef}
-                className={isReviewWorkspace ? 'h-full overflow-x-auto overflow-y-auto' : 'overflow-y-auto overflow-x-auto'}
+                className={`cm-workspace-long-table ${isReviewWorkspace ? 'h-full overflow-x-auto overflow-y-auto' : 'overflow-y-auto overflow-x-auto'}`}
                 style={isReviewWorkspace ? undefined : { maxHeight: layerMgrListMaxHeight }}
               >
                 {relayPackageDraft.deleteMarks.length > 0 && (
@@ -4666,6 +4675,7 @@ const layerManagerDesktopNode = measuringActive ? (
   <div className="hidden sm:block">
     <DraggablePanel
       id="measuring-layers"
+      inWorkspaceSidebar
       defaultPosition={{ x: 960, y: 120 }}
       zIndex={1790}
       constrainExpandedToViewport
@@ -4686,7 +4696,6 @@ const rightDockNode = (
     */}
     {measureDropdownPortal}
     {!measureDropdownDesktop && measureDropdownOpen ? <div className="sm:hidden fixed right-4 top-[40%] z-[2600] max-h-[55vh] overflow-y-auto">{measureDropdownMenu}</div> : null}
-    {layerManagerDesktopNode}
   </>
 );
 
@@ -4749,13 +4758,14 @@ const measuringWindowActions = (
         <div className="hidden sm:block">
           <DraggablePanel
             id="measuring-main"
+            inWorkspaceSidebar
             defaultPosition={{ x: 16, y: 240 }}
             zIndex={1800}
             expandedHeaderActions={measuringWindowActions}
           >
             <AppCard className="w-96 max-h-[70vh] overflow-hidden border" data-draggable-proxy-close="true">
               {/* 标题栏（拖拽区域） */}
-              <div className="flex items-center px-4 py-3 pr-40 border-b">
+              <div className="cm-panel-title-bar flex items-center px-4 py-3 pr-40 border-b">
                 <h3 className="font-bold text-gray-800" data-draggable-title>{isReviewWorkspace ? '审核测绘工作区' : '测绘'}</h3>
                 <button
                   type="button"
@@ -4768,7 +4778,7 @@ const measuringWindowActions = (
               </div>
 
               {/* 内容区 */}
-              <div className="p-3 overflow-y-auto max-h-[calc(70vh-48px)]">
+               <div className="cm-workspace-long-content p-3 overflow-y-auto max-h-[calc(70vh-48px)]">
 
 {/* 点/线/面（完整模式） / 工作流选择（快捷模式） */}
 {measuringVariant === 'full' ? null : (
@@ -5038,7 +5048,9 @@ const measuringWindowActions = (
       </div>
 
       {tempOutputOpen && (
-        <textarea readOnly className="w-full h-20 border p-1" value={currentTempOutput()} />
+        layersInSidebar
+          ? <pre className="cm-workspace-output border p-1 text-xs">{currentTempOutput()}</pre>
+          : <textarea readOnly className="w-full h-20 border p-1" value={currentTempOutput()} />
       )}
     </div>
   )
@@ -5216,12 +5228,13 @@ const measuringWindowActions = (
         </div>
       )}
 
+      {layerManagerDesktopNode}
       {/* =========================
           导入面板：桌面端（可拖拽）
          ========================= */}
       {importPanelOpen && (
         <div className="hidden sm:block">
-          <DraggablePanel id="measuring-import" defaultPosition={{ x: 420, y: 240 }} zIndex={1800}>
+          <DraggablePanel id="measuring-import" inWorkspaceSidebar revealInWorkspaceSidebar defaultPosition={{ x: 420, y: 240 }} zIndex={1800}>
             <AppCard className="w-96 overflow-hidden border">
               <div className="flex items-center justify-between px-4 py-3 border-b">
                 <h3 className="font-bold text-gray-800">导入矢量数据</h3>
@@ -5236,7 +5249,7 @@ const measuringWindowActions = (
                 </AppButton>
               </div>
 
-              <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+              <div className="cm-workspace-long-content p-4 space-y-3 max-h-[60vh] overflow-y-auto">
                 <div className="text-sm font-bold">格式</div>
                 <div className="text-xs text-gray-600">批量（JSON）</div>
 
@@ -5343,7 +5356,7 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
 
       {/* ======== JSON 导出窗口（替代 alert/print） ======== */}
 {measuringActive && jsonPanelOpen && (
-  <DraggablePanel id="measuring-json-export" defaultPosition={{ x: 340, y: 260 }} zIndex={1900}>
+  <DraggablePanel id="measuring-json-export" inWorkspaceSidebar revealInWorkspaceSidebar defaultPosition={{ x: 340, y: 260 }} zIndex={1900}>
     <AppCard className="w-[520px] max-h-[70vh] overflow-hidden border">
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <h3 className="font-bold text-gray-800">JSON 导出</h3>
@@ -5358,11 +5371,11 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
         </AppButton>
       </div>
 
-      <div className="p-3 flex gap-3">
+      <div className="cm-workspace-export p-3 flex gap-3">
         {/* 左侧：按要素类型分区导出 */}
-        <div className="w-28 shrink-0 border rounded p-2 bg-gray-50 max-h-[50vh] overflow-hidden flex flex-col">
+        <div className="cm-workspace-long-content w-28 shrink-0 border rounded p-2 bg-gray-50 max-h-[50vh] overflow-hidden flex flex-col">
           <div className="text-xs text-gray-500 mb-2">导出范围</div>
-          <div className="space-y-1 overflow-y-auto flex-1">
+          <div className="cm-workspace-long-content space-y-1 overflow-y-auto flex-1">
             <AppButton
               type="button"
               className={`w-full px-2 py-1 text-sm rounded border ${
@@ -5453,11 +5466,9 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
 
         {/* 右侧：内容 + 操作 */}
         <div className="flex-1 space-y-2">
-          <textarea
-            readOnly
-            className="w-full h-64 border p-2 text-xs font-mono rounded"
-            value={jsonPanelText}
-          />
+            {layersInSidebar
+              ? <pre className="cm-workspace-output border p-2 text-xs font-mono rounded">{jsonPanelText}</pre>
+              : <textarea readOnly className="w-full h-64 border p-2 text-xs font-mono rounded" value={jsonPanelText} />}
 
           <div className="flex gap-2">
             {/* 原“复制” → 下载(分条) */}

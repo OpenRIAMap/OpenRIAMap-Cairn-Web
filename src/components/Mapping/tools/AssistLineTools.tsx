@@ -734,7 +734,7 @@ export default forwardRef<AssistLineToolsHandle, AssistLineToolsProps>(function 
 
       {/* 桌面端浮动面板（移动端 DraggablePanel 会返回 null） */}
       {enabled && panelOpen && (
-        <DraggablePanel id="assist-line-panel" defaultPosition={defaultPanelPosition}>
+        <DraggablePanel id="assist-line-panel" inWorkspaceSidebar defaultPosition={defaultPanelPosition}>
           <div className="bg-white border rounded shadow-md w-80">
             <div className="flex items-center justify-between px-3 py-2 border-b">
               <div className="text-sm font-semibold">辅助线</div>

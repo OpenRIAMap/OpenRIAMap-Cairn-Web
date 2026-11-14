@@ -1,8 +1,9 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { forwardRef, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { DynmapProjection } from '@/lib/DynmapProjection';
 import DraggablePanel from '@/components/DraggablePanel/DraggablePanel';
+import { WorkspaceSidebarContext } from '@/components/DraggablePanel/WorkspaceSidebarContext';
 import { Ruler, X } from 'lucide-react';
 import ToolIconButton from '@/components/Toolbar/ToolIconButton';
 import AppButton from '@/components/ui/AppButton';
@@ -94,6 +95,7 @@ function rotateXZ(x: number, z: number, rad: number) {
 }
 
 const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToolsModuleProps>((props, ref) => {
+  const inSidebar = Boolean(useContext(WorkspaceSidebarContext)?.enabled);
   const { mapReady, leafletMapRef, projectionRef, closeSignal, onBecameActive, launcherSlot, openSignal, onRequestOpen } = props;
 
   // 主按钮开关
@@ -784,7 +786,7 @@ const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToo
           主操作面板：桌面端（可拖拽）
          ========================= */}
       {active && (
-        <DraggablePanel id="mtools-main" defaultPosition={{ x: 16, y: 180 }} zIndex={2200}>
+        <DraggablePanel id="mtools-main" inWorkspaceSidebar defaultPosition={{ x: 16, y: 180 }} zIndex={2200}>
           <AppCard className="w-[520px] max-h-[70vh] overflow-hidden">
             {/* 标题栏（用于拖拽区域，右侧留出关闭按钮） */}
             <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0">
@@ -930,7 +932,7 @@ const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToo
           仅输出：Layer n + 面积/距离（summaryText）
          ========================= */}
       {active && (
-        <DraggablePanel id="mtools-results" defaultPosition={{ x: 16, y: 520 }} zIndex={2200}>
+        <DraggablePanel id="mtools-results" inWorkspaceSidebar defaultPosition={{ x: 16, y: 520 }} zIndex={2200}>
           <AppCard className="w-[520px] overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h3 className="font-bold text-gray-800">测量结果</h3>
@@ -939,12 +941,10 @@ const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToo
               </AppButton>
             </div>
             <div className="p-3">
-              <textarea
-                className="w-full border rounded-lg p-2 h-28 text-xs"
-                readOnly
-                value={resultsText}
-                placeholder="这里仅显示：Layer n + 面积/距离"
-              />
+              {inSidebar
+                ? <pre className="cm-workspace-output border rounded-lg p-2 text-xs">{resultsText || '暂无测量结果'}</pre>
+                : <textarea className="w-full border rounded-lg p-2 h-28 text-xs" readOnly value={resultsText}
+                    placeholder="这里仅显示：Layer n + 面积/距离" />}
             </div>
           </AppCard>
         </DraggablePanel>
@@ -1093,11 +1093,12 @@ const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToo
       {active && (
         <DraggablePanel
           id="measurement-layer-manager"
+          inWorkspaceSidebar
           defaultPosition={{ x: window.innerWidth - 380, y: 80 }}
           zIndex={2100}
         >
           <AppCard className="w-[360px] max-h-[calc(75vh)] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0">
+            <div className="cm-panel-title-bar flex items-center justify-between px-4 py-3 border-b flex-shrink-0">
               <h3 className="font-bold text-gray-800" data-draggable-title>测量图层管理</h3>
               <AppButton
                 onClick={handleClosePanels}
@@ -1110,7 +1111,7 @@ const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToo
                 <X className="w-4 h-4" />
               </AppButton>
             </div>
-            <div className="p-3 overflow-auto">
+            <div className="cm-workspace-long-content p-3 overflow-auto">
               {layers.length === 0 && <div className="text-xs text-gray-500">暂无图层</div>}
 
               <div className="space-y-2">

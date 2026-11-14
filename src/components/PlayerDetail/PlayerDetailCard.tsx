@@ -66,7 +66,7 @@ export function PlayerDetailCard({
       ) : null}
 
       {/* 头部 */}
-      <div className="relative flex items-start justify-between gap-3 bg-cyan-500 px-4 py-3 text-white">
+      <div className="cm-player-card-heading relative flex items-start justify-between gap-3 bg-cyan-500 px-4 py-3 text-white">
         <div className="min-w-0 pr-1 sm:pr-[88px]" data-draggable-title>
           <div className="flex min-w-0 items-center gap-2">
             <User className="h-4 w-4 flex-none" />
