@@ -808,7 +808,7 @@ export default forwardRef<CurveInputTHandle, CurveInputTProps>(function CurveInp
       </AppButton>
 
       {open && (
-        <DraggablePanel id="curve-input" defaultPosition={{ x: 420, y: 140 }}>
+        <DraggablePanel id="curve-input" inWorkspaceSidebar defaultPosition={{ x: 420, y: 140 }}>
           <div className="bg-white border rounded shadow-md w-[26rem]">
             <div className="flex items-center justify-between px-3 py-2 border-b">
               <div className="text-sm font-semibold">曲线输入</div>

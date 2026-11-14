@@ -38,7 +38,7 @@ export default function RuleButtonPanel({ activeButtonIds, onToggle, mode = 'des
     window.addEventListener('resize',measure);return()=>{observer.disconnect();attributes.disconnect();window.removeEventListener('resize',measure);};
   },[mobile,frameless]);
   const content = (
-    <div className={`flex flex-wrap items-center ${mobile ? 'gap-1 justify-start' : 'gap-1'}`}>
+    <div className={`flex flex-wrap items-center gap-1 ${mobile ? 'justify-start' : 'cm-desktop-rule-buttons'}`}>
       {RULE_BUTTON_DEFS.map((d) => (
         <ToolIconButton
           key={d.id}

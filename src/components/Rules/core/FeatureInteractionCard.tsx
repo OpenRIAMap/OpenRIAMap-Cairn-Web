@@ -586,7 +586,7 @@ export default function FeatureInteractionCard(props: Props) {
                       href={href}
                       target="_blank"
                       rel="noreferrer"
-                      style={{ color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                      style={{ color: 'var(--cm-dark-link, #2563eb)', textDecoration: 'underline', cursor: 'pointer' }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       {text}
@@ -610,7 +610,7 @@ export default function FeatureInteractionCard(props: Props) {
 
                   textNode = (
                     <span
-                      style={v.linkTarget?.clickable === false ? undefined : { color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                      style={v.linkTarget?.clickable === false ? undefined : { color: 'var(--cm-dark-link, #2563eb)', textDecoration: 'underline', cursor: 'pointer' }}
                       title={id || undefined}
                       onClick={v.linkTarget?.clickable === false ? undefined : (e) => {
                         e.stopPropagation();
@@ -637,7 +637,7 @@ export default function FeatureInteractionCard(props: Props) {
                         return (
                           <span
                             key={`${id}-${idx}`}
-                            style={item.linkTarget?.clickable === false ? undefined : { color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                            style={item.linkTarget?.clickable === false ? undefined : { color: 'var(--cm-dark-link, #2563eb)', textDecoration: 'underline', cursor: 'pointer' }}
                             title={id || undefined}
                             onClick={item.linkTarget?.clickable === false ? undefined : (e) => {
                               e.stopPropagation();
@@ -727,7 +727,7 @@ export default function FeatureInteractionCard(props: Props) {
                             href={href}
                             target="_blank"
                             rel="noreferrer"
-                            style={{ color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                            style={{ color: 'var(--cm-dark-link, #2563eb)', textDecoration: 'underline', cursor: 'pointer' }}
                             onClick={(e) => e.stopPropagation()}
                           >
                             {text}
@@ -751,7 +751,7 @@ export default function FeatureInteractionCard(props: Props) {
 
                         textNode = (
                           <span
-                            style={v.linkTarget?.clickable === false ? undefined : { color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                            style={v.linkTarget?.clickable === false ? undefined : { color: 'var(--cm-dark-link, #2563eb)', textDecoration: 'underline', cursor: 'pointer' }}
                             title={id || undefined}
                             onClick={v.linkTarget?.clickable === false ? undefined : (e) => {
                               e.stopPropagation();
@@ -778,7 +778,7 @@ export default function FeatureInteractionCard(props: Props) {
                               return (
                                 <span
                                   key={`${id}-${idx}`}
-                                  style={item.linkTarget?.clickable === false ? undefined : { color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                                  style={item.linkTarget?.clickable === false ? undefined : { color: 'var(--cm-dark-link, #2563eb)', textDecoration: 'underline', cursor: 'pointer' }}
                                   title={id || undefined}
                                   onClick={item.linkTarget?.clickable === false ? undefined : (e) => {
                                     e.stopPropagation();

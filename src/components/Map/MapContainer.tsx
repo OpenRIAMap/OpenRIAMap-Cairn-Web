@@ -8,6 +8,8 @@ import { useSyncExternalStore } from 'react';
 import { isNativeConfigRevision } from '../../configStudio/contract';
 import { MAP_ZOOM_BOUNDS, TILE_ZOOM_BOUNDS } from '@/lib/mapZoom';
 import { Suspense, lazy, useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { WorkspaceSidebarContext } from '../DraggablePanel/WorkspaceSidebarContext';
+import { useAppearancePreferences } from '@/store/appearancePreferences';
 import {ReviewWorkspaceBoundary} from '../Review/ReviewWorkspaceBoundary';
 import MobileBottomSheet from '@/components/Mobile/MobileBottomSheet';
 import MobileQuickDock from '@/components/Mobile/MobileQuickDock';
@@ -54,6 +56,7 @@ import { hasEnabledTemporaryRuleSources } from '@/components/Rules/data/temporar
 import { resolveConfiguredFeatureCard } from '@/components/Rules/cardrules/featureCardRegistry';
 import { pickIdFieldValue, type FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import RuleButtonPanel from '@/components/Rules/ButtonRule/RuleButtonPanel';
+import { FoldableToolbarPanel } from '@/components/Toolbar/FoldableToolbarPanel';
 import { useRuleButtonState } from '@/components/Rules/ButtonRule/ruleButtonState';
 import { normalizeRuleSourceWorldId } from '@/components/Rules/data/ruleDataSources';
 
@@ -61,7 +64,7 @@ import { formatGridNumber, snapWorldPointByMode } from '@/lib/gridSnapUtils';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import ToolIconButton from '@/components/Toolbar/ToolIconButton';
-import { Globe2, PanelsTopLeft, Layers3, SlidersHorizontal, Plus, Minus, Pencil, RefreshCw, Ruler, User, History } from 'lucide-react';
+import { Globe2, PanelsTopLeft, Layers3, SlidersHorizontal, Plus, Minus, Pencil, RefreshCw, Ruler, User, History, Maximize2, Minimize2 } from 'lucide-react';
 import { getRuleDisplayName } from '@/components/Search/searchPresentation';
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { consumeFeatureShareTargetFromLocation, normalizePlayerShareId, type FeatureSharePayload, type FeatureShareTarget, type PlayerShareTarget, type ShareParseResult } from '@/lib/featureShareLink';
@@ -331,6 +334,32 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   const [showPublicReleaseRecords, setShowPublicReleaseRecords] = useState(false);
   const [rulePanelCollapsed, setRulePanelCollapsed] = useState(false);
   const [modePanelCollapsed, setModePanelCollapsed] = useState(false);
+  const desktopWorldControlsRef = useRef<HTMLDivElement>(null);
+  const desktopToolbarRef = useRef<HTMLDivElement>(null);
+  const [worldControlsRight, setWorldControlsRight] = useState(316);
+  useEffect(() => {
+    const controls = desktopWorldControlsRef.current;
+    if (!controls) return;
+    const measure = () => setWorldControlsRight(controls.offsetLeft + controls.offsetWidth);
+    const observer = new ResizeObserver(measure);
+    observer.observe(controls);
+    measure();
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    const toolbar = desktopToolbarRef.current;
+    if (!toolbar) return;
+    const measure = () => {
+      const first = toolbar.firstElementChild?.getBoundingClientRect();
+      const last = toolbar.lastElementChild?.getBoundingClientRect();
+      const needsScroll = first && last && last.right - first.left > toolbar.getBoundingClientRect().width + 1;
+      toolbar.toggleAttribute('data-toolbar-overflow', needsScroll);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(toolbar);
+    for (const panel of toolbar.children) observer.observe(panel);
+    return () => observer.disconnect();
+  }, []);
   const [mobileActivePanel, setMobileActivePanel] = useState<MobilePanelKey>(null);
   const [mobileQuickPanel, setMobileQuickPanel] = useState<MobileQuickPanelKey>(null);
   const [mobileSheetCollapsed, setMobileSheetCollapsed] = useState(false);
@@ -420,6 +449,48 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   const [measureToolsCloseSignal, setMeasureToolsCloseSignal] = useState(0);
   const [moduleMode, setModuleMode] = useState<CairnMapModuleMode>('runtime');
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceKind>('runtime');
+  const [sidebarTarget, setSidebarTarget] = useState<HTMLDivElement | null>(null);
+  const [sidebarPanels, setSidebarPanels] = useState(0);
+  const [sidebarWide, setSidebarWide] = useState(false);
+  const [sidebarHidden, setSidebarHidden] = useState(false);
+  const [sidebarMapRight, setSidebarMapRight] = useState<number | null>(null);
+  const { layout } = useAppearancePreferences();
+  const sidebarEnabled = layout !== 'floating';
+  const sidebarAvailable = sidebarEnabled && sidebarPanels > 0;
+  const sidebarVisible = sidebarAvailable && !sidebarHidden;
+  const sidebarTitle = activeWorkspace === 'review' ? '审核'
+    : activeWorkspace === 'measurement' ? '测量工具' : '测绘';
+  const registerPanel = useCallback((_id: string) => {
+    setSidebarPanels(count => count + 1);
+    return () => setSidebarPanels(count => count - 1);
+  }, []);
+  const sidebarContext = useMemo(() => ({
+    enabled: sidebarEnabled,
+    target: sidebarTarget,
+    registerPanel,
+    mapRight: sidebarVisible ? sidebarMapRight : null,
+  }), [registerPanel, sidebarEnabled, sidebarMapRight, sidebarTarget, sidebarVisible]);
+  useEffect(() => {
+    setSidebarHidden(false);
+  }, [activeWorkspace, sidebarAvailable]);
+  useEffect(() => {
+    const mapNode = mapRef.current;
+    if (!mapReady || !mapNode) return;
+    let previousWidth = mapNode.clientWidth;
+    let previousHeight = mapNode.clientHeight;
+    setSidebarMapRight(Math.round(mapNode.getBoundingClientRect().right));
+    const observer = new ResizeObserver(() => {
+      if (!mapNode.isConnected || leafletMapRef.current?.getContainer() !== mapNode) return;
+      if (previousWidth === mapNode.clientWidth && previousHeight === mapNode.clientHeight) return;
+      previousWidth = mapNode.clientWidth;
+      previousHeight = mapNode.clientHeight;
+      leafletMapRef.current?.invalidateSize({ pan: true, animate: false, debounceMoveend: true });
+      const right = Math.round(mapNode.getBoundingClientRect().right);
+      setSidebarMapRight(previous => previous === right ? previous : right);
+    });
+    observer.observe(mapNode);
+    return () => observer.disconnect();
+  }, [mapReady]);
   const [workspaceTransitionPhase, setWorkspaceTransitionPhase] = useState<'idle' | 'awaiting-source-confirmation' | 'preparing-target'>('idle');
   // Mapping and review deliberately receive different React instances.  The
   // review instance is never a mode switch inside a live mapping instance,
@@ -705,6 +776,7 @@ useEffect(() => {
     setShowNavigation(true);
   }
   const requestMeasuringModuleEntry = useCallback((target: 'measuring' | 'mtools') => {
+    if (target === 'measuring' && window.matchMedia('(max-width: 639px)').matches) return;
     if(!moduleEnabled(target==='measuring'?'mapping':'measurement'))return;
     void requestWorkspaceEntry(target === 'measuring' ? 'mapping' : 'measurement');
   }, [requestWorkspaceEntry]);
@@ -1003,15 +1075,8 @@ useEffect(() => {
 
   // 控制背景淡化
   useEffect(() => {
-    const tilePane = document.querySelector('.leaflet-tile-pane');
-    if (tilePane) {
-      if (dimBackground) {
-        tilePane.classList.add('dimmed');
-      } else {
-        tilePane.classList.remove('dimmed');
-      }
-    }
-  }, [dimBackground]);
+    leafletMapRef.current?.getPane('tilePane')?.classList.toggle('dimmed', dimBackground);
+  }, [dimBackground, mapReady]);
 
   // 地图风格切换
   useEffect(() => {
@@ -1688,6 +1753,7 @@ if (savedMapStyle === 'sketch') {
     tileLayerRef.current = tileLayer;
 
     // 开发期：输出缩放/中心点对应的瓦片 URL，便于定位“缩放偏移”类问题
+    let removeTileDebugListener: (() => void) | undefined;
     if (import.meta.env.DEV) {
       const logTileDebug = () => {
         const layer = tileLayerRef.current as unknown as DynmapTileLayer | null;
@@ -1700,6 +1766,7 @@ if (savedMapStyle === 'sketch') {
         console.log('[tile-debug]', { zoom, tileZoom: tile.tileZoom, center, mc, tile: tile.info, url: tile.url });
       };
       map.on('zoomend moveend', logTileDebug);
+      removeTileDebugListener = () => { map.off('zoomend moveend', logTileDebug); };
       logTileDebug();
     }
 
@@ -1770,6 +1837,7 @@ map.on('mousemove', handleMouseMove);
 
     // 清理函数
     return () => {
+      removeTileDebugListener?.();
       map.off('mousemove', handleMouseMove);
       if (rafId !== null) window.cancelAnimationFrame(rafId);
       if (leafletMapRef.current) {
@@ -1978,13 +2046,36 @@ case 'players':
   };
 
   return (
+    <WorkspaceSidebarContext.Provider value={sidebarContext}>
     <div
-      className={`relative w-full h-full ${application.preferences.toolbar.compact?'cm-toolbar-compact':''}`}
-      style={{ ['--ria-mobile-bottom-offset' as any]: `${mobileSheetOffset}px` }}
+      className={`relative w-full h-full cm-sidebar-layout ${application.preferences.toolbar.compact?'cm-toolbar-compact':''}`}
+      data-sidebar-open={sidebarVisible}
+      data-sidebar-wide={sidebarWide}
+      data-dim-background={dimBackground}
+      style={{ ['--ria-mobile-bottom-offset' as any]: `${mobileSheetOffset}px`, ['--cm-world-controls-right' as any]: `${worldControlsRight}px` }}
     >
       {!configLab&&configRuntime&&configRuntime.contractRevision>=18?<AnnouncementHost config={configRuntime} ready={!!currentRuleDataset&&!currentRulePending&&!isGlobalLoading}/>:null}
       {/* 地图容器 */}
-      <div ref={mapRef} className="w-full h-full" />
+      <div ref={mapRef} className="cm-sidebar-map h-full" />
+      {sidebarAvailable && (
+        <button type="button" className="cm-sidebar-handle"
+          aria-label={sidebarHidden ? '显示侧栏' : '隐藏侧栏'}
+          title={sidebarHidden ? '显示侧栏' : '隐藏侧栏'}
+          aria-expanded={sidebarVisible} aria-controls="cm-workspace-sidebar"
+          onClick={() => setSidebarHidden(hidden => !hidden)}>
+          <span className="cm-fold-triangle" aria-hidden="true" />
+        </button>
+      )}
+      <aside id="cm-workspace-sidebar" className="cm-workspace-sidebar" aria-label={sidebarTitle} hidden={!sidebarVisible}>
+        <header>
+          <strong>{sidebarTitle}</strong>
+          <button type="button" aria-label={sidebarWide ? '缩小侧栏' : '放大侧栏'} title={sidebarWide ? '缩小侧栏' : '放大侧栏'}
+            aria-pressed={sidebarWide} onClick={() => setSidebarWide(wide => !wide)}>
+            {sidebarWide ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </button>
+        </header>
+        <div className="cm-workspace-panel-list" ref={setSidebarTarget} />
+      </aside>
 
       {shareLookupState && (
         <div className="absolute top-4 left-1/2 z-[2400] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2">
@@ -2134,7 +2225,7 @@ case 'players':
 )}
 
       {/* 顶部区域：桌面端恢复原始布局；移动端仅保留搜索框与关于快捷按钮 */}
-      <div data-map-world-controls className="hidden sm:flex absolute top-4 left-4 right-auto z-[1000] flex-col gap-2 sm:max-w-[300px]">
+      <div ref={desktopWorldControlsRef} data-map-world-controls className="hidden sm:flex absolute top-4 left-4 right-auto z-[1000] flex-col gap-2 sm:max-w-[300px]">
         <AppCard className="bg-white/90 px-3 py-2 sm:px-4">
           <h1 className="text-base sm:text-lg font-bold text-gray-800">RIA 在线地图</h1>
           <WorldSwitcher
@@ -2263,7 +2354,6 @@ case 'players':
               >
                 <ToolIconButton label="发布记录" icon={<History className="w-5 h-5" />} tone="purple" onClick={() => openMobilePanel('releaseRecords')} />
                 <ToolIconButton label="测量工具" icon={<Ruler className="w-5 h-5" />} active={activeWorkspace === 'measurement'} disabled={!moduleEnabled('measurement')||workspaceTransitionPhase !== 'idle'} onClick={() => { requestMeasuringModuleEntry('mtools'); setMobileQuickPanel(null); }} />
-                <ToolIconButton label="测绘" icon={<Pencil className="w-5 h-5" />} active={activeWorkspace === 'mapping'} disabled={!moduleEnabled('mapping')||workspaceTransitionPhase !== 'idle'} onClick={() => { requestMeasuringModuleEntry('measuring'); setMobileQuickPanel(null); }} />
               </LayerControl>
             );
           }}
@@ -2483,16 +2573,21 @@ case 'players':
       )}
 
       {/* 桌面端：右上角图层控制 */}
-      <div className={`hidden sm:block absolute top-4 ${application.preferences.toolbar.position==='left'?'left-4':'right-4'} z-[1000]`}>
-        <div data-desktop-map-toolbar data-toolbar-side={application.preferences.toolbar.position} className="flex max-w-[calc(100vw-2rem)] flex-wrap items-start justify-end gap-2">
-          {rulePanelCollapsed ? <ToolIconButton label="展开图层面板" icon={<Layers3 className="w-5 h-5" />} tone="green" onClick={() => setRulePanelCollapsed(false)} /> : <div className="flex items-start gap-1"><RuleButtonPanel
+      <div className="cm-map-toolbar hidden sm:flex absolute top-4 z-[1000]">
+        <div ref={desktopToolbarRef} data-desktop-map-toolbar data-toolbar-side={application.preferences.toolbar.position}>
+          <FoldableToolbarPanel kind="layers" label="图层面板" icon={<Layers3 className="h-5 w-5" aria-hidden="true" />}
+            collapsed={rulePanelCollapsed} onToggle={() => setRulePanelCollapsed(value => !value)}>
+          <RuleButtonPanel frameless
             activeButtonIds={activeRuleButtonIds}
             onToggle={toggleRuleButton}
             showPlayers={showPlayers}
             onTogglePlayers={setShowPlayers}
-          /><ToolIconButton label="收起图层面板" icon={<PanelsTopLeft className="w-5 h-5" />} tone="gray" onClick={() => setRulePanelCollapsed(true)} /></div>}
+          />
+          </FoldableToolbarPanel>
 
-          {modePanelCollapsed ? <ToolIconButton label="展开模式面板" icon={<SlidersHorizontal className="w-5 h-5" />} tone="blue" onClick={() => setModePanelCollapsed(false)} /> : <div className="flex items-start gap-1"><LayerControl
+          <FoldableToolbarPanel kind="mode" label="模式面板" icon={<SlidersHorizontal className="h-5 w-5" aria-hidden="true" />}
+            collapsed={modePanelCollapsed} onToggle={() => setModePanelCollapsed(value => !value)}>
+          <LayerControl frameless
             dimBackground={dimBackground}
             mapStyle={mapStyle}
             onToggleDimBackground={setDimBackground}
@@ -2528,7 +2623,8 @@ case 'players':
             />
           </div>
 
-          </LayerControl><ToolIconButton label="收起模式面板" icon={<PanelsTopLeft className="w-5 h-5" />} tone="gray" onClick={() => setModePanelCollapsed(true)} /></div>}
+          </LayerControl>
+          </FoldableToolbarPanel>
         </div>
       </div>
 
@@ -2640,6 +2736,7 @@ case 'players':
       {/* 加载进度提示 */}
       <LoadingOverlay />
     </div>
+    </WorkspaceSidebarContext.Provider>
   );
 }
 

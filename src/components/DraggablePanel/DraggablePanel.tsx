@@ -3,10 +3,11 @@
  * 仅桌面端支持拖拽，手机端保持固定布局
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { Minus, Square, X } from 'lucide-react';
 import { useDesktopWindowStackLayer } from '@/components/DraggablePanel/desktopWindowStack';
+import { WorkspaceSidebarContext } from './WorkspaceSidebarContext';
 
 interface DraggablePanelProps {
   id: string;
@@ -21,6 +22,8 @@ interface DraggablePanelProps {
   minimizedTitleNode?: React.ReactNode;
   expandedControlLayout?: 'default' | 'playerCardGrid';
   expandedHeaderActions?: React.ReactNode;
+  inWorkspaceSidebar?: boolean;
+  revealInWorkspaceSidebar?: boolean;
 }
 
 const HEADER_HEIGHT = 48;
@@ -81,7 +84,19 @@ export function DraggablePanel({
   minimizedTitleNode,
   expandedControlLayout = 'default',
   expandedHeaderActions,
+  inWorkspaceSidebar = false,
+  revealInWorkspaceSidebar = false,
 }: DraggablePanelProps) {
+  const sidebar = useContext(WorkspaceSidebarContext);
+  const docked = inWorkspaceSidebar && !!sidebar?.enabled;
+  const registerSidebarPanel = sidebar?.registerPanel;
+  const sidebarTarget = sidebar?.target;
+  const [movableHost] = useState(() => {
+    if (!inWorkspaceSidebar || !sidebar) return null;
+    const host = document.createElement('div');
+    host.className = 'contents';
+    return host;
+  });
   const [position, setPosition] = useState(defaultPosition);
   const [isDragging, setIsDragging] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -89,9 +104,12 @@ export function DraggablePanel({
   const [panelTitle, setPanelTitle] = useState(id);
   const [hasCloseButton, setHasCloseButton] = useState(false);
   const [preferProxyClose, setPreferProxyClose] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(0);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const constrainToMap = id === 'featureInteractionCard' || id === 'playerDetail';
+  const mapRight = constrainToMap ? sidebar?.mapRight : null;
 
   // 检测是否桌面端
   useEffect(() => {
@@ -116,13 +134,38 @@ export function DraggablePanel({
     return () => window.clearTimeout(timer);
   }, [children, isDesktop, refreshHeaderMeta]);
 
+  useEffect(() => {
+    if (docked && isDesktop) return registerSidebarPanel?.(id);
+  }, [docked, id, isDesktop, registerSidebarPanel]);
+
+  useEffect(() => {
+    if (!docked || !sidebarTarget || !isDesktop || !revealInWorkspaceSidebar) return;
+    const frame = window.requestAnimationFrame(() => panelRef.current?.scrollIntoView({ block: 'nearest' }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [docked, isDesktop, revealInWorkspaceSidebar, sidebarTarget]);
+
   const { portalRoot, effectiveZIndex, emitFocused } = useDesktopWindowStackLayer({
     id,
     stackGroup,
     stackGroupOrder,
-    enabled: isDesktop,
+    enabled: isDesktop && !docked,
     onFocus,
   });
+
+  // Keep the portal target stable while its host moves between containers.
+  useLayoutEffect(() => {
+    const target = docked ? sidebarTarget : portalRoot;
+    if (isDesktop && movableHost && target) target.appendChild(movableHost);
+  }, [docked, isDesktop, movableHost, portalRoot, sidebarTarget]);
+  useLayoutEffect(() => () => movableHost?.remove(), [movableHost]);
+
+  useEffect(() => {
+    const node = panelRef.current;
+    if (!constrainToMap || !node) return;
+    const observer = new ResizeObserver(() => setWindowWidth(node.offsetWidth));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [constrainToMap, portalRoot]);
 
   const clampPosition = useCallback((x: number, y: number, minimized: boolean) => {
     const panelWidth = panelRef.current?.offsetWidth || 300;
@@ -152,7 +195,7 @@ export function DraggablePanel({
 
   // 开始拖拽
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!isDesktop) return;
+    if (!isDesktop || docked) return;
 
     // 点击输入控件/按钮等交互元素时，不进入拖拽逻辑（避免抢焦点/阻止输入）
     const target = e.target as HTMLElement | null;
@@ -167,11 +210,11 @@ export function DraggablePanel({
     e.preventDefault();
     setIsDragging(true);
     dragStartRef.current = {
-      x: e.clientX - position.x,
+      x: e.clientX - rect.left,
       y: e.clientY - position.y,
     };
     emitFocused();
-  }, [emitFocused, isDesktop, position.x, position.y]);
+  }, [docked, emitFocused, isDesktop, position.y]);
 
   // 拖拽中
   useEffect(() => {
@@ -197,9 +240,9 @@ export function DraggablePanel({
   }, [clampPosition, isDragging, isMinimized]);
 
   useEffect(() => {
-    if (!isDesktop) return;
+    if (!isDesktop || docked) return;
     setPosition((prev) => clampPosition(prev.x, prev.y, isMinimized));
-  }, [clampPosition, isDesktop, isMinimized]);
+  }, [clampPosition, docked, isDesktop, isMinimized]);
 
   const handleRootMouseDownCapture = useCallback(() => {
     emitFocused();
@@ -213,16 +256,16 @@ export function DraggablePanel({
   const handleToggleMinimize = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    emitFocused();
+    if (!docked) emitFocused();
     setIsMinimized((prev) => !prev);
-  }, [emitFocused]);
+  }, [docked, emitFocused]);
 
   const handleRequestClose = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    emitFocused();
+    if (!docked) emitFocused();
     findCloseButton(contentRef.current)?.click();
-  }, [emitFocused]);
+  }, [docked, emitFocused]);
 
   // 手机端：不渲染（手机端内容在 MapContainer 的 sm:hidden 区域单独渲染）
   if (!isDesktop) {
@@ -236,28 +279,35 @@ export function DraggablePanel({
   const minimizedControlButtonClass = 'flex h-7 w-7 items-center justify-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600';
   const expandedControlTop = expandedControlLayout === 'playerCardGrid' ? 10 : 10;
   const expandedHeaderActionsRight = WINDOW_SIDE_PADDING + (WINDOW_BUTTON_SIZE + WINDOW_BUTTON_GAP) * 2;
+  const left = mapRight != null
+    ? Math.max(8, Math.min(position.x, mapRight - windowWidth - 8))
+    : position.x;
 
   const panelNode = (
     <div
       ref={panelRef}
       data-panel-id={id}
       data-panel-minimized={isMinimized ? 'true' : 'false'}
-      className="fixed pointer-events-auto"
-      style={{
-        left: position.x,
+      data-map-bounded={mapRight != null ? 'true' : undefined}
+      className={docked ? 'cm-workspace-panel pointer-events-auto' : 'cm-floating-panel fixed pointer-events-auto'}
+      style={docked ? undefined : {
+        left,
         top: position.y,
         zIndex: effectiveZIndex,
         cursor: isDragging ? 'grabbing' : 'default',
         width: isMinimized ? 'fit-content' : undefined,
-        maxWidth: isMinimized ? MINIMIZED_MAX_WIDTH : undefined,
+        maxWidth: mapRight != null
+          ? Math.min(mapRight - 16, isMinimized ? MINIMIZED_MAX_WIDTH : Number.POSITIVE_INFINITY)
+          : isMinimized ? MINIMIZED_MAX_WIDTH : undefined,
       }}
-      onMouseDownCapture={handleRootMouseDownCapture}
-      onMouseDown={handleRootMouseDown}
+      onMouseDownCapture={docked ? undefined : handleRootMouseDownCapture}
+      onMouseDown={docked ? undefined : handleRootMouseDown}
     >
       <div className="relative">
         <div
           ref={contentRef}
-          style={isMinimized ? { display: 'none' } : undefined}
+          className="cm-panel-frame-content"
+          hidden={isMinimized}
           aria-expanded={!isMinimized}
         >
           {children}
@@ -265,7 +315,7 @@ export function DraggablePanel({
 
         {isMinimized ? (
           <div
-            className="flex items-center gap-2 rounded-2xl border border-black/10 bg-white shadow-md"
+            className="cm-panel-minimized flex items-center gap-2 rounded-2xl border border-black/10 bg-white shadow-md"
             style={{ minWidth: MINIMIZED_MIN_WIDTH }}
           >
             <div className="min-w-0 px-4 py-3 text-sm font-semibold text-gray-800 truncate" title={panelTitle}>
@@ -314,8 +364,8 @@ export function DraggablePanel({
               type="button"
               onClick={handleToggleMinimize}
               className={`absolute ${expandedControlButtonClass}`}
-              aria-label="最小化面板"
-              title="最小化面板"
+              aria-label={docked ? '折叠面板' : '最小化面板'}
+              title={docked ? '折叠面板' : '最小化面板'}
               style={{
                 top: expandedControlTop,
                 right: WINDOW_SIDE_PADDING + WINDOW_BUTTON_SIZE + WINDOW_BUTTON_GAP,
@@ -348,8 +398,8 @@ export function DraggablePanel({
     </div>
   );
 
-  if (!portalRoot) return null;
-  return createPortal(panelNode, portalRoot);
+  const target = movableHost ?? (docked ? sidebarTarget : portalRoot);
+  return target ? createPortal(panelNode, target) : null;
 }
 
 export default DraggablePanel;

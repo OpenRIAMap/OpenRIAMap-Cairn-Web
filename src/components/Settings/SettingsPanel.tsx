@@ -8,8 +8,9 @@ import {getRuntimeDataDiagnostics} from '@/configRuntime/runtimeDataView';
  */
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { setAppearancePreferences, useAppearancePreferences, type ColorPreference, type PanelLayout } from '@/store/appearancePreferences';
 import { getApplicationSettings, subscribeApplication } from '@/core/project/applicationRuntime';
-import { X, RefreshCw, Trash2, Database, Smartphone, CheckCircle, AlertCircle, Loader2, Download, SlidersHorizontal } from 'lucide-react';
+import { X, RefreshCw, Trash2, Database, Smartphone, CheckCircle, AlertCircle, Loader2, Download, Palette, SlidersHorizontal } from 'lucide-react';
 
 // PWA 安装事件类型
 interface BeforeInstallPromptEvent extends Event {
@@ -77,6 +78,7 @@ function compactFormalVersion(value: string | null): string {
 }
 
 export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, reviewAuth, reviewAuthTitle, reviewAuthLoginLabel }: SettingsPanelProps) {
+  const appearance = useAppearancePreferences();
   const [versionSession,setVersionSession]=useState<ReviewAuthSessionState>({status:'anonymous'});
   const formalConfiguration=useSyncExternalStore(subscribeFormalConfiguration,getFormalConfiguration);
   const formal=formalConfiguration?.identity;
@@ -371,12 +373,13 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
   };
 
   return (
-    <AppCard className="w-80 max-h-[80vh] overflow-hidden flex flex-col">
+    <AppCard className="w-full overflow-hidden sm:w-80 sm:max-h-[80vh] sm:flex sm:flex-col">
       {/* 头部 */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
         <h2 className="font-bold text-gray-800">设置</h2>
         <AppButton
           onClick={onClose}
+          aria-label="关闭设置"
           className="p-1 hover:bg-gray-200 rounded"
         >
           <X className="w-5 h-5 text-gray-500" />
@@ -384,7 +387,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
       </div>
 
       {/* 内容 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="space-y-4 p-4 sm:flex-1 sm:overflow-y-auto">
         {reviewAuth ? (
           <ReviewAuthSettingsSection
             auth={reviewAuth}
@@ -602,6 +605,33 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
           )}
         </div>
 
+
+        <section className="space-y-3" aria-labelledby="appearance-settings-heading">
+          <h3 id="appearance-settings-heading" className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <Palette className="h-4 w-4" />
+            界面外观
+          </h3>
+          <div className="space-y-2 rounded-lg bg-gray-50 p-3 text-sm">
+            <label className="flex flex-wrap items-center justify-between gap-2">
+              <span>页面配色</span>
+              <select className="max-w-full rounded border px-2 py-1" value={appearance.color}
+                onChange={event => setAppearancePreferences({ color: event.currentTarget.value as ColorPreference })}>
+                <option value="light">浅色</option>
+                <option value="dark">深色</option>
+                <option value="system">遵照浏览器配色</option>
+              </select>
+            </label>
+            <label className="hidden flex-wrap items-center justify-between gap-2 sm:flex">
+              <span>显示效果</span>
+              <select className="max-w-full rounded border px-2 py-1" value={appearance.layout}
+                onChange={event => setAppearancePreferences({ layout: event.currentTarget.value as PanelLayout })}>
+                <option value="cards">方正卡片与边栏</option>
+                <option value="floating">浮动卡片</option>
+                <option value="compact">紧凑型与边栏</option>
+              </select>
+            </label>
+          </div>
+        </section>
 
         {/* 配置编辑入口 */}
         {onOpenConfigStudio ? (

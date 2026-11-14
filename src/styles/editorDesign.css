@@ -1,8 +1,8 @@
 /* Configuration authoring surfaces only. Embedded workflow forms keep their UI. */
 .config-editor.cm-editor-design {
-  --cm-border: #cbd5e1;
-  --cm-line: #e2e8f0;
-  --cm-surface: #f8fafc;
+  --cm-border: var(--cm-editor-border, #cbd5e1);
+  --cm-line: var(--cm-editor-line, #e2e8f0);
+  --cm-surface: var(--cm-editor-surface, #f8fafc);
   --cm-gap: 12px;
   font-size: 14px;
   line-height: 1.5;
@@ -34,13 +34,13 @@
   border: 1px solid var(--cm-border);
   border-left-width: 3px;
   border-radius: 8px;
-  background: #fff;
+  background: var(--cm-editor-card, #fff);
 }
 .config-editor.cm-editor-design .cm-item-heading { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .config-editor.cm-editor-design .cm-item-heading small, .config-editor.cm-editor-design .cm-item-meta {
   font-size: 12px;
   font-weight: 400;
-  color: #475569;
+  color: var(--cm-editor-muted, #475569);
   overflow-wrap: anywhere;
 }
 .config-editor.cm-editor-design .cm-subsection {
@@ -49,7 +49,7 @@
   padding: 12px;
   border: 1px solid var(--cm-line);
   border-radius: 6px;
-  background: #f8fafc;
+  background: var(--cm-editor-surface, #f8fafc);
 }
 .config-editor.cm-editor-design .cm-subsection > :is(h4, h5, header) { margin-bottom: 10px; }
 .config-editor.cm-editor-design .cm-action-bar {
@@ -143,7 +143,7 @@
   padding: 12px;
   border: 1px solid var(--cm-border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--cm-editor-card, #fff);
 }
 .config-editor.cm-editor-design .cm-condition-row > .cm-help-control { flex: 1 1 10rem; }
 .config-editor.cm-editor-design .cm-condition-row > b { align-self: end; display: flex; align-items: center; min-height: 36px; }
@@ -226,9 +226,9 @@
 .config-editor.cm-editor-design .cm-authoring-pane { container: authoring / inline-size; }
 .config-editor.cm-editor-design .cm-field-identity { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .config-editor.cm-editor-design .cm-field-definition > .cm-flex-grid { padding-block: 4px 12px; }
-.config-editor.cm-editor-design .cm-field-group { background: #f1f5f9; }
+.config-editor.cm-editor-design .cm-field-group { background: var(--cm-editor-group, #f1f5f9); }
 .config-editor.cm-editor-design .cm-field-group .cm-item { margin-block: 12px; }
-.config-editor.cm-editor-design .cm-dialog-heading { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--cm-line); background: white; }
+.config-editor.cm-editor-design .cm-dialog-heading { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--cm-line); background: var(--cm-editor-card, #fff); }
 .config-editor.cm-editor-design fieldset > legend { padding-inline: 6px; font-size: 13px; font-weight: 600; }
 .config-editor.cm-editor-design .cm-drawing-settings > .cm-flex-grid > p { margin: 0; align-self: center; font-size: 13px; }
 .config-editor.cm-editor-design .cm-condition-settings > .cm-help-control { margin-block: 12px; }

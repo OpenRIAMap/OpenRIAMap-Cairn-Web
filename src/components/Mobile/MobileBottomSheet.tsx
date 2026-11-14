@@ -69,7 +69,7 @@ export default function MobileBottomSheet({
           hidden ? 'translate-y-[calc(100%-56px)]' : '',
         ].join(' ')}
       >
-        <AppCard className="bg-white/95 backdrop-blur-sm rounded-[28px] shadow-2xl overflow-hidden">
+        <AppCard className="cm-mobile-sheet bg-white/95 backdrop-blur-sm rounded-[28px] shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <AppButton

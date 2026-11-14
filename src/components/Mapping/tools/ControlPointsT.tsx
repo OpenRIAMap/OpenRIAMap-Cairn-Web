@@ -1198,7 +1198,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
       </div>
 
       {toolPanelOpen && (
-        <DraggablePanel id="cpT-main-panel" defaultPosition={{ x: 16, y: 320 }} zIndex={1840}>
+        <DraggablePanel id="cpT-main-panel" inWorkspaceSidebar defaultPosition={{ x: 16, y: 320 }} zIndex={1840}>
           <AppCard className="w-[360px] overflow-hidden border">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h3 className="font-bold text-gray-800">控制点工具</h3>
@@ -1322,7 +1322,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
       )}
 
       {editEnabled && editPanelOpen && (
-        <DraggablePanel id="cpT-edit-panel" defaultPosition={{ x: 16, y: 470 }} zIndex={1850}>
+        <DraggablePanel id="cpT-edit-panel" inWorkspaceSidebar defaultPosition={{ x: 16, y: 470 }} zIndex={1850}>
           <AppCard className="w-80 overflow-hidden border">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h3 className="font-bold text-gray-800">控制点修改</h3>
@@ -1388,7 +1388,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
       )}
 
       {addEnabled && addPanelOpen && (
-        <DraggablePanel id="cpT-add-panel" defaultPosition={{ x: 16, y: 470 }} zIndex={1850}>
+        <DraggablePanel id="cpT-add-panel" inWorkspaceSidebar defaultPosition={{ x: 16, y: 470 }} zIndex={1850}>
           <AppCard className="w-80 overflow-hidden border">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h3 className="font-bold text-gray-800">控制点添加</h3>
@@ -1452,7 +1452,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
       )}
 
       {deleteEnabled && deletePanelOpen && (
-        <DraggablePanel id="cpT-delete-panel" defaultPosition={{ x: 16, y: 470 }} zIndex={1850}>
+        <DraggablePanel id="cpT-delete-panel" inWorkspaceSidebar defaultPosition={{ x: 16, y: 470 }} zIndex={1850}>
           <AppCard className="w-80 overflow-hidden border">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h3 className="font-bold text-gray-800">控制点删除</h3>
@@ -1475,7 +1475,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
       )}
 
       {arrayEditorOpen && (
-        <DraggablePanel id="cpT-array-editor-panel" defaultPosition={{ x: 392, y: 320 }} zIndex={1860}>
+        <DraggablePanel id="cpT-array-editor-panel" inWorkspaceSidebar defaultPosition={{ x: 392, y: 320 }} zIndex={1860}>
           <AppCard className="w-[420px] overflow-hidden border">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <div className="flex items-center gap-2">
