@@ -56,6 +56,7 @@ import {ConfigSearchExtension} from '@/components/Search/ConfigSearchExtension';
 import {getRuleSearchPoolVersion,subscribeRuleSearchPool} from '@/components/Rules/search/ruleSearchRegistry';
 import { getRuleSearchPool } from '@/components/Rules/search/ruleSearchRegistry';
 import { hasEnabledTemporaryRuleSources } from '@/components/Rules/data/temporaryRuleSession';
+import { FormalReleaseReaderError } from '@/components/Rules/data/formalReleaseReader';
 import type { FeatureRecord } from '@/components/Rules/rendering/renderPrimitives';
 import { formatGridNumber, snapWorldPointByMode } from '@/lib/gridSnapUtils';
 import {
@@ -844,6 +845,7 @@ export function NavigationPanel({
   const nativeSearch=Boolean(configRuntime&&configRuntime.contractRevision>=10);
   const [startPoint, setStartPoint] = useState<SearchItem | null>(null);
   const [endPoint, setEndPoint] = useState<SearchItem | null>(null);
+  const endpointWorld = useRef(worldId);
   const [travelMode, setTravelMode] = useState<TravelModePanel>(()=>modes[0]?.mode??'walk');
   const [preferLessTransfer, setPreferLessTransfer] = useState(true);
   const [useElytra, setUseElytra] = useState(true);
@@ -853,6 +855,14 @@ export function NavigationPanel({
   const [resultTeleportNew, setResultTeleportNew] = useState<NavTeleportNewIntegratedPlan | null>(null);
   const [resultRoad, setResultRoad] = useState<NavRoadPlan | null>(null);
   const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    if (endpointWorld.current === worldId) return;
+    endpointWorld.current = worldId;
+    setStartPoint(null);
+    setEndPoint(null);
+    setMapPickTarget(null);
+  }, [worldId]);
 
   useEffect(() => {
     if (!initialEndPoint?.coord) return;
@@ -1097,8 +1107,13 @@ useEffect(() => {
       items.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
       setRailNewStaBuildingItems(items);
     } catch (err) {
+      if (!alive) return;
+      if (err instanceof FormalReleaseReaderError && err.code === 'world-not-published') {
+        setRailSearchError('当前世界尚无已发布的导航数据。');
+        return;
+      }
       console.error('[rail_new] listRailNewStaBuildingsForSearch failed', err);
-      if (alive) {setRailNewStaBuildingItems([]);setRailSearchError(`车站搜索数据准备失败：${err instanceof Error?err.message:String(err)}`);}
+      setRailSearchError(`车站搜索数据准备失败：${err instanceof Error ? err.message : String(err)}`);
     }
 
   })();
@@ -1478,7 +1493,18 @@ if (travelMode === 'road') {
         }
         onRouteFound(path);
       }
-    } catch(error) {if(current())setNavigationError(error instanceof Error?error.message:String(error));} finally {
+    } catch (error) {
+      if (current()) {
+        const detail = error instanceof Error ? error.message : String(error);
+        if (error instanceof FormalReleaseReaderError) {
+          setNavigationError(error.code === 'world-not-published'
+            ? '当前世界尚无已发布的导航数据。'
+            : `导航数据读取失败：${detail}`);
+        } else {
+          setNavigationError(`路径规划失败：${detail}`);
+        }
+      }
+    } finally {
       window.clearTimeout(progressTimer);
       if(token===requestGeneration.current){setSearchProgressOpen(false);setSearching(false);}
     }
@@ -1489,9 +1515,10 @@ if (travelMode === 'road') {
   // ---------------------------
 
   const hasResult = !!(resultLegacy || resultRailNew || resultTeleportNew || resultRoad);
+  const resultNotice = navigationError || (travelMode === 'rail_new' ? railSearchError : '');
 
   return (
-    <AppCard className="relative w-full sm:w-72 max-h-[70vh] sm:max-h-[82vh] flex flex-col">{navigationError||travelMode==='rail_new'&&railSearchError?<p role="alert" className="m-3 rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">{navigationError||railSearchError}</p>:null}
+    <AppCard className="relative w-full sm:w-72 sm:max-h-[82vh] flex flex-col">
       {searchProgressOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20">
           <AppCard className="p-4 w-[240px]">
@@ -1519,7 +1546,7 @@ if (travelMode === 'road') {
       </div>
 
       {/* 模式选择 */}
-      <div className="flex border-b">
+      <div className="flex shrink-0 border-b">
         {modes.map(({ mode, label, icon: Icon }) => (
           <AppButton
             key={mode}
@@ -1548,7 +1575,7 @@ if (travelMode === 'road') {
       </div>
 
       {/* 输入区域 */}
-      <div className="p-3 border-b">
+      <div className="shrink-0 p-3 border-b">
         <div className="flex items-start gap-2 mb-2">
           <div className="flex-1">
             <PointSearchInput
@@ -1772,8 +1799,13 @@ if (travelMode === 'road') {
       </div>
 
       {/* 结果区域 */}
-      {hasResult && (
-        <div className="flex-1 overflow-y-auto p-3">
+      {(hasResult || resultNotice) && (
+        <div className="min-h-0 flex-1 p-3 sm:overflow-y-auto">
+          {resultNotice && (
+            <p role="status" className="rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700 [overflow-wrap:anywhere]">
+              {resultNotice}
+            </p>
+          )}
           {/* 新铁路结果 */}
           {travelMode === 'rail_new' && resultRailNew && (
             <>

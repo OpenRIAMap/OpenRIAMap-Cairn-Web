@@ -1379,7 +1379,7 @@ export async function computeRoadPlanFromCoords(opt: NavigationRoadComputeOption
   if (!roads.length) {
     return {
       ok: false,
-      reason: '未加载到道路数据（Class=ROD）',
+      reason: '所选出行方式缺少可用于导航的道路数据（ROD）。',
       worldId,
       profileCode: String(opt.travelModeCode ?? ''),
       profileName: '',
