@@ -27,5 +27,5 @@ saved=b.evaluate('JSON.stringify(window.__feedback.value)');prompt_value='javasc
 assert b.evaluate('JSON.stringify(window.__feedback.value)')==saved
 assert b.evaluate("document.body.innerText.includes('链接格式不受支持')")
 b.screenshot('workflow-feedback-links.png')
-result={'defaultLinkStyle':style,'partialRetargetNoNestedAnchors':True,'formatPreservesLink':True,'unsafeLinkRejected':True,'localeDoesNotMutateReport':True,'warnings':b.evaluate('window.__feedback.report.issues.length'),'notes':b.evaluate('window.__feedback.report.designNotes.length')}
+result={'defaultLinkStyle':style,'partialRetargetNoNestedAnchors':True,'formatPreservesLink':True,'unsafeLinkRejected':True,'localeDoesNotMutateReport':True,'warnings':b.evaluate('window.__feedback.report.issues.length'),'notes':b.evaluate('window.__feedback.report.designNotes?.length ?? 0')}
 (OUT/'workflow-feedback-browser-result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps(result,ensure_ascii=False))
