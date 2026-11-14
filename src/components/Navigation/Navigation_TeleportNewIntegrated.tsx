@@ -425,7 +425,7 @@ export async function computeTeleportNewPlanFromCoords(opt: NavigationTeleportCo
   if (!tps.length) {
     return {
       ok: false,
-      reason: teleportLoad.excluded?`当前没有可用传送边：${teleportLoad.excluded} 个传送点或其 Warp 目标已明确停用。`:'未加载到任何 TPP 传送点（请确认当前世界数据集或兼容 public 数据可用）',
+      reason: teleportLoad.excluded?`当前没有可用传送边：${teleportLoad.excluded} 个传送点或其 Warp 目标已明确停用。`:'当前世界缺少可用于传送导航的传送点（TPP）。',
       worldId,
       totalTimeSeconds: 0,
       totalDistance: 0,

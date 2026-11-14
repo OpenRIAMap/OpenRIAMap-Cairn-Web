@@ -99,7 +99,6 @@ export async function listRailNewStaBuildingsForSearch(opt: {
     dataSourceOverride: opt.dataSourceOverride,
     filesOverride: opt.filesOverride,
     fetcher: opt.fetcher,
-    strict: true,
   });
 
 	const idx = buildStationBuildingIndex(stas, buildings);
@@ -585,10 +584,7 @@ function normalizeWorldId(worldId: string): string {
   return map[wid] ?? wid;
 }
 
-type RuleLoadOptions = Pick<NavigationRailComputeOptions, 'dataSourceOverride' | 'filesOverride' | 'fetcher' | 'navigationContext'> & {
-  /** strict=true：若完全加载不到任何数据则抛错（用于候选列表/调试） */
-  strict?: boolean;
-};
+type RuleLoadOptions = Pick<NavigationRailComputeOptions, 'dataSourceOverride' | 'filesOverride' | 'fetcher' | 'navigationContext'>;
 
 function makeRuleCacheKey(wid: string, merged: WorldRuleDataSource, signature: string): string {
   const files = Array.isArray(merged.files) ? merged.files : [];
@@ -619,13 +615,7 @@ async function loadRuleItems(worldId: string, opt: RuleLoadOptions): Promise<any
     if (pending) return pending;
   }
 
-  const loadPromise = (async () => {
-    const result = items;
-    if (opt.strict && result.length === 0) {
-      throw new Error(`未能从当前世界数据集加载到 Rule JSON（worldId=${worldId}）。请确认 Data 仓库 world 数据集、临时挂载数据或兼容 public 数据可用。`);
-    }
-    return result as RawItem[];
-  })();
+  const loadPromise = Promise.resolve(items);
 
   if (allowCache) RULE_ITEMS_PENDING.set(cacheKey, loadPromise);
   try {
@@ -2673,8 +2663,9 @@ export async function computeRailPlanFromCoords(opt: NavigationRailNewIntegrated
   if (!startBuilding || !endBuilding) {
     return {
       ok: false,
-      reason:
-        '未找到可用车站建筑（STB/SBP）用于起点或终点，请检查规则数据是否已加载，以及 STB/SBP 是否存在。',
+      reason: buildings.size === 0
+        ? '当前世界缺少可用于铁路导航的车站建筑（STB/SBP）。'
+        : '未找到可用车站建筑（STB/SBP）用于起点或终点。',
       mode,
       totalDistance: 0,
       totalTimeSeconds: 0,

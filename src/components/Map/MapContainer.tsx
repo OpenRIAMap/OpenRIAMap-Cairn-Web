@@ -255,6 +255,7 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const projectionRef = useRef<DynmapProjection | null>(null);
+  const mapWorldIdRef = useRef<string | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const measuringModuleRef = useRef<MeasuringModuleHandle | null>(null);
   const measurementToolsRef = useRef<MeasurementToolsHandle | null>(null);
@@ -285,6 +286,32 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   // 从 cookie 读取初始设置；分享链接中的 world 优先，避免先进入 cookie 世界再切换。
   const savedSettings = loadMapSettings();
   const [currentWorld, setCurrentWorld] = useState(() => enabledApplicationWorldId(normalizeRuleSourceWorldId(initialPendingShareRef.current?.target.worldId ?? savedSettings?.currentWorld ?? applicationWorld('').id)));
+  const [navigationInitialEndPoint, setNavigationInitialEndPoint] = useState<NavigationInitialPoint | null>(null);
+  const [routeHighlight, setRouteHighlight] = useState<RouteHighlightData | null>(null);
+
+  const switchMapWorld = useCallback((worldId: string, recenter = false) => {
+    if (currentWorld !== worldId) {
+      setNavigationInitialEndPoint(null);
+      setRouteHighlight(null);
+    }
+    const map = leafletMapRef.current;
+    const worldChanged = mapWorldIdRef.current !== worldId;
+    if (map && (worldChanged || recenter)) {
+      const world = applicationWorld(worldId);
+      if (worldChanged) {
+        const crs = createDynmapCRS(world.projection);
+        tileLayerRef.current?.remove();
+        tileLayerRef.current = null;
+        map.options.crs = crs;
+        projectionRef.current = (crs as L.CRS & { dynmapProjection: DynmapProjection }).dynmapProjection;
+        mapWorldIdRef.current = worldId;
+      }
+      const { x, y, z } = world.center;
+      const projection = projectionRef.current;
+      if (projection) map.setView(projection.locationToLatLng(x, y, z), 2);
+    }
+    setCurrentWorld(worldId);
+  }, [currentWorld]);
 
   const applyShareParseResult = useCallback((result: ShareParseResult) => {
     if (result.kind === 'none') return;
@@ -313,9 +340,9 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
     shareTargetConsumedRef.current = false;
     setShareLinkMessage(null);
     setShareLookupState(createShareLookupState(pending));
-    setCurrentWorld(pending.target.worldId);
+    switchMapWorld(pending.target.worldId);
     setShareTargetRevision((revision) => revision + 1);
-  }, []);
+  }, [application.worlds, switchMapWorld]);
 
   const [showRailway, setShowRailway] = useState(false);
   const [showLandmark, setShowLandmark] = useState(false);
@@ -367,7 +394,6 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   const [mobileSheetOffset, setMobileSheetOffset] = useState(0);
   const [selectedRuleFeature, setSelectedRuleFeature] = useState<FeatureRecord | null>(null);
   const [, setSelectedRuleClassCode] = useState<string | null>(null);
-  const [navigationInitialEndPoint, setNavigationInitialEndPoint] = useState<NavigationInitialPoint | null>(null);
 
   const [mobileFeatureJson, setMobileFeatureJson] = useState<{ title: string; jsonText: string; filename: string } | null>(null);
   const [mobileFeatureShare, setMobileFeatureShare] = useState<FeatureSharePayload | null>(null);
@@ -423,7 +449,6 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   const [landmarks, setLandmarks] = useState<ParsedLandmark[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [playerSnapshotReadyWorld, setPlayerSnapshotReadyWorld] = useState<string | null>(null);
-  const [routeHighlight, setRouteHighlight] = useState<RouteHighlightData | null>(null);
   const [showRouteHighlight] = useState(true);
 
 // 是否存在可绘制的路线（用于隐藏图层/显示清除按钮）
@@ -1643,45 +1668,8 @@ const handleRouteFound = useCallback((route: RouteHighlightData | Array<{ coord:
     // 同步关闭“测量工具”（不需要二次确认）
     setMeasureToolsCloseSignal(v => v + 1);
 
-    setCurrentWorld(normalizedWorldId);
-
-    // 更新瓦片图层
-    const map = leafletMapRef.current;
-    if (!map) return;
-    const crs=createDynmapCRS(getWorldConfig(normalizedWorldId));map.options.crs=crs;const proj=(crs as any).dynmapProjection as DynmapProjection;projectionRef.current=proj;
-
-    // 移除旧瓦片图层
-    if (tileLayerRef.current) {
-      tileLayerRef.current.remove();
-    }
-
-    // 添加新瓦片图层（根据当前风格选择）
-    let newTileLayer: L.TileLayer;
-const tileLayerOptions = { ...TILE_ZOOM_BOUNDS };
-
-if (mapStyle === 'sketch') {
-  newTileLayer = createSketchTileLayer(normalizedWorldId, 'flat', tileLayerOptions);
-} else if (mapStyle === 'watercolor') {
-  newTileLayer = createWatercolorTileLayer(normalizedWorldId, 'flat', tileLayerOptions);
-} else {
-  newTileLayer = createDynmapTileLayer(normalizedWorldId, 'flat', tileLayerOptions);
-}
-
-
-    newTileLayer.addTo(map);
-    tileLayerRef.current = newTileLayer;
-
-    // 移动到新世界的中心点
-    const world = WORLDS.find(w => w.id === normalizedWorldId);
-    if (world) {
-      const centerLatLng = proj.locationToLatLng(
-        world.center.x,
-        world.center.y,
-        world.center.z
-      );
-      map.setView(centerLatLng, 2);
-    }
-  }, [mapStyle]);
+    switchMapWorld(normalizedWorldId, true);
+  }, [application.worlds, switchMapWorld]);
 
   useEffect(() => {
     if (!mapRef.current || leafletMapRef.current) return;
@@ -1693,6 +1681,7 @@ if (mapStyle === 'sketch') {
     const crs = createDynmapCRS(getWorldConfig(savedWorld));
     const projection = (crs as any).dynmapProjection as DynmapProjection;
     projectionRef.current = projection;
+    mapWorldIdRef.current = savedWorld;
 
     // 计算初始中心点 - 使用保存的世界，否则退回零洲
     const world = WORLDS.find(w => w.id === savedWorld) ?? WORLDS.find(w => w.id === 'zth') ?? WORLDS[0];
@@ -1798,13 +1787,14 @@ const flushCoord = () => {
         // 禁用条件：测量工具启用时永远禁止；测绘(快捷/完整)启用时，若临时挂载未启用则禁止
         if (measurementToolsActiveRef.current) return;
         if (measuringModuleActiveRef.current && !isTempRuleMountEnabled()) return;
+        const worldId = mapWorldIdRef.current;
         const proj = projectionRef.current;
-        if (!proj) return;
+        if (!worldId || !proj) return;
         const p = proj.latLngToLocation(e.latlng, 64);
         window.dispatchEvent(
           new CustomEvent<MapClickWorldPointEventDetail>('ria:mapClickWorldPoint', {
             detail: {
-              worldId: currentWorld,
+              worldId,
               point: { x: p.x, y: p.y, z: p.z },
             },
           })
