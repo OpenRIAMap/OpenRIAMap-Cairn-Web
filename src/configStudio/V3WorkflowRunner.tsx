@@ -1,4 +1,7 @@
 import {outputAcceptsClassification,workflowClassificationGroup} from './workflowClassificationGroup';
+import {OrdinaryTableInput} from './OrdinaryTableInput';
+import {WorkflowFormLayout} from './WorkflowFormLayout';
+import {datasetOptions,workflowConditionContext} from './c21Workflow';
 import {workflowClassificationCaption} from './workflowCategoryOptions';
 import {WorkflowGroupCategoryInput} from './WorkflowGroupCategoryInput';
 import {findCompatibleSearchCandidates} from '../configRuntime/classificationReadScopes';
@@ -27,8 +30,8 @@ export {resolveV3WorldPrefix,normalizeV3WorldId,evaluateV3Expression,normalizeV3
 export type {V3WorkflowValueMap,V3WorkflowRunResult,V3WorkflowInputIssue,V3SearchCandidate,V3GeometryCapture} from './workflowKernel';
 import { normalizeV3WorldId, normalizeV3WorkflowSlots, evaluateV3WorkflowOutputs, validateV3WorkflowInputs, validateV3WorkflowRecords, decodePath, displaySearchTemplate, type V3WorkflowValueMap, type V3WorkflowRunResult, type V3SearchCandidate, type V3GeometryCapture, type V3WorkflowInputIssue } from './workflowKernel';
 
-function ToggleInput({ value, onChange }: { value: unknown; onChange: (value: boolean | undefined) => void }) {
-  return <span className="grid w-full grid-cols-2 self-start overflow-hidden rounded border text-sm" role="group" aria-label="是否选择">{([true,false] as const).map(choice => <button type="button" key={String(choice)} aria-pressed={value===choice} className={`min-w-0 px-3 py-1 ${!choice?'border-l ':''}${value===choice?'bg-blue-600 text-white':'bg-white'}`} onClick={()=>onChange(value===choice?undefined:choice)}>{choice?'是':'否'}</button>)}</span>;
+function ToggleInput({ value, onChange,options=[] }: { value: unknown; onChange: (value: boolean | undefined) => void;options?:import('./types').SelectOption[] }) {
+  return <span className="grid w-full grid-cols-2 self-start overflow-hidden rounded border text-sm" role="group" aria-label="是否选择">{([true,false] as const).map(choice => <button type="button" key={String(choice)} aria-pressed={value===choice} className={`min-w-0 px-3 py-1 ${!choice?'border-l ':''}${value===choice?'bg-blue-600 text-white':'bg-white'}`} onClick={()=>onChange(value===choice?undefined:choice)}>{options.find(o=>o.value===String(choice))?.label.zh??(choice?'是':'否')}</button>)}</span>;
 }
 
 function FeatureSearchInput({ config, profile, records, value, onChange, placeholder, world }: { config?:ConfigPackageV3; profile?: SearchProfile; records: MountedFeatureRecord[]; value: unknown; onChange: (value: unknown) => void; placeholder?: string; world?: string }) {
@@ -71,9 +74,11 @@ function GroupControlInput({ config, control, value, onChange, records, world }:
 
 export function ControlInput({ control, value, onChange, config, records, world, fixedGeometry, output, classificationPaths }: { control: WorkflowControl; value: unknown; onChange: (value: unknown) => void; config: ConfigPackageV3; records: MountedFeatureRecord[]; world?: string; output?:import('./types').WorkflowOutput;classificationPaths?:ClassificationPath[];fixedGeometry?: GeometryKind }) {
   if (control.kind === 'group') return <GroupControlInput config={config} control={control} value={value} onChange={onChange} records={records} world={world} />;
+  if(control.kind==='table')return control.table?<OrdinaryTableInput table={control.table} value={value} onChange={onChange}/>:<p role="alert">表格列配置缺失</p>;
+  if(control.kind==='dataset'){const options=datasetOptions(config,world??'',classificationPaths?.[0]);return <select aria-label="所属数据集" className="w-full rounded border px-2 py-1 text-sm" value={String(value??'')} onChange={e=>onChange(e.target.value||undefined)}><option value="">无</option>{value&&!options.some(o=>o.value===value)?<option value={String(value)}>历史引用：{String(value)}（请核对）</option>:null}{options.map(o=><option key={o.value} value={o.value}>{optionLabel(o)}</option>)}</select>;}
   const common = { className: 'w-full rounded border px-2 py-1 text-sm', value: control.kind === 'json' && value && typeof value === 'object' ? JSON.stringify(value) : String(value ?? ''), placeholder: control.placeholder??(control.fieldFormat==='externalLink'?'https://…':control.fieldFormat==='date'?'YYYY-MM-DD':undefined), onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => onChange(event.target.value) };
   if (control.kind === 'textarea' || control.kind === 'json') return <textarea {...common} rows={control.rows ?? (control.kind === 'json' ? 4 : 3)} placeholder={control.kind === 'json' ? '{ }' : control.placeholder} />;
-  if (control.kind === 'toggle') return <ToggleInput value={value} onChange={onChange} />;
+  if (control.kind === 'toggle') return <ToggleInput value={value} onChange={onChange} options={resolveWorkflowSelectOptions(config,control)} />;
   if (control.kind === 'select') return <select {...common}><option value="">请选择</option>{resolveWorkflowSelectOptions(config, control).map((item) => <option key={item.value} value={item.value}>{optionLabel(item)}</option>)}</select>;
   if (control.kind === 'classificationPicker') {
     if(config.contractRevision>=15&&output)return <WorkflowGroupCategoryInput config={config} output={output} allowedPaths={classificationPaths} value={String(value??'')} onChange={onChange}/>;
@@ -118,9 +123,12 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
   const savingRef = useRef(false);
   const titleRef = useRef<HTMLDivElement>(null);
   const stepCallback = useRef(onStepChange); stepCallback.current = onStepChange;
-  const typedSlots=useMemo(()=>normalizeV3WorkflowSlots(workflow,slots),[workflow,slots]);
+  const typedSlots=useMemo(()=>workflowConditionContext(workflow,normalizeV3WorkflowSlots(workflow,slots),classifications),[workflow,slots,classifications]);
+  const datasetContext=useRef<string>('');
+  useEffect(()=>{const key=JSON.stringify([activeWorld,classifications,config.lookupTables?.find(t=>t.functionKind==='dataset')]);if(datasetContext.current&&datasetContext.current!==key)setSlots(current=>{const next={...current};for(const c of workflow.steps.flatMap(s=>s.controls??[]).filter(c=>c.kind==='dataset')){const slot=c.slot??c.id;if(next[slot]&&!datasetOptions(config,activeWorld,classifications[c.outputId??'']).some(o=>o.value===next[slot]))delete next[slot];}return next;});datasetContext.current=key;},[workflow,activeWorld,classifications,config]);
   const steps = workflow.mode === 'composed' ? workflow.steps.filter(step=>step.kind!=='geometry'||enabledDrawing(step,workflow,typedSlots)) : [];
   const step = steps[Math.min(page,steps.length-1)];
+  useEffect(()=>{const issue=inputIssues.find(i=>i.stepId),index=steps.findIndex(s=>s.id===issue?.stepId);if(index>=0&&index!==page)setPage(index);},[inputIssues]);
   const activeTask=workflow.steps.find(task=>task.kind==='geometry'&&drawingKey(task)===activeDrawingKey);
   const activeHeight=activeTask?.drawing?.heightSlot?typedSlots[activeTask.drawing.heightSlot]:undefined;
   const drawingTargets=useMemo(()=>Object.fromEntries(workflow.steps.filter(task=>task.kind==='geometry').map(task=>{
@@ -232,12 +240,12 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
       }} /></label>:null}
       {geometryErrors[drawingKey(step)] ? <p role="alert" className="text-rose-700">{geometryErrors[drawingKey(step)]}</p> : null}
     </div> : null}
-    {step.controls?.length ? <div className="cm-runtime-grid">{step.controls.filter(control => workflowConditionMatches(control.when, typedSlots)&&(!control.outputId||!['classificationPicker','tagsExtensions'].includes(control.kind)||workflowConditionMatches(workflow.outputs.find(output=>output.id===control.outputId)?.when,typedSlots))).map(control => <div key={control.id} data-workflow-control={control.id} className="grid min-w-0 content-start gap-1 self-start text-sm" style={{"--cm-columns":control.columns===1?6:control.columns===2?3:2} as CSSProperties}>
-      <span>{control.kind==='classificationPicker'?workflowClassificationCaption(config,control,workflow.outputs.find(output=>output.id===control.outputId)):control.label.zh}{control.required ? ' *' : ''}</span>{control.kind==='tagsExtensions'?<WorkflowAnnotationsInput config={config} workflow={workflow} control={control} value={slots[control.id]} classifications={classifications} onChange={value=>{setSlots(current=>({...current,[control.id]:value}));setInputIssues([]);}}/>:<ControlInput control={control} output={workflow.outputs.find(output=>output.id===control.outputId)} fixedGeometry={workflow.outputs.find(output => output.id === control.outputId)?.geometry.selected} value={slots[control.slot ?? control.id]} config={config} records={records} world={activeWorld} onChange={value => {
+    {step.controls?.length ? <div className="cm-runtime-grid"><WorkflowFormLayout step={step} errors={inputIssues.flatMap(i=>i.controlId?[i.controlId]:[])} controls={step.controls.filter(control => workflowConditionMatches(control.when, typedSlots)&&(!control.outputId||!['classificationPicker','tagsExtensions','dataset'].includes(control.kind)||workflowConditionMatches(workflow.outputs.find(output=>output.id===control.outputId)?.when,typedSlots)))} render={control => <div key={control.id} data-workflow-control={control.id} className="grid min-w-0 content-start gap-1 self-start text-sm" style={{"--cm-columns":control.columns===1?6:control.columns===2?3:2} as CSSProperties}>
+      <span>{control.kind==='classificationPicker'?workflowClassificationCaption(config,control,workflow.outputs.find(output=>output.id===control.outputId)):control.label.zh}{control.required ? ' *' : ''}</span>{control.kind==='tagsExtensions'?<WorkflowAnnotationsInput config={config} workflow={workflow} control={control} value={slots[control.id]} classifications={classifications} onChange={value=>{setSlots(current=>({...current,[control.id]:value}));setInputIssues([]);}}/>:<ControlInput classificationPaths={classifications[control.outputId??'']?[classifications[control.outputId??'']!]:[]} control={control} output={workflow.outputs.find(output=>output.id===control.outputId)} fixedGeometry={workflow.outputs.find(output => output.id === control.outputId)?.geometry.selected} value={slots[control.slot ?? control.id]} config={config} records={records} world={activeWorld} onChange={value => {
         if (control.kind === 'classificationPicker') { const classification = decodePath(String(value)); if (control.outputId) setClassifications(current => ({ ...current, [control.outputId!]: classification })); }
         setSlots(current => ({ ...current, [control.slot ?? control.id]: value })); setInputIssues([]);
       }} />
-    }</div>)}</div> : null}
+    }</div>}/></div> : null}
     {currentIssues.length ? <ul role="alert" className="mt-3 rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-800">{currentIssues.map((issue, index) => <li key={index}>{issue.message}</li>)}</ul> : null}
     {navigation}
     {!onSubmit ? <details className="mt-3 rounded border p-2"><summary>最终 record 预览</summary>{previewState.error ? <p role="alert">{previewState.error}</p> : <pre className="max-h-64 overflow-auto text-xs">{JSON.stringify(previewState.outputs, null, 2)}</pre>}</details> : null}

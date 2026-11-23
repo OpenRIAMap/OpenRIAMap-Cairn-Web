@@ -106,6 +106,7 @@ export function validateWorkflowWrites(workflow: WorkflowDefinition, fields: (pa
     workflow.outputs.forEach((_, index) => tokens.set(`${token}_${index + 1}`, shape('string')));
   }
   const controlShape = (control: WorkflowControl | WorkflowGroupField): Shape => {
+    if(control.kind==='table'&&'table' in control)return {kinds:['array'],item:{kinds:['object'],properties:Object.fromEntries((control.table?.columns??[]).map(c=>[c.key,shape(c.type==='number'?'number':'string')])),requiredProperties:control.table?.columns.filter(c=>c.required).map(c=>c.key)}};
     if (control.kind === 'group' && 'group' in control) return { kinds: ['array'], item: control.group?.storage === 'scalar' ? controlShape(control.group.itemFields[0]) : {kinds:['object'],properties:Object.fromEntries((control.group?.itemFields??[]).map(f=>[f.key,controlShape(f)])),requiredProperties:control.group?.itemFields.filter(field=>field.required&&!field.requiredWhen?.length).map(field=>field.key)} };
     if (control.kind === 'json' || control.kind === 'runtimeValue' || control.kind === 'component') return shape('unknown');
     if (control.kind === 'select') {

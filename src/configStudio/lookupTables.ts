@@ -85,7 +85,7 @@ export function tableReferences(config:ConfigPackageV3, id:string):string[] {
 }
 export function renameLookupTable(input:ConfigPackageV3,from:string,to:string):ConfigPackageV3 {
   if(from===to)return input;
-  if(input.contractRevision>=11&&['teleport-hubs','road-travel-modes','standard-tag-fields'].includes(from))throw Error('系统标准表 ID 不能更名。');
+  if(input.contractRevision>=11&&['teleport-hubs','road-travel-modes','standard-tag-fields','dataset-directory'].includes(from))throw Error('系统标准表 ID 不能更名。');
   if(!/^[a-z][a-z0-9-]{1,80}$/.test(to)||input.lookupTables?.some(table=>table.id===to))throw Error('表格 ID 格式无效或与已有表格重复。');
   if(!input.lookupTables?.some(table=>table.id===from))throw Error('原表格已不存在。');
   const config=structuredClone(input);
@@ -109,7 +109,7 @@ export function validateLookupTables(config:ConfigPackageV3,includeNodes=true):C
     const path=`lookupTables/${table.id}`;
     if(!/^[a-z][a-z0-9-]{1,80}$/.test(table.id)||ids.has(table.id))error(path,'表格 ID 必须有效且唯一。');ids.add(table.id);
     if(!(table.label.zh.trim()||config.contractRevision>=11&&table.label.en.trim()))error(path,'表格需要中文或英文名称。');
-    if(!table.rows.length)error(path,'表格至少需要一行。');
+    if(!table.rows.length&&table.functionKind!=='dataset')error(path,'表格至少需要一行。');
     const values=new Set<string>();const pointIds=new Set<string>();
     for(const [index,row] of table.rows.entries()){
       const at=`${path}/rows/${index}`,normalized=table.valueType==='number'?String(Number(row.value)):row.value;
@@ -119,7 +119,7 @@ export function validateLookupTables(config:ConfigPackageV3,includeNodes=true):C
       if(table.functionKind==='speed'&&(typeof row.functionValue!=='number'||!Number.isFinite(row.functionValue)||row.functionValue<=0))error(at,'出行速度必须为正数，单位为方块/秒。');
       if(table.functionKind==='teleportHub'){
         const hub=row.functionValue;
-        if(!hub||typeof hub==='number'||!('world' in hub)||!hub.world.trim()||!Number.isFinite(hub.range)||hub.range<=0||!hub.returnPoints.length){error(at,'枢纽需设置世界、正数范围及至少一个返回点。');continue;}
+        if(!hub||typeof hub==='number'||!('returnPoints' in hub)||!hub.world.trim()||config.contractRevision<21&&(!Number.isFinite(hub.range)||Number(hub.range)<=0)||!hub.returnPoints.length){error(at,'枢纽需设置世界、正数范围及至少一个返回点。');continue;}
         for(const point of hub.returnPoints){if(!point.id.trim()||pointIds.has(`${hub.world}/${point.id}`)||![point.x,point.y,point.z].every(Number.isFinite)||!point.label.zh.trim())error(at,'返回点 ID/名称/坐标无效，或同世界 ID 重复。');pointIds.add(`${hub.world}/${point.id}`);}
       }
     }

@@ -17,5 +17,6 @@ export function specializedFormView(config:ConfigPackageV3,_workflow:WorkflowDef
   active.push({key:definition.key,path:definition.key,label:definition.labels.zh||definition.labels.en||definition.key,required:definition.required,defaultValue:definition.defaultValue,control:definition.type==='boolean'?'bool':definition.type==='number'?'number':definition.type==='enum'?'select':definition.type==='json'?'json':'text',order:1000+active.length,...(definition.type==='enum'?{options:effectiveOptions(config,definition).map(option=>({label:option.label.zh||option.label.en,value:option.value}))}:{})});
  }
  const groups=view.groups.flatMap(group=>{const definition=fields.find(field=>field.key===group.path);return definition?[{...group,label:definition.labels.zh||definition.labels.en||group.label,optional:!definition.required}]:[];});
+ if(config.contractRevision>=21)active.push({key:'dataset',path:'tags.dataset',label:'所属数据集',control:'select',order:2000});
  return {...view,classification:undefined,fields:active.filter(field=>!groups.some(group=>group.path===field.path)),groups};
 }

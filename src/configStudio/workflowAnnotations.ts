@@ -51,6 +51,7 @@ export function annotationsForOutput(workflow:WorkflowDefinition,slots:Record<st
   for(const control of workflow.steps.flatMap(step=>step.controls??[]).filter(control=>control.kind==='tagsExtensions'&&(!control.outputId||control.outputId===outputId))) {
     const stored=slots[control.id] as WorkflowAnnotations|undefined;
     const next=assembleAnnotations(stored?.[outputId]);
+    if(workflow.steps.some(step=>step.controls?.some(c=>c.kind==='dataset'&&c.outputId===outputId))&&Object.prototype.hasOwnProperty.call(next.tags,'dataset'))throw Error('所属数据集由系统单元填写，请删除标签扩展中的 dataset 重复项。');
     mergeAnnotations(result.tags,next.tags,'tags');mergeAnnotations(result.extensions,next.extensions,'extensions');
   }
   return result;

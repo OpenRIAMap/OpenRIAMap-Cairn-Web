@@ -20,7 +20,7 @@ import {assertStructureTargets} from '../../src/configStudio/structureCommit';
 import {resolveNodeFieldSettings} from '../../src/configStudio/nodeFieldSettings';
 import type { ConfigPackageV3, MountedFeatureRecord } from '../../src/configStudio/types';
 
-export const rulesVersion='cairnmap-c20-production-1';
+export const rulesVersion='cairnmap-c21-production-1';
 export const validateConfiguration=validateConfigPackage;
 export async function validateConfigurationArchive(bytes:Uint8Array) {
   const config=await readRawNativePackage(new File([bytes], 'configuration.zip') as unknown as globalThis.File) as ConfigPackageV3;

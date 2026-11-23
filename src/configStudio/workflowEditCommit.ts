@@ -1,4 +1,5 @@
 import {resolveWorkflowFields} from './fieldReuse';
+import {workflowConditionContext} from './c21Workflow';
 import type {ConfigPackageV3,WorkflowDefinition} from './types';
 import {assertStructureTargets} from './structureCommit';
 import {compileWorkflowEditPlan,hydrateWorkflowEdit,buildWorkflowEditRecord,workflowEditSlots,recordClassification,assertEditIdentity,type WorkflowEditDraft} from './workflowEditing';
@@ -13,10 +14,10 @@ export function prepareNativeWorkflowEdit(config:ConfigPackageV3,workflow:Workfl
  const plan=compileWorkflowEditPlan(workflow,config),type=workflow.outputs[0].geometry.selected;
  if(type!==geometry.type)throw Error('编辑几何类型与工作流不一致。');const geometryError=validateMultipartGeometry(geometry);if(geometryError)throw Error(geometryError);
  const projected={...workflow,steps:[{id:'edit',kind:'form' as const,label:{zh:'编辑',en:''},controls:plan.controls}],actor:{required:false}};
- const inputIssues=validateV3WorkflowInputs(projected,coerceWorkflowValues(projected,workflowEditSlots(plan,original,draft,geometry)),projected.steps,config);if(inputIssues.length)throw Error(inputIssues.map(i=>i.message).join('\n'));
+ const inputIssues=validateV3WorkflowInputs(projected,workflowConditionContext(projected,coerceWorkflowValues(projected,workflowEditSlots(plan,original,draft,geometry)),{[workflow.outputs[0].id]:draft.classification}),projected.steps,config,classificationPathKey(draft.classification)===classificationPathKey(recordClassification(original))?draft.initialSlots:undefined);if(inputIssues.length&&typeof window!=='undefined')window.dispatchEvent(new CustomEvent('cairn:workflow-input-errors',{detail:{workflowId:workflow.id,controlIds:inputIssues.flatMap(i=>i.controlId?[i.controlId]:[])}}));if(inputIssues.length)throw Error(inputIssues.map(i=>i.message).join('\n'));
  let record=omitOptionalFieldValues(config,draft.classification,buildWorkflowEditRecord(plan,original,draft,{geometry}));assertEditIdentity(record,original,world,others);
  record=withCanonicalMultipartGeometry({...record,Type:featureTypeFromGeometryType(geometry.type)},geometry);
- const issues=validateV3WorkflowRecords(config,workflow,[{outputId:workflow.outputs[0].id,classification:draft.classification,geometry:type,record}]);if(issues.length)throw Error(issues.map(i=>i.message).join('\n'));
+ const issues=validateV3WorkflowRecords(config,workflow,[{outputId:workflow.outputs[0].id,classification:draft.classification,geometry:type,record}],original);if(issues.length)throw Error(issues.map(i=>i.message).join('\n'));
  assertStructureTargets(config,[record],others);
  if(!editor.trim())throw Error('编辑人不能为空。');record.ModifityBy=editor.trim();record.ModifityTime=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
  return record;
@@ -28,7 +29,7 @@ export function testWorkflowEditConversion(config:ConfigPackageV3,workflow:Workf
  const path=plan.classifications[0];if(!path)throw Error('编辑范围没有最终可用分类。');
  const slots:Record<string,unknown>={ID:'EDIT_SAMPLE',actor:'editing-test'};
  for(const control of workflow.steps.flatMap(s=>s.controls??[])){const scalar=(field:Pick<typeof control,'kind'|'options'|'optionValueType'>)=>field.kind==='number'?0:field.kind==='toggle'?false:field.kind==='select'?field.optionValueType==='number'?Number(field.options?.[0]?.value??0):field.optionValueType==='boolean'?field.options?.[0]?.value==='true':field.options?.[0]?.value??'':field.kind==='json'?{kept:0}: '样本';
- if(control.kind==='classificationPicker'){slots[control.slot??control.id]=JSON.stringify(path);continue;}if(control.kind==='tagsExtensions')continue;
+ if(control.kind==='classificationPicker'){slots[control.slot??control.id]=JSON.stringify(path);continue;}if(control.kind==='tagsExtensions'||control.kind==='dataset')continue;
  slots[control.slot??control.id]=control.kind==='group'&&control.group?Array.from({length:Math.max(1,control.group.minItems??0)},()=>control.group!.storage==='scalar'?scalar(control.group!.itemFields[0]):Object.fromEntries(control.group!.itemFields.map(f=>[f.key,scalar(f)]))):scalar(control);}
  const geometry:MultipartGeometry=output.geometry.selected==='Point'?{type:'Point',parts:[{x:0,y:0,z:0}]}:output.geometry.selected==='LineString'?{type:'LineString',parts:[[{x:0,y:0,z:0},{x:10,y:0,z:10}]]}:{type:'Polygon',parts:[[[{x:0,y:0,z:0},{x:10,y:0,z:0},{x:10,y:0,z:10}]]]};
  const step=workflow.steps.find(s=>s.kind==='geometry')!,coords=geometry.type==='Point'?geometry.parts:geometry.type==='LineString'?geometry.parts[0]:geometry.parts[0][0],captured=captureDrawingSnapshot(workflow,slots,{[drawingKey(step)]:{geometry,coordinates:coords,point:coords[0]}});

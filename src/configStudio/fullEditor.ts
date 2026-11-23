@@ -22,7 +22,7 @@ export function initializeFullEditor(config:ConfigPackageV3,plan:WorkflowEditPla
   if(control.kind==='tagsExtensions'){slots[control.id]={[plan.workflow.outputs[0].id]:{tags:[],extensions:[]}};continue;}
   const target=plan.bindings.find(binding=>binding.slot===control.slot)?.target,field=fields.find(field=>field.key===target);
   const value=control.defaultValue??field?.defaultValue;
-  slots[key]=value!==undefined?structuredClone(value):control.kind==='group'?[]:control.kind==='toggle'?false:'';
+  slots[key]=value!==undefined?structuredClone(value):['group','table'].includes(control.kind)?[]:control.kind==='toggle'?undefined:'';
  }
  return {classification,slots,initialSlots:structuredClone(slots)};
 }
@@ -32,7 +32,7 @@ export function prepareFullEditorCreate(config:ConfigPackageV3,workflow:Workflow
  const projected={...workflow,steps:workflow.steps.map(step=>({...step,...(step.kind==='form'?{controls:plan.controls}:{} )})),outputs:workflow.outputs.map(output=>({...output,assignments:output.assignments.map(assignment=>assignment.target==='ID'?{...assignment,expression:JSON.stringify(id)}:assignment)}))};
  const slots={...coerceWorkflowValues(projected,workflowEditSlots(plan,{},draft,geometry)),actor:actor.trim()};
  const inputs=validateV3WorkflowInputs({...projected,actor:{required:false}},slots,projected.steps.filter(step=>step.kind==='form'),config);
- if(inputs.length)throw Error(inputs.map(issue=>issue.message).join('\n'));
+ if(inputs.length&&typeof window!=='undefined')window.dispatchEvent(new CustomEvent('cairn:workflow-input-errors',{detail:{workflowId:workflow.id,controlIds:inputs.flatMap(i=>i.controlId?[i.controlId]:[])}}));if(inputs.length)throw Error(inputs.map(issue=>issue.message).join('\n'));
  const output=projected.outputs[0],results=evaluateV3WorkflowOutputs(projected,slots,{world,config,classifications:{[output.id]:draft.classification},coordinates:{[output.id]:geometry},now});
  const raw=results[0]?.record;if(!raw)throw Error('未生成有效的新建记录。');
  return prepareNativeRecordCreate(config,draft.classification,geometry,raw,world,actor,others,now);

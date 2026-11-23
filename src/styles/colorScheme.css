@@ -1,3 +1,11 @@
+:root { --cm-help-bg:#fff; }
+:root[data-color-scheme="dark"] { --cm-help-bg:#262626; }
+.cm-help-popup { background:var(--cm-panel-bg,#fff); color:var(--cm-panel-ink,#334155); border-color:var(--cm-panel-line,#cbd5e1); }
+.cm-help-trigger:hover,.cm-help-trigger:focus-visible { color:var(--cm-panel-ink,#1d4ed8); }
+.cm-ordinary-table { table-layout:fixed; width:100%; border-collapse:collapse; }
+.cm-ordinary-table :is(th,td) { min-width:0; border:1px solid var(--cm-panel-line,#cbd5e1); padding:.4rem; white-space:pre-wrap; overflow-wrap:anywhere; vertical-align:top; text-align:left; }
+.cm-ordinary-table textarea { width:100%; min-width:0; resize:vertical; }
+.cm-table-actions { width:3.5rem; }
 html[data-color-scheme] { background: var(--cm-page-bg); }
 .cm-sidebar-layout .leaflet-container.cm-sidebar-map {
   background-color: var(--cm-map-background, #ddd);

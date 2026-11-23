@@ -285,6 +285,7 @@ export function isConfigRuntimeRecordVisible(
   ctx: RenderContext,
   store?: FeatureStore,
 ): boolean {
+  if(config.contractRevision>=21&&['BUD','FLR'].includes(pathFor(record).class)&&featureValue(record,'Situation')===false)return false;
   if(config.contractRevision>=18&&store){
     const index=buildStructureIndex(config,store),role=index.roles.get(record);
     if(role?.role==='member'){

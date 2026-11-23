@@ -3,12 +3,12 @@ import { resolveEffectiveFields } from './runtime';
 import { workflowControlFromField } from './workflowFieldControl';
 import { effectiveOptionsOwner } from './lookupTables';
 
-export const FIELD_IMPORT_PROPERTIES = ['label','kind','options','optionValueType','placeholder','defaultValue','required','requiredWhen','search','group','rows','valueNormalization','fieldFormat'] as const;
+export const FIELD_IMPORT_PROPERTIES = ['label','kind','options','optionValueType','placeholder','defaultValue','required','requiredWhen','search','group','rows','valueNormalization','fieldFormat','table'] as const;
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 export function fieldSourceSnapshot(field: FieldDefinition): WorkflowFieldSource['snapshot'] {
-  const { key,type,cardinality,labels,options,optionValueType,format,defaultValue,required,requiredWhen,input,placeholder,reference } = field;
-  return structuredClone({ key,type,cardinality,labels,options,optionValueType,format,defaultValue,required,requiredWhen,input,placeholder,reference });
+  const { key,type,cardinality,labels,options,optionValueType,format,defaultValue,required,requiredWhen,input,placeholder,reference,table } = field;
+  return structuredClone({ key,type,cardinality,labels,options,optionValueType,format,defaultValue,required,requiredWhen,input,placeholder,reference,table });
 }
 export function resolveSourceField(config: ConfigPackageV3, source: WorkflowFieldSource): FieldDefinition | undefined {
   const node = config.nodes.find(item => item.nodeId === source.nodeId);
@@ -75,6 +75,8 @@ export function fieldImportErrors(config: ConfigPackageV3, workflow: WorkflowDef
   const field = resolveSourceField(config,source);
   if (!field) return [`来源分类/字段 ${source.nodeId}/${source.snapshot.key} 已不存在或不再有效。`];
   const errors: string[] = [];
+  const tableShape=(table:FieldDefinition['table'])=>table?.columns.map(c=>({key:c.key,type:c.type,required:c.required===true})).sort((a,b)=>a.key.localeCompare(b.key));
+  if(field.format==='table'&&!same(tableShape(field.table),tableShape(source.snapshot.table)))errors.push('表格列键、类型或必填定义已变化，请核对数据与控件快照后重新导入字段。');
   if(field.type==='enum'&&(field.optionValueType??'string')!==(source.snapshot.optionValueType??'string'))errors.push(`来源字段 ${field.key} 的保存值类型已变化，请重新导入。`);
   if (field.type !== source.snapshot.type || field.cardinality !== source.snapshot.cardinality) errors.push(`来源字段 ${field.key} 的类型或值数量已变化，请重新导入后确认绑定。`);
   if (source.overrides.some(key=>!(FIELD_IMPORT_PROPERTIES as readonly string[]).includes(key))) errors.push('存在未知字段覆写项。');

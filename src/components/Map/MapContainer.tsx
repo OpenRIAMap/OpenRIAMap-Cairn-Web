@@ -2217,7 +2217,7 @@ case 'players':
       {/* 顶部区域：桌面端恢复原始布局；移动端仅保留搜索框与关于快捷按钮 */}
       <div ref={desktopWorldControlsRef} data-map-world-controls className="hidden sm:flex absolute top-4 left-4 right-auto z-[1000] flex-col gap-2 sm:max-w-[300px]">
         <AppCard className="bg-white/90 px-3 py-2 sm:px-4">
-          <h1 className="text-base sm:text-lg font-bold text-gray-800">RIA 在线地图</h1>
+          <h1 className="text-base sm:text-lg font-bold text-gray-800">{application.titles?.mapTitle||'RIA 在线地图'}</h1>
           <WorldSwitcher
             frameless
             worlds={WORLDS}

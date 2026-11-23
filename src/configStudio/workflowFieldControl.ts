@@ -23,6 +23,7 @@ export function workflowControlFromField(field: FieldDefinition, slot: string, i
   } : undefined : undefined;
   if (kind === 'featureSearch' && !search) throw new Error('要素搜索输入需要先在字段定义中设置引用目标。');
   const common = { id, slot, columns: 1 as const, label: structuredClone(field.labels), required: field.required, placeholder: field.placeholder, defaultValue: structuredClone(field.defaultValue), optionValueType:field.optionValueType??(field.type==='number'?'number':field.type==='boolean'?'boolean':undefined), fieldFormat:field.format };
+  if(field.input==='table')return {...common,kind:'table',table:structuredClone(field.table)};
   if(field.type==='json'&&field.cardinality==='multiple')return {...common,kind:'json'};
   if (field.cardinality === 'multiple') return { ...common, kind: 'group', group: {
     storage: 'scalar', optional: !field.required, addLabel: { zh: `添加${field.labels.zh}`, en: '' },
