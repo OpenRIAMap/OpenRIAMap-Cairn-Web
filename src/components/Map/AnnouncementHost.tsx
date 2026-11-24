@@ -9,7 +9,7 @@ export const announcementKey=(project:string,id:string)=>`cairnmap:announcement:
 export function AnnouncementHost({config,ready}:{config:ConfigPackageV3;ready:boolean}){
  const [item,setItem]=useState<Announcement>(),[step,setStep]=useState(0);
  const [authenticated,setAuthenticated]=useState(false);
- useEffect(()=>{let live=true,serial=0;const refresh=async()=>{const request=++serial;setAuthenticated(false);const result=await openriamapGithubReviewAuth.getSession({includeRoles:false});if(live&&request===serial)setAuthenticated(result.status==='authenticated');};if(config.application?.review.enabled)void refresh();window.addEventListener('ria:review-auth-changed',refresh);return()=>{live=false;window.removeEventListener('ria:review-auth-changed',refresh);};},[config.application?.review]);
+ useEffect(()=>{let live=true,serial=0;const refresh=async()=>{const request=++serial;setAuthenticated(false);const result=await openriamapGithubReviewAuth.getSession({includeRoles:false});if(live&&request===serial)setAuthenticated(result.status==='authenticated');};if(config.application?.review?.enabled)void refresh();window.addEventListener('ria:review-auth-changed',refresh);return()=>{live=false;window.removeEventListener('ria:review-auth-changed',refresh);};},[config.application?.review]);
  useEffect(()=>{const previous=document.title;document.title=config.application?.titles?.tabTitle||'CairnMap - OpenRIAMap Profile';return()=>{document.title=previous;};},[config.application?.titles?.tabTitle]);
  useEffect(()=>{
   if(!ready||item)return;

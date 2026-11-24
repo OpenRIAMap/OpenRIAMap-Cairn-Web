@@ -70,16 +70,17 @@ assert b.evaluate('window.__c18.order.find(row=>row.id==="b").page')=='one'
 record('A11: cancelled drag leaves original data and expansion unchanged')
 
 now=str(time.time())
-items=[{'id':'once-'+now,'title':'单次验收','enabled':True,'mode':'once','content':{'paragraphs':[{'runs':[{'text':'单次正文','bold':True}]}]}}, {'id':'always-'+now,'title':'持续验收','enabled':True,'mode':'always','content':{'paragraphs':[{'runs':[{'text':'持续正文','link':'https://wiki.ria.red/'}]}]}}]
+items=[{'id':'login-'+now,'title':'登录专用验收','enabled':True,'loginOnly':True,'mode':'once','content':{'paragraphs':[{'runs':[{'text':'仅登录后显示'}]}]}}, {'id':'once-'+now,'title':'单次验收','enabled':True,'mode':'once','content':{'paragraphs':[{'runs':[{'text':'单次正文','bold':True}]}]}}, {'id':'always-'+now,'title':'持续验收','enabled':True,'mode':'always','content':{'paragraphs':[{'runs':[{'text':'持续正文','link':'https://wiki.ria.red/'}]}]}}]
 b.evaluate('window.__c18.showNotices('+json.dumps(items)+',false)')
 assert not b.evaluate('!!document.querySelector("[data-announcement]")')
 b.evaluate('window.__c18.showNotices('+json.dumps(items)+',true)');b.wait('!!document.querySelector("[data-announcement]")')
+assert b.evaluate('!!document.querySelector("[aria-label=单次验收]")'),'ordinary notices must work without review settings and skip login-only entries'
 assert not b.evaluate('!![...document.querySelectorAll("button")].find(e=>e.textContent==="不再提醒")')
 b.click('关闭');b.wait('!!document.querySelector("[aria-label=持续验收]")')
 b.screenshot('c18-announcement.png');b.click('不再提醒')
 b.wait('!document.querySelector("[data-announcement]")')
 assert b.evaluate('Object.keys(localStorage).filter(key=>key.includes('+json.dumps(now)+')).length')==2
-record('A13: readiness, queued once/always notices, explicit dismiss and durable do-not-remind keys')
+record('A13: ordinary notices without review settings, anonymous login-only exclusion, readiness, queue, explicit dismiss and durable keys')
 
 b.evaluate('window.__c18.showDiagnostics()');b.wait('document.body.innerText.includes("real-error")')
 # Raw diagnostic details are nested disclosure widgets, not problem groups.
