@@ -6,15 +6,15 @@ import {migrateC16Nodes,migrateC16Workflow} from './c16Migration';
 import {migrateC17Nodes} from './c17Migration';
 import {migrateC18Nodes,migrateC18Workflow,migrateC18Application,migrateC18Ranges} from './c18Migration';
 import {migrateC20Settings,type C20RetirementSource} from './c20Migration';
-import {migrateC21Package,migrateC21Workflow} from './c21Migration';
+import {migrateC21Package,migrateC21Workflow,migrateC21LookupTables} from './c21Migration';
 import {migrateC19Render} from './c19Migration';
 import {syncWorkflowClassification} from './systemClassification';
-import type {CategoryNode,ConfigPackageV3,GeometryKind,GeometryProfile,RenderStyle,WorkflowDefinition} from './types';
+import type {CategoryNode,ConfigPackageV3,GeometryKind,GeometryProfile,LookupTable,RenderStyle,WorkflowDefinition} from './types';
 
 export type MigrationKind='package'|'node'|'classTree'|'workflow';
 export type MigrationChange={id:string;kind:'default'|'converted'|'removed'|'optional'|'unresolved';component:string;path:string;message:string;before?:unknown;after?:unknown};
 export type MigrationReport={schemaVersion:'cairnmap.contract-migration.v1';source:number;target:number;steps:string[];migratorVersion:string;changes:MigrationChange[];dismissed:string[];sourceSha256?:string;resultSha256?:string};
-type Document=C20RetirementSource & {contractRevision:number;workflow?:WorkflowDefinition;workflows?:WorkflowDefinition[]};
+type Document=C20RetirementSource & {contractRevision:number;lookupTables?:LookupTable[];workflow?:WorkflowDefinition;workflows?:WorkflowDefinition[]};
 export type MigrationStep={from:number;to:number;kinds:readonly MigrationKind[];apply:(document:Document,changes:MigrationChange[],context?:ConfigPackageV3)=>void};
 const change=(changes:MigrationChange[],path:string,after:unknown)=>changes.push({id:`c13-c14:${path}`,kind:'default',component:'render',path,message:'新增必填 Halo 设置，默认关闭以保留原显示。',after:structuredClone(after)});
 
@@ -104,7 +104,7 @@ export const MIGRATION_STEPS:readonly MigrationStep[]=[{
   },
 },{from:20,to:21,kinds:['package','node','classTree','workflow'],apply(document,changes,context){
  if('schemaVersion' in document&&document.schemaVersion==='cairnmap.config-package.v3')migrateC21Package(document as ConfigPackageV3,changes);
- else {if(document.workflow)document.workflow=migrateC21Workflow(document.workflow,context);for(const n of document.nodes??[])if(!n.fields.some(f=>f.key==='tags.dataset'))n.fields.push({fieldId:'system-tags-dataset',key:'tags.dataset',scope:'tags',type:'string',cardinality:'single',input:'select',dynamicSource:'dataset-directory',labels:{zh:'所属数据集',en:'Dataset'},description:{zh:'',en:''}});}
+ else {migrateC21LookupTables(document.lookupTables??[],context?.application);if(document.workflow)document.workflow=migrateC21Workflow(document.workflow,context);for(const n of document.nodes??[])if(!n.fields.some(f=>f.key==='tags.dataset'))n.fields.push({fieldId:'system-tags-dataset',key:'tags.dataset',scope:'tags',type:'string',cardinality:'single',input:'select',dynamicSource:'dataset-directory',labels:{zh:'所属数据集',en:'Dataset'},description:{zh:'',en:''}});}
 }}];
 
 /** Injected registries are for window/chain tests; production always uses known capabilities. */

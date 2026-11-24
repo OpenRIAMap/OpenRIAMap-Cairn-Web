@@ -1,4 +1,4 @@
-import type {ConfigPackageV3,FieldDefinition,WorkflowDefinition} from './types';
+import type {ConfigPackageV3,FieldDefinition,LookupTable,WorkflowDefinition} from './types';
 import {groupTagControls,DATASET_TABLE_ID} from './c21Workflow';
 import {syncWorkflowClassification} from './systemClassification';
 import {resolveEffectiveFields} from './runtime';
@@ -8,11 +8,15 @@ export function migrateC21Workflow(workflow:WorkflowDefinition,config?:ConfigPac
  const result=config?syncWorkflowClassification({...config,contractRevision:21},workflow):structuredClone(workflow);
  groupTagControls(result);return result;
 }
+/** Upgrade carried dependencies exactly as full packages before comparing them. */
+export function migrateC21LookupTables(tables:LookupTable[],application?:ConfigPackageV3['application']):void{
+ for(const t of tables)if(t.functionKind==='teleportHub')for(const row of t.rows){const hub=row.functionValue;if(hub&&typeof hub==='object'&&'returnPoints' in hub){delete hub.range;const world=application?.worlds.find(w=>[w.id,w.prefix,String(w.numericCode),w.label.zh,w.label.en].includes(hub.world));if(world)hub.world=world.id;}}
+ const tags=tables.find(t=>t.id==='standard-tag-fields');if(tags&&!tags.rows.some(r=>r.value==='dataset'))tags.rows.push({value:'dataset',label:{zh:'所属数据集',en:'Dataset'},functionValue:{kind:'tagField',type:'select',dynamicSource:'dataset-directory'}});
+}
 export function migrateC21Package(config:ConfigPackageV3,changes:MigrationChange[]):void{
  config.lookupTables??=[];
  if(!config.lookupTables.some(t=>t.id===DATASET_TABLE_ID))config.lookupTables.push({id:DATASET_TABLE_ID,label:{zh:'数据集目录',en:'Dataset directory'},valueType:'string',functionKind:'dataset',rows:[]});
- for(const t of config.lookupTables)if(t.functionKind==='teleportHub')for(const row of t.rows){const hub=row.functionValue;if(hub&&typeof hub==='object'&&'returnPoints' in hub){delete hub.range;const world=config.application?.worlds.find(w=>[w.id,w.prefix,String(w.numericCode),w.label.zh,w.label.en].includes(hub.world));if(world)hub.world=world.id;}}
- const tags=config.lookupTables.find(t=>t.id==='standard-tag-fields');if(tags&&!tags.rows.some(r=>r.value==='dataset'))tags.rows.push({value:'dataset',label:{zh:'所属数据集',en:'Dataset'},functionValue:{kind:'tagField',type:'select',dynamicSource:'dataset-directory'}});
+ migrateC21LookupTables(config.lookupTables,config.application);
  for(const n of [...config.nodes].sort((a,b)=>Object.keys(a.path).length-Object.keys(b.path).length))if(!resolveEffectiveFields(config,n.path).some(f=>f.key==='tags.dataset'))n.fields.push(datasetField());
  config.workflows=config.workflows.map(w=>migrateC21Workflow(w,config));
  if(config.application){config.application.titles??={mapTitle:'RIA 在线地图',tabTitle:'CairnMap - OpenRIAMap Profile'};for(const n of config.application.announcements?.items??[])n.loginOnly??=false;}

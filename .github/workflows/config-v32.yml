@@ -22,7 +22,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Full code regressions (once)
-        run: npm run verify:ci
+        run: npm run verify:ci && npm run test:c21-artifacts
       - run: npm run build
       - name: Verify downstream integration contracts
         run: |
