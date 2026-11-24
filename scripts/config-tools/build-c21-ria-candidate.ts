@@ -1,16 +1,16 @@
 /** RIA business configuration generation. No network or publication side effects. */
 import fs from 'node:fs';
+import {configureC21BuildingWorkflows} from './c21-building-workflows';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {migratePackageToContract} from '../../src/configStudio/contractMigration';
-import {resolveEffectiveFields,resolveCardConfiguration,resolveGeometryProfile,validateConfigPackage,classificationPathKey} from '../../src/configStudio/runtime';
-import {workflowControlFromField} from '../../src/configStudio/workflowFieldControl';
+import {resolveEffectiveFields,resolveCardConfiguration,resolveGeometryProfile,validateConfigPackage} from '../../src/configStudio/runtime';
 import {syncSystemClassification} from '../../src/configStudio/systemClassification';
 import {groupTagControls} from '../../src/configStudio/c21Workflow';
 import {datasetField} from '../../src/configStudio/c21Migration';
 import {canonicalDictionaries} from '../../src/configStudio/dictionaryContract';
 import {buildConfigPackageArchive} from '../../src/configStudio/package';
-import type {CategoryNode,ClassificationPath,ConfigPackageV3,FieldDefinition,WorkflowDefinition,WorkflowValueCondition} from '../../src/configStudio/types';
+import type {ClassificationPath,ConfigPackageV3,FieldDefinition} from '../../src/configStudio/types';
 const input=path.resolve(process.argv[2]??'../../outputs/c21-generation-20261124/baseline/formal-r161-c20.config.json'),out=path.resolve(process.argv[3]??'../../outputs/c21-generation-20261124/candidate');fs.mkdirSync(out,{recursive:true});
 const bytes=fs.readFileSync(input),base=JSON.parse(bytes.toString('utf8')) as ConfigPackageV3;
 if(base.revision!==161||base.contractRevision!==20||createHash('sha256').update(bytes).digest('hex')!=='ceaae53a99a215389edd966d39d8c19673b2ea08fe79c9320237da9a511c8cf7')throw Error('c21 baseline identity mismatch');
@@ -65,27 +65,9 @@ for(const n of config.nodes.filter(n=>['BUD','FLR'].includes(n.path.class))){
  }
 }
 for(const n of config.nodes)n.children=config.nodes.filter(child=>{const a=K(n.path).split('/'),b=K(child.path).split('/');return b.length===a.length+1&&a.every((v,i)=>b[i]===v);}).map(child=>child.nodeId);
-const bup=structuredClone(config.workflows.find(w=>w.id==='v3-bud_building')!);bup.id='v3-bud-sub-point';bup.label=L('附属建筑点');for(const s of bup.steps){s.id='c21-point-'+s.id;for(const c of s.controls??[]){c.id='c21-point-'+c.id;if(c.outputId)c.outputId='c21-bud-point-output';}}bup.outputs[0].id='c21-bud-point-output';bup.outputs[0].geometry.selected='Point';bup.outputs[0].classificationGroup={selectors:[{id:'bup-scope',mode:'leafDescendants',path:parse('BUD/SUB/BUP')}]};for(const s of bup.steps.filter(s=>s.kind==='geometry')){s.outputId=bup.outputs[0].id;s.geometry=['Point'];s.drawing={...s.drawing,multiple:false};}bup.editor={enabled:true,range:{rows:[{id:'bup-scope',condition:'include',path:parse('BUD/SUB/BUP')}]}};config.workflows.push(bup);
-for(const w of config.workflows.filter(w=>['v3-bud_building','v3-flr_unit','v3-bud-sub-point'].includes(w.id))){
- const output=w.outputs[0],isFlr=w.id==='v3-flr_unit',point=w.id==='v3-bud-sub-point';
- if(!point)output.classificationGroup={selectors:[{id:'c21-all-'+w.id,mode:'leafDescendants',path:{class:isFlr?'FLR':'BUD'}}]};
- if(!isFlr&&!point)w.editor={enabled:true,range:{rows:[{id:'bud-poly',condition:'include',path:{class:'BUD'}},{id:'except-bup',condition:'exclude',path:parse('BUD/SUB/BUP')}]}};
- const form=w.steps.find(s=>s.kind==='form')!;form.sections??=[];
- const candidateNodes=config.nodes.filter(n=>n.path.class===(isFlr?'FLR':'BUD')&&(point?K(n.path).startsWith('BUD/SUB/BUP'):!K(n.path).startsWith('BUD/SUB/BUP')));
- const fields=new Map<string,FieldDefinition>();for(const n of candidateNodes)for(const f of n.fields)if(specs.some(s=>s[0]===f.key)||['BuildingID','NofFloor'].includes(f.key)&&!isFlr)fields.set(f.key,f);
- for(const [key,f] of fields){const slot='C21_'+key.toUpperCase(),id=w.id+'-'+key;if(form.controls?.some(c=>c.slot===slot))continue;
-  const paths=candidateNodes.filter(n=>n.fields.some(field=>field.key===key)).map(n=>n.path);
-  const testPath=(p:ClassificationPath):WorkflowValueCondition=>({token:'',operator:'present',all:[['Class',p.class],['Kind',p.kind??''],['Skind',p.skind??''],['Skind2',p.skind2??'']].map(([token,value])=>({token,operator:'equals',value}))});
-  const when=paths.length===candidateNodes.length?undefined:{token:'',operator:'present' as const,any:paths.map(testPath)};
-  let control=workflowControlFromField(f,slot,id,config);control.outputId=output.id;control.when=when;
-  if(key==='ContainTRP')control={...control,kind:'group',group:{storage:'object',optional:true,addLabel:L('添加交易'),itemFields:[{key:'ID',kind:'featureSearch',required:true,label:L('交易'),search:{target:{class:'TRP'},queryFields:['ID','Name'],returnField:'ID',displayTemplate:'{{Name}}',matcher:'contains',cacheScope:'world',maxResults:30,minQueryLength:1,debounceMs:180}}]}};
-  if(key==='BuildingID')control.search={...control.search!,target:{class:'BUD'},targetRole:'main',cacheScope:'world'};
-  const use=specs.find(s=>s[0]===key)?.[3],sectionId=use?'special-'+use.join('-'):'building-details';control.sectionId=sectionId;if(!form.sections.some(s=>s.id===sectionId))form.sections.push({id:sectionId,label:L(use?use.join(' / ')+' 专属信息':'建筑与结构信息'),initialOpen:true});
-  form.controls!.push(control);output.assignments.push({id,target:key,expression:slot,when});
- }
-}
+configureC21BuildingWorkflows(config,specs.map(spec=>spec[0]));
 let candidate=canonicalDictionaries(syncSystemClassification(config));for(const w of candidate.workflows)groupTagControls(w);
 // r161 is the publication baseline, not a newly allocated production revision.
 const report=validateConfigPackage(candidate);fs.writeFileSync(path.join(out,'candidate.config.json'),JSON.stringify(candidate,null,2)+'\n');fs.writeFileSync(path.join(out,'validation.json'),JSON.stringify(report,null,2)+'\n');fs.writeFileSync(path.join(out,'migration.json'),JSON.stringify(migrated.report,null,2)+'\n');
 if(!report.valid){console.error(JSON.stringify(report.issues.filter(i=>i.severity==='error').slice(0,25),null,2));throw Error('c21 candidate validation failed');}
-const archive=Buffer.from(await(await buildConfigPackageArchive(candidate,report)).arrayBuffer());fs.writeFileSync(path.join(out,'c21-ria-review.cairn-config.zip'),archive);fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify({taskId:'c21-generation-20261124',base:{revision:161,contractRevision:20,sha256:createHash('sha256').update(bytes).digest('hex')},candidate:{contractRevision:21,revision:candidate.revision,sha256:createHash('sha256').update(fs.readFileSync(path.join(out,'candidate.config.json'))).digest('hex'),archiveSha256:createHash('sha256').update(archive).digest('hex'),nodes:candidate.nodes.length,workflows:candidate.workflows.length,buildingLeaves:38},publicationPerformed:false},null,2)+'\n');console.log('c21 RIA candidate validated and generated:',out);
+const archive=Buffer.from(await(await buildConfigPackageArchive(candidate,report)).arrayBuffer());fs.writeFileSync(path.join(out,'c21-ria-review.cairn-config.zip'),archive);fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify({taskId:'c21-repair-20261124',base:{revision:161,contractRevision:20,sha256:createHash('sha256').update(bytes).digest('hex')},candidate:{contractRevision:21,revision:candidate.revision,sha256:createHash('sha256').update(fs.readFileSync(path.join(out,'candidate.config.json'))).digest('hex'),archiveSha256:createHash('sha256').update(archive).digest('hex'),nodes:candidate.nodes.length,workflows:candidate.workflows.length,buildingLeaves:38},publicationPerformed:false},null,2)+'\n');console.log('c21 RIA candidate validated and generated:',out);

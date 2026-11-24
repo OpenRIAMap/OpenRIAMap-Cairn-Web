@@ -5,7 +5,7 @@ import {buildStructureIndex,STRUCTURE_CONTEXT_ID} from '../../src/configStudio/s
 import {compileConfigRuntime} from '../../src/configStudio/runtime';
 import {configHostFloorViewEligible,isConfigRuntimeRecordVisible,resolveConfigRuntimeRule} from '../../src/components/Rules/configRuntime/configPackageAdapter';
 import type {FeatureRecord,RenderContext} from '../../src/components/Rules/rendering/renderPrimitives';
-const root='../../outputs/c21-generation-20261124',c=compileConfigRuntime(JSON.parse(fs.readFileSync(root+'/candidate/candidate.config.json','utf8')),true);
+const root=process.argv[2]??'../../outputs/c21-generation-20261124',c=compileConfigRuntime(JSON.parse(fs.readFileSync(root+'/candidate/candidate.config.json','utf8')),true);
 function record(ID:string,Class:string,Kind:string,SKind:string,SKind2?:string,BuildingID?:string,NofFloor='1'):FeatureRecord {return {uid:ID,type:'Polygon',coords3:[{x:0,y:64,z:0},{x:10,y:64,z:0},{x:10,y:64,z:10}],meta:{Class,Type:'Polygon',World:'zth',idField:'ID',idValue:ID,sig:{},signatureKey:ID,groups:{}},featureInfo:{ID,World:'zth',Class,Kind,SKind,...(SKind2?{SKind2}:{}),Name:ID,...(BuildingID?{BuildingID,NofFloor}:{})}};}
 const host=record('host','BUD','LAR','RES'),bum=record('bum','BUD','SUB','BUM','RES','host'),flr=record('flr','FLR','NOM','RES',undefined,'host'),other=record('other','FLR','NOM','RES',undefined,'host','2'),invalid=record('invalid','FLR','NOM','RES',undefined,'missing');
 const records=[host,bum,flr,other,invalid],store=new FeatureStore(records),index=buildStructureIndex(c,store);assert.equal(index.hostsByMember.get(bum),host);assert.equal(index.hostsByMember.get(flr),host);assert(!index.hostsByMember.has(invalid));

@@ -13660,6 +13660,7 @@ function assertStructureTargets(config, created, existing) {
 }
 
 // src/configStudio/workflowEditing.ts
+var isHistoricalBuildingParent = (path2) => ["BUD", "FLR"].includes(path2.class) && path2.kind === "NOM" && !path2.skind && !path2.skind2;
 var recordClassification = (record) => ({ class: String(record.Class ?? ""), ...record.Kind ? { kind: String(record.Kind) } : {}, ...record.SKind ?? record.Skind ? { skind: String(record.SKind ?? record.Skind) } : {}, ...record.SKind2 ?? record.Skind2 ? { skind2: String(record.SKind2 ?? record.Skind2) } : {} });
 function compileWorkflowEditPlan(workflow, config) {
   workflow = resolveWorkflowFields(config, workflow);
@@ -13773,6 +13774,7 @@ function workflowEditSlots(plan, original, draft, supplied) {
   return { ...draft.slots, ...Object.fromEntries(Object.entries(result).filter(([key2]) => !controls.has(key2))) };
 }
 function buildWorkflowEditRecord(plan, original, draft, options = {}) {
+  if (isHistoricalBuildingParent(draft.classification) && plan.classifications.some((path2) => pathMatchesScope(path2, draft.classification) && classificationPathKey(path2) !== classificationPathKey(draft.classification)) && classificationPathKey(recordClassification(original)) !== classificationPathKey(draft.classification)) throw Error("\u5386\u53F2\u7236\u5206\u7C7B\u4EC5\u5141\u8BB8\u539F\u6709\u8BB0\u5F55\u4FDD\u7559\uFF0C\u5DF2\u7EC6\u5206\u8BB0\u5F55\u4E0D\u80FD\u9000\u56DE\u7236\u5206\u7C7B\u3002");
   const record = structuredClone(original), slots = coerceWorkflowValues(plan.workflow, workflowEditSlots(plan, original, draft, options.geometry)), initial = draft.initialSlots;
   const id2 = String(draft.slots.EDIT_ID ?? "").trim();
   if (!id2) throw Error("ID \u4E0D\u80FD\u4E3A\u7A7A\u3002");

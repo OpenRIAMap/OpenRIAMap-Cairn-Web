@@ -6,7 +6,7 @@ import type {ConfigPackageV3,MountedFeatureRecord,ClassificationPath,WorkflowCon
 import {workflowClassificationCaption,workflowCategoryOptions} from '@/configStudio/workflowCategoryOptions';
 import {ControlInput} from '@/configStudio/V3WorkflowRunner';
 import {WorkflowAnnotationsInput} from '@/configStudio/WorkflowAnnotationsInput';
-import type {WorkflowEditDraft,WorkflowEditPlan} from '@/configStudio/workflowEditing';
+import {workflowEditClassifications,type WorkflowEditDraft,type WorkflowEditPlan} from '@/configStudio/workflowEditing';
 export function NativeRecordForm({config,plan,draft,onChange,records,world,editor,onEditorChange,onCancel,mode='edit',hideClassification=false,onClassificationChange}:{
  config:ConfigPackageV3;plan:WorkflowEditPlan;draft:WorkflowEditDraft;onChange:(draft:WorkflowEditDraft)=>void;records:MountedFeatureRecord[];world:string;editor:string;onEditorChange:(value:string)=>void;onCancel:()=>void;mode?:'create'|'edit';hideClassification?:boolean;onClassificationChange?:(path:ClassificationPath)=>void;
 }){
@@ -15,7 +15,7 @@ export function NativeRecordForm({config,plan,draft,onChange,records,world,edito
  const change=(key:string,value:unknown)=>{setErrors([]);onChange({...draft,slots:{...draft.slots,[key]:value}});};
  const originalControls=plan.controls.some(c=>c.kind==='classificationPicker')?plan.controls:[{id:'edit-classification',kind:'classificationPicker',label:{zh:'类型',en:''},columns:1,outputId:plan.workflow.outputs[0].id} as WorkflowControl,...plan.controls];
  const controls=originalControls.filter((c,i,all)=>c.kind!=='classificationPicker'||all.findIndex(v=>v.kind==='classificationPicker')===i);
- const classificationOptions=workflowCategoryOptions(config,plan.classifications);
+ const classificationOptions=workflowCategoryOptions(config,config.contractRevision>=21?workflowEditClassifications(plan,draft.classification,mode):plan.classifications);
  const datasetContext=useRef('');
  useEffect(()=>{const key=JSON.stringify([world,draft.classification,config.lookupTables?.find(t=>t.functionKind==='dataset')]);if(datasetContext.current&&datasetContext.current!==key){const slots={...draft.slots};let dirty=false;for(const c of controls.filter(c=>c.kind==='dataset')){const slot=c.slot??c.id;if(slots[slot]&&!datasetOptions(config,world,draft.classification).some(o=>o.value===slots[slot])){delete slots[slot];dirty=true;}}if(dirty)onChange({...draft,slots});}datasetContext.current=key;},[world,draft.classification,config.lookupTables,draft,onChange]);
  return <section aria-label="V3 工作流式编辑" className="config-editor space-y-3 rounded border bg-white p-3">
