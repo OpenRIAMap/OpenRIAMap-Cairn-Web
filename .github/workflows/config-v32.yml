@@ -36,6 +36,7 @@ jobs:
           npm run validate:formal-data-source-runtime
           npm run test:review-package-contract
           npm run test:review-package-profile-auth
+          npm run test:contribution-audit
           npm run test:review-auth-routes
           npm run test:review-status-board
           npm run test:review-workspace-contracts
