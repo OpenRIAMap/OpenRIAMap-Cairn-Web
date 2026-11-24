@@ -24,7 +24,7 @@ const blob = await buildRelayPackageZip({
     color: '#fff',
     coords: [],
     visible: true,
-    jsonInfo: { subType: 'BUD', featureInfo: { ID: 'new-feature', Class: 'BUD', World: 'zth', Name: 'New feature' } },
+    jsonInfo: { subType: 'BUD', featureInfo: { ID: 'new-feature', Class: 'BUD', World: 'zth', Name: 'New feature',CreateBy:'tester',CreateTime:'20261124' } },
   }],
 });
 if (OPENRIAMAP_RIA_REVIEW_PACKAGE_PROFILE.profileId !== 'openriamap-ria-relay'

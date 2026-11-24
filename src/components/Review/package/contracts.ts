@@ -38,6 +38,8 @@ export type ReviewPackageProfile = {
   profileId: string;
   /** Classes whose feature and picture paths preserve a nested kind path. */
   nestedKindClasses?: readonly string[];
+  /** Application-owned checks run at every common package generation boundary. */
+  validateFeatures?: (features: readonly ReviewPackageFeatureInput[]) => void;
 };
 
 export type ReviewPackageDeleteMark = {

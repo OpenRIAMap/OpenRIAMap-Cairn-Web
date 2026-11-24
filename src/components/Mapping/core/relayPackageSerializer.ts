@@ -115,7 +115,6 @@ export async function buildRelayPackageZip(args: {
     if (!record || typeof record !== 'object') continue;
     const classCode = String(record.Class ?? '').trim();
     const featureId = String(record.ID ?? '').trim();
-    if (!classCode || !featureId) continue;
     const worldId = resolveRelayPackageWorldId(record.World, args.currentWorldId);
     const kind = String(record.Kind ?? '').trim();
     const kindPath = kind ? [kind] : [];

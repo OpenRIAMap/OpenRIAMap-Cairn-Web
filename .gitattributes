@@ -121,6 +121,7 @@ scripts/config-tools/json-handbook/* text eol=lf
 /legacy-v1/filter.ts -text
 /legacy-v1/manifest.json -text
 /vendor/configuration-r11/* text eol=lf
+/src/core/audit/* text eol=lf
 docs/90_roadmap-and-history/runtime-v32-production-promotion-20261017/*.md text eol=lf
 docs/90_roadmap-and-history/runtime-v32-production-promotion-20261017/*.json text eol=lf
 docs/90_roadmap-and-history/runtime-v32-production-promotion-20261017/*.log text eol=lf

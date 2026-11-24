@@ -36,7 +36,16 @@ function asDetails(value: unknown): string[] {
 function operationError(payload: unknown, status: number): ReviewOperationError {
   const object = payload && typeof payload === 'object' ? payload as ControlErrorPayload : {};
   const code = asString(object.code) ?? asString(object.error) ?? `review-control-http-${status}`;
-  const message = asString(object.message) ?? asString(object.error) ?? `审核服务请求失败（HTTP ${status}）。`;
+  const auditMessages:Record<string,string>={
+    'invalid-contribution-audit-date-range':'请选择有效的行为日期范围，起始日期不得晚于结束日期。',
+    'invalid-release-history-date-range':'请选择有效的发布时间范围，起始日期不得晚于结束日期。',
+    'invalid-contribution-audit-options':'计算开关或价格输入无效，请检查后重新计算。',
+    'review-audit-query-stale':'日志已更新，请重新计算以使用一致的版本。',
+    'review-release-history-query-stale':'发布记录已更新，请刷新后重新读取。',
+    'review-audit-file-integrity':'部分日志缺失或校验失败，本次计算未完成。',
+    'review-audit-expected-day-missing':'所选范围缺少应有的日志文件，本次计算未完成。',
+  };
+  const message = asString(object.message) ?? auditMessages[code] ?? asString(object.error) ?? `审核服务请求失败（HTTP ${status}）。`;
   return new ReviewOperationError({
     code,
     message,
@@ -46,9 +55,10 @@ function operationError(payload: unknown, status: number): ReviewOperationError 
   });
 }
 
-async function requestControl<T>(fetcher: ReviewWorkflowFetch, body: Record<string, unknown>): Promise<T> {
+async function requestControl<T>(fetcher: ReviewWorkflowFetch, body: Record<string, unknown>, signal?:AbortSignal): Promise<T> {
   assertReviewWorldContext(body);
   const response = await fetcher(reviewEndpoint('control'), {
+    signal,
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'content-type': 'application/json' },
@@ -220,11 +230,16 @@ export type PublicReviewReleaseFeedItem = {
   worldVersionChanges?:Array<{worldId:string;from:number|null;to:number;bindingRevision:number}>;
   noContentChange?:boolean;
   packageCount?: number;
+  publisher?:string|null;
+  effectivePublishedAt?:string;
+  matchingSubmissionIds?:string[];
 };
 
 export type PublicReviewReleasePackage = {
   submissionId: string;
   packageName?: string;
+  operator?:string|null;
+  uploadedBy?:string|null;
   decisionRevisionId: string;
   decisionState?: string;
   decisionAction?: string;
@@ -237,6 +252,14 @@ export type PublicReviewReleasePackage = {
 export type PublicReviewReleaseDetail = PublicReviewReleaseFeedItem & {
   packages: PublicReviewReleasePackage[];
 };
+
+export type ReleaseHistoryResult={months:Array<{month:string;releaseCount:number;packageCount:number}>;items:PublicReviewReleaseFeedItem[];nextCursor:string|null;coverage:string;watermark:string};
+export type AuditOperation={operationId:string;releaseId:string;worldId:string;featureId:string;day:string|null;actor:string|null;kind:string;fields:Array<{path:string;change:string;before:unknown;after:unknown;required:boolean|null}>};
+export type AuditCounts={amount:string;operations:number;deleted:number;backfilled:number;unclassified:number;[key:string]:number|string};
+export type AuditSummary={total:AuditCounts;actors:Array<AuditCounts&{actor:string}>;features:number};
+export type AuditQueryResult={items:AuditOperation[];summary:AuditSummary|null;nextCursor:string|null;complete:boolean;coverage:{enabled:boolean;enabledAt:string|null;pending:unknown[];unattributed:number}};
+export function requestRiaReleaseHistory(query:Record<string,unknown>,signal?:AbortSignal):Promise<ReleaseHistoryResult>{return requestControl(fetch,{operation:'public-release-history-query',query},signal);}
+export function requestRiaContributionAudit(kind:'query'|'coverage'|'detail',query:Record<string,unknown>,signal?:AbortSignal):Promise<AuditQueryResult>{return requestControl(fetch,{operation:'contribution-audit-'+kind,query},signal);}
 
 export async function requestRiaPublicReviewReleaseFeed(limit = 20, fetcher: ReviewWorkflowFetch = fetch): Promise<PublicReviewReleaseFeedItem[]> {
   const response = await requestControl<{ items?: PublicReviewReleaseFeedItem[] }>(fetcher, { operation: 'public-release-feed', limit });

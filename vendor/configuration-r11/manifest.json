@@ -1,7 +1,7 @@
 {
   "schemaVersion": "cairnmap.validation-kernel.v1",
   "rulesVersion": "cairnmap-c21-production-1",
-  "sha256": "4e79d53b7d2fd95c0711592c1725b5ec5a52cc66066bdd259acbb395644a3846",
+  "sha256": "e20e433507b89ff4163feadb601aa949c6eae6db4ce4eec8ea95c0aa8da94e60",
   "sourceTextEol": "LF",
   "sources": {
     ".cairn/formal-data-source-runtime.json": "9a925beb75448ec20bd50503df9b97f1b5b2d0104598c34bdbb4cdf292b0fb38",
@@ -78,7 +78,7 @@
     "project-config/packages/openriamap-ria/environment/ruleButtons.json": "57f42999ea08bdbd4be021dbd248b6860fd0cfbecd9e2d528f22d72043239a74",
     "project-config/packages/openriamap-ria/environment/sourceLinkModes.json": "31eaf13b6d376d98193a32f9a8fcf3870f933ac0e222b9d53534293e70e93bbd",
     "project-config/packages/openriamap-ria/environment/worlds.json": "e5b9ee2d1c32f68e0666c39c86e7a950effbe7e85c3a7dd416ffbcb15be7d22e",
-    "scripts/config-tools/server-validation-entry.ts": "cd8dd67fe3ca6a5f270fe4ae06aaca5003af87f3526c0fc691d93715e4798ca2",
+    "scripts/config-tools/server-validation-entry.ts": "50eb3e72ea8c547f3be4c9dcace242490f03576f66613ed50550d20f5478f269",
     "src/configRuntime/classificationCompatibility.ts": "eaaac9b6cc14d2d16908a0b2765b65fb2ee939435a3e058e60f19edbfb8e044c",
     "src/configRuntime/configurationFingerprint.ts": "a640d3ab03042ea234f63e20ddf8e3f873364903c8bfb1df97bc9ab38f1d1af9",
     "src/configStudio/archivePolicy.ts": "552b3da2bb87ac3d4ab32411793f88f8a93f1a966e870b1466fa903a3bb1657b",

@@ -11,6 +11,7 @@ const operations = new Set([
   'status-board', 'status-save',
   'revision-download-request',
   'public-release-feed', 'public-release-detail', 'public-release-package-download-request',
+  'public-release-history-query','contribution-audit-coverage','contribution-audit-query','contribution-audit-detail',
 ]);
 
 const versionedOperations = new Set([
@@ -86,6 +87,12 @@ function requireStatusBoardSave(request) {
 export function normalizeReviewControlRequest(input, actor) {
   const operation = input?.operation;
   if (!operations.has(operation)) throw new Error('invalid-review-control-operation');
+  if(['public-release-history-query','contribution-audit-coverage','contribution-audit-query','contribution-audit-detail'].includes(operation)){
+    const query=input.query;if(!query||typeof query!=='object'||Array.isArray(query)||JSON.stringify(query).length>220000)throw Error('invalid-review-query');
+    const allowed=new Set(operation==='public-release-history-query'?['dateFrom','dateTo','publisher','operator','month','cursor']:['dateFrom','dateTo','expression','prices','includeSystem','includeClassification','cursor','releaseId','operationId']);
+    if(Object.keys(query).some(key=>!allowed.has(key)))throw Error('invalid-review-query');
+    return {operation,actor,query};
+  }
   if(operation==='world-version'){
     const request=input.request;
     if(!request||!['inspect','precheck','confirm','progress','recover'].includes(request.action))throw Error('invalid-world-version-request');

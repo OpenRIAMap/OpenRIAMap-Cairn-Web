@@ -30344,6 +30344,12 @@ async function readRawNativePackage(file, options = {}) {
 // scripts/config-tools/server-validation-entry.ts
 var rulesVersion = "cairnmap-c21-production-1";
 var validateConfiguration = validateConfigPackage;
+function describeAuditFields(config, record) {
+  if (!config) return {};
+  const raw = recordCategory(record), path2 = readableClassification(config, raw) ?? raw;
+  if (!hasCategoryNode(config, path2)) return {};
+  return Object.fromEntries(resolveEffectiveFields(config, path2).map((field) => [field.key, { required: recordFieldRequired(field, record), type: field.type, format: field.format ?? null, source: "frozen-configuration" }]));
+}
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));
   if (!supportsContract("publication", config.contractRevision)) throw Error("Publication requires supported contracts " + CONTRACT_CAPABILITIES.publication.map((v) => "c" + v).join(", ") + ".");
@@ -30419,6 +30425,7 @@ function validateIncomingBatch(config, created, existing, deletes = [], options 
 export {
   CONTRACT_CAPABILITIES,
   stableConfigText as configurationSnapshotText,
+  describeAuditFields,
   rulesVersion,
   validateBusinessJsonRecords,
   validateConfiguration,

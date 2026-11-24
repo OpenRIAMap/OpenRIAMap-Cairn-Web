@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AppCard from '@/components/ui/AppCard';
 import BlockingFullscreenModal from '@/components/Common/BlockingFullscreenModal';
 import AppButton from '@/components/ui/AppButton';
@@ -6,12 +6,14 @@ import { relayDraftShowsMeta, relayDraftStatusLabel, type RelayPackageDraft } fr
 import { formatConfigRevision, formatContractRevision } from '@/configStudio/contract';
 import type { ConfigPackageV3 } from '@/configStudio/types';
 import { X } from 'lucide-react';
+import type {MetadataIssue} from '@/core/audit/contributionContract.mjs';
 
 export default function RelayPackageExportPanel(props: {
   open: boolean;
   draft: RelayPackageDraft;
   configuration?: Pick<ConfigPackageV3, 'revision' | 'contractRevision'>;
   featureCount: number;
+  contentVersion?:string;
   onClose: () => void;
   onExport: (operator: string, note: string) => Promise<{ blob: Blob; filename: string }>;
   /** Optional application binding. Core export UI never chooses a provider. */
@@ -22,6 +24,9 @@ export default function RelayPackageExportPanel(props: {
   const [note, setNote] = useState(draft.meta.note ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [issues,setIssues]=useState<MetadataIssue[]>([]);
+  const [reportLimit,setReportLimit]=useState(100);
+  const generation=useRef(0);
   const [preparedPackage, setPreparedPackage] = useState<{ blob: Blob; filename: string } | null>(null);
   const [uploadResult, setUploadResult] = useState<{ submissionId: string; revisionId: string } | null>(null);
 
@@ -31,9 +36,11 @@ export default function RelayPackageExportPanel(props: {
     setNote(draft.meta.note ?? '');
     setBusy(false);
     setError(null);
+    setIssues([]);
     setPreparedPackage(null);
     setUploadResult(null);
   }, [open]);
+  useEffect(()=>{generation.current++;setPreparedPackage(null);setUploadResult(null);setIssues([]);setError(null);},[props.contentVersion,operator,note,open]);
 
   const pictureCount = Object.values(draft.picturesById).reduce((sum, list) => sum + list.filter((x) => !x.deleted).length, 0);
   const showDraftMeta = relayDraftShowsMeta(draft.meta.draftStatus);
@@ -89,6 +96,12 @@ export default function RelayPackageExportPanel(props: {
           </div>
 
           {error ? <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
+          {issues.length ? <div className="rounded border border-red-200 p-3 text-sm" role="alert">
+            <p className="font-semibold">{new Set(issues.map(row=>row.worldId+':'+row.featureId)).size} 个要素，共 {issues.length} 项错误，未生成标准包。</p>
+            <div className="max-h-52 overflow-auto">{issues.slice(0,reportLimit).map((row,index)=><div key={index} className="border-b py-2"><div>{row.worldId} · {row.classCode} · {row.featureId} · {row.field}</div><div>{row.message}</div><code className="break-all text-xs">{row.code} · {row.path} · 原值：{JSON.stringify(row.value)}</code></div>)}</div>
+            {reportLimit<issues.length?<AppButton className="mr-3 underline" onClick={()=>setReportLimit(n=>n+100)}>继续显示错误</AppButton>:null}
+            <AppButton className="underline" onClick={()=>{const url=URL.createObjectURL(new Blob([JSON.stringify({valid:false,issues},null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='标准包元数据校验报告.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}}>下载完整报告</AppButton>
+          </div>:null}
           {preparedPackage ? <div className="rounded border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{readyMessage}</div> : null}
           {uploadResult ? <div className="rounded border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">已提交至审核序列：{uploadResult.submissionId}（版本 {uploadResult.revisionId}）</div> : null}
 
@@ -140,13 +153,16 @@ export default function RelayPackageExportPanel(props: {
               <AppButton
                 className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg disabled:opacity-60"
                 onClick={async () => {
+                  const token=generation.current;
                   setBusy(true);
                   setError(null);
                   try {
                     const built = await onExport(operator, note);
+                    if(token!==generation.current){setError('内容已变化，请重新生成标准包。');return;}
                     setPreparedPackage(built);
                   } catch (e) {
                     setError(String((e as Error)?.message ?? e ?? '标准包生成失败'));
+                    setIssues((e as {issues?:MetadataIssue[]})?.issues??[]);setReportLimit(100);setPreparedPackage(null);
                   } finally {
                     setBusy(false);
                   }
