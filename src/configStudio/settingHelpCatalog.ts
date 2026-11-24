@@ -1,5 +1,11 @@
 /** Semantic setting documentation; shared by static labels and dynamic rows. */
 const entries:Record<string,string>={
+  '普通表格格式':'将字段保存为普通表格的行数组，并使用逐行输入组件。列设置决定允许的列键、列名、类型及必填性；切换格式后需核验已有数据和输出绑定。',
+  '列键':'此键用于表格每一行中的实际保存属性，须唯一且保持稳定。修改已有列键不会迁移历史数据；仅调整显示名称时请修改列名。',
+  '列名':'设置表头和输入提示中展示的名称。修改列名不改变列键及已保存的单元格内容，也不会调整列的必填性。',
+  '所属分栏':'将当前控件放入本页的可折叠分栏，选择无则直接显示。分类选择器和标签与扩展控件不能放入分栏；分栏中没有可见控件时自动隐藏。',
+  '分栏标题':'设置用户填写工作流时看到的分栏名称。使用能说明内部控件共同用途的标题；它只影响展示，不参与字段保存或分类判断。',
+  '初始展开':'开启后首次进入此页时展开分栏，关闭则先显示标题。用户仍可自行展开或收起；折叠不会清除控件值，也不会跳过必填核验。',
   '已保存模板':'选择当前要编辑的全局模板。正在引用该模板的规则会在保存前列出。',
   '新模板几何':'模板仅适用于其源几何。选择点、线或面后，只能复制同一几何的现有模板。',
   '初始化模板':'从空模块开始，或复制同源几何模板的完整逻辑。新模板有独立 ID。',
@@ -443,6 +449,9 @@ const contexts:Record<string,string>={
 };
 export function resolveSettingHelp(title:string,context:string):HelpResolution {
   const normalized=title.replace(/\s+/g,' ').trim(),key=`${context}/${normalized}`;
+  if(context==='ApplicationWorldSelect')return {key,text:'选择本条对照适用的世界。候选来自已启用的世界列表；历史世界会保留提示，需选择有效世界后才能通过核验。',kind:'semantic'};
+  if(context==='TableDefinitionEditor'&&normalized==='类型')return {key,text:'文本列可填写带单位的文字或多行内容；数字列仅接受有限数字，零为有效值。修改类型后须重新核验已有单元格内容。',kind:'semantic'};
+  if(context==='TableDefinitionEditor'&&normalized==='必填')return {key,text:'开启后，只要添加了这一行就必须填写此列。整张表能否为空由字段或工作流控件的必填设置决定；空白行会在保存时归一化。',kind:'semantic'};
   if(context==='LayerButtonIds')return {key,text:'选择这个按钮是否加入当前标题所示的默认、互斥或联动目标集合。这里只保存目标 ID，整体预览用于检查最终开关行为。',kind:'semantic'};
   if(context==='LayerButtonsEditor'&&normalized==='（ ）')return {key,text:'选择此按钮是否属于当前默认或联动目标集合，具体按钮由显示名称和稳定 ID 识别。',kind:'semantic'};
   if(context==='LayerWorldDefaults')return {key,text:'开启后为这个世界单独配置默认按钮，未开启时使用全局默认列表。它只决定初始状态，用户记忆与互斥联动继续按规则处理。',kind:'semantic'};
