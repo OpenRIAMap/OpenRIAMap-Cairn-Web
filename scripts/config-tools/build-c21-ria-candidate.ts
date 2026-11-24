@@ -11,7 +11,7 @@ import {datasetField} from '../../src/configStudio/c21Migration';
 import {canonicalDictionaries} from '../../src/configStudio/dictionaryContract';
 import {buildConfigPackageArchive} from '../../src/configStudio/package';
 import type {ClassificationPath,ConfigPackageV3,FieldDefinition} from '../../src/configStudio/types';
-const input=path.resolve(process.argv[2]??'../../outputs/c21-generation-20261124/baseline/formal-r161-c20.config.json'),out=path.resolve(process.argv[3]??'../../outputs/c21-generation-20261124/candidate');fs.mkdirSync(out,{recursive:true});
+const input=path.resolve(process.argv[2]??'../../outputs/c21-generation-20261124/baseline/formal-r161-c20.config.json'),out=path.resolve(process.argv[3]??'../../outputs/c21-repair-20261124/candidate');fs.mkdirSync(out,{recursive:true});
 const bytes=fs.readFileSync(input),base=JSON.parse(bytes.toString('utf8')) as ConfigPackageV3;
 if(base.revision!==161||base.contractRevision!==20||createHash('sha256').update(bytes).digest('hex')!=='ceaae53a99a215389edd966d39d8c19673b2ea08fe79c9320237da9a511c8cf7')throw Error('c21 baseline identity mismatch');
 const migrated=migratePackageToContract(base),config=migrated.config;
