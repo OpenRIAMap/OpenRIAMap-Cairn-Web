@@ -74,7 +74,11 @@ export function hydrateWorkflowEdit(plan:WorkflowEditPlan,record:Record<string,u
  const slots:Record<string,unknown>={EDIT_ID:record.ID};
  for(const control of plan.controls){if(control.kind==='classificationPicker'){slots[control.slot??control.id]=JSON.stringify(classification);continue;}if(control.kind==='tagsExtensions'){slots[control.id]=residualAnnotations(plan,record);continue;}
    if(control.kind==='dataset'){slots[control.slot??control.id]=readRecordPath(record,'tags.dataset');continue;}
-   if(!control.slot)continue;const values=plan.bindings.filter(b=>b.slot===control.slot).map(b=>readRecordPath(record,b.target));if(values.some(v=>!annotationEqual(v,values[0])))throw Error(`槽位 ${control.slot} 的多个回填目标具有不同值，不能猜测。`);slots[control.slot]=structuredClone(values[0]);
+   if(!control.slot)continue;const values=plan.bindings.filter(b=>b.slot===control.slot).map(b=>readRecordPath(record,b.target));if(values.some(v=>!annotationEqual(v,values[0])))throw Error(`槽位 ${control.slot} 的多个回填目标具有不同值，不能猜测。`);
+   // An explicitly configured Situation=true is a display default only: the
+   // untouched edit still preserves an absent field. Other optional booleans
+   // remain unset, including the c21 building controls without a default.
+   const statusDefault=values[0]===undefined&&control.kind==='toggle'&&control.required!==true&&control.defaultValue===true&&plan.bindings.some(b=>b.slot===control.slot&&b.target==='Situation');slots[control.slot]=statusDefault?true:structuredClone(values[0]);
  }
  const draft={slots,classification,initialSlots:structuredClone(slots)},filled=workflowEditSlots(plan,record,draft);
  return {...draft,slots:filled,initialSlots:structuredClone(filled)};

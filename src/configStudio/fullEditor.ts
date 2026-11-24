@@ -22,7 +22,7 @@ export function initializeFullEditor(config:ConfigPackageV3,plan:WorkflowEditPla
   if(control.kind==='tagsExtensions'){slots[control.id]={[plan.workflow.outputs[0].id]:{tags:[],extensions:[]}};continue;}
   const target=plan.bindings.find(binding=>binding.slot===control.slot)?.target,field=fields.find(field=>field.key===target);
   const value=control.defaultValue??field?.defaultValue;
-  slots[key]=value!==undefined?structuredClone(value):['group','table'].includes(control.kind)?[]:control.kind==='toggle'?undefined:'';
+  slots[key]=value!==undefined?structuredClone(value):['group','table'].includes(control.kind)?[]:control.kind==='toggle'?(config.contractRevision>=21?undefined:false):'';
  }
  return {classification,slots,initialSlots:structuredClone(slots)};
 }

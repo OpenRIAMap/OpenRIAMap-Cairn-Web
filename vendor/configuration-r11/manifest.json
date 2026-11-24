@@ -1,7 +1,7 @@
 {
   "schemaVersion": "cairnmap.validation-kernel.v1",
   "rulesVersion": "cairnmap-c21-production-1",
-  "sha256": "e20e433507b89ff4163feadb601aa949c6eae6db4ce4eec8ea95c0aa8da94e60",
+  "sha256": "d006358e8dca91b433d57fedd1a44471fb8d12886c96fb061a6de247b40b58f8",
   "sourceTextEol": "LF",
   "sources": {
     ".cairn/formal-data-source-runtime.json": "9a925beb75448ec20bd50503df9b97f1b5b2d0104598c34bdbb4cdf292b0fb38",
@@ -136,7 +136,7 @@
     "src/configStudio/workflowDrawing.ts": "e3f1a3585c8ab9a8430b067c0ed71f6a556267ca6c8372ec00b03dec339e4af5",
     "src/configStudio/workflowDrawingMigration.ts": "e5363f0af947b5bf5ffbfef099a39906fdd47b019d35217fcd4e2423161f652f",
     "src/configStudio/workflowEditCommit.ts": "e0ab051d91982246b2b9fda08fe00355a22d8870f9e7c9991d513e6ec4ba9312",
-    "src/configStudio/workflowEditing.ts": "615f2d317c40ab1b420007c726a4f7e36785fd97d4766007b229ead958b59184",
+    "src/configStudio/workflowEditing.ts": "1e02550430bca13b033611482fd5f32538cb234932222da5995a636abb72a81c",
     "src/configStudio/workflowExpression.ts": "a15fbb4d933c57900326d4e6ab92d295a2b3288501f9eb8fded2ea03e24d729d",
     "src/configStudio/workflowFieldControl.ts": "5d5d6f134333a1e3ecf7e7ab678592c13abd82a56219e2ab77e18c43428c5bcf",
     "src/configStudio/workflowKernel.ts": "6e75e2c95dac1e47c361a67dae74ab03e524a7b5df1c3186cf8567b047a13ffc",

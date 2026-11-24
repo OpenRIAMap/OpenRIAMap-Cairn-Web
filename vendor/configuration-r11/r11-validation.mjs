@@ -13760,7 +13760,8 @@ function hydrateWorkflowEdit(plan, record) {
     if (!control.slot) continue;
     const values2 = plan.bindings.filter((b) => b.slot === control.slot).map((b) => readRecordPath(record, b.target));
     if (values2.some((v) => !annotationEqual(v, values2[0]))) throw Error(`\u69FD\u4F4D ${control.slot} \u7684\u591A\u4E2A\u56DE\u586B\u76EE\u6807\u5177\u6709\u4E0D\u540C\u503C\uFF0C\u4E0D\u80FD\u731C\u6D4B\u3002`);
-    slots[control.slot] = structuredClone(values2[0]);
+    const statusDefault = values2[0] === void 0 && control.kind === "toggle" && control.required !== true && control.defaultValue === true && plan.bindings.some((b) => b.slot === control.slot && b.target === "Situation");
+    slots[control.slot] = statusDefault ? true : structuredClone(values2[0]);
   }
   const draft = { slots, classification, initialSlots: structuredClone(slots) }, filled = workflowEditSlots(plan, record, draft);
   return { ...draft, slots: filled, initialSlots: structuredClone(filled) };
