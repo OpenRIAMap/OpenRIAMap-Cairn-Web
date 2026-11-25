@@ -9,6 +9,8 @@ import {validateNativeStructure} from '../../src/configStudio/nativeContractVali
 import {canonicalizeWorkflow} from '../../src/configStudio/V3WorkflowEditor';
 import {workflowLayout,orderedWorkflowControls,workflowLayoutProblems,moveWorkflowLayout,layoutContainer} from '../../src/configStudio/workflowLayout';
 import {WorkflowFormLayout} from '../../src/configStudio/WorkflowFormLayout';
+import {NativeRecordForm} from '../../src/components/Mapping/Workflow/NativeRecordForm';
+import {compileWorkflowEditPlan} from '../../src/configStudio/workflowEditing';
 import {buildConfigPackageArchive,readConfigPackage} from '../../src/configStudio/package';
 import {capsuleColor} from '../../src/configStudio/cssColor';
 import {buildV3CardSections} from '../../src/configStudio/V3CardRenderer';
@@ -52,6 +54,15 @@ check('canonicalization preserves moved layout and empty section; runtime hides 
  s.sections??=[];s.sections.push({id:'empty',label:{zh:'空分栏',en:''}});s.layout!.unshift({kind:'section',sectionId:'empty',children:[]});const once=canonicalizeWorkflow(w,config),twice=canonicalizeWorkflow(once,config);assert.deepEqual(twice,once);assert.equal(once.steps.find(p=>p.id===s.id)!.layout?.[0].kind,'section');
  const html=renderToStaticMarkup(<WorkflowFormLayout step={form} controls={form.controls!.filter(c=>c.id!=='b')} render={c=><span key={c.id}>{c.id}</span>}/>);assert(!html.includes('data-workflow-section='));assert(html.includes('sys'));
  const all=renderToStaticMarkup(<WorkflowFormLayout step={form} controls={form.controls!} render={c=><span key={c.id}>{c.id}</span>}/>);assert(all.includes('aria-expanded="false"'));assert(all.indexOf('>a<')<all.indexOf('data-workflow-section'));
+});
+check('native edit retains synthesized legacy classification and renders configured c22 classification once',()=>{
+ const historical=JSON.parse(fs.readFileSync('public/configuration/releases/e8f258de720cbcc49938b6edac21e5b6178990cf499fc3c782b495d4cf877036/config.json','utf8')) as ConfigPackageV3;
+ for(const source of [historical,config]){
+  const plan=compileWorkflowEditPlan(source.workflows.find(w=>w.id==='v3-pta_pot')!,source),draft={slots:{EDIT_ID:'CLASSIFICATION-REGRESSION'},classification:plan.classifications[0],initialSlots:{}};
+  const html=(hideClassification=false)=>renderToStaticMarkup(<NativeRecordForm config={source} plan={plan} draft={draft} onChange={()=>{}} records={[]} world="zth" editor="QA" onEditorChange={()=>{}} onCancel={()=>{}} hideClassification={hideClassification}/>);
+  assert.equal((html().match(/aria-label="工作流分类"/g)??[]).length,1);assert(!html(true).includes('aria-label="工作流分类"'));
+  if(source===historical)assert(!plan.controls.some(c=>c.kind==='classificationPicker'));
+ }
 });
 check('capsule accepts both hex forms and valid CSS; actual information card preserves stored text',()=>{
  assert.equal(capsuleColor(' FFD700 '),'#FFD700');assert.equal(capsuleColor('abc'),'#abc');assert.equal(capsuleColor('#11223344'),'#11223344');assert.equal(capsuleColor('rgb(1, 2, 3)'),'rgb(1, 2, 3)');assert.equal(capsuleColor('badcolor','##bad','64748b'),'#64748b');
