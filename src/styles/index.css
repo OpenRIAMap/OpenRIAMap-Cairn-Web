@@ -22,8 +22,8 @@
   .cm-flex-grid > [class*="col-span-"] { grid-column: 1 / -1; }
   .config-editor :is(article, section, fieldset) { min-width: 0; }
   .config-editor article + article { margin-top: .75rem; }
-  .cm-field-card { border-left: 3px solid #cbd5e1; padding: .75rem; background: white; }
-  .cm-field-card > header { margin-bottom: .65rem; border-bottom: 1px solid #e2e8f0; padding-bottom: .4rem; font-weight: 600; }
+  .cm-field-card { border-left: 3px solid #cbd5e1; padding: .75rem; background: var(--cm-panel-bg,white); color:var(--cm-panel-ink,#334155); border-color:var(--cm-panel-line,#cbd5e1); }
+  .cm-field-card > header { margin-bottom: .65rem; border-bottom: 1px solid var(--cm-panel-line,#e2e8f0); padding-bottom: .4rem; font-weight: 600; }
   .cm-workflow-page { container: workflow-page / inline-size; }
   .cm-runtime-grid { display: grid; gap: .75rem; align-items: start; }
   @container workflow-page (min-width: 32rem) {

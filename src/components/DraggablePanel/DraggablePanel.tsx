@@ -195,7 +195,7 @@ export function DraggablePanel({
 
   // 开始拖拽
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!isDesktop || docked) return;
+    if (!isDesktop || docked || e.button !== 0 || (e.buttons & 1) !== 1) return;
 
     // 点击输入控件/按钮等交互元素时，不进入拖拽逻辑（避免抢焦点/阻止输入）
     const target = e.target as HTMLElement | null;
@@ -205,7 +205,7 @@ export function DraggablePanel({
     const rect = panelRef.current?.getBoundingClientRect();
     if (!rect) return;
     const relativeY = e.clientY - rect.top;
-    if (relativeY > HEADER_HEIGHT) return;
+    if (relativeY < 0 || relativeY > HEADER_HEIGHT || e.clientX < rect.left || e.clientX > rect.right) return;
 
     e.preventDefault();
     setIsDragging(true);
@@ -221,6 +221,7 @@ export function DraggablePanel({
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
+      if ((e.buttons & 1) !== 1) {setIsDragging(false);return;}
       const newX = e.clientX - dragStartRef.current.x;
       const newY = e.clientY - dragStartRef.current.y;
       setPosition(clampPosition(newX, newY, isMinimized));
@@ -232,10 +233,12 @@ export function DraggablePanel({
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('blur',handleMouseUp);
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('blur',handleMouseUp);
     };
   }, [clampPosition, isDragging, isMinimized]);
 

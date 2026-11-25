@@ -1,3 +1,4 @@
+import {normalizeAuditSelection} from '../src/core/audit/contributionContract.mjs';
 import { requireReviewAutomation } from './_reviewAutomation.mjs';
 import { signDispatcherRequest, verifySession } from './review-relay-transfer.mjs';
 
@@ -89,9 +90,9 @@ export function normalizeReviewControlRequest(input, actor) {
   if (!operations.has(operation)) throw new Error('invalid-review-control-operation');
   if(['public-release-history-query','contribution-audit-coverage','contribution-audit-query','contribution-audit-detail'].includes(operation)){
     const query=input.query;if(!query||typeof query!=='object'||Array.isArray(query)||JSON.stringify(query).length>220000)throw Error('invalid-review-query');
-    const allowed=new Set(operation==='public-release-history-query'?['dateFrom','dateTo','publisher','operator','month','cursor']:['dateFrom','dateTo','expression','prices','includeSystem','includeClassification','cursor','releaseId','operationId']);
+    const allowed=new Set(operation==='public-release-history-query'?['dateFrom','dateTo','publisher','operator','month','cursor']:['dateFrom','dateTo','expression','prices','includeSystem','includeClassification',...(operation==='contribution-audit-query'?['selection']:[]),'cursor','releaseId','operationId']);
     if(Object.keys(query).some(key=>!allowed.has(key)))throw Error('invalid-review-query');
-    return {operation,actor,query};
+    return {operation,actor,query:query.selection===undefined?query:{...query,selection:normalizeAuditSelection(query.selection,query.expression??'')}};
   }
   if(operation==='world-version'){
     const request=input.request;

@@ -1,3 +1,4 @@
+import {workflowControlsInOrder} from './workflowLayout';
 import {matchesClassificationRange} from './classificationScope';
 import {activeWorkflowSlots,workflowConditionContext,datasetOptions} from './c21Workflow';
 import {normalizeTableRows,tableValueErrors} from './ordinaryTable';
@@ -68,7 +69,7 @@ export function normalizeV3WorkflowSlots(workflow: WorkflowDefinition, raw: V3Wo
   for (const point of workflow.steps.flatMap(step => step.drawing?.auxiliaryPoints ?? [])) if (!workflowConditionMatches(point.when, slots)) delete slots[point.slot];
   for(const step of workflow.steps.filter(step=>step.kind==='geometry'))if(!enabledDrawing(step,workflow,slots)){
     for(const slot of [step.drawing?.captureSlot,step.drawing?.pointSlot].filter(Boolean) as string[])for(const key of [slot,`${slot}_RAW_POINT`,`${slot}_X`,`${slot}_Y`,`${slot}_Z`,`${slot}_HEIGHT`])delete slots[key];
-    for(const control of step.controls??[])if(control.slot)delete slots[control.slot];
+    for(const control of workflowControlsInOrder(step))if(control.slot)delete slots[control.slot];
   }
   for (const slot of workflowCaptureSlots(workflow)) {
     let raw=slots[`${slot}_RAW_POINT`]??slots[slot];while(Array.isArray(raw)&&Array.isArray(raw[0]))raw=raw[0];
@@ -94,7 +95,7 @@ export function workflowOutputSystem(workflow: WorkflowDefinition, slots: V3Work
 export function evaluateV3WorkflowOutputs(workflow: WorkflowDefinition, slots: V3WorkflowValueMap, options: { world?: string; classifications?: Record<string, ClassificationPath | undefined>; config?: ConfigPackageV3; coordinates?: Record<string, MultipartCoord[] | MultipartGeometry>; now?: Date } = {}): V3WorkflowRunResult {
   if (options.config) workflow=resolveWorkflowFields(options.config,workflow);
   slots = normalizeV3WorkflowSlots(workflow, slots);
-  if(options.config?.contractRevision&&options.config.contractRevision>=21){slots=activeWorkflowSlots(workflow,slots,options.classifications);for(const c of workflow.steps.flatMap(s=>s.controls??[]))if(c.kind==='table'&&c.slot&&Array.isArray(slots[c.slot]))slots[c.slot]=normalizeTableRows(slots[c.slot]);}
+  if(options.config?.contractRevision&&options.config.contractRevision>=21){slots=activeWorkflowSlots(workflow,slots,options.classifications);for(const c of workflow.steps.flatMap(workflowControlsInOrder))if(c.kind==='table'&&c.slot&&Array.isArray(slots[c.slot]))slots[c.slot]=normalizeTableRows(slots[c.slot]);}
   const world = normalizeV3WorldId(options.world ?? slots.World ?? 'zth');
   const assembled = new Map<number, V3WorkflowRunResult[number]>();
   const active=new Set(activeOutputIds(workflow,slots));
@@ -128,7 +129,7 @@ export function evaluateV3WorkflowOutputs(workflow: WorkflowDefinition, slots: V
       system[`ID_${index + 1}`] = record.ID ?? '';
     }
     const custom=annotationsForOutput(workflow,slots,output.id);
-    const dataset=workflow.steps.flatMap(s=>s.controls??[]).find(c=>c.kind==='dataset'&&c.outputId===output.id);
+    const dataset=workflow.steps.flatMap(workflowControlsInOrder).find(c=>c.kind==='dataset'&&c.outputId===output.id);
     if(dataset){const value=slots[dataset.slot??dataset.id];if(typeof value==='string'&&value){if(options.config&&!datasetOptions(options.config,world,classification).some(o=>o.value===value))throw Error('所属数据集已不适用于当前世界和分类，请重新选择。');record.tags??={};(record.tags as Record<string,unknown>).dataset=value;}else if(record.tags&&typeof record.tags==='object')delete (record.tags as Record<string,unknown>).dataset;}
     for(const namespace of ['tags','extensions'] as const)if(Object.keys(custom[namespace]).length){
       if(record[namespace]!=null&&(typeof record[namespace]!=='object'||Array.isArray(record[namespace])))throw new Error(`${namespace} 自动组装必须为对象。`);
@@ -195,7 +196,7 @@ export function validateV3WorkflowInputs(workflow: WorkflowDefinition, slots: V3
     if (field.kind === 'select' && !field.options?.some((option) => option.value === String(value))) report(`${field.label.zh} 必须选择有效的保存值。`);
     if (field.kind === 'json') try { if (typeof value === 'string') JSON.parse(value); } catch { report(`${field.label.zh} 必须是有效 JSON。`); }
   };
-  for (const step of steps) for (const control of step.controls ?? []) {
+  for (const step of steps) for (const control of workflowControlsInOrder(step)) {
     if (!workflowConditionMatches(control.when, slots) || ['classificationPicker','tagsExtensions'].includes(control.kind) && control.outputId && !activeOutputIds(workflow,slots).includes(control.outputId)) continue;
     const value = slots[control.slot ?? control.id];
     const report = (message: string) => issues.push({ stepId: step.id, controlId: control.id, message });

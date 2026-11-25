@@ -55,9 +55,9 @@ function operationError(payload: unknown, status: number): ReviewOperationError 
   });
 }
 
-async function requestControl<T>(fetcher: ReviewWorkflowFetch, body: Record<string, unknown>, signal?:AbortSignal): Promise<T> {
+async function requestControl<T>(fetcher: ReviewWorkflowFetch, body: Record<string, unknown>, signal?:AbortSignal,endpoint:Parameters<typeof reviewEndpoint>[0]='control',endpointPath?:string): Promise<T> {
   assertReviewWorldContext(body);
-  const response = await fetcher(reviewEndpoint('control'), {
+  const response = await fetcher(endpointPath??reviewEndpoint(endpoint), {
     signal,
     method: 'POST',
     credentials: 'same-origin',
@@ -258,8 +258,8 @@ export type AuditOperation={operationId:string;releaseId:string;worldId:string;f
 export type AuditCounts={amount:string;operations:number;deleted:number;backfilled:number;unclassified:number;[key:string]:number|string};
 export type AuditSummary={total:AuditCounts;actors:Array<AuditCounts&{actor:string}>;features:number};
 export type AuditQueryResult={items:AuditOperation[];summary:AuditSummary|null;nextCursor:string|null;complete:boolean;coverage:{enabled:boolean;enabledAt:string|null;pending:unknown[];unattributed:number}};
-export function requestRiaReleaseHistory(query:Record<string,unknown>,signal?:AbortSignal):Promise<ReleaseHistoryResult>{return requestControl(fetch,{operation:'public-release-history-query',query},signal);}
-export function requestRiaContributionAudit(kind:'query'|'coverage'|'detail',query:Record<string,unknown>,signal?:AbortSignal):Promise<AuditQueryResult>{return requestControl(fetch,{operation:'contribution-audit-'+kind,query},signal);}
+export function requestRiaReleaseHistory(query:Record<string,unknown>,signal?:AbortSignal):Promise<ReleaseHistoryResult>{return requestControl(fetch,{operation:'public-release-history-query',query},signal,'releaseHistory');}
+export function requestRiaContributionAudit(kind:'query'|'coverage'|'detail',query:Record<string,unknown>,signal?:AbortSignal,endpointPath?:string):Promise<AuditQueryResult>{return requestControl(fetch,{operation:'contribution-audit-'+kind,query},signal,kind==='query'?'auditQuery':kind==='coverage'?'auditCoverage':'auditDetail',endpointPath);}
 
 export async function requestRiaPublicReviewReleaseFeed(limit = 20, fetcher: ReviewWorkflowFetch = fetch): Promise<PublicReviewReleaseFeedItem[]> {
   const response = await requestControl<{ items?: PublicReviewReleaseFeedItem[] }>(fetcher, { operation: 'public-release-feed', limit });

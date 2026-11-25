@@ -5,6 +5,10 @@ const names = new Set(('aliceblue antiquewhite aqua aquamarine azure beige bisqu
 const number = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
 const numeric = (value: string) => number.test(value) && Number.isFinite(Number(value));
 const channel = (value: string) => numeric(value.endsWith('%') ? value.slice(0,-1) : value);
+export function capsuleColor(...values:unknown[]):string {
+  for(const input of values){if(typeof input!=='string')continue;let color=input.trim();if(/^(?:[\da-f]{3}|[\da-f]{6})$/i.test(color))color='#'+color;if(validCssColor(color))return color;}
+  return '#64748b';
+}
 export function validCssColor(input: unknown): input is string {
   if (typeof input !== 'string') return false;
   const value = input.trim().toLowerCase();

@@ -20,6 +20,9 @@ type LoadingStartOptions = {
 type LoadingStageDefinition = Pick<LoadingStage, 'name' | 'label'>;
 
 interface LoadingState {
+  configurationStatus:'idle'|'reading'|'verifying'|'ready'|'error';
+  configurationError:string;
+  configurationProgress:(status:'reading'|'verifying'|'ready'|'error',error?:string)=>void;
   // 是否正在加载
   isLoading: boolean;
   // 加载阶段列表
@@ -42,6 +45,8 @@ interface LoadingState {
 }
 
 export const useLoadingStore = create<LoadingState>()((set, get): LoadingState => ({
+  configurationStatus:'idle',configurationError:'',
+  configurationProgress:(configurationStatus,configurationError='')=>set({configurationStatus,configurationError}),
   isLoading: false,
   stages: [],
   initialized: false,

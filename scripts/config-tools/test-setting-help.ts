@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {resolveSettingHelp} from '../../src/configStudio/settingHelpCatalog';
+import {AUDIT_PRICE_LABELS,AUDIT_ENDPOINT_LABELS} from '../../src/core/audit/auditSettings';
+for(const title of [...Object.values(AUDIT_PRICE_LABELS),...Object.values(AUDIT_ENDPOINT_LABELS)]){const help=resolveSettingHelp(title,'AuditSettings');assert.equal(help.kind,'exact');assert(help.text.length>25);}
 const sites=JSON.parse(fs.readFileSync('docs/90_roadmap-and-history/runtime-v32-postc-v11-20261015/help-control-sites.json','utf8')) as Array<{file:string;kind:string;title:string}>;
 const settingContext=(file:string)=>path.posix.basename(file.replace(/\\/g,'/'),'.tsx');
 for(const file of ['src\\configStudio\\LayerButtonsEditor.tsx','src/configStudio/LayerButtonsEditor.tsx']){

@@ -1,3 +1,4 @@
+import {useLoadingStore} from '../store/loadingStore';
 import {supportsContract} from '../configStudio/contract';
 import {setRuntimeConfiguration} from './runtimeDataView';
 import type { ConfigPackageV3 } from '../configStudio/types';
@@ -14,7 +15,7 @@ export type ConfigurationIdentity = {
   contractRevision: number; configSha256: string; manifestSha256: string; configUrl: string;
 };
 export type FormalConfiguration = { config: ConfigPackageV3; identity: ConfigurationIdentity; warning?: string; availableIdentity?: ConfigurationIdentity };
-export const CONFIGURATION_RULES_VERSION = 'cairnmap-c21-production-1';
+export const CONFIGURATION_RULES_VERSION = 'cairnmap-c22-production-1';
 let snapshot: FormalConfiguration | undefined, pending: Promise<FormalConfiguration> | undefined;
 const subscribers = new Set<() => void>();
 export const subscribeFormalConfiguration = (listener: () => void) => { subscribers.add(listener); return () => { subscribers.delete(listener); }; };
@@ -42,6 +43,7 @@ async function decode(identity: ConfigurationIdentity, bytes: Uint8Array, receip
 }
 export async function verifyFormalConfiguration(identity: ConfigurationIdentity, bytes: Uint8Array, receipt?: ValidationReceipt): Promise<FormalConfiguration> {
   assertConfigurationIdentity(identity);
+  if(!snapshot)useLoadingStore.getState().configurationProgress('verifying');
   const config = await decode(identity, bytes, receipt);
   performance.mark('cairn:formal-verified',{detail:{reused:receiptMatches(identity,receipt),contractRevision:identity.contractRevision}});
   return { identity, config: compileConfigRuntime(config, true) };
@@ -85,10 +87,12 @@ async function cachedVersion(): Promise<FormalConfiguration | undefined> {
   return undefined;
 }
 function activate(value: FormalConfiguration): FormalConfiguration {
+  useLoadingStore.getState().configurationProgress('ready');
   snapshot = value; setRuntimeConfiguration(value.config); applyApplicationSettings(value.config.application); performance.mark('cairn:formal-ready',{detail:{configSha256:value.identity.configSha256,revision:value.identity.revision,contractRevision:value.identity.contractRevision}}); notify(); return value;
 }
 export function loadFormalConfiguration(): Promise<FormalConfiguration> {
   return pending ??= (async () => {
+    useLoadingStore.getState().configurationProgress('reading');
     performance.mark('cairn:formal-start');
     // Attach the error handler immediately while the independent cache read runs.
     const remote = readFormalIdentity().then(identity => ({ identity, error: undefined }), error => ({ identity: undefined, error }));
@@ -114,7 +118,7 @@ export function loadFormalConfiguration(): Promise<FormalConfiguration> {
     const next = await fetchVersion(result.identity); const value = activate(next.value); void persist(result.identity, next.bytes);
     if (refresh && typeof history !== 'undefined') { const url = new URL(location.href); url.searchParams.delete('refreshConfiguration'); history.replaceState(history.state, '', url); }
     return value;
-  })();
+  })().catch(error=>{useLoadingStore.getState().configurationProgress('error',String(error));throw error;});
 }
 /** Explicit callers only; host has no focus listener or periodic identity probe. */
 export async function checkForFormalUpdate(): Promise<ConfigurationIdentity | undefined> {

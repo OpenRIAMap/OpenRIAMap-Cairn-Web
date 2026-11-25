@@ -21,7 +21,7 @@ import {assertStructureTargets} from '../../src/configStudio/structureCommit';
 import {resolveNodeFieldSettings} from '../../src/configStudio/nodeFieldSettings';
 import type { ConfigPackageV3, MountedFeatureRecord } from '../../src/configStudio/types';
 
-export const rulesVersion='cairnmap-c21-production-1';
+export const rulesVersion='cairnmap-c22-production-1';
 export const validateConfiguration=validateConfigPackage;
 /** Freeze field meaning with the exact publication configuration, including conditional requiredness. */
 export function describeAuditFields(config:ConfigPackageV3|undefined,record:MountedFeatureRecord) {

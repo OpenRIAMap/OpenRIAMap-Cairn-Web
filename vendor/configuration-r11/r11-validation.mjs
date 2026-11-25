@@ -9777,15 +9777,15 @@ function validateMediaPolicy(config, incoming, existing) {
 }
 
 // src/configStudio/contract.ts
-var NATIVE_CONFIG_REVISION = 21;
+var NATIVE_CONFIG_REVISION = 22;
 var CONTRACT_CAPABILITIES = {
   latest: NATIVE_CONFIG_REVISION,
-  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-  category: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-  publication: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17], [17, 18], [18, 19], [19, 20], [20, 21]] }
+  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+  category: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+  publication: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17], [17, 18], [18, 19], [19, 20], [20, 21], [21, 22]] }
 };
 var supportsContract = (capability, value) => typeof value === "number" && CONTRACT_CAPABILITIES[capability].includes(value);
 function isNativeConfigRevision(value) {
@@ -9828,6 +9828,62 @@ function classificationScopeProblems(scope, config) {
     else if (config && !config.nodes.some((node) => levels.every((key2) => (node.path[key2] ?? "") === (row2.path[key2] ?? "")))) problems.push("\u5206\u7C7B\u8DEF\u5F84\u4E0D\u5B58\u5728\uFF1A" + levels.map((key2) => row2.path[key2]).filter(Boolean).join("/"));
   }
   return problems;
+}
+
+// src/configStudio/workflowLayout.ts
+function legacyWorkflowLayout(step) {
+  const result = [], seen = /* @__PURE__ */ new Set();
+  for (const control of step.controls ?? []) {
+    if (!control.sectionId) {
+      result.push({ kind: "control", controlId: control.id });
+      continue;
+    }
+    if (!step.sections?.some((section) => section.id === control.sectionId)) throw Error(`\u63A7\u4EF6 ${control.id} \u5F15\u7528\u4E86\u4E0D\u5B58\u5728\u7684\u5206\u680F ${control.sectionId}`);
+    if (seen.has(control.sectionId)) continue;
+    seen.add(control.sectionId);
+    result.push({ kind: "section", sectionId: control.sectionId, children: (step.controls ?? []).filter((item) => item.sectionId === control.sectionId).map((item) => ({ kind: "control", controlId: item.id })) });
+  }
+  const empty4 = (step.sections ?? []).filter((s) => !seen.has(s.id)).map((s) => ({ kind: "section", sectionId: s.id, children: [] }));
+  const tags = result.findIndex((item) => item.kind === "control" && step.controls?.find((c) => c.id === item.controlId)?.kind === "tagsExtensions");
+  result.splice(tags < 0 ? result.length : tags, 0, ...empty4);
+  return result;
+}
+var workflowLayout = (step) => step.layout ?? legacyWorkflowLayout(step);
+function orderedWorkflowControls(step) {
+  const byId = new Map((step.controls ?? []).map((c) => [c.id, c]));
+  return workflowLayout(step).flatMap((item) => item.kind === "control" ? [item] : item.children).flatMap((item) => {
+    const c = byId.get(item.controlId);
+    return c ? [c] : [];
+  });
+}
+var workflowControlsInOrder = (step) => step.layout ? orderedWorkflowControls(step) : step.controls ?? [];
+function workflowLayoutProblems(step) {
+  const errors = [], controls = new Map((step.controls ?? []).map((c) => [c.id, c])), sections = new Set((step.sections ?? []).map((s) => s.id)), seen = /* @__PURE__ */ new Set(), seenSections = /* @__PURE__ */ new Set();
+  if (!Array.isArray(step.layout)) return ["c22 \u4FE1\u606F\u9875\u5FC5\u987B\u5305\u542B layout\u3002"];
+  const control = (item, inside) => {
+    if (item.kind !== "control" || !item.controlId || !controls.has(item.controlId)) {
+      errors.push("\u5E03\u5C40\u5B58\u5728\u60AC\u7A7A\u6216\u975E\u6CD5\u63A7\u4EF6\u5F15\u7528\u3002");
+      return;
+    }
+    if (seen.has(item.controlId)) errors.push("\u5E03\u5C40\u63A7\u4EF6\u91CD\u590D\uFF1A" + item.controlId);
+    seen.add(item.controlId);
+    if (inside && ["classificationPicker", "tagsExtensions"].includes(controls.get(item.controlId).kind)) errors.push("\u5206\u7C7B\u548C\u6807\u7B7E\u6269\u5C55\u7CFB\u7EDF\u5355\u5143\u5FC5\u987B\u5728\u9875\u9876\u5C42\u3002");
+  };
+  for (const item of step.layout) {
+    if (item.kind === "control") control(item, false);
+    else if (item.kind === "section") {
+      if (!sections.has(item.sectionId) || seenSections.has(item.sectionId)) errors.push("\u5206\u680F\u5F15\u7528\u4E0D\u5B58\u5728\u6216\u91CD\u590D\u3002");
+      seenSections.add(item.sectionId);
+      if (!Array.isArray(item.children)) errors.push("\u5206\u680F\u5185\u90E8\u5FC5\u987B\u662F\u63A7\u4EF6\u5F15\u7528\u5217\u8868\u3002");
+      else for (const child of item.children) control(child, true);
+    } else errors.push("\u5E03\u5C40\u4EC5\u5141\u8BB8\u63A7\u4EF6\u548C\u5355\u5C42\u5206\u680F\u3002");
+  }
+  for (const c of controls.values()) {
+    if (!seen.has(c.id)) errors.push("\u63A7\u4EF6\u672A\u52A0\u5165\u5E03\u5C40\uFF1A" + c.id);
+    if (c.sectionId !== void 0) errors.push("c22 \u4E0D\u5141\u8BB8\u65E7 sectionId \u5F52\u5C5E\u3002");
+  }
+  for (const id2 of sections) if (!seenSections.has(id2)) errors.push("\u5206\u680F\u672A\u52A0\u5165\u5E03\u5C40\uFF1A" + id2);
+  return errors;
 }
 
 // src/configRuntime/configurationFingerprint.ts
@@ -11988,7 +12044,7 @@ function validateApplication(input, classCodes) {
   if (value.modules.players.pollIntervalMs < 1e3 || value.modules.players.requestTimeoutMs < 1e3) fail("modules/players", "\u73A9\u5BB6\u8F6E\u8BE2\u548C\u8D85\u65F6\u4E0D\u80FD\u5C0F\u4E8E 1000ms\u3002");
   if (!value.modules.players.endpoint.startsWith("/") || value.modules.players.endpoint.startsWith("//")) url(value.modules.players.endpoint.replace("{timestamp}", "0").replace("{world}", "zth"), "modules/players/endpoint");
   url(value.modules.players.directEndpoint.replace("{timestamp}", "0").replace("{world}", "zth"), "modules/players/directEndpoint");
-  for (const [key2, path2] of Object.entries({ ...value.review.auth, control: value.review.control, workflow: value.review.workflow, publicReleases: value.review.publicReleases })) if ((value.review.enabled || path2) && (!path2.startsWith("/") || path2.startsWith("//") || path2.includes("..") || /[?#]/.test(path2))) fail("review/" + key2, "\u5BA1\u6838\u4F7F\u7528\u540C\u6E90\u7EDD\u5BF9\u8DEF\u5F84\uFF1B\u542F\u7528\u65F6\u4E0D\u53EF\u4E3A\u7A7A\u3002");
+  for (const [key2, path2] of Object.entries({ ...value.review.auth, control: value.review.control, workflow: value.review.workflow, publicReleases: value.review.publicReleases, ...Object.fromEntries(["releaseHistory", "auditQuery", "auditCoverage", "auditDetail"].filter((key3) => key3 in value.review).map((key3) => [key3, value.review[key3] ?? ""])) })) if ((value.review.enabled || path2) && (!path2.startsWith("/") || path2.startsWith("//") || path2.includes("..") || /[?#]/.test(path2))) fail("review/" + key2, "\u5BA1\u6838\u4F7F\u7528\u540C\u6E90\u7EDD\u5BF9\u8DEF\u5F84\uFF1B\u542F\u7528\u65F6\u4E0D\u53EF\u4E3A\u7A7A\u3002");
   for (const ref of Object.values(value.review.serverReferences)) if (!/^[A-Z][A-Z0-9_]*$/.test(ref)) fail("review/serverReferences", "\u4EC5\u4FDD\u5B58\u670D\u52A1\u7AEF\u73AF\u5883\u53D8\u91CF\u5F15\u7528\u540D\u3002");
   const preferences = value.preferences;
   if (!Number.isInteger(preferences.map.leafletOffset) || Math.abs(preferences.map.leafletOffset) > 8 || !Number.isInteger(preferences.map.logicalInitialZoom) || preferences.map.logicalInitialZoom < 0 || preferences.map.logicalInitialZoom > 8) fail("preferences/map", "\u903B\u8F91 Zoom \u4E3A 0\u20138\uFF0C\u6620\u5C04\u504F\u79FB\u987B\u4E3A -8\u20138 \u6574\u6570\u3002");
@@ -12866,7 +12922,7 @@ function leafValue(field, value) {
 }
 function coerceWorkflowValues(workflow, raw) {
   const slots = { ...raw };
-  for (const control of workflow.steps.flatMap((step) => step.controls ?? [])) {
+  for (const control of workflow.steps.flatMap(workflowControlsInOrder)) {
     if (!control.slot || slots[control.slot] == null) continue;
     const value = slots[control.slot];
     if (control.kind === "select") {
@@ -13324,7 +13380,7 @@ function normalizeV3WorkflowSlots(workflow, raw) {
   for (const point of workflow.steps.flatMap((step) => step.drawing?.auxiliaryPoints ?? [])) if (!workflowConditionMatches(point.when, slots)) delete slots[point.slot];
   for (const step of workflow.steps.filter((step2) => step2.kind === "geometry")) if (!enabledDrawing(step, workflow, slots)) {
     for (const slot of [step.drawing?.captureSlot, step.drawing?.pointSlot].filter(Boolean)) for (const key2 of [slot, `${slot}_RAW_POINT`, `${slot}_X`, `${slot}_Y`, `${slot}_Z`, `${slot}_HEIGHT`]) delete slots[key2];
-    for (const control of step.controls ?? []) if (control.slot) delete slots[control.slot];
+    for (const control of workflowControlsInOrder(step)) if (control.slot) delete slots[control.slot];
   }
   for (const slot of workflowCaptureSlots(workflow)) {
     let raw2 = slots[`${slot}_RAW_POINT`] ?? slots[slot];
@@ -13354,7 +13410,7 @@ function evaluateV3WorkflowOutputs(workflow, slots, options = {}) {
   slots = normalizeV3WorkflowSlots(workflow, slots);
   if (options.config?.contractRevision && options.config.contractRevision >= 21) {
     slots = activeWorkflowSlots(workflow, slots, options.classifications);
-    for (const c of workflow.steps.flatMap((s) => s.controls ?? [])) if (c.kind === "table" && c.slot && Array.isArray(slots[c.slot])) slots[c.slot] = normalizeTableRows(slots[c.slot]);
+    for (const c of workflow.steps.flatMap(workflowControlsInOrder)) if (c.kind === "table" && c.slot && Array.isArray(slots[c.slot])) slots[c.slot] = normalizeTableRows(slots[c.slot]);
   }
   const world = normalizeV3WorldId(options.world ?? slots.World ?? "zth");
   const assembled = /* @__PURE__ */ new Map();
@@ -13391,7 +13447,7 @@ function evaluateV3WorkflowOutputs(workflow, slots, options = {}) {
       system[`ID_${index + 1}`] = record.ID ?? "";
     }
     const custom = annotationsForOutput(workflow, slots, output.id);
-    const dataset = workflow.steps.flatMap((s) => s.controls ?? []).find((c) => c.kind === "dataset" && c.outputId === output.id);
+    const dataset = workflow.steps.flatMap(workflowControlsInOrder).find((c) => c.kind === "dataset" && c.outputId === output.id);
     if (dataset) {
       const value = slots[dataset.slot ?? dataset.id];
       if (typeof value === "string" && value) {
@@ -13673,13 +13729,13 @@ function compileWorkflowEditPlan(workflow, config) {
   if (workflow.steps.some((s) => s.when || config.contractRevision < 21 && s.controls?.some((c) => c.when || c.group?.itemFields.some((f) => "when" in f && f.when))) || workflow.outputs.some((o) => o.when || config.contractRevision < 21 && o.assignments.some((a) => a.when))) errors.push("\u4E0D\u80FD\u5305\u542B\u9875\u9762\u6216\u8F93\u51FA\u7684\u542F\u7528\u6761\u4EF6\u3002");
   if (config.contractRevision >= 21) {
     const allowed = /* @__PURE__ */ new Set(["Class", "Kind", "Skind", "Skind2", ...["Class", "Kind", "Skind", "Skind2"].map((k) => k + "_1"), ...["Class", "Kind", "Skind", "Skind2"].map((k) => workflow.outputs[0]?.id + "." + k)]);
-    for (const c of [...workflow.steps.flatMap((s) => s.controls ?? []), ...workflow.outputs.flatMap((o) => o.assignments)]) if (c.when && conditionTokens(c.when).some((token) => !allowed.has(token))) errors.push("\u7F16\u8F91\u8F93\u5165\u53CA\u5199\u5165\u6761\u4EF6\u4EC5\u5141\u8BB8\u5F53\u524D\u8F93\u51FA\u7684\u5206\u7C7B\u5B57\u6BB5\uFF1B\u5176\u4ED6\u65E2\u6709\u8F6C\u6362\u8D44\u683C\u4FDD\u6301\u3002");
+    for (const c of [...workflow.steps.flatMap(workflowControlsInOrder), ...workflow.outputs.flatMap((o) => o.assignments)]) if (c.when && conditionTokens(c.when).some((token) => !allowed.has(token))) errors.push("\u7F16\u8F91\u8F93\u5165\u53CA\u5199\u5165\u6761\u4EF6\u4EC5\u5141\u8BB8\u5F53\u524D\u8F93\u51FA\u7684\u5206\u7C7B\u5B57\u6BB5\uFF1B\u5176\u4ED6\u65E2\u6709\u8F6C\u6362\u8D44\u683C\u4FDD\u6301\u3002");
   }
   if (errors.length) throw Error(errors.join("\n"));
   const output = workflow.outputs[0], scope = workflow.editor?.scope ?? output.classification ?? { class: "" };
   const classifications = workflowClassificationGroup(config, output).paths.filter((path2) => workflow.editor?.range ? matchesClassificationRange(workflow.editor.range, path2) : pathMatchesScope(path2, scope));
   if (workflow.editor?.scope && !hasCategoryNode(config, scope) || !classifications.length || config.contractRevision < 15 && (!output.classification || !pathMatchesScope(scope, output.classification) || !config.nodes.some((n) => classificationPathKey(n.path) === classificationPathKey(scope)))) throw Error("\u7F16\u8F91\u4F5C\u7528\u8303\u56F4\u5FC5\u987B\u4E3A\u8F93\u51FA\u8303\u56F4\u5185\u7684\u5B9E\u9645\u5206\u7C7B\u3002");
-  const controls = workflow.steps.flatMap((s) => s.controls ?? []), tokens = new Set(controls.flatMap((c) => c.slot ? [c.slot] : [])), needed = /* @__PURE__ */ new Set(), idOnly = /* @__PURE__ */ new Set(), bindings = [];
+  const controls = workflow.steps.flatMap(workflowControlsInOrder), tokens = new Set(controls.flatMap((c) => c.slot ? [c.slot] : [])), needed = /* @__PURE__ */ new Set(), idOnly = /* @__PURE__ */ new Set(), bindings = [];
   for (const assignment of output.assignments) {
     const ast = parseWorkflowExpression(assignment.expression), used = workflowExpressionTokens(ast).filter((t) => tokens.has(t));
     if (assignment.target === "ID") used.forEach((t) => idOnly.add(t));
@@ -20430,6 +20486,34 @@ var native_contract_schema_generated_default = {
         publicReleases: {
           type: "string"
         },
+        releaseHistory: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        auditQuery: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        auditCoverage: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        auditDetail: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
         serverReferences: {
           ref: "t107"
         }
@@ -20448,6 +20532,29 @@ var native_contract_schema_generated_default = {
     t109: {
       type: "object",
       properties: {
+        featuresCreated: {
+          type: "string"
+        },
+        optionalAdded: {
+          type: "string"
+        },
+        requiredEdited: {
+          type: "string"
+        },
+        optionalEdited: {
+          type: "string"
+        }
+      },
+      required: [
+        "featuresCreated",
+        "optionalAdded",
+        "requiredEdited",
+        "optionalEdited"
+      ]
+    },
+    t110: {
+      type: "object",
+      properties: {
         homepageLimit: {
           type: "number"
         },
@@ -20464,7 +20571,7 @@ var native_contract_schema_generated_default = {
         "debounceMs"
       ]
     },
-    t110: {
+    t111: {
       type: "object",
       properties: {
         transferWalkSpeed: {
@@ -20487,7 +20594,7 @@ var native_contract_schema_generated_default = {
         "normalPlatformTransferCost"
       ]
     },
-    t112: {
+    t113: {
       type: "object",
       properties: {
         lines: {
@@ -20550,14 +20657,14 @@ var native_contract_schema_generated_default = {
         "stations"
       ]
     },
-    t111: {
+    t112: {
       type: "object",
       properties: {
         schemaVersion: {
           const: "cairnmap.railway-roles.v1"
         },
         selectors: {
-          ref: "t112"
+          ref: "t113"
         }
       },
       required: [
@@ -20565,7 +20672,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t113: {
+    t114: {
       type: "object",
       properties: {
         logicalInitialZoom: {
@@ -20592,7 +20699,7 @@ var native_contract_schema_generated_default = {
         "dragging"
       ]
     },
-    t114: {
+    t115: {
       type: "object",
       properties: {
         position: {
@@ -20614,7 +20721,7 @@ var native_contract_schema_generated_default = {
         "compact"
       ]
     },
-    t115: {
+    t116: {
       type: "object",
       properties: {
         allowUpload: {
@@ -20632,6 +20739,13 @@ var native_contract_schema_generated_default = {
     t108: {
       type: "object",
       properties: {
+        auditCalculationDefaults: {
+          anyOf: [
+            {
+              ref: "t109"
+            }
+          ]
+        },
         language: {
           anyOf: [
             {
@@ -20643,32 +20757,32 @@ var native_contract_schema_generated_default = {
           ]
         },
         search: {
-          ref: "t109"
+          ref: "t110"
         },
         navigation: {
-          anyOf: [
-            {
-              ref: "t110"
-            }
-          ]
-        },
-        railwayRoles: {
           anyOf: [
             {
               ref: "t111"
             }
           ]
         },
+        railwayRoles: {
+          anyOf: [
+            {
+              ref: "t112"
+            }
+          ]
+        },
         map: {
-          ref: "t113"
+          ref: "t114"
         },
         toolbar: {
-          ref: "t114"
+          ref: "t115"
         },
         pictureControls: {
           anyOf: [
             {
-              ref: "t115"
+              ref: "t116"
             }
           ]
         }
@@ -20680,7 +20794,7 @@ var native_contract_schema_generated_default = {
         "toolbar"
       ]
     },
-    t117: {
+    t118: {
       type: "object",
       properties: {
         enabled: {
@@ -20690,10 +20804,10 @@ var native_contract_schema_generated_default = {
           ref: "t1"
         },
         parameters: {
-          ref: "t110"
+          ref: "t111"
         },
         selectors: {
-          ref: "t112"
+          ref: "t113"
         }
       },
       required: [
@@ -20703,7 +20817,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t119: {
+    t120: {
       type: "object",
       properties: {
         teleportPoints: {
@@ -20738,7 +20852,7 @@ var native_contract_schema_generated_default = {
         "warpPoints"
       ]
     },
-    t118: {
+    t119: {
       type: "object",
       properties: {
         enabled: {
@@ -20751,7 +20865,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         selectors: {
-          ref: "t119"
+          ref: "t120"
         }
       },
       required: [
@@ -20761,7 +20875,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t121: {
+    t122: {
       type: "object",
       properties: {
         roads: {
@@ -20782,7 +20896,7 @@ var native_contract_schema_generated_default = {
         "roads"
       ]
     },
-    t120: {
+    t121: {
       type: "object",
       properties: {
         enabled: {
@@ -20795,7 +20909,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         selectors: {
-          ref: "t121"
+          ref: "t122"
         }
       },
       required: [
@@ -20805,7 +20919,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t122: {
+    t123: {
       type: "object",
       properties: {
         elytraSpeed: {
@@ -20820,23 +20934,23 @@ var native_contract_schema_generated_default = {
         "walkSpeed"
       ]
     },
-    t116: {
+    t117: {
       type: "object",
       properties: {
         schemaVersion: {
           const: "cairnmap.navigation.v1"
         },
         rail: {
-          ref: "t117"
-        },
-        teleport: {
           ref: "t118"
         },
+        teleport: {
+          ref: "t119"
+        },
         road: {
-          ref: "t120"
+          ref: "t121"
         },
         common: {
-          ref: "t122"
+          ref: "t123"
         }
       },
       required: [
@@ -20847,7 +20961,7 @@ var native_contract_schema_generated_default = {
         "common"
       ]
     },
-    t127: {
+    t128: {
       type: "object",
       properties: {
         text: {
@@ -20909,13 +21023,13 @@ var native_contract_schema_generated_default = {
         "text"
       ]
     },
-    t126: {
+    t127: {
       type: "object",
       properties: {
         runs: {
           type: "array",
           items: {
-            ref: "t127"
+            ref: "t128"
           }
         }
       },
@@ -20923,13 +21037,13 @@ var native_contract_schema_generated_default = {
         "runs"
       ]
     },
-    t125: {
+    t126: {
       type: "object",
       properties: {
         paragraphs: {
           type: "array",
           items: {
-            ref: "t126"
+            ref: "t127"
           }
         }
       },
@@ -20937,7 +21051,7 @@ var native_contract_schema_generated_default = {
         "paragraphs"
       ]
     },
-    t124: {
+    t125: {
       type: "object",
       properties: {
         loginOnly: {
@@ -20970,7 +21084,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         content: {
-          ref: "t125"
+          ref: "t126"
         }
       },
       required: [
@@ -20981,13 +21095,13 @@ var native_contract_schema_generated_default = {
         "content"
       ]
     },
-    t123: {
+    t124: {
       type: "object",
       properties: {
         items: {
           type: "array",
           items: {
-            ref: "t124"
+            ref: "t125"
           }
         }
       },
@@ -20995,7 +21109,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t128: {
+    t129: {
       type: "object",
       properties: {
         path: {
@@ -21074,7 +21188,7 @@ var native_contract_schema_generated_default = {
         navigation: {
           anyOf: [
             {
-              ref: "t116"
+              ref: "t117"
             }
           ]
         },
@@ -21088,21 +21202,21 @@ var native_contract_schema_generated_default = {
         announcements: {
           anyOf: [
             {
-              ref: "t123"
+              ref: "t124"
             }
           ]
         },
         about: {
           anyOf: [
             {
-              ref: "t125"
+              ref: "t126"
             }
           ]
         },
         externalLayers: {
           anyOf: [
             {
-              ref: "t128"
+              ref: "t129"
             }
           ]
         }
@@ -21117,7 +21231,7 @@ var native_contract_schema_generated_default = {
         "preferences"
       ]
     },
-    t130: {
+    t131: {
       type: "object",
       properties: {
         library: {
@@ -21136,13 +21250,13 @@ var native_contract_schema_generated_default = {
         "manifestSha256"
       ]
     },
-    t129: {
+    t130: {
       type: "object",
       properties: {
         iconLibraries: {
           type: "array",
           items: {
-            ref: "t130"
+            ref: "t131"
           }
         }
       },
@@ -21150,7 +21264,7 @@ var native_contract_schema_generated_default = {
         "iconLibraries"
       ]
     },
-    t132: {
+    t133: {
       type: "object",
       properties: {
         class: {
@@ -21184,7 +21298,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t133: {
+    t134: {
       type: "object",
       properties: {
         fields: {
@@ -21213,7 +21327,7 @@ var native_contract_schema_generated_default = {
         "card"
       ]
     },
-    t134: {
+    t135: {
       type: "object",
       properties: {
         fields: {
@@ -21269,7 +21383,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t135: {
+    t136: {
       type: "object",
       properties: {
         fields: {
@@ -21331,7 +21445,7 @@ var native_contract_schema_generated_default = {
         "card"
       ]
     },
-    t137: {
+    t138: {
       type: "object",
       properties: {
         kind: {
@@ -21342,7 +21456,7 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t138: {
+    t139: {
       type: "object",
       properties: {
         kind: {
@@ -21367,7 +21481,7 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t139: {
+    t140: {
       type: "object",
       properties: {
         kind: {
@@ -21403,7 +21517,7 @@ var native_contract_schema_generated_default = {
         "scope"
       ]
     },
-    t140: {
+    t141: {
       type: "object",
       properties: {
         kind: {
@@ -21422,7 +21536,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t141: {
+    t142: {
       type: "object",
       properties: {
         kind: {
@@ -21444,7 +21558,7 @@ var native_contract_schema_generated_default = {
         "values"
       ]
     },
-    t142: {
+    t143: {
       type: "object",
       properties: {
         kind: {
@@ -21463,7 +21577,7 @@ var native_contract_schema_generated_default = {
         "present"
       ]
     },
-    t144: {
+    t145: {
       type: "object",
       properties: {
         key: {
@@ -21499,13 +21613,13 @@ var native_contract_schema_generated_default = {
         "type"
       ]
     },
-    t143: {
+    t144: {
       type: "object",
       properties: {
         columns: {
           type: "array",
           items: {
-            ref: "t144"
+            ref: "t145"
           }
         },
         maxRows: {
@@ -21527,15 +21641,15 @@ var native_contract_schema_generated_default = {
         "columns"
       ]
     },
-    t146: {
+    t147: {
       type: "object",
       properties: {},
       required: [],
       additionalProperties: {
-        ref: "t145"
+        ref: "t146"
       }
     },
-    t145: {
+    t146: {
       type: "object",
       properties: {
         type: {
@@ -21562,7 +21676,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t145"
+                ref: "t146"
               }
             }
           ]
@@ -21570,7 +21684,7 @@ var native_contract_schema_generated_default = {
         properties: {
           anyOf: [
             {
-              ref: "t146"
+              ref: "t147"
             }
           ]
         },
@@ -21587,7 +21701,7 @@ var native_contract_schema_generated_default = {
         items: {
           anyOf: [
             {
-              ref: "t145"
+              ref: "t146"
             }
           ]
         },
@@ -21645,7 +21759,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t147: {
+    t148: {
       type: "object",
       properties: {
         registryKey: {
@@ -21663,7 +21777,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t148: {
+    t149: {
       type: "object",
       properties: {
         workflow: {
@@ -21709,7 +21823,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t149: {
+    t150: {
       type: "object",
       properties: {
         classCode: {
@@ -21731,7 +21845,7 @@ var native_contract_schema_generated_default = {
         "matchField"
       ]
     },
-    t136: {
+    t137: {
       type: "object",
       properties: {
         fieldId: {
@@ -21837,9 +21951,6 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t137"
-                  },
-                  {
                     ref: "t138"
                   },
                   {
@@ -21853,6 +21964,9 @@ var native_contract_schema_generated_default = {
                   },
                   {
                     ref: "t142"
+                  },
+                  {
+                    ref: "t143"
                   }
                 ]
               }
@@ -21927,7 +22041,7 @@ var native_contract_schema_generated_default = {
         table: {
           anyOf: [
             {
-              ref: "t143"
+              ref: "t144"
             }
           ]
         },
@@ -21957,14 +22071,14 @@ var native_contract_schema_generated_default = {
         valueSchema: {
           anyOf: [
             {
-              ref: "t145"
+              ref: "t146"
             }
           ]
         },
         optionSource: {
           anyOf: [
             {
-              ref: "t147"
+              ref: "t148"
             }
           ]
         },
@@ -21996,14 +22110,14 @@ var native_contract_schema_generated_default = {
         scenes: {
           anyOf: [
             {
-              ref: "t148"
+              ref: "t149"
             }
           ]
         },
         reference: {
           anyOf: [
             {
-              ref: "t149"
+              ref: "t150"
             }
           ]
         },
@@ -22038,7 +22152,7 @@ var native_contract_schema_generated_default = {
         "description"
       ]
     },
-    t151: {
+    t152: {
       type: "object",
       properties: {
         enabled: {
@@ -22108,7 +22222,7 @@ var native_contract_schema_generated_default = {
         "role"
       ]
     },
-    t155: {
+    t156: {
       type: "object",
       properties: {
         path: {
@@ -22127,11 +22241,11 @@ var native_contract_schema_generated_default = {
         "key"
       ]
     },
-    t154: {
+    t155: {
       type: "object",
       properties: {
         source: {
-          ref: "t155"
+          ref: "t156"
         },
         fingerprint: {
           type: "string"
@@ -22149,7 +22263,7 @@ var native_contract_schema_generated_default = {
         "fingerprint"
       ]
     },
-    t153: {
+    t154: {
       type: "object",
       properties: {
         mode: {
@@ -22219,7 +22333,7 @@ var native_contract_schema_generated_default = {
         prefillAudit: {
           anyOf: [
             {
-              ref: "t154"
+              ref: "t155"
             }
           ]
         }
@@ -22228,7 +22342,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t156: {
+    t157: {
       type: "object",
       properties: {
         mode: {
@@ -22293,7 +22407,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t152: {
+    t153: {
       type: "object",
       properties: {
         enabled: {
@@ -22323,10 +22437,10 @@ var native_contract_schema_generated_default = {
           ]
         },
         subtitle: {
-          ref: "t153"
+          ref: "t154"
         },
         extension: {
-          ref: "t156"
+          ref: "t157"
         }
       },
       required: [
@@ -22336,17 +22450,30 @@ var native_contract_schema_generated_default = {
         "extension"
       ]
     },
-    t150: {
+    t151: {
       type: "object",
       properties: {
         structure: {
           anyOf: [
             {
-              ref: "t151"
+              ref: "t152"
             }
           ]
         },
         search: {
+          anyOf: [
+            {
+              ref: "t153"
+            }
+          ]
+        }
+      },
+      required: []
+    },
+    t158: {
+      type: "object",
+      properties: {
+        structure: {
           anyOf: [
             {
               ref: "t152"
@@ -22356,20 +22483,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t157: {
-      type: "object",
-      properties: {
-        structure: {
-          anyOf: [
-            {
-              ref: "t151"
-            }
-          ]
-        }
-      },
-      required: []
-    },
-    t160: {
+    t161: {
       type: "object",
       properties: {
         weight: {
@@ -22403,7 +22517,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t161: {
+    t162: {
       type: "object",
       properties: {
         zLevel: {
@@ -22428,7 +22542,7 @@ var native_contract_schema_generated_default = {
         "zLevel"
       ]
     },
-    t163: {
+    t164: {
       type: "object",
       properties: {
         role: {
@@ -22497,7 +22611,7 @@ var native_contract_schema_generated_default = {
         "basePriority"
       ]
     },
-    t162: {
+    t163: {
       type: "object",
       properties: {
         visible: {
@@ -22518,9 +22632,6 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t137"
-              },
-              {
                 ref: "t138"
               },
               {
@@ -22534,12 +22645,15 @@ var native_contract_schema_generated_default = {
               },
               {
                 ref: "t142"
+              },
+              {
+                ref: "t143"
               }
             ]
           }
         },
         collision: {
-          ref: "t163"
+          ref: "t164"
         }
       },
       required: [
@@ -22549,7 +22663,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t167: {
+    t168: {
       type: "object",
       properties: {
         min: {
@@ -22564,7 +22678,7 @@ var native_contract_schema_generated_default = {
         "max"
       ]
     },
-    t169: {
+    t170: {
       type: "object",
       properties: {
         kind: {
@@ -22653,7 +22767,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t171: {
+    t172: {
       type: "object",
       properties: {
         id: {
@@ -22675,16 +22789,16 @@ var native_contract_schema_generated_default = {
         condition: {
           anyOf: [
             {
-              ref: "t140"
-            },
-            {
               ref: "t141"
             },
             {
               ref: "t142"
             },
             {
-              ref: "t169"
+              ref: "t143"
+            },
+            {
+              ref: "t170"
             }
           ]
         }
@@ -22695,7 +22809,7 @@ var native_contract_schema_generated_default = {
         "condition"
       ]
     },
-    t172: {
+    t173: {
       type: "object",
       properties: {
         id: {
@@ -22710,7 +22824,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t170: {
+    t171: {
       type: "object",
       properties: {
         expression: {
@@ -22729,7 +22843,7 @@ var native_contract_schema_generated_default = {
         terms: {
           type: "array",
           items: {
-            ref: "t171"
+            ref: "t172"
           }
         },
         groups: {
@@ -22737,7 +22851,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t172"
+                ref: "t173"
               }
             }
           ]
@@ -22748,7 +22862,7 @@ var native_contract_schema_generated_default = {
         "terms"
       ]
     },
-    t168: {
+    t169: {
       type: "object",
       properties: {
         op: {
@@ -22769,19 +22883,19 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t140"
-              },
-              {
                 ref: "t141"
               },
               {
                 ref: "t142"
               },
               {
-                ref: "t168"
+                ref: "t143"
               },
               {
                 ref: "t169"
+              },
+              {
+                ref: "t170"
               }
             ]
           }
@@ -22789,7 +22903,7 @@ var native_contract_schema_generated_default = {
         formula: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t171"
             }
           ]
         }
@@ -22799,16 +22913,16 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t166: {
+    t167: {
       type: "object",
       properties: {
         zoom: {
-          ref: "t167"
+          ref: "t168"
         },
         fields: {
           anyOf: [
             {
-              ref: "t168"
+              ref: "t169"
             }
           ]
         }
@@ -22817,7 +22931,7 @@ var native_contract_schema_generated_default = {
         "zoom"
       ]
     },
-    t174: {
+    t175: {
       type: "object",
       properties: {
         enabled: {
@@ -22852,7 +22966,7 @@ var native_contract_schema_generated_default = {
         "color"
       ]
     },
-    t175: {
+    t176: {
       type: "object",
       properties: {
         enabled: {
@@ -22891,7 +23005,22 @@ var native_contract_schema_generated_default = {
         "showInner"
       ]
     },
-    t176: {
+    t177: {
+      type: "object",
+      properties: {
+        x: {
+          type: "number"
+        },
+        y: {
+          type: "number"
+        }
+      },
+      required: [
+        "x",
+        "y"
+      ]
+    },
+    t181: {
       type: "object",
       properties: {
         x: {
@@ -22909,23 +23038,8 @@ var native_contract_schema_generated_default = {
     t180: {
       type: "object",
       properties: {
-        x: {
-          type: "number"
-        },
-        y: {
-          type: "number"
-        }
-      },
-      required: [
-        "x",
-        "y"
-      ]
-    },
-    t179: {
-      type: "object",
-      properties: {
         offsetPx: {
-          ref: "t180"
+          ref: "t181"
         },
         anchor: {
           anyOf: [
@@ -22954,20 +23068,20 @@ var native_contract_schema_generated_default = {
         "visibility"
       ]
     },
-    t178: {
+    t179: {
       type: "object",
       properties: {
         behavior: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t180"
             }
           ]
         },
         halo: {
           anyOf: [
             {
-              ref: "t174"
+              ref: "t175"
             }
           ]
         },
@@ -23082,7 +23196,7 @@ var native_contract_schema_generated_default = {
         "fillOpacity"
       ]
     },
-    t182: {
+    t183: {
       type: "object",
       properties: {
         value: {
@@ -23102,7 +23216,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         item: {
-          ref: "t178"
+          ref: "t179"
         }
       },
       required: [
@@ -23110,7 +23224,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t181: {
+    t182: {
       type: "object",
       properties: {
         field: {
@@ -23119,7 +23233,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t182"
+            ref: "t183"
           }
         }
       },
@@ -23128,7 +23242,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t177: {
+    t178: {
       type: "object",
       properties: {
         kind: {
@@ -23145,12 +23259,12 @@ var native_contract_schema_generated_default = {
           ]
         },
         shape: {
-          ref: "t178"
+          ref: "t179"
         },
         mapping: {
           anyOf: [
             {
-              ref: "t181"
+              ref: "t182"
             }
           ]
         }
@@ -23160,7 +23274,7 @@ var native_contract_schema_generated_default = {
         "shape"
       ]
     },
-    t186: {
+    t187: {
       type: "object",
       properties: {
         shape: {
@@ -23247,7 +23361,7 @@ var native_contract_schema_generated_default = {
         "strokeOpacity"
       ]
     },
-    t188: {
+    t189: {
       type: "object",
       properties: {
         mode: {
@@ -23303,7 +23417,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t189: {
+    t190: {
       type: "object",
       properties: {
         x: {
@@ -23318,14 +23432,14 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t187: {
+    t188: {
       type: "object",
       properties: {
         anchor: {
-          ref: "t188"
+          ref: "t189"
         },
         offsetPx: {
-          ref: "t189"
+          ref: "t190"
         }
       },
       required: [
@@ -23333,20 +23447,20 @@ var native_contract_schema_generated_default = {
         "offsetPx"
       ]
     },
-    t185: {
+    t186: {
       type: "object",
       properties: {
         behavior: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t180"
             }
           ]
         },
         halo: {
           anyOf: [
             {
-              ref: "t174"
+              ref: "t175"
             }
           ]
         },
@@ -23384,12 +23498,12 @@ var native_contract_schema_generated_default = {
         plate: {
           anyOf: [
             {
-              ref: "t186"
+              ref: "t187"
             }
           ]
         },
         placement: {
-          ref: "t187"
+          ref: "t188"
         }
       },
       required: [
@@ -23401,14 +23515,14 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t184: {
+    t185: {
       type: "object",
       properties: {
         mode: {
           const: "single"
         },
         item: {
-          ref: "t185"
+          ref: "t186"
         }
       },
       required: [
@@ -23416,7 +23530,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t191: {
+    t192: {
       type: "object",
       properties: {
         value: {
@@ -23436,7 +23550,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         item: {
-          ref: "t185"
+          ref: "t186"
         }
       },
       required: [
@@ -23444,7 +23558,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t190: {
+    t191: {
       type: "object",
       properties: {
         mode: {
@@ -23456,7 +23570,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t191"
+            ref: "t192"
           }
         }
       },
@@ -23466,7 +23580,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t183: {
+    t184: {
       type: "object",
       properties: {
         kind: {
@@ -23475,15 +23589,15 @@ var native_contract_schema_generated_default = {
         icon: {
           anyOf: [
             {
-              ref: "t184"
+              ref: "t185"
             },
             {
-              ref: "t190"
+              ref: "t191"
             }
           ]
         },
         fallback: {
-          ref: "t178"
+          ref: "t179"
         }
       },
       required: [
@@ -23492,7 +23606,7 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t195: {
+    t196: {
       type: "object",
       properties: {
         width: {
@@ -23507,26 +23621,26 @@ var native_contract_schema_generated_default = {
         "height"
       ]
     },
-    t194: {
+    t195: {
       type: "object",
       properties: {
         sizePx: {
-          ref: "t195"
+          ref: "t196"
         },
         placement: {
-          ref: "t187"
+          ref: "t188"
         },
         halo: {
           anyOf: [
             {
-              ref: "t174"
+              ref: "t175"
             }
           ]
         },
         behavior: {
           anyOf: [
             {
-              ref: "t179"
+              ref: "t180"
             }
           ]
         }
@@ -23536,14 +23650,14 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t193: {
+    t194: {
       type: "object",
       properties: {
         mode: {
           const: "fixed"
         },
         presentation: {
-          ref: "t194"
+          ref: "t195"
         },
         url: {
           type: "string"
@@ -23565,7 +23679,7 @@ var native_contract_schema_generated_default = {
         "url"
       ]
     },
-    t196: {
+    t197: {
       type: "object",
       properties: {
         mode: {
@@ -23575,7 +23689,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t194"
+          ref: "t195"
         }
       },
       required: [
@@ -23584,7 +23698,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t197: {
+    t198: {
       type: "object",
       properties: {
         mode: {
@@ -23597,7 +23711,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t194"
+          ref: "t195"
         }
       },
       required: [
@@ -23607,7 +23721,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t199: {
+    t200: {
       type: "object",
       properties: {
         value: {
@@ -23627,7 +23741,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         presentation: {
-          ref: "t194"
+          ref: "t195"
         },
         url: {
           type: "string"
@@ -23649,7 +23763,7 @@ var native_contract_schema_generated_default = {
         "url"
       ]
     },
-    t198: {
+    t199: {
       type: "object",
       properties: {
         mode: {
@@ -23661,7 +23775,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t199"
+            ref: "t200"
           }
         }
       },
@@ -23671,7 +23785,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t192: {
+    t193: {
       type: "object",
       properties: {
         kind: {
@@ -23680,21 +23794,21 @@ var native_contract_schema_generated_default = {
         image: {
           anyOf: [
             {
-              ref: "t193"
-            },
-            {
-              ref: "t196"
+              ref: "t194"
             },
             {
               ref: "t197"
             },
             {
               ref: "t198"
+            },
+            {
+              ref: "t199"
             }
           ]
         },
         fallback: {
-          ref: "t178"
+          ref: "t179"
         }
       },
       required: [
@@ -23703,19 +23817,19 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t200: {
+    t201: {
       type: "object",
       properties: {
         pointSymbol: {
           anyOf: [
             {
-              ref: "t177"
+              ref: "t178"
             },
             {
-              ref: "t183"
+              ref: "t184"
             },
             {
-              ref: "t192"
+              ref: "t193"
             }
           ]
         }
@@ -23724,7 +23838,7 @@ var native_contract_schema_generated_default = {
         "pointSymbol"
       ]
     },
-    t201: {
+    t202: {
       type: "object",
       properties: {
         source: {
@@ -23770,23 +23884,23 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t173: {
+    t174: {
       type: "object",
       properties: {
         halo: {
           anyOf: [
             {
-              ref: "t174"
+              ref: "t175"
             },
             {
-              ref: "t175"
+              ref: "t176"
             }
           ]
         },
         symbolOffsetPx: {
           anyOf: [
             {
-              ref: "t176"
+              ref: "t177"
             }
           ]
         },
@@ -23835,27 +23949,27 @@ var native_contract_schema_generated_default = {
         pointSymbol: {
           anyOf: [
             {
-              ref: "t177"
+              ref: "t178"
             },
             {
-              ref: "t183"
+              ref: "t184"
             },
             {
-              ref: "t192"
+              ref: "t193"
             }
           ]
         },
         midpoint: {
           anyOf: [
             {
-              ref: "t200"
+              ref: "t201"
             }
           ]
         },
         icon: {
           anyOf: [
             {
-              ref: "t201"
+              ref: "t202"
             }
           ]
         },
@@ -23970,7 +24084,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t204: {
+    t205: {
       type: "object",
       properties: {
         italic: {
@@ -24006,7 +24120,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t205: {
+    t206: {
       type: "object",
       properties: {
         lineHeightRatio: {
@@ -24093,7 +24207,7 @@ var native_contract_schema_generated_default = {
         "strokeWidth"
       ]
     },
-    t203: {
+    t204: {
       type: "object",
       properties: {
         family: {
@@ -24130,7 +24244,7 @@ var native_contract_schema_generated_default = {
         modifiers: {
           anyOf: [
             {
-              ref: "t204"
+              ref: "t205"
             }
           ]
         },
@@ -24156,7 +24270,7 @@ var native_contract_schema_generated_default = {
         pill: {
           anyOf: [
             {
-              ref: "t205"
+              ref: "t206"
             }
           ]
         }
@@ -24166,7 +24280,7 @@ var native_contract_schema_generated_default = {
         "size"
       ]
     },
-    t206: {
+    t207: {
       type: "object",
       properties: {},
       required: [],
@@ -24181,7 +24295,7 @@ var native_contract_schema_generated_default = {
         ]
       }
     },
-    t209: {
+    t210: {
       type: "object",
       properties: {
         visible: {
@@ -24190,7 +24304,7 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t203"
+              ref: "t204"
             }
           ]
         },
@@ -24281,7 +24395,7 @@ var native_contract_schema_generated_default = {
         fallbackValueFormats: {
           anyOf: [
             {
-              ref: "t206"
+              ref: "t207"
             }
           ]
         },
@@ -24374,7 +24488,7 @@ var native_contract_schema_generated_default = {
         "visible"
       ]
     },
-    t208: {
+    t209: {
       type: "object",
       properties: {
         value: {
@@ -24394,7 +24508,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         item: {
-          ref: "t209"
+          ref: "t210"
         }
       },
       required: [
@@ -24402,7 +24516,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t207: {
+    t208: {
       type: "object",
       properties: {
         field: {
@@ -24411,7 +24525,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t208"
+            ref: "t209"
           }
         }
       },
@@ -24420,7 +24534,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t202: {
+    t203: {
       type: "object",
       properties: {
         visible: {
@@ -24429,7 +24543,7 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t203"
+              ref: "t204"
             }
           ]
         },
@@ -24520,7 +24634,7 @@ var native_contract_schema_generated_default = {
         fallbackValueFormats: {
           anyOf: [
             {
-              ref: "t206"
+              ref: "t207"
             }
           ]
         },
@@ -24609,7 +24723,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         collision: {
-          ref: "t163"
+          ref: "t164"
         },
         mode: {
           anyOf: [
@@ -24624,7 +24738,7 @@ var native_contract_schema_generated_default = {
         mapping: {
           anyOf: [
             {
-              ref: "t207"
+              ref: "t208"
             }
           ]
         }
@@ -24634,7 +24748,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t211: {
+    t212: {
       type: "object",
       properties: {
         point: {
@@ -24690,18 +24804,18 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t210: {
+    t211: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t211"
+          ref: "t212"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t213: {
+    t214: {
       type: "object",
       properties: {
         admission: {
@@ -24770,14 +24884,14 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t212: {
+    t213: {
       type: "object",
       properties: {
         templateId: {
           type: "string"
         },
         overrides: {
-          ref: "t213"
+          ref: "t214"
         }
       },
       required: [
@@ -24785,7 +24899,7 @@ var native_contract_schema_generated_default = {
         "overrides"
       ]
     },
-    t215: {
+    t216: {
       type: "object",
       properties: {
         mode: {
@@ -24817,7 +24931,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t214: {
+    t215: {
       type: "object",
       properties: {
         id: {
@@ -24827,9 +24941,6 @@ var native_contract_schema_generated_default = {
           type: "array",
           items: {
             anyOf: [
-              {
-                ref: "t137"
-              },
               {
                 ref: "t138"
               },
@@ -24844,6 +24955,9 @@ var native_contract_schema_generated_default = {
               },
               {
                 ref: "t142"
+              },
+              {
+                ref: "t143"
               }
             ]
           }
@@ -24870,28 +24984,28 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t173"
+              ref: "t174"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t202"
+              ref: "t203"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t161"
+              ref: "t162"
             }
           ]
         },
         priority: {
           anyOf: [
             {
-              ref: "t215"
+              ref: "t216"
             }
           ]
         },
@@ -24908,13 +25022,13 @@ var native_contract_schema_generated_default = {
         "when"
       ]
     },
-    t217: {
+    t218: {
       type: "object",
       properties: {},
       required: [],
       additionalProperties: {}
     },
-    t218: {
+    t219: {
       type: "object",
       properties: {
         preserveFallback: {
@@ -24937,55 +25051,55 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t216: {
+    t217: {
       type: "object",
       properties: {
         predicates: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         },
         visibility: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         },
         geometry: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         },
         symbol: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         },
         collision: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         },
         selection: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         },
@@ -25002,14 +25116,14 @@ var native_contract_schema_generated_default = {
         legacyRuntime: {
           anyOf: [
             {
-              ref: "t218"
+              ref: "t219"
             }
           ]
         }
       },
       required: []
     },
-    t165: {
+    t166: {
       type: "object",
       properties: {
         id: {
@@ -25028,7 +25142,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t166"
+              ref: "t167"
             }
           ]
         },
@@ -25068,28 +25182,28 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t173"
+              ref: "t174"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t202"
+              ref: "t203"
             }
           ]
         },
         interaction: {
           anyOf: [
             {
-              ref: "t210"
+              ref: "t211"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t161"
+              ref: "t162"
             }
           ]
         },
@@ -25103,7 +25217,7 @@ var native_contract_schema_generated_default = {
         logic: {
           anyOf: [
             {
-              ref: "t212"
+              ref: "t213"
             }
           ]
         },
@@ -25112,7 +25226,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t214"
+                ref: "t215"
               }
             }
           ]
@@ -25120,7 +25234,7 @@ var native_contract_schema_generated_default = {
         advanced: {
           anyOf: [
             {
-              ref: "t216"
+              ref: "t217"
             }
           ]
         },
@@ -25160,7 +25274,7 @@ var native_contract_schema_generated_default = {
         priority: {
           anyOf: [
             {
-              ref: "t215"
+              ref: "t216"
             }
           ]
         }
@@ -25169,13 +25283,13 @@ var native_contract_schema_generated_default = {
         "id"
       ]
     },
-    t164: {
+    t165: {
       type: "object",
       properties: {
         rules: {
           type: "array",
           items: {
-            ref: "t165"
+            ref: "t166"
           }
         }
       },
@@ -25183,18 +25297,18 @@ var native_contract_schema_generated_default = {
         "rules"
       ]
     },
-    t219: {
+    t220: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t211"
+          ref: "t212"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t220: {
+    t221: {
       type: "object",
       properties: {
         ruleIds: {
@@ -25222,7 +25336,7 @@ var native_contract_schema_generated_default = {
         "specialLogicKeys"
       ]
     },
-    t159: {
+    t160: {
       type: "object",
       properties: {
         renderState: {
@@ -25261,38 +25375,38 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t160"
+              ref: "t161"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t161"
+              ref: "t162"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t162"
+              ref: "t163"
             }
           ]
         },
         zoomPriority: {
-          ref: "t164"
+          ref: "t165"
         },
         interaction: {
           anyOf: [
             {
-              ref: "t219"
+              ref: "t220"
             }
           ]
         },
         legacyDisplay: {
           anyOf: [
             {
-              ref: "t220"
+              ref: "t221"
             }
           ]
         }
@@ -25303,34 +25417,34 @@ var native_contract_schema_generated_default = {
         "zoomPriority"
       ]
     },
-    t158: {
+    t159: {
       type: "object",
       properties: {
         Point: {
           anyOf: [
             {
-              ref: "t159"
+              ref: "t160"
             }
           ]
         },
         LineString: {
           anyOf: [
             {
-              ref: "t159"
+              ref: "t160"
             }
           ]
         },
         Polygon: {
           anyOf: [
             {
-              ref: "t159"
+              ref: "t160"
             }
           ]
         }
       },
       required: []
     },
-    t221: {
+    t222: {
       type: "object",
       properties: {
         enabled: {
@@ -25365,7 +25479,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t224: {
+    t225: {
       type: "object",
       properties: {
         token: {
@@ -25431,7 +25545,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t224"
+                ref: "t225"
               }
             }
           ]
@@ -25441,7 +25555,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t224"
+                ref: "t225"
               }
             }
           ]
@@ -25452,7 +25566,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t225: {
+    t226: {
       type: "object",
       properties: {
         nodeId: {
@@ -25467,7 +25581,7 @@ var native_contract_schema_generated_default = {
         "fieldId"
       ]
     },
-    t226: {
+    t227: {
       type: "object",
       properties: {
         nodeId: {
@@ -25482,7 +25596,7 @@ var native_contract_schema_generated_default = {
         "itemId"
       ]
     },
-    t227: {
+    t228: {
       type: "object",
       properties: {
         colorSource: {
@@ -25580,7 +25694,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t228: {
+    t229: {
       type: "object",
       properties: {
         targetRole: {
@@ -25658,13 +25772,13 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t223: {
+    t224: {
       type: "object",
       properties: {
         when: {
           anyOf: [
             {
-              ref: "t224"
+              ref: "t225"
             }
           ]
         },
@@ -25674,14 +25788,14 @@ var native_contract_schema_generated_default = {
         fieldBinding: {
           anyOf: [
             {
-              ref: "t225"
+              ref: "t226"
             }
           ]
         },
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t225"
+              ref: "t226"
             }
           ]
         },
@@ -25715,14 +25829,14 @@ var native_contract_schema_generated_default = {
         inheritFrom: {
           anyOf: [
             {
-              ref: "t226"
+              ref: "t227"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t154"
+              ref: "t155"
             }
           ]
         },
@@ -25837,14 +25951,14 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t227"
+              ref: "t228"
             }
           ]
         },
         relation: {
           anyOf: [
             {
-              ref: "t228"
+              ref: "t229"
             }
           ]
         }
@@ -25856,7 +25970,7 @@ var native_contract_schema_generated_default = {
         "renderer"
       ]
     },
-    t229: {
+    t230: {
       type: "object",
       properties: {
         enabled: {
@@ -25926,7 +26040,7 @@ var native_contract_schema_generated_default = {
         "includeSystem"
       ]
     },
-    t222: {
+    t223: {
       type: "object",
       properties: {
         mode: {
@@ -25935,13 +26049,13 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t223"
+            ref: "t224"
           }
         },
         remaining: {
           anyOf: [
             {
-              ref: "t229"
+              ref: "t230"
             }
           ]
         }
@@ -25951,7 +26065,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t230: {
+    t231: {
       type: "object",
       properties: {
         mode: {
@@ -25963,7 +26077,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         }
@@ -25973,7 +26087,7 @@ var native_contract_schema_generated_default = {
         "layoutId"
       ]
     },
-    t231: {
+    t232: {
       type: "object",
       properties: {
         mode: {
@@ -25985,7 +26099,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         }
@@ -25995,7 +26109,7 @@ var native_contract_schema_generated_default = {
         "componentKey"
       ]
     },
-    t232: {
+    t233: {
       type: "object",
       properties: {
         classCode: {
@@ -26024,7 +26138,7 @@ var native_contract_schema_generated_default = {
         source: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         }
@@ -26034,7 +26148,7 @@ var native_contract_schema_generated_default = {
         "displayRuleIds"
       ]
     },
-    t131: {
+    t132: {
       type: "object",
       properties: {
         nodeId: {
@@ -26046,7 +26160,7 @@ var native_contract_schema_generated_default = {
         classificationLabels: {
           anyOf: [
             {
-              ref: "t132"
+              ref: "t133"
             }
           ]
         },
@@ -26059,48 +26173,48 @@ var native_contract_schema_generated_default = {
         inheritDown: {
           anyOf: [
             {
-              ref: "t133"
+              ref: "t134"
             }
           ]
         },
         receiveFromParent: {
           anyOf: [
             {
-              ref: "t134"
+              ref: "t135"
             }
           ]
         },
         policies: {
           anyOf: [
             {
-              ref: "t135"
+              ref: "t136"
             }
           ]
         },
         fields: {
           type: "array",
           items: {
-            ref: "t136"
+            ref: "t137"
           }
         },
         fieldSettings: {
           anyOf: [
             {
-              ref: "t150"
+              ref: "t151"
             }
           ]
         },
         displaySettings: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t158"
             }
           ]
         },
         searchSettings: {
           anyOf: [
             {
-              ref: "t152"
+              ref: "t153"
             }
           ]
         },
@@ -26118,32 +26232,32 @@ var native_contract_schema_generated_default = {
           ]
         },
         geometryProfiles: {
-          ref: "t158"
+          ref: "t159"
         },
         containment: {
           anyOf: [
             {
-              ref: "t221"
+              ref: "t222"
             }
           ]
         },
         card: {
           anyOf: [
             {
-              ref: "t222"
-            },
-            {
-              ref: "t230"
+              ref: "t223"
             },
             {
               ref: "t231"
+            },
+            {
+              ref: "t232"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t232"
+              ref: "t233"
             }
           ]
         }
@@ -26156,7 +26270,7 @@ var native_contract_schema_generated_default = {
         "geometryProfiles"
       ]
     },
-    t234: {
+    t235: {
       type: "object",
       properties: {
         classification: {
@@ -26171,7 +26285,7 @@ var native_contract_schema_generated_default = {
         "referenceField"
       ]
     },
-    t233: {
+    t234: {
       type: "object",
       properties: {
         id: {
@@ -26181,10 +26295,10 @@ var native_contract_schema_generated_default = {
           ref: "t1"
         },
         host: {
-          ref: "t234"
+          ref: "t235"
         },
         member: {
-          ref: "t234"
+          ref: "t235"
         },
         memberSelectorField: {
           anyOf: [
@@ -26219,7 +26333,7 @@ var native_contract_schema_generated_default = {
         "profile"
       ]
     },
-    t237: {
+    t238: {
       type: "object",
       properties: {
         slot: {
@@ -26234,7 +26348,7 @@ var native_contract_schema_generated_default = {
         "target"
       ]
     },
-    t236: {
+    t237: {
       type: "object",
       properties: {
         enabled: {
@@ -26269,7 +26383,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t237"
+                ref: "t238"
               }
             }
           ]
@@ -26279,7 +26393,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t238: {
+    t239: {
       type: "object",
       properties: {
         required: {
@@ -26290,7 +26404,44 @@ var native_contract_schema_generated_default = {
         "required"
       ]
     },
-    t240: {
+    t241: {
+      type: "object",
+      properties: {
+        kind: {
+          const: "control"
+        },
+        controlId: {
+          type: "string"
+        }
+      },
+      required: [
+        "kind",
+        "controlId"
+      ]
+    },
+    t242: {
+      type: "object",
+      properties: {
+        kind: {
+          const: "section"
+        },
+        sectionId: {
+          type: "string"
+        },
+        children: {
+          type: "array",
+          items: {
+            ref: "t241"
+          }
+        }
+      },
+      required: [
+        "kind",
+        "sectionId",
+        "children"
+      ]
+    },
+    t243: {
       type: "object",
       properties: {
         id: {
@@ -26315,7 +26466,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t243: {
+    t246: {
       type: "object",
       properties: {
         placeholder: {
@@ -26338,14 +26489,14 @@ var native_contract_schema_generated_default = {
         reference: {
           anyOf: [
             {
-              ref: "t149"
+              ref: "t150"
             }
           ]
         },
         table: {
           anyOf: [
             {
-              ref: "t143"
+              ref: "t144"
             }
           ]
         },
@@ -26440,9 +26591,6 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t137"
-                  },
-                  {
                     ref: "t138"
                   },
                   {
@@ -26456,6 +26604,9 @@ var native_contract_schema_generated_default = {
                   },
                   {
                     ref: "t142"
+                  },
+                  {
+                    ref: "t143"
                   }
                 ]
               }
@@ -26496,7 +26647,7 @@ var native_contract_schema_generated_default = {
         "input"
       ]
     },
-    t242: {
+    t245: {
       type: "object",
       properties: {
         nodeId: {
@@ -26506,7 +26657,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         snapshot: {
-          ref: "t243"
+          ref: "t246"
         },
         overrides: {
           type: "array",
@@ -26522,7 +26673,7 @@ var native_contract_schema_generated_default = {
         "overrides"
       ]
     },
-    t244: {
+    t247: {
       type: "object",
       properties: {
         registryKey: {
@@ -26533,7 +26684,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t246: {
+    t249: {
       type: "object",
       properties: {
         matcher: {
@@ -26572,7 +26723,7 @@ var native_contract_schema_generated_default = {
         "maxResults"
       ]
     },
-    t245: {
+    t248: {
       type: "object",
       properties: {
         target: {
@@ -26706,7 +26857,7 @@ var native_contract_schema_generated_default = {
         coarse: {
           anyOf: [
             {
-              ref: "t246"
+              ref: "t249"
             }
           ]
         }
@@ -26716,7 +26867,7 @@ var native_contract_schema_generated_default = {
         "cacheScope"
       ]
     },
-    t248: {
+    t251: {
       type: "object",
       properties: {
         optionTable: {
@@ -26729,14 +26880,14 @@ var native_contract_schema_generated_default = {
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t225"
+              ref: "t226"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t154"
+              ref: "t155"
             }
           ]
         },
@@ -26832,7 +26983,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t245"
+              ref: "t248"
             }
           ]
         },
@@ -26874,7 +27025,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t242"
+              ref: "t245"
             }
           ]
         },
@@ -26883,7 +27034,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t224"
+                ref: "t225"
               }
             }
           ]
@@ -26911,13 +27062,13 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t247: {
+    t250: {
       type: "object",
       properties: {
         itemFields: {
           type: "array",
           items: {
-            ref: "t248"
+            ref: "t251"
           }
         },
         storage: {
@@ -26959,7 +27110,7 @@ var native_contract_schema_generated_default = {
         "itemFields"
       ]
     },
-    t249: {
+    t252: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -26974,7 +27125,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t241: {
+    t244: {
       type: "object",
       properties: {
         sectionId: {
@@ -26987,7 +27138,7 @@ var native_contract_schema_generated_default = {
         table: {
           anyOf: [
             {
-              ref: "t143"
+              ref: "t144"
             }
           ]
         },
@@ -27001,14 +27152,14 @@ var native_contract_schema_generated_default = {
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t225"
+              ref: "t226"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t154"
+              ref: "t155"
             }
           ]
         },
@@ -27116,7 +27267,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t242"
+              ref: "t245"
             }
           ]
         },
@@ -27160,7 +27311,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t224"
+                ref: "t225"
               }
             }
           ]
@@ -27185,7 +27336,7 @@ var native_contract_schema_generated_default = {
         optionSource: {
           anyOf: [
             {
-              ref: "t244"
+              ref: "t247"
             }
           ]
         },
@@ -27207,7 +27358,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t245"
+              ref: "t248"
             }
           ]
         },
@@ -27238,7 +27389,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t224"
+              ref: "t225"
             }
           ]
         },
@@ -27255,14 +27406,14 @@ var native_contract_schema_generated_default = {
         group: {
           anyOf: [
             {
-              ref: "t247"
+              ref: "t250"
             }
           ]
         },
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t249"
+              ref: "t252"
             }
           ]
         },
@@ -27276,7 +27427,7 @@ var native_contract_schema_generated_default = {
         legacyBlock: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         }
@@ -27288,7 +27439,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t250: {
+    t253: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -27303,7 +27454,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t252: {
+    t255: {
       type: "object",
       properties: {
         id: {
@@ -27328,7 +27479,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t224"
+              ref: "t225"
             }
           ]
         }
@@ -27339,7 +27490,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t253: {
+    t256: {
       type: "object",
       properties: {
         outputId: {
@@ -27365,7 +27516,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t251: {
+    t254: {
       type: "object",
       properties: {
         enabledFromThisPage: {
@@ -27417,7 +27568,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t252"
+                ref: "t255"
               }
             }
           ]
@@ -27467,7 +27618,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t253"
+                ref: "t256"
               }
             }
           ]
@@ -27475,15 +27626,32 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t239: {
+    t240: {
       type: "object",
       properties: {
+        layout: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                anyOf: [
+                  {
+                    ref: "t241"
+                  },
+                  {
+                    ref: "t242"
+                  }
+                ]
+              }
+            }
+          ]
+        },
         sections: {
           anyOf: [
             {
               type: "array",
               items: {
-                ref: "t240"
+                ref: "t243"
               }
             }
           ]
@@ -27525,7 +27693,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t241"
+                ref: "t244"
               }
             }
           ]
@@ -27570,7 +27738,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t224"
+              ref: "t225"
             }
           ]
         },
@@ -27584,21 +27752,21 @@ var native_contract_schema_generated_default = {
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t250"
+              ref: "t253"
             }
           ]
         },
         drawing: {
           anyOf: [
             {
-              ref: "t251"
+              ref: "t254"
             }
           ]
         },
         legacyPage: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         }
@@ -27609,7 +27777,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t256: {
+    t259: {
       type: "object",
       properties: {
         id: {
@@ -27645,13 +27813,13 @@ var native_contract_schema_generated_default = {
         "path"
       ]
     },
-    t255: {
+    t258: {
       type: "object",
       properties: {
         selectors: {
           type: "array",
           items: {
-            ref: "t256"
+            ref: "t259"
           }
         }
       },
@@ -27659,7 +27827,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t257: {
+    t260: {
       type: "object",
       properties: {
         id: {
@@ -27674,7 +27842,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t224"
+              ref: "t225"
             }
           ]
         }
@@ -27685,7 +27853,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t258: {
+    t261: {
       type: "object",
       properties: {
         selected: {
@@ -27726,7 +27894,7 @@ var native_contract_schema_generated_default = {
         "selected"
       ]
     },
-    t254: {
+    t257: {
       type: "object",
       properties: {
         id: {
@@ -27742,25 +27910,25 @@ var native_contract_schema_generated_default = {
         classificationGroup: {
           anyOf: [
             {
-              ref: "t255"
+              ref: "t258"
             }
           ]
         },
         assignments: {
           type: "array",
           items: {
-            ref: "t257"
+            ref: "t260"
           }
         },
         when: {
           anyOf: [
             {
-              ref: "t224"
+              ref: "t225"
             }
           ]
         },
         geometry: {
-          ref: "t258"
+          ref: "t261"
         }
       },
       required: [
@@ -27769,13 +27937,13 @@ var native_contract_schema_generated_default = {
         "geometry"
       ]
     },
-    t261: {
+    t264: {
       type: "object",
       properties: {
         selectors: {
           type: "array",
           items: {
-            ref: "t256"
+            ref: "t259"
           }
         }
       },
@@ -27783,7 +27951,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t260: {
+    t263: {
       type: "object",
       properties: {
         role: {
@@ -27815,7 +27983,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         classificationGroup: {
-          ref: "t261"
+          ref: "t264"
         }
       },
       required: [
@@ -27823,7 +27991,7 @@ var native_contract_schema_generated_default = {
         "classificationGroup"
       ]
     },
-    t263: {
+    t266: {
       type: "object",
       properties: {
         workflowId: {
@@ -27838,14 +28006,14 @@ var native_contract_schema_generated_default = {
         "bindingId"
       ]
     },
-    t262: {
+    t265: {
       type: "object",
       properties: {
         bindingId: {
           type: "string"
         },
         source: {
-          ref: "t263"
+          ref: "t266"
         },
         classificationGroup: {
           type: "undefined"
@@ -27859,13 +28027,13 @@ var native_contract_schema_generated_default = {
         "source"
       ]
     },
-    t265: {
+    t268: {
       type: "object",
       properties: {
         selectors: {
           type: "array",
           items: {
-            ref: "t256"
+            ref: "t259"
           }
         }
       },
@@ -27873,7 +28041,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t266: {
+    t269: {
       type: "object",
       properties: {
         scope: {
@@ -27959,7 +28127,7 @@ var native_contract_schema_generated_default = {
         "cacheScope"
       ]
     },
-    t264: {
+    t267: {
       type: "object",
       properties: {
         bindingId: {
@@ -27969,10 +28137,10 @@ var native_contract_schema_generated_default = {
           type: "undefined"
         },
         classificationGroup: {
-          ref: "t265"
+          ref: "t268"
         },
         search: {
-          ref: "t266"
+          ref: "t269"
         }
       },
       required: [
@@ -27981,7 +28149,7 @@ var native_contract_schema_generated_default = {
         "search"
       ]
     },
-    t259: {
+    t262: {
       type: "object",
       properties: {
         componentKey: {
@@ -28032,7 +28200,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t260"
+                ref: "t263"
               }
             }
           ]
@@ -28044,10 +28212,10 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t262"
+                    ref: "t265"
                   },
                   {
-                    ref: "t264"
+                    ref: "t267"
                   }
                 ]
               }
@@ -28060,7 +28228,7 @@ var native_contract_schema_generated_default = {
         "reason"
       ]
     },
-    t267: {
+    t270: {
       type: "object",
       properties: {
         runtimeMode: {
@@ -28080,21 +28248,21 @@ var native_contract_schema_generated_default = {
         output: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         },
         source: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t218"
             }
           ]
         }
       },
       required: []
     },
-    t235: {
+    t236: {
       type: "object",
       properties: {
         id: {
@@ -28126,14 +28294,14 @@ var native_contract_schema_generated_default = {
         editor: {
           anyOf: [
             {
-              ref: "t236"
+              ref: "t237"
             }
           ]
         },
         actor: {
           anyOf: [
             {
-              ref: "t238"
+              ref: "t239"
             }
           ]
         },
@@ -28147,13 +28315,13 @@ var native_contract_schema_generated_default = {
         steps: {
           type: "array",
           items: {
-            ref: "t239"
+            ref: "t240"
           }
         },
         outputs: {
           type: "array",
           items: {
-            ref: "t254"
+            ref: "t257"
           }
         },
         assignments: {
@@ -28161,7 +28329,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t257"
+                ref: "t260"
               }
             }
           ]
@@ -28169,14 +28337,14 @@ var native_contract_schema_generated_default = {
         external: {
           anyOf: [
             {
-              ref: "t259"
+              ref: "t262"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t267"
+              ref: "t270"
             }
           ]
         }
@@ -28189,7 +28357,7 @@ var native_contract_schema_generated_default = {
         "outputs"
       ]
     },
-    t269: {
+    t272: {
       type: "object",
       properties: {
         kind: {
@@ -28246,7 +28414,7 @@ var native_contract_schema_generated_default = {
         "status"
       ]
     },
-    t268: {
+    t271: {
       type: "object",
       properties: {
         schemaVersion: {
@@ -28262,7 +28430,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t269"
+            ref: "t272"
           }
         },
         generatedAt: {
@@ -28339,6 +28507,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: 21
+            },
+            {
+              const: 22
             }
           ]
         },
@@ -28391,14 +28562,14 @@ var native_contract_schema_generated_default = {
         resources: {
           anyOf: [
             {
-              ref: "t129"
+              ref: "t130"
             }
           ]
         },
         nodes: {
           type: "array",
           items: {
-            ref: "t131"
+            ref: "t132"
           }
         },
         contextBindings: {
@@ -28406,7 +28577,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t233"
+                ref: "t234"
               }
             }
           ]
@@ -28414,13 +28585,13 @@ var native_contract_schema_generated_default = {
         workflows: {
           type: "array",
           items: {
-            ref: "t235"
+            ref: "t236"
           }
         },
         parity: {
           anyOf: [
             {
-              ref: "t268"
+              ref: "t271"
             }
           ]
         }
@@ -28439,6 +28610,51 @@ var native_contract_schema_generated_default = {
     }
   }
 };
+
+// src/core/audit/auditSettings.ts
+var AUDIT_DEFAULT_PRICES = { featuresCreated: "0", optionalAdded: "0", requiredEdited: "0", optionalEdited: "0" };
+var AUDIT_ENDPOINT_KEYS = ["releaseHistory", "auditQuery", "auditCoverage", "auditDetail"];
+
+// src/core/audit/contributionContract.mjs
+function priceMicros(value) {
+  const text3 = value == null || value === "" ? "0" : String(value);
+  if (!/^\d{1,12}(?:\.\d{1,6})?$/.test(text3)) throw Error("\u4EF7\u683C\u5FC5\u987B\u4E3A\u975E\u8D1F\u6570\uFF0C\u6700\u591A 12 \u4F4D\u6574\u6570\u548C 6 \u4F4D\u5C0F\u6570\u3002");
+  const [whole, fraction = ""] = text3.split(".");
+  return BigInt(whole) * 1000000n + BigInt(fraction.padEnd(6, "0"));
+}
+
+// src/configStudio/c22Validation.ts
+function c22ConfigurationProblems(config) {
+  const result = [], fail = (path2, message) => result.push({ path: path2, message });
+  const c22 = config.contractRevision >= 22;
+  for (const w of config.workflows) for (const s of w.steps) {
+    const path2 = `workflows/${w.id}/steps/${s.id}`;
+    if (c22 && s.kind === "form") for (const message of workflowLayoutProblems(s)) fail(path2 + "/layout", message);
+    else if (s.layout !== void 0) fail(path2 + "/layout", "\u9875\u5185\u5E03\u5C40\u6700\u4F4E\u8981\u6C42 c22 \u4FE1\u606F\u9875\u3002");
+  }
+  const app = config.application;
+  if (!app) return result;
+  const prices = app.preferences.auditCalculationDefaults;
+  if (!c22) {
+    if (prices || AUDIT_ENDPOINT_KEYS.some((key2) => key2 in app.review)) fail("application", "\u5BA1\u8BA1\u9ED8\u8BA4\u503C\u548C\u72EC\u7ACB\u8BFB\u53D6\u63A5\u53E3\u6700\u4F4E\u8981\u6C42 c22\u3002");
+    return result;
+  }
+  for (const key2 of Object.keys(AUDIT_DEFAULT_PRICES)) {
+    const value = prices?.[key2];
+    try {
+      if (typeof value !== "string" || !value.length) throw Error();
+      priceMicros(value);
+    } catch {
+      fail("application/preferences/auditCalculationDefaults/" + key2, "\u4EF7\u683C\u987B\u4E3A\u975E\u8D1F\u5341\u8FDB\u5236\u6587\u672C\uFF0C\u6700\u591A 12 \u4F4D\u6574\u6570\u4E0E 6 \u4F4D\u5C0F\u6570\u3002");
+    }
+  }
+  if (prices && Object.keys(prices).some((key2) => !(key2 in AUDIT_DEFAULT_PRICES))) fail("application/preferences/auditCalculationDefaults", "\u5B58\u5728\u672A\u77E5\u7684\u53C2\u4E0E\u503C\u3002");
+  for (const key2 of AUDIT_ENDPOINT_KEYS) {
+    const value = app.review[key2];
+    if (typeof value !== "string" || app.review.enabled && !value || value && (!value.startsWith("/") || value.startsWith("//") || value.includes("..") || /[?#\\\s]/.test(value))) fail("application/review/" + key2, "\u63A5\u53E3\u987B\u4E3A\u540C\u6E90\u7EDD\u5BF9\u8DEF\u5F84\uFF0C\u5BA1\u6838\u542F\u7528\u65F6\u4E0D\u53EF\u4E3A\u7A7A\u3002");
+  }
+  return result;
+}
 
 // src/configStudio/c21Validation.ts
 function c21ConfigurationProblems(config) {
@@ -28649,7 +28865,7 @@ function validateNativeStructure(value) {
   const issues = inspect(value, native_contract_schema_generated_default.root, "config", 0);
   if (issues.length) return issues;
   const config = value;
-  issues.push(...c21ConfigurationProblems(config));
+  issues.push(...c21ConfigurationProblems(config), ...c22ConfigurationProblems(config));
   const c15 = config.contractRevision >= 15;
   if (config.contractRevision >= 20) visitC20RetiredSettings(config, (item) => {
     issues.push({ path: "config/" + item.path, message: "\u6B64\u914D\u7F6E\u952E\u5DF2\u5728 c20 \u9000\u5F79\uFF0C\u8BF7\u901A\u8FC7\u65E7\u5951\u7EA6\u8FC1\u79FB\u5BFC\u5165\u3002" });
@@ -29534,7 +29750,7 @@ function validateCard(node, config, issues) {
   }
 }
 function controlsFor(workflow) {
-  return workflow.steps.flatMap((step) => step.controls ?? []);
+  return workflow.steps.flatMap(workflowControlsInOrder);
 }
 function validateSearch(control, config, path2, issues) {
   const search = normalizeSearchProfile(control.search);
@@ -29633,6 +29849,14 @@ function validateWorkflowValueCondition(condition, tokens, path2, issues) {
   if (condition.operator === "in" && (!condition.values?.length || condition.values.some((value) => !["string", "number", "boolean"].includes(typeof value)))) issue(issues, "error", "workflow-value-condition-invalid", path2, "\u5C5E\u4E8E\u6761\u4EF6\u5FC5\u987B\u5305\u542B\u6709\u6548\u6BD4\u8F83\u503C\u3002");
 }
 function validateWorkflow(workflow, config, issues, designNotes = []) {
+  if (config.contractRevision >= 22) {
+    let invalid = false;
+    for (const step of workflow.steps) if (step.kind === "form") for (const message of workflowLayoutProblems(step)) {
+      invalid = true;
+      issue(issues, "error", "workflow-layout-invalid", `workflows/${workflow.id}/steps/${step.id}/layout`, message);
+    }
+    if (invalid) return;
+  }
   if (config.contractRevision >= 16 && workflow.mode === "external") {
     const declared = { ...config, workflows: config.workflows.some((row2) => row2.id === workflow.id) ? config.workflows.map((row2) => row2.id === workflow.id ? workflow : row2) : [...config.workflows, workflow] };
     for (const error of externalBindingIssues(declared).filter((error2) => error2.path.startsWith("workflows/" + workflow.id + "/"))) issue(issues, "error", "external-binding-invalid", error.path, error.message);
@@ -29669,7 +29893,7 @@ function validateWorkflow(workflow, config, issues, designNotes = []) {
   };
   checkIds(workflow.steps, "\u9875\u9762");
   checkIds(workflow.outputs, "\u8F93\u51FA");
-  checkIds(controlsFor(workflow), "\u63A7\u4EF6");
+  checkIds(workflow.steps.flatMap((step) => step.controls ?? []), "\u63A7\u4EF6");
   if (workflow.mode === "external") {
     if (config.contractRevision >= 16) {
       if (workflow.steps.length || workflow.outputs.length) issue(issues, "error", "external-workflow-invalid", base, "\u4E13\u7528\u6210\u54C1\u4E0D\u80FD\u540C\u65F6\u5305\u542B\u666E\u901A\u7EC4\u88C5\u6B65\u9AA4\u3002");
@@ -30343,7 +30567,7 @@ async function readRawNativePackage(file, options = {}) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-c21-production-1";
+var rulesVersion = "cairnmap-c22-production-1";
 var validateConfiguration = validateConfigPackage;
 function describeAuditFields(config, record) {
   if (!config) return {};

@@ -1,3 +1,4 @@
+import {workflowControlsInOrder} from './workflowLayout';
 import type { WorkflowDefinition,WorkflowControl,WorkflowGroupField } from './types';
 import { storedOptionValue } from './fieldReuse';
 /** Form validation, conditions and final drawing snapshots share value types. */
@@ -12,7 +13,7 @@ function leafValue(field:WorkflowControl|WorkflowGroupField,value:unknown):unkno
 }
 export function coerceWorkflowValues(workflow:WorkflowDefinition,raw:Record<string,unknown>):Record<string,unknown> {
   const slots={...raw};
-  for(const control of workflow.steps.flatMap(step=>step.controls??[])){
+  for(const control of workflow.steps.flatMap(workflowControlsInOrder)){
     if(!control.slot||slots[control.slot]==null)continue;
     const value=slots[control.slot];
     if(control.kind==='select'){slots[control.slot]=storedOptionValue(value,control.optionValueType);continue;}
