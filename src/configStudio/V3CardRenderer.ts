@@ -1,3 +1,4 @@
+import {capsuleColor} from './cssColor';
 import { normalizeRuleSourceWorldId } from '../core/project/worldIdentity';
 import {workflowConditionMatches} from './workflowExpression';
 import { isNativeConfigRevision } from './contract';
@@ -125,15 +126,15 @@ function rowFor(item: CardItem, record: FeatureRecord, config: ConfigPackageV3, 
     return { label, value: makeFeatureLink(values[0], undefined, target) };
   }
   if (item.renderer === 'colorCapsule') {
-    const color = colorText || item.options?.fallbackColor || '#64748b';
+    const color = capsuleColor(colorText,item.options?.fallbackColor);
     if (!rawText && !colorText && item.hideWhenEmpty !== false) return undefined;
-    return { label, value: { kind: 'colorChip', color, text: rawText || color } };
+    return { label, value: { kind: 'colorChip', color, text: rawText || colorText || item.options?.fallbackColor || '#64748b' } };
   }
   if (item.renderer === 'nameColorCapsule') {
-    const color = colorText || item.options?.fallbackColor || '#64748b';
+    const color = capsuleColor(colorText,item.options?.fallbackColor);
     const name = text(valueAt(record, item.options?.nameSource || item.source)).trim() || rawText;
     if (!name && item.hideWhenEmpty !== false) return undefined;
-    return { label, value: { kind: 'lineChips', items: name ? [{ name, color, text: rawText || color }] : [] } };
+    return { label, value: { kind: 'lineChips', items: name ? [{ name, color, text: rawText || colorText || item.options?.fallbackColor || '#64748b' }] : [] } };
   }
   if (item.renderer === 'tag') {
     if (!rawText && item.hideWhenEmpty !== false) return undefined;

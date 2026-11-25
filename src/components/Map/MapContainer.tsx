@@ -1,3 +1,4 @@
+import {focusDesktopWindow} from '../DraggablePanel/desktopWindowStack';
 import {AnnouncementHost} from './AnnouncementHost';
 import {categorySearchIndex,categorySearchSubtitle} from '@/components/Search/configSearch';
 import {classificationDisplayName} from '@/configStudio/classificationPresentation';
@@ -12,8 +13,7 @@ import { WorkspaceSidebarContext } from '../DraggablePanel/WorkspaceSidebarConte
 import { useAppearancePreferences } from '@/store/appearancePreferences';
 import {ReviewWorkspaceBoundary} from '../Review/ReviewWorkspaceBoundary';
 import MobileBottomSheet from '@/components/Mobile/MobileBottomSheet';
-import ContributionAuditPanel from '@/components/Review/ContributionAuditPanel';
-import {canReadReleaseAudit} from '@/components/Review/releaseAuditAccess';
+import AuditWindow from '@/components/Review/AuditWindow';
 import {Calculator} from 'lucide-react';
 import MobileQuickDock from '@/components/Mobile/MobileQuickDock';
 import MobileFeatureJsonPanel from '@/components/Mobile/MobileFeatureJsonPanel';
@@ -37,7 +37,6 @@ import { AttributeQueryPanel } from '../AttributeQuery/AttributeQueryPanel';
 import { PlayerDetailCard } from '../PlayerDetail/PlayerDetailCard';
 import { Toolbar, LayerControl, AboutCard } from '../Toolbar/Toolbar';
 import { PlayersList } from '../Players/PlayersList';
-import { LoadingOverlay } from '../Loading/LoadingOverlay';
 import { DraggablePanel } from '../DraggablePanel/DraggablePanel';
 import { SettingsPanel } from '../Settings/SettingsPanel';
 import { openriamapGithubReviewAuth } from '@/components/Review/openriamapReviewAuth';
@@ -366,10 +365,9 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   const [showContributionAudit,setShowContributionAudit]=useState(false);
   const [mobileAuditCollapsed,setMobileAuditCollapsed]=useState(false);
   useEffect(()=>{if(!showPublicReleaseRecords)setReleaseRecordsAuthorized(false);},[showPublicReleaseRecords]);
-  const openContributionAudit=useCallback(async()=>{
-    const session=await openriamapGithubReviewAuth.getSession();if(!canReadReleaseAudit(session)){setReleaseRecordsAuthorized(false);return;}
+  const openContributionAudit=useCallback(()=>{
     setShowContributionAudit(true);setMobileAuditCollapsed(false);
-    window.setTimeout(()=>document.querySelector('[data-panel-id="contribution-audit"]')?.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0})),0);
+    focusDesktopWindow('contribution-audit');
   },[]);
   const [rulePanelCollapsed, setRulePanelCollapsed] = useState(false);
   const [modePanelCollapsed, setModePanelCollapsed] = useState(false);
@@ -2703,10 +2701,7 @@ case 'players':
         {renderMobileSheetContent()}
       </MobileBottomSheet>
 
-      {showContributionAudit?<>
-        <div className="hidden sm:block"><DraggablePanel id="contribution-audit" defaultPosition={{x:620,y:140}} constrainExpandedToViewport><ContributionAuditPanel onClose={()=>setShowContributionAudit(false)}/></DraggablePanel></div>
-        <MobileBottomSheet open title="审计" collapsed={mobileAuditCollapsed} onToggleCollapsed={()=>setMobileAuditCollapsed(value=>!value)} onClose={()=>setShowContributionAudit(false)}><ContributionAuditPanel onClose={()=>setShowContributionAudit(false)}/></MobileBottomSheet>
-      </>:null}
+      {showContributionAudit?<AuditWindow collapsed={mobileAuditCollapsed} onToggle={()=>setMobileAuditCollapsed(value=>!value)} onClose={()=>setShowContributionAudit(false)} />:null}
 
       {/* 路径高亮图层 */}
 {mapReady && leafletMapRef.current && projectionRef.current && showRouteOverlay && routeHighlight && (
@@ -2741,7 +2736,7 @@ case 'players':
       )}
 
       {/* 加载进度提示 */}
-      <LoadingOverlay />
+
     </div>
     </WorkspaceSidebarContext.Provider>
   );

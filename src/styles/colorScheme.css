@@ -88,3 +88,13 @@ html[data-color-scheme] { background: var(--cm-page-bg); }
 @media (max-width: 639px) {
   :root[data-color-scheme="dark"] .cm-mobile-sheet { background-color: var(--cm-panel-bg); }
 }
+
+/* Match the shared toolbar tones; preserve real inline feature colours. */
+:root[data-color-scheme="dark"] .bg-teal-100 { background-color:#173b37; }
+:root[data-color-scheme="dark"] .text-teal-700 { color:#99e4d8; }
+:root[data-color-scheme="dark"] .bg-pink-100 { background-color:#442a38; }
+:root[data-color-scheme="dark"] .text-pink-700 { color:#f6b3d4; }
+[data-order-insert="into-start"],[data-order-insert="into-end"] { outline:2px solid #8b5cf6; outline-offset:-2px; }
+[data-order-insert="into-start"] > summary::after { content:'移入顶部'; color:var(--cm-panel-ink); font-size:.75rem; }
+[data-order-insert="into-end"] > summary::after { content:'移入分栏'; color:var(--cm-panel-ink); font-size:.75rem; }
+.cm-layout-section { border:2px solid var(--cm-panel-line,#cbd5e1); }

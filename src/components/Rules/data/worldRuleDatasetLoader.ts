@@ -67,12 +67,13 @@ async function readWorldRuleDataset(
   signal.throwIfAborted();
   onProgress?.({ stage: 'world-version', status: 'loading' });
   const release = await resolveFormalWorldRelease({ source, worldId, fetchJson });
+  onProgress?.({ stage: 'world-version', status: 'success' });
   const scope = cacheScope(source, release.releaseId, worldId,release);
   onProgress?.({ stage: 'world-cache-check', status: 'loading' });
   if (isRuleWorldCacheValid(scope)) {
     onProgress?.({ stage: 'world-cache-check', status: 'success' });
     const cached = readRuleWorldCache(scope);
-    if (cached && cached.features.length===release.worldManifest.featureCount) {await assertFormalReleaseCurrent({source,release,fetchJson});signal.throwIfAborted();const updated={...cached,formalVersion:release.formalVersion??undefined,...formalReleaseMetadata(release)};writeRuleWorldCache(scope,updated);return applicationWorldDataset(updated,source,worldId);}
+    if (cached && cached.features.length===release.worldManifest.featureCount) {await assertFormalReleaseCurrent({source,release,fetchJson});signal.throwIfAborted();const updated={...cached,formalVersion:release.formalVersion??undefined,...formalReleaseMetadata(release)};writeRuleWorldCache(scope,updated);for(const stage of ['world-index-scan','world-chunk-load','world-cache-write'])onProgress?.({stage,status:'success',message:'已复用核验通过的缓存'});return applicationWorldDataset(updated,source,worldId);}
   } else {
     onProgress?.({ stage: 'world-cache-check', status: 'success', message: 'Cache requires refresh' });
   }

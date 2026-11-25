@@ -50,6 +50,9 @@ export function addC14NodeDefaults(nodes:CategoryNode[],changes:MigrationChange[
   for(const node of nodes)for(const [geometry,profile] of Object.entries(node.geometryProfiles))if(profile)addC14ProfileDefaults(profile,geometry as GeometryKind,changes,`nodes/${node.nodeId}/geometryProfiles/${geometry}`);
 }
 
+import {migrateWorkflowLayout} from './workflowLayout';
+import {AUDIT_DEFAULT_PRICES,AUDIT_ENDPOINT_KEYS} from '../core/audit/auditSettings';
+
 export const MIGRATION_STEPS:readonly MigrationStep[]=[{
   from:13,to:14,kinds:['package','node','classTree','workflow'],
   apply(document,changes){
@@ -105,6 +108,11 @@ export const MIGRATION_STEPS:readonly MigrationStep[]=[{
 },{from:20,to:21,kinds:['package','node','classTree','workflow'],apply(document,changes,context){
  if('schemaVersion' in document&&document.schemaVersion==='cairnmap.config-package.v3')migrateC21Package(document as ConfigPackageV3,changes);
  else {migrateC21LookupTables(document.lookupTables??[],context?.application);if(document.workflow)document.workflow=migrateC21Workflow(document.workflow,context);for(const n of document.nodes??[])if(!n.fields.some(f=>f.key==='tags.dataset'))n.fields.push({fieldId:'system-tags-dataset',key:'tags.dataset',scope:'tags',type:'string',cardinality:'single',input:'select',dynamicSource:'dataset-directory',labels:{zh:'所属数据集',en:'Dataset'},description:{zh:'',en:''}});}
+}},{from:21,to:22,kinds:['package','node','classTree','workflow'],apply(document,changes){
+ if(document.workflow)document.workflow=migrateWorkflowLayout(document.workflow);
+ if(document.workflows)document.workflows=document.workflows.map(migrateWorkflowLayout);
+ if('application' in document&&document.application){const app=(document as ConfigPackageV3).application!;app.preferences.auditCalculationDefaults={...AUDIT_DEFAULT_PRICES};for(const key of AUDIT_ENDPOINT_KEYS)app.review[key]=app.review.control;}
+ changes.push({id:'c21-c22:layout',kind:'converted',component:'workflow',path:'contractRevision',message:'c21 → c22；分栏显式排序，审计默认值为 0，读取接口沿用现役 control。',before:21,after:22});
 }}];
 
 /** Injected registries are for window/chain tests; production always uses known capabilities. */
@@ -132,7 +140,7 @@ export function migrateContract<T extends Document>(input:T,target:number,kind:M
   };
   check(document);
   for(const step of chain){step.apply(document,changes,context);document.contractRevision=step.to;check(document);}
-  return {document,report:{schemaVersion:'cairnmap.contract-migration.v1',source:input.contractRevision,target,steps:chain.map(step=>`c${step.from} → c${step.to}`),migratorVersion:target>=21?'c21-1':target>=20?'c20-1':target>=19?'c19-1':'c18-1',changes,dismissed:[]}};
+  return {document,report:{schemaVersion:'cairnmap.contract-migration.v1',source:input.contractRevision,target,steps:chain.map(step=>`c${step.from} → c${step.to}`),migratorVersion:target>=22?'c22-1':target>=21?'c21-1':target>=20?'c20-1':target>=19?'c19-1':'c18-1',changes,dismissed:[]}};
 }
 export function migratePackageToContract(input:ConfigPackageV3,target:number=CONTRACT_CAPABILITIES.latest){
   if(!isNativeConfigRevision(input.contractRevision))throw Error('未知契约，不能升级。');

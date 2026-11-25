@@ -1,102 +1,29 @@
-/**
- * 加载进度提示组件
- * 显示数据加载进度
- */
+import {Loader2} from 'lucide-react';
+import {useRef} from 'react';
+import {useLoadingStore} from '@/store/loadingStore';
+import {useRuleDataStore} from '@/store/ruleDataStore';
+import {getApplicationSettings} from '@/core/project/applicationRuntime';
 
-import { Check, X, Loader2 } from 'lucide-react';
-import { useLoadingStore } from '@/store/loadingStore';
-import type { LoadingStage } from '@/store/loadingStore';
-
-export function LoadingOverlay() {
-  const { isLoading, stages, initialized } = useLoadingStore((state) => ({
-    isLoading: state.isLoading,
-    stages: state.stages,
-    initialized: state.initialized,
-  }));
-
-  // 首次加载未完成 或 正在加载时显示
-  if (!isLoading && initialized) {
-    return null;
-  }
-
-  // 计算进度
-  const completedCount = stages.filter(
-    (stage: LoadingStage) => stage.status === 'success' || stage.status === 'error'
-  ).length;
-  const progress = stages.length > 0 ? (completedCount / stages.length) * 100 : 0;
-
-  return (
-    <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-2xl p-6 w-80 max-w-[90vw]">
-        {/* 标题 */}
-        <div className="text-center mb-4">
-          <h2 className="text-lg font-bold text-gray-800">RIA 在线地图</h2>
-          <p className="text-sm text-gray-500 mt-1">正在加载数据...</p>
-        </div>
-
-        {/* 进度条 */}
-        <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-4">
-          <div
-            className="h-full bg-blue-500 transition-all duration-300 ease-out"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {/* 加载阶段列表 */}
-        <div className="space-y-2">
-          {stages.map((stage: LoadingStage) => (
-            <div
-              key={stage.name}
-              className="flex items-center gap-2 text-sm"
-            >
-              {/* 状态图标 */}
-              <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
-                {stage.status === 'pending' && (
-                  <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
-                )}
-                {stage.status === 'loading' && (
-                  <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                )}
-                {stage.status === 'success' && (
-                  <Check className="w-5 h-5 text-green-500" />
-                )}
-                {stage.status === 'error' && (
-                  <X className="w-5 h-5 text-red-500" />
-                )}
-              </div>
-
-              {/* 阶段名称 */}
-              <span
-                className={`flex-1 ${
-                  stage.status === 'loading'
-                    ? 'text-blue-600 font-medium'
-                    : stage.status === 'success'
-                    ? 'text-green-600'
-                    : stage.status === 'error'
-                    ? 'text-red-600'
-                    : 'text-gray-400'
-                }`}
-              >
-                {stage.label}
-              </span>
-
-              {/* 状态文字 */}
-              <span className="text-xs text-gray-400">
-                {stage.status === 'loading' && '加载中'}
-                {stage.status === 'success' && '完成'}
-                {stage.status === 'error' && (stage.message || '失败')}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* 提示文字 */}
-        <p className="text-xs text-gray-400 text-center mt-4">
-          数据来自 GitHub，如加载缓慢请稍候
-        </p>
-      </div>
-    </div>
-  );
+/** Owned by App: stays mounted across configuration activation and map creation. */
+export function LoadingOverlay({initial=true}:{initial?:boolean}){
+  const state=useLoadingStore(),failure=useRuleDataStore(s=>s.dataSourceFailure);
+  const floor=useRef({task:'',progress:0}),task=initial&&!state.initialized?'startup':state.activeFlowId??'idle';
+  if(floor.current.task!==task)floor.current={task,progress:0};
+  if(failure||!state.isLoading&&(!initial||state.initialized))return null;
+  const english=getApplicationSettings().preferences.language==='en',configuring=initial&&state.configurationStatus!=='ready'&&!state.initialized;
+  const failed=state.configurationStatus==='error'||state.stages.some(s=>s.status==='error');
+  const stage=state.stages.find(s=>s.status==='loading')??state.stages.find(s=>s.status==='error')??state.stages.find(s=>s.status==='pending')??state.stages[state.stages.length-1];
+  const done=state.stages.filter(s=>s.status==='success').length,base=state.initialized||!initial?0:20;
+  const completedProgress=configuring?(state.configurationStatus==='verifying'?12:2):base+(state.stages.length?done/state.stages.length:0)*(100-base);
+  const progress=Math.max(floor.current.progress,completedProgress);floor.current.progress=progress;
+  const label=configuring?(failed?(english?'Configuration could not be loaded':'配置加载失败'):state.configurationStatus==='verifying'?(english?'Verifying configuration':'正在核验配置'):(english?'Reading configuration':'正在读取配置')):(stage?.label??(english?'Preparing world data':'正在准备世界数据'));
+  return <div data-global-loading className="fixed inset-0 z-[29000] flex items-center justify-center bg-black/25 p-4 backdrop-blur-md" aria-busy={!failed}>
+    <section className="w-[min(92vw,420px)] rounded-2xl border p-6 shadow-xl" style={{background:'var(--cm-panel-bg,#fff)',color:'var(--cm-panel-ink,#222)',borderColor:'var(--cm-panel-line,#ccc)'}} role={failed?'alert':'status'}>
+      <h2 className="text-lg font-bold">{english?'Loading map':'地图加载中'}</h2>
+      <div className="mt-4 h-2 overflow-hidden rounded bg-black/10" role="progressbar" aria-label={english?'Loading progress':'加载进度'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}><div className="h-full rounded bg-blue-500 transition-[width] duration-200 motion-reduce:transition-none" style={{width:Math.min(progress,failed?99:100)+'%'}}/></div>
+      <p className="mt-4 flex items-center gap-2 break-words text-sm">{!failed?<Loader2 className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none"/>:null}<span>{label}</span></p>
+      {state.configurationError?<><p className="mt-3 text-sm">{english?'Reload to try again.':'请重新加载后重试。'}</p><details className="mt-2 break-all text-xs"><summary>{english?'Diagnostic details':'诊断详情'}</summary>{state.configurationError}</details><button className="mt-3 rounded border px-3 py-1" onClick={()=>location.reload()}>{english?'Reload':'重新加载'}</button></>:null}
+    </section>
+  </div>;
 }
-
 export default LoadingOverlay;

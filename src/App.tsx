@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
+import LoadingOverlay from './components/Loading/LoadingOverlay';
 import FormalConfigurationHost from './configRuntime/FormalConfigurationHost';
 import FeatureModuleLoadDialog from './components/Common/FeatureModuleLoadDialog'
 import FeatureModuleLoadingOverlay from './components/Common/FeatureModuleLoadingOverlay'
@@ -41,6 +42,7 @@ function App() {
   return (
     <div className="app-root h-screen w-screen">
       {workspaceContent}
+      <LoadingOverlay initial={!entryModule}/>
       <FeatureModuleLoadDialog onCancel={moduleKey=>{if(moduleKey===entryModule)closeWorkspace();}} />
       <FeatureModuleLoadingOverlay />
       <DataSourceRecoveryHost />

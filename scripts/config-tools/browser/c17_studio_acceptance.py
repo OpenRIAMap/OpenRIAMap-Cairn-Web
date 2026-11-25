@@ -1,4 +1,4 @@
-"""Full workbench c16->c17, regional save, ZIP import/export and explicit resume.
+"""Image-library workbench migration, save, ZIP roundtrip and explicit resume.
 Only a disposable localhost profile is used; no login, upload or publication.
 """
 import json,time,zipfile,os,urllib.request
@@ -40,8 +40,20 @@ try:
  # The frozen source keeps this regression valid after the production pointer
  # advances or the user's current taxonomy changes.
  source=Path('public/configuration/releases/d11e0537c8756dcb7d58326675171a06aa47d71dfe7a4213acde9eb550f3b778/config.json').resolve()
+ frozen_source=source;frozen_bytes=source.read_bytes()
  b.click('导入本地配置');document=b.call('DOM.getDocument');upload=b.call('DOM.querySelector',{'nodeId':document['root']['nodeId'],'selector':'header input[type=file]'})['nodeId'];b.call('DOM.setFileInputFiles',{'nodeId':upload,'files':[str(source)]})
- b.wait('document.body.innerText.includes("已导入隔离候选")',45);assert '契约 c'+str(target) in b.evaluate('document.body.innerText')[:500];checks.append('normal UI import migrates an immutable c16 JSON source without changing the source')
+ minimum=b.evaluate('(async()=> (await import("/src/configStudio/contract.ts")).migrationMinimumRevision('+str(target)+'))()')
+ if json.loads(frozen_bytes)['contractRevision']<minimum:
+  b.wait('document.body.innerText.includes("来源超出自动迁移窗口")',45)
+  assert not b.evaluate('document.body.innerText.includes("整包候选 ·")')
+  checks.append('current rolling migration window rejects the immutable c16 source without activating a candidate')
+  # Prepare history explicitly through supported one-step migrations. The
+  # product admission window stays strict, and the original bytes stay frozen.
+  prepared=b.evaluate('''(async()=>{const {migratePackageToContract}=await import('/src/configStudio/contractMigration.ts');let config=await(await fetch('/configuration/releases/d11e0537c8756dcb7d58326675171a06aa47d71dfe7a4213acde9eb550f3b778/config.json')).json();while(config.contractRevision<'''+str(minimum)+''')config=migratePackageToContract(config,config.contractRevision+1).config;return config;})()''')
+  assert prepared['contractRevision']==minimum
+  source=OUT/('c17-studio-supported-source-c'+str(minimum)+'.json');source.write_text(json.dumps(prepared,ensure_ascii=False),encoding='utf-8')
+  b.click('导入本地配置');document=b.call('DOM.getDocument');upload=b.call('DOM.querySelector',{'nodeId':document['root']['nodeId'],'selector':'header input[type=file]'})['nodeId'];b.call('DOM.setFileInputFiles',{'nodeId':upload,'files':[str(source.resolve())]})
+ b.wait('document.body.innerText.includes("已导入隔离候选")',45);assert '契约 c'+str(target) in b.evaluate('document.body.innerText')[:500];assert frozen_source.read_bytes()==frozen_bytes;checks.append('normal UI import migrates a supported historical JSON source without changing its frozen original')
  select_path();b.click('读取分类');open_rule();put(label('显示种类'),'geometry');put(label('点状显示'),'externalImage');put(label('来源形式'),'library')
  b.click('从图片库选择');b.wait('Boolean(document.querySelector("[role=dialog][aria-label=图片库]"))');b.click('选择图片 N1.png');b.wait('!([...document.querySelectorAll("[role=dialog] button")].find(e=>e.textContent.trim()==="确认选择").disabled)');b.click('确认选择')
  b.click('核验');b.wait('document.body.innerText.includes("核验通过 ·")');b.click('保存');checks.append('actual category read, display edit, gallery choice, validation and regional save')

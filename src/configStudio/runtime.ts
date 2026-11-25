@@ -1,3 +1,4 @@
+import {workflowControlsInOrder,workflowLayoutProblems} from './workflowLayout';
 import {stableConfigText} from '../configRuntime/configurationFingerprint';
 import {classificationScopeProblems,resolveClassificationScope,matchesClassificationRange,scopeRows} from './classificationScope';
 import {validateWorkflowSupplies} from './workflowSupplyValidation';
@@ -966,7 +967,7 @@ function validateCard(node: CategoryNode, config: ConfigPackageV3, issues: Confi
 }
 
 function controlsFor(workflow: WorkflowDefinition): WorkflowControl[] {
-  return workflow.steps.flatMap((step) => step.controls ?? []);
+  return workflow.steps.flatMap(workflowControlsInOrder);
 }
 
 function validateSearch(control: Pick<WorkflowControl, 'kind' | 'search'>, config: ConfigPackageV3, path: string, issues: ConfigValidationIssue[]): void {
@@ -1058,6 +1059,7 @@ function validateWorkflowValueCondition(condition: import('./types').WorkflowVal
 }
 
 function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3, issues: ConfigValidationIssue[],designNotes:ConfigDesignNote[]=[]): void {
+  if(config.contractRevision>=22){let invalid=false;for(const step of workflow.steps)if(step.kind==='form')for(const message of workflowLayoutProblems(step)){invalid=true;issue(issues,'error','workflow-layout-invalid',`workflows/${workflow.id}/steps/${step.id}/layout`,message);}if(invalid)return;}
   if(config.contractRevision>=16&&workflow.mode==='external'){
     const declared={...config,workflows:config.workflows.some(row=>row.id===workflow.id)?config.workflows.map(row=>row.id===workflow.id?workflow:row):[...config.workflows,workflow]};
     for(const error of externalBindingIssues(declared).filter(error=>error.path.startsWith('workflows/'+workflow.id+'/')))issue(issues,'error','external-binding-invalid',error.path,error.message);
@@ -1079,7 +1081,7 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
     const ids = new Set<string>();
     for (const item of items ?? []) { if (!item.id?.trim() || ids.has(item.id)) issue(issues, 'error', 'workflow-id-invalid', base, `${kind}标识必须存在且不能重复。`); ids.add(item.id); }
   };
-  checkIds(workflow.steps, '页面'); checkIds(workflow.outputs, '输出'); checkIds(controlsFor(workflow), '控件');
+  checkIds(workflow.steps, '页面'); checkIds(workflow.outputs, '输出'); checkIds(workflow.steps.flatMap(step=>step.controls??[]), '控件');
   if (workflow.mode === 'external') {
     if(config.contractRevision>=16){
       if(workflow.steps.length||workflow.outputs.length)issue(issues,'error','external-workflow-invalid',base,'专用成品不能同时包含普通组装步骤。');

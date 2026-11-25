@@ -122,7 +122,7 @@ import { firstMultipartCoordinate, flattenMultipartCoordinates, geometryTypeFrom
 
 import { filterRecordsByRuleButtons } from "@/components/Rules/ButtonRule/buttonRuleFilter";
 import { setRuleSearchPool } from "@/components/Rules/search/ruleSearchRegistry";
-import { useRuleDataStore } from "@/store/ruleDataStore";
+import { useRuleDataStore, WORLD_LOADING_STAGES } from "@/store/ruleDataStore";
 import { useLoadingStore } from "@/store/loadingStore";
 import { configHostFloorViewEligible, configRuntimeViewportReach, resolveConfigInteractionVisual, resolveConfigRuntimeContextForHost, resolveConfigRuntimeContextForRecord, resolveConfigRuntimeRule, resolveConfigRuntimeScreenGate, resolveConfigRuntimeStackOrder } from "@/components/Rules/configRuntime/configPackageAdapter";
 import type { ConfigPackageV3 } from "@/configStudio/types";
@@ -1705,6 +1705,7 @@ export default function RuleDrivenLayer(props: Props) {
     bypassButtonFilter = false,
   } = props;
 
+  const ruleLoadingFlow=useLoadingStore(state=>state.activeRuleWorldId===worldId?state.activeFlowId:null);
   const symbolAssetsRevision = useSyncExternalStore(subscribeSymbolAssets, symbolAssetEpoch);
 
   const worldDataset = useRuleDataStore((s) => s.datasets[worldId] ?? null);
@@ -1759,6 +1760,7 @@ export default function RuleDrivenLayer(props: Props) {
   const storeRef = useRef<FeatureStore | null>(null);
   const pendingRuleFirstPaintWorldRef = useRef<string | null>(null);
   const pendingRuleFirstPaintFlowRef = useRef<string | null>(null);
+  const preparedViewWorldRef = useRef<string|null>(null);
   const renderCompletionScheduledRef = useRef(false);
   const labelViewportSnapshotRef = useRef<LabelViewportSnapshot | null>(null);
   const labelLayoutWindowRef = useRef<LabelLayoutWindowState | null>(null);
@@ -2080,6 +2082,13 @@ export default function RuleDrivenLayer(props: Props) {
       if (!mapReady) return;
 
       let dataset = runtimeDataset ?? worldDataset;
+      const newView=preparedViewWorldRef.current!==worldId;
+      preparedViewWorldRef.current=worldId;
+      if(dataset&&newView&&!useLoadingStore.getState().isRuleWorldFlow(worldId)){
+        const loading=useLoadingStore.getState();
+        loading.startLoading(WORLD_LOADING_STAGES,{flowId:`rule-view:${worldId}:${Date.now()}`,ruleWorldId:worldId});
+        for(const stage of WORLD_LOADING_STAGES.slice(0,6))loading.updateStage(stage.name,'success','已复用当前内存版本');
+      }
       if (!dataset && !runtimeDataset) {
         try {
           dataset = await ensureWorldLoaded(worldId);
@@ -2089,6 +2098,7 @@ export default function RuleDrivenLayer(props: Props) {
         }
       }
 
+      if(cancelled)return;
       updateRuleLoadingStage(worldId, "world-record-build", "loading");
 
       const all: FeatureRecord[] = [];
@@ -2174,7 +2184,7 @@ export default function RuleDrivenLayer(props: Props) {
     return () => {
       cancelled = true;
     };
-  }, [mapReady, worldId, worldDataset, ensureWorldLoaded, tempSourceVersion, runtimeDataset, disableTransientSources, configRuntime]);
+  }, [mapReady, worldId, worldDataset, ensureWorldLoaded, tempSourceVersion, runtimeDataset, disableTransientSources, configRuntime, ruleLoadingFlow]);
 
   // =========================
   // SearchBar -> RuleDrivenLayer：按 uid 打开信息卡
@@ -4342,8 +4352,10 @@ export default function RuleDrivenLayer(props: Props) {
 
       if (waitingFirstPaint && !renderCompletionScheduledRef.current) {
         renderCompletionScheduledRef.current = true;
+        const paintFlowId=pendingRuleFirstPaintFlowRef.current;
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
+            if(useLoadingStore.getState().activeFlowId!==paintFlowId||pendingRuleFirstPaintFlowRef.current!==paintFlowId)return;
             updateRuleLoadingStage(
               worldId,
               "world-layer-render",

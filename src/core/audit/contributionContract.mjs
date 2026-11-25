@@ -3,6 +3,39 @@ export const AUDIT_RULES_VERSION = 'ria-contribution-audit.v1';
 export const CLASSIFICATION_FIELDS = ['Class', 'Kind', 'SKind', 'SKind2', 'Skind', 'Skind2'];
 export const SYSTEM_FIELDS = ['ID', 'Type', 'World', 'CreateBy', 'CreateTime', 'ModifityBy', 'ModifityTime'];
 export const COUNT_KEYS = ['featuresCreated', 'optionalAdded', 'requiredEdited', 'optionalEdited'];
+/** A bounded, data-only predicate. UI row identities never enter cursor semantics. */
+export function normalizeAuditSelection(input, expression='') {
+  if(input===undefined)return undefined;
+  const object=value=>value&&typeof value==='object'&&!Array.isArray(value);
+  const fail=()=>{throw Error('invalid-contribution-audit-selection');};
+  if(!object(input)||input.schemaVersion!=='cairnmap.contribution-selection.v1'||Object.keys(input).some(k=>!['schemaVersion','userId','classificationScope','datasetValue'].includes(k))||typeof expression!=='string'||expression.trim())fail();
+  const result={schemaVersion:input.schemaVersion};
+  for(const key of ['userId','datasetValue'])if(input[key]!==undefined){if(typeof input[key]!=='string'||input[key].length>2000)fail();const value=input[key].trim();if(value)result[key]=value;}
+  if(input.classificationScope!==undefined){
+    const scope=input.classificationScope;if(!object(scope)||Object.keys(scope).some(k=>k!=='rows')||!Array.isArray(scope.rows)||scope.rows.length>200)fail();
+    const levels=['class','kind','skind','skind2'];
+    const rows=scope.rows.map(row=>{
+      if(!object(row)||Object.keys(row).some(k=>!['id','condition','path'].includes(k))||!['include','exclude'].includes(row.condition)||!object(row.path)||Object.keys(row.path).some(k=>!levels.includes(k)))fail();
+      const path={};let ended=false;
+      for(const key of levels){const value=row.path[key];if(value===undefined){ended=true;continue;}if(ended||typeof value!=='string'||!value.trim()||value!==value.trim()||value.length>128)fail();path[key]=value;}
+      if(!path.class)fail();return {condition:row.condition,path};
+    });
+    if(rows.length&&!rows.some(row=>row.condition==='include'))fail();
+    if(rows.length){const unique=[...new Map(rows.map(row=>[JSON.stringify(row),row])).values()];unique.sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));result.classificationScope={rows:unique};}
+  }
+  return result;
+}
+export function matchesAuditSelection(selection,operation) {
+  if(!selection)return true;
+  if(selection.userId!==undefined&&(!['create','modify'].includes(operation.kind)||operation.actor!==selection.userId))return false;
+  const record=(operation.kind==='delete'?operation.before:operation.after)??{};
+  if(selection.datasetValue!==undefined&&readPath(record,'tags.dataset')!==selection.datasetValue)return false;
+  const rows=selection.classificationScope?.rows;
+  if(!rows?.length)return true;
+  const path={class:record.Class,kind:record.Kind,skind:record.SKind??record.Skind,skind2:record.SKind2??record.Skind2};
+  const contains=row=>Object.entries(row.path).every(([key,value])=>path[key]===value);
+  return rows.some(row=>row.condition==='include'&&contains(row))&&!rows.some(row=>row.condition==='exclude'&&contains(row));
+}
 const own = (object, key) => Object.prototype.hasOwnProperty.call(object ?? {}, key);
 export function validBehaviorDate(value) {
   if (typeof value !== 'string' || !/^\d{8}$/.test(value) || value.slice(0, 4) === '0000') return false;

@@ -36,6 +36,9 @@ for(const fixture of fixtures){
  assert.deepEqual(evaluateV3WorkflowOutputs(workflow,slots,{world:'zth',classifications:{[output.id]:fixture.classification},config,coordinates:{[output.id]:coords},now:new Date('2026-10-07T00:00:00Z')})[0].record,fixture.expectedRecord,fixture.schemaKey);
 }
 const baseline=JSON.parse(fs.readFileSync('scripts/config-tools/fixtures/v1-independent-card-baseline.json','utf8'));
+// Intentional c22 rendering change: the historical sample literal is invalid CSS.
+const invalidColor=baseline.cases.find((item:any)=>item.key==='catalog:RLE///').sections.mainRows.find((row:any)=>row.label==='色号').value;
+assert.equal(invalidColor.color,'sample');assert.equal(invalidColor.text,'sample');invalidColor.color='#999999';
 const empty=(v:any)=>v==null||typeof v==='string'&&(!v.trim()||v.trim()==='未知')||typeof v==='object'&&!Object.keys(v).length||Array.isArray(v)&&!v.length||v.kind==='lineChips'&&!v.items?.length;
 const normalCards=(sections:any)=>Object.fromEntries(['mainRows','otherRows'].map(key=>[key,(sections?.[key]??[]).filter((r:any)=>!empty(r.value)).map(({label,value}:any)=>({label,value}))]));
 let cards=0;

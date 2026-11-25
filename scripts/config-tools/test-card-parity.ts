@@ -12,6 +12,12 @@ for (const item of baseline.cases) {
   const fi = item.record;
   const record: any = { uid: fi.ID, featureInfo: fi, type: fi.Type, meta: { Class: fi.Class, idValue: fi.ID, sig: fi } };
   const expected = normalize(item.sections), actual = normalize(buildV3CardSections(config, record));
+  // c22 deliberately replaces this oracle's invalid CSS literal with the configured fallback.
+  // Keep the independent historical oracle and all displayed text intact.
+  if(item.key==='catalog:RLE///'){
+    const chip=expected.mainRows.find((row:any)=>row.label==='色号').value;
+    assert.equal(chip.color,'sample');assert.equal(chip.text,'sample');chip.color='#999999';
+  }
   try { assert.deepEqual(JSON.parse(JSON.stringify(actual)), JSON.parse(JSON.stringify(expected))); }
   catch { differences.push({ key: item.key, fi, expected, actual }); }
 }

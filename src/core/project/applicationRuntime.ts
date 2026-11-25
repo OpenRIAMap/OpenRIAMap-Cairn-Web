@@ -33,9 +33,9 @@ export function assertReviewWorldContext(payload:unknown,requireContext=false):v
   visit(payload,0);
   if(requireContext&&current.sources.groups.length>1&&!found)throw Error('多服务器上传缺少可确认的世界归属，不能发送到默认审核服务器。');
 }
-export function reviewEndpoint(key:'start'|'session'|'logout'|'control'|'workflow'|'publicReleases',worldId?:string):string {
+export function reviewEndpoint(key:'start'|'session'|'logout'|'control'|'workflow'|'publicReleases'|'releaseHistory'|'auditQuery'|'auditCoverage'|'auditDetail',worldId?:string):string {
   if(worldId&&!worldUsesSharedInterfaces(worldId))throw Error('此来源组尚未绑定审核服务，不能发送到其他服务器的审核接口。');
-  if(!current.review.enabled||!moduleEnabled(key==='publicReleases'?'publicReleases':'review'))throw Error('审核远端功能未启用。');
-  const path=key==='start'||key==='session'||key==='logout'?current.review.auth[key]:current.review[key];
-  if(!path.trim())throw Error('审核接口尚未配置。');return path;
+  if(!current.review.enabled||!moduleEnabled(key==='publicReleases'||key==='releaseHistory'?'publicReleases':'review'))throw Error('审核远端功能未启用。');
+  const path=key==='start'||key==='session'||key==='logout'?current.review.auth[key]:(current.review[key]??(key==='releaseHistory'||key==='auditQuery'||key==='auditCoverage'||key==='auditDetail'?('auditQuery' in current.review?undefined:current.review.control):undefined));
+  if(typeof path!=='string'||!path.trim())throw Error('审核接口尚未配置。');return path;
 }

@@ -1,8 +1,13 @@
+import {getRuntimeConfiguration} from '@/configRuntime/runtimeDataView';
+import {getApplicationSettings,reviewEndpoint} from '@/core/project/applicationRuntime';
+import {AUDIT_DEFAULT_PRICES} from '@/core/audit/auditSettings';
+import {ClassificationScopeEditor} from '@/configStudio/ClassificationScopeEditor';
+import {classificationScopeProblems,type ClassificationScope} from '@/configStudio/classificationScope';
 import {useEffect,useRef,useState} from 'react';
 import {LogIn,X} from 'lucide-react';
 import AppCard from '@/components/ui/AppCard';
 import AppButton from '@/components/ui/AppButton';
-import {parseAuditExpression,COUNT_KEYS,priceMicros,formatMicros} from '@/core/audit/contributionContract.mjs';
+import {normalizeAuditSelection,COUNT_KEYS,priceMicros,formatMicros} from '@/core/audit/contributionContract.mjs';
 import {requestRiaContributionAudit,type AuditOperation,type AuditQueryResult,type AuditSummary} from './riaReviewSubmissionAdapter';
 import {useReleaseAuditAccess} from './releaseAuditAccess';
 import {openriamapGithubReviewAuth} from './openriamapReviewAuth';
@@ -21,22 +26,29 @@ function mergeSummaries(summaries:AuditSummary[],features:number):AuditSummary{
 export default function ContributionAuditPanel({onClose,showNativeClose=false}:{onClose:()=>void;showNativeClose?:boolean}){
   const {authorized,refresh}=useReleaseAuditAccess();
   const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  const [dateFrom,setFrom]=useState(today.slice(0,8)+'01'),[dateTo,setTo]=useState(today),[expression,setExpression]=useState(''),[field,setField]=useState('CreateBy'),[operator,setOperator]=useState('='),[value,setValue]=useState('');
-  const [prices,setPrices]=useState<Record<string,string>>({}),[includeSystem,setSystem]=useState(false),[includeClassification,setClassification]=useState(false);
+  const [dateFrom,setFrom]=useState(today.slice(0,8)+'01'),[dateTo,setTo]=useState(today);
+  const [userId,setUserId]=useState(''),[scope,setScope]=useState<ClassificationScope>({rows:[]}),[dataset,setDataset]=useState('');
+  const config=getRuntimeConfiguration(),directory=config?.lookupTables?.find(t=>t.id==='dataset-directory');
+  const datasets=directory?.rows??[];
+  const [prices,setPrices]=useState<Record<string,string>>(()=>({...AUDIT_DEFAULT_PRICES,...getApplicationSettings().preferences.auditCalculationDefaults})),[includeSystem,setSystem]=useState(false),[includeClassification,setClassification]=useState(false);
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[summary,setSummary]=useState<AuditSummary|null>(null),[rows,setRows]=useState<AuditOperation[]>([]),[status,setStatus]=useState(''),[coverage,setCoverage]=useState<AuditQueryResult['coverage']|null>(null),[detail,setDetail]=useState<AuditOperation|null>(null);
   const generation=useRef(0),abort=useRef<AbortController|null>(null);
   const invalidate=()=>{generation.current++;abort.current?.abort();setBusy(false);setSummary(null);setRows([]);setStatus('');setCoverage(null);setDetail(null);setError('');};
   useEffect(()=>{if(authorized!==true)invalidate();return()=>{generation.current++;abort.current?.abort();};},[authorized]);
   const changed=(apply:()=>void)=>{invalidate();apply();};
   async function calculate(){
-    if(!await refresh())return;
     const token=++generation.current;abort.current?.abort();const controller=new AbortController();abort.current=controller;
     setError('');setBusy(true);setSummary(null);setRows([]);setDetail(null);
     try{
-      parseAuditExpression(expression);Object.values(prices).forEach(priceMicros);
+      setStatus('正在核验登录状态…');
+      if(!await refresh()||token!==generation.current)return;
+      const problems=config?classificationScopeProblems(scope,config):[];if(problems.length)throw Error(problems.join('；'));
+      const selection=normalizeAuditSelection({schemaVersion:'cairnmap.contribution-selection.v1',userId,classificationScope:scope,datasetValue:dataset});
+      Object.values(prices).forEach(priceMicros);const queryEndpoint=reviewEndpoint('auditQuery');
+      setStatus('正在读取行为日志…');
       const summaries:AuditSummary[]=[],seen=new Set<string>(),preview:AuditOperation[]=[];let cursor:string|null=null,result:AuditQueryResult;
       do{
-        result=await requestRiaContributionAudit('query',{dateFrom,dateTo,expression,prices,includeSystem,includeClassification,...(cursor?{cursor}:{})},controller.signal);
+        result=await requestRiaContributionAudit('query',{dateFrom,dateTo,selection,prices:{...prices},includeSystem,includeClassification,...(cursor?{cursor}:{})},controller.signal,queryEndpoint);
         if(token!==generation.current)return;
         if(result.summary)summaries.push(result.summary);
         for(const row of result.items){seen.add(row.worldId+':'+row.featureId);if(preview.length<200)preview.push(row);}
@@ -53,8 +65,9 @@ export default function ContributionAuditPanel({onClose,showNativeClose=false}:{
       {authorized===null?<p>正在核验登录状态…</p>:authorized===false?<div className="rounded border border-amber-200 bg-amber-50 p-4"><p>审计需要登录并具备 Contributor 或更高权限。</p><AppButton className="mt-2 inline-flex items-center gap-2 underline" onClick={()=>void openriamapGithubReviewAuth.beginLogin().catch(e=>setError(e.message))}><LogIn className="h-4 w-4"/>登录</AppButton></div>:<>
         <div className="grid grid-cols-2 gap-3"><label className="text-sm">行为日期起<input aria-label="行为日期起" type="date" value={dateFrom} className={input+' mt-1 w-full'} onChange={e=>changed(()=>setFrom(e.target.value))}/></label><label className="text-sm">行为日期止<input aria-label="行为日期止" type="date" value={dateTo} className={input+' mt-1 w-full'} onChange={e=>changed(()=>setTo(e.target.value))}/></label></div>
         <fieldset className="mt-4 rounded border border-slate-200 p-3"><legend className="px-1 text-sm font-semibold">范围条件</legend>
-          <div className="flex flex-wrap gap-2"><select aria-label="条件字段" value={field} onChange={e=>setField(e.target.value)} className={input}>{['CreateBy','ModifityBy','tags.dataset','World','Class','Kind','before.tags.dataset','after.tags.dataset'].map(key=><option key={key}>{key}</option>)}</select><select aria-label="条件运算符" value={operator} onChange={e=>setOperator(e.target.value)} className={input}>{['=','!=','IS NULL','IS NOT NULL'].map(op=><option key={op}>{op}</option>)}</select>{!operator.startsWith('IS')?<input className={input+' min-w-0 flex-1'} aria-label="条件值" value={value} onChange={e=>setValue(e.target.value)}/>:null}{['AND','OR'].map(join=><AppButton key={join} className="rounded border px-2 py-1 text-xs" onClick={()=>changed(()=>setExpression(previous=>(previous?'('+previous+') '+join+' ':'')+field+' '+operator+(operator.startsWith('IS')?'':" '"+value.replace(/'/g,"''")+"'")))}>添加 {join}</AppButton>)}</div>
-          <textarea aria-label="审计条件表达式" value={expression} onChange={e=>changed(()=>setExpression(e.target.value))} placeholder="(CreateBy = '114' OR ModifityBy = '114') AND tags.dataset = 'ZInd1'" className={input+' mt-2 min-h-20 w-full font-mono'}/>
+          <label className="grid gap-1 text-sm">用户 ID<input aria-label="用户 ID" value={userId} placeholder="不限用户" className={input} onChange={e=>changed(()=>setUserId(e.target.value))}/></label>
+          <div className="mt-3 text-sm"><p className="mb-2 font-medium">要素分类范围{scope.rows.length?'':'（不限分类）'}</p>{config?<ClassificationScopeEditor config={config} label="要素分类范围" emptyDescription="未添加范围：不限分类" value={scope} onChange={next=>changed(()=>setScope(Array.isArray(next)?{rows:next.map((path,i)=>({id:String(i),condition:'include',path}))}:next))}/>:<p>分类配置尚未就绪</p>}</div>
+          <label className="mt-3 grid gap-1 text-sm">所属数据集<select aria-label="所属数据集" value={dataset} className={input} onChange={e=>changed(()=>setDataset(e.target.value))}><option value="">不限数据集</option>{dataset&&!datasets.some(row=>String(row.value)===dataset)?<option value={dataset}>{dataset}（历史引用）</option>:null}{datasets.map(row=><option key={String(row.value)} value={String(row.value)}>{row.label[getApplicationSettings().preferences.language]||row.label.zh||String(row.value)} · {String(row.value)}</option>)}</select></label>{!datasets.length?<p className="mt-1 text-xs text-slate-500">数据集目录暂无条目。</p>:null}
         </fieldset>
         <fieldset className="mt-4 grid grid-cols-2 gap-3 rounded border border-slate-200 p-3"><legend className="px-1 text-sm font-semibold">计算参与值</legend>{COUNT_KEYS.map((key,i)=><label key={key} className="text-sm">{labels[i]}价格<input aria-label={labels[i]+'价格'} value={prices[key]??''} inputMode="decimal" placeholder="未设置，按 0" className={input+' mt-1 w-full'} onChange={e=>changed(()=>setPrices(old=>({...old,[key]:e.target.value})))}/></label>)}<label className="col-span-2 flex items-center gap-2 text-sm"><input type="checkbox" checked={includeSystem} onChange={e=>changed(()=>setSystem(e.target.checked))}/>系统字段参与计算</label><label className="col-span-2 flex items-center gap-2 text-sm"><input type="checkbox" checked={includeClassification} onChange={e=>changed(()=>setClassification(e.target.checked))}/>分类字段参与计算</label></fieldset>
         <div className="mt-4 flex gap-2"><AppButton className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50" disabled={busy||!dateFrom||!dateTo} onClick={()=>void calculate()}>{busy?'正在计算…':'计算'}</AppButton>{busy?<AppButton className="rounded border px-4" onClick={invalidate}>取消查询</AppButton>:null}</div>

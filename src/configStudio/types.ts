@@ -936,7 +936,10 @@ export type WorkflowControl = {
   legacyBlock?: Record<string, unknown>;
 };
 
+export type WorkflowControlReference = {kind:'control';controlId:string};
+export type WorkflowLayoutItem = WorkflowControlReference | {kind:'section';sectionId:string;children:WorkflowControlReference[]};
 export type WorkflowStep = {
+  layout?: WorkflowLayoutItem[];
   sections?: Array<{id:string;label:LocalizedText;initialOpen?:boolean}>;
   id: string;
   kind: 'actor' | 'form' | 'tagsExtensions' | 'geometry' | 'special';
@@ -1033,7 +1036,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */

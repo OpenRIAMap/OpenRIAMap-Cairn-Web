@@ -50,6 +50,8 @@ export function ensureGroupOrder(group: string) {
   return GROUP_STACK_ORDER.get(group) ?? 1;
 }
 
+export function focusDesktopWindow(id:string){const order=nextStackOrder();PANEL_STACK_ORDER.set(id,order);emitDesktopWindowFocus({id,order});}
+
 export function emitDesktopWindowFocus(detail: { id: string; stackGroup?: string; order: number }) {
   window.dispatchEvent(new CustomEvent('ria:draggable-panel-focus', { detail }));
 }

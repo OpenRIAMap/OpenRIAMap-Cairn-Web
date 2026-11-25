@@ -1,4 +1,5 @@
 import generated from './native-contract-schema.generated.json';
+import {c22ConfigurationProblems} from './c22Validation';
 import {c21ConfigurationProblems} from './c21Validation';
 import {visitC20RetiredSettings} from './c20Migration';
 import {symbolHalos} from './halo';
@@ -45,7 +46,7 @@ export function validateNativeStructure(value: unknown): NativeStructureIssue[] 
   const issues=inspect(value, generated.root, 'config', 0);
   if(issues.length)return issues;
   const config=value as ConfigPackageV3;
-  issues.push(...c21ConfigurationProblems(config));
+  issues.push(...c21ConfigurationProblems(config),...c22ConfigurationProblems(config));
   const c15=config.contractRevision>=15;
   if(config.contractRevision>=20)visitC20RetiredSettings(config, item => {
     issues.push({path:'config/'+item.path,message:'此配置键已在 c20 退役，请通过旧契约迁移导入。'});

@@ -1,3 +1,4 @@
+import {workflowControlsInOrder} from './workflowLayout';
 import {matchesClassificationRange} from './classificationScope';
 import {workflowControlActive,workflowConditionContext} from './c21Workflow';
 import {workflowConditionMatches} from './workflowExpression';
@@ -38,11 +39,11 @@ export function compileWorkflowEditPlan(workflow:WorkflowDefinition,config:Confi
  if(drawings.some(s=>s.geometryRole==='auxiliary'||s.drawing?.auxiliaryPoints?.length))errors.push('不能包含额外绘制。');
  if(workflow.outputs.length!==1||drawings.length!==1||drawings[0]?.outputId!==workflow.outputs[0]?.id)errors.push('必须只有一个明确绑定输出的要素绘制。');
  if(workflow.steps.some(s=>s.when||config.contractRevision<21&&s.controls?.some(c=>c.when||c.group?.itemFields.some(f=>'when' in f&&f.when)))||workflow.outputs.some(o=>o.when||config.contractRevision<21&&o.assignments.some(a=>a.when)))errors.push('不能包含页面或输出的启用条件。');
- if(config.contractRevision>=21){const allowed=new Set(['Class','Kind','Skind','Skind2',...['Class','Kind','Skind','Skind2'].map(k=>k+'_1'),...['Class','Kind','Skind','Skind2'].map(k=>workflow.outputs[0]?.id+'.'+k)]);for(const c of [...workflow.steps.flatMap(s=>s.controls??[]),...workflow.outputs.flatMap(o=>o.assignments)])if(c.when&&conditionTokens(c.when).some(token=>!allowed.has(token)))errors.push('编辑输入及写入条件仅允许当前输出的分类字段；其他既有转换资格保持。');}
+ if(config.contractRevision>=21){const allowed=new Set(['Class','Kind','Skind','Skind2',...['Class','Kind','Skind','Skind2'].map(k=>k+'_1'),...['Class','Kind','Skind','Skind2'].map(k=>workflow.outputs[0]?.id+'.'+k)]);for(const c of [...workflow.steps.flatMap(workflowControlsInOrder),...workflow.outputs.flatMap(o=>o.assignments)])if(c.when&&conditionTokens(c.when).some(token=>!allowed.has(token)))errors.push('编辑输入及写入条件仅允许当前输出的分类字段；其他既有转换资格保持。');}
  if(errors.length)throw Error(errors.join('\n'));
  const output=workflow.outputs[0],scope=workflow.editor?.scope??output.classification??{class:''};const classifications=workflowClassificationGroup(config,output).paths.filter(path=>workflow.editor?.range?matchesClassificationRange(workflow.editor.range,path):pathMatchesScope(path,scope));
  if(workflow.editor?.scope&&!hasCategoryNode(config,scope)||!classifications.length||(config.contractRevision<15&&(!output.classification||!pathMatchesScope(scope,output.classification)||!config.nodes.some(n=>classificationPathKey(n.path)===classificationPathKey(scope)))))throw Error('编辑作用范围必须为输出范围内的实际分类。');
- const controls=workflow.steps.flatMap(s=>s.controls??[]),tokens=new Set(controls.flatMap(c=>c.slot?[c.slot]:[])),needed=new Set<string>(),idOnly=new Set<string>(),bindings:Array<{slot:string;target:string}>=[];
+ const controls=workflow.steps.flatMap(workflowControlsInOrder),tokens=new Set(controls.flatMap(c=>c.slot?[c.slot]:[])),needed=new Set<string>(),idOnly=new Set<string>(),bindings:Array<{slot:string;target:string}>=[];
  for(const assignment of output.assignments){const ast=parseWorkflowExpression(assignment.expression),used=workflowExpressionTokens(ast).filter(t=>tokens.has(t));if(assignment.target==='ID')used.forEach(t=>idOnly.add(t));else {used.forEach(t=>needed.add(t));if(ast.kind==='token'&&tokens.has(ast.name))bindings.push({slot:ast.name,target:assignment.target});}}
  for(const step of drawings){if(step.drawing?.heightSlot)needed.add(step.drawing.heightSlot);for(const binding of step.drawing?.bindings??[])if(binding.value==='height'&&step.drawing?.heightSlot)bindings.push({slot:step.drawing.heightSlot,target:binding.target});}
  for(const control of controls)for(const condition of control.requiredWhen??[])for(const token of conditionTokens(condition))if(tokens.has(token))needed.add(token);
