@@ -239,6 +239,19 @@
   color: var(--cm-panel-ink);
 }
 .cm-floating-panel[data-map-bounded="true"] .cm-panel-frame-content > :first-child { max-width: 100%; }
+.cm-release-history > header, .cm-audit-panel > :first-child {
+  background-color:var(--cm-panel-header, #f8fafc) !important;
+  color:var(--cm-panel-ink, #111827);
+  border-color:var(--cm-panel-line, #d1d5db) !important;
+}
+.cm-release-history, .cm-audit-panel { min-width:0; }
+.cm-release-history > form { background-color:var(--cm-panel-bg, #fff) !important; }
+@media(min-width:640px) { .cm-release-history > header {padding-right:11rem;} }
+@media(max-width:639px) { .cm-release-history,.cm-audit-panel {width:100%;max-height:68vh;} }
+@media(max-width:639px) {
+  .cm-mobile-sheet .cm-audit-panel {max-height:calc(58vh - 24px);}
+  .cm-mobile-sheet .cm-release-history {height:calc(58vh - 24px);}
+}
 :root:not([data-panel-layout="floating"]) :is(.cm-workspace-panel, .cm-floating-panel) .cm-panel-frame-content
   :is(button, input, textarea, select) { border-radius: calc(var(--cm-panel-radius) / 2 + 1px) !important; }
 :root:not([data-panel-layout="floating"]) :is(.cm-workspace-panel, .cm-floating-panel)

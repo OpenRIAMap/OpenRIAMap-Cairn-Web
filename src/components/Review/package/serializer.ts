@@ -68,6 +68,7 @@ export function createReviewPackageReviewMarker(exportedAt: string): ReviewPacka
 }
 
 export function buildReviewPackageFiles(profile: ReviewPackageProfile, draft: ReviewPackageDraft): { files: ReviewPackageFile[]; manifest: ReviewPackageManifest; reviewMarker: ReviewPackageReviewMarker } {
+  profile.validateFeatures?.(draft.features);
   const validation = validateReviewPackageDraft(draft, profile, 'strict-submission');
   if (!validation.valid) throw new Error(`review-package-invalid:${validation.errors.map((entry) => entry.code).join(',')}`);
   const exportedAt = normalizedTime(draft.exportedAt);

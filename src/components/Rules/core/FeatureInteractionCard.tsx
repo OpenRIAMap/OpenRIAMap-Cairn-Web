@@ -96,6 +96,7 @@ function formatValue(v: any): string {
 
 function renderRichValue(v: any) {
   if (!v || typeof v !== 'object') return null;
+  if(v.kind==='ordinaryTable')return <table className="cm-ordinary-table"><thead><tr>{v.columns.map((c:import('@/configStudio/types').TableColumn)=><th key={c.key}>{c.label.zh}</th>)}</tr></thead><tbody>{v.rows.map((row:Record<string,unknown>,i:number)=><tr key={i}>{v.columns.map((c:import('@/configStudio/types').TableColumn)=><td key={c.key}>{String(row?.[c.key]??'')}</td>)}</tr>)}</tbody></table>;
 
   if (v.kind === 'colorChip') {
     const color = v.color || '#999999';

@@ -1,0 +1,6 @@
+import type {TableDefinition} from './types';
+import {TABLE_LIMITS,tableValueErrors} from './ordinaryTable';
+export function OrdinaryTableInput({table,value,onChange}:{table:TableDefinition;value:unknown;onChange:(value:unknown)=>void}){
+ const rows=Array.isArray(value)?value:[];const errors=tableValueErrors(table,value);
+ return <div className="cm-ordinary-table-input min-w-0 space-y-2">{errors.length?<p role="status" className="text-xs text-amber-700">{errors.join(' ')}</p>:null}<table className="cm-ordinary-table"><thead><tr>{table.columns.map(c=><th key={c.key}>{c.label.zh}{c.required?' *':''}</th>)}<th className="cm-table-actions">操作</th></tr></thead><tbody>{rows.map((row,index)=><tr key={index}>{table.columns.map(c=><td key={c.key}><textarea aria-label={`第 ${index+1} 行 ${c.label.zh}`} rows={2} value={String(row?.[c.key]??'')} onChange={event=>{const text=event.target.value;onChange(rows.map((r,i)=>i===index?{...r,[c.key]:c.type==='number'&&text.trim()&&Number.isFinite(Number(text))?Number(text):text}:r));}}/></td>)}<td><button type="button" aria-label={`删除第 ${index+1} 行`} onClick={()=>onChange(rows.filter((_,i)=>i!==index))}>删除</button></td></tr>)}</tbody></table><button type="button" className="rounded border px-2 py-1 text-sm" disabled={rows.length>=(table.maxRows??TABLE_LIMITS.rows)} onClick={()=>onChange([...rows,{}])}>添加一行</button></div>;
+}

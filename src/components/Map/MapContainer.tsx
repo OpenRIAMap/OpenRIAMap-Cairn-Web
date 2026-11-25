@@ -12,6 +12,9 @@ import { WorkspaceSidebarContext } from '../DraggablePanel/WorkspaceSidebarConte
 import { useAppearancePreferences } from '@/store/appearancePreferences';
 import {ReviewWorkspaceBoundary} from '../Review/ReviewWorkspaceBoundary';
 import MobileBottomSheet from '@/components/Mobile/MobileBottomSheet';
+import ContributionAuditPanel from '@/components/Review/ContributionAuditPanel';
+import {canReadReleaseAudit} from '@/components/Review/releaseAuditAccess';
+import {Calculator} from 'lucide-react';
 import MobileQuickDock from '@/components/Mobile/MobileQuickDock';
 import MobileFeatureJsonPanel from '@/components/Mobile/MobileFeatureJsonPanel';
 import MobileFeatureSharePanel from '@/components/Mobile/MobileFeatureSharePanel';
@@ -359,6 +362,15 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   const [showSettings, setShowSettings] = useState(false);
   const [reviewAccessBlockedMessage, setReviewAccessBlockedMessage] = useState<string | null>(null);
   const [showPublicReleaseRecords, setShowPublicReleaseRecords] = useState(false);
+  const [releaseRecordsAuthorized,setReleaseRecordsAuthorized]=useState(false);
+  const [showContributionAudit,setShowContributionAudit]=useState(false);
+  const [mobileAuditCollapsed,setMobileAuditCollapsed]=useState(false);
+  useEffect(()=>{if(!showPublicReleaseRecords)setReleaseRecordsAuthorized(false);},[showPublicReleaseRecords]);
+  const openContributionAudit=useCallback(async()=>{
+    const session=await openriamapGithubReviewAuth.getSession();if(!canReadReleaseAudit(session)){setReleaseRecordsAuthorized(false);return;}
+    setShowContributionAudit(true);setMobileAuditCollapsed(false);
+    window.setTimeout(()=>document.querySelector('[data-panel-id="contribution-audit"]')?.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0})),0);
+  },[]);
   const [rulePanelCollapsed, setRulePanelCollapsed] = useState(false);
   const [modePanelCollapsed, setModePanelCollapsed] = useState(false);
   const desktopWorldControlsRef = useRef<HTMLDivElement>(null);
@@ -1980,7 +1992,7 @@ map.on('mousemove', handleMouseMove);
       case 'settings':
         return <SettingsPanel onClose={closeMobileSheet} onOpenConfigStudio={() => { closeMobileSheet(); openConfigStudio(); }} onOpenConfigLab={configLab ? undefined : () => { closeMobileSheet(); openConfigLab(); }} reviewAuth={openriamapGithubReviewAuth} reviewAuthTitle="登录状态" reviewAuthLoginLabel="使用 GitHub 登录" />;
       case 'releaseRecords':
-        return <PublicReleaseRecordsPanel showNativeClose showInlineRefresh onClose={closeMobileSheet} />;
+        return <PublicReleaseRecordsPanel showNativeClose showInlineRefresh onClose={closeMobileSheet} onOpenAudit={()=>void openContributionAudit()} />;
       case 'navigation':
         return (
           <NavigationPanel
@@ -2152,9 +2164,9 @@ case 'players':
             id="public-release-records"
             defaultPosition={{ x: 760, y: 160 }}
             constrainExpandedToViewport
-            expandedHeaderActions={<AppButton className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={() => setPublicReleaseRecordsRefreshSignal((value) => value + 1)} title="刷新发布记录"><RefreshCw className="h-5 w-5" /></AppButton>}
+            expandedHeaderActions={<>{releaseRecordsAuthorized?<AppButton className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={()=>void openContributionAudit()} title="审计"><Calculator className="h-5 w-5"/></AppButton>:null}<AppButton className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={() => setPublicReleaseRecordsRefreshSignal((value) => value + 1)} title="刷新发布记录"><RefreshCw className="h-5 w-5" /></AppButton></>}
           >
-            <PublicReleaseRecordsPanel onClose={() => setShowPublicReleaseRecords(false)} refreshSignal={publicReleaseRecordsRefreshSignal} />
+            <PublicReleaseRecordsPanel onClose={() => setShowPublicReleaseRecords(false)} refreshSignal={publicReleaseRecordsRefreshSignal} onOpenAudit={()=>void openContributionAudit()} onAuthorizationChange={setReleaseRecordsAuthorized} />
           </DraggablePanel>
         </div>
       )}
@@ -2217,7 +2229,7 @@ case 'players':
       {/* 顶部区域：桌面端恢复原始布局；移动端仅保留搜索框与关于快捷按钮 */}
       <div ref={desktopWorldControlsRef} data-map-world-controls className="hidden sm:flex absolute top-4 left-4 right-auto z-[1000] flex-col gap-2 sm:max-w-[300px]">
         <AppCard className="bg-white/90 px-3 py-2 sm:px-4">
-          <h1 className="text-base sm:text-lg font-bold text-gray-800">RIA 在线地图</h1>
+          <h1 className="text-base sm:text-lg font-bold text-gray-800">{application.titles?.mapTitle||'RIA 在线地图'}</h1>
           <WorldSwitcher
             frameless
             worlds={WORLDS}
@@ -2690,6 +2702,11 @@ case 'players':
       >
         {renderMobileSheetContent()}
       </MobileBottomSheet>
+
+      {showContributionAudit?<>
+        <div className="hidden sm:block"><DraggablePanel id="contribution-audit" defaultPosition={{x:620,y:140}} constrainExpandedToViewport><ContributionAuditPanel onClose={()=>setShowContributionAudit(false)}/></DraggablePanel></div>
+        <MobileBottomSheet open title="审计" collapsed={mobileAuditCollapsed} onToggleCollapsed={()=>setMobileAuditCollapsed(value=>!value)} onClose={()=>setShowContributionAudit(false)}><ContributionAuditPanel onClose={()=>setShowContributionAudit(false)}/></MobileBottomSheet>
+      </>:null}
 
       {/* 路径高亮图层 */}
 {mapReady && leafletMapRef.current && projectionRef.current && showRouteOverlay && routeHighlight && (

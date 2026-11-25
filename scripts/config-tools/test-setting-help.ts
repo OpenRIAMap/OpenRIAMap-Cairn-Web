@@ -12,4 +12,5 @@ const missing=[...new Set(sites.filter(row=>row.title&&resolveSettingHelp(row.ti
 assert.deepEqual(missing,[],'static setting sites must have semantic explanations');
 const {inventory}=await import('./instrument-setting-help.mjs');assert.equal(inventory.length,0,'new controls need local help integration');
 for(const [title,context] of [['symbol','ExtraRuleSettings'],['NE','RenderRuleExtensionsEditor'],['tags.custom','NodeFieldSettingsEditor'],['custom','LabelSourceEditor'],['1','GeneralParameterEditor:sources/github/sourceIds/0']]){const result=resolveSettingHelp(title,context);assert.notEqual(result.kind,'context');assert(result.text.length>25);assert(result.key.includes(title));}
+for(const [title,context] of [['世界','ApplicationWorldSelect'],['普通表格格式','ConfigStudio'],...['列键','列名','类型','必填'].map(title=>[title,'TableDefinitionEditor']),...['所属分栏','分栏标题','初始展开'].map(title=>[title,'V3WorkflowEditor'])])assert.notEqual(resolveSettingHelp(title,context).kind,'context',`${context}/${title} needs specific c21 help`);
 console.log(`setting-help: ${sites.length} static sites, dynamic field/event/direction semantics and new-control coverage passed`);

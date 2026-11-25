@@ -33,7 +33,7 @@ export function workflowConditionMatches(condition: import('./types').WorkflowVa
   if (condition.all) return condition.all.every(item=>workflowConditionMatches(item,slots,system));
   if (condition.any) return condition.any.some(item=>workflowConditionMatches(item,slots,system));
   const value = Object.prototype.hasOwnProperty.call(system, condition.token) ? system[condition.token] : slots[condition.token];
-  const empty = value == null || typeof value === 'string' && !value.trim();
+  const empty = value == null || typeof value === 'string' && !value.trim() || Array.isArray(value)&&!value.length;
   if (condition.operator === 'empty') return empty;
   if (condition.operator === 'present') return !empty;
   if (condition.operator === 'in') return condition.values?.includes(value as string | number | boolean) ?? false;

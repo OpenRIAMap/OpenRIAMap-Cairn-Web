@@ -3376,7 +3376,7 @@ const buildRelayPackageArtifact = async (operator: string, note: string): Promis
       note,
     });
   } catch (error) {
-    throw new Error(`标准包生成失败：${String((error as Error)?.message ?? error ?? '未知错误')}`);
+    throw Object.assign(new Error(`标准包生成失败：${String((error as Error)?.message ?? error ?? '未知错误')}`), {issues:(error as {issues?:unknown})?.issues});
   }
   const now = new Date();
   const y = String(now.getFullYear());
@@ -5743,6 +5743,7 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
       <RelayPackageExportPanel
         open={relayPackageExportOpen}
         draft={relayPackageDraft}
+        contentVersion={JSON.stringify([layers.map(layer=>layer.jsonInfo?.featureInfo),relayPackageDraft.deleteMarks,relayPackageDraft.picturesById])}
         configuration={configRuntime}
         featureCount={layers.filter((l) => l.id !== editingLayerId && l.jsonInfo?.featureInfo).length}
         onClose={() => setRelayPackageExportOpen(false)}

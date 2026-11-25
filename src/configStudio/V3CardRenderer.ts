@@ -1,4 +1,5 @@
 import { normalizeRuleSourceWorldId } from '../core/project/worldIdentity';
+import {workflowConditionMatches} from './workflowExpression';
 import { isNativeConfigRevision } from './contract';
 import type { CardItem, ClassificationPath, ConfigPackageV3 } from './types';
 import { resolveCardConfiguration, resolveEffectiveFields, optionLabel } from './runtime';
@@ -96,6 +97,7 @@ function lineChipsRow(item: CardItem, record: FeatureRecord, config:ConfigPackag
 
 function rowFor(item: CardItem, record: FeatureRecord, config: ConfigPackageV3, railIndex?: RailNewIndex | null): CardRow | undefined {
   if (!item.visible) return undefined;
+  const values={...record.featureInfo} as Record<string,unknown>;const fill=(condition:import('./types').WorkflowValueCondition|undefined):void=>{if(!condition)return;if(condition.token)values[condition.token]=valueAt(record,condition.token);for(const c of condition.all??condition.any??[])fill(c);};fill(item.when);if(!workflowConditionMatches(item.when,values))return undefined;
   const language=config.application?.preferences.language??'zh';
   const defined = config.contractRevision<9?resolveEffectiveFields(config,classificationFor(record)).find(field=>field.key===item.source):undefined;
   if(item.valueMode==='field'&&item.options?.format===undefined&&defined?.format)item={...item,options:{...item.options,format:defined.format}};
@@ -103,6 +105,8 @@ function rowFor(item: CardItem, record: FeatureRecord, config: ConfigPackageV3, 
 
   const raw = [item.source, ...(item.fallbackSources ?? [])].map(source => valueAt(record, source)).find(value => !isEmpty(value));
   const rawText = text(raw).trim();
+  const tableField=resolveEffectiveFields(config,classificationFor(record)).find(f=>f.key===item.source&&f.format==='table');
+  if(tableField?.table)return Array.isArray(raw)&&raw.length?{label:labelFor(item,config,record),value:{kind:'ordinaryTable',columns:tableField.table.columns,rows:raw}}:undefined;
   const label = labelFor(item,config,record);
   const colorText = text(valueAt(record, item.options?.colorSource || item.source)).trim();
   const needsValue = item.renderer !== 'media' && item.renderer !== 'colorCapsule';

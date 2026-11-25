@@ -1,4 +1,6 @@
 import {matchesClassificationRange} from './classificationScope';
+import {activeWorkflowSlots,workflowConditionContext,datasetOptions} from './c21Workflow';
+import {normalizeTableRows,tableValueErrors} from './ordinaryTable';
 import {matchesSearchQuery} from './searchMatch';
 import {workflowClassificationGroup,outputAcceptsClassification,recordClassificationEligible} from './workflowClassificationGroup';
 import { tagRecordErrors } from './standardTagFields';
@@ -85,13 +87,14 @@ export function workflowOutputSystem(workflow: WorkflowDefinition, slots: V3Work
   const values = (classification: ClassificationPath) => ({ World: world, WorldPrefix: resolveV3WorldPrefix(world), Class: classification.class, Kind: classification.kind ?? '', Skind: classification.skind ?? '', Skind2: classification.skind2 ?? '', Creator: slots.actor ?? '', ID: slots.ID ?? '' });
   const selected = workflow.outputs.find((output) => output.id === outputId) ?? workflow.outputs[0];
   const system: V3WorkflowValueMap = selected ? values(resolvedClassification(selected, options.classifications ?? {},options.config)) : {};
-  workflow.outputs.forEach((output, index) => Object.entries(values(resolvedClassification(output, options.classifications ?? {},options.config))).forEach(([key, value]) => { system[`${key}_${index + 1}`] = value; }));
+  workflow.outputs.forEach((output, index) => Object.entries(values(resolvedClassification(output, options.classifications ?? {},options.config))).forEach(([key, value]) => { system[`${key}_${index + 1}`] = value; system[`${output.id}.${key}`]=value; }));
   return system;
 }
 
 export function evaluateV3WorkflowOutputs(workflow: WorkflowDefinition, slots: V3WorkflowValueMap, options: { world?: string; classifications?: Record<string, ClassificationPath | undefined>; config?: ConfigPackageV3; coordinates?: Record<string, MultipartCoord[] | MultipartGeometry>; now?: Date } = {}): V3WorkflowRunResult {
   if (options.config) workflow=resolveWorkflowFields(options.config,workflow);
   slots = normalizeV3WorkflowSlots(workflow, slots);
+  if(options.config?.contractRevision&&options.config.contractRevision>=21){slots=activeWorkflowSlots(workflow,slots,options.classifications);for(const c of workflow.steps.flatMap(s=>s.controls??[]))if(c.kind==='table'&&c.slot&&Array.isArray(slots[c.slot]))slots[c.slot]=normalizeTableRows(slots[c.slot]);}
   const world = normalizeV3WorldId(options.world ?? slots.World ?? 'zth');
   const assembled = new Map<number, V3WorkflowRunResult[number]>();
   const active=new Set(activeOutputIds(workflow,slots));
@@ -125,6 +128,8 @@ export function evaluateV3WorkflowOutputs(workflow: WorkflowDefinition, slots: V
       system[`ID_${index + 1}`] = record.ID ?? '';
     }
     const custom=annotationsForOutput(workflow,slots,output.id);
+    const dataset=workflow.steps.flatMap(s=>s.controls??[]).find(c=>c.kind==='dataset'&&c.outputId===output.id);
+    if(dataset){const value=slots[dataset.slot??dataset.id];if(typeof value==='string'&&value){if(options.config&&!datasetOptions(options.config,world,classification).some(o=>o.value===value))throw Error('所属数据集已不适用于当前世界和分类，请重新选择。');record.tags??={};(record.tags as Record<string,unknown>).dataset=value;}else if(record.tags&&typeof record.tags==='object')delete (record.tags as Record<string,unknown>).dataset;}
     for(const namespace of ['tags','extensions'] as const)if(Object.keys(custom[namespace]).length){
       if(record[namespace]!=null&&(typeof record[namespace]!=='object'||Array.isArray(record[namespace])))throw new Error(`${namespace} 自动组装必须为对象。`);
       record[namespace]??={};mergeAnnotations(record[namespace] as Record<string,unknown>,custom[namespace],namespace);
@@ -174,10 +179,11 @@ export function findV3SearchCandidates(records: MountedFeatureRecord[], profile:
   }).slice(0, search.maxResults ?? 30).map((record, index) => ({ id: String(record.ID ?? index), display: displaySearchTemplate(search.displayTemplate ?? '{{ID}} ({{Name}})', record), returned: readRecordPath(record, search.returnField ?? 'ID'), record }));
 }
 
-export function validateV3WorkflowInputs(workflow: WorkflowDefinition, slots: V3WorkflowValueMap, steps = workflow.steps, config?: ConfigPackageV3): V3WorkflowInputIssue[] {
+export function validateV3WorkflowInputs(workflow: WorkflowDefinition, slots: V3WorkflowValueMap, steps = workflow.steps, config?: ConfigPackageV3, unchangedTables?:Record<string,unknown>): V3WorkflowInputIssue[] {
   if (workflow.mode !== 'composed') return [];
   if(config){workflow=resolveWorkflowFields(config,workflow);steps=resolveWorkflowFields(config,{...workflow,steps}).steps;}
   slots=coerceWorkflowValues(workflow,slots);
+  slots=workflowConditionContext(workflow,slots);
   const issues: V3WorkflowInputIssue[] = [];
   for (const step of steps) if (step.kind === 'actor' && workflow.actor?.required !== false && empty(slots.actor)) issues.push({ stepId: step.id, message: '填写人为必填项。' });
   const isRequired=(field:WorkflowControl|WorkflowGroupField)=>field.required&&(!field.requiredWhen?.length||field.requiredWhen.every(condition=>workflowConditionMatches(condition,slots)));
@@ -193,6 +199,7 @@ export function validateV3WorkflowInputs(workflow: WorkflowDefinition, slots: V3
     if (!workflowConditionMatches(control.when, slots) || ['classificationPicker','tagsExtensions'].includes(control.kind) && control.outputId && !activeOutputIds(workflow,slots).includes(control.outputId)) continue;
     const value = slots[control.slot ?? control.id];
     const report = (message: string) => issues.push({ stepId: step.id, controlId: control.id, message });
+    if(control.kind==='table'){const slot=control.slot??control.id;if(unchangedTables&&Object.prototype.hasOwnProperty.call(unchangedTables,slot)&&JSON.stringify(value)===JSON.stringify(unchangedTables[slot]))continue;for(const message of tableValueErrors(control.table,normalizeTableRows(value),Boolean(isRequired(control))))report(message);continue;}
     if(control.kind==='classificationPicker' && config && !empty(value)){
       const path=decodePath(String(value));if(!path||(config.contractRevision>=15?!workflow.outputs.some(output=>output.id===control.outputId&&outputAcceptsClassification(config,output,path)):!hasCategoryNode(config,path)||hasDescendants(config,path)||!pathMatchesScope(path,control.classificationScope??{class:''})))report('请选择范围内最终子分类。');
     }
@@ -228,7 +235,7 @@ export function validateV3WorkflowInputs(workflow: WorkflowDefinition, slots: V3
 }
 
 /** Creation validates the assembled record, not only its form slots. */
-export function validateV3WorkflowRecords(config: ConfigPackageV3, workflow: WorkflowDefinition, result: V3WorkflowRunResult): V3WorkflowInputIssue[] {
+export function validateV3WorkflowRecords(config: ConfigPackageV3, workflow: WorkflowDefinition, result: V3WorkflowRunResult, original?:Record<string,unknown>): V3WorkflowInputIssue[] {
   const issues: V3WorkflowInputIssue[] = [];
   for (const output of result) {
     const definition = workflow.outputs.find(item => item.id === output.outputId);
@@ -244,6 +251,7 @@ export function validateV3WorkflowRecords(config: ConfigPackageV3, workflow: Wor
     }}
     for (const field of resolveEffectiveFields(config, output.classification)) {
       const value = readRecordPath(output.record, field.key);
+      if(field.format==='table'&&original&&JSON.stringify(recordPath(original))===JSON.stringify(output.classification)&&JSON.stringify(value)===JSON.stringify(readRecordPath(original,field.key)))continue;
       const required = recordFieldRequired(field,output.record);
       if (required && empty(value)) issues.push({ message: `输出 ${output.outputId} 的 ${field.key} 为必填项。` });
       if (empty(value)) continue;

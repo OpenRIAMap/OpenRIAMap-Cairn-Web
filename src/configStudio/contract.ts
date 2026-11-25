@@ -1,14 +1,14 @@
 /** One capability source for UI, codecs, migrations and the vendored Node validator.
  * Configuration revision (r) and contract revision (c) are separate identities. */
-export const NATIVE_CONFIG_REVISION = 20 as const;
+export const NATIVE_CONFIG_REVISION = 21 as const;
 export const CONTRACT_CAPABILITIES = {
   latest: NATIVE_CONFIG_REVISION,
-  native: [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
-  activation: [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
-  category: [9,10,11,12,13,14,15,16,17,18,19,20],
-  workflow: [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
-  publication: [11,12,13,14,15,16,17,18,19,20],
-  migration: { baseline: 13, previousVersions: 5, steps: [[13,14],[14,15],[15,16],[16,17],[17,18],[18,19],[19,20]] },
+  native: [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21],
+  activation: [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21],
+  category: [9,10,11,12,13,14,15,16,17,18,19,20,21],
+  workflow: [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21],
+  publication: [11,12,13,14,15,16,17,18,19,20,21],
+  migration: { baseline: 13, previousVersions: 5, steps: [[13,14],[14,15],[15,16],[16,17],[17,18],[18,19],[19,20],[20,21]] },
 } as const;
 export type NativeContractRevision = typeof CONTRACT_CAPABILITIES.native[number];
 export type CategoryContractRevision = typeof CONTRACT_CAPABILITIES.category[number];

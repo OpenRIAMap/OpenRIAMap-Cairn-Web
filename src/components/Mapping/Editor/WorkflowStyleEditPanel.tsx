@@ -1,4 +1,5 @@
 import {externalRolePaths} from '@/configStudio/externalBindings';
+import {DatasetInput} from '@/configStudio/DatasetInput';
 import {workflowCategoryOptions} from '@/configStudio/workflowCategoryOptions';
 import {specializedReferenceSearch} from '../Workflow/specialized/referenceSearch';
 import type {ReactNode} from 'react';
@@ -108,6 +109,7 @@ export default function WorkflowStyleEditPanel(props: Props) {
   const renderField = (field: ProjectedRegistryField) => {
     const value = values[field.path];
     const label = field.label;
+    if(field.path==='tags.dataset'&&context){const encoded=String(values[CLASSIFICATION_DRAFT_KEY]??''),[kind,skind,skind2]=encoded.split('||'),paths=externalRolePaths(context.config,context.workflow,'tradePoint'),path=paths.find(p=>(p.kind??'')===kind&&(p.skind??'')===skind&&(p.skind2??'')===skind2)??(paths.length===1?paths[0]:undefined);return <label key={field.path} className="mb-2 block text-xs">{label}<DatasetInput config={context.config} world={bridge.getCurrentWorldId()} path={path} value={value} onChange={value=>onChangeValue(field.path,value)}/></label>;}
     if(field.control==='select')return <label key={field.path} data-editor-field={field.path} className="mb-2 block text-xs">{label}{field.required?' *':''}<select className="mt-1 w-full rounded border p-1 text-sm" value={getText(value)} onChange={event=>onChangeValue(field.path,event.target.value)}><option value="">请选择</option>{field.options?.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
 
     if (field.control === 'bool') {

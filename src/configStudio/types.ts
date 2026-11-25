@@ -17,14 +17,17 @@ export type SelectOption = { value: string; label: LocalizedText };
 /** The same dictionary body is used inline and by public lookup tables. */
 export type OptionTable = { valueType: 'string' | 'number' | 'boolean'; rows: SelectOption[] };
 export type FieldDefinitionRef = { nodeId: string; fieldId: string };
-export type TagFieldMetadata = {kind:'tagField';type:'text'|'number'|'bool'|'select';format?:'plain'|'externalLink'|'date';valueTable?:OptionTable;valueTableId?:string};
+export type TagFieldMetadata = {kind:'tagField';type:'text'|'number'|'bool'|'select';format?:'plain'|'externalLink'|'date';valueTable?:OptionTable;valueTableId?:string;dynamicSource?:'dataset-directory'};
+export type DatasetEntry = {world:string;scope:import('./classificationScope').ClassificationScope};
+export type TableColumn = {key:string;label:LocalizedText;type:'text'|'number';required?:boolean};
+export type TableDefinition = {columns:TableColumn[];maxRows?:number;maxCellLength?:number};
 /** Explicit table binding is live; prefill copies effective rows without it. */
 export type LookupTable = {
   id: string;
   label: LocalizedText;
   valueType: 'string' | 'number' | 'boolean';
-  functionKind: 'none' | 'speed' | 'teleportHub' | 'tagField';
-  rows: Array<SelectOption & { functionValue?: TagFieldMetadata | number | { world: string; range: number; returnPoints: Array<{ id: string; label: LocalizedText; x: number; y: number; z: number }> } }>;
+  functionKind: 'none' | 'speed' | 'teleportHub' | 'tagField' | 'dataset';
+  rows: Array<SelectOption & { functionValue?: TagFieldMetadata | DatasetEntry | number | { world: string; range?: number; returnPoints: Array<{ id: string; label: LocalizedText; x: number; y: number; z: number }> } }>;
 };
 /** `tags` and `extensions` are optional field groups, never synthetic root
  * fields named "tags" or "extensions". `key` remains the full data path so
@@ -48,7 +51,7 @@ export type FieldDefinition = {
   scope?: FieldScope;
   type: FieldValueType;
   cardinality: 'single' | 'multiple';
-  input: 'text' | 'textarea' | 'select' | 'toggle' | 'json' | 'featureSearch';
+  input: 'text' | 'textarea' | 'select' | 'toggle' | 'json' | 'featureSearch' | 'table';
   required?: boolean;
   /** V1 data is not retroactively invalidated unless the editor opts in. */
   validateExistingData?: boolean;
@@ -60,7 +63,9 @@ export type FieldDefinition = {
   optionTable?: OptionTable;
   /** Options are serialized text keys; this controls the actual stored scalar. */
   optionValueType?: 'string' | 'number' | 'boolean';
-  format?: 'plain' | 'externalLink' | 'boolean' | 'json' | 'date';
+  format?: 'plain' | 'externalLink' | 'boolean' | 'json' | 'date' | 'table';
+  table?: TableDefinition;
+  dynamicSource?: 'dataset-directory';
   coordinateFormat?: 'coordP' | 'pointObject' | 'coordL' | 'coordG';
   /** Bounded declarative JSON value contract; no remote references or executable code. */
   valueSchema?: ValueSchema;
@@ -750,6 +755,7 @@ export type CardRelation = {
   fallbackDisplay?: 'raw' | 'unknown';
 };
 export type CardItem = {
+  when?: WorkflowValueCondition;
   id: string;
   fieldBinding?: FieldDefinitionRef;
   optionsFieldRef?: FieldDefinitionRef;
@@ -782,7 +788,7 @@ export type CardItem = {
     lineChipSource?: 'platform' | 'station' | 'stationBuilding';
     /** A small set of V1 field-formatters that remains reusable rather than a
      * code-card escape hatch. */
-    format?: 'plain' | 'externalLink' | 'boolean' | 'json' | 'classification' | 'enum' | 'date' | 'world';
+    format?: 'plain' | 'externalLink' | 'boolean' | 'json' | 'classification' | 'enum' | 'date' | 'world' | 'table';
     linkText?: 'raw' | 'href';
   };
   relation?: CardRelation;
@@ -849,7 +855,7 @@ export type SearchProfile = {
 };
 
 /** Composed workflows expose only the standard reusable input controls. */
-export type ComposedWorkflowControlKind = 'text' | 'textarea' | 'number' | 'select' | 'toggle' | 'json' | 'classificationPicker' | 'featureSearch' | 'coarseSearch' | 'group' | 'tagsExtensions';
+export type ComposedWorkflowControlKind = 'text' | 'textarea' | 'number' | 'select' | 'toggle' | 'json' | 'classificationPicker' | 'featureSearch' | 'coarseSearch' | 'group' | 'tagsExtensions' | 'table' | 'dataset';
 /** Legacy values are retained solely so an old package can be migrated with a precise diagnostic. */
 export type WorkflowControlKind = ComposedWorkflowControlKind | 'notice' | 'json' | 'runtimeValue' | 'component';
 /**
@@ -882,7 +888,7 @@ export type WorkflowGroupField = {
 export type WorkflowFieldSource = {
   nodeId: string;
   fieldId: string;
-  snapshot: Pick<FieldDefinition, 'key' | 'type' | 'cardinality' | 'labels' | 'options' | 'optionValueType' | 'format' | 'defaultValue' | 'required' | 'requiredWhen' | 'input' | 'placeholder' | 'reference'>;
+  snapshot: Pick<FieldDefinition, 'key' | 'type' | 'cardinality' | 'labels' | 'options' | 'optionValueType' | 'format' | 'defaultValue' | 'required' | 'requiredWhen' | 'input' | 'placeholder' | 'reference' | 'table'>;
   overrides: string[];
 };
 export type WorkflowRepeatGroup = {
@@ -895,6 +901,8 @@ export type WorkflowRepeatGroup = {
   addLabel?: LocalizedText;
 };
 export type WorkflowControl = {
+  sectionId?: string;
+  table?: TableDefinition;
   optionTable?: OptionTable;
   optionsFieldRef?: FieldDefinitionRef;
   prefillAudit?: PrefillAudit;
@@ -929,6 +937,7 @@ export type WorkflowControl = {
 };
 
 export type WorkflowStep = {
+  sections?: Array<{id:string;label:LocalizedText;initialOpen?:boolean}>;
   id: string;
   kind: 'actor' | 'form' | 'tagsExtensions' | 'geometry' | 'special';
   label: LocalizedText;
@@ -1024,7 +1033,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
+  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */

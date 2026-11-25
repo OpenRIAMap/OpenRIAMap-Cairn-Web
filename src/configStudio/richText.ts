@@ -9,4 +9,4 @@ export function richTextProblems(value:RichTextDocument):string[]{
   if(size>100000||runs>5000)errors.push('富文本超过长度或格式片段数量限制。');
   return [...new Set(errors)];
 }
-export type Announcement={id:string;title:string;enabled:boolean;mode:'once'|'always';content:RichTextDocument};
+export type Announcement={loginOnly?:boolean;id:string;title:string;enabled:boolean;mode:'once'|'always';content:RichTextDocument};

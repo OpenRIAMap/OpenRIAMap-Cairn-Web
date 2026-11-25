@@ -944,7 +944,7 @@ function validateCard(node: CategoryNode, config: ConfigPackageV3, issues: Confi
     if (mapped.some(option=>!option.value.trim()) || new Set(mapped.map(option=>option.value)).size!==mapped.length) issue(issues,'error','card-value-map-invalid',itemPath,'信息卡覆写对照必须有唯一非空的存储值。');
     const definition=resolveEffectiveFields(config,node.path).find(field=>field.key===item.source);
     if(config.contractRevision>=8&&item.valueMode==='override'&&definition?.type==='enum'&&mapped.some(option=>!definition.options?.some(value=>value.value===option.value)))issue(issues,'error','card-field-map-conflict',itemPath,`信息卡 ${item.source} 覆写对照使用了来源字段已删除的选项，请调整覆写或恢复跟随。`);
-    if (item.options?.format && !['plain','externalLink','boolean','json','classification','enum','date','world'].includes(item.options.format)) issue(issues, 'error', 'card-format-invalid', itemPath, '未知的信息卡格式。');
+    if (item.options?.format && !['plain','externalLink','boolean','json','classification','enum','date','world','table'].includes(item.options.format)) issue(issues, 'error', 'card-format-invalid', itemPath, '未知的信息卡格式。');
     if (config.contractRevision === 5 && item.options?.format && ['classification','enum','date','world'].includes(item.options.format)) issue(issues, 'error', 'card-format-revision-invalid', itemPath, '该信息卡格式要求原生 c6。');
     if (item.renderer === 'lineChips' && !item.options?.lineChipSource) issue(issues, 'error', 'card-line-chips-source-required', itemPath, '关联线路胶囊必须选择平台、车站或车站建筑来源。');
     if (item.renderer !== 'relationLink') continue;
@@ -1134,6 +1134,7 @@ function validateWorkflow(workflow: WorkflowDefinition, config: ConfigPackageV3,
     if(tailIndex>=0||(config.contractRevision>=18?modules.length!==workflow.outputs.length||modules.some(control=>!control.systemManaged||!workflow.outputs.some(output=>output.id===control.outputId)):modules.length!==1||!modules[0]?.systemManaged)||workflow.steps.some(step=>step.kind!=='form'&&step.controls?.some(control=>control.kind==='tagsExtensions')))issue(issues,'error','workflow-inline-annotations-required',base,'必须在信息收集页保留一个不可删除、可移动的标签与扩展固定单元。');
   }
   const allTokens = new Set([...controlList.flatMap(control => control.slot ? [control.slot] : []), ...workflowDerivedPointTokens(workflow), ...WORKFLOW_SYSTEM_TOKENS, ...workflow.outputs.flatMap((_, index) => WORKFLOW_SYSTEM_TOKENS.map(token => `${token}_${index + 1}`))]);
+  if(config.contractRevision>=21)for(const output of workflow.outputs)for(const token of WORKFLOW_SYSTEM_TOKENS)allTokens.add(`${output.id}.${token}`);
   const captured = workflowCaptureSlots(workflow);
   const derivedTokens = workflowDerivedPointTokens(workflow);
   for (const token of derivedTokens) if (!/^[A-Z][A-Z0-9_]*$/.test(token) || controlList.some(control => control.slot === token) || derivedTokens.filter(item => item === token).length > 1 || WORKFLOW_SYSTEM_TOKENS.some(system => token === system || new RegExp(`^${system}_\\d+$`).test(token))) issue(issues, 'error', 'workflow-capture-slot-invalid', base, `坐标槽位 ${token} 无效、重复或占用系统 token。`);

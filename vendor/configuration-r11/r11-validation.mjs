@@ -9777,15 +9777,15 @@ function validateMediaPolicy(config, incoming, existing) {
 }
 
 // src/configStudio/contract.ts
-var NATIVE_CONFIG_REVISION = 20;
+var NATIVE_CONFIG_REVISION = 21;
 var CONTRACT_CAPABILITIES = {
   latest: NATIVE_CONFIG_REVISION,
-  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-  category: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-  publication: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17], [17, 18], [18, 19], [19, 20]] }
+  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+  category: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+  publication: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17], [17, 18], [18, 19], [19, 20], [20, 21]] }
 };
 var supportsContract = (capability, value) => typeof value === "number" && CONTRACT_CAPABILITIES[capability].includes(value);
 function isNativeConfigRevision(value) {
@@ -9867,7 +9867,7 @@ function workflowConditionMatches(condition, slots, system = {}) {
   if (condition.all) return condition.all.every((item) => workflowConditionMatches(item, slots, system));
   if (condition.any) return condition.any.some((item) => workflowConditionMatches(item, slots, system));
   const value = Object.prototype.hasOwnProperty.call(system, condition.token) ? system[condition.token] : slots[condition.token];
-  const empty4 = value == null || typeof value === "string" && !value.trim();
+  const empty4 = value == null || typeof value === "string" && !value.trim() || Array.isArray(value) && !value.length;
   if (condition.operator === "empty") return empty4;
   if (condition.operator === "present") return !empty4;
   if (condition.operator === "in") return condition.values?.includes(value) ?? false;
@@ -10194,6 +10194,50 @@ function validateStructuredValue(value, schema, path2 = "value", reportBranchDet
   return visit(value, schema, path2, 0);
 }
 
+// src/configStudio/ordinaryTable.ts
+var TABLE_LIMITS = { columns: 16, rows: 500, cellLength: 1e4 };
+var blank = (v) => v == null || typeof v === "string" && !v.trim();
+function normalizeTableRows(value) {
+  if (!Array.isArray(value)) return value;
+  return value.filter((row2) => !row2 || typeof row2 !== "object" || Array.isArray(row2) || Object.values(row2).some((v) => !blank(v))).map((row2) => row2 && typeof row2 === "object" && !Array.isArray(row2) ? Object.fromEntries(Object.entries(row2).filter(([, v]) => !blank(v))) : row2);
+}
+function tableDefinitionErrors(table) {
+  if (!table || !Array.isArray(table.columns) || !table.columns.length || table.columns.length > TABLE_LIMITS.columns) return ["\u8868\u683C\u5FC5\u987B\u6709 1\u201316 \u5217\u3002"];
+  const keys = /* @__PURE__ */ new Set(), errors = [];
+  for (const c of table.columns) {
+    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(c.key) || ["constructor", "prototype", "__proto__"].includes(c.key) || keys.has(c.key)) errors.push("\u8868\u683C\u5217\u952E\u5FC5\u987B\u5B89\u5168\u3001\u7A33\u5B9A\u4E14\u552F\u4E00\u3002");
+    keys.add(c.key);
+    if (!(c.label.zh.trim() || c.label.en.trim())) errors.push("\u8868\u683C\u5217\u9700\u8981\u540D\u79F0\u3002");
+  }
+  if (table.maxRows !== void 0 && (!Number.isInteger(table.maxRows) || table.maxRows < 1 || table.maxRows > TABLE_LIMITS.rows)) errors.push("\u8868\u683C\u884C\u6570\u4E0A\u9650\u5E94\u4E3A 1\u2013500\u3002");
+  if (table.maxCellLength !== void 0 && (!Number.isInteger(table.maxCellLength) || table.maxCellLength < 1 || table.maxCellLength > TABLE_LIMITS.cellLength)) errors.push("\u5355\u5143\u683C\u957F\u5EA6\u4E0A\u9650\u5E94\u4E3A 1\u201310000\u3002");
+  return errors;
+}
+function tableValueErrors(table, value, required = false) {
+  const errors = tableDefinitionErrors(table);
+  if (errors.length) return errors;
+  if (value == null || Array.isArray(value) && !value.length) return required ? ["\u8868\u683C\u81F3\u5C11\u9700\u8981\u4E00\u6761\u6709\u6548\u884C\u3002"] : [];
+  if (!Array.isArray(value)) return ["\u8868\u683C\u5FC5\u987B\u4FDD\u5B58\u4E3A JSON \u884C\u6570\u7EC4\uFF1B\u539F\u503C\u5DF2\u4FDD\u7559\uFF0C\u8BF7\u4FEE\u6574\u3002"];
+  if (value.length > (table.maxRows ?? TABLE_LIMITS.rows)) errors.push("\u8868\u683C\u8D85\u8FC7\u5141\u8BB8\u884C\u6570\uFF1B\u672A\u622A\u65AD\u6570\u636E\u3002");
+  for (const [i, row2] of value.entries()) {
+    if (!row2 || typeof row2 !== "object" || Array.isArray(row2)) {
+      errors.push(`\u7B2C ${i + 1} \u884C\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002`);
+      continue;
+    }
+    for (const key2 of Object.keys(row2)) if (!table.columns.some((c) => c.key === key2)) errors.push(`\u7B2C ${i + 1} \u884C\u542B\u5386\u53F2\u672A\u77E5\u5217 ${key2}\uFF0C\u539F\u503C\u5DF2\u4FDD\u7559\u3002`);
+    for (const c of table.columns) {
+      const v = row2[c.key], at = `\u7B2C ${i + 1} \u884C / ${c.label.zh || c.key}`;
+      if (blank(v)) {
+        if (c.required) errors.push(at + " \u4E3A\u5FC5\u586B\u3002");
+        continue;
+      }
+      if (c.type === "number" ? typeof v !== "number" || !Number.isFinite(v) : typeof v !== "string") errors.push(at + " \u7C7B\u578B\u4E0D\u7B26\u3002");
+      if (typeof v === "string" && v.length > (table.maxCellLength ?? TABLE_LIMITS.cellLength)) errors.push(at + " \u8D85\u8FC7\u5141\u8BB8\u957F\u5EA6\uFF1B\u672A\u622A\u65AD\u3002");
+    }
+  }
+  return errors;
+}
+
 // src/core/geometry/multipartGeometry.ts
 var DEFAULT_GEOMETRY_Y = -64;
 var isObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -10459,6 +10503,7 @@ function fieldFormatErrors(field, value) {
   return [];
 }
 function fieldValueErrors(field, value) {
+  if (field.format === "table") return tableValueErrors(field.table, value, field.required).map((message) => field.key + " " + message);
   if (emptyFieldValue(value)) return [];
   const errors = [];
   if (field.valueSchema) errors.push(...validateStructuredValue(value, field.valueSchema, field.key));
@@ -10581,6 +10626,7 @@ function validateWorkflowWrites(workflow, fields, candidate, searchFields) {
     workflow.outputs.forEach((_, index) => tokens.set(`${token}_${index + 1}`, shape("string")));
   }
   const controlShape = (control) => {
+    if (control.kind === "table" && "table" in control) return { kinds: ["array"], item: { kinds: ["object"], properties: Object.fromEntries((control.table?.columns ?? []).map((c) => [c.key, shape(c.type === "number" ? "number" : "string")])), requiredProperties: control.table?.columns.filter((c) => c.required).map((c) => c.key) } };
     if (control.kind === "group" && "group" in control) return { kinds: ["array"], item: control.group?.storage === "scalar" ? controlShape(control.group.itemFields[0]) : { kinds: ["object"], properties: Object.fromEntries((control.group?.itemFields ?? []).map((f) => [f.key, controlShape(f)])), requiredProperties: control.group?.itemFields.filter((field) => field.required && !field.requiredWhen?.length).map((field) => field.key) } };
     if (control.kind === "json" || control.kind === "runtimeValue" || control.kind === "component") return shape("unknown");
     if (control.kind === "select") {
@@ -10715,7 +10761,11 @@ function validateWorkflowSupplies(workflow, fields, candidate) {
   for (const [key2, value] of Object.entries({ ...constants })) constants[`${key2}_${workflow.outputs.indexOf(output) + 1}`] = value;
   const controls = workflow.steps.flatMap((step) => (step.controls ?? []).map((control) => ({ step, control })));
   const drawings = workflow.steps.filter((step) => step.kind === "geometry");
-  const inputConditionKnown = (condition) => !condition || !/^(?:ID|Class|Kind|Skind|Skind2|Creator|WorldPrefix)(?:_\d+)?$/.test(condition.token) && (condition.all ?? condition.any ?? []).every(inputConditionKnown);
+  const inputConditionKnown = (condition) => {
+    if (!condition) return true;
+    if (condition.all || condition.any) return (condition.all ?? condition.any ?? []).every(inputConditionKnown);
+    return !/^(?:ID|Creator|WorldPrefix)(?:_\d+)?$/.test(condition.token);
+  };
   const source = (node) => {
     const tokens = workflowExpressionTokens(node);
     if (tokens.every((token) => Object.prototype.hasOwnProperty.call(constants, token))) {
@@ -12065,7 +12115,7 @@ function validateLookupTables(config, includeNodes = true) {
     if (!/^[a-z][a-z0-9-]{1,80}$/.test(table.id) || ids.has(table.id)) error(path2, "\u8868\u683C ID \u5FC5\u987B\u6709\u6548\u4E14\u552F\u4E00\u3002");
     ids.add(table.id);
     if (!(table.label.zh.trim() || config.contractRevision >= 11 && table.label.en.trim())) error(path2, "\u8868\u683C\u9700\u8981\u4E2D\u6587\u6216\u82F1\u6587\u540D\u79F0\u3002");
-    if (!table.rows.length) error(path2, "\u8868\u683C\u81F3\u5C11\u9700\u8981\u4E00\u884C\u3002");
+    if (!table.rows.length && table.functionKind !== "dataset") error(path2, "\u8868\u683C\u81F3\u5C11\u9700\u8981\u4E00\u884C\u3002");
     const values2 = /* @__PURE__ */ new Set();
     const pointIds = /* @__PURE__ */ new Set();
     for (const [index, row2] of table.rows.entries()) {
@@ -12077,7 +12127,7 @@ function validateLookupTables(config, includeNodes = true) {
       if (table.functionKind === "speed" && (typeof row2.functionValue !== "number" || !Number.isFinite(row2.functionValue) || row2.functionValue <= 0)) error(at, "\u51FA\u884C\u901F\u5EA6\u5FC5\u987B\u4E3A\u6B63\u6570\uFF0C\u5355\u4F4D\u4E3A\u65B9\u5757/\u79D2\u3002");
       if (table.functionKind === "teleportHub") {
         const hub = row2.functionValue;
-        if (!hub || typeof hub === "number" || !("world" in hub) || !hub.world.trim() || !Number.isFinite(hub.range) || hub.range <= 0 || !hub.returnPoints.length) {
+        if (!hub || typeof hub === "number" || !("returnPoints" in hub) || !hub.world.trim() || config.contractRevision < 21 && (!Number.isFinite(hub.range) || Number(hub.range) <= 0) || !hub.returnPoints.length) {
           error(at, "\u67A2\u7EBD\u9700\u8BBE\u7F6E\u4E16\u754C\u3001\u6B63\u6570\u8303\u56F4\u53CA\u81F3\u5C11\u4E00\u4E2A\u8FD4\u56DE\u70B9\u3002");
           continue;
         }
@@ -12167,84 +12217,6 @@ function legacyExternalRoleBindings(config, workflow) {
     const hasChildren = Boolean(config?.nodes.some((node) => node.path.class === path2.class && (!path2.kind || node.path.kind === path2.kind) && Object.values(node.path).filter(Boolean).length > Object.values(path2).filter(Boolean).length));
     return [{ role, classificationGroup: { selectors: [{ id: "migrated-" + role, mode: role === "tradePoint" && hasChildren ? "leafDescendants" : "self", path: path2 }] } }];
   });
-}
-
-// src/configStudio/standardTagFields.ts
-function tagMetadata(field) {
-  const type = field.type === "enum" || field.input === "select" ? "select" : field.type === "number" ? "number" : field.type === "boolean" ? "bool" : "text";
-  return { kind: "tagField", type, ...field.format === "externalLink" || field.format === "date" ? { format: field.format } : {}, ...type === "select" ? { valueTable: { valueType: field.optionValueType ?? "string", rows: structuredClone(field.options ?? []) } } : {} };
-}
-var stable = (value) => JSON.stringify(value);
-function standardTagFields(config, path2) {
-  const fields = resolveEffectiveFields(config, path2).filter((field) => field.key.startsWith("tags."));
-  if (config.contractRevision < 11) return fields;
-  const table = config.lookupTables?.find((table2) => table2.id === "standard-tag-fields");
-  if (!table || table.functionKind !== "tagField") throw Error("\u6807\u51C6\u6807\u7B7E\u5B57\u6BB5\u76EE\u5F55\u4E0D\u5B58\u5728\u6216\u683C\u5F0F\u65E0\u6548\u3002");
-  const result = table.rows.map((row2) => {
-    const meta = row2.functionValue;
-    if (!meta || typeof meta !== "object" || !("kind" in meta) || meta.kind !== "tagField") throw Error(`\u6807\u7B7E ${row2.value} \u7F3A\u5C11\u53D7\u63A7\u7C7B\u578B\u3002`);
-    const options = meta.type === "select" ? effectiveOptionTable(config, { optionTable: meta.valueTable, optionsTableId: meta.valueTableId }) : void 0;
-    return { fieldId: `tag-catalog-${row2.value}`, key: `tags.${row2.value}`, scope: "tags", type: meta.type === "select" ? "enum" : meta.type === "number" ? "number" : meta.type === "bool" ? "boolean" : "string", input: meta.type === "select" ? "select" : meta.type === "bool" ? "toggle" : "text", cardinality: "single", labels: row2.label, description: { zh: "", en: "" }, format: meta.format, options: options?.rows, optionValueType: options?.valueType };
-  });
-  for (const field of fields) {
-    const index = result.findIndex((row2) => row2.key === field.key);
-    if (index >= 0) result[index] = field;
-    else result.push(field);
-  }
-  return result;
-}
-function tagRecordErrors(config, path2, record) {
-  if (config.contractRevision < 11 || !record.tags || typeof record.tags !== "object") return [];
-  const fields = standardTagFields(config, path2), tags = record.tags, errors = [];
-  for (const field of fields) {
-    const value = tags[field.key.slice(5)];
-    if (value === void 0 || value === null) continue;
-    const values2 = field.cardinality === "multiple" && Array.isArray(value) ? value : [value], type = field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : field.type === "enum" ? field.optionValueType ?? "string" : "string";
-    if (values2.some((value2) => typeof value2 !== type || field.type === "enum" && !field.options?.some((option) => option.value === String(value2)))) errors.push(`${field.key} \u4E0E\u6807\u51C6\u76EE\u5F55\uFF0F\u5206\u7C7B\u5B57\u6BB5\u7684\u7C7B\u578B\u6216\u53EF\u9009\u503C\u4E0D\u7B26\u3002`);
-  }
-  return errors;
-}
-function standardTagTableErrors(config) {
-  if (config.contractRevision < 11) return [];
-  const errors = [], fail = (path2, message) => errors.push({ path: path2, message });
-  for (const [id2, kind] of [["teleport-hubs", "teleportHub"], ["road-travel-modes", "speed"], ["standard-tag-fields", "tagField"]]) {
-    const table2 = config.lookupTables?.find((table3) => table3.id === id2);
-    if (!table2 || table2.functionKind !== kind || table2.valueType !== "string") fail(`lookupTables/${id2}`, "\u7CFB\u7EDF\u6807\u51C6\u8868\u7F3A\u5931\uFF0C\u6216\u5176\u56FA\u5B9A ID\u3001\u7528\u9014\u3001\u4FDD\u5B58\u503C\u7C7B\u578B\u88AB\u4FEE\u6539\u3002");
-  }
-  for (const table2 of config.lookupTables ?? []) if (table2.functionKind === "tagField") {
-    if (table2.valueType !== "string") fail(`lookupTables/${table2.id}`, "\u6807\u7B7E\u540D\u79F0\u76EE\u5F55\u5FC5\u987B\u4EE5\u6587\u672C key \u4FDD\u5B58\u3002");
-    for (const row2 of table2.rows) {
-      const path2 = `lookupTables/${table2.id}/${row2.value}`, meta = row2.functionValue;
-      if (row2.value === "__other__" || !/^[A-Za-z][A-Za-z0-9_]*$/.test(row2.value)) fail(path2, "\u6807\u7B7E key \u65E0\u6548\uFF1B\u5176\u4ED6\u5B57\u6BB5\u5165\u53E3\u4E0D\u80FD\u5B58\u5165\u76EE\u5F55\u3002");
-      if (!meta || typeof meta !== "object" || !("kind" in meta) || meta.kind !== "tagField") {
-        fail(path2, "\u6807\u7B7E\u76EE\u5F55\u9700\u8981\u53D7\u63A7\u7684\u6807\u7B7E\u7C7B\u578B\u529F\u80FD\u503C\u3002");
-        continue;
-      }
-      if (meta.type !== "select" && (meta.valueTable || meta.valueTableId)) fail(path2, "\u53EA\u6709\u4E0B\u62C9\u6807\u7B7E\u53EF\u4EE5\u8BBE\u7F6E\u503C\u9009\u9879\u3002");
-      if (meta.type === "select") {
-        if (meta.valueTable && meta.valueTableId) fail(path2, "\u6807\u7B7E\u503C\u526F\u672C\u4E0E\u8868\u683C\u5F15\u7528\u4E0D\u80FD\u5E76\u5B58\u3002");
-        const source = meta.valueTableId ? config.lookupTables?.find((table3) => table3.id === meta.valueTableId) : void 0;
-        if (meta.valueTableId && (!source || source.functionKind === "tagField")) fail(path2, "\u6807\u7B7E\u503C\u5BF9\u7167\u4E0D\u80FD\u5F15\u7528\u540D\u79F0\u76EE\u5F55\u6216\u7F3A\u5931\u8868\u683C\uFF0C\u9632\u6B62\u5FAA\u73AF\u3002");
-        const values2 = effectiveOptionTable(config, { optionTable: meta.valueTable, optionsTableId: meta.valueTableId });
-        if (!values2.rows.length) fail(path2, "\u4E0B\u62C9\u6807\u7B7E\u81F3\u5C11\u9700\u8981\u4E00\u4E2A\u6709\u6548\u503C\u9009\u9879\u3002");
-        const keys = /* @__PURE__ */ new Set();
-        for (const value of values2.rows) {
-          const key2 = values2.valueType === "number" ? String(Number(value.value)) : value.value;
-          if (!value.value.trim() || keys.has(key2) || !(value.label.zh.trim() || value.label.en.trim()) || values2.valueType === "number" && !Number.isFinite(Number(value.value)) || values2.valueType === "boolean" && !["true", "false"].includes(value.value)) fail(path2, "\u6807\u7B7E\u503C\u5BF9\u7167\u5B58\u5728\u91CD\u590D\u3001\u7A7A\u540D\u79F0\u6216\u65E0\u6548\u4FDD\u5B58\u503C\u3002");
-          keys.add(key2);
-        }
-      }
-    }
-  }
-  const table = config.lookupTables?.find((table2) => table2.id === "standard-tag-fields");
-  for (const node of config.nodes) for (const field of resolveEffectiveFields(config, node.path).filter((field2) => field2.key.startsWith("tags."))) {
-    const row2 = table?.rows.find((row3) => row3.value === field.key.slice(5)), meta = row2?.functionValue;
-    if (meta && typeof meta === "object" && "kind" in meta && meta.kind === "tagField") {
-      const definition = tagMetadata(field), dictionary = meta.type === "select" ? effectiveOptionTable(config, { optionTable: meta.valueTable, optionsTableId: meta.valueTableId }) : void 0;
-      if (meta.type !== definition.type || dictionary && stable(dictionary) !== stable(definition.valueTable)) fail(`nodes/${node.nodeId}/fields/${field.fieldId}`, "\u5206\u7C7B\u4E13\u7528\u6807\u7B7E\u4E0E\u6807\u51C6\u76EE\u5F55\u7684\u7C7B\u578B\uFF0F\u503C\u9009\u9879\u5B58\u5728\u51B2\u7A81\uFF0C\u8BF7\u660E\u786E\u4FEE\u590D\u3002");
-    }
-  }
-  return errors;
 }
 
 // project-config/packages/openriamap-ria/environment/ruleButtons.json
@@ -12632,6 +12604,126 @@ function applicationWorld(id2) {
   return value;
 }
 
+// src/core/project/worldIdentity.ts
+function normalizeRuleSourceWorldId(worldId2) {
+  const raw = String(worldId2 ?? "").trim(), worlds = getApplicationSettings().worlds;
+  return worlds.find((world) => world.id.toLowerCase() === raw.toLowerCase() || world.prefix.toLowerCase() === raw.toLowerCase() || String(world.numericCode) === raw || world.label.zh === raw || world.label.en && world.label.en === raw)?.id ?? (raw || applicationWorld("").id);
+}
+
+// src/configStudio/c21Workflow.ts
+var DATASET_TABLE_ID = "dataset-directory";
+function datasetOptions(config, world, path2) {
+  if (!path2?.class) return [];
+  return (config.lookupTables?.find((t) => t.id === DATASET_TABLE_ID)?.rows ?? []).filter((row2) => {
+    const entry = row2.functionValue;
+    return entry && entry.world === normalizeRuleSourceWorldId(world) && entry.scope && matchesClassificationRange(entry.scope, path2);
+  });
+}
+function workflowConditionContext(workflow, slots, selections = {}) {
+  const context = { ...slots };
+  workflow.outputs.forEach((output, index) => {
+    const picker = workflow.steps.flatMap((s) => s.controls ?? []).find((c) => c.kind === "classificationPicker" && c.outputId === output.id);
+    let selected = selections[output.id] ?? (typeof slots[`${output.id}.Class`] === "string" ? { class: String(slots[`${output.id}.Class`]), kind: String(slots[`${output.id}.Kind`] ?? ""), skind: String(slots[`${output.id}.Skind`] ?? ""), skind2: String(slots[`${output.id}.Skind2`] ?? "") } : void 0) ?? output.classification;
+    if (!selected && picker) try {
+      selected = JSON.parse(String(slots[picker.slot ?? picker.id] ?? ""));
+    } catch {
+    }
+    const values2 = { Class: selected?.class ?? "", Kind: selected?.kind ?? "", Skind: selected?.skind ?? "", Skind2: selected?.skind2 ?? "" };
+    for (const [key2, value] of Object.entries(values2)) {
+      if (index === 0) context[key2] = value;
+      context[`${key2}_${index + 1}`] = value;
+      context[`${output.id}.${key2}`] = value;
+    }
+  });
+  return context;
+}
+function workflowControlActive(workflow, control, slots, selections = {}) {
+  return workflowConditionMatches(control.when, workflowConditionContext(workflow, slots, selections));
+}
+function activeWorkflowSlots(workflow, slots, selections = {}) {
+  const result = { ...slots };
+  for (const c of workflow.steps.flatMap((s) => s.controls ?? [])) if (c.slot && !workflowControlActive(workflow, c, slots, selections)) delete result[c.slot];
+  return result;
+}
+
+// src/configStudio/standardTagFields.ts
+function tagMetadata(field) {
+  const type = field.type === "enum" || field.input === "select" ? "select" : field.type === "number" ? "number" : field.type === "boolean" ? "bool" : "text";
+  return { kind: "tagField", type, ...field.dynamicSource ? { dynamicSource: field.dynamicSource } : {}, ...field.format === "externalLink" || field.format === "date" ? { format: field.format } : {}, ...type === "select" ? { valueTable: { valueType: field.optionValueType ?? "string", rows: structuredClone(field.options ?? []) } } : {} };
+}
+var stable = (value) => JSON.stringify(value);
+function standardTagFields(config, path2) {
+  const fields = resolveEffectiveFields(config, path2).filter((field) => field.key.startsWith("tags."));
+  if (config.contractRevision < 11) return fields;
+  const table = config.lookupTables?.find((table2) => table2.id === "standard-tag-fields");
+  if (!table || table.functionKind !== "tagField") throw Error("\u6807\u51C6\u6807\u7B7E\u5B57\u6BB5\u76EE\u5F55\u4E0D\u5B58\u5728\u6216\u683C\u5F0F\u65E0\u6548\u3002");
+  const result = table.rows.map((row2) => {
+    const meta = row2.functionValue;
+    if (!meta || typeof meta !== "object" || !("kind" in meta) || meta.kind !== "tagField") throw Error(`\u6807\u7B7E ${row2.value} \u7F3A\u5C11\u53D7\u63A7\u7C7B\u578B\u3002`);
+    const options = meta.type === "select" ? effectiveOptionTable(config, { optionTable: meta.valueTable, optionsTableId: meta.valueTableId }) : void 0;
+    return { fieldId: `tag-catalog-${row2.value}`, key: `tags.${row2.value}`, scope: "tags", type: meta.type === "select" ? "enum" : meta.type === "number" ? "number" : meta.type === "bool" ? "boolean" : "string", dynamicSource: meta.dynamicSource, input: meta.type === "select" ? "select" : meta.type === "bool" ? "toggle" : "text", cardinality: "single", labels: row2.label, description: { zh: "", en: "" }, format: meta.format, options: options?.rows, optionValueType: options?.valueType };
+  });
+  for (const field of fields) {
+    const index = result.findIndex((row2) => row2.key === field.key);
+    if (index >= 0) result[index] = field;
+    else result.push(field);
+  }
+  return result;
+}
+function tagRecordErrors(config, path2, record) {
+  if (config.contractRevision < 11 || !record.tags || typeof record.tags !== "object") return [];
+  const fields = standardTagFields(config, path2), tags = record.tags, errors = [];
+  for (const field of fields) {
+    const value = tags[field.key.slice(5)];
+    if (value === void 0 || value === null) continue;
+    const values2 = field.cardinality === "multiple" && Array.isArray(value) ? value : [value], type = field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : field.type === "enum" ? field.optionValueType ?? "string" : "string";
+    if (values2.some((value2) => typeof value2 !== type || field.type === "enum" && !field.dynamicSource && !field.options?.some((option) => option.value === String(value2)))) errors.push(`${field.key} \u4E0E\u6807\u51C6\u76EE\u5F55\uFF0F\u5206\u7C7B\u5B57\u6BB5\u7684\u7C7B\u578B\u6216\u53EF\u9009\u503C\u4E0D\u7B26\u3002`);
+  }
+  return errors;
+}
+function standardTagTableErrors(config) {
+  if (config.contractRevision < 11) return [];
+  const errors = [], fail = (path2, message) => errors.push({ path: path2, message });
+  for (const [id2, kind] of [["teleport-hubs", "teleportHub"], ["road-travel-modes", "speed"], ["standard-tag-fields", "tagField"]]) {
+    const table2 = config.lookupTables?.find((table3) => table3.id === id2);
+    if (!table2 || table2.functionKind !== kind || table2.valueType !== "string") fail(`lookupTables/${id2}`, "\u7CFB\u7EDF\u6807\u51C6\u8868\u7F3A\u5931\uFF0C\u6216\u5176\u56FA\u5B9A ID\u3001\u7528\u9014\u3001\u4FDD\u5B58\u503C\u7C7B\u578B\u88AB\u4FEE\u6539\u3002");
+  }
+  for (const table2 of config.lookupTables ?? []) if (table2.functionKind === "tagField") {
+    if (table2.valueType !== "string") fail(`lookupTables/${table2.id}`, "\u6807\u7B7E\u540D\u79F0\u76EE\u5F55\u5FC5\u987B\u4EE5\u6587\u672C key \u4FDD\u5B58\u3002");
+    for (const row2 of table2.rows) {
+      const path2 = `lookupTables/${table2.id}/${row2.value}`, meta = row2.functionValue;
+      if (row2.value === "__other__" || !/^[A-Za-z][A-Za-z0-9_]*$/.test(row2.value)) fail(path2, "\u6807\u7B7E key \u65E0\u6548\uFF1B\u5176\u4ED6\u5B57\u6BB5\u5165\u53E3\u4E0D\u80FD\u5B58\u5165\u76EE\u5F55\u3002");
+      if (!meta || typeof meta !== "object" || !("kind" in meta) || meta.kind !== "tagField") {
+        fail(path2, "\u6807\u7B7E\u76EE\u5F55\u9700\u8981\u53D7\u63A7\u7684\u6807\u7B7E\u7C7B\u578B\u529F\u80FD\u503C\u3002");
+        continue;
+      }
+      if (meta.type !== "select" && (meta.valueTable || meta.valueTableId)) fail(path2, "\u53EA\u6709\u4E0B\u62C9\u6807\u7B7E\u53EF\u4EE5\u8BBE\u7F6E\u503C\u9009\u9879\u3002");
+      if (meta.type === "select") {
+        if (meta.valueTable && meta.valueTableId) fail(path2, "\u6807\u7B7E\u503C\u526F\u672C\u4E0E\u8868\u683C\u5F15\u7528\u4E0D\u80FD\u5E76\u5B58\u3002");
+        const source = meta.valueTableId ? config.lookupTables?.find((table3) => table3.id === meta.valueTableId) : void 0;
+        if (meta.valueTableId && (!source || source.functionKind === "tagField")) fail(path2, "\u6807\u7B7E\u503C\u5BF9\u7167\u4E0D\u80FD\u5F15\u7528\u540D\u79F0\u76EE\u5F55\u6216\u7F3A\u5931\u8868\u683C\uFF0C\u9632\u6B62\u5FAA\u73AF\u3002");
+        const values2 = effectiveOptionTable(config, { optionTable: meta.valueTable, optionsTableId: meta.valueTableId });
+        if (!meta.dynamicSource && !values2.rows.length) fail(path2, "\u4E0B\u62C9\u6807\u7B7E\u81F3\u5C11\u9700\u8981\u4E00\u4E2A\u6709\u6548\u503C\u9009\u9879\u3002");
+        const keys = /* @__PURE__ */ new Set();
+        for (const value of values2.rows) {
+          const key2 = values2.valueType === "number" ? String(Number(value.value)) : value.value;
+          if (!value.value.trim() || keys.has(key2) || !(value.label.zh.trim() || value.label.en.trim()) || values2.valueType === "number" && !Number.isFinite(Number(value.value)) || values2.valueType === "boolean" && !["true", "false"].includes(value.value)) fail(path2, "\u6807\u7B7E\u503C\u5BF9\u7167\u5B58\u5728\u91CD\u590D\u3001\u7A7A\u540D\u79F0\u6216\u65E0\u6548\u4FDD\u5B58\u503C\u3002");
+          keys.add(key2);
+        }
+      }
+    }
+  }
+  const table = config.lookupTables?.find((table2) => table2.id === "standard-tag-fields");
+  for (const node of config.nodes) for (const field of resolveEffectiveFields(config, node.path).filter((field2) => field2.key.startsWith("tags."))) {
+    const row2 = table?.rows.find((row3) => row3.value === field.key.slice(5)), meta = row2?.functionValue;
+    if (meta && typeof meta === "object" && "kind" in meta && meta.kind === "tagField") {
+      const definition = tagMetadata(field), dictionary = meta.type === "select" ? effectiveOptionTable(config, { optionTable: meta.valueTable, optionsTableId: meta.valueTableId }) : void 0;
+      if (meta.type !== definition.type || !meta.dynamicSource && dictionary && stable(dictionary) !== stable(definition.valueTable)) fail(`nodes/${node.nodeId}/fields/${field.fieldId}`, "\u5206\u7C7B\u4E13\u7528\u6807\u7B7E\u4E0E\u6807\u51C6\u76EE\u5F55\u7684\u7C7B\u578B\uFF0F\u503C\u9009\u9879\u5B58\u5728\u51B2\u7A81\uFF0C\u8BF7\u660E\u786E\u4FEE\u590D\u3002");
+    }
+  }
+  return errors;
+}
+
 // src/configStudio/workflowFieldControl.ts
 function workflowControlFromField(field, slot, id2, config) {
   if (!isSafeWorkflowTarget(field.key) || PROTECTED_WORKFLOW_TARGETS.has(field.key) || field.key === "ID") throw new Error("\u7CFB\u7EDF\u5B57\u6BB5\u4E0D\u80FD\u901A\u8FC7\u666E\u901A\u5B57\u6BB5\u8F93\u5165\u91CD\u65B0\u5B9A\u4E49\u3002");
@@ -12650,6 +12742,7 @@ function workflowControlFromField(field, slot, id2, config) {
   } : void 0 : void 0;
   if (kind === "featureSearch" && !search) throw new Error("\u8981\u7D20\u641C\u7D22\u8F93\u5165\u9700\u8981\u5148\u5728\u5B57\u6BB5\u5B9A\u4E49\u4E2D\u8BBE\u7F6E\u5F15\u7528\u76EE\u6807\u3002");
   const common = { id: id2, slot, columns: 1, label: structuredClone(field.labels), required: field.required, placeholder: field.placeholder, defaultValue: structuredClone(field.defaultValue), optionValueType: field.optionValueType ?? (field.type === "number" ? "number" : field.type === "boolean" ? "boolean" : void 0), fieldFormat: field.format };
+  if (field.input === "table") return { ...common, kind: "table", table: structuredClone(field.table) };
   if (field.type === "json" && field.cardinality === "multiple") return { ...common, kind: "json" };
   if (field.cardinality === "multiple") return { ...common, kind: "group", group: {
     storage: "scalar",
@@ -12661,10 +12754,11 @@ function workflowControlFromField(field, slot, id2, config) {
 }
 
 // src/configStudio/fieldReuse.ts
-var FIELD_IMPORT_PROPERTIES = ["label", "kind", "options", "optionValueType", "placeholder", "defaultValue", "required", "requiredWhen", "search", "group", "rows", "valueNormalization", "fieldFormat"];
+var FIELD_IMPORT_PROPERTIES = ["label", "kind", "options", "optionValueType", "placeholder", "defaultValue", "required", "requiredWhen", "search", "group", "rows", "valueNormalization", "fieldFormat", "table"];
+var same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 function fieldSourceSnapshot(field) {
-  const { key: key2, type, cardinality, labels: labels2, options, optionValueType, format, defaultValue, required, requiredWhen, input, placeholder, reference } = field;
-  return structuredClone({ key: key2, type, cardinality, labels: labels2, options, optionValueType, format, defaultValue, required, requiredWhen, input, placeholder, reference });
+  const { key: key2, type, cardinality, labels: labels2, options, optionValueType, format, defaultValue, required, requiredWhen, input, placeholder, reference, table } = field;
+  return structuredClone({ key: key2, type, cardinality, labels: labels2, options, optionValueType, format, defaultValue, required, requiredWhen, input, placeholder, reference, table });
 }
 function resolveSourceField(config, source) {
   const node = config.nodes.find((item) => item.nodeId === source.nodeId);
@@ -12733,6 +12827,8 @@ function fieldImportErrors(config, workflow, control) {
   const field = resolveSourceField(config, source);
   if (!field) return [`\u6765\u6E90\u5206\u7C7B/\u5B57\u6BB5 ${source.nodeId}/${source.snapshot.key} \u5DF2\u4E0D\u5B58\u5728\u6216\u4E0D\u518D\u6709\u6548\u3002`];
   const errors = [];
+  const tableShape = (table) => table?.columns.map((c) => ({ key: c.key, type: c.type, required: c.required === true })).sort((a, b) => a.key.localeCompare(b.key));
+  if (field.format === "table" && !same(tableShape(field.table), tableShape(source.snapshot.table))) errors.push("\u8868\u683C\u5217\u952E\u3001\u7C7B\u578B\u6216\u5FC5\u586B\u5B9A\u4E49\u5DF2\u53D8\u5316\uFF0C\u8BF7\u6838\u5BF9\u6570\u636E\u4E0E\u63A7\u4EF6\u5FEB\u7167\u540E\u91CD\u65B0\u5BFC\u5165\u5B57\u6BB5\u3002");
   if (field.type === "enum" && (field.optionValueType ?? "string") !== (source.snapshot.optionValueType ?? "string")) errors.push(`\u6765\u6E90\u5B57\u6BB5 ${field.key} \u7684\u4FDD\u5B58\u503C\u7C7B\u578B\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u5BFC\u5165\u3002`);
   if (field.type !== source.snapshot.type || field.cardinality !== source.snapshot.cardinality) errors.push(`\u6765\u6E90\u5B57\u6BB5 ${field.key} \u7684\u7C7B\u578B\u6216\u503C\u6570\u91CF\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u5BFC\u5165\u540E\u786E\u8BA4\u7ED1\u5B9A\u3002`);
   if (source.overrides.some((key2) => !FIELD_IMPORT_PROPERTIES.includes(key2))) errors.push("\u5B58\u5728\u672A\u77E5\u5B57\u6BB5\u8986\u5199\u9879\u3002");
@@ -13060,6 +13156,7 @@ function annotationsForOutput(workflow, slots, outputId) {
   for (const control of workflow.steps.flatMap((step) => step.controls ?? []).filter((control2) => control2.kind === "tagsExtensions" && (!control2.outputId || control2.outputId === outputId))) {
     const stored = slots[control.id];
     const next = assembleAnnotations(stored?.[outputId]);
+    if (workflow.steps.some((step) => step.controls?.some((c) => c.kind === "dataset" && c.outputId === outputId)) && Object.prototype.hasOwnProperty.call(next.tags, "dataset")) throw Error("\u6240\u5C5E\u6570\u636E\u96C6\u7531\u7CFB\u7EDF\u5355\u5143\u586B\u5199\uFF0C\u8BF7\u5220\u9664\u6807\u7B7E\u6269\u5C55\u4E2D\u7684 dataset \u91CD\u590D\u9879\u3002");
     mergeAnnotations(result.tags, next.tags, "tags");
     mergeAnnotations(result.extensions, next.extensions, "extensions");
   }
@@ -13079,12 +13176,6 @@ function validateAnnotationValue(value, depth = 0) {
     if (["__proto__", "prototype", "constructor"].includes(key2)) throw new Error(`\u5371\u9669\u6807\u7B7E/\u6269\u5C55\u952E\uFF1A${key2}`);
     validateAnnotationValue(item, depth + 1);
   }
-}
-
-// src/core/project/worldIdentity.ts
-function normalizeRuleSourceWorldId(worldId2) {
-  const raw = String(worldId2 ?? "").trim(), worlds = getApplicationSettings().worlds;
-  return worlds.find((world) => world.id.toLowerCase() === raw.toLowerCase() || world.prefix.toLowerCase() === raw.toLowerCase() || String(world.numericCode) === raw || world.label.zh === raw || world.label.en && world.label.en === raw)?.id ?? (raw || applicationWorld("").id);
 }
 
 // src/configStudio/workflowDrawing.ts
@@ -13254,12 +13345,17 @@ function workflowOutputSystem(workflow, slots, options, outputId) {
   const system = selected ? values2(resolvedClassification(selected, options.classifications ?? {}, options.config)) : {};
   workflow.outputs.forEach((output, index) => Object.entries(values2(resolvedClassification(output, options.classifications ?? {}, options.config))).forEach(([key2, value]) => {
     system[`${key2}_${index + 1}`] = value;
+    system[`${output.id}.${key2}`] = value;
   }));
   return system;
 }
 function evaluateV3WorkflowOutputs(workflow, slots, options = {}) {
   if (options.config) workflow = resolveWorkflowFields(options.config, workflow);
   slots = normalizeV3WorkflowSlots(workflow, slots);
+  if (options.config?.contractRevision && options.config.contractRevision >= 21) {
+    slots = activeWorkflowSlots(workflow, slots, options.classifications);
+    for (const c of workflow.steps.flatMap((s) => s.controls ?? [])) if (c.kind === "table" && c.slot && Array.isArray(slots[c.slot])) slots[c.slot] = normalizeTableRows(slots[c.slot]);
+  }
   const world = normalizeV3WorldId(options.world ?? slots.World ?? "zth");
   const assembled = /* @__PURE__ */ new Map();
   const active = new Set(activeOutputIds(workflow, slots));
@@ -13295,6 +13391,15 @@ function evaluateV3WorkflowOutputs(workflow, slots, options = {}) {
       system[`ID_${index + 1}`] = record.ID ?? "";
     }
     const custom = annotationsForOutput(workflow, slots, output.id);
+    const dataset = workflow.steps.flatMap((s) => s.controls ?? []).find((c) => c.kind === "dataset" && c.outputId === output.id);
+    if (dataset) {
+      const value = slots[dataset.slot ?? dataset.id];
+      if (typeof value === "string" && value) {
+        if (options.config && !datasetOptions(options.config, world, classification).some((o) => o.value === value)) throw Error("\u6240\u5C5E\u6570\u636E\u96C6\u5DF2\u4E0D\u9002\u7528\u4E8E\u5F53\u524D\u4E16\u754C\u548C\u5206\u7C7B\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u3002");
+        record.tags ??= {};
+        record.tags.dataset = value;
+      } else if (record.tags && typeof record.tags === "object") delete record.tags.dataset;
+    }
     for (const namespace of ["tags", "extensions"]) if (Object.keys(custom[namespace]).length) {
       if (record[namespace] != null && (typeof record[namespace] !== "object" || Array.isArray(record[namespace]))) throw new Error(`${namespace} \u81EA\u52A8\u7EC4\u88C5\u5FC5\u987B\u4E3A\u5BF9\u8C61\u3002`);
       record[namespace] ??= {};
@@ -13326,7 +13431,10 @@ function evaluateV3WorkflowOutputs(workflow, slots, options = {}) {
 function empty2(value) {
   return value === void 0 || value === null || typeof value === "string" && !value.trim() || Array.isArray(value) && value.length === 0;
 }
-function validateV3WorkflowRecords(config, workflow, result) {
+function recordPath(record) {
+  return { class: String(record.Class ?? ""), ...record.Kind ? { kind: String(record.Kind) } : {}, ...record.Skind ?? record.SKind ? { skind: String(record.Skind ?? record.SKind) } : {}, ...record.Skind2 ?? record.SKind2 ? { skind2: String(record.Skind2 ?? record.SKind2) } : {} };
+}
+function validateV3WorkflowRecords(config, workflow, result, original) {
   const issues = [];
   for (const output of result) {
     const definition = workflow.outputs.find((item) => item.id === output.outputId);
@@ -13348,6 +13456,7 @@ function validateV3WorkflowRecords(config, workflow, result) {
     }
     for (const field of resolveEffectiveFields(config, output.classification)) {
       const value = readRecordPath(output.record, field.key);
+      if (field.format === "table" && original && JSON.stringify(recordPath(original)) === JSON.stringify(output.classification) && JSON.stringify(value) === JSON.stringify(readRecordPath(original, field.key))) continue;
       const required = recordFieldRequired(field, output.record);
       if (required && empty2(value)) issues.push({ message: `\u8F93\u51FA ${output.outputId} \u7684 ${field.key} \u4E3A\u5FC5\u586B\u9879\u3002` });
       if (empty2(value)) continue;
@@ -13551,6 +13660,7 @@ function assertStructureTargets(config, created, existing) {
 }
 
 // src/configStudio/workflowEditing.ts
+var isHistoricalBuildingParent = (path2) => ["BUD", "FLR"].includes(path2.class) && path2.kind === "NOM" && !path2.skind && !path2.skind2;
 var recordClassification = (record) => ({ class: String(record.Class ?? ""), ...record.Kind ? { kind: String(record.Kind) } : {}, ...record.SKind ?? record.Skind ? { skind: String(record.SKind ?? record.Skind) } : {}, ...record.SKind2 ?? record.Skind2 ? { skind2: String(record.SKind2 ?? record.Skind2) } : {} });
 function compileWorkflowEditPlan(workflow, config) {
   workflow = resolveWorkflowFields(config, workflow);
@@ -13560,7 +13670,11 @@ function compileWorkflowEditPlan(workflow, config) {
   const drawings = workflow.steps.filter((s) => s.kind === "geometry");
   if (drawings.some((s) => s.geometryRole === "auxiliary" || s.drawing?.auxiliaryPoints?.length)) errors.push("\u4E0D\u80FD\u5305\u542B\u989D\u5916\u7ED8\u5236\u3002");
   if (workflow.outputs.length !== 1 || drawings.length !== 1 || drawings[0]?.outputId !== workflow.outputs[0]?.id) errors.push("\u5FC5\u987B\u53EA\u6709\u4E00\u4E2A\u660E\u786E\u7ED1\u5B9A\u8F93\u51FA\u7684\u8981\u7D20\u7ED8\u5236\u3002");
-  if (workflow.steps.some((s) => s.when || s.controls?.some((c) => c.when || c.group?.itemFields.some((f) => "when" in f && f.when))) || workflow.outputs.some((o) => o.when || o.assignments.some((a) => a.when))) errors.push("\u4E0D\u80FD\u5305\u542B\u8F93\u5165\u3001\u9875\u9762\u6216\u8F93\u51FA\u7684\u542F\u7528\u6761\u4EF6\u3002");
+  if (workflow.steps.some((s) => s.when || config.contractRevision < 21 && s.controls?.some((c) => c.when || c.group?.itemFields.some((f) => "when" in f && f.when))) || workflow.outputs.some((o) => o.when || config.contractRevision < 21 && o.assignments.some((a) => a.when))) errors.push("\u4E0D\u80FD\u5305\u542B\u9875\u9762\u6216\u8F93\u51FA\u7684\u542F\u7528\u6761\u4EF6\u3002");
+  if (config.contractRevision >= 21) {
+    const allowed = /* @__PURE__ */ new Set(["Class", "Kind", "Skind", "Skind2", ...["Class", "Kind", "Skind", "Skind2"].map((k) => k + "_1"), ...["Class", "Kind", "Skind", "Skind2"].map((k) => workflow.outputs[0]?.id + "." + k)]);
+    for (const c of [...workflow.steps.flatMap((s) => s.controls ?? []), ...workflow.outputs.flatMap((o) => o.assignments)]) if (c.when && conditionTokens(c.when).some((token) => !allowed.has(token))) errors.push("\u7F16\u8F91\u8F93\u5165\u53CA\u5199\u5165\u6761\u4EF6\u4EC5\u5141\u8BB8\u5F53\u524D\u8F93\u51FA\u7684\u5206\u7C7B\u5B57\u6BB5\uFF1B\u5176\u4ED6\u65E2\u6709\u8F6C\u6362\u8D44\u683C\u4FDD\u6301\u3002");
+  }
   if (errors.length) throw Error(errors.join("\n"));
   const output = workflow.outputs[0], scope = workflow.editor?.scope ?? output.classification ?? { class: "" };
   const classifications = workflowClassificationGroup(config, output).paths.filter((path2) => workflow.editor?.range ? matchesClassificationRange(workflow.editor.range, path2) : pathMatchesScope(path2, scope));
@@ -13590,7 +13704,7 @@ function compileWorkflowEditPlan(workflow, config) {
     for (const classification of classifications) for (const issue2 of validateWorkflowWrites(proposed, (path2) => resolveEffectiveFields(config, path2), { outputId: output.id, classification }, (search) => workflowSearchFields(config, search))) if (issue2.severity === "error" && issue2.path.endsWith("/assignments/" + id2)) errors.push("[" + classificationPathKey(classification) + "] \u56DE\u586B\u6620\u5C04\uFF1A" + issue2.message);
   }
   const removed = controls.filter((c) => c.slot && idOnly.has(c.slot) && !needed.has(c.slot)), kept = controls.filter((c) => !removed.includes(c));
-  for (const control of kept) if (control.slot && !bindings.some((b) => b.slot === control.slot) && !["classificationPicker", "tagsExtensions"].includes(control.kind)) errors.push(`\u63A7\u4EF6 ${control.slot}\uFF08${control.label.zh}\uFF09\u7F3A\u5C11\u53EF\u9006\u76F4\u63A5\u8D4B\u503C\u6216\u660E\u786E\u56DE\u586B\u6620\u5C04\u3002`);
+  for (const control of kept) if (control.slot && !bindings.some((b) => b.slot === control.slot) && !["classificationPicker", "tagsExtensions", "dataset"].includes(control.kind)) errors.push(`\u63A7\u4EF6 ${control.slot}\uFF08${control.label.zh}\uFF09\u7F3A\u5C11\u53EF\u9006\u76F4\u63A5\u8D4B\u503C\u6216\u660E\u786E\u56DE\u586B\u6620\u5C04\u3002`);
   if (errors.length) throw Error(errors.join("\n"));
   return { workflow: structuredClone(workflow), scope, classifications, controls: structuredClone(kept), removed: structuredClone(removed), bindings: bindings.filter((b, i, all) => all.findIndex((x) => x.slot === b.slot && x.target === b.target) === i) };
 }
@@ -13622,6 +13736,7 @@ var row = (key2, value, group) => ({ key: key2, ...group ? { group } : {}, type:
 function residualAnnotations(plan, record) {
   const residual = structuredClone({ tags: record.tags ?? {}, extensions: record.extensions ?? {} });
   for (const a of plan.workflow.outputs[0].assignments) if (a.target.startsWith("tags.") || a.target.startsWith("extensions.")) removePath(residual, a.target);
+  if (plan.controls.some((c) => c.kind === "dataset")) removePath(residual, "tags.dataset");
   const tags = Object.entries(residual.tags ?? {}).map(([key2, value]) => row(key2, value)), extensions = Object.entries(residual.extensions ?? {}).flatMap(([group, values2]) => Object.entries(values2 ?? {}).map(([key2, value]) => row(key2, value, group)));
   return { [plan.workflow.outputs[0].id]: { tags, extensions } };
 }
@@ -13636,6 +13751,10 @@ function hydrateWorkflowEdit(plan, record) {
     }
     if (control.kind === "tagsExtensions") {
       slots[control.id] = residualAnnotations(plan, record);
+      continue;
+    }
+    if (control.kind === "dataset") {
+      slots[control.slot ?? control.id] = readRecordPath(record, "tags.dataset");
       continue;
     }
     if (!control.slot) continue;
@@ -13656,6 +13775,7 @@ function workflowEditSlots(plan, original, draft, supplied) {
   return { ...draft.slots, ...Object.fromEntries(Object.entries(result).filter(([key2]) => !controls.has(key2))) };
 }
 function buildWorkflowEditRecord(plan, original, draft, options = {}) {
+  if (isHistoricalBuildingParent(draft.classification) && plan.classifications.some((path2) => pathMatchesScope(path2, draft.classification) && classificationPathKey(path2) !== classificationPathKey(draft.classification)) && classificationPathKey(recordClassification(original)) !== classificationPathKey(draft.classification)) throw Error("\u5386\u53F2\u7236\u5206\u7C7B\u4EC5\u5141\u8BB8\u539F\u6709\u8BB0\u5F55\u4FDD\u7559\uFF0C\u5DF2\u7EC6\u5206\u8BB0\u5F55\u4E0D\u80FD\u9000\u56DE\u7236\u5206\u7C7B\u3002");
   const record = structuredClone(original), slots = coerceWorkflowValues(plan.workflow, workflowEditSlots(plan, original, draft, options.geometry)), initial = draft.initialSlots;
   const id2 = String(draft.slots.EDIT_ID ?? "").trim();
   if (!id2) throw Error("ID \u4E0D\u80FD\u4E3A\u7A7A\u3002");
@@ -13671,6 +13791,13 @@ function buildWorkflowEditRecord(plan, original, draft, options = {}) {
   const geometryTokens = new Set(plan.workflow.steps.flatMap((s) => [s.drawing?.captureSlot, s.drawing?.pointSlot]).filter((slot) => Boolean(slot)).flatMap((slot) => [slot, `${slot}_X`, `${slot}_Y`, `${slot}_Z`, `${slot}_HEIGHT`]));
   const beforePath = recordClassification(original), classificationDirty = !annotationEqual(draft.classification, beforePath);
   for (const assignment of plan.workflow.outputs[0].assignments) if (assignment.target !== "ID") {
+    const context = workflowConditionContext(plan.workflow, slots, { [plan.workflow.outputs[0].id]: draft.classification });
+    const managed = plan.controls.filter((c) => c.slot && workflowExpressionTokens(parseWorkflowExpression(assignment.expression)).includes(c.slot));
+    if (!workflowConditionMatches(assignment.when, context) || managed.some((c) => !workflowControlActive(plan.workflow, c, slots, { [plan.workflow.outputs[0].id]: draft.classification }))) {
+      if (classificationDirty) removePath(record, assignment.target);
+      continue;
+    }
+    for (const c of managed) if (c.kind === "table" && c.slot && !annotationEqual(draft.slots[c.slot], initial[c.slot])) slots[c.slot] = normalizeTableRows(slots[c.slot]);
     const tokens = workflowExpressionTokens(parseWorkflowExpression(assignment.expression));
     if (tokens.some((t) => plan.controls.some((c) => c.slot === t) && !annotationEqual(draft.slots[t], initial[t]) || geometryDirty && geometryTokens.has(t) || /^ID(?:_1)?$/.test(t) && id2 !== String(original.ID) || classificationDirty && /^(Class|Kind|Skind|Skind2)(?:_1)?$/.test(t))) setPath2(record, assignment.target, evaluateWorkflowExpression(assignment.expression, slots, system));
   }
@@ -13688,6 +13815,7 @@ function buildWorkflowEditRecord(plan, original, draft, options = {}) {
       else setPath2(record, `${namespace}.${key2}`, value);
     }
   }
+  for (const c of plan.controls.filter((c2) => c2.kind === "dataset")) if (!annotationEqual(draft.slots[c.slot ?? c.id], initial[c.slot ?? c.id])) setPath2(record, "tags.dataset", draft.slots[c.slot ?? c.id] || void 0);
   return record;
 }
 
@@ -13704,7 +13832,7 @@ function testWorkflowEditConversion(config, workflow, records = []) {
       slots[control.slot ?? control.id] = JSON.stringify(path2);
       continue;
     }
-    if (control.kind === "tagsExtensions") continue;
+    if (control.kind === "tagsExtensions" || control.kind === "dataset") continue;
     slots[control.slot ?? control.id] = control.kind === "group" && control.group ? Array.from({ length: Math.max(1, control.group.minItems ?? 0) }, () => control.group.storage === "scalar" ? scalar(control.group.itemFields[0]) : Object.fromEntries(control.group.itemFields.map((f) => [f.key, scalar(f)]))) : scalar(control);
   }
   const geometry = output.geometry.selected === "Point" ? { type: "Point", parts: [{ x: 0, y: 0, z: 0 }] } : output.geometry.selected === "LineString" ? { type: "LineString", parts: [[{ x: 0, y: 0, z: 0 }, { x: 10, y: 0, z: 10 }]] } : { type: "Polygon", parts: [[[{ x: 0, y: 0, z: 0 }, { x: 10, y: 0, z: 0 }, { x: 10, y: 0, z: 10 }]]] };
@@ -13731,7 +13859,7 @@ function mergeInheritedCard(parent, local, parentId) {
     const key2 = identity(item.inheritFrom), source = upstream.get(key2);
     if (!source) return [];
     represented.add(key2);
-    return [{ ...item, source: source.source, label: source.label, valueOptions: source.valueOptions, fieldBinding: source.fieldBinding, optionTable: source.optionTable, optionsFieldRef: source.optionsFieldRef, optionsTableId: source.optionsTableId, optionValueType: source.optionValueType, prefillAudit: void 0 }];
+    return [{ ...item, source: source.source, label: source.label, when: source.when, valueOptions: source.valueOptions, fieldBinding: source.fieldBinding, optionTable: source.optionTable, optionsFieldRef: source.optionsFieldRef, optionsTableId: source.optionsTableId, optionValueType: source.optionValueType, prefillAudit: void 0 }];
   });
   for (const [key2, item] of upstream) if (!represented.has(key2)) items.push({ ...item, id: `inherited:${key2}`, inheritFrom: item.inheritFrom ?? { nodeId: parentId, itemId: item.id }, prefillAudit: void 0 });
   return { ...local, items };
@@ -14174,7 +14302,7 @@ function validateNavigationRecords(config, records, includeIssueTargets = false)
 
 // src/configStudio/structureRoleIndex.ts
 var STRUCTURE_CONTEXT_ID = "structure-role-context";
-var recordPath = (record) => {
+var recordPath2 = (record) => {
   const fi = record.featureInfo ?? {}, sig = record.meta.sig ?? {};
   return { class: record.meta.Class ?? String(fi.Class ?? ""), kind: fi.Kind ?? sig.Kind, skind: fi.SKind ?? fi.Skind ?? sig.SKind ?? sig.Skind, skind2: fi.SKind2 ?? fi.Skind2 ?? sig.SKind2 ?? sig.Skind2 };
 };
@@ -14201,7 +14329,7 @@ function buildStructureIndex(config, store) {
       rows.push(record);
       ids.set(key2(record), rows);
     }
-    const role = resolveNodeFieldSettings(config, recordPath(record)).value.structure;
+    const role = resolveNodeFieldSettings(config, recordPath2(record)).value.structure;
     if (role?.enabled) result.roles.set(record, role);
   }
   const add = (host, member) => {
@@ -19001,6 +19129,13 @@ var native_contract_schema_generated_default = {
               type: "string"
             }
           ]
+        },
+        dynamicSource: {
+          anyOf: [
+            {
+              const: "dataset-directory"
+            }
+          ]
         }
       },
       required: [
@@ -19008,7 +19143,22 @@ var native_contract_schema_generated_default = {
         "type"
       ]
     },
-    t76: {
+    t75: {
+      type: "object",
+      properties: {
+        world: {
+          type: "string"
+        },
+        scope: {
+          ref: "t17"
+        }
+      },
+      required: [
+        "world",
+        "scope"
+      ]
+    },
+    t77: {
       type: "object",
       properties: {
         id: {
@@ -19035,25 +19185,28 @@ var native_contract_schema_generated_default = {
         "z"
       ]
     },
-    t75: {
+    t76: {
       type: "object",
       properties: {
         world: {
           type: "string"
         },
         range: {
-          type: "number"
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
         },
         returnPoints: {
           type: "array",
           items: {
-            ref: "t76"
+            ref: "t77"
           }
         }
       },
       required: [
         "world",
-        "range",
         "returnPoints"
       ]
     },
@@ -19076,6 +19229,9 @@ var native_contract_schema_generated_default = {
             },
             {
               ref: "t75"
+            },
+            {
+              ref: "t76"
             }
           ]
         }
@@ -19120,6 +19276,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "tagField"
+            },
+            {
+              const: "dataset"
             }
           ]
         },
@@ -19141,6 +19300,21 @@ var native_contract_schema_generated_default = {
     t79: {
       type: "object",
       properties: {
+        mapTitle: {
+          type: "string"
+        },
+        tabTitle: {
+          type: "string"
+        }
+      },
+      required: [
+        "mapTitle",
+        "tabTitle"
+      ]
+    },
+    t81: {
+      type: "object",
+      properties: {
         zh: {
           type: "string"
         },
@@ -19153,7 +19327,7 @@ var native_contract_schema_generated_default = {
         "en"
       ]
     },
-    t80: {
+    t82: {
       type: "object",
       properties: {
         x: {
@@ -19172,7 +19346,7 @@ var native_contract_schema_generated_default = {
         "z"
       ]
     },
-    t81: {
+    t83: {
       type: "object",
       properties: {
         id: {
@@ -19213,7 +19387,7 @@ var native_contract_schema_generated_default = {
         "tilescale"
       ]
     },
-    t82: {
+    t84: {
       type: "object",
       properties: {
         baseUrl: {
@@ -19270,7 +19444,7 @@ var native_contract_schema_generated_default = {
         "retryDelay"
       ]
     },
-    t78: {
+    t80: {
       type: "object",
       properties: {
         id: {
@@ -19283,7 +19457,7 @@ var native_contract_schema_generated_default = {
           type: "number"
         },
         label: {
-          ref: "t79"
+          ref: "t81"
         },
         enabled: {
           type: "boolean"
@@ -19292,7 +19466,7 @@ var native_contract_schema_generated_default = {
           type: "boolean"
         },
         center: {
-          ref: "t80"
+          ref: "t82"
         },
         mapLink: {
           type: "string"
@@ -19314,21 +19488,21 @@ var native_contract_schema_generated_default = {
         projection: {
           anyOf: [
             {
-              ref: "t81"
+              ref: "t83"
             }
           ]
         },
         tiles: {
           anyOf: [
             {
-              ref: "t82"
+              ref: "t84"
             }
           ]
         },
         projectionOverride: {
           anyOf: [
             {
-              ref: "t81"
+              ref: "t83"
             }
           ]
         }
@@ -19344,7 +19518,7 @@ var native_contract_schema_generated_default = {
         "mapLink"
       ]
     },
-    t84: {
+    t86: {
       type: "object",
       properties: {},
       required: [],
@@ -19355,7 +19529,7 @@ var native_contract_schema_generated_default = {
         }
       }
     },
-    t87: {
+    t89: {
       type: "object",
       properties: {
         class: {
@@ -19387,7 +19561,7 @@ var native_contract_schema_generated_default = {
         "class"
       ]
     },
-    t86: {
+    t88: {
       type: "object",
       properties: {
         scope: {
@@ -19402,7 +19576,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t87"
+                ref: "t89"
               }
             }
           ]
@@ -19450,7 +19624,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t89: {
+    t91: {
       type: "object",
       properties: {
         targetId: {
@@ -19475,7 +19649,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t88: {
+    t90: {
       type: "object",
       properties: {
         exclusiveWith: {
@@ -19503,7 +19677,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t89"
+                ref: "t91"
               }
             }
           ]
@@ -19541,7 +19715,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t85: {
+    t87: {
       type: "object",
       properties: {
         id: {
@@ -19601,17 +19775,17 @@ var native_contract_schema_generated_default = {
           ]
         },
         criteria: {
-          ref: "t86"
+          ref: "t88"
         },
         behavior: {
           anyOf: [
             {
-              ref: "t88"
+              ref: "t90"
             }
           ]
         },
         names: {
-          ref: "t79"
+          ref: "t81"
         },
         size: {
           anyOf: [
@@ -19640,7 +19814,7 @@ var native_contract_schema_generated_default = {
         "group"
       ]
     },
-    t83: {
+    t85: {
       type: "object",
       properties: {
         storageKey: {
@@ -19662,12 +19836,12 @@ var native_contract_schema_generated_default = {
           }
         },
         byWorld: {
-          ref: "t84"
+          ref: "t86"
         },
         items: {
           type: "array",
           items: {
-            ref: "t85"
+            ref: "t87"
           }
         }
       },
@@ -19680,14 +19854,14 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t91: {
+    t93: {
       type: "object",
       properties: {
         id: {
           type: "string"
         },
         label: {
-          ref: "t79"
+          ref: "t81"
         },
         enabled: {
           type: "boolean"
@@ -19730,7 +19904,7 @@ var native_contract_schema_generated_default = {
         "transport"
       ]
     },
-    t92: {
+    t94: {
       type: "object",
       properties: {
         sourceIds: {
@@ -19756,14 +19930,14 @@ var native_contract_schema_generated_default = {
         "branch"
       ]
     },
-    t94: {
+    t96: {
       type: "object",
       properties: {
         id: {
           type: "string"
         },
         label: {
-          ref: "t79"
+          ref: "t81"
         },
         baseUrl: {
           type: "string"
@@ -19779,7 +19953,7 @@ var native_contract_schema_generated_default = {
         "default"
       ]
     },
-    t93: {
+    t95: {
       type: "object",
       properties: {
         storageKey: {
@@ -19794,7 +19968,7 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t94"
+            ref: "t96"
           }
         }
       },
@@ -19804,7 +19978,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t90: {
+    t92: {
       type: "object",
       properties: {
         storageKey: {
@@ -19832,14 +20006,14 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t91"
+            ref: "t93"
           }
         },
         github: {
-          ref: "t92"
+          ref: "t94"
         },
         linkModes: {
-          ref: "t93"
+          ref: "t95"
         }
       },
       required: [
@@ -19852,7 +20026,7 @@ var native_contract_schema_generated_default = {
         "linkModes"
       ]
     },
-    t98: {
+    t100: {
       type: "object",
       properties: {
         name: {
@@ -19877,7 +20051,7 @@ var native_contract_schema_generated_default = {
         "name"
       ]
     },
-    t97: {
+    t99: {
       type: "object",
       properties: {
         baseUrlTemplate: {
@@ -19949,7 +20123,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         attribution: {
-          ref: "t98"
+          ref: "t100"
         },
         maxRetries: {
           anyOf: [
@@ -19972,20 +20146,20 @@ var native_contract_schema_generated_default = {
         "attribution"
       ]
     },
-    t96: {
+    t98: {
       type: "object",
       properties: {
         id: {
           type: "string"
         },
         label: {
-          ref: "t79"
+          ref: "t81"
         },
         enabled: {
           type: "boolean"
         },
         sources: {
-          ref: "t90"
+          ref: "t92"
         },
         dataPathTemplate: {
           type: "string"
@@ -19994,7 +20168,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         tiles: {
-          ref: "t97"
+          ref: "t99"
         }
       },
       required: [
@@ -20007,7 +20181,7 @@ var native_contract_schema_generated_default = {
         "tiles"
       ]
     },
-    t99: {
+    t101: {
       type: "object",
       properties: {},
       required: [],
@@ -20015,7 +20189,7 @@ var native_contract_schema_generated_default = {
         type: "string"
       }
     },
-    t95: {
+    t97: {
       type: "object",
       properties: {
         kind: {
@@ -20034,11 +20208,11 @@ var native_contract_schema_generated_default = {
         groups: {
           type: "array",
           items: {
-            ref: "t96"
+            ref: "t98"
           }
         },
         bindings: {
-          ref: "t99"
+          ref: "t101"
         }
       },
       required: [
@@ -20048,7 +20222,7 @@ var native_contract_schema_generated_default = {
         "bindings"
       ]
     },
-    t101: {
+    t103: {
       type: "object",
       properties: {
         id: {
@@ -20134,7 +20308,7 @@ var native_contract_schema_generated_default = {
         "exclusiveWith"
       ]
     },
-    t102: {
+    t104: {
       type: "object",
       properties: {
         endpoint: {
@@ -20168,17 +20342,17 @@ var native_contract_schema_generated_default = {
         "requestTimeoutMs"
       ]
     },
-    t100: {
+    t102: {
       type: "object",
       properties: {
         items: {
           type: "array",
           items: {
-            ref: "t101"
+            ref: "t103"
           }
         },
         players: {
-          ref: "t102"
+          ref: "t104"
         }
       },
       required: [
@@ -20186,7 +20360,7 @@ var native_contract_schema_generated_default = {
         "players"
       ]
     },
-    t104: {
+    t106: {
       type: "object",
       properties: {
         start: {
@@ -20205,7 +20379,7 @@ var native_contract_schema_generated_default = {
         "logout"
       ]
     },
-    t105: {
+    t107: {
       type: "object",
       properties: {
         oauthClientId: {
@@ -20232,7 +20406,7 @@ var native_contract_schema_generated_default = {
         "brokerSecret"
       ]
     },
-    t103: {
+    t105: {
       type: "object",
       properties: {
         enabled: {
@@ -20245,7 +20419,7 @@ var native_contract_schema_generated_default = {
           const: "openriamap-review-v1"
         },
         auth: {
-          ref: "t104"
+          ref: "t106"
         },
         control: {
           type: "string"
@@ -20257,7 +20431,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         serverReferences: {
-          ref: "t105"
+          ref: "t107"
         }
       },
       required: [
@@ -20271,7 +20445,7 @@ var native_contract_schema_generated_default = {
         "serverReferences"
       ]
     },
-    t107: {
+    t109: {
       type: "object",
       properties: {
         homepageLimit: {
@@ -20290,7 +20464,7 @@ var native_contract_schema_generated_default = {
         "debounceMs"
       ]
     },
-    t108: {
+    t110: {
       type: "object",
       properties: {
         transferWalkSpeed: {
@@ -20313,7 +20487,7 @@ var native_contract_schema_generated_default = {
         "normalPlatformTransferCost"
       ]
     },
-    t110: {
+    t112: {
       type: "object",
       properties: {
         lines: {
@@ -20376,14 +20550,14 @@ var native_contract_schema_generated_default = {
         "stations"
       ]
     },
-    t109: {
+    t111: {
       type: "object",
       properties: {
         schemaVersion: {
           const: "cairnmap.railway-roles.v1"
         },
         selectors: {
-          ref: "t110"
+          ref: "t112"
         }
       },
       required: [
@@ -20391,7 +20565,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t111: {
+    t113: {
       type: "object",
       properties: {
         logicalInitialZoom: {
@@ -20418,7 +20592,7 @@ var native_contract_schema_generated_default = {
         "dragging"
       ]
     },
-    t112: {
+    t114: {
       type: "object",
       properties: {
         position: {
@@ -20440,7 +20614,7 @@ var native_contract_schema_generated_default = {
         "compact"
       ]
     },
-    t113: {
+    t115: {
       type: "object",
       properties: {
         allowUpload: {
@@ -20455,7 +20629,7 @@ var native_contract_schema_generated_default = {
         "allowExternalLink"
       ]
     },
-    t106: {
+    t108: {
       type: "object",
       properties: {
         language: {
@@ -20469,32 +20643,32 @@ var native_contract_schema_generated_default = {
           ]
         },
         search: {
-          ref: "t107"
+          ref: "t109"
         },
         navigation: {
           anyOf: [
             {
-              ref: "t108"
+              ref: "t110"
             }
           ]
         },
         railwayRoles: {
           anyOf: [
             {
-              ref: "t109"
+              ref: "t111"
             }
           ]
         },
         map: {
-          ref: "t111"
+          ref: "t113"
         },
         toolbar: {
-          ref: "t112"
+          ref: "t114"
         },
         pictureControls: {
           anyOf: [
             {
-              ref: "t113"
+              ref: "t115"
             }
           ]
         }
@@ -20506,7 +20680,7 @@ var native_contract_schema_generated_default = {
         "toolbar"
       ]
     },
-    t115: {
+    t117: {
       type: "object",
       properties: {
         enabled: {
@@ -20516,10 +20690,10 @@ var native_contract_schema_generated_default = {
           ref: "t1"
         },
         parameters: {
-          ref: "t108"
+          ref: "t110"
         },
         selectors: {
-          ref: "t110"
+          ref: "t112"
         }
       },
       required: [
@@ -20529,7 +20703,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t117: {
+    t119: {
       type: "object",
       properties: {
         teleportPoints: {
@@ -20564,7 +20738,7 @@ var native_contract_schema_generated_default = {
         "warpPoints"
       ]
     },
-    t116: {
+    t118: {
       type: "object",
       properties: {
         enabled: {
@@ -20577,7 +20751,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         selectors: {
-          ref: "t117"
+          ref: "t119"
         }
       },
       required: [
@@ -20587,7 +20761,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t119: {
+    t121: {
       type: "object",
       properties: {
         roads: {
@@ -20608,7 +20782,7 @@ var native_contract_schema_generated_default = {
         "roads"
       ]
     },
-    t118: {
+    t120: {
       type: "object",
       properties: {
         enabled: {
@@ -20621,7 +20795,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         selectors: {
-          ref: "t119"
+          ref: "t121"
         }
       },
       required: [
@@ -20631,7 +20805,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t120: {
+    t122: {
       type: "object",
       properties: {
         elytraSpeed: {
@@ -20646,23 +20820,23 @@ var native_contract_schema_generated_default = {
         "walkSpeed"
       ]
     },
-    t114: {
+    t116: {
       type: "object",
       properties: {
         schemaVersion: {
           const: "cairnmap.navigation.v1"
         },
         rail: {
-          ref: "t115"
+          ref: "t117"
         },
         teleport: {
-          ref: "t116"
-        },
-        road: {
           ref: "t118"
         },
-        common: {
+        road: {
           ref: "t120"
+        },
+        common: {
+          ref: "t122"
         }
       },
       required: [
@@ -20673,7 +20847,7 @@ var native_contract_schema_generated_default = {
         "common"
       ]
     },
-    t125: {
+    t127: {
       type: "object",
       properties: {
         text: {
@@ -20735,13 +20909,13 @@ var native_contract_schema_generated_default = {
         "text"
       ]
     },
-    t124: {
+    t126: {
       type: "object",
       properties: {
         runs: {
           type: "array",
           items: {
-            ref: "t125"
+            ref: "t127"
           }
         }
       },
@@ -20749,13 +20923,13 @@ var native_contract_schema_generated_default = {
         "runs"
       ]
     },
-    t123: {
+    t125: {
       type: "object",
       properties: {
         paragraphs: {
           type: "array",
           items: {
-            ref: "t124"
+            ref: "t126"
           }
         }
       },
@@ -20763,9 +20937,19 @@ var native_contract_schema_generated_default = {
         "paragraphs"
       ]
     },
-    t122: {
+    t124: {
       type: "object",
       properties: {
+        loginOnly: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
         id: {
           type: "string"
         },
@@ -20786,7 +20970,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         content: {
-          ref: "t123"
+          ref: "t125"
         }
       },
       required: [
@@ -20797,13 +20981,13 @@ var native_contract_schema_generated_default = {
         "content"
       ]
     },
-    t121: {
+    t123: {
       type: "object",
       properties: {
         items: {
           type: "array",
           items: {
-            ref: "t122"
+            ref: "t124"
           }
         }
       },
@@ -20811,7 +20995,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t126: {
+    t128: {
       type: "object",
       properties: {
         path: {
@@ -20846,72 +21030,79 @@ var native_contract_schema_generated_default = {
         "playerTooltip"
       ]
     },
-    t77: {
+    t78: {
       type: "object",
       properties: {
+        titles: {
+          anyOf: [
+            {
+              ref: "t79"
+            }
+          ]
+        },
         schemaVersion: {
           const: "cairnmap.application.v1"
         },
         worlds: {
           type: "array",
           items: {
-            ref: "t78"
+            ref: "t80"
           }
         },
         buttons: {
-          ref: "t83"
+          ref: "t85"
         },
         sources: {
           anyOf: [
             {
-              ref: "t90"
+              ref: "t92"
             },
             {
-              ref: "t95"
+              ref: "t97"
             }
           ]
         },
         modules: {
-          ref: "t100"
+          ref: "t102"
         },
         review: {
-          ref: "t103"
+          ref: "t105"
         },
         preferences: {
-          ref: "t106"
+          ref: "t108"
         },
         navigation: {
           anyOf: [
             {
-              ref: "t114"
+              ref: "t116"
             }
           ]
         },
         workflowAvailability: {
           anyOf: [
             {
-              ref: "t84"
+              ref: "t86"
             }
           ]
         },
         announcements: {
           anyOf: [
             {
-              ref: "t121"
+              ref: "t123"
             }
           ]
         },
         about: {
           anyOf: [
             {
-              ref: "t123"
+              ref: "t125"
             }
           ]
         },
         externalLayers: {
           anyOf: [
             {
-              ref: "t126"
+              ref: "t128"
             }
           ]
         }
@@ -20926,7 +21117,7 @@ var native_contract_schema_generated_default = {
         "preferences"
       ]
     },
-    t128: {
+    t130: {
       type: "object",
       properties: {
         library: {
@@ -20945,13 +21136,13 @@ var native_contract_schema_generated_default = {
         "manifestSha256"
       ]
     },
-    t127: {
+    t129: {
       type: "object",
       properties: {
         iconLibraries: {
           type: "array",
           items: {
-            ref: "t128"
+            ref: "t130"
           }
         }
       },
@@ -20959,7 +21150,7 @@ var native_contract_schema_generated_default = {
         "iconLibraries"
       ]
     },
-    t130: {
+    t132: {
       type: "object",
       properties: {
         class: {
@@ -20993,7 +21184,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t131: {
+    t133: {
       type: "object",
       properties: {
         fields: {
@@ -21022,7 +21213,7 @@ var native_contract_schema_generated_default = {
         "card"
       ]
     },
-    t132: {
+    t134: {
       type: "object",
       properties: {
         fields: {
@@ -21078,7 +21269,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t133: {
+    t135: {
       type: "object",
       properties: {
         fields: {
@@ -21140,7 +21331,7 @@ var native_contract_schema_generated_default = {
         "card"
       ]
     },
-    t135: {
+    t137: {
       type: "object",
       properties: {
         kind: {
@@ -21151,7 +21342,7 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t136: {
+    t138: {
       type: "object",
       properties: {
         kind: {
@@ -21176,7 +21367,7 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t137: {
+    t139: {
       type: "object",
       properties: {
         kind: {
@@ -21212,7 +21403,7 @@ var native_contract_schema_generated_default = {
         "scope"
       ]
     },
-    t138: {
+    t140: {
       type: "object",
       properties: {
         kind: {
@@ -21231,7 +21422,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t139: {
+    t141: {
       type: "object",
       properties: {
         kind: {
@@ -21253,7 +21444,7 @@ var native_contract_schema_generated_default = {
         "values"
       ]
     },
-    t140: {
+    t142: {
       type: "object",
       properties: {
         kind: {
@@ -21272,15 +21463,79 @@ var native_contract_schema_generated_default = {
         "present"
       ]
     },
-    t142: {
+    t144: {
+      type: "object",
+      properties: {
+        key: {
+          type: "string"
+        },
+        label: {
+          ref: "t1"
+        },
+        type: {
+          anyOf: [
+            {
+              const: "number"
+            },
+            {
+              const: "text"
+            }
+          ]
+        },
+        required: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        }
+      },
+      required: [
+        "key",
+        "label",
+        "type"
+      ]
+    },
+    t143: {
+      type: "object",
+      properties: {
+        columns: {
+          type: "array",
+          items: {
+            ref: "t144"
+          }
+        },
+        maxRows: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        },
+        maxCellLength: {
+          anyOf: [
+            {
+              type: "number"
+            }
+          ]
+        }
+      },
+      required: [
+        "columns"
+      ]
+    },
+    t146: {
       type: "object",
       properties: {},
       required: [],
       additionalProperties: {
-        ref: "t141"
+        ref: "t145"
       }
     },
-    t141: {
+    t145: {
       type: "object",
       properties: {
         type: {
@@ -21307,7 +21562,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t141"
+                ref: "t145"
               }
             }
           ]
@@ -21315,7 +21570,7 @@ var native_contract_schema_generated_default = {
         properties: {
           anyOf: [
             {
-              ref: "t142"
+              ref: "t146"
             }
           ]
         },
@@ -21332,7 +21587,7 @@ var native_contract_schema_generated_default = {
         items: {
           anyOf: [
             {
-              ref: "t141"
+              ref: "t145"
             }
           ]
         },
@@ -21390,7 +21645,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t143: {
+    t147: {
       type: "object",
       properties: {
         registryKey: {
@@ -21408,7 +21663,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t144: {
+    t148: {
       type: "object",
       properties: {
         workflow: {
@@ -21454,7 +21709,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t145: {
+    t149: {
       type: "object",
       properties: {
         classCode: {
@@ -21476,7 +21731,7 @@ var native_contract_schema_generated_default = {
         "matchField"
       ]
     },
-    t134: {
+    t136: {
       type: "object",
       properties: {
         fieldId: {
@@ -21549,6 +21804,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "featureSearch"
+            },
+            {
+              const: "table"
             }
           ]
         },
@@ -21579,12 +21837,6 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t135"
-                  },
-                  {
-                    ref: "t136"
-                  },
-                  {
                     ref: "t137"
                   },
                   {
@@ -21595,6 +21847,12 @@ var native_contract_schema_generated_default = {
                   },
                   {
                     ref: "t140"
+                  },
+                  {
+                    ref: "t141"
+                  },
+                  {
+                    ref: "t142"
                   }
                 ]
               }
@@ -21660,6 +21918,23 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "json"
+            },
+            {
+              const: "table"
+            }
+          ]
+        },
+        table: {
+          anyOf: [
+            {
+              ref: "t143"
+            }
+          ]
+        },
+        dynamicSource: {
+          anyOf: [
+            {
+              const: "dataset-directory"
             }
           ]
         },
@@ -21682,14 +21957,14 @@ var native_contract_schema_generated_default = {
         valueSchema: {
           anyOf: [
             {
-              ref: "t141"
+              ref: "t145"
             }
           ]
         },
         optionSource: {
           anyOf: [
             {
-              ref: "t143"
+              ref: "t147"
             }
           ]
         },
@@ -21721,14 +21996,14 @@ var native_contract_schema_generated_default = {
         scenes: {
           anyOf: [
             {
-              ref: "t144"
+              ref: "t148"
             }
           ]
         },
         reference: {
           anyOf: [
             {
-              ref: "t145"
+              ref: "t149"
             }
           ]
         },
@@ -21763,7 +22038,7 @@ var native_contract_schema_generated_default = {
         "description"
       ]
     },
-    t147: {
+    t151: {
       type: "object",
       properties: {
         enabled: {
@@ -21833,7 +22108,7 @@ var native_contract_schema_generated_default = {
         "role"
       ]
     },
-    t151: {
+    t155: {
       type: "object",
       properties: {
         path: {
@@ -21852,11 +22127,11 @@ var native_contract_schema_generated_default = {
         "key"
       ]
     },
-    t150: {
+    t154: {
       type: "object",
       properties: {
         source: {
-          ref: "t151"
+          ref: "t155"
         },
         fingerprint: {
           type: "string"
@@ -21874,7 +22149,7 @@ var native_contract_schema_generated_default = {
         "fingerprint"
       ]
     },
-    t149: {
+    t153: {
       type: "object",
       properties: {
         mode: {
@@ -21944,7 +22219,7 @@ var native_contract_schema_generated_default = {
         prefillAudit: {
           anyOf: [
             {
-              ref: "t150"
+              ref: "t154"
             }
           ]
         }
@@ -21953,7 +22228,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t152: {
+    t156: {
       type: "object",
       properties: {
         mode: {
@@ -22018,7 +22293,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t148: {
+    t152: {
       type: "object",
       properties: {
         enabled: {
@@ -22048,10 +22323,10 @@ var native_contract_schema_generated_default = {
           ]
         },
         subtitle: {
-          ref: "t149"
+          ref: "t153"
         },
         extension: {
-          ref: "t152"
+          ref: "t156"
         }
       },
       required: [
@@ -22061,40 +22336,40 @@ var native_contract_schema_generated_default = {
         "extension"
       ]
     },
-    t146: {
+    t150: {
       type: "object",
       properties: {
         structure: {
           anyOf: [
             {
-              ref: "t147"
+              ref: "t151"
             }
           ]
         },
         search: {
           anyOf: [
             {
-              ref: "t148"
+              ref: "t152"
             }
           ]
         }
       },
       required: []
     },
-    t153: {
+    t157: {
       type: "object",
       properties: {
         structure: {
           anyOf: [
             {
-              ref: "t147"
+              ref: "t151"
             }
           ]
         }
       },
       required: []
     },
-    t156: {
+    t160: {
       type: "object",
       properties: {
         weight: {
@@ -22128,7 +22403,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t157: {
+    t161: {
       type: "object",
       properties: {
         zLevel: {
@@ -22153,7 +22428,7 @@ var native_contract_schema_generated_default = {
         "zLevel"
       ]
     },
-    t159: {
+    t163: {
       type: "object",
       properties: {
         role: {
@@ -22222,7 +22497,7 @@ var native_contract_schema_generated_default = {
         "basePriority"
       ]
     },
-    t158: {
+    t162: {
       type: "object",
       properties: {
         visible: {
@@ -22243,12 +22518,6 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t135"
-              },
-              {
-                ref: "t136"
-              },
-              {
                 ref: "t137"
               },
               {
@@ -22259,12 +22528,18 @@ var native_contract_schema_generated_default = {
               },
               {
                 ref: "t140"
+              },
+              {
+                ref: "t141"
+              },
+              {
+                ref: "t142"
               }
             ]
           }
         },
         collision: {
-          ref: "t159"
+          ref: "t163"
         }
       },
       required: [
@@ -22274,7 +22549,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t163: {
+    t167: {
       type: "object",
       properties: {
         min: {
@@ -22289,7 +22564,7 @@ var native_contract_schema_generated_default = {
         "max"
       ]
     },
-    t165: {
+    t169: {
       type: "object",
       properties: {
         kind: {
@@ -22378,7 +22653,7 @@ var native_contract_schema_generated_default = {
         "operator"
       ]
     },
-    t167: {
+    t171: {
       type: "object",
       properties: {
         id: {
@@ -22400,16 +22675,16 @@ var native_contract_schema_generated_default = {
         condition: {
           anyOf: [
             {
-              ref: "t138"
-            },
-            {
-              ref: "t139"
-            },
-            {
               ref: "t140"
             },
             {
-              ref: "t165"
+              ref: "t141"
+            },
+            {
+              ref: "t142"
+            },
+            {
+              ref: "t169"
             }
           ]
         }
@@ -22420,7 +22695,7 @@ var native_contract_schema_generated_default = {
         "condition"
       ]
     },
-    t168: {
+    t172: {
       type: "object",
       properties: {
         id: {
@@ -22435,7 +22710,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t166: {
+    t170: {
       type: "object",
       properties: {
         expression: {
@@ -22454,7 +22729,7 @@ var native_contract_schema_generated_default = {
         terms: {
           type: "array",
           items: {
-            ref: "t167"
+            ref: "t171"
           }
         },
         groups: {
@@ -22462,7 +22737,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t168"
+                ref: "t172"
               }
             }
           ]
@@ -22473,7 +22748,7 @@ var native_contract_schema_generated_default = {
         "terms"
       ]
     },
-    t164: {
+    t168: {
       type: "object",
       properties: {
         op: {
@@ -22494,19 +22769,19 @@ var native_contract_schema_generated_default = {
           items: {
             anyOf: [
               {
-                ref: "t138"
-              },
-              {
-                ref: "t139"
-              },
-              {
                 ref: "t140"
               },
               {
-                ref: "t164"
+                ref: "t141"
               },
               {
-                ref: "t165"
+                ref: "t142"
+              },
+              {
+                ref: "t168"
+              },
+              {
+                ref: "t169"
               }
             ]
           }
@@ -22514,7 +22789,7 @@ var native_contract_schema_generated_default = {
         formula: {
           anyOf: [
             {
-              ref: "t166"
+              ref: "t170"
             }
           ]
         }
@@ -22524,16 +22799,16 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t162: {
+    t166: {
       type: "object",
       properties: {
         zoom: {
-          ref: "t163"
+          ref: "t167"
         },
         fields: {
           anyOf: [
             {
-              ref: "t164"
+              ref: "t168"
             }
           ]
         }
@@ -22542,7 +22817,7 @@ var native_contract_schema_generated_default = {
         "zoom"
       ]
     },
-    t170: {
+    t174: {
       type: "object",
       properties: {
         enabled: {
@@ -22577,7 +22852,7 @@ var native_contract_schema_generated_default = {
         "color"
       ]
     },
-    t171: {
+    t175: {
       type: "object",
       properties: {
         enabled: {
@@ -22616,21 +22891,6 @@ var native_contract_schema_generated_default = {
         "showInner"
       ]
     },
-    t172: {
-      type: "object",
-      properties: {
-        x: {
-          type: "number"
-        },
-        y: {
-          type: "number"
-        }
-      },
-      required: [
-        "x",
-        "y"
-      ]
-    },
     t176: {
       type: "object",
       properties: {
@@ -22646,11 +22906,26 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t175: {
+    t180: {
+      type: "object",
+      properties: {
+        x: {
+          type: "number"
+        },
+        y: {
+          type: "number"
+        }
+      },
+      required: [
+        "x",
+        "y"
+      ]
+    },
+    t179: {
       type: "object",
       properties: {
         offsetPx: {
-          ref: "t176"
+          ref: "t180"
         },
         anchor: {
           anyOf: [
@@ -22679,20 +22954,20 @@ var native_contract_schema_generated_default = {
         "visibility"
       ]
     },
-    t174: {
+    t178: {
       type: "object",
       properties: {
         behavior: {
           anyOf: [
             {
-              ref: "t175"
+              ref: "t179"
             }
           ]
         },
         halo: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t174"
             }
           ]
         },
@@ -22807,7 +23082,7 @@ var native_contract_schema_generated_default = {
         "fillOpacity"
       ]
     },
-    t178: {
+    t182: {
       type: "object",
       properties: {
         value: {
@@ -22827,7 +23102,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         item: {
-          ref: "t174"
+          ref: "t178"
         }
       },
       required: [
@@ -22835,7 +23110,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t177: {
+    t181: {
       type: "object",
       properties: {
         field: {
@@ -22844,7 +23119,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t178"
+            ref: "t182"
           }
         }
       },
@@ -22853,7 +23128,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t173: {
+    t177: {
       type: "object",
       properties: {
         kind: {
@@ -22870,12 +23145,12 @@ var native_contract_schema_generated_default = {
           ]
         },
         shape: {
-          ref: "t174"
+          ref: "t178"
         },
         mapping: {
           anyOf: [
             {
-              ref: "t177"
+              ref: "t181"
             }
           ]
         }
@@ -22885,7 +23160,7 @@ var native_contract_schema_generated_default = {
         "shape"
       ]
     },
-    t182: {
+    t186: {
       type: "object",
       properties: {
         shape: {
@@ -22972,7 +23247,7 @@ var native_contract_schema_generated_default = {
         "strokeOpacity"
       ]
     },
-    t184: {
+    t188: {
       type: "object",
       properties: {
         mode: {
@@ -23028,7 +23303,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t185: {
+    t189: {
       type: "object",
       properties: {
         x: {
@@ -23043,14 +23318,14 @@ var native_contract_schema_generated_default = {
         "y"
       ]
     },
-    t183: {
+    t187: {
       type: "object",
       properties: {
         anchor: {
-          ref: "t184"
+          ref: "t188"
         },
         offsetPx: {
-          ref: "t185"
+          ref: "t189"
         }
       },
       required: [
@@ -23058,20 +23333,20 @@ var native_contract_schema_generated_default = {
         "offsetPx"
       ]
     },
-    t181: {
+    t185: {
       type: "object",
       properties: {
         behavior: {
           anyOf: [
             {
-              ref: "t175"
+              ref: "t179"
             }
           ]
         },
         halo: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t174"
             }
           ]
         },
@@ -23109,12 +23384,12 @@ var native_contract_schema_generated_default = {
         plate: {
           anyOf: [
             {
-              ref: "t182"
+              ref: "t186"
             }
           ]
         },
         placement: {
-          ref: "t183"
+          ref: "t187"
         }
       },
       required: [
@@ -23126,14 +23401,14 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t180: {
+    t184: {
       type: "object",
       properties: {
         mode: {
           const: "single"
         },
         item: {
-          ref: "t181"
+          ref: "t185"
         }
       },
       required: [
@@ -23141,7 +23416,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t187: {
+    t191: {
       type: "object",
       properties: {
         value: {
@@ -23161,7 +23436,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         item: {
-          ref: "t181"
+          ref: "t185"
         }
       },
       required: [
@@ -23169,7 +23444,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t186: {
+    t190: {
       type: "object",
       properties: {
         mode: {
@@ -23181,7 +23456,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t187"
+            ref: "t191"
           }
         }
       },
@@ -23191,7 +23466,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t179: {
+    t183: {
       type: "object",
       properties: {
         kind: {
@@ -23200,15 +23475,15 @@ var native_contract_schema_generated_default = {
         icon: {
           anyOf: [
             {
-              ref: "t180"
+              ref: "t184"
             },
             {
-              ref: "t186"
+              ref: "t190"
             }
           ]
         },
         fallback: {
-          ref: "t174"
+          ref: "t178"
         }
       },
       required: [
@@ -23217,7 +23492,7 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t191: {
+    t195: {
       type: "object",
       properties: {
         width: {
@@ -23232,26 +23507,26 @@ var native_contract_schema_generated_default = {
         "height"
       ]
     },
-    t190: {
+    t194: {
       type: "object",
       properties: {
         sizePx: {
-          ref: "t191"
+          ref: "t195"
         },
         placement: {
-          ref: "t183"
+          ref: "t187"
         },
         halo: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t174"
             }
           ]
         },
         behavior: {
           anyOf: [
             {
-              ref: "t175"
+              ref: "t179"
             }
           ]
         }
@@ -23261,14 +23536,14 @@ var native_contract_schema_generated_default = {
         "placement"
       ]
     },
-    t189: {
+    t193: {
       type: "object",
       properties: {
         mode: {
           const: "fixed"
         },
         presentation: {
-          ref: "t190"
+          ref: "t194"
         },
         url: {
           type: "string"
@@ -23290,7 +23565,7 @@ var native_contract_schema_generated_default = {
         "url"
       ]
     },
-    t192: {
+    t196: {
       type: "object",
       properties: {
         mode: {
@@ -23300,7 +23575,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t190"
+          ref: "t194"
         }
       },
       required: [
@@ -23309,7 +23584,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t193: {
+    t197: {
       type: "object",
       properties: {
         mode: {
@@ -23322,7 +23597,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         presentation: {
-          ref: "t190"
+          ref: "t194"
         }
       },
       required: [
@@ -23332,7 +23607,7 @@ var native_contract_schema_generated_default = {
         "presentation"
       ]
     },
-    t195: {
+    t199: {
       type: "object",
       properties: {
         value: {
@@ -23352,7 +23627,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         presentation: {
-          ref: "t190"
+          ref: "t194"
         },
         url: {
           type: "string"
@@ -23374,7 +23649,7 @@ var native_contract_schema_generated_default = {
         "url"
       ]
     },
-    t194: {
+    t198: {
       type: "object",
       properties: {
         mode: {
@@ -23386,7 +23661,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t195"
+            ref: "t199"
           }
         }
       },
@@ -23396,7 +23671,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t188: {
+    t192: {
       type: "object",
       properties: {
         kind: {
@@ -23405,21 +23680,21 @@ var native_contract_schema_generated_default = {
         image: {
           anyOf: [
             {
-              ref: "t189"
-            },
-            {
-              ref: "t192"
-            },
-            {
               ref: "t193"
             },
             {
-              ref: "t194"
+              ref: "t196"
+            },
+            {
+              ref: "t197"
+            },
+            {
+              ref: "t198"
             }
           ]
         },
         fallback: {
-          ref: "t174"
+          ref: "t178"
         }
       },
       required: [
@@ -23428,19 +23703,19 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t196: {
+    t200: {
       type: "object",
       properties: {
         pointSymbol: {
           anyOf: [
             {
-              ref: "t173"
+              ref: "t177"
             },
             {
-              ref: "t179"
+              ref: "t183"
             },
             {
-              ref: "t188"
+              ref: "t192"
             }
           ]
         }
@@ -23449,7 +23724,7 @@ var native_contract_schema_generated_default = {
         "pointSymbol"
       ]
     },
-    t197: {
+    t201: {
       type: "object",
       properties: {
         source: {
@@ -23495,23 +23770,23 @@ var native_contract_schema_generated_default = {
         "fallback"
       ]
     },
-    t169: {
+    t173: {
       type: "object",
       properties: {
         halo: {
           anyOf: [
             {
-              ref: "t170"
+              ref: "t174"
             },
             {
-              ref: "t171"
+              ref: "t175"
             }
           ]
         },
         symbolOffsetPx: {
           anyOf: [
             {
-              ref: "t172"
+              ref: "t176"
             }
           ]
         },
@@ -23560,27 +23835,27 @@ var native_contract_schema_generated_default = {
         pointSymbol: {
           anyOf: [
             {
-              ref: "t173"
+              ref: "t177"
             },
             {
-              ref: "t179"
+              ref: "t183"
             },
             {
-              ref: "t188"
+              ref: "t192"
             }
           ]
         },
         midpoint: {
           anyOf: [
             {
-              ref: "t196"
+              ref: "t200"
             }
           ]
         },
         icon: {
           anyOf: [
             {
-              ref: "t197"
+              ref: "t201"
             }
           ]
         },
@@ -23695,7 +23970,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t200: {
+    t204: {
       type: "object",
       properties: {
         italic: {
@@ -23731,7 +24006,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t201: {
+    t205: {
       type: "object",
       properties: {
         lineHeightRatio: {
@@ -23818,7 +24093,7 @@ var native_contract_schema_generated_default = {
         "strokeWidth"
       ]
     },
-    t199: {
+    t203: {
       type: "object",
       properties: {
         family: {
@@ -23855,7 +24130,7 @@ var native_contract_schema_generated_default = {
         modifiers: {
           anyOf: [
             {
-              ref: "t200"
+              ref: "t204"
             }
           ]
         },
@@ -23881,7 +24156,7 @@ var native_contract_schema_generated_default = {
         pill: {
           anyOf: [
             {
-              ref: "t201"
+              ref: "t205"
             }
           ]
         }
@@ -23891,7 +24166,7 @@ var native_contract_schema_generated_default = {
         "size"
       ]
     },
-    t202: {
+    t206: {
       type: "object",
       properties: {},
       required: [],
@@ -23906,7 +24181,7 @@ var native_contract_schema_generated_default = {
         ]
       }
     },
-    t205: {
+    t209: {
       type: "object",
       properties: {
         visible: {
@@ -23915,7 +24190,7 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t199"
+              ref: "t203"
             }
           ]
         },
@@ -24006,7 +24281,7 @@ var native_contract_schema_generated_default = {
         fallbackValueFormats: {
           anyOf: [
             {
-              ref: "t202"
+              ref: "t206"
             }
           ]
         },
@@ -24099,7 +24374,7 @@ var native_contract_schema_generated_default = {
         "visible"
       ]
     },
-    t204: {
+    t208: {
       type: "object",
       properties: {
         value: {
@@ -24119,7 +24394,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         item: {
-          ref: "t205"
+          ref: "t209"
         }
       },
       required: [
@@ -24127,7 +24402,7 @@ var native_contract_schema_generated_default = {
         "item"
       ]
     },
-    t203: {
+    t207: {
       type: "object",
       properties: {
         field: {
@@ -24136,7 +24411,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t204"
+            ref: "t208"
           }
         }
       },
@@ -24145,7 +24420,7 @@ var native_contract_schema_generated_default = {
         "entries"
       ]
     },
-    t198: {
+    t202: {
       type: "object",
       properties: {
         visible: {
@@ -24154,7 +24429,7 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t199"
+              ref: "t203"
             }
           ]
         },
@@ -24245,7 +24520,7 @@ var native_contract_schema_generated_default = {
         fallbackValueFormats: {
           anyOf: [
             {
-              ref: "t202"
+              ref: "t206"
             }
           ]
         },
@@ -24334,7 +24609,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         collision: {
-          ref: "t159"
+          ref: "t163"
         },
         mode: {
           anyOf: [
@@ -24349,7 +24624,7 @@ var native_contract_schema_generated_default = {
         mapping: {
           anyOf: [
             {
-              ref: "t203"
+              ref: "t207"
             }
           ]
         }
@@ -24359,7 +24634,7 @@ var native_contract_schema_generated_default = {
         "collision"
       ]
     },
-    t207: {
+    t211: {
       type: "object",
       properties: {
         point: {
@@ -24415,18 +24690,18 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t206: {
+    t210: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t207"
+          ref: "t211"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t209: {
+    t213: {
       type: "object",
       properties: {
         admission: {
@@ -24495,14 +24770,14 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t208: {
+    t212: {
       type: "object",
       properties: {
         templateId: {
           type: "string"
         },
         overrides: {
-          ref: "t209"
+          ref: "t213"
         }
       },
       required: [
@@ -24510,7 +24785,7 @@ var native_contract_schema_generated_default = {
         "overrides"
       ]
     },
-    t211: {
+    t215: {
       type: "object",
       properties: {
         mode: {
@@ -24542,7 +24817,7 @@ var native_contract_schema_generated_default = {
         "mode"
       ]
     },
-    t210: {
+    t214: {
       type: "object",
       properties: {
         id: {
@@ -24552,12 +24827,6 @@ var native_contract_schema_generated_default = {
           type: "array",
           items: {
             anyOf: [
-              {
-                ref: "t135"
-              },
-              {
-                ref: "t136"
-              },
               {
                 ref: "t137"
               },
@@ -24569,6 +24838,12 @@ var native_contract_schema_generated_default = {
               },
               {
                 ref: "t140"
+              },
+              {
+                ref: "t141"
+              },
+              {
+                ref: "t142"
               }
             ]
           }
@@ -24595,28 +24870,28 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t173"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t198"
+              ref: "t202"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t161"
             }
           ]
         },
         priority: {
           anyOf: [
             {
-              ref: "t211"
+              ref: "t215"
             }
           ]
         },
@@ -24633,13 +24908,13 @@ var native_contract_schema_generated_default = {
         "when"
       ]
     },
-    t213: {
+    t217: {
       type: "object",
       properties: {},
       required: [],
       additionalProperties: {}
     },
-    t214: {
+    t218: {
       type: "object",
       properties: {
         preserveFallback: {
@@ -24662,55 +24937,55 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t212: {
+    t216: {
       type: "object",
       properties: {
         predicates: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         },
         visibility: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         },
         geometry: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         },
         symbol: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         },
         collision: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         },
         selection: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         },
@@ -24727,14 +25002,14 @@ var native_contract_schema_generated_default = {
         legacyRuntime: {
           anyOf: [
             {
-              ref: "t214"
+              ref: "t218"
             }
           ]
         }
       },
       required: []
     },
-    t161: {
+    t165: {
       type: "object",
       properties: {
         id: {
@@ -24753,7 +25028,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t162"
+              ref: "t166"
             }
           ]
         },
@@ -24793,28 +25068,28 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t169"
+              ref: "t173"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t198"
+              ref: "t202"
             }
           ]
         },
         interaction: {
           anyOf: [
             {
-              ref: "t206"
+              ref: "t210"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t161"
             }
           ]
         },
@@ -24828,7 +25103,7 @@ var native_contract_schema_generated_default = {
         logic: {
           anyOf: [
             {
-              ref: "t208"
+              ref: "t212"
             }
           ]
         },
@@ -24837,7 +25112,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t210"
+                ref: "t214"
               }
             }
           ]
@@ -24845,7 +25120,7 @@ var native_contract_schema_generated_default = {
         advanced: {
           anyOf: [
             {
-              ref: "t212"
+              ref: "t216"
             }
           ]
         },
@@ -24885,7 +25160,7 @@ var native_contract_schema_generated_default = {
         priority: {
           anyOf: [
             {
-              ref: "t211"
+              ref: "t215"
             }
           ]
         }
@@ -24894,13 +25169,13 @@ var native_contract_schema_generated_default = {
         "id"
       ]
     },
-    t160: {
+    t164: {
       type: "object",
       properties: {
         rules: {
           type: "array",
           items: {
-            ref: "t161"
+            ref: "t165"
           }
         }
       },
@@ -24908,18 +25183,18 @@ var native_contract_schema_generated_default = {
         "rules"
       ]
     },
-    t215: {
+    t219: {
       type: "object",
       properties: {
         triggers: {
-          ref: "t207"
+          ref: "t211"
         }
       },
       required: [
         "triggers"
       ]
     },
-    t216: {
+    t220: {
       type: "object",
       properties: {
         ruleIds: {
@@ -24947,7 +25222,7 @@ var native_contract_schema_generated_default = {
         "specialLogicKeys"
       ]
     },
-    t155: {
+    t159: {
       type: "object",
       properties: {
         renderState: {
@@ -24986,38 +25261,38 @@ var native_contract_schema_generated_default = {
         style: {
           anyOf: [
             {
-              ref: "t156"
+              ref: "t160"
             }
           ]
         },
         geometryStack: {
           anyOf: [
             {
-              ref: "t157"
+              ref: "t161"
             }
           ]
         },
         label: {
           anyOf: [
             {
-              ref: "t158"
+              ref: "t162"
             }
           ]
         },
         zoomPriority: {
-          ref: "t160"
+          ref: "t164"
         },
         interaction: {
           anyOf: [
             {
-              ref: "t215"
+              ref: "t219"
             }
           ]
         },
         legacyDisplay: {
           anyOf: [
             {
-              ref: "t216"
+              ref: "t220"
             }
           ]
         }
@@ -25028,34 +25303,34 @@ var native_contract_schema_generated_default = {
         "zoomPriority"
       ]
     },
-    t154: {
+    t158: {
       type: "object",
       properties: {
         Point: {
           anyOf: [
             {
-              ref: "t155"
+              ref: "t159"
             }
           ]
         },
         LineString: {
           anyOf: [
             {
-              ref: "t155"
+              ref: "t159"
             }
           ]
         },
         Polygon: {
           anyOf: [
             {
-              ref: "t155"
+              ref: "t159"
             }
           ]
         }
       },
       required: []
     },
-    t217: {
+    t221: {
       type: "object",
       properties: {
         enabled: {
@@ -25090,7 +25365,94 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t220: {
+    t224: {
+      type: "object",
+      properties: {
+        token: {
+          type: "string"
+        },
+        operator: {
+          anyOf: [
+            {
+              const: "in"
+            },
+            {
+              const: "present"
+            },
+            {
+              const: "empty"
+            },
+            {
+              const: "equals"
+            }
+          ]
+        },
+        value: {
+          anyOf: [
+            {
+              type: "string"
+            },
+            {
+              type: "number"
+            },
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        },
+        values: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                anyOf: [
+                  {
+                    type: "string"
+                  },
+                  {
+                    type: "number"
+                  },
+                  {
+                    const: false
+                  },
+                  {
+                    const: true
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        all: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                ref: "t224"
+              }
+            }
+          ]
+        },
+        any: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                ref: "t224"
+              }
+            }
+          ]
+        }
+      },
+      required: [
+        "token",
+        "operator"
+      ]
+    },
+    t225: {
       type: "object",
       properties: {
         nodeId: {
@@ -25105,7 +25467,7 @@ var native_contract_schema_generated_default = {
         "fieldId"
       ]
     },
-    t221: {
+    t226: {
       type: "object",
       properties: {
         nodeId: {
@@ -25120,7 +25482,7 @@ var native_contract_schema_generated_default = {
         "itemId"
       ]
     },
-    t222: {
+    t227: {
       type: "object",
       properties: {
         colorSource: {
@@ -25195,6 +25557,9 @@ var native_contract_schema_generated_default = {
               const: "json"
             },
             {
+              const: "table"
+            },
+            {
               const: "classification"
             },
             {
@@ -25215,7 +25580,7 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t223: {
+    t228: {
       type: "object",
       properties: {
         targetRole: {
@@ -25293,23 +25658,30 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t219: {
+    t223: {
       type: "object",
       properties: {
+        when: {
+          anyOf: [
+            {
+              ref: "t224"
+            }
+          ]
+        },
         id: {
           type: "string"
         },
         fieldBinding: {
           anyOf: [
             {
-              ref: "t220"
+              ref: "t225"
             }
           ]
         },
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t220"
+              ref: "t225"
             }
           ]
         },
@@ -25343,14 +25715,14 @@ var native_contract_schema_generated_default = {
         inheritFrom: {
           anyOf: [
             {
-              ref: "t221"
+              ref: "t226"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t150"
+              ref: "t154"
             }
           ]
         },
@@ -25465,14 +25837,14 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t222"
+              ref: "t227"
             }
           ]
         },
         relation: {
           anyOf: [
             {
-              ref: "t223"
+              ref: "t228"
             }
           ]
         }
@@ -25484,7 +25856,7 @@ var native_contract_schema_generated_default = {
         "renderer"
       ]
     },
-    t224: {
+    t229: {
       type: "object",
       properties: {
         enabled: {
@@ -25554,7 +25926,7 @@ var native_contract_schema_generated_default = {
         "includeSystem"
       ]
     },
-    t218: {
+    t222: {
       type: "object",
       properties: {
         mode: {
@@ -25563,13 +25935,13 @@ var native_contract_schema_generated_default = {
         items: {
           type: "array",
           items: {
-            ref: "t219"
+            ref: "t223"
           }
         },
         remaining: {
           anyOf: [
             {
-              ref: "t224"
+              ref: "t229"
             }
           ]
         }
@@ -25579,7 +25951,7 @@ var native_contract_schema_generated_default = {
         "items"
       ]
     },
-    t225: {
+    t230: {
       type: "object",
       properties: {
         mode: {
@@ -25591,7 +25963,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         }
@@ -25601,7 +25973,7 @@ var native_contract_schema_generated_default = {
         "layoutId"
       ]
     },
-    t226: {
+    t231: {
       type: "object",
       properties: {
         mode: {
@@ -25613,7 +25985,7 @@ var native_contract_schema_generated_default = {
         options: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         }
@@ -25623,7 +25995,7 @@ var native_contract_schema_generated_default = {
         "componentKey"
       ]
     },
-    t227: {
+    t232: {
       type: "object",
       properties: {
         classCode: {
@@ -25652,7 +26024,7 @@ var native_contract_schema_generated_default = {
         source: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         }
@@ -25662,7 +26034,7 @@ var native_contract_schema_generated_default = {
         "displayRuleIds"
       ]
     },
-    t129: {
+    t131: {
       type: "object",
       properties: {
         nodeId: {
@@ -25674,7 +26046,7 @@ var native_contract_schema_generated_default = {
         classificationLabels: {
           anyOf: [
             {
-              ref: "t130"
+              ref: "t132"
             }
           ]
         },
@@ -25687,48 +26059,48 @@ var native_contract_schema_generated_default = {
         inheritDown: {
           anyOf: [
             {
-              ref: "t131"
+              ref: "t133"
             }
           ]
         },
         receiveFromParent: {
           anyOf: [
             {
-              ref: "t132"
+              ref: "t134"
             }
           ]
         },
         policies: {
           anyOf: [
             {
-              ref: "t133"
+              ref: "t135"
             }
           ]
         },
         fields: {
           type: "array",
           items: {
-            ref: "t134"
+            ref: "t136"
           }
         },
         fieldSettings: {
           anyOf: [
             {
-              ref: "t146"
+              ref: "t150"
             }
           ]
         },
         displaySettings: {
           anyOf: [
             {
-              ref: "t153"
+              ref: "t157"
             }
           ]
         },
         searchSettings: {
           anyOf: [
             {
-              ref: "t148"
+              ref: "t152"
             }
           ]
         },
@@ -25746,32 +26118,32 @@ var native_contract_schema_generated_default = {
           ]
         },
         geometryProfiles: {
-          ref: "t154"
+          ref: "t158"
         },
         containment: {
           anyOf: [
             {
-              ref: "t217"
+              ref: "t221"
             }
           ]
         },
         card: {
           anyOf: [
             {
-              ref: "t218"
+              ref: "t222"
             },
             {
-              ref: "t225"
+              ref: "t230"
             },
             {
-              ref: "t226"
+              ref: "t231"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t227"
+              ref: "t232"
             }
           ]
         }
@@ -25784,7 +26156,7 @@ var native_contract_schema_generated_default = {
         "geometryProfiles"
       ]
     },
-    t229: {
+    t234: {
       type: "object",
       properties: {
         classification: {
@@ -25799,7 +26171,7 @@ var native_contract_schema_generated_default = {
         "referenceField"
       ]
     },
-    t228: {
+    t233: {
       type: "object",
       properties: {
         id: {
@@ -25809,10 +26181,10 @@ var native_contract_schema_generated_default = {
           ref: "t1"
         },
         host: {
-          ref: "t229"
+          ref: "t234"
         },
         member: {
-          ref: "t229"
+          ref: "t234"
         },
         memberSelectorField: {
           anyOf: [
@@ -25847,7 +26219,7 @@ var native_contract_schema_generated_default = {
         "profile"
       ]
     },
-    t232: {
+    t237: {
       type: "object",
       properties: {
         slot: {
@@ -25862,7 +26234,7 @@ var native_contract_schema_generated_default = {
         "target"
       ]
     },
-    t231: {
+    t236: {
       type: "object",
       properties: {
         enabled: {
@@ -25897,7 +26269,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t232"
+                ref: "t237"
               }
             }
           ]
@@ -25907,7 +26279,7 @@ var native_contract_schema_generated_default = {
         "enabled"
       ]
     },
-    t233: {
+    t238: {
       type: "object",
       properties: {
         required: {
@@ -25918,7 +26290,32 @@ var native_contract_schema_generated_default = {
         "required"
       ]
     },
-    t237: {
+    t240: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string"
+        },
+        label: {
+          ref: "t1"
+        },
+        initialOpen: {
+          anyOf: [
+            {
+              const: false
+            },
+            {
+              const: true
+            }
+          ]
+        }
+      },
+      required: [
+        "id",
+        "label"
+      ]
+    },
+    t243: {
       type: "object",
       properties: {
         placeholder: {
@@ -25941,7 +26338,14 @@ var native_contract_schema_generated_default = {
         reference: {
           anyOf: [
             {
-              ref: "t145"
+              ref: "t149"
+            }
+          ]
+        },
+        table: {
+          anyOf: [
+            {
+              ref: "t143"
             }
           ]
         },
@@ -26022,6 +26426,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "json"
+            },
+            {
+              const: "table"
             }
           ]
         },
@@ -26033,12 +26440,6 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t135"
-                  },
-                  {
-                    ref: "t136"
-                  },
-                  {
                     ref: "t137"
                   },
                   {
@@ -26049,6 +26450,12 @@ var native_contract_schema_generated_default = {
                   },
                   {
                     ref: "t140"
+                  },
+                  {
+                    ref: "t141"
+                  },
+                  {
+                    ref: "t142"
                   }
                 ]
               }
@@ -26074,6 +26481,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "featureSearch"
+            },
+            {
+              const: "table"
             }
           ]
         }
@@ -26086,7 +26496,7 @@ var native_contract_schema_generated_default = {
         "input"
       ]
     },
-    t236: {
+    t242: {
       type: "object",
       properties: {
         nodeId: {
@@ -26096,7 +26506,7 @@ var native_contract_schema_generated_default = {
           type: "string"
         },
         snapshot: {
-          ref: "t237"
+          ref: "t243"
         },
         overrides: {
           type: "array",
@@ -26112,94 +26522,7 @@ var native_contract_schema_generated_default = {
         "overrides"
       ]
     },
-    t238: {
-      type: "object",
-      properties: {
-        token: {
-          type: "string"
-        },
-        operator: {
-          anyOf: [
-            {
-              const: "in"
-            },
-            {
-              const: "present"
-            },
-            {
-              const: "empty"
-            },
-            {
-              const: "equals"
-            }
-          ]
-        },
-        value: {
-          anyOf: [
-            {
-              type: "string"
-            },
-            {
-              type: "number"
-            },
-            {
-              const: false
-            },
-            {
-              const: true
-            }
-          ]
-        },
-        values: {
-          anyOf: [
-            {
-              type: "array",
-              items: {
-                anyOf: [
-                  {
-                    type: "string"
-                  },
-                  {
-                    type: "number"
-                  },
-                  {
-                    const: false
-                  },
-                  {
-                    const: true
-                  }
-                ]
-              }
-            }
-          ]
-        },
-        all: {
-          anyOf: [
-            {
-              type: "array",
-              items: {
-                ref: "t238"
-              }
-            }
-          ]
-        },
-        any: {
-          anyOf: [
-            {
-              type: "array",
-              items: {
-                ref: "t238"
-              }
-            }
-          ]
-        }
-      },
-      required: [
-        "token",
-        "operator"
-      ]
-    },
-    t239: {
+    t244: {
       type: "object",
       properties: {
         registryKey: {
@@ -26210,7 +26533,7 @@ var native_contract_schema_generated_default = {
         "registryKey"
       ]
     },
-    t241: {
+    t246: {
       type: "object",
       properties: {
         matcher: {
@@ -26249,7 +26572,7 @@ var native_contract_schema_generated_default = {
         "maxResults"
       ]
     },
-    t240: {
+    t245: {
       type: "object",
       properties: {
         target: {
@@ -26383,7 +26706,7 @@ var native_contract_schema_generated_default = {
         coarse: {
           anyOf: [
             {
-              ref: "t241"
+              ref: "t246"
             }
           ]
         }
@@ -26393,7 +26716,7 @@ var native_contract_schema_generated_default = {
         "cacheScope"
       ]
     },
-    t243: {
+    t248: {
       type: "object",
       properties: {
         optionTable: {
@@ -26406,14 +26729,14 @@ var native_contract_schema_generated_default = {
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t220"
+              ref: "t225"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t150"
+              ref: "t154"
             }
           ]
         },
@@ -26442,6 +26765,9 @@ var native_contract_schema_generated_default = {
               const: "select"
             },
             {
+              const: "dataset"
+            },
+            {
               const: "json"
             },
             {
@@ -26452,6 +26778,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "featureSearch"
+            },
+            {
+              const: "table"
             },
             {
               const: "coarseSearch"
@@ -26503,7 +26832,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t240"
+              ref: "t245"
             }
           ]
         },
@@ -26536,13 +26865,16 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "json"
+            },
+            {
+              const: "table"
             }
           ]
         },
         fieldSource: {
           anyOf: [
             {
-              ref: "t236"
+              ref: "t242"
             }
           ]
         },
@@ -26551,7 +26883,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t238"
+                ref: "t224"
               }
             }
           ]
@@ -26579,13 +26911,13 @@ var native_contract_schema_generated_default = {
         "kind"
       ]
     },
-    t242: {
+    t247: {
       type: "object",
       properties: {
         itemFields: {
           type: "array",
           items: {
-            ref: "t243"
+            ref: "t248"
           }
         },
         storage: {
@@ -26627,7 +26959,7 @@ var native_contract_schema_generated_default = {
         "itemFields"
       ]
     },
-    t244: {
+    t249: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -26642,9 +26974,23 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t235: {
+    t241: {
       type: "object",
       properties: {
+        sectionId: {
+          anyOf: [
+            {
+              type: "string"
+            }
+          ]
+        },
+        table: {
+          anyOf: [
+            {
+              ref: "t143"
+            }
+          ]
+        },
         optionTable: {
           anyOf: [
             {
@@ -26655,14 +27001,14 @@ var native_contract_schema_generated_default = {
         optionsFieldRef: {
           anyOf: [
             {
-              ref: "t220"
+              ref: "t225"
             }
           ]
         },
         prefillAudit: {
           anyOf: [
             {
-              ref: "t150"
+              ref: "t154"
             }
           ]
         },
@@ -26711,6 +27057,9 @@ var native_contract_schema_generated_default = {
               const: "select"
             },
             {
+              const: "dataset"
+            },
+            {
               const: "json"
             },
             {
@@ -26721,6 +27070,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "featureSearch"
+            },
+            {
+              const: "table"
             },
             {
               const: "component"
@@ -26764,7 +27116,7 @@ var native_contract_schema_generated_default = {
         fieldSource: {
           anyOf: [
             {
-              ref: "t236"
+              ref: "t242"
             }
           ]
         },
@@ -26784,6 +27136,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "json"
+            },
+            {
+              const: "table"
             }
           ]
         },
@@ -26805,7 +27160,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t238"
+                ref: "t224"
               }
             }
           ]
@@ -26830,7 +27185,7 @@ var native_contract_schema_generated_default = {
         optionSource: {
           anyOf: [
             {
-              ref: "t239"
+              ref: "t244"
             }
           ]
         },
@@ -26852,7 +27207,7 @@ var native_contract_schema_generated_default = {
         search: {
           anyOf: [
             {
-              ref: "t240"
+              ref: "t245"
             }
           ]
         },
@@ -26883,7 +27238,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t238"
+              ref: "t224"
             }
           ]
         },
@@ -26900,14 +27255,14 @@ var native_contract_schema_generated_default = {
         group: {
           anyOf: [
             {
-              ref: "t242"
+              ref: "t247"
             }
           ]
         },
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t244"
+              ref: "t249"
             }
           ]
         },
@@ -26921,7 +27276,7 @@ var native_contract_schema_generated_default = {
         legacyBlock: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         }
@@ -26933,7 +27288,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t245: {
+    t250: {
       type: "object",
       properties: {
         tagsEnabled: {
@@ -26948,7 +27303,7 @@ var native_contract_schema_generated_default = {
         "extensionsEnabled"
       ]
     },
-    t247: {
+    t252: {
       type: "object",
       properties: {
         id: {
@@ -26973,7 +27328,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t238"
+              ref: "t224"
             }
           ]
         }
@@ -26984,7 +27339,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t248: {
+    t253: {
       type: "object",
       properties: {
         outputId: {
@@ -27010,7 +27365,7 @@ var native_contract_schema_generated_default = {
         "value"
       ]
     },
-    t246: {
+    t251: {
       type: "object",
       properties: {
         enabledFromThisPage: {
@@ -27062,7 +27417,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t247"
+                ref: "t252"
               }
             }
           ]
@@ -27112,7 +27467,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t248"
+                ref: "t253"
               }
             }
           ]
@@ -27120,9 +27475,19 @@ var native_contract_schema_generated_default = {
       },
       required: []
     },
-    t234: {
+    t239: {
       type: "object",
       properties: {
+        sections: {
+          anyOf: [
+            {
+              type: "array",
+              items: {
+                ref: "t240"
+              }
+            }
+          ]
+        },
         id: {
           type: "string"
         },
@@ -27160,7 +27525,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t235"
+                ref: "t241"
               }
             }
           ]
@@ -27205,7 +27570,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t238"
+              ref: "t224"
             }
           ]
         },
@@ -27219,21 +27584,21 @@ var native_contract_schema_generated_default = {
         tagsExtensions: {
           anyOf: [
             {
-              ref: "t245"
+              ref: "t250"
             }
           ]
         },
         drawing: {
           anyOf: [
             {
-              ref: "t246"
+              ref: "t251"
             }
           ]
         },
         legacyPage: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         }
@@ -27244,7 +27609,7 @@ var native_contract_schema_generated_default = {
         "label"
       ]
     },
-    t251: {
+    t256: {
       type: "object",
       properties: {
         id: {
@@ -27280,13 +27645,13 @@ var native_contract_schema_generated_default = {
         "path"
       ]
     },
-    t250: {
+    t255: {
       type: "object",
       properties: {
         selectors: {
           type: "array",
           items: {
-            ref: "t251"
+            ref: "t256"
           }
         }
       },
@@ -27294,7 +27659,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t252: {
+    t257: {
       type: "object",
       properties: {
         id: {
@@ -27309,7 +27674,7 @@ var native_contract_schema_generated_default = {
         when: {
           anyOf: [
             {
-              ref: "t238"
+              ref: "t224"
             }
           ]
         }
@@ -27320,7 +27685,7 @@ var native_contract_schema_generated_default = {
         "expression"
       ]
     },
-    t253: {
+    t258: {
       type: "object",
       properties: {
         selected: {
@@ -27361,7 +27726,7 @@ var native_contract_schema_generated_default = {
         "selected"
       ]
     },
-    t249: {
+    t254: {
       type: "object",
       properties: {
         id: {
@@ -27377,25 +27742,25 @@ var native_contract_schema_generated_default = {
         classificationGroup: {
           anyOf: [
             {
-              ref: "t250"
+              ref: "t255"
             }
           ]
         },
         assignments: {
           type: "array",
           items: {
-            ref: "t252"
+            ref: "t257"
           }
         },
         when: {
           anyOf: [
             {
-              ref: "t238"
+              ref: "t224"
             }
           ]
         },
         geometry: {
-          ref: "t253"
+          ref: "t258"
         }
       },
       required: [
@@ -27404,13 +27769,13 @@ var native_contract_schema_generated_default = {
         "geometry"
       ]
     },
-    t256: {
+    t261: {
       type: "object",
       properties: {
         selectors: {
           type: "array",
           items: {
-            ref: "t251"
+            ref: "t256"
           }
         }
       },
@@ -27418,7 +27783,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t255: {
+    t260: {
       type: "object",
       properties: {
         role: {
@@ -27450,7 +27815,7 @@ var native_contract_schema_generated_default = {
           ]
         },
         classificationGroup: {
-          ref: "t256"
+          ref: "t261"
         }
       },
       required: [
@@ -27458,7 +27823,7 @@ var native_contract_schema_generated_default = {
         "classificationGroup"
       ]
     },
-    t258: {
+    t263: {
       type: "object",
       properties: {
         workflowId: {
@@ -27473,14 +27838,14 @@ var native_contract_schema_generated_default = {
         "bindingId"
       ]
     },
-    t257: {
+    t262: {
       type: "object",
       properties: {
         bindingId: {
           type: "string"
         },
         source: {
-          ref: "t258"
+          ref: "t263"
         },
         classificationGroup: {
           type: "undefined"
@@ -27494,13 +27859,13 @@ var native_contract_schema_generated_default = {
         "source"
       ]
     },
-    t260: {
+    t265: {
       type: "object",
       properties: {
         selectors: {
           type: "array",
           items: {
-            ref: "t251"
+            ref: "t256"
           }
         }
       },
@@ -27508,7 +27873,7 @@ var native_contract_schema_generated_default = {
         "selectors"
       ]
     },
-    t261: {
+    t266: {
       type: "object",
       properties: {
         scope: {
@@ -27594,7 +27959,7 @@ var native_contract_schema_generated_default = {
         "cacheScope"
       ]
     },
-    t259: {
+    t264: {
       type: "object",
       properties: {
         bindingId: {
@@ -27604,10 +27969,10 @@ var native_contract_schema_generated_default = {
           type: "undefined"
         },
         classificationGroup: {
-          ref: "t260"
+          ref: "t265"
         },
         search: {
-          ref: "t261"
+          ref: "t266"
         }
       },
       required: [
@@ -27616,7 +27981,7 @@ var native_contract_schema_generated_default = {
         "search"
       ]
     },
-    t254: {
+    t259: {
       type: "object",
       properties: {
         componentKey: {
@@ -27667,7 +28032,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t255"
+                ref: "t260"
               }
             }
           ]
@@ -27679,10 +28044,10 @@ var native_contract_schema_generated_default = {
               items: {
                 anyOf: [
                   {
-                    ref: "t257"
+                    ref: "t262"
                   },
                   {
-                    ref: "t259"
+                    ref: "t264"
                   }
                 ]
               }
@@ -27695,7 +28060,7 @@ var native_contract_schema_generated_default = {
         "reason"
       ]
     },
-    t262: {
+    t267: {
       type: "object",
       properties: {
         runtimeMode: {
@@ -27715,21 +28080,21 @@ var native_contract_schema_generated_default = {
         output: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         },
         source: {
           anyOf: [
             {
-              ref: "t213"
+              ref: "t217"
             }
           ]
         }
       },
       required: []
     },
-    t230: {
+    t235: {
       type: "object",
       properties: {
         id: {
@@ -27761,14 +28126,14 @@ var native_contract_schema_generated_default = {
         editor: {
           anyOf: [
             {
-              ref: "t231"
+              ref: "t236"
             }
           ]
         },
         actor: {
           anyOf: [
             {
-              ref: "t233"
+              ref: "t238"
             }
           ]
         },
@@ -27782,13 +28147,13 @@ var native_contract_schema_generated_default = {
         steps: {
           type: "array",
           items: {
-            ref: "t234"
+            ref: "t239"
           }
         },
         outputs: {
           type: "array",
           items: {
-            ref: "t249"
+            ref: "t254"
           }
         },
         assignments: {
@@ -27796,7 +28161,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t252"
+                ref: "t257"
               }
             }
           ]
@@ -27804,14 +28169,14 @@ var native_contract_schema_generated_default = {
         external: {
           anyOf: [
             {
-              ref: "t254"
+              ref: "t259"
             }
           ]
         },
         legacy: {
           anyOf: [
             {
-              ref: "t262"
+              ref: "t267"
             }
           ]
         }
@@ -27824,7 +28189,7 @@ var native_contract_schema_generated_default = {
         "outputs"
       ]
     },
-    t264: {
+    t269: {
       type: "object",
       properties: {
         kind: {
@@ -27881,7 +28246,7 @@ var native_contract_schema_generated_default = {
         "status"
       ]
     },
-    t263: {
+    t268: {
       type: "object",
       properties: {
         schemaVersion: {
@@ -27897,7 +28262,7 @@ var native_contract_schema_generated_default = {
         entries: {
           type: "array",
           items: {
-            ref: "t264"
+            ref: "t269"
           }
         },
         generatedAt: {
@@ -27971,6 +28336,9 @@ var native_contract_schema_generated_default = {
             },
             {
               const: 20
+            },
+            {
+              const: 21
             }
           ]
         },
@@ -28016,21 +28384,21 @@ var native_contract_schema_generated_default = {
         application: {
           anyOf: [
             {
-              ref: "t77"
+              ref: "t78"
             }
           ]
         },
         resources: {
           anyOf: [
             {
-              ref: "t127"
+              ref: "t129"
             }
           ]
         },
         nodes: {
           type: "array",
           items: {
-            ref: "t129"
+            ref: "t131"
           }
         },
         contextBindings: {
@@ -28038,7 +28406,7 @@ var native_contract_schema_generated_default = {
             {
               type: "array",
               items: {
-                ref: "t228"
+                ref: "t233"
               }
             }
           ]
@@ -28046,13 +28414,13 @@ var native_contract_schema_generated_default = {
         workflows: {
           type: "array",
           items: {
-            ref: "t230"
+            ref: "t235"
           }
         },
         parity: {
           anyOf: [
             {
-              ref: "t263"
+              ref: "t268"
             }
           ]
         }
@@ -28071,6 +28439,92 @@ var native_contract_schema_generated_default = {
     }
   }
 };
+
+// src/configStudio/c21Validation.ts
+function c21ConfigurationProblems(config) {
+  const issues = [], fail = (path2, message) => issues.push({ path: path2, message });
+  const c21 = config.contractRevision >= 21;
+  if (!c21 && (config.application?.titles || config.application?.announcements?.items.some((n) => n.loginOnly !== void 0))) fail("application", "\u6807\u9898\u548C\u767B\u5F55\u516C\u544A\u95E8\u69DB\u6700\u4F4E\u8981\u6C42 c21\u3002");
+  const condition = (c, path2, depth = 0) => {
+    if (!c) return;
+    if (depth > 12) {
+      fail(path2, "\u6761\u4EF6\u5D4C\u5957\u4E0D\u80FD\u8D85\u8FC7 12 \u5C42\u3002");
+      return;
+    }
+    if (c.all && c.any) fail(path2, "\u6761\u4EF6\u4E0D\u80FD\u540C\u65F6\u4F7F\u7528\u5168\u90E8\u548C\u4EFB\u610F\u7EC4\u5408\u3002");
+    if (c.all || c.any) {
+      if (!(c.all ?? c.any).length) fail(path2, "\u6761\u4EF6\u7EC4\u5408\u4E0D\u80FD\u4E3A\u7A7A\u3002");
+      for (const v of c.all ?? c.any ?? []) condition(v, path2, depth + 1);
+    } else if (!c.token || !["empty", "present", "equals", "in"].includes(c.operator) || c.operator === "equals" && c.value === void 0 || c.operator === "in" && !c.values?.length) fail(path2, "\u663E\u793A\u6761\u4EF6\u7F3A\u5C11\u5B57\u6BB5\u3001\u64CD\u4F5C\u6216\u6BD4\u8F83\u503C\u3002");
+  };
+  if (c21 && config.application) {
+    const directory = config.lookupTables?.find((t) => t.id === "dataset-directory");
+    if (!directory || directory.functionKind !== "dataset" || directory.valueType !== "string") fail("lookupTables/dataset-directory", "\u6570\u636E\u96C6\u76EE\u5F55\u7684\u56FA\u5B9A\u8EAB\u4EFD\u3001\u529F\u80FD\u548C\u6587\u672C\u4FDD\u5B58\u7C7B\u578B\u5FC5\u987B\u4FDD\u7559\u3002");
+  }
+  for (const t of config.lookupTables ?? []) {
+    const path2 = "lookupTables/" + t.id;
+    if (!c21 && t.functionKind === "dataset") fail(path2, "\u6570\u636E\u96C6\u76EE\u5F55\u6700\u4F4E\u8981\u6C42 c21\u3002");
+    if (t.functionKind === "dataset") for (const row2 of t.rows) {
+      const v = row2.functionValue;
+      if (!v || typeof v !== "object" || !("scope" in v)) {
+        fail(path2, "\u6570\u636E\u96C6\u884C\u9700\u8981\u4E16\u754C\u4E0E\u5206\u7C7B\u8303\u56F4\u3002");
+        continue;
+      }
+      if (!config.application?.worlds.some((w) => w.id === v.world && w.enabled)) fail(path2, "\u6570\u636E\u96C6\u884C\u9700\u8981\u5DF2\u542F\u7528\u4E16\u754C\u7684\u7A33\u5B9A ID\u3002");
+      if (!v.scope.rows.length) fail(path2, "\u6570\u636E\u96C6\u884C\u81F3\u5C11\u9700\u8981\u4E00\u4E2A\u5206\u7C7B\u8303\u56F4\u3002");
+      for (const message of classificationScopeProblems(v.scope, config)) fail(path2, message);
+    }
+    if (c21 && t.functionKind === "teleportHub") for (const row2 of t.rows) {
+      const v = row2.functionValue;
+      if (v && typeof v === "object" && "returnPoints" in v) {
+        if ("range" in v) fail(path2, "c21 \u5DF2\u79FB\u9664\u67A2\u7EBD\u8303\u56F4\uFF0C\u8BF7\u4ECE\u65E7\u5951\u7EA6\u663E\u5F0F\u8FC1\u79FB\u3002");
+        if (!config.application?.worlds.some((w) => w.id === v.world && w.enabled)) fail(path2, "\u67A2\u7EBD\u4E16\u754C\u9700\u8981\u5DF2\u542F\u7528\u4E16\u754C\u7A33\u5B9A ID\u3002");
+      }
+    }
+  }
+  for (const n of config.nodes) {
+    const path2 = "nodes/" + n.nodeId;
+    for (const f of n.fields) {
+      if (!c21 && (f.table || f.dynamicSource || f.format === "table" || f.input === "table")) fail(path2, "\u8868\u683C\u548C\u52A8\u6001\u6570\u636E\u96C6\u5B57\u6BB5\u6700\u4F4E\u8981\u6C42 c21\u3002");
+      if (f.format === "table" || f.input === "table") {
+        if (f.format !== "table" || f.input !== "table" || f.type !== "json" || f.cardinality !== "single") fail(path2, "\u666E\u901A\u8868\u683C\u9700\u8981\u5355\u503C JSON \u7C7B\u578B\u3001\u8868\u683C\u683C\u5F0F\u4E0E\u8868\u683C\u8F93\u5165\u3002");
+        for (const message of tableDefinitionErrors(f.table)) fail(path2 + "/fields/" + f.fieldId, message);
+      }
+    }
+    if (n.card?.mode === "fields") for (const item of n.card.items) {
+      if (!c21 && item.when) fail(path2, "\u4FE1\u606F\u5361\u884C\u6761\u4EF6\u6700\u4F4E\u8981\u6C42 c21\u3002");
+      condition(item.when, path2 + "/card/" + item.id);
+    }
+  }
+  for (const w of config.workflows) {
+    const path2 = "workflows/" + w.id, controls = w.steps.flatMap((s) => s.controls ?? []);
+    if (c21 && w.mode === "composed") for (const o of w.outputs) {
+      const ds = controls.filter((c) => c.kind === "dataset" && c.outputId === o.id);
+      if (ds.length !== 1 || !ds[0]?.systemManaged) fail(path2, "\u6BCF\u4E2A\u8F93\u51FA\u9700\u8981\u552F\u4E00\u7CFB\u7EDF\u6240\u5C5E\u6570\u636E\u96C6\u5355\u5143\u3002");
+      if (o.assignments.some((a) => a.target === "tags.dataset" || a.target === "tags")) fail(path2, "tags.dataset \u7531\u7CFB\u7EDF\u6570\u636E\u96C6\u5355\u5143\u72EC\u5360\uFF0C\u4E0D\u80FD\u7531\u666E\u901A\u7EC4\u88C5\u91CD\u590D\u5199\u5165\u3002");
+    }
+    for (const s of w.steps) {
+      const ids = /* @__PURE__ */ new Set();
+      for (const section of s.sections ?? []) {
+        if (!c21 || s.kind !== "form" || !section.id || ids.has(section.id) || !(section.label.zh.trim() || section.label.en.trim())) fail(path2, "\u5206\u680F\u5FC5\u987B\u5728 c21 \u4FE1\u606F\u9875\u5185\uFF0C\u6807\u8BC6\u552F\u4E00\u4E14\u6709\u6807\u9898\u3002");
+        ids.add(section.id);
+      }
+      for (const c of s.controls ?? []) {
+        if (!c21 && (c.kind === "table" || c.kind === "dataset" || c.sectionId)) fail(path2, "\u8868\u683C\u3001\u6570\u636E\u96C6\u3001\u5206\u680F\u63A7\u4EF6\u6700\u4F4E\u8981\u6C42 c21\u3002");
+        if (c.sectionId && (!ids.has(c.sectionId) || ["classificationPicker", "tagsExtensions"].includes(c.kind))) fail(path2, "\u63A7\u4EF6\u5206\u680F\u5F15\u7528\u65E0\u6548\uFF0C\u5206\u7C7B\u548C\u6807\u7B7E\u6269\u5C55\u5355\u5143\u4E0D\u80FD\u8FDB\u5165\u5206\u680F\u3002");
+        if (c.kind === "table") {
+          for (const message of tableDefinitionErrors(c.table)) fail(path2 + "/controls/" + c.id, message);
+          if (c.defaultValue !== void 0) for (const message of tableValueErrors(c.table, c.defaultValue, !!c.required)) fail(path2, message);
+        }
+        condition(c.when, path2);
+      }
+    }
+  }
+  if (c21 && config.application?.titles) {
+    for (const [key2, v] of Object.entries(config.application.titles)) if (!v.trim() || v.length > 200) fail("application/titles/" + key2, "\u6807\u9898\u9700\u8981 1\u2013200 \u5B57\u7B26\u3002");
+  }
+  return issues;
+}
 
 // src/configStudio/c20Migration.ts
 function visitC20RetiredSettings(source, visit) {
@@ -28195,6 +28649,7 @@ function validateNativeStructure(value) {
   const issues = inspect(value, native_contract_schema_generated_default.root, "config", 0);
   if (issues.length) return issues;
   const config = value;
+  issues.push(...c21ConfigurationProblems(config));
   const c15 = config.contractRevision >= 15;
   if (config.contractRevision >= 20) visitC20RetiredSettings(config, (item) => {
     issues.push({ path: "config/" + item.path, message: "\u6B64\u914D\u7F6E\u952E\u5DF2\u5728 c20 \u9000\u5F79\uFF0C\u8BF7\u901A\u8FC7\u65E7\u5951\u7EA6\u8FC1\u79FB\u5BFC\u5165\u3002" });
@@ -29055,7 +29510,7 @@ function validateCard(node, config, issues) {
     if (mapped.some((option) => !option.value.trim()) || new Set(mapped.map((option) => option.value)).size !== mapped.length) issue(issues, "error", "card-value-map-invalid", itemPath, "\u4FE1\u606F\u5361\u8986\u5199\u5BF9\u7167\u5FC5\u987B\u6709\u552F\u4E00\u975E\u7A7A\u7684\u5B58\u50A8\u503C\u3002");
     const definition = resolveEffectiveFields(config, node.path).find((field) => field.key === item.source);
     if (config.contractRevision >= 8 && item.valueMode === "override" && definition?.type === "enum" && mapped.some((option) => !definition.options?.some((value) => value.value === option.value))) issue(issues, "error", "card-field-map-conflict", itemPath, `\u4FE1\u606F\u5361 ${item.source} \u8986\u5199\u5BF9\u7167\u4F7F\u7528\u4E86\u6765\u6E90\u5B57\u6BB5\u5DF2\u5220\u9664\u7684\u9009\u9879\uFF0C\u8BF7\u8C03\u6574\u8986\u5199\u6216\u6062\u590D\u8DDF\u968F\u3002`);
-    if (item.options?.format && !["plain", "externalLink", "boolean", "json", "classification", "enum", "date", "world"].includes(item.options.format)) issue(issues, "error", "card-format-invalid", itemPath, "\u672A\u77E5\u7684\u4FE1\u606F\u5361\u683C\u5F0F\u3002");
+    if (item.options?.format && !["plain", "externalLink", "boolean", "json", "classification", "enum", "date", "world", "table"].includes(item.options.format)) issue(issues, "error", "card-format-invalid", itemPath, "\u672A\u77E5\u7684\u4FE1\u606F\u5361\u683C\u5F0F\u3002");
     if (config.contractRevision === 5 && item.options?.format && ["classification", "enum", "date", "world"].includes(item.options.format)) issue(issues, "error", "card-format-revision-invalid", itemPath, "\u8BE5\u4FE1\u606F\u5361\u683C\u5F0F\u8981\u6C42\u539F\u751F c6\u3002");
     if (item.renderer === "lineChips" && !item.options?.lineChipSource) issue(issues, "error", "card-line-chips-source-required", itemPath, "\u5173\u8054\u7EBF\u8DEF\u80F6\u56CA\u5FC5\u987B\u9009\u62E9\u5E73\u53F0\u3001\u8F66\u7AD9\u6216\u8F66\u7AD9\u5EFA\u7B51\u6765\u6E90\u3002");
     if (item.renderer !== "relationLink") continue;
@@ -29268,6 +29723,7 @@ function validateWorkflow(workflow, config, issues, designNotes = []) {
     if (tailIndex >= 0 || (config.contractRevision >= 18 ? modules.length !== workflow.outputs.length || modules.some((control) => !control.systemManaged || !workflow.outputs.some((output) => output.id === control.outputId)) : modules.length !== 1 || !modules[0]?.systemManaged) || workflow.steps.some((step) => step.kind !== "form" && step.controls?.some((control) => control.kind === "tagsExtensions"))) issue(issues, "error", "workflow-inline-annotations-required", base, "\u5FC5\u987B\u5728\u4FE1\u606F\u6536\u96C6\u9875\u4FDD\u7559\u4E00\u4E2A\u4E0D\u53EF\u5220\u9664\u3001\u53EF\u79FB\u52A8\u7684\u6807\u7B7E\u4E0E\u6269\u5C55\u56FA\u5B9A\u5355\u5143\u3002");
   }
   const allTokens = /* @__PURE__ */ new Set([...controlList.flatMap((control) => control.slot ? [control.slot] : []), ...workflowDerivedPointTokens(workflow), ...WORKFLOW_SYSTEM_TOKENS, ...workflow.outputs.flatMap((_, index) => WORKFLOW_SYSTEM_TOKENS.map((token) => `${token}_${index + 1}`))]);
+  if (config.contractRevision >= 21) for (const output of workflow.outputs) for (const token of WORKFLOW_SYSTEM_TOKENS) allTokens.add(`${output.id}.${token}`);
   const captured = workflowCaptureSlots(workflow);
   const derivedTokens = workflowDerivedPointTokens(workflow);
   for (const token of derivedTokens) if (!/^[A-Z][A-Z0-9_]*$/.test(token) || controlList.some((control) => control.slot === token) || derivedTokens.filter((item) => item === token).length > 1 || WORKFLOW_SYSTEM_TOKENS.some((system) => token === system || new RegExp(`^${system}_\\d+$`).test(token))) issue(issues, "error", "workflow-capture-slot-invalid", base, `\u5750\u6807\u69FD\u4F4D ${token} \u65E0\u6548\u3001\u91CD\u590D\u6216\u5360\u7528\u7CFB\u7EDF token\u3002`);
@@ -29753,7 +30209,7 @@ function validateConfigPackage(config, mountedRecords = []) {
 var cache5 = /* @__PURE__ */ new WeakMap();
 var levels2 = ["class", "kind", "skind", "skind2"];
 var continuous = (path2) => Boolean(path2?.class) && levels2.every((key2, index) => !path2[key2] || levels2.slice(0, index).every((parent) => Boolean(path2[parent])));
-var same = (a, b) => classificationPathKey(a) === classificationPathKey(b);
+var same2 = (a, b) => classificationPathKey(a) === classificationPathKey(b);
 function workflowClassificationGroup(config, output) {
   const prior = Object.isFrozen(config) ? cache5.get(config)?.get(output) : void 0;
   if (prior) return prior;
@@ -29778,7 +30234,7 @@ function workflowClassificationGroup(config, output) {
   outputs.set(output, result);
   return result;
 }
-var outputAcceptsClassification = (config, output, path2) => workflowClassificationGroup(config, output).paths.some((candidate) => same(candidate, path2));
+var outputAcceptsClassification = (config, output, path2) => workflowClassificationGroup(config, output).paths.some((candidate) => same2(candidate, path2));
 function recordClassificationEligible(config, path2, geometry) {
   return hasCategoryNode(config, path2) && (config.contractRevision >= 15 || !hasDescendants(config, path2)) && Boolean(resolveGeometryProfile(config, path2, geometry)?.enabled);
 }
@@ -29887,8 +30343,14 @@ async function readRawNativePackage(file, options = {}) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-c20-production-1";
+var rulesVersion = "cairnmap-c21-production-1";
 var validateConfiguration = validateConfigPackage;
+function describeAuditFields(config, record) {
+  if (!config) return {};
+  const raw = recordCategory(record), path2 = readableClassification(config, raw) ?? raw;
+  if (!hasCategoryNode(config, path2)) return {};
+  return Object.fromEntries(resolveEffectiveFields(config, path2).map((field) => [field.key, { required: recordFieldRequired(field, record), type: field.type, format: field.format ?? null, source: "frozen-configuration" }]));
+}
 async function validateConfigurationArchive(bytes) {
   const config = await readRawNativePackage(new File([bytes], "configuration.zip"));
   if (!supportsContract("publication", config.contractRevision)) throw Error("Publication requires supported contracts " + CONTRACT_CAPABILITIES.publication.map((v) => "c" + v).join(", ") + ".");
@@ -29964,6 +30426,7 @@ function validateIncomingBatch(config, created, existing, deletes = [], options 
 export {
   CONTRACT_CAPABILITIES,
   stableConfigText as configurationSnapshotText,
+  describeAuditFields,
   rulesVersion,
   validateBusinessJsonRecords,
   validateConfiguration,

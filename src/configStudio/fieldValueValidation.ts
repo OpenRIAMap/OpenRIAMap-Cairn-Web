@@ -1,4 +1,5 @@
 import type {FieldDefinition} from './types';
+import {tableValueErrors} from './ordinaryTable';
 import {validateStructuredValue} from './valueSchema';
 import {readMultipartGeometry,validateMultipartGeometry} from '../core/geometry/multipartGeometry';
 
@@ -28,6 +29,7 @@ export function fieldFormatErrors(field:FieldDefinition,value:unknown):string[]{
 
 /** Shared by actual workflow commits, imports and the pure Node intake kernel. */
 export function fieldValueErrors(field:FieldDefinition,value:unknown):string[]{
+  if(field.format==='table')return tableValueErrors(field.table,value,field.required).map(message=>field.key+' '+message);
   if(emptyFieldValue(value))return [];
   const errors:string[]=[];
   if(field.valueSchema)errors.push(...validateStructuredValue(value,field.valueSchema,field.key));

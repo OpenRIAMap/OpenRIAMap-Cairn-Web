@@ -12,7 +12,8 @@ import { File } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import JSZip from 'jszip';
 import { readRawNativePackage } from '../../src/configStudio/nativeArchive';
-import { validateConfigPackage, resolveGeometryProfile, hasCategoryNode, readRecordPath } from '../../src/configStudio/runtime';
+import { validateConfigPackage, resolveGeometryProfile, hasCategoryNode, readRecordPath, resolveEffectiveFields } from '../../src/configStudio/runtime';
+import {recordFieldRequired} from '../../src/configStudio/optionalFieldValues';
 import { readMultipartGeometry, validateMultipartGeometry } from '../../src/core/geometry/multipartGeometry';
 import { recordCategory } from '../../src/configStudio/multipartPolicy';
 import {validateV3WorkflowRecords} from '../../src/configStudio/workflowKernel';
@@ -20,8 +21,15 @@ import {assertStructureTargets} from '../../src/configStudio/structureCommit';
 import {resolveNodeFieldSettings} from '../../src/configStudio/nodeFieldSettings';
 import type { ConfigPackageV3, MountedFeatureRecord } from '../../src/configStudio/types';
 
-export const rulesVersion='cairnmap-c20-production-1';
+export const rulesVersion='cairnmap-c21-production-1';
 export const validateConfiguration=validateConfigPackage;
+/** Freeze field meaning with the exact publication configuration, including conditional requiredness. */
+export function describeAuditFields(config:ConfigPackageV3|undefined,record:MountedFeatureRecord) {
+  if(!config)return {};
+  const raw=recordCategory(record),path=readableClassification(config,raw)??raw;
+  if(!hasCategoryNode(config,path))return {};
+  return Object.fromEntries(resolveEffectiveFields(config,path).map(field=>[field.key,{required:recordFieldRequired(field,record),type:field.type,format:field.format??null,source:'frozen-configuration'}]));
+}
 export async function validateConfigurationArchive(bytes:Uint8Array) {
   const config=await readRawNativePackage(new File([bytes], 'configuration.zip') as unknown as globalThis.File) as ConfigPackageV3;
   if(!supportsContract('publication',config.contractRevision))throw Error('Publication requires supported contracts '+CONTRACT_CAPABILITIES.publication.map(v=>'c'+v).join(', ')+'.');

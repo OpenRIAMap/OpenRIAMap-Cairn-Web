@@ -14,6 +14,7 @@
     align-items: start;
     min-width: 0;
   }
+  [data-workflow-section-content][hidden] { display: none !important; }
   .cm-flex-grid > :is(label, div, fieldset) { min-width: 0; }
   .cm-flex-grid > label { display: grid; gap: .35rem; align-content: start; }
   .cm-flex-grid > label:has(> input[type="checkbox"]:only-of-type):not(:has(> select, > textarea)) { display: flex; gap: .4rem; align-items: start; }

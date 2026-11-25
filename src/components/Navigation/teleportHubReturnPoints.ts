@@ -46,7 +46,7 @@ export const HUB_RETURN_POINTS: Record<string, HubReturnPoint[]> = {
 export function listHubReturnPoints(worldId: string, context=captureNavigationContext()): HubReturnPoint[] {
   if(!context.settings.teleport.enabled)return [];
   const canonical=(value:string)=>context.configuration?.application?.worlds.find(w=>[w.id,w.prefix,String(w.numericCode),w.label.zh,w.label.en].includes(value))?.id??value;
-  if(context.native)return navigationTable(context,context.settings.teleport.hubTableId,'teleportHub').rows.flatMap(row=>{const hub=row.functionValue;if(!hub||typeof hub!=='object'||!('world' in hub)||canonical(hub.world)!==canonical(worldId))return [];return hub.returnPoints.map(p=>({id:p.id,name:p.label[context.language]||p.label.zh||p.label.en||p.id,hub:row.value,coord:{x:p.x,y:p.y,z:p.z},range:hub.range}));});
+  if(context.native)return navigationTable(context,context.settings.teleport.hubTableId,'teleportHub').rows.flatMap(row=>{const hub=row.functionValue;if(!hub||typeof hub!=='object'||!('returnPoints' in hub)||canonical(hub.world)!==canonical(worldId))return [];return hub.returnPoints.map(p=>({id:p.id,name:p.label[context.language]||p.label.zh||p.label.en||p.id,hub:row.value,coord:{x:p.x,y:p.y,z:p.z},...(Number(context.configuration?.contractRevision??0)<21?{range:hub.range}:{})}));});
   return HUB_RETURN_POINTS[worldId] ?? [];
 }
 

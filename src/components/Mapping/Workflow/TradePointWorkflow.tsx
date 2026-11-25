@@ -1,3 +1,4 @@
+import {DatasetInput} from '@/configStudio/DatasetInput';
 import { applicationWorldCodeMap, applicationWorldPrefixMap, subscribeApplication } from '@/core/project/applicationRuntime';
 // File: src/components/Mapping/Workflow/TradePointWorkflow.tsx
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -242,6 +243,7 @@ export default function TradePointWorkflow(props: WorkflowComponentProps) {
   const [step, setStep] = useState<Step>('creator');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [dataset,setDataset]=useState<string|undefined>();
 
   const worldId = bridge.getCurrentWorldId?.() ?? 'zth';
   const worldPrefix = useMemo(() => resolveWorldPrefix(worldId), [worldId]);
@@ -380,6 +382,7 @@ export default function TradePointWorkflow(props: WorkflowComponentProps) {
       const land = String(info.landId ?? '').trim();
       const uadm = String(info.uadmId ?? '').trim();
       const uadmg = String(info.uadmgId ?? '').trim();
+      if(dataset)tags.push({tagKey:'dataset',tagValue:dataset});
       if (land) tags.push({ tagKey: 'Land', tagValue: land });
       if (uadm) tags.push({ tagKey: 'UAdm', tagValue: uadm });
       if (uadmg) tags.push({ tagKey: 'UAdmG', tagValue: uadmg });
@@ -513,6 +516,8 @@ export default function TradePointWorkflow(props: WorkflowComponentProps) {
 
           <LabeledInput label={wfRegistry.getWorkflowFieldLabel(WF_KEY, 'Name')} value={info.name} placeholder="例如：村民交易站" onChange={(v) => setInfo((p) => ({ ...p, name: v }))} />
           <LabeledInput label={wfRegistry.getWorkflowAuxLabel(WF_KEY, 'abbr')} value={info.abbr} placeholder="例如：VIL" onChange={(v) => setInfo((p) => ({ ...p, abbr: v }))} />
+
+          {captureContext&&captureContext.config.contractRevision>=21?<label className="block text-sm">所属数据集<DatasetInput config={captureContext.config} world={worldId} path={selectedType?.path} value={dataset} onChange={setDataset}/></label>:null}
 
           <WorkflowFeatureSearchSelect
             bridge={bridgeRef.current}

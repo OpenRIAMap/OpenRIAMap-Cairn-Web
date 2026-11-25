@@ -8,6 +8,7 @@ import {EXTERNAL_ROLES} from './externalCapabilities';
 import {externalRolePaths} from './externalBindings';
 import type {ExternalRole} from './types';
 import {standardTagFields} from './standardTagFields';
+import {datasetOptions} from './c21Workflow';
 
 export const nativeSelfOutput=(config:ConfigPackageV3,path:ClassificationPath,geometry:MultipartGeometry['type']):WorkflowOutput=>({
  id:'native-record',...(config.contractRevision>=15?{classificationGroup:{selectors:[{id:'native-record',mode:'self' as const,path}]}}:{classification:path}),geometry:{selected:geometry},assignments:[],
@@ -41,6 +42,7 @@ export function assembleDraftGroups(config:ConfigPackageV3,path:ClassificationPa
 export function prepareSpecializedCapture(config:ConfigPackageV3,workflow:WorkflowDefinition,role:ExternalRole,geometry:MultipartGeometry,values:Record<string,unknown>,groups:Record<string,unknown[]>,world:string,actor:string,others:Record<string,unknown>[]=[],selection?:ClassificationPath){
  const paths=externalRolePaths(config,workflow,role),path=selection??(paths.length===1?paths[0]:undefined);
  if(!path||!paths.some(candidate=>classificationPathKey(candidate)===classificationPathKey(path)))throw Error('请为 '+EXTERNAL_ROLES[role].label+' 选择有效目标分类。');
+ if(config.contractRevision>=21){const dataset=(groups.tags??[]).find(row=>(row as Record<string,unknown>).tagKey==='dataset') as Record<string,unknown>|undefined;if(dataset?.tagValue&&!datasetOptions(config,world,path).some(o=>o.value===dataset.tagValue))throw Error('所属数据集已不适用于当前世界或分类。');}
  if(EXTERNAL_ROLES[role].geometry!==geometry.type)throw Error('专用角色与完整几何类型不一致。');
  if(role==='stationBuilding'&&geometry.parts.length>1)throw Error('车站建筑仅允许一个面部件；不能截断完整几何。');
  const raw={...values,...assembleDraftGroups(config,path,groups)};

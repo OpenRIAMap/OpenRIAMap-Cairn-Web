@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
-const excluded=new Set(['ModuleHelp','SettingHelp','V3WorkflowRunner','WorkflowAnnotationsInput','FeatureSearchInput','ConfigRuntimePreview','ConfigRuntimeMap']);
+// Runtime form widgets are labelled by their host; this inventory covers Studio
+// configuration controls, not user-entered table cells or dataset selections.
+const excluded=new Set(['ModuleHelp','SettingHelp','V3WorkflowRunner','WorkflowAnnotationsInput','FeatureSearchInput','DatasetInput','OrdinaryTableInput','ConfigRuntimePreview','ConfigRuntimeMap']);
 const root='src/configStudio',inventory=[];
 for(const name of fs.readdirSync(root).filter(name=>name.endsWith('.tsx'))){
  const context=name.slice(0,-4);if(excluded.has(context))continue;

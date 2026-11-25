@@ -21,7 +21,7 @@ export function validateWorkflowSupplies(workflow:WorkflowDefinition,fields:Fiel
   for(const [key,value]of Object.entries({...constants}))constants[`${key}_${workflow.outputs.indexOf(output)+1}`]=value;
   const controls=workflow.steps.flatMap(step=>(step.controls??[]).map(control=>({step,control})));
   const drawings=workflow.steps.filter(step=>step.kind==='geometry');
-  const inputConditionKnown=(condition?:WorkflowValueCondition):boolean=>!condition||!(/^(?:ID|Class|Kind|Skind|Skind2|Creator|WorldPrefix)(?:_\d+)?$/.test(condition.token))&&(condition.all??condition.any??[]).every(inputConditionKnown);
+  const inputConditionKnown=(condition?:WorkflowValueCondition):boolean=>{if(!condition)return true;if(condition.all||condition.any)return (condition.all??condition.any??[]).every(inputConditionKnown);return !(/^(?:ID|Creator|WorldPrefix)(?:_\d+)?$/.test(condition.token));};
   const source=(node:WorkflowExpression):Source=>{
     const tokens=workflowExpressionTokens(node);
     if(tokens.every(token=>Object.prototype.hasOwnProperty.call(constants,token))){try{const value=evaluateWorkflowExpressionNode(node,constants);return {possible:!emptyFieldValue(value),guaranteed:emptyFieldValue(value)?[]:[[]],known:true,constant:value,mayEmptyArray:Array.isArray(value)&&!value.length};}catch{return {possible:false,guaranteed:[]};}}
