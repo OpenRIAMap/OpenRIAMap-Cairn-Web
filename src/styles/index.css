@@ -1,6 +1,7 @@
 @import './editorDesign.css';
 @import './workspaceSidebar.css';
 @import './colorScheme.css';
+@import './controlTones.css';
 
 @tailwind base;
 @tailwind components;

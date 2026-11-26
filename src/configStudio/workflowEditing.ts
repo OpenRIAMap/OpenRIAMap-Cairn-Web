@@ -18,8 +18,9 @@ export type WorkflowEditPlan={workflow:WorkflowDefinition;scope:ClassificationPa
 export type WorkflowEditDraft={slots:Record<string,unknown>;classification:ClassificationPath;initialSlots:Record<string,unknown>};
 /** The former BUD/FLR parent classifications remain valid only for existing records. */
 export const isHistoricalBuildingParent=(path:ClassificationPath)=>['BUD','FLR'].includes(path.class)&&path.kind==='NOM'&&!path.skind&&!path.skind2;
+const isRetainedBuildingParent=(plan:WorkflowEditPlan,path:ClassificationPath)=>isHistoricalBuildingParent(path)||path.class==='BUD'&&plan.classifications.some(child=>pathMatchesScope(child,path)&&classificationPathKey(child)!==classificationPathKey(path));
 export function workflowEditClassifications(plan:WorkflowEditPlan,current:ClassificationPath,mode:'create'|'edit'='edit'):ClassificationPath[]{
- return plan.classifications.filter(path=>!isHistoricalBuildingParent(path)||mode==='edit'&&classificationPathKey(path)===classificationPathKey(current));
+ return plan.classifications.filter(path=>!isRetainedBuildingParent(plan,path)||mode==='edit'&&classificationPathKey(path)===classificationPathKey(current));
 }
 export const recordClassification=(record:Record<string,unknown>):ClassificationPath=>({class:String(record.Class??''),...(record.Kind?{kind:String(record.Kind)}:{}),...(record.SKind??record.Skind?{skind:String(record.SKind??record.Skind)}:{}),...(record.SKind2??record.Skind2?{skind2:String(record.SKind2??record.Skind2)}:{})});
 export const isQuickMappingWorkflow=(workflow:WorkflowDefinition)=>workflow.quickMapping!==false&&!workflow.editor?.dedicated&&workflow.external?.purpose!=='edit';
@@ -94,7 +95,7 @@ export function workflowEditSlots(plan:WorkflowEditPlan,original:Record<string,u
 }
 /** Patch the original, and never run creation ID assembly or default cleanup. */
 export function buildWorkflowEditRecord(plan:WorkflowEditPlan,original:Record<string,unknown>,draft:WorkflowEditDraft,options:{geometry?:MultipartGeometry}={}):Record<string,unknown> {
- if(isHistoricalBuildingParent(draft.classification)&&plan.classifications.some(path=>pathMatchesScope(path,draft.classification)&&classificationPathKey(path)!==classificationPathKey(draft.classification))&&classificationPathKey(recordClassification(original))!==classificationPathKey(draft.classification))throw Error('历史父分类仅允许原有记录保留，已细分记录不能退回父分类。');
+ if(isRetainedBuildingParent(plan,draft.classification)&&plan.classifications.some(path=>pathMatchesScope(path,draft.classification)&&classificationPathKey(path)!==classificationPathKey(draft.classification))&&classificationPathKey(recordClassification(original))!==classificationPathKey(draft.classification))throw Error('历史父分类仅允许原有记录保留，已细分记录不能退回父分类。');
  const record=structuredClone(original),slots=coerceWorkflowValues(plan.workflow,workflowEditSlots(plan,original,draft,options.geometry)),initial=draft.initialSlots;
  const id=String(draft.slots.EDIT_ID??'').trim();if(!id)throw Error('ID 不能为空。');record.ID=id;
  if(plan.workflow.editor?.range?!plan.classifications.some(path=>classificationPathKey(path)===classificationPathKey(draft.classification)):!pathMatchesScope(draft.classification,plan.scope)||Boolean(plan.workflow.outputs[0].classificationGroup)&&!plan.classifications.some(path=>classificationPathKey(path)===classificationPathKey(draft.classification)))throw Error('不能将要素改为工作流作用范围之外的分类。');

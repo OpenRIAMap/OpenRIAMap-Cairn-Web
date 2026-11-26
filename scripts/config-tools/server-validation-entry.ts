@@ -21,7 +21,7 @@ import {assertStructureTargets} from '../../src/configStudio/structureCommit';
 import {resolveNodeFieldSettings} from '../../src/configStudio/nodeFieldSettings';
 import type { ConfigPackageV3, MountedFeatureRecord } from '../../src/configStudio/types';
 
-export const rulesVersion='cairnmap-c22-production-1';
+export const rulesVersion='cairnmap-c22-production-2';
 export const validateConfiguration=validateConfigPackage;
 /** Freeze field meaning with the exact publication configuration, including conditional requiredness. */
 export function describeAuditFields(config:ConfigPackageV3|undefined,record:MountedFeatureRecord) {
@@ -73,6 +73,18 @@ export function validateIncomingBatch(config:ConfigPackageV3,created:MountedFeat
     const update=writes.get(identity(record));if(update&&update.Class!==record.Class)throw Error('configuration-record-id-collision');return !update;
   });
   const final=[...surviving,...created];
+  // A legal BUD main→area-member edit invalidates untouched incoming relations;
+  // it does not turn them into second-level relations or rewrite their records.
+  const demotedHosts=new Set<string>();
+  for(const record of created){
+    const category=recordCategory(record),key=identity(record);
+    if(category.class!=='BUD'||category.kind!=='SUB'||category.skind!=='BUM'||geometryTypeFromFeatureType(record.Type)!=='Polygon')continue;
+    const prior=existing.filter(row=>identity(row)===key);
+    if(prior.length!==1||prior[0].Class!=='BUD'||geometryTypeFromFeatureType(prior[0].Type)!=='Polygon')continue;
+    const before=resolveNodeFieldSettings(config,recordCategory(prior[0])).value.structure,after=resolveNodeFieldSettings(config,category).value.structure;
+    if(!before?.enabled||before.role!=='main'||!after?.enabled||after.role!=='member'||validateIncomingRecord(config,record,worldId(config,record.World)).length)continue;
+    try{assertStructureTargets(config,[record],final.filter(row=>row!==record));demotedHosts.add(key);}catch{/* The edited member still fails the normal target validation below. */}
+  }
   const businessJsonIssues=validateBusinessJsonRecords(config,created);
   if(businessJsonIssues.length)throw Object.assign(Error('configuration-batch-business-json-invalid: '+businessJsonIssues.slice(0,5)
     .map(issue=>issue.path+' · '+issue.message).join(' / ')),{issues:businessJsonIssues});
@@ -85,6 +97,7 @@ export function validateIncomingBatch(config:ConfigPackageV3,created:MountedFeat
       const targetId=typeof target==='string'?target:undefined;
       const world=worldId(config,record.World);
       if(writes.get(identity(record))!==record&&!touched.has(`${world}:${targetId}`))return [];
+      if(writes.get(identity(record))!==record&&demotedHosts.has(`${world}:${targetId}`))return [];
       try {assertStructureTargets(config,[record],final.filter(row=>row!==record));return [];}
       catch(error){return [{message:(error as Error).message,worldId:world,targetId,businessKey:targetId,affectedFeatures:[{id:String(record.ID)}]}];}
     });

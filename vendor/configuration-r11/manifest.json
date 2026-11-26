@@ -1,7 +1,7 @@
 {
   "schemaVersion": "cairnmap.validation-kernel.v1",
-  "rulesVersion": "cairnmap-c22-production-1",
-  "sha256": "993afd52d77b9e17e5f47e0f4bde5c6031e70748c08f395d153f8f58172fc2b9",
+  "rulesVersion": "cairnmap-c22-production-2",
+  "sha256": "717ace83734e2ea1127b9e20883cad5b7a6570f614c0ff2716a109c58c21f6e7",
   "sourceTextEol": "LF",
   "sources": {
     ".cairn/formal-data-source-runtime.json": "9a925beb75448ec20bd50503df9b97f1b5b2d0104598c34bdbb4cdf292b0fb38",
@@ -78,7 +78,7 @@
     "project-config/packages/openriamap-ria/environment/ruleButtons.json": "57f42999ea08bdbd4be021dbd248b6860fd0cfbecd9e2d528f22d72043239a74",
     "project-config/packages/openriamap-ria/environment/sourceLinkModes.json": "31eaf13b6d376d98193a32f9a8fcf3870f933ac0e222b9d53534293e70e93bbd",
     "project-config/packages/openriamap-ria/environment/worlds.json": "e5b9ee2d1c32f68e0666c39c86e7a950effbe7e85c3a7dd416ffbcb15be7d22e",
-    "scripts/config-tools/server-validation-entry.ts": "e8ad7ae925e3999ad97e20f4bcc1ff347a5b2e8b17ee9223932b56cbc4467573",
+    "scripts/config-tools/server-validation-entry.ts": "a5ca4783a5598f571d88139223cf9e4fdd5b479b658c0952d69bd5c1d9ce61d4",
     "src/configRuntime/classificationCompatibility.ts": "eaaac9b6cc14d2d16908a0b2765b65fb2ee939435a3e058e60f19edbfb8e044c",
     "src/configRuntime/configurationFingerprint.ts": "a640d3ab03042ea234f63e20ddf8e3f873364903c8bfb1df97bc9ab38f1d1af9",
     "src/configStudio/archivePolicy.ts": "552b3da2bb87ac3d4ab32411793f88f8a93f1a966e870b1466fa903a3bb1657b",
@@ -137,7 +137,7 @@
     "src/configStudio/workflowDrawing.ts": "e3f1a3585c8ab9a8430b067c0ed71f6a556267ca6c8372ec00b03dec339e4af5",
     "src/configStudio/workflowDrawingMigration.ts": "e5363f0af947b5bf5ffbfef099a39906fdd47b019d35217fcd4e2423161f652f",
     "src/configStudio/workflowEditCommit.ts": "e0ab051d91982246b2b9fda08fe00355a22d8870f9e7c9991d513e6ec4ba9312",
-    "src/configStudio/workflowEditing.ts": "ad6246955610632ed2d7ec3c029f235dc6ae03b51ae897e52865ec86995e7be7",
+    "src/configStudio/workflowEditing.ts": "7b8e818642f9c6a454eb06400e62e714b084b97a27e553db6bc4ad694db3efe6",
     "src/configStudio/workflowExpression.ts": "a15fbb4d933c57900326d4e6ab92d295a2b3288501f9eb8fded2ea03e24d729d",
     "src/configStudio/workflowFieldControl.ts": "5d5d6f134333a1e3ecf7e7ab678592c13abd82a56219e2ab77e18c43428c5bcf",
     "src/configStudio/workflowKernel.ts": "d110215cf9ea38d4ee604684cdeac2811273089102533b5662c6d00da2271a09",

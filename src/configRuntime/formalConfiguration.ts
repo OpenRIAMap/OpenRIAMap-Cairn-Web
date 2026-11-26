@@ -15,7 +15,7 @@ export type ConfigurationIdentity = {
   contractRevision: number; configSha256: string; manifestSha256: string; configUrl: string;
 };
 export type FormalConfiguration = { config: ConfigPackageV3; identity: ConfigurationIdentity; warning?: string; availableIdentity?: ConfigurationIdentity };
-export const CONFIGURATION_RULES_VERSION = 'cairnmap-c22-production-1';
+export const CONFIGURATION_RULES_VERSION = 'cairnmap-c22-production-2';
 let snapshot: FormalConfiguration | undefined, pending: Promise<FormalConfiguration> | undefined;
 const subscribers = new Set<() => void>();
 export const subscribeFormalConfiguration = (listener: () => void) => { subscribers.add(listener); return () => { subscribers.delete(listener); }; };
@@ -124,5 +124,17 @@ export function loadFormalConfiguration(): Promise<FormalConfiguration> {
 export async function checkForFormalUpdate(): Promise<ConfigurationIdentity | undefined> {
   const identity = await readFormalIdentity();
   return snapshot && stableConfigText(identity) !== stableConfigText(snapshot.identity) ? identity : undefined;
+}
+/** Read current verified settings without activating a new map/editing configuration. */
+export async function readLatestVerifiedFormalConfiguration(signal?:AbortSignal):Promise<FormalConfiguration>{
+  const identity=await readFormalIdentity(signal);
+  if(snapshot&&stableConfigText(snapshot.identity)===stableConfigText(identity))return snapshot;
+  const cached=await readFormalCache().catch(()=>undefined);
+  signal?.throwIfAborted();
+  if(cached?.identity.configSha256===identity.configSha256)return verifyFormalConfiguration(identity,cached.bytes,cached.receipt);
+  const response=await fetch(identity.configUrl,{cache:'force-cache',signal});
+  if(!response.ok)throw Error(`正式配置读取失败（${response.status}）。`);
+  const value=await verifyFormalConfiguration(identity,new Uint8Array(await response.arrayBuffer()));
+  signal?.throwIfAborted();return value;
 }
 export const seedConfigSha256 = seed.sha256;

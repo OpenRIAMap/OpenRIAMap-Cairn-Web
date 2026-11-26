@@ -4495,7 +4495,7 @@ export default function RuleDrivenLayer(props: Props) {
       {showFloorUI && floorPanelMode !== 'hidden' && (
         floorPanelMode === 'embedded'
           ? <div className="absolute right-3 top-3 z-[1000] hidden sm:block"><FloorSelectorContents activeBuildingName={activeBuildingName} floorOptions={floorOptions} activeFloorIndex={activeFloorIndex} onSelect={setActiveFloorIndexAndRemember} /></div>
-          : <div className="hidden sm:block"><SmallDraggablePanel id="desktop-floor-view-selector" title="拖动楼层视角面板" defaultPosition={{ x: Math.max(16, window.innerWidth - 152), y: 160 }} zIndex={2147483647} dragHandleSelector="[data-small-drag-handle]"><FloorSelectorContents activeBuildingName={activeBuildingName} floorOptions={floorOptions} activeFloorIndex={activeFloorIndex} onSelect={setActiveFloorIndexAndRemember} /></SmallDraggablePanel></div>
+          : <div className="hidden sm:block"><SmallDraggablePanel id="desktop-floor-view-selector" title="拖动楼层视角面板" boundaryElement={map?.getContainer()??null} defaultPosition={{ x: Math.max(16, window.innerWidth - 152), y: 160 }} zIndex={2147483647} dragHandleSelector="[data-small-drag-handle]"><FloorSelectorContents activeBuildingName={activeBuildingName} floorOptions={floorOptions} activeFloorIndex={activeFloorIndex} onSelect={setActiveFloorIndexAndRemember} /></SmallDraggablePanel></div>
       )}
       <div className="hidden sm:block">
         {(() => {

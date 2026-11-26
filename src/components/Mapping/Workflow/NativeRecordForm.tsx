@@ -16,7 +16,7 @@ export function NativeRecordForm({config,plan,draft,onChange,records,world,edito
  const fallbackClassification=plan.controls.some(c=>c.kind==='classificationPicker')?undefined:{id:'edit-classification',kind:'classificationPicker',label:{zh:'类型',en:''},columns:1,outputId:plan.workflow.outputs[0].id} as WorkflowControl;
  const originalControls=fallbackClassification?[fallbackClassification,...plan.controls]:plan.controls;
  const controls=originalControls.filter((c,i,all)=>c.kind!=='classificationPicker'||all.findIndex(v=>v.kind==='classificationPicker')===i);
- const classificationOptions=workflowCategoryOptions(config,config.contractRevision>=21?workflowEditClassifications(plan,draft.classification,mode):plan.classifications);
+ const classificationOptions=workflowCategoryOptions(config,config.contractRevision>=21?workflowEditClassifications(plan,draft.classification,mode):plan.classifications,plan.classifications);
  const datasetContext=useRef('');
  useEffect(()=>{const key=JSON.stringify([world,draft.classification,config.lookupTables?.find(t=>t.functionKind==='dataset')]);if(datasetContext.current&&datasetContext.current!==key){const slots={...draft.slots};let dirty=false;for(const c of controls.filter(c=>c.kind==='dataset')){const slot=c.slot??c.id;if(slots[slot]&&!datasetOptions(config,world,draft.classification).some(o=>o.value===slots[slot])){delete slots[slot];dirty=true;}}if(dirty)onChange({...draft,slots});}datasetContext.current=key;},[world,draft.classification,config.lookupTables,draft,onChange]);
  const renderControl=(control:WorkflowControl)=><fieldset disabled={control.kind==='classificationPicker'&&plan.classifications.length===1} key={control.id} data-edit-control={control.id} className="space-y-1 text-sm">
