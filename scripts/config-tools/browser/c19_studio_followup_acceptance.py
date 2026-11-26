@@ -72,10 +72,20 @@ def main():
         click('读取分类')
         wait('Boolean(' + rule + ')')
         js(rule + '.open=true')
+        # This regression exercises shape preservation, independent of the
+        # currently published BUD icon choice. Configure its test draft in UI.
+        set_value(rule + '.querySelector(\'[aria-label="点状显示效果"] select\')', 'shape')
         initial = verify_rule('point')['pointSymbol']
         if js('document.body.innerText.includes("显示验证器")'):
             click('显示验证器')
         set_value(find('select[data-config-setting="ConfigStudio/样例状态"]'), 'mediumPolygon')
+        bounds = state(selected + '(session.draft).when.zoom')
+        target_zoom = min(max(6, bounds.get('min', 0)), bounds.get('max', 8))
+        for _ in range(9):
+            preview_zoom = js('Number([...document.querySelectorAll("span")].find(e=>e.textContent.startsWith("规则 Zoom ")).textContent.split(" ").at(-1))')
+            if preview_zoom == target_zoom:
+                break
+            click('缩小验证器' if preview_zoom > target_zoom else '放大验证器')
         marker = find('.ria-config-shape-marker')
         wait('Boolean(' + marker + ')', 30)
         set_value(mode, 'geometry')

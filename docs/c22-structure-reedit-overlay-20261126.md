@@ -31,6 +31,9 @@ Unwritten historical orphan members do not acquire new blockers.
   area workflow. On the merged c22 workflow it narrows the draft edit range
   before retargeting, and asserts the specific stale-range error rather than
   matching the editor's range heading.
+- The historical shape regression explicitly chooses a shape through Studio
+  controls and previews an eligible rule Zoom, so published icon/Zoom changes
+  do not remove the marker that this representation-preservation test needs.
 - Isolated Edge, normal configuration lab: edited the formal shrine and
   emakake through the actual UI, selected the updated host, saved floor G,
   downloaded a two-record standard ZIP and checked its contents. Removing
