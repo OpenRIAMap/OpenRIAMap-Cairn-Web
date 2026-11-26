@@ -27,6 +27,10 @@ Unwritten historical orphan members do not acquire new blockers.
 - `npm run test:mapping-record-overlay`: 12 regressions, included in the
   existing `test:c22-refinement` / `verify:ci` chain.
 - `npm run verify:ci` and production build passed locally on Node 24.22.2.
+- The studio authoring browser regression selects the available land/natural
+  area workflow. On the merged c22 workflow it narrows the draft edit range
+  before retargeting, and asserts the specific stale-range error rather than
+  matching the editor's range heading.
 - Isolated Edge, normal configuration lab: edited the formal shrine and
   emakake through the actual UI, selected the updated host, saved floor G,
   downloaded a two-record standard ZIP and checked its contents. Removing
