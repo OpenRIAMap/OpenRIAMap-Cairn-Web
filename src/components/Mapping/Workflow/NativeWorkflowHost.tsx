@@ -14,13 +14,13 @@ import { drawingKey, enabledDrawing, type WorkflowDrawingTarget } from '@/config
 import {flattenMultipartCoordinates,firstMultipartCoordinate} from '@/core/geometry/multipartGeometry';
 import { migrateWorkflowDrawings } from '@/configStudio/workflowDrawingMigration';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRuleDataStore } from '@/store/ruleDataStore';
 import { V3WorkflowRunner, normalizeV3WorldId, type V3WorkflowRunResult } from '@/configStudio/V3WorkflowRunner';
 import type { ConfigPackageV3, MountedFeatureRecord, WorkflowDefinition, WorkflowStep } from '@/configStudio/types';
 import WorkflowHost, { type WorkflowBridge, type WorkflowKey, type WorkflowRegistry } from './WorkflowHost';
 
-export function NativeWorkflowHost({ config, workflow, bridge, registry, onCommit, onExit, readOnly=false }: {
+export function NativeWorkflowHost({ config, workflow, bridge, getRecords, registry, onCommit, onExit, readOnly=false }: {
   config: ConfigPackageV3; workflow: WorkflowDefinition; bridge: WorkflowBridge; registry: WorkflowRegistry;
+  getRecords: () => MountedFeatureRecord[];
   onCommit: (config: ConfigPackageV3, workflow: WorkflowDefinition, outputs: V3WorkflowRunResult) => void;
   onExit: () => void;readOnly?:boolean;
 }) {
@@ -37,13 +37,7 @@ export function NativeWorkflowHost({ config, workflow, bridge, registry, onCommi
   useEffect(()=>{session.setWorldMismatch(worldMismatch);syncPreviews();},[session,previews,worldMismatch]);
   useEffect(()=>()=>{session.stop();previews.clearAll();},[session,previews]);
   const exit=()=>{if(readOnly)return;session.stop();previews.clearAll();onExit();};
-  const datasets = useRuleDataStore(state => state.datasets);
-  const deleted = new Set(bridge.getDeleteMarkedFeatureIds?.() ?? []);
-  const all = [...Object.values(datasets).flatMap(dataset => dataset.features), ...(bridge.getCommittedLayerJsonInfos?.().map(item => item.featureInfo) ?? [])];
-  const records = [...new Map(all.map(raw => {
-    const record = (raw.featureInfo && typeof raw.featureInfo === 'object' ? raw.featureInfo : raw) as MountedFeatureRecord;
-    return [`${record.World}:${record.Class}:${record.Kind ?? ""}:${record.SKind ?? record.Skind ?? ""}:${record.SKind2 ?? record.Skind2 ?? ""}:${record.ID}`, record] as const;
-  })).values()].filter(record => !deleted.has(String(record.ID ?? '')));
+  const records = getRecords();
   const switchStep=useCallback((step:WorkflowStep|undefined,targets:Record<string,WorkflowDrawingTarget>)=>{try{session.setTargets(targets);session.switchPage(step);}finally{syncPreviews();}},[session,previews,worldMismatch]);
   const previewSlots = useCallback((slots: Record<string, unknown>) => {
     for(const step of snapshot.workflow.steps.filter(step=>step.kind==='geometry'))if(!enabledDrawing(step,snapshot.workflow,slots)){const key=drawingKey(step);session.invalidate(key);previews.clear(key);}
@@ -74,9 +68,7 @@ export function NativeWorkflowHost({ config, workflow, bridge, registry, onCommi
     onSubmit={outputs => {
       if(normalizeV3WorldId(bridgeRef.current.getCurrentWorldId())!==snapshot.world)throw Error('当前世界与工作流坐标不一致。');
       if(bridgeRef.current.prepareDrawingTransition?.()===false)throw Error('请先完成或关闭当前坐标编辑工具，再确认保存。');
-      const latest=[...Object.values(useRuleDataStore.getState().datasets).flatMap(dataset=>dataset.features),...(bridgeRef.current.getCommittedLayerJsonInfos?.().map(item=>item.featureInfo)??[])].map(raw=>(raw.featureInfo&&typeof raw.featureInfo==='object'?raw.featureInfo:raw) as MountedFeatureRecord);
-      const removed=new Set(bridgeRef.current.getDeleteMarkedFeatureIds?.()??[]);
-      assertStructureTargets(snapshot.config,outputs.map(output=>output.record),latest.filter(record=>!removed.has(String(record.ID??''))));
+      assertStructureTargets(snapshot.config,outputs.map(output=>output.record),getRecords());
       if(readOnly)throw Error('请先完成或关闭完整数组。');onCommit(snapshot.config,snapshot.workflow,outputs);exit();
     }}
   /></fieldset></div>;
