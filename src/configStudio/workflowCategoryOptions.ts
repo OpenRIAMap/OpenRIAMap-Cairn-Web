@@ -3,24 +3,26 @@ import {classificationPathKey,workflowPathLabel} from './runtime';
 import {workflowClassificationGroup} from './workflowClassificationGroup';
 
 const levels=['class','kind','skind','skind2'] as const;
-export function workflowCategoryOptions(config:ConfigPackageV3,paths:ClassificationPath[]){
+export function workflowCategoryOptions(config:ConfigPackageV3,paths:ClassificationPath[],scopePaths:ClassificationPath[]=paths){
   const nodes=new Map(config.nodes.map(node=>[classificationPathKey(node.path),node]));
+  const parts=(path:ClassificationPath)=>levels.flatMap(level=>path[level]?[path[level]!]:[]);
+  const scope=[...new Map(scopePaths.map(path=>[classificationPathKey(path),path])).values()].map(parts);
+  let common=0;
+  while(scope.length&&scope[0][common]&&scope.every(path=>path[common]===scope[0][common]))common++;
+  // A single concrete choice still needs its own code, including retained parents.
+  if(scope.length===1)common=Math.max(0,common-1);
   const options=[...new Map(paths.map(path=>[classificationPathKey(path),path])).values()].map(path=>{
-    const key=classificationPathKey(path),level=[...levels].reverse().find(level=>Boolean(path[level]))!,code=path[level]!,node=nodes.get(key),name=node?.classificationLabels?.[level]?.zh||node?.classificationLabels?.[level]?.en;
-    return {key,path,value:JSON.stringify(path),label:name&&name!==code?`${code}（${name}）`:code,pathLabel:workflowPathLabel(config,path)};
+    const key=classificationPathKey(path),level=[...levels].reverse().find(level=>Boolean(path[level]))!,node=nodes.get(key),name=node?.classificationLabels?.[level]?.zh||node?.classificationLabels?.[level]?.en;
+    const code=parts(path).slice(common).join('-')||path[level]!;
+    return {key,path,value:JSON.stringify(path),label:name&&name!==code?`${name}（${code}）`:code,pathLabel:workflowPathLabel(config,path)};
   });
   const byLabel=new Map<string,typeof options>();
   for(const option of options)byLabel.set(option.label,[...byLabel.get(option.label)??[],option]);
   return options.map(option=>{
     const conflicts=byLabel.get(option.label)!;
     if(conflicts.length<2)return option;
-    const parents=levels.filter(level=>Boolean(option.path[level])).slice(0,-1).map(level=>option.path[level]!);
-    let suffix=parents.join('/');
-    for(let size=1;size<=parents.length;size++){
-      const tail=parents.slice(-size).join('/');
-      if(conflicts.every(other=>other.key===option.key||levels.filter(level=>Boolean(other.path[level])).slice(0,-1).map(level=>other.path[level]!).slice(-size).join('/')!==tail)){suffix=tail;break;}
-    }
-    return {...option,label:`${option.label} · ${suffix||option.key}`};
+    const level=[...levels].reverse().find(level=>Boolean(option.path[level]))!,name=nodes.get(option.key)?.classificationLabels?.[level];
+    return {...option,label:`${name?.zh||name?.en||option.path[level]}（${parts(option.path).join('/')}）`};
   });
 }
 

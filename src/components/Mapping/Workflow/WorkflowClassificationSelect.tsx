@@ -5,8 +5,9 @@ import {workflowCategoryOptions} from '@/configStudio/workflowCategoryOptions';
 
 /** Authoring defines the scope; filling a workflow selects one concrete member. */
 export function WorkflowClassificationSelect({config,output,value,onChange,allowedPaths}:{config:ConfigPackageV3;output:WorkflowOutput;value:string;onChange:(value:string)=>void;allowedPaths?:ClassificationPath[]}){
-  const paths=workflowClassificationGroup(config,output).paths.filter(path=>!allowedPaths||allowedPaths.some(allowed=>classificationPathKey(allowed)===classificationPathKey(path)));
-  const options=workflowCategoryOptions(config,paths);
+  const groupPaths=workflowClassificationGroup(config,output).paths;
+  const paths=groupPaths.filter(path=>!allowedPaths||allowedPaths.some(allowed=>classificationPathKey(allowed)===classificationPathKey(path)));
+  const options=workflowCategoryOptions(config,paths,groupPaths);
   let key='';try{if(value)key=classificationPathKey(JSON.parse(value));}catch{/* Invalid stored selections remain visible as an error. */}
   const valid=options.some(option=>option.key===key);
   return <div className="grid gap-1">

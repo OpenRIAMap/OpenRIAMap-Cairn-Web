@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {workflowCategoryOptions} from '../../src/configStudio/workflowCategoryOptions';
+import {auditPricesFromConfiguration} from '../../src/core/audit/useAuditPriceDefaults';
+import type {ConfigPackageV3,ClassificationPath} from '../../src/configStudio/types';
+
+const config=JSON.parse(fs.readFileSync('public/configuration/releases/aa2a777f4cd1456b4155b8b7e5831ab2902b55054d80a613bec433716862826b/config.json','utf8')) as ConfigPackageV3;
+const paths:ClassificationPath[]=[{class:'BUD',kind:'NOM',skind:'COM'},{class:'BUD',kind:'LAR',skind:'COM'},{class:'BUD',kind:'SUB',skind:'BUM',skind2:'COM'}];
+const options=workflowCategoryOptions(config,paths);
+assert.deepEqual(options.map(o=>o.label),['商业建筑（NOM-COM）','商业综合体（LAR-COM）','附属商业建筑（SUB-BUM-COM）']);
+assert.deepEqual(options.map(o=>JSON.parse(o.value)),paths);
+assert.equal(workflowCategoryOptions(config,[paths[1]],paths)[0].label,'商业综合体（LAR-COM）','A filtered choice does not change its upstream suffix');
+assert.equal(workflowCategoryOptions(config,[paths[0]])[0].label,'商业建筑（COM）');
+const ports:ClassificationPath[]=[{class:'PTA',kind:'AIR',skind:'NOM'},{class:'PTA',kind:'POT',skind:'NOM'}];
+assert.deepEqual(workflowCategoryOptions(config,ports).map(o=>o.label),['默认机场（AIR-NOM）','默认港口（POT-NOM）']);
+const natural:ClassificationPath[]=[{class:'NGF',kind:'LAD',skind:'CON'},{class:'NGF',kind:'WTR',skind:'LWB',skind2:'LKE'},{class:'NGF',kind:'WTR',skind:'SWB'}];
+assert.deepEqual(workflowCategoryOptions(config,natural).map(o=>o.label),['大陆（LAD-CON）','湖泊（WTR-LWB-LKE）','小型水域（WTR-SWB）']);
+assert.deepEqual(auditPricesFromConfiguration(config),{featuresCreated:'0.05',optionalAdded:'0.005',requiredEdited:'0.001',optionalEdited:'0.001'});
+const zero=structuredClone(config);zero.application!.preferences.auditCalculationDefaults={featuresCreated:'0',optionalAdded:'0.000001',requiredEdited:'0',optionalEdited:'0'};
+assert.equal(auditPricesFromConfiguration(zero).featuresCreated,'0');assert.equal(auditPricesFromConfiguration(zero).optionalAdded,'0.000001');
+assert.throws(()=>auditPricesFromConfiguration({...zero,application:{...zero.application!,preferences:{...zero.application!.preferences,auditCalculationDefaults:{...zero.application!.preferences.auditCalculationDefaults!,featuresCreated:'-1'}}}}));
+console.log('c22 refinement: shared classification labels, stable narrowed scope, exact default prices and invalid defaults passed');

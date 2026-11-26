@@ -173,7 +173,7 @@ export default function TRPTradeSection({ feature, resolveFeatureById, onTryTrig
             <div className="text-[11px] text-gray-500 shrink-0">所属地理单元</div>
             <div className="text-[11px] text-right">
               <span
-                style={landLinkTarget?{color:'#2563eb',textDecoration:'underline',cursor:'pointer'}:{}}
+                style={landLinkTarget?{color:'var(--cm-dark-link, #2563eb)',textDecoration:'underline',cursor:'pointer'}:{}}
                 title={landId}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -198,7 +198,7 @@ export default function TRPTradeSection({ feature, resolveFeatureById, onTryTrig
                 href={wiki.startsWith('http') || wiki.startsWith('//') ? wiki : `https://${wiki}`}
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                style={{ color: 'var(--cm-dark-link, #2563eb)', textDecoration: 'underline', cursor: 'pointer' }}
                 onClick={(e) => e.stopPropagation()}
               >
                 {wiki}

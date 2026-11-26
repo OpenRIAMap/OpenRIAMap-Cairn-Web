@@ -18,7 +18,7 @@ assert(report().valid,JSON.stringify(report().issues));
 const paths=workflowClassificationGroup(config,output).paths;
 assert.deepEqual(paths.map(classificationPathKey),['WFTEST/A','WFTEST/GROUP/B','WFTEST/DEEP/MID/C','WFTEST','OTHER/A']);
 const options=workflowCategoryOptions(config,paths);
-assert.deepEqual(options.map(option=>option.label),['A（同名类型） · WFTEST','B（名称B）','C（名称C）','WFTEST（名称WFTEST）','A（同名类型） · OTHER']);
+assert.deepEqual(options.map(option=>option.label),['同名类型（WFTEST-A）','名称B（WFTEST-GROUP-B）','名称C（WFTEST-DEEP-MID-C）','名称WFTEST（WFTEST）','同名类型（OTHER-A）']);
 assert(!options[1].label.includes('/'));assert.notEqual(options[0].value,options[4].value);
 assert(!workflowOutputFields(config,output).some(field=>field.key==='URL'));
 assert(workflowOutputFieldCatalog(config,output).some(entry=>entry.field.key==='URL'&&entry.variants.length===5));

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
 type Position = { x: number; y: number };
 
@@ -14,6 +14,8 @@ type SmallDraggablePanelProps = {
    * When omitted, the whole panel remains draggable for backwards compatibility.
    */
   dragHandleSelector?: string;
+  /** Opt in to map-relative defaults and dragging; existing floating panels stay unchanged. */
+  boundaryElement?: HTMLElement | null;
 };
 
 function clamp(n: number, min: number, max: number) {
@@ -51,6 +53,7 @@ export default function SmallDraggablePanel(props: SmallDraggablePanelProps) {
     className = '',
     children,
     dragHandleSelector,
+    boundaryElement,
   } = props;
   const rootRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{
@@ -63,8 +66,21 @@ export default function SmallDraggablePanel(props: SmallDraggablePanelProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
-    setPos(defaultPosition);
-  }, [defaultPosition.x, defaultPosition.y]);
+    if(!boundaryElement)setPos(defaultPosition);
+  }, [defaultPosition.x, defaultPosition.y,boundaryElement]);
+
+  useLayoutEffect(()=>{
+    const element=rootRef.current;if(!boundaryElement||!element)return;
+    let previous='';
+    const measure=()=>{
+      const rect=boundaryElement.getBoundingClientRect(),width=element.offsetWidth,height=element.offsetHeight;
+      const key=[rect.left,rect.top,rect.right,rect.bottom,width,height].join(':');if(previous===key)return;previous=key;
+      const minX=rect.left+16,minY=rect.top+16,maxX=Math.max(minX,rect.right-width-16),maxY=Math.max(minY,rect.bottom-height-16);
+      setPos({x:maxX,y:clamp(rect.top+defaultPosition.y,minY,maxY)});
+    };
+    measure();const observer=new ResizeObserver(measure);observer.observe(boundaryElement);observer.observe(element);window.addEventListener('resize',measure);
+    return()=>{observer.disconnect();window.removeEventListener('resize',measure);};
+  },[boundaryElement,defaultPosition.y]);
 
   useEffect(() => {
     if (!isDragging || typeof document === 'undefined') return;
@@ -79,6 +95,7 @@ export default function SmallDraggablePanel(props: SmallDraggablePanelProps) {
     const el = rootRef.current;
     const w = el?.offsetWidth ?? 140;
     const h = el?.offsetHeight ?? 160;
+    if(boundaryElement){const rect=boundaryElement.getBoundingClientRect();return {x:clamp(next.x,rect.left+16,Math.max(rect.left+16,rect.right-w-16)),y:clamp(next.y,rect.top+16,Math.max(rect.top+16,rect.bottom-h-16))};}
     const maxX = Math.max(8, window.innerWidth - w - 8);
     const maxY = Math.max(8, window.innerHeight - h - 8);
     return { x: clamp(next.x, 8, maxX), y: clamp(next.y, 8, maxY) };

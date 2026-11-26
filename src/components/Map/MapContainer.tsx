@@ -2701,7 +2701,7 @@ case 'players':
         {renderMobileSheetContent()}
       </MobileBottomSheet>
 
-      {showContributionAudit?<AuditWindow collapsed={mobileAuditCollapsed} onToggle={()=>setMobileAuditCollapsed(value=>!value)} onClose={()=>setShowContributionAudit(false)} />:null}
+      {showContributionAudit?<AuditWindow collapsed={mobileAuditCollapsed} onToggle={()=>setMobileAuditCollapsed(value=>!value)} onClose={()=>setShowContributionAudit(false)} configuration={configRuntime} formal={!configLab}/>:null}
 
       {/* 路径高亮图层 */}
 {mapReady && leafletMapRef.current && projectionRef.current && showRouteOverlay && routeHighlight && (
