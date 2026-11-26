@@ -4,7 +4,7 @@ import {resolveCreateForm,projectCreateDraft,transferCreateDraft,type CreateForm
 import {convertEditingGeometry,validateEditingGeometry,replaceDraftGeometry,parseCompleteArray,completeArrayText} from './editingGeometry';
 import {layerClassificationCaption} from './layerPresentation';
 import {diagnoseEditorClassification} from './editorClassificationDiagnostics';
-import {recordsAfterExactDeletes} from '@/configStudio/nativeRecordSubmission';
+import {effectiveMappingRecords,assertExportStructureTargets} from '../Workflow/effectiveMappingRecords';
 import {prepareSpecializedCapture} from '@/configStudio/nativeRecordSubmission';
 import {categoryAllowsParts,recordCategory} from '@/configStudio/multipartPolicy';
 import {ExternalFeatureEditHost} from '../Workflow/ExternalFeatureEditHost';
@@ -869,9 +869,11 @@ const fullSwitchSnapshot=useRef<{config:ConfigPackageV3;path:ClassificationPath;
 
 const [fullExternalCreate,setFullExternalCreate]=useState<{config:ConfigPackageV3;workflow:WorkflowDefinition;path:ClassificationPath;view:ProjectedRegistryScene;values:WorkflowEditorDraftValues;unparsed:WorkflowEditorUnparsedEntry[];world:string}|null>(null);
 useEffect(()=>{setFullSubmissionError('');},[nativeEdit?.draft,externalEdit?.session,fullExternalCreate?.values,tempPoints,fullCategory]);
+const [relayPackageDraft, setRelayPackageDraft] = useState<RelayPackageDraft>(() => createEmptyRelayPackageDraft());
 const nativeEditDatasets=useRuleDataStore(state=>state.datasets);
 const nativeEditRecords=useMemo(()=>Object.values(nativeEditDatasets).flatMap(dataset=>dataset.features).map(raw=>(raw.featureInfo&&typeof raw.featureInfo==='object'?raw.featureInfo:raw) as Record<string,unknown>),[nativeEditDatasets]);
-const nativeEditSearchRecords=useMemo(()=>[...nativeEditRecords,...layers.flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])],[nativeEditRecords,layers]);
+const nativeEditSearchRecords=useMemo(()=>configRuntime?effectiveMappingRecords(configRuntime,nativeEditRecords,layers.flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[]),relayPackageDraft.deleteMarks):[],[configRuntime,nativeEditRecords,layers,relayPackageDraft.deleteMarks]);
+const getEffectiveRecords=(excludeLayerId:number|null=null)=>configRuntime?effectiveMappingRecords(configRuntime,Object.values(useRuleDataStore.getState().datasets).flatMap(dataset=>dataset.features),layersRef.current.filter(layer=>layer.id!==excludeLayerId).flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[]),relayPackageDraft.deleteMarks):[];
 const nativeEditWorldMismatch=Boolean(nativeEdit&&nativeEdit.world!==normalizeV3WorldId(currentWorldId));
 const activeEditWorld=nativeEdit?.world??externalEdit?.world??fullExternalCreate?.world;
 worldReadOnlyRef.current=Boolean(activeEditWorld&&activeEditWorld!==normalizeV3WorldId(currentWorldId));
@@ -1041,7 +1043,6 @@ const importFileInputRef = useRef<HTMLInputElement | null>(null);
 const [importFileBusy, setImportFileBusy] = useState(false);
 
 // RelayPackage 草稿状态（导入/导出、删除标记、图片绑定均在此维护）
-const [relayPackageDraft, setRelayPackageDraft] = useState<RelayPackageDraft>(() => createEmptyRelayPackageDraft());
 const [relayPackageExportOpen, setRelayPackageExportOpen] = useState(false);
 const [deletePanelOpen, setDeletePanelOpen] = useState(false);
 const [deleteMapPickEnabled, setDeleteMapPickEnabled] = useState(false);
@@ -2197,7 +2198,7 @@ const finishLayer = () => {
     const bundles:DraftBundle[]=specialDraftMode==='merge-point-platform-station'?[...mergePointPSDraft.platforms,...(mergePointPSDraft.station?[mergePointPSDraft.station]:[])]:[...(mergePolygonOBDraft.outline?[mergePolygonOBDraft.outline]:[]),...(mergePolygonOBDraft.building?[mergePolygonOBDraft.building]:[])];
     if(!bundles.length){alert('请至少添加一份要素信息。');return;}
     if(specialDraftMode==='merge-point-platform-station'&&geometry.parts.length!==1){alert('多点合一需要一个共享坐标，不能截断多部件。');return;}
-    const outputs:LayerType[]=[],records=[...recordsAfterExactDeletes(nativeEditRecords,relayPackageDraft.deleteMarks),...layersRef.current.flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])];
+    const outputs:LayerType[]=[],records=getEffectiveRecords();
     try{for(const bundle of bundles){const record=prepareMergeDraft(bundle,geometry,currentWorldId,editorIdInput,[...records,...outputs.flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])]);outputs.push({id:nextLayerId.current++,mode:drawMode as DrawMode,color:drawColor,coords:finalCoords,visible:true,leafletGroup:makeLeafletGroup(drawMode as DrawMode,finalCoords,drawColor,geometry),jsonInfo:{subType:classificationPathKey(recordCategory(record)),featureInfo:record}});}}catch(error){alert(error instanceof Error?error.message:String(error));return;}
     setLayers(previous=>{const next=[...previous,...outputs];syncFixedRoot(next,null);return next;});cleanupAfterFinish();return;
   }
@@ -2209,7 +2210,7 @@ const finishLayer = () => {
     return;
   }
   let finalFeatureInfo:Record<string,unknown>|undefined;
-  const others=[...recordsAfterExactDeletes(nativeEditRecords,relayPackageDraft.deleteMarks),...layersRef.current.filter(layer=>layer.id!==editingLayerId).flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])];
+  const others=getEffectiveRecords(editingLayerId);
   try{
     if(fullCategoryError)throw Error(fullCategoryError);
     if(externalEdit&&editUiMode==='external-workflow')finalFeatureInfo=prepareTrpExternalEdit(externalEdit.config,externalEdit.workflow,externalEdit.session,finalGeometry,currentWorldId,editorIdInput,others);
@@ -3353,7 +3354,7 @@ const applyPictureBindingForLayer = (layerId: number | null, pictures: any[]) =>
 };
 
 const buildRelayPackageArtifact = async (operator: string, note: string): Promise<{ blob: Blob; filename: string; nextMeta: RelayPackageDraft['meta'] }> => {
-  const visibleList = layers.filter((l) => l.id !== editingLayerId);
+  const visibleList = layersRef.current.filter((l) => l.id !== editingLayerId);
   const packageVersion = buildRelayPackageVersionStamp();
   const nextMeta = {
     ...relayPackageDraft.meta,
@@ -3365,6 +3366,9 @@ const buildRelayPackageArtifact = async (operator: string, note: string): Promis
   };
   let blob: Blob;
   try {
+    if(!configRuntime)throw Error('当前配置尚未就绪，请等待配置加载完成后重试。');
+    const datasets=useRuleDataStore.getState().datasets;
+    assertExportStructureTargets(configRuntime,visibleList.flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[]),Object.values(datasets).flatMap(dataset=>dataset.features),relayPackageDraft.deleteMarks,Object.keys(datasets));
     blob = await buildRelayPackageZip({
       layers: visibleList as any,
       currentWorldId,
@@ -3778,7 +3782,7 @@ const commitFeatureFromWorkflow = (args: WorkflowCommitArgs) => {
   if(geometryError||geometry.type!==geometryKindForDrawMode(args.mode))return {ok:false as const,error:geometryError??'专用几何类型不一致。'};
   const workflowCoords=geometry.type==='Point'?geometry.parts:geometry.type==='LineString'?geometry.parts[0]:geometry.parts[0]?.[0]??[];
   let finalFeatureInfo:Record<string,unknown>;
-  try{finalFeatureInfo=prepareSpecializedCapture(config,workflow,args.role,geometry,args.values??{},args.groupInfo??{},currentWorldId,args.editorId??editorIdInput,[...recordsAfterExactDeletes(nativeEditRecords,relayPackageDraft.deleteMarks),...layersRef.current.flatMap(layer=>layer.jsonInfo?.featureInfo?[layer.jsonInfo.featureInfo]:[])],args.classification);}catch(error){return {ok:false as const,error:error instanceof Error?error.message:'专用要素无效。'};}
+  try{finalFeatureInfo=prepareSpecializedCapture(config,workflow,args.role,geometry,args.values??{},args.groupInfo??{},currentWorldId,args.editorId??editorIdInput,getEffectiveRecords(),args.classification);}catch(error){return {ok:false as const,error:error instanceof Error?error.message:'专用要素无效。'};}
 
   const id = nextLayerId.current++;
   const color = args.color ?? drawColor;
@@ -4748,7 +4752,7 @@ const measuringWindowActions = (
 
   return (
     <>
-      {nativeWorkflowSnapshot ? createPortal(<NativeWorkflowHost readOnly={completeArray!==null} key={nativeWorkflowSnapshot.workflow.id} config={nativeWorkflowSnapshot.config} workflow={nativeWorkflowSnapshot.workflow} bridge={workflowBridge} registry={specializedWorkflowRegistry} onCommit={commitNativeWorkflow} onExit={stopWorkflowToSelector} />, nativeHostElement) : null}
+      {nativeWorkflowSnapshot ? createPortal(<NativeWorkflowHost readOnly={completeArray!==null} key={nativeWorkflowSnapshot.workflow.id} config={nativeWorkflowSnapshot.config} workflow={nativeWorkflowSnapshot.workflow} bridge={workflowBridge} getRecords={getEffectiveRecords} registry={specializedWorkflowRegistry} onCommit={commitNativeWorkflow} onExit={stopWorkflowToSelector} />, nativeHostElement) : null}
       {rightDockNode}
 
       {/* =========================

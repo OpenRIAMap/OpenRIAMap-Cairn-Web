@@ -235,12 +235,24 @@ try:
     assert state()['active']==baseline
     checks.append('template without field synchronization follows the current contract dependency; report and validation pass; source unchanged')
     b.click('工作流设计')
-    value('已保存工作流','v3-isg_ngf_lad')
+    # c22 merged the old land-only workflow into the natural-area workflow.
+    # Keep exercising real classification/edit-range conflicts on either UI.
+    workflow_ids = {workflow['id'] for workflow in baseline['workflows']}
+    workflow_id = 'v3-isg_ngf_lad' if 'v3-isg_ngf_lad' in workflow_ids else 'v3-natural-area'
+    assert workflow_id in workflow_ids, 'No natural-area workflow available for the edit-range regression'
+    value('已保存工作流',workflow_id)
     b.click('读取')
+    if workflow_id == 'v3-natural-area':
+        # Its broad NGF range also covers the target. Narrow the test draft to
+        # land first, so retargeting still produces a genuinely stale range.
+        value('编辑作用范围 1 Class','NGF')
+        value('编辑作用范围 1 Kind','LAD')
+        b.click('核验')
+        assert '工作流核验通过' in b.evaluate('document.body.innerText')
     for level,code in ([('Class','ISG'),('Kind','NGF'),('SKind','LIS')] if any(n['path']=={'class':'ISG','kind':'NGF','skind':'LIS'} for n in baseline['nodes']) else [('Class','NGF'),('Kind','LIS'),('SKind','LAG')]):
         value('分类 1 '+level,code)
     b.click('核验')
-    assert '编辑作用范围' in b.evaluate('document.body.innerText')
+    assert '编辑作用范围必须为输出范围内的实际分类' in b.evaluate('document.body.innerText')
     for level,code in ([('Class','ISG'),('Kind','NGF'),('SKind','LIS')] if any(n['path']=={'class':'ISG','kind':'NGF','skind':'LIS'} for n in baseline['nodes']) else [('Class','NGF'),('Kind','LIS'),('SKind','LAG')]):
         value('编辑作用范围 1 '+level,code)
     b.click('核验')

@@ -174,7 +174,8 @@
     "test:c18-followup": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-c18-followup.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-c18-hub-routing.ts",
     "test:workflow-feedback-tpt": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-workflow-feedback-tpt.ts && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-tpt-status-candidate.ts",
     "test:c22": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-c22.tsx",
-    "test:c22-refinement": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-c22-refinement.tsx && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-c22-refinement-candidate.ts"
+    "test:c22-refinement": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-c22-refinement.tsx && tsx --tsconfig tsconfig.app.json scripts/config-tools/test-c22-refinement-candidate.ts && npm run test:mapping-record-overlay",
+    "test:mapping-record-overlay": "tsx --tsconfig tsconfig.app.json scripts/config-tools/test-mapping-record-overlay.ts"
   },
   "dependencies": {
     "jszip": "^3.10.1",
