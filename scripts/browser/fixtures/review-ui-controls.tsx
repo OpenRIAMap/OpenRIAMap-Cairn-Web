@@ -32,6 +32,12 @@ const props={
       countByRequest.set(request.request.idempotencyKey,n);diagnostics();
       await new Promise(resolve=>setTimeout(resolve,350));
       gate={attemptId:request.request.idempotencyKey,gateVersion:2,state:n<3?'prechecking':'awaiting-confirmation',owner:request.request.actor,leaseExpiresAt:new Date(Date.now()+120000).toISOString()};
+      if(scenario==='legacy-resume'&&n===1){
+        const storageKey='cairnmap-review-precheck:'+request.request.actor.principalId;
+        const saved=JSON.parse(sessionStorage.getItem(storageKey)??'null');
+        saved.key=board().entries.filter(entry=>request.selectedSubmissionIds.includes(entry.submissionId)).map(entry=>entry.submissionId+':'+entry.decisionRevisionId).join('|')+':'+boardVersion;
+        sessionStorage.setItem(storageKey,JSON.stringify(saved));
+      }
       if(scenario==='retry'&&n===1)throw Error('fixture-network-interrupted');
       if(n<3)return {decision:'pending',gate,report:{findings:[{code:'BATCH_CONFIGURATION_PENDING',severity:'info',message:`检查阶段 ${n}`}]}};
       return {decision:'warning-confirmation-required',gate,report:{reportSha256:'a'.repeat(64),findings:Array.from({length:800},(_,i)=>({code:'UPSERT_OVERWRITES_CURRENT',severity:'warning',message:`报告条目 ${i}：此项将覆盖同世界、同分类、同 ID 的要素。`,target:{worldId:'zth',classCode:'BUD',featureId:`LOCAL_${i}`}}))}};

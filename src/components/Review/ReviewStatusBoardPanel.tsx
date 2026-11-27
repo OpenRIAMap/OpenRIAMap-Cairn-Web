@@ -494,7 +494,12 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
       const sessionKey='cairnmap-review-precheck:'+actor.principalId;
       if(!ongoingPrecheck.current)try{
         const saved=JSON.parse(sessionStorage.getItem(sessionKey)??'null');
-        if(saved?.key===key&&saved.savedAt>Date.now()-24*60*60*1000&&typeof saved.request?.request?.idempotencyKey==='string'&&saved.request.request.actor?.principalId===actor.principalId)ongoingPrecheck.current=saved;
+        // Keep the idempotency identity saved by pages before scope canonicalization.
+        const legacyKey=selectedEntries.map(entry=>entry.submissionId+':'+entry.decisionRevisionId).join('|')+':'+board.boardVersion;
+        const ids=selectedEntries.map(entry=>entry.submissionId).sort();
+        const savedIds=saved?.request?.selectedSubmissionIds;
+        const sameIds=Array.isArray(savedIds)&&savedIds.length===ids.length&&[...savedIds].sort().every((id,index)=>id===ids[index]);
+        if((saved?.key===key||saved?.key===legacyKey)&&sameIds&&saved.request.expectedBoardVersion===board.boardVersion&&saved.savedAt>Date.now()-24*60*60*1000&&typeof saved.request?.request?.idempotencyKey==='string'&&saved.request.request.actor?.principalId===actor.principalId)ongoingPrecheck.current={key,request:saved.request};
       }catch{/* Session storage is optional; server identity checks remain authoritative. */}
       const gate = normalizeGate(await releaseControl.getReleaseGate(actor));
       if(generation!==precheckGeneration.current)return;

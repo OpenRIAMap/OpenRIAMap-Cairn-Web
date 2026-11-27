@@ -90,19 +90,21 @@ try:
     assert retried['unique']==1 and len(retried['calls'])==3,retried
     checks.append('retry after network interruption uses original idempotency identity')
 
-    b.call('Page.navigate',{'url':APP_URL+'/scripts/browser/fixtures/review-ui-controls.html?scenario=resume'})
-    b.wait('!!document.querySelector("[data-review-package]")')
-    b.click('全选可发布包');b.click('发布前检查')
-    b.wait('document.body.innerText.includes("发布前检查报告")')
-    click_selector('[data-panel-id="review-status-board"] button[title="关闭"]')
-    b.wait('!document.querySelector("[data-panel-id=review-status-board]")')
-    b.click('重开面板')
-    b.wait('!!document.querySelector("[data-review-package]")')
-    b.click('全选可发布包');b.click('发布前检查')
-    b.wait('document.body.innerText.includes("LOCAL_799")',30)
-    resumed=json.loads(b.evaluate("document.querySelector('#fixture-calls').textContent"))
-    assert resumed['unique']==1 and len(resumed['calls'])==3,resumed
-    checks.append('closing and reopening resumes the same task with no duplicate identity')
+    for resume_mode in ('resume','legacy-resume'):
+        b.call('Page.navigate',{'url':APP_URL+'/scripts/browser/fixtures/review-ui-controls.html?scenario='+resume_mode})
+        b.wait('!!document.querySelector("[data-review-package]")')
+        b.click('全选可发布包');b.click('发布前检查')
+        b.wait('document.body.innerText.includes("发布前检查报告")')
+        click_selector('[data-panel-id="review-status-board"] button[title="关闭"]')
+        b.wait('!document.querySelector("[data-panel-id=review-status-board]")')
+        b.click('重开面板')
+        b.wait('!!document.querySelector("[data-review-package]")')
+        b.click('全选可发布包');b.click('发布前检查')
+        b.wait('document.body.innerText.includes("LOCAL_799")',30)
+        resumed=json.loads(b.evaluate("document.querySelector('#fixture-calls').textContent"))
+        assert resumed['unique']==1 and len(resumed['calls'])==3,resumed
+        checks.append('closing and reopening resumes the same task with no duplicate identity ('+resume_mode+')')
+
 
     b.click('发布前检查')
     b.wait('document.body.innerText.includes("发布前检查报告")')
