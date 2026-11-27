@@ -605,7 +605,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
         }
       },
     });
-  }, [actor, publishReady, refreshList, releaseControl, releaseReport, selectedEntries, submissions]);
+  }, [actor, publishReady, refreshList, releaseControl, releaseGate, releaseReport, selectedEntries, submissions]);
 
   const openPublicReleaseRecord = useCallback(() => {
     window.dispatchEvent(new CustomEvent('ria:open-public-release-record'));
