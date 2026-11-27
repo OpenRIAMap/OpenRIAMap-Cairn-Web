@@ -18,12 +18,16 @@ class Browser:
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         port = os.environ.get('CAIRNMAP_CDP_PORT', '9238')
         pages = json.loads(opener.open('http://127.0.0.1:'+port+'/json').read())
-        page = next(item for item in pages if item['type'] == 'page' and (item['url'] == 'about:blank' or item['url'].startswith((APP_URL, 'http://127.0.0.1:5190', 'http://127.0.0.1:5188', 'http://127.0.0.1:5189', 'http://127.0.0.1:5208', 'http://127.0.0.1:5209'))))
+        target_id = os.environ.get('CAIRNMAP_CDP_TARGET')
+        page = next(item for item in pages if item['type'] == 'page' and (item['id'] == target_id if target_id else (item['url'] == 'about:blank' or item['url'].startswith((APP_URL, 'http://127.0.0.1:5190', 'http://127.0.0.1:5188', 'http://127.0.0.1:5189', 'http://127.0.0.1:5208', 'http://127.0.0.1:5209')))))
         self.ws = websocket.create_connection(page['webSocketDebuggerUrl'], origin='http://127.0.0.1:'+port, timeout=30)
         self.seq = 0
         self.errors = []
         self.call('Page.enable')
         self.call('Runtime.enable')
+        if target_id:
+            self.call('Page.bringToFront')
+            self.call('Emulation.setFocusEmulationEnabled', {'enabled': True})
         self.call('Emulation.setTouchEmulationEnabled', {'enabled': False})
         self.call('Emulation.setDeviceMetricsOverride', {'width': 1440, 'height': 1000, 'deviceScaleFactor': 1, 'mobile': False})
     def call(self, method, params=None):

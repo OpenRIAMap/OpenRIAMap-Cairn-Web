@@ -18,6 +18,7 @@ interface DraggablePanelProps {
   stackGroup?: string;
   stackGroupOrder?: number;
   constrainExpandedToViewport?: boolean;
+  constrainToMap?: boolean;
   windowControlTone?: 'default' | 'light';
   minimizedTitleNode?: React.ReactNode;
   expandedControlLayout?: 'default' | 'playerCardGrid';
@@ -80,6 +81,7 @@ export function DraggablePanel({
   stackGroup,
   stackGroupOrder = 0,
   constrainExpandedToViewport = false,
+  constrainToMap: constrainToMapProp = false,
   windowControlTone = 'default',
   minimizedTitleNode,
   expandedControlLayout = 'default',
@@ -108,7 +110,7 @@ export function DraggablePanel({
   const dragStartRef = useRef({ x: 0, y: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const constrainToMap = id === 'featureInteractionCard' || id === 'playerDetail';
+  const constrainToMap = constrainToMapProp || id === 'featureInteractionCard' || id === 'playerDetail';
   const mapRight = constrainToMap ? sidebar?.mapRight : null;
 
   // 检测是否桌面端
@@ -192,6 +194,18 @@ export function DraggablePanel({
       y: Math.max(minY, Math.min(y, maxY)),
     };
   }, [constrainExpandedToViewport]);
+
+  useLayoutEffect(() => {
+    if (!constrainToMapProp || !isDesktop || docked) return;
+    const node = panelRef.current;
+    if (!node) return;
+    const observer = new ResizeObserver(() => setPosition(previous => {
+      const next = clampPosition(previous.x, previous.y, isMinimized);
+      return next.x === previous.x && next.y === previous.y ? previous : next;
+    }));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [clampPosition, constrainToMapProp, docked, isDesktop, isMinimized, portalRoot]);
 
   // 开始拖拽
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -305,6 +319,7 @@ export function DraggablePanel({
       }}
       onMouseDownCapture={docked ? undefined : handleRootMouseDownCapture}
       onMouseDown={docked ? undefined : handleRootMouseDown}
+      onWheel={constrainToMapProp ? event=>event.stopPropagation() : undefined}
     >
       <div className="relative">
         <div

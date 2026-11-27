@@ -8,6 +8,7 @@ import { Archive, CheckCircle2, ClipboardCheck, FileDown, FileText, RefreshCw, R
 import AppButton from '@/components/ui/AppButton';
 import { DraggablePanel } from '@/components/DraggablePanel/DraggablePanel';
 import { REVIEW_LAYER } from './reviewLayering';
+import { releasePrecheckScopeKey, releasePrecheckCanPublish } from './releasePrecheckScope';
 import type { ReviewPackageSession } from './reviewPackageSession';
 import type { ReviewAuthPort } from './auth';
 import {
@@ -182,7 +183,7 @@ function reportView(report: ReviewReleaseControlReport | ReviewPackagePrecheckRe
   if(!reviewReportProtocolValid(report))rawFindings.push({code:'REPORT_PROTOCOL_INVALID',severity:'blocker',message:source+'返回了阻断或警告状态，却没有具体原因。请重新检查并保留关联信息；当前禁止发布。'});
   return <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
     <div className="font-semibold">{title}：{remoteState(report.decision??'',language)}</div>
-    {rawFindings.length?<div className="mt-2 space-y-1">{rawFindings.map((finding,index)=><div key={index} className={finding.severity==='blocker'?'text-red-700':finding.severity==='warning'?'text-amber-700':'text-gray-600'}><ReviewFindingDetails finding={finding} language={language}/></div>)}</div>:<div className="mt-1 text-gray-500">{language==='zh'?'未发现阻断或警告项。':'No blockers or warnings.'}</div>}
+    {rawFindings.length?<div className="cm-bounded-scroll mt-2 space-y-1" tabIndex={0} aria-label={`${title}明细`} onWheel={event=>event.stopPropagation()}>{rawFindings.map((finding,index)=><div key={index} className={finding.severity==='blocker'?'text-red-700':finding.severity==='warning'?'text-amber-700':'text-gray-600'}><ReviewFindingDetails finding={finding} language={language}/></div>)}</div>:<div className="mt-1 text-gray-500">{language==='zh'?'未发现阻断或警告项。':'No blockers or warnings.'}</div>}
   </div>;
 }
 
@@ -228,17 +229,21 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
   const historicalArchiveCandidates = useMemo(() => submissions.filter((submission) => isHistoricalArchiveCandidate(submission, draft.find((entry) => entry.submissionId === submission.submissionId))), [draft, submissions]);
   const dirty = board ? isReviewStatusBoardDirty({ baseBoardVersion: board.boardVersion, entries: draft }, board) : false;
   const [releaseReportKey,setReleaseReportKey]=useState<string>();
+  const [precheckScope,setPrecheckScope]=useState<{key:string;packages:{submissionId:string;packageName:string}[]}|null>(null);
 
   const precheckGeneration=useRef(0);
   const ongoingPrecheck=useRef<{key:string;request:Parameters<typeof releaseControl.runReleasePrecheck>[0]}>();
-  const selectedKey=selectedEntries.map(entry=>entry.submissionId+':'+entry.decisionRevisionId).join('|');
-  const selectionVersionKey=selectedKey+':'+board?.boardVersion;
-  const publishReady=!dirty&&releaseReportKey===selectionVersionKey&&reviewReportProtocolValid(releaseReport)&&
-    (releaseReport?.decision==='ready'||releaseReport?.decision==='warning-confirmation-required');
+  const selectionVersionKey=releasePrecheckScopeKey(selectedEntries,board?.boardVersion,actor.principalId);
+  const publishReady=releasePrecheckCanPublish({dirty,currentKey:selectionVersionKey,reportKey:releaseReportKey,report:releaseReport,gate:releaseGate});
   useEffect(()=>{
+    // Only an identity/lifetime change ends this subscription. Checkboxes never do.
+    ongoingPrecheck.current=undefined;
+    setPrecheckScope(null);
+    setReleaseReport(null);
     setReleaseReportKey(undefined);
+    setBusy(previous=>previous==='release-precheck'?null:previous);
     return()=>{precheckGeneration.current++;};
-  },[selectionVersionKey]);
+  },[actor.principalId]);
 
   const selectDetail = useCallback((submission: ReviewSubmissionSnapshot) => {
     if (activeWorkspaceSubmissionId && activeWorkspaceSubmissionId !== submission.submissionId) {
@@ -376,7 +381,6 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
               requestId: createId('status-save'), correlationId: createId('status-correlation'), idempotencyKey: createId('status-idempotency'),
               expectedBoardVersion, entries: selectedEntries, actor, occurredAt: new Date().toISOString(),
             });
-            setReleaseReport(null);
             await refreshList({ preserveMessage: true });
             setMessage('审核状态已保存。');
           } catch (error) {
@@ -479,19 +483,32 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
     const approved = selectedEntries.find((entry) => entry.state === 'approved' && entry.decisionRevisionId);
     const owner = approved && submissions.find((item) => item.submissionId === approved.submissionId);
     if (!approved || !owner) { setMessage('至少选择一个已通过且已指定版本的审核包。'); return; }
+    const generation=++precheckGeneration.current;
+    const key=selectionVersionKey;
+    setPrecheckScope({key,packages:selectedEntries.map(entry=>({submissionId:entry.submissionId,packageName:submissions.find(item=>item.submissionId===entry.submissionId)?.packageName??entry.submissionId}))});
+    setReleaseReport(null);
+    setReleaseReportKey(undefined);
+    setMessage(null);
     setBusy('release-precheck');
     try {
       const sessionKey='cairnmap-review-precheck:'+actor.principalId;
       if(!ongoingPrecheck.current)try{
         const saved=JSON.parse(sessionStorage.getItem(sessionKey)??'null');
-        if(saved?.key===selectedKey+':'+board.boardVersion&&saved.savedAt>Date.now()-24*60*60*1000&&typeof saved.request?.request?.idempotencyKey==='string'&&saved.request.request.actor?.principalId===actor.principalId)ongoingPrecheck.current=saved;
+        // Keep the idempotency identity saved by pages before scope canonicalization.
+        const legacyKey=selectedEntries.map(entry=>entry.submissionId+':'+entry.decisionRevisionId).join('|')+':'+board.boardVersion;
+        const ids=selectedEntries.map(entry=>entry.submissionId).sort();
+        const savedIds=saved?.request?.selectedSubmissionIds;
+        const sameIds=Array.isArray(savedIds)&&savedIds.length===ids.length&&[...savedIds].sort().every((id,index)=>id===ids[index]);
+        if((saved?.key===key||saved?.key===legacyKey)&&sameIds&&saved.request.expectedBoardVersion===board.boardVersion&&saved.savedAt>Date.now()-24*60*60*1000&&typeof saved.request?.request?.idempotencyKey==='string'&&saved.request.request.actor?.principalId===actor.principalId)ongoingPrecheck.current={key,request:saved.request};
       }catch{/* Session storage is optional; server identity checks remain authoritative. */}
       const gate = normalizeGate(await releaseControl.getReleaseGate(actor));
+      if(generation!==precheckGeneration.current)return;
       setReleaseGate(gate);
       const canReplace=gate.owner?.principalId===actor.principalId&&['prechecking','awaiting-confirmation'].includes(gate.state);
       if(isReviewReleaseGateLeaseActive(gate)&&!canReplace){setMessage('当前已有发布进行中，请稍后刷新 Release Gate。');return;}
       if (isReviewReleaseGateLeaseExpired(gate)) setMessage(null);
       const remote = await submissionAdapter.getStatusBoard(actor);
+      if(generation!==precheckGeneration.current)return;
       const differences = compareReviewStatusBoards(draft, remote.entries).filter((difference) => difference.kind !== 'unchanged');
       if (remote.boardVersion !== board.boardVersion || differences.length) {
         const revisionChanges = differences.filter((difference) => difference.kind === 'revision-changed');
@@ -502,8 +519,6 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
         }
         return;
       }
-      const generation=++precheckGeneration.current;
-      const key=selectedKey+':'+board.boardVersion;
       const request=ongoingPrecheck.current?.key===key?ongoingPrecheck.current.request:{precheckProtocol:'pending-v2' as const,replaceAttemptId:canReplace?gate.attemptId??undefined:undefined,selectedSubmissionIds:selectedEntries.map(entry=>entry.submissionId),expectedBoardVersion:board.boardVersion,request:{requestId:createId('release-precheck'),correlationId:createId('release-correlation'),idempotencyKey:createId('release-idempotency'),submissionId:owner.submissionId,targetRevisionId:approved.decisionRevisionId!,expectedStateVersion:owner.stateVersion,action:'publish' as const,occurredAt:new Date().toISOString(),actor}};
       ongoingPrecheck.current={key,request};
       try{sessionStorage.setItem(sessionKey,JSON.stringify({key,request,savedAt:Date.now()}));}catch{/* The current page can still resume without storage. */}
@@ -516,19 +531,20 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
         setReleaseReport(result);setReleaseReportKey(key);setReleaseGate(normalizeGate(result.gate));
         pendingResult=result.decision==='pending';
         if(!pendingResult){ongoingPrecheck.current=undefined;try{sessionStorage.removeItem(sessionKey);}catch{/* optional storage */}setMessage(result.decision==='ready'?'发布前检查通过。':null);break;}
-        setMessage('后台正在按当前正式配置核验；保持本次选择，完成后自动更新报告。');
+        setMessage('后台正在按本次检查范围核验，完成后自动更新报告；调整列表勾选不会中断本次检查。');
       }
       if(pendingResult)setMessage('后台核验仍在进行；可再次点击发布前检查继续查询同一任务，无需刷新 Release Gate。');
 
     } catch (error) {
-      setMessage(describeError(error));
+      if(generation===precheckGeneration.current)setMessage(describeError(error));
     } finally {
-      setBusy(null);
+      if(generation===precheckGeneration.current)setBusy(null);
     }
-  }, [actor, board, dirty, draft, releaseControl, selectedEntries, submissionAdapter, submissions]);
+  }, [actor, board, dirty, draft, releaseControl, selectedEntries, selectionVersionKey, submissionAdapter, submissions]);
 
   const publish = useCallback(async () => {
     if (!releaseReport?.gate?.attemptId || !releaseReport.report?.reportSha256 || !publishReady) return;
+    if(releaseGate&&isReviewReleaseGateLeaseExpired(releaseGate)){setMessage('Release Gate 已过期，请重新执行发布前检查。');return;}
     const approved = selectedEntries.find((entry) => entry.state === 'approved' && entry.decisionRevisionId);
     const owner = approved && submissions.find((item) => item.submissionId === approved.submissionId);
     if (!approved || !owner) return;
@@ -594,7 +610,7 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
         }
       },
     });
-  }, [actor, publishReady, refreshList, releaseControl, releaseReport, selectedEntries, submissions]);
+  }, [actor, publishReady, refreshList, releaseControl, releaseGate, releaseReport, selectedEntries, submissions]);
 
   const openPublicReleaseRecord = useCallback(() => {
     window.dispatchEvent(new CustomEvent('ria:open-public-release-record'));
@@ -728,20 +744,27 @@ export function ReviewStatusBoardPanel({ auth, submissionAdapter, releaseControl
           <div className="grid grid-cols-2 gap-2"><AppButton onClick={() => void refreshGate()} disabled={busy !== null} className="justify-center rounded-xl bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200"><ShieldCheck className="h-4 w-4" />刷新 Release Gate</AppButton><AppButton onClick={openPublicReleaseRecord} disabled={busy !== null} className="justify-center rounded-xl bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200"><FileText className="h-4 w-4" />打开发布记录</AppButton><AppButton onClick={() => void refreshList()} disabled={busy !== null} className="justify-center rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-700 hover:bg-blue-100"><RefreshCw className="h-4 w-4" />刷新列表</AppButton><div className="rounded-xl bg-gray-50 px-3 py-2 text-center text-sm text-gray-600">Gate：{releaseGate ? (isReviewReleaseGateLeaseExpired(releaseGate) ? '已过期' : stateLabel(releaseGate.state)) : '未读取'} · 发布已选 {selectedEntries.length}{historicalArchiveSelectedIds.size ? ` · 历史整理已选 ${historicalArchiveSelectedIds.size}` : ''}</div></div>
           {message ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{message}</div> : null}
           <div className="flex items-center justify-between"><h3 className="font-semibold text-gray-900">待审核包</h3><div className="flex gap-3 text-sm"><button type="button" className="text-blue-600 hover:underline" onClick={() => setSelectedIds(new Set(submissions.filter((item) => !isHistoricalArchiveCandidate(item, draft.find((entry) => entry.submissionId === item.submissionId))).map((item) => item.submissionId)))}>全选可发布包</button><button type="button" className="text-gray-500 hover:underline" onClick={() => { setSelectedIds(new Set()); setHistoricalArchiveSelectedIds(new Set()); }}>清空选择</button></div></div>
-          <div className="space-y-2">{submissions.map((submission) => {
+          <div className="cm-bounded-scroll space-y-2" tabIndex={0} aria-label="待审核包列表" onWheel={event=>event.stopPropagation()}>{submissions.map((submission) => {
             const entry = draft.find((item) => item.submissionId === submission.submissionId);
             const shownState = displayState(submission, entry);
             const historical = isHistoricalArchiveCandidate(submission, entry);
             const checked = historical ? historicalArchiveSelectedIds.has(submission.submissionId) : selectedIds.has(submission.submissionId);
-            return <button key={submission.submissionId} type="button" onClick={() => selectDetail(submission)} className={`w-full rounded-2xl border p-3 text-left ${historical ? 'border-amber-300 bg-amber-50 hover:border-amber-500' : 'border-blue-200 bg-blue-50 hover:border-blue-400'}`}><div className="flex gap-3"><input aria-label={`${historical ? '选择历史归档整理' : '选择发布'} ${submission.packageName}`} type="checkbox" checked={checked} onClick={(event) => event.stopPropagation()} onChange={() => {
+            const detailOpen = detail?.submissionId === submission.submissionId;
+            return <button key={submission.submissionId} type="button" aria-current={detailOpen?'true':undefined} data-review-package={submission.submissionId} onClick={() => selectDetail(submission)} className={`cm-review-package w-full rounded-2xl border p-3 text-left ${historical ? 'border-amber-300 bg-amber-50 hover:border-amber-500' : 'border-blue-200 bg-blue-50 hover:border-blue-400'}`}><div className="flex gap-3"><input aria-label={`${historical ? '选择历史归档整理' : '选择发布'} ${submission.packageName}`} type="checkbox" checked={checked} onClick={(event) => event.stopPropagation()} onChange={() => {
               if (historical) setHistoricalArchiveSelectedIds((previous) => { const next = new Set(previous); if (next.has(submission.submissionId)) next.delete(submission.submissionId); else next.add(submission.submissionId); return next; });
               else setSelectedIds((previous) => { const next = new Set(previous); if (next.has(submission.submissionId)) next.delete(submission.submissionId); else next.add(submission.submissionId); return next; });
-            }} /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><span className="truncate font-semibold text-gray-900">{submission.packageName}</span><span className={`shrink-0 rounded-full px-2 py-1 text-xs ${historical ? 'bg-amber-100 text-amber-800' : stateTone(shownState)}`}>{historical ? '历史归档待整理' : reviewStatusLabel(shownState)}</span></div><div className="mt-1 text-xs text-gray-500">{submission.submissionId}</div><div className="mt-2 text-xs text-gray-600">决策版本：{entry?.decisionRevisionId ?? '未选择'} · 共 {submission.revisions.length} 个版本</div>{historical ? <div className="mt-2 text-xs text-amber-800">该旧包已有“归档”状态灯但缺少归档完成回执，不能参与普通发布；请使用下方“历史归档整理”。</div> : isPublicationLifecycleState(submission.state) ? <div className="mt-2 text-xs text-amber-700">发布生命周期：{stateLabel(submission.state)}。状态灯仍可记录，但不会重新发布、回滚数据或创建新版本。</div> : null}</div></div></button>;
+            }} /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><span className="truncate font-semibold text-gray-900">{submission.packageName}</span><span aria-hidden={!detailOpen} className={`cm-review-detail-indicator shrink-0 rounded px-1 py-0.5 text-xs ${detailOpen?'': 'invisible'}`}>当前详情</span><span className={`shrink-0 rounded-full px-2 py-1 text-xs ${historical ? 'bg-amber-100 text-amber-800' : stateTone(shownState)}`}>{historical ? '历史归档待整理' : reviewStatusLabel(shownState)}</span></div><div className="mt-1 text-xs text-gray-500">{submission.submissionId}</div><div className="mt-2 text-xs text-gray-600">决策版本：{entry?.decisionRevisionId ?? '未选择'} · 共 {submission.revisions.length} 个版本</div>{historical ? <div className="mt-2 text-xs text-amber-800">该旧包已有“归档”状态灯但缺少归档完成回执，不能参与普通发布；请使用下方“历史归档整理”。</div> : isPublicationLifecycleState(submission.state) ? <div className="mt-2 text-xs text-amber-700">发布生命周期：{stateLabel(submission.state)}。状态灯仍可记录，但不会重新发布、回滚数据或创建新版本。</div> : null}</div></div></button>;
           })}</div>
           {historicalArchiveCandidates.length ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3"><div className="flex items-center justify-between gap-2"><div><div className="font-semibold text-amber-900">历史归档整理</div><p className="mt-1 text-xs text-amber-800">仅维护者可为明确选中的旧包创建迁移计划；不发布正式地图数据。</p></div><span className="text-xs text-amber-800">候选 {historicalArchiveCandidates.length}</span></div><div className="mt-2 flex items-center justify-between"><button type="button" className="text-xs text-amber-900 underline" onClick={() => setHistoricalArchiveSelectedIds(new Set(historicalArchiveCandidates.map((item) => item.submissionId)))}>全选历史包</button><AppButton disabled={!historicalArchiveSelectedIds.size || busy !== null || !actor.roles.includes('maintainer')} onClick={reconcileHistoricalArchives} className="justify-center rounded-xl bg-amber-600 px-3 py-2 text-xs text-white hover:bg-amber-700 disabled:bg-amber-300"><Archive className="h-3.5 w-3.5" />整理已选历史归档</AppButton></div>{!actor.roles.includes('maintainer') ? <p className="mt-2 text-xs text-amber-800">当前身份不是维护者，不能创建归档整理任务。</p> : null}</div> : null}
           <div className="grid grid-cols-3 gap-2 border-t border-gray-100 pt-3"><AppButton disabled={!selectedEntries.length || busy !== null} onClick={() => void saveStatus()} className="justify-center rounded-xl bg-orange-600 px-2 py-2 text-xs text-white hover:bg-orange-700 disabled:bg-orange-300"><CheckCircle2 className="h-3.5 w-3.5" />保存状态</AppButton><AppButton disabled={!selectedEntries.length || dirty || busy !== null} onClick={() => void releasePrecheck()} className="justify-center rounded-xl bg-blue-600 px-2 py-2 text-xs text-white hover:bg-blue-700 disabled:bg-blue-300"><ClipboardCheck className="h-3.5 w-3.5" />发布前检查</AppButton><AppButton disabled={!publishReady || busy !== null} onClick={() => void publish()} className="justify-center rounded-xl bg-green-600 px-2 py-2 text-xs text-white hover:bg-green-700 disabled:bg-green-300"><Send className="h-3.5 w-3.5" />发布</AppButton></div>
           {dirty ? <p className="text-xs text-amber-700">状态灯有未保存的本地修改；请先保存状态。</p> : null}
-          {reportView(releaseReportKey===selectionVersionKey||releaseReport?.decision==='queued'?releaseReport:null, '发布前检查报告','服务端',getApplicationSettings().preferences.language)}
+          {precheckScope?<section data-review-precheck-scope className="rounded border border-gray-200 p-3 text-xs">
+            <div role="status" className="font-semibold">{busy==='release-precheck'?'正在进行发布前检查':'本次发布前检查'} · {precheckScope.packages.length} 个审核包</div>
+            <p className="mt-1 break-words" title={precheckScope.packages.map(item=>`${item.packageName}（${item.submissionId}）`).join('、')}>检查范围：{precheckScope.packages.slice(0,3).map(item=>item.packageName).join('、')}{precheckScope.packages.length>3?'……':''}</p>
+            {precheckScope.key!==selectionVersionKey?<p className="mt-1 text-amber-700">此报告对应上次检查范围，当前选择或状态版本已变化；按当前范围发布需重新检查。切回相同范围且版本仍有效时可继续使用。</p>:null}
+            {releaseGate&&isReviewReleaseGateLeaseExpired(releaseGate)?<p className="mt-1 text-amber-700">检查对应的 Release Gate 已过期，请重新检查。</p>:null}
+          </section>:null}
+          {reportView(releaseReport, '发布前检查报告','服务端',getApplicationSettings().preferences.language)}
         </div>
       </div>
     </DraggablePanel>

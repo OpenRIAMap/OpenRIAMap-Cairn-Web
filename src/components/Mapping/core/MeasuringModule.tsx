@@ -3629,7 +3629,7 @@ const renderFullForm=()=>{
     {editingLayerId===null&&drawMode==='polygon'&&(roles.has('platformFootprint')||roles.has('stationBuilding'))?<AppButton type="button" onClick={()=>requestExitSpecialDraftIfNeeded(()=>setSpecialDraftMode(specialDraftMode==='merge-polygon-outline-building'?'none':'merge-polygon-outline-building'))}>多面合一</AppButton>:null}
     {drawMode==='polyline'&&roles.has('railLine')?<RailwayDirectionReverseButton enabled={tempPoints.length>=2&&!drawClickSuppressed&&!showMultipartPartLabels} onReverse={()=>{if(showMultipartPartLabelsRef.current)return;const reversed=[...tempPoints].reverse();if(multipartEnabledRef.current)persistActiveEditorCoords(reversed);setTempPoints(reversed);drawDraftGeometry(reversed,'polyline',drawColor);setNativeEdit(current=>current?{...current,draft:reverseWorkflowEditEndpoints(current.plan,current.draft)}:current);}}/>:null}</div>
    </div>
-   {specialDraftMode==='merge-point-platform-station'?<MergePointPlatformStation {...mergeProps} draft={mergePointPSDraft} onChange={setMergePointPSDraft}/>:specialDraftMode==='merge-polygon-outline-building'?<MergePolygonOutlineBuilding {...mergeProps} draft={mergePolygonOBDraft} onChange={setMergePolygonOBDraft}/>:externalEdit?<fieldset disabled={externalEditWorldMismatch}><ExternalFeatureEditHost onClassificationChange={selectFullCategory} config={externalEdit.config} workflow={externalEdit.workflow} session={externalEdit.session} bridge={workflowBridge} context={{initialRecord:externalEdit.session.original,featureIdentity:{layerId:editingLayerId!,originalId:String(externalEdit.session.original.ID)},activeWorld:externalEdit.world,originalGeometry:externalEdit.session.originalGeometry,currentGeometry:multipartDraftRef.current??undefined,editor:editorIdInput,onEditorChange:(value:string)=>{if(!writeBlocked())setEditorIdInput(value);},onUpdate:finishLayer,onCancel:clearTemporaryForVariantSwitch}} onDraftChange={session=>!toolWriteBlocked()&&setExternalEdit(current=>current?{...current,session}:current)}/></fieldset>:nativeEdit?<fieldset disabled={nativeEditWorldMismatch}>{nativeEditWorldMismatch?<p role="alert">请返回 {nativeEdit.world} 后继续。</p>:null}<NativeWorkflowEditPanel config={nativeEdit.config} plan={nativeEdit.plan} draft={nativeEdit.draft} records={nativeEditSearchRecords} world={nativeEdit.world} editor={editorIdInput} onEditorChange={value=>{if(!writeBlocked())setEditorIdInput(value);}} onCancel={clearTemporaryForVariantSwitch} onChange={draft=>!toolWriteBlocked()&&setNativeEdit(current=>current?{...current,draft}:current)} mode={nativeEdit.original?'edit':'create'} hideClassification={!nativeEdit.original} onClassificationChange={selectFullCategory}/></fieldset>:fullExternalCreate?<fieldset disabled={fullExternalWorldMismatch}>{fullExternalWorldMismatch?<p role="alert">请返回 {fullExternalCreate.world} 后继续此新建。</p>:null}<WorkflowStyleEditPanel view={fullExternalCreate.view} values={fullExternalCreate.values} unparsedEntries={fullExternalCreate.unparsed} bridge={{...workflowBridge,getCaptureContext:()=>({config:fullExternalCreate.config,workflow:fullExternalCreate.workflow})}} idFirst classificationContent={<p className="text-xs">分类由上方四级选择树指定；本次保存为新要素。</p>} onChangeValue={(key,value)=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,values:{...current.values,[key]:value}}:current)} onChangeUnparsedEntries={unparsed=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,unparsed}:current)} editorId={editorIdInput} onChangeEditorId={value=>{if(!writeBlocked())setEditorIdInput(value);}}/></fieldset>:<p className="text-xs text-slate-500">未分类几何草稿。选择分类后使用对应编辑方案填写新要素。</p>}
+   {specialDraftMode==='merge-point-platform-station'?<MergePointPlatformStation {...mergeProps} draft={mergePointPSDraft} onChange={setMergePointPSDraft}/>:specialDraftMode==='merge-polygon-outline-building'?<MergePolygonOutlineBuilding {...mergeProps} draft={mergePolygonOBDraft} onChange={setMergePolygonOBDraft}/>:externalEdit?<fieldset disabled={externalEditWorldMismatch}><ExternalFeatureEditHost onClassificationChange={selectFullCategory} config={externalEdit.config} workflow={externalEdit.workflow} session={externalEdit.session} bridge={workflowBridge} context={{initialRecord:externalEdit.session.original,featureIdentity:{layerId:editingLayerId!,originalId:String(externalEdit.session.original.ID)},activeWorld:externalEdit.world,originalGeometry:externalEdit.session.originalGeometry,currentGeometry:multipartDraftRef.current??undefined,editor:editorIdInput,onEditorChange:(value:string)=>{if(!writeBlocked())setEditorIdInput(value);},onUpdate:finishLayer,onCancel:clearTemporaryForVariantSwitch,saveDisabled:isTempMountReadonly||externalEditWorldMismatch||writeBlocked()||showMultipartPartLabels||controlPointSessionBusy}} onDraftChange={session=>!toolWriteBlocked()&&setExternalEdit(current=>current?{...current,session}:current)}/></fieldset>:nativeEdit?<fieldset disabled={nativeEditWorldMismatch}>{nativeEditWorldMismatch?<p role="alert">请返回 {nativeEdit.world} 后继续。</p>:null}<NativeWorkflowEditPanel config={nativeEdit.config} plan={nativeEdit.plan} draft={nativeEdit.draft} records={nativeEditSearchRecords} world={nativeEdit.world} editor={editorIdInput} onEditorChange={value=>{if(!writeBlocked())setEditorIdInput(value);}} onCancel={clearTemporaryForVariantSwitch} onSave={nativeEdit.original?finishLayer:undefined} saveDisabled={isTempMountReadonly||nativeEditWorldMismatch||writeBlocked()||showMultipartPartLabels||controlPointSessionBusy} onChange={draft=>!toolWriteBlocked()&&setNativeEdit(current=>current?{...current,draft}:current)} mode={nativeEdit.original?'edit':'create'} hideClassification={!nativeEdit.original} onClassificationChange={selectFullCategory}/></fieldset>:fullExternalCreate?<fieldset disabled={fullExternalWorldMismatch}>{fullExternalWorldMismatch?<p role="alert">请返回 {fullExternalCreate.world} 后继续此新建。</p>:null}<WorkflowStyleEditPanel view={fullExternalCreate.view} values={fullExternalCreate.values} unparsedEntries={fullExternalCreate.unparsed} bridge={{...workflowBridge,getCaptureContext:()=>({config:fullExternalCreate.config,workflow:fullExternalCreate.workflow})}} idFirst classificationContent={<p className="text-xs">分类由上方四级选择树指定；本次保存为新要素。</p>} onChangeValue={(key,value)=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,values:{...current.values,[key]:value}}:current)} onChangeUnparsedEntries={unparsed=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,unparsed}:current)} editorId={editorIdInput} onChangeEditorId={value=>{if(!writeBlocked())setEditorIdInput(value);}}/></fieldset>:<p className="text-xs text-slate-500">未分类几何草稿。选择分类后使用对应编辑方案填写新要素。</p>}
   </section>;
 };
 const isWorkflowStyleEditing=Boolean(nativeEdit||externalEdit||fullExternalCreate);
@@ -4535,8 +4535,11 @@ const workflowBridge: WorkflowBridge = {
             <div className={isReviewWorkspace ? 'min-h-0 flex-1 px-3 pb-3' : 'px-3 pb-3'}>
               <div
                 ref={layerMgrBodyRef}
-                className={`cm-workspace-long-table ${isReviewWorkspace ? 'h-full overflow-x-auto overflow-y-auto' : 'overflow-y-auto overflow-x-auto'}`}
-                style={isReviewWorkspace ? undefined : { maxHeight: layerMgrListMaxHeight }}
+                className="cm-workspace-long-table cm-bounded-scroll"
+                style={{ maxHeight: isReviewWorkspace ? 'min(48vh, 34rem)' : layerMgrListMaxHeight }}
+                tabIndex={0}
+                aria-label="图层管理列表"
+                onWheel={event=>event.stopPropagation()}
               >
                 {relayPackageDraft.deleteMarks.length > 0 && (
                   <div className="px-4 py-2 border-b text-xs text-gray-700 bg-rose-50/60 space-y-1">
@@ -4848,7 +4851,7 @@ const measuringWindowActions = (
       重做
     </AppButton>
 
-    {measuringVariant === 'full' && !externalEdit && (
+    {measuringVariant === 'full' && !externalEdit && editingLayerId === null && (
       <AppButton
         className={`px-3 py-1 rounded-lg flex-1 ${
           isTempMountReadonly ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-green-500 text-white'
@@ -4857,7 +4860,7 @@ const measuringWindowActions = (
         type="button"
         disabled={isTempMountReadonly}
       >
-        {editingLayerId !== null ? '保存编辑图层' : '完成当前图层'}
+        完成当前图层
       </AppButton>
     )}
   </div>
@@ -5052,9 +5055,7 @@ const measuringWindowActions = (
       </div>
 
       {tempOutputOpen && (
-        layersInSidebar
-          ? <pre className="cm-workspace-output border p-1 text-xs">{currentTempOutput()}</pre>
-          : <textarea readOnly className="w-full h-20 border p-1" value={currentTempOutput()} />
+        <textarea aria-label="当前要素 JSON" readOnly className="cm-workspace-output cm-bounded-scroll w-full h-20 border p-1 text-xs" value={currentTempOutput()} onWheel={event=>event.stopPropagation()}/>
       )}
     </div>
   )
@@ -5114,7 +5115,7 @@ const measuringWindowActions = (
       重做
     </AppButton>
 
-    {measuringVariant === 'full' && !externalEdit && (
+    {measuringVariant === 'full' && !externalEdit && editingLayerId === null && (
       <AppButton
         className={`px-3 py-1 rounded-lg flex-1 ${
           isTempMountReadonly ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-green-500 text-white'
@@ -5123,7 +5124,7 @@ const measuringWindowActions = (
         type="button"
         disabled={isTempMountReadonly}
       >
-        {editingLayerId !== null ? '保存编辑图层' : '完成当前图层'}
+        完成当前图层
       </AppButton>
     )}
   </div>
@@ -5377,9 +5378,9 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
 
       <div className="cm-workspace-export p-3 flex gap-3">
         {/* 左侧：按要素类型分区导出 */}
-        <div className="cm-workspace-long-content w-28 shrink-0 border rounded p-2 bg-gray-50 max-h-[50vh] overflow-hidden flex flex-col">
+        <div className="w-28 shrink-0 border rounded p-2 bg-gray-50 max-h-[50vh] overflow-hidden flex flex-col min-h-0">
           <div className="text-xs text-gray-500 mb-2">导出范围</div>
-          <div className="cm-workspace-long-content space-y-1 overflow-y-auto flex-1">
+          <div className="cm-bounded-scroll space-y-1 flex-1" tabIndex={0} aria-label="JSON 导出范围" onWheel={event=>event.stopPropagation()}>
             <AppButton
               type="button"
               className={`w-full px-2 py-1 text-sm rounded border ${
@@ -5469,10 +5470,8 @@ placeholder={'批量 JSON：支持数组或 {items:[...]} / {features:[...]}。�
         </div>
 
         {/* 右侧：内容 + 操作 */}
-        <div className="flex-1 space-y-2">
-            {layersInSidebar
-              ? <pre className="cm-workspace-output border p-2 text-xs font-mono rounded">{jsonPanelText}</pre>
-              : <textarea readOnly className="w-full h-64 border p-2 text-xs font-mono rounded" value={jsonPanelText} />}
+        <div className="min-w-0 flex-1 space-y-2">
+            <textarea aria-label="整体 JSON 内容" readOnly className="cm-workspace-output cm-bounded-scroll cm-workspace-export-text w-full border p-2 text-xs font-mono rounded" value={jsonPanelText} onWheel={event=>event.stopPropagation()}/>
 
           <div className="flex gap-2">
             {/* 原“复制” → 下载(分条) */}

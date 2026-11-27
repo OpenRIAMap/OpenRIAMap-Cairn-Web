@@ -25,6 +25,7 @@ const referenceKey=(field:{path?:string;searchConfigKey?:string})=>({'tags.Land'
 
 type Props = {
   idFirst?:boolean;
+  editorIdentityLast?:boolean;
   classificationContent?:ReactNode;
   extraContent?:ReactNode;
   view: ProjectedRegistryScene;
@@ -101,7 +102,7 @@ export default function WorkflowStyleEditPanel(props: Props) {
     bridge,
     editorId,
     onChangeEditorId,
-    idFirst=false,classificationContent,extraContent,
+    idFirst=false,classificationContent,extraContent,editorIdentityLast=false,
   } = props;
   const context=bridge.getCaptureContext?.();
   const classificationOptions=context?workflowCategoryOptions(context.config,externalRolePaths(context.config,context.workflow,'tradePoint')).map(option=>({kind:option.path.kind??'',skind:option.path.skind??'',skind2:option.path.skind2??'',name:option.label,label:option.label,classCode:option.path.class})):[];
@@ -375,6 +376,21 @@ export default function WorkflowStyleEditPanel(props: Props) {
     onChangeUnparsedEntries(next);
   };
 
+  const editorIdentity = (
+    <div className="border-t pt-2">
+      <label className="block text-xs font-bold mb-1">编辑者ID</label>
+      <input
+        className="w-full border p-1 rounded text-sm"
+        placeholder="可选：用于写入 CreateBy / ModifityBy"
+        value={editorId}
+        onChange={(e) => onChangeEditorId(e.target.value)}
+      />
+      <div className="mt-1 text-[11px] text-gray-500">
+        初次绘制完成时（非空）写入 CreateBy；编辑保存时（非空）写入 ModifityBy。
+      </div>
+    </div>
+  );
+
   return (
     <div
       className="mt-2 space-y-3"
@@ -421,18 +437,7 @@ export default function WorkflowStyleEditPanel(props: Props) {
       </div>
 
       {extraContent}
-      <div className="border-t pt-2">
-        <label className="block text-xs font-bold mb-1">编辑者ID</label>
-        <input
-          className="w-full border p-1 rounded text-sm"
-          placeholder="可选：用于写入 CreateBy / ModifityBy"
-          value={editorId}
-          onChange={(e) => onChangeEditorId(e.target.value)}
-        />
-        <div className="mt-1 text-[11px] text-gray-500">
-          初次绘制完成时（非空）写入 CreateBy；编辑保存时（非空）写入 ModifityBy。
-        </div>
-      </div>
+      {!editorIdentityLast && editorIdentity}
 
       {view.allowUnparsedBlock && (
         <div className="border-t pt-2">
@@ -464,6 +469,7 @@ export default function WorkflowStyleEditPanel(props: Props) {
           )}
         </div>
       )}
+      {editorIdentityLast && editorIdentity}
     </div>
   );
 }

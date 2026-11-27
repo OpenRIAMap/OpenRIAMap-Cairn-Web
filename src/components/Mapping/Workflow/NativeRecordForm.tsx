@@ -1,4 +1,5 @@
 import {classificationPathKey} from '@/configStudio/runtime';
+import {FeatureEditActions} from '../Editor/FeatureEditActions';
 import {useEffect,useRef,useState} from 'react';
 import {WorkflowFormLayout} from '@/configStudio/WorkflowFormLayout';
 import {datasetOptions,workflowControlActive} from '@/configStudio/c21Workflow';
@@ -7,8 +8,8 @@ import {workflowClassificationCaption,workflowCategoryOptions} from '@/configStu
 import {ControlInput} from '@/configStudio/V3WorkflowRunner';
 import {WorkflowAnnotationsInput} from '@/configStudio/WorkflowAnnotationsInput';
 import {workflowEditClassifications,type WorkflowEditDraft,type WorkflowEditPlan} from '@/configStudio/workflowEditing';
-export function NativeRecordForm({config,plan,draft,onChange,records,world,editor,onEditorChange,onCancel,mode='edit',hideClassification=false,onClassificationChange}:{
- config:ConfigPackageV3;plan:WorkflowEditPlan;draft:WorkflowEditDraft;onChange:(draft:WorkflowEditDraft)=>void;records:MountedFeatureRecord[];world:string;editor:string;onEditorChange:(value:string)=>void;onCancel:()=>void;mode?:'create'|'edit';hideClassification?:boolean;onClassificationChange?:(path:ClassificationPath)=>void;
+export function NativeRecordForm({config,plan,draft,onChange,records,world,editor,onEditorChange,onCancel,onSave,saveDisabled=false,mode='edit',hideClassification=false,onClassificationChange}:{
+ config:ConfigPackageV3;plan:WorkflowEditPlan;draft:WorkflowEditDraft;onChange:(draft:WorkflowEditDraft)=>void;records:MountedFeatureRecord[];world:string;editor:string;onEditorChange:(value:string)=>void;onCancel:()=>void;onSave?:()=>void;saveDisabled?:boolean;mode?:'create'|'edit';hideClassification?:boolean;onClassificationChange?:(path:ClassificationPath)=>void;
 }){
  const [errors,setErrors]=useState<string[]>([]);
  useEffect(()=>{const handler=(event:Event)=>{const detail=(event as CustomEvent<{workflowId:string;controlIds:string[]}>).detail;if(detail.workflowId===plan.workflow.id)setErrors(detail.controlIds);};window.addEventListener('cairn:workflow-input-errors',handler);return()=>window.removeEventListener('cairn:workflow-input-errors',handler);},[plan.workflow.id]);
@@ -31,6 +32,6 @@ export function NativeRecordForm({config,plan,draft,onChange,records,world,edito
   {fallbackClassification&&!hideClassification?renderControl(fallbackClassification):null}
   <WorkflowFormLayout step={plan.workflow.steps.find(s=>s.kind==='form')!} errors={errors} controls={controls.filter(control=>(!hideClassification||control.kind!=='classificationPicker')&&workflowControlActive(plan.workflow,control,draft.slots,{[plan.workflow.outputs[0].id]:draft.classification}))} render={renderControl}/>
   <label className="block text-sm">{mode==='create'?'填写人':'编辑人'}<input aria-label="工作流编辑人" className="mt-1 w-full rounded border px-2 py-1" value={editor} onChange={event=>onEditorChange(event.target.value)}/></label>
-  <button type="button" className="rounded border px-3 py-1" onClick={onCancel}>{mode==='create'?'放弃此新建':'放弃要素编辑'}</button>
+  {mode==='edit'&&onSave?<FeatureEditActions onCancel={onCancel} onSave={onSave} saveDisabled={saveDisabled}/>:<button type="button" className="rounded border px-3 py-1" onClick={onCancel}>{mode==='create'?'放弃此新建':'放弃要素编辑'}</button>}
  </section>;
 }

@@ -168,7 +168,7 @@
 :root[data-panel-layout="compact"] .cm-workspace-panel-list > .contents + .contents > .cm-workspace-panel {
   border-block-start: 3px solid var(--cm-panel-divider);
 }
-.cm-workspace-panel .cm-panel-frame-content > :first-child {
+.cm-workspace-panel .cm-panel-frame-content > :first-child:not(.cm-bounded-panel) {
   width: 100% !important;
   height: auto !important;
   max-height: none !important;
@@ -178,16 +178,62 @@
 .cm-workspace-panel .cm-panel-frame-content > :first-child [data-draggable-title] {
   min-width: 0;
 }
-.cm-workspace-panel .cm-workspace-long-content {
+.cm-workspace-panel .cm-panel-frame-content > .cm-bounded-panel {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.cm-workspace-panel .cm-workspace-long-content:not(.cm-bounded-scroll) {
   height: auto !important;
   max-height: none !important;
   overflow: visible !important;
 }
-.cm-workspace-panel .cm-workspace-long-table {
-  height: auto !important;
-  max-height: none !important;
-  overflow-x: auto;
+/* Data output stays bounded; ordinary forms still grow with the sidebar. */
+.cm-bounded-scroll {
+  min-height: 0;
+  max-height: min(44vh, 32rem);
+  overflow: auto;
+  overscroll-behavior: contain;
 }
+.cm-bounded-scroll:focus-visible { outline: 2px solid var(--cm-panel-active, #2563eb); outline-offset: -2px; }
+.cm-workspace-export-text { height: 16rem; max-height: 48vh; }
+.cm-control-point-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 24px);
+  max-width: 100%;
+}
+.cm-control-point-panel > :first-child { flex-shrink: 0; }
+.cm-control-point-panel > :not(:first-child),
+.cm-control-point-panel [data-complete-array-editor] > :last-child {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.cm-control-point-panel [data-complete-array-editor] {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.cm-control-point-panel [data-complete-array-editor] > :first-child { flex-shrink: 0; }
+.cm-feature-edit-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.cm-feature-edit-actions > button { color: #fff !important; font-weight: 600; }
+.cm-feature-edit-cancel { background-color: #b91c1c !important; }
+.cm-feature-edit-save { background-color: #15803d !important; }
+.cm-feature-edit-cancel:hover:enabled { background-color: #991b1b !important; }
+.cm-feature-edit-save:hover:enabled { background-color: #166534 !important; }
+:root .cm-review-package[aria-current="true"] {
+  border-color: #2563eb !important;
+  background-color: #dbeafe !important;
+  box-shadow: inset 3px 0 #2563eb;
+}
+.cm-review-detail-indicator { background: #1d4ed8; color: #fff; }
+:root[data-color-scheme="dark"] .cm-review-package[aria-current="true"] {
+  border-color: #93c5fd !important;
+  background-color: #26364b !important;
+  box-shadow: inset 3px 0 #93c5fd;
+}
+:root[data-color-scheme="dark"] .cm-review-detail-indicator { background: #93c5fd; color: #172033; }
 .cm-workspace-panel .cm-workspace-output {
   margin: 0;
   white-space: pre-wrap;

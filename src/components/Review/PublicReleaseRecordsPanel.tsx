@@ -141,7 +141,7 @@ export default function PublicReleaseRecordsPanel({onClose,showNativeClose=false
     catch(e){if(token===generation.current)setError(textError(e,'下载失败。'));}
     finally{if(token===generation.current)setDownloadingKey(null);}
   }
-  return <AppCard data-draggable-proxy-close="true" className="cm-release-history flex h-[min(76vh,900px)] w-[min(94vw,680px)] flex-col overflow-hidden border border-slate-200 bg-white text-slate-900 shadow-xl">
+  return <AppCard data-draggable-proxy-close="true" className="cm-bounded-panel cm-release-history flex h-[min(76vh,900px)] w-[min(94vw,680px)] flex-col overflow-hidden border border-slate-200 bg-white text-slate-900 shadow-xl">
     <button type="button" data-draggable-close className="sr-only" aria-label="关闭" onClick={onClose}/>
     <header className="relative shrink-0 border-b border-slate-200 bg-slate-50 px-5 py-4 pr-28">
       <h2 data-draggable-title className="text-xl font-bold">发布记录</h2><p className="mt-1 text-xs text-slate-500">按发布时间检索，月份默认收起。</p>
@@ -155,7 +155,7 @@ export default function PublicReleaseRecordsPanel({onClose,showNativeClose=false
       <div className="grid grid-cols-2 gap-2">{(['dateFrom','dateTo','publisher','operator'] as const).map((key,index)=><label key={key} className="text-xs">{['发布时间起','发布时间止','发布用户名','包用户名'][index]}<input aria-label={['发布时间起','发布时间止','发布用户名','包用户名'][index]} type={index<2?'date':'text'} value={filter[key]} onChange={event=>setFilter(old=>({...old,[key]:event.target.value}))} className="mt-1 w-full min-w-0 rounded border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900"/></label>)}</div>
       <div className="mt-2 flex gap-2"><AppButton type="submit" className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white">搜索</AppButton><AppButton type="button" className="rounded border px-3 py-1.5 text-sm" onClick={()=>{const next={dateFrom:'',dateTo:'',publisher:'',operator:''};setFilter(next);setApplied(next);setOpened({});}}>重置</AppButton></div>
     </form>:null}
-    <div data-release-list className="min-h-0 flex-1 overflow-auto p-5">
+    <div data-release-list className="min-h-0 flex-1 overflow-auto overscroll-contain p-5" onWheel={event=>event.stopPropagation()}>
       {authorized===null?<p>正在核验登录状态…</p>:authorized===false?<div className="rounded border border-amber-200 bg-amber-50 p-4 text-sm"><p className="font-semibold">需要登录</p><p>发布记录与归档下载需要 Contributor 或更高权限。</p><AppButton className="mt-2 inline-flex items-center gap-2 underline" onClick={()=>void openriamapGithubReviewAuth.beginLogin().catch(e=>setError(e.message))}><LogIn className="h-4 w-4"/>登录</AppButton></div>:<>
         {coverage&&coverage!=='complete'?<p className="mb-3 rounded border border-amber-200 bg-amber-50 p-2 text-xs">历史月份索引尚未全部补齐；已知记录可以检索，未覆盖范围不代表没有发布。</p>:null}
         {loading?<p role="status">正在读取月份…</p>:!months.length&&!error?<p>当前条件下没有发布记录。</p>:null}

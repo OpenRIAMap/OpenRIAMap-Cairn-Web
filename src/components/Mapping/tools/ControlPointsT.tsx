@@ -1198,8 +1198,8 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
       </div>
 
       {toolPanelOpen && (
-        <DraggablePanel id="cpT-main-panel" inWorkspaceSidebar defaultPosition={{ x: 16, y: 320 }} zIndex={1840}>
-          <AppCard className="w-[360px] overflow-hidden border">
+        <DraggablePanel id="cpT-main-panel" constrainToMap constrainExpandedToViewport defaultPosition={{ x: 16, y: 320 }} zIndex={1840}>
+          <AppCard className="cm-control-point-panel w-[360px] overflow-hidden border">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h3 className="font-bold text-gray-800">控制点工具</h3>
               <AppButton
@@ -1322,8 +1322,8 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
       )}
 
       {editEnabled && editPanelOpen && (
-        <DraggablePanel id="cpT-edit-panel" inWorkspaceSidebar defaultPosition={{ x: 16, y: 470 }} zIndex={1850}>
-          <AppCard className="w-80 overflow-hidden border">
+        <DraggablePanel id="cpT-edit-panel" constrainToMap constrainExpandedToViewport defaultPosition={{ x: 16, y: 470 }} zIndex={1850}>
+          <AppCard className="cm-control-point-panel w-80 overflow-hidden border">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h3 className="font-bold text-gray-800">控制点修改</h3>
               <AppButton
@@ -1388,8 +1388,8 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
       )}
 
       {addEnabled && addPanelOpen && (
-        <DraggablePanel id="cpT-add-panel" inWorkspaceSidebar defaultPosition={{ x: 16, y: 470 }} zIndex={1850}>
-          <AppCard className="w-80 overflow-hidden border">
+        <DraggablePanel id="cpT-add-panel" constrainToMap constrainExpandedToViewport defaultPosition={{ x: 16, y: 470 }} zIndex={1850}>
+          <AppCard className="cm-control-point-panel w-80 overflow-hidden border">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h3 className="font-bold text-gray-800">控制点添加</h3>
               <AppButton
@@ -1452,8 +1452,8 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
       )}
 
       {deleteEnabled && deletePanelOpen && (
-        <DraggablePanel id="cpT-delete-panel" inWorkspaceSidebar defaultPosition={{ x: 16, y: 470 }} zIndex={1850}>
-          <AppCard className="w-80 overflow-hidden border">
+        <DraggablePanel id="cpT-delete-panel" constrainToMap constrainExpandedToViewport defaultPosition={{ x: 16, y: 470 }} zIndex={1850}>
+          <AppCard className="cm-control-point-panel w-80 overflow-hidden border">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h3 className="font-bold text-gray-800">控制点删除</h3>
               <AppButton onClick={() => tryClosePanelDiscard('delete')} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded" aria-label="关闭" title="关闭" type="button">
@@ -1475,8 +1475,8 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
       )}
 
       {arrayEditorOpen && (
-        <DraggablePanel id="cpT-array-editor-panel" inWorkspaceSidebar defaultPosition={{ x: 392, y: 320 }} zIndex={1860}>
-          <AppCard className="w-[420px] overflow-hidden border">
+        <DraggablePanel id="cpT-array-editor-panel" constrainToMap constrainExpandedToViewport defaultPosition={{ x: 392, y: 320 }} zIndex={1860}>
+          <AppCard className="cm-control-point-panel w-[420px] overflow-hidden border">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-gray-800">数组编辑</h3>
@@ -1513,7 +1513,7 @@ export default forwardRef<ControlPointsTHandle, ControlPointsTProps>(function Co
               <textarea
                 value={arrayText}
                 onChange={(e) => recordArrayTextChange(e.target.value)}
-                className="w-full h-56 px-3 py-2 border rounded text-sm font-mono"
+                className="cm-bounded-scroll w-full h-56 px-3 py-2 border rounded text-sm font-mono"
                 placeholder="请输入严格 JSON 数组，例如：[[1,-64,2],[3,-64,4]]"
               />
 
