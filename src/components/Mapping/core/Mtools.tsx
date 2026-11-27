@@ -1,9 +1,9 @@
-import { forwardRef, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { DynmapProjection } from '@/lib/DynmapProjection';
 import DraggablePanel from '@/components/DraggablePanel/DraggablePanel';
-import { WorkspaceSidebarContext } from '@/components/DraggablePanel/WorkspaceSidebarContext';
+
 import { Ruler, X } from 'lucide-react';
 import ToolIconButton from '@/components/Toolbar/ToolIconButton';
 import AppButton from '@/components/ui/AppButton';
@@ -95,7 +95,7 @@ function rotateXZ(x: number, z: number, rad: number) {
 }
 
 const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToolsModuleProps>((props, ref) => {
-  const inSidebar = Boolean(useContext(WorkspaceSidebarContext)?.enabled);
+
   const { mapReady, leafletMapRef, projectionRef, closeSignal, onBecameActive, launcherSlot, openSignal, onRequestOpen } = props;
 
   // 主按钮开关
@@ -941,10 +941,8 @@ const MeasurementToolsModule = forwardRef<MeasurementToolsHandle, MeasurementToo
               </AppButton>
             </div>
             <div className="p-3">
-              {inSidebar
-                ? <pre className="cm-workspace-output border rounded-lg p-2 text-xs">{resultsText || '暂无测量结果'}</pre>
-                : <textarea className="w-full border rounded-lg p-2 h-28 text-xs" readOnly value={resultsText}
-                    placeholder="这里仅显示：Layer n + 面积/距离" />}
+              <textarea aria-label="测量结果" className="cm-workspace-output cm-bounded-scroll w-full border rounded-lg p-2 h-28 text-xs" readOnly value={resultsText}
+                    placeholder="这里仅显示：Layer n + 面积/距离" onWheel={event=>event.stopPropagation()}/>
             </div>
           </AppCard>
         </DraggablePanel>

@@ -60,10 +60,10 @@ export default function ContributionAuditPanel({onClose,showNativeClose=false,co
     }catch(e){if(token===generation.current){setError((e as Error).message);setStatus('查询未完成，当前结果不可作为完整总额。');void refresh();}}
     finally{if(token===generation.current)setBusy(false);}
   }
-  return <AppCard data-draggable-proxy-close="true" className="cm-audit-panel flex max-h-[76vh] w-[min(94vw,760px)] flex-col overflow-hidden border border-slate-200 bg-white text-slate-900 shadow-xl">
+  return <AppCard data-draggable-proxy-close="true" className="cm-bounded-panel cm-audit-panel flex max-h-[76vh] w-[min(94vw,760px)] flex-col overflow-hidden border border-slate-200 bg-white text-slate-900 shadow-xl">
     <button type="button" data-draggable-close className="sr-only" aria-label="关闭" onClick={onClose}/>
     <div className="shrink-0 border-b border-slate-200 bg-slate-50 px-5 py-4 pr-24"><h2 data-draggable-title className="text-xl font-bold">审计</h2><p className="mt-1 text-xs text-slate-500">按 CreateTime／ModifityTime 查询行为日期；价格仅用于本次估算。</p>{showNativeClose?<AppButton onClick={onClose} title="关闭审计" className="absolute right-4 top-4 p-2"><X className="h-5 w-5"/></AppButton>:null}</div>
-    <div data-audit-scroll className="min-h-0 overflow-auto p-5">
+    <div data-audit-scroll className="min-h-0 overflow-auto overscroll-contain p-5" onWheel={event=>event.stopPropagation()}>
       {authorized===null?<p>正在核验登录状态…</p>:authorized===false?<div className="rounded border border-amber-200 bg-amber-50 p-4"><p>审计需要登录并具备 Contributor 或更高权限。</p><AppButton className="mt-2 inline-flex items-center gap-2 underline" onClick={()=>void openriamapGithubReviewAuth.beginLogin().catch(e=>setError(e.message))}><LogIn className="h-4 w-4"/>登录</AppButton></div>:<>
         <div className="grid grid-cols-2 gap-3"><label className="text-sm">行为日期起<input aria-label="行为日期起" type="date" value={dateFrom} className={input+' mt-1 w-full'} onChange={e=>changed(()=>setFrom(e.target.value))}/></label><label className="text-sm">行为日期止<input aria-label="行为日期止" type="date" value={dateTo} className={input+' mt-1 w-full'} onChange={e=>changed(()=>setTo(e.target.value))}/></label></div>
         <fieldset className="mt-4 rounded border border-slate-200 p-3"><legend className="px-1 text-sm font-semibold">范围条件</legend>
