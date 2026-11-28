@@ -85,6 +85,7 @@ try:
     checks.append('manual single/batch and curve output remain available and append in order within the selected gap')
 
     load('?empty=1');b.click('图形输入');b.wait('!!document.querySelector(".cm-shape-center")')
+    click_at({'x':1000,'y':800});assert points()==[],'shape preview must own map input despite the closed curve editor'
     assert points()==[]
     old_x=float(ev('document.querySelector('+json.dumps('input[aria-label="中心 X"]')+').value'))
     drag('.cm-shape-center',60,30)

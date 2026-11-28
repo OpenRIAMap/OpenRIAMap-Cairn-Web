@@ -150,7 +150,7 @@ export default forwardRef<ShapeInputHandle, Props>(function ShapeInputT(props, r
     update(next);
   };
   return <div className="flex-1 min-w-0">
-    <AppButton className="w-full border rounded px-2 py-1 text-sm" disabled={!props.enabled && !open} onClick={() => {
+    <AppButton type="button" className={`w-full px-2 py-1 rounded text-sm border ${open ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'} ${!props.enabled && !open ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!props.enabled && !open} onClick={() => {
       if (open) { close(); return; }
       const map = props.leafletMapRef.current, proj = props.projectionRef.current; if (!props.enabled || !map || !proj) return;
       const rect = map.getContainer().getBoundingClientRect(), right = sidebar?.mapRight ?? rect.right;
@@ -159,7 +159,7 @@ export default forwardRef<ShapeInputHandle, Props>(function ShapeInputT(props, r
       start.current = center; token.current = props.getInputToken(); update(newShape(model.kind, center, Number.isFinite(model.radius) && model.radius > 0 ? model.radius : 10));
       setCount(model.kind === 'polygon' ? 6 : ['circle', 'ellipse'].includes(model.kind) ? 32 : 4); setMessage('设置参数后点击放置，或直接拖动预览'); openRef.current = true; setOpen(true); props.onOpenChange(true);
     }}>图形输入</AppButton>
-    {open && <DraggablePanel id="shape-input" constrainToMap constrainExpandedToViewport defaultPosition={{ x: 24, y: 130 }} zIndex={1870}>
+    {open && <DraggablePanel id="shape-input" inWorkspaceSidebar constrainToMap constrainExpandedToViewport defaultPosition={{ x: 24, y: 130 }} zIndex={1870}>
       <AppCard className="cm-control-point-panel w-80 overflow-hidden border">
         <div className="flex items-center justify-between border-b p-3"><h3 data-draggable-title className="font-bold">图形输入</h3><AppButton aria-label="关闭" onClick={close}>×</AppButton></div>
         <div className="p-3 space-y-3">

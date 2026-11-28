@@ -125,6 +125,13 @@ def assert_fixed_geometry(expected):
 try:
  config=copy.deepcopy(BASE);flow=open_flow(config,'v3-bud_building','SEPOLYGON')
  save_config('polygon',config)
+ # Real host regression: the inactive curve tool reports false after shape
+ # opens; it must not release the shape owner's map-input lock.
+ empty=draft();click('图形输入');time.sleep(.4);draw([(120,0),(130,10)]);assert draft()==empty
+ press(panel_button('shape-input','放置'));draw([(0,0)]);assert draft()==empty
+ press(panel_button('shape-input','输入'));assert len(geometry()['parts'][0][0])==32
+ click('撤销');assert not geometry()['parts'][0][0]
+ checks.append('shape preview and placement block ordinary map writes in the real host; Input still commits once and one Undo restores the empty draft')
  draw([(0,0),(70,0),(70,70),(0,70)]);click('多部件和内洞设置');array([(0,0),(70,0),(70,70),(0,70)])
  click('内部空间');click('添加内部洞');draw([(10,10),(20,10),(20,20)]);array([(10,10),(20,10),(20,20),(10,20)])
  click('添加部件');draw([(20,-50),(70,-50),(70,-20)]);array([(20,-50),(70,-50),(70,-20),(20,-20)])

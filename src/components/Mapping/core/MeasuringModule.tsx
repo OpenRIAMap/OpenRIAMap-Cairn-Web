@@ -351,6 +351,9 @@ const [insertionPicking,setInsertionPickingState]=useState(false);
 const insertionPickingRef=useRef(false);
 const setInsertionPicking=(value:boolean)=>{insertionPickingRef.current=value;setInsertionPickingState(value);};
 const [shapeInputOpen,setShapeInputOpen]=useState(false);
+// Each coordinate tool owns its lock. A closed curve editor must not release
+// the shape editor's map-input lock through its own suppression callback.
+const shapeInputOpenRef=useRef(false);
 const shapeInputRef=useRef<ShapeInputHandle|null>(null);
 const drawingListeners=useRef(new Set<()=>void>());
 const [drawingTargetRevision,setDrawingTargetRevision]=useState(0);
@@ -1745,8 +1748,8 @@ useEffect(() => {
 
   const handleClick = (e: L.LeafletMouseEvent) => {
     if (!mapDraftInputActiveRef.current || writeBlocked()) return;
-    // 曲线输入面板开启时：主绘制/编辑区完全冻结
-    if (curveInputFrozenRef.current || insertionPickingRef.current) return;
+    // 坐标预览或插入选择器占用地图时，禁止主绘制加点
+    if (curveInputFrozenRef.current || shapeInputOpenRef.current || insertionPickingRef.current) return;
 
     // ControlPointsT can exist in desktop and compact shells concurrently.
     // The aggregate ref is updated synchronously by either shell.
@@ -1874,8 +1877,8 @@ const onMapDrawClick = (e: L.LeafletMouseEvent) => {
   // survives React transitions.  Idle map clicks must never mutate drafts.
   if (!mapDraftInputActiveRef.current) return;
   if (showMultipartPartLabelsRef.current) return;
-  // 曲线输入面板开启时：主绘制/编辑区完全冻结
-  if (curveInputFrozenRef.current || insertionPickingRef.current) return;
+  // 坐标预览或插入选择器占用地图时，禁止主绘制加点
+  if (curveInputFrozenRef.current || shapeInputOpenRef.current || insertionPickingRef.current) return;
 
   // Double protection for direct calls as well as Leaflet's stable listener.
   if (controlPointSessionBusyRef.current) return;
@@ -1907,7 +1910,7 @@ const onManualPointSubmit = (v: { x: number; y: number; z: number }, token?:stri
   if(writeBlocked())return false;
   if (showMultipartPartLabelsRef.current) return false;
   if (!measuringActive || !drawing || drawMode === 'none') return false;
-  if (curveInputFrozenRef.current || insertionPickingRef.current) return false;
+  if (curveInputFrozenRef.current || shapeInputOpenRef.current || insertionPickingRef.current) return false;
   if (controlPointSessionBusyRef.current) return false;
   if (drawClickSuppressedRef.current) return false;
 
@@ -2168,7 +2171,7 @@ useEffect(() => {
 
 
 const finishLayer = () => {
-  if(controlPointSessionBusyRef.current||curveInputFrozenRef.current||insertionPickingRef.current){setMultipartInputError('请先完成或关闭当前坐标工具，再保存图层。');return;}
+  if(controlPointSessionBusyRef.current||curveInputFrozenRef.current||shapeInputOpenRef.current||insertionPickingRef.current){setMultipartInputError('请先完成或关闭当前坐标工具，再保存图层。');return;}
   if (guardTempMountReadonly()) return;
   const map = leafletMapRef.current;
   const proj = projectionRef.current;
@@ -2748,7 +2751,7 @@ useEffect(() => {
 const restorePointSequence=(snapshot?:SequenceSnapshot)=>{const sequence=pointSequenceRef.current,active=sequence.active;if(snapshot)sequence.restore(snapshot);else sequence.sync(tempPointsRef.current);if(active&&!sequence.active)setMultipartInputError('插入起点已失效，已恢复末端追加。');const endpoint=sequence.active?sequence.points[sequence.index]:tempPointsRef.current[tempPointsRef.current.length-1];if(endpoint)updateLatestEndpointMarker(endpoint,drawColorRef.current);else draftEndpointRef.current?.clearLayers();};
 
 const handleUndo = () => {
-  if(writeBlocked()||showMultipartPartLabelsRef.current||controlPointSessionBusyRef.current||curveInputFrozenRef.current||insertionPickingRef.current)return;
+  if(writeBlocked()||showMultipartPartLabelsRef.current||controlPointSessionBusyRef.current||curveInputFrozenRef.current||shapeInputOpenRef.current||insertionPickingRef.current)return;
   const whole=completeHistory.current.undo[completeHistory.current.undo.length-1];
   if(whole&&sameDrawingValue(workflowBridge.getDrawingDraft?.(),whole.after)){
     writeInternally(()=>workflowBridge.restoreDrawingDraft?.(whole.before));restorePointSequence(whole.sequenceBefore);completeHistory.current.undo.pop();completeHistory.current.redo.push(whole);setHistoryRevision(v=>v+1);return;
@@ -2769,7 +2772,7 @@ const handleUndo = () => {
 };
 
 const handleRedo = () => {
-  if(writeBlocked()||showMultipartPartLabelsRef.current||controlPointSessionBusyRef.current||curveInputFrozenRef.current||insertionPickingRef.current)return;
+  if(writeBlocked()||showMultipartPartLabelsRef.current||controlPointSessionBusyRef.current||curveInputFrozenRef.current||shapeInputOpenRef.current||insertionPickingRef.current)return;
   const whole=completeHistory.current.redo[completeHistory.current.redo.length-1];
   if(whole&&sameDrawingValue(workflowBridge.getDrawingDraft?.(),whole.before)){
     writeInternally(()=>workflowBridge.restoreDrawingDraft?.(whole.after));restorePointSequence(whole.sequenceAfter);completeHistory.current.redo.pop();completeHistory.current.undo.push(whole);setHistoryRevision(v=>v+1);return;
@@ -3946,7 +3949,7 @@ const workflowBridge: WorkflowBridge = {
   },
   getDrawingGeometry:()=>drawModeRef.current==='none'?null:structuredClone(buildCurrentMultipartGeometry(drawModeRef.current,tempPointsRef.current)),
   prepareDrawingTransition:()=>{
-    if(manualPointInputOpen||curveInputFrozenRef.current||completeArrayOpenRef.current||fullFrozenRef.current)return false;
+    if(manualPointInputOpen||curveInputFrozenRef.current||shapeInputOpenRef.current||completeArrayOpenRef.current||fullFrozenRef.current)return false;
     return closeControlPointSessions();
   },
   getDrawingDraft:():WorkflowDrawingDraft|null=>drawModeRef.current==='none'?null:{
@@ -5007,7 +5010,7 @@ useEffect(() => {
   <ShapeInputT ref={shapeInputRef} enabled={measuringActive&&drawing&&['polyline','polygon'].includes(drawMode)&&!controlPointSessionBusy&&!curveInputOpen&&!manualPointInputOpen&&!showMultipartPartLabels&&!isTempMountReadonly&&!writeBlocked()}
     mapReady={mapReady} leafletMapRef={leafletMapRef} projectionRef={projectionRef} polygon={drawMode==='polygon'}
     defaultY={tempPoints.find(point=>point.y!==undefined)?.y??-64} getInputToken={getCoordinateInputToken}
-    onOpenChange={(open)=>{if(open)setInsertionPicking(false);setShapeInputOpen(open);setCurveInputFrozenImmediate(open);}}
+    onOpenChange={(open)=>{shapeInputOpenRef.current=open;if(open)setInsertionPicking(false);setShapeInputOpen(open);}}
     filterWorldPoint={(point)=>assistLineToolsRef.current?.transformWorldPoint?.(point)?.point??point}
     candidate={(points)=>pointSequenceRef.current.candidate(points,drawMode==='polygon').points}
     validate={(points,token)=>validateCoordinateInput(points,token)}

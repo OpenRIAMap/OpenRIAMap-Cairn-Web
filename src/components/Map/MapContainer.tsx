@@ -484,6 +484,17 @@ function MapContainer({ configRuntime, configLab = false }: { configRuntime?: Co
   const [measureToolsCloseSignal, setMeasureToolsCloseSignal] = useState(0);
   const [moduleMode, setModuleMode] = useState<CairnMapModuleMode>('runtime');
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceKind>('runtime');
+  useEffect(() => {
+    if (activeWorkspace !== 'mapping' && activeWorkspace !== 'review') return;
+    // Protect the whole active workspace, including empty or hidden panels.
+    // The browser supplies its native close/reload/leave confirmation text.
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [activeWorkspace]);
   const [sidebarTarget, setSidebarTarget] = useState<HTMLDivElement | null>(null);
   const [sidebarPanels, setSidebarPanels] = useState(0);
   const [sidebarWide, setSidebarWide] = useState(false);
