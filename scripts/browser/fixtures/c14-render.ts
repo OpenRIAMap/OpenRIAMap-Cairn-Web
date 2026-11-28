@@ -20,7 +20,15 @@ Object.assign(window,{runC14RenderChecks:async()=>{
   check(document.querySelectorAll('.ria-geometry-halo').length===4,'one halo per projected path');
   for(const path of cases){const original=path.getElement()!,halo=original.previousElementSibling!;check(halo.getAttribute('d')===original.getAttribute('d'),'holes/multipart share projected coordinates');check(halo.getAttribute('pointer-events')!=='auto'&&(halo as SVGElement).style.pointerEvents==='none','no duplicate interaction');check(halo.getAttribute('stroke-dasharray')===original.getAttribute('stroke-dasharray'),'dash preserved');}
   cases[0].setStyle({weight:10,dashArray:'3 9',dashOffset:'5'});map.setZoom(2);await frame();
-  check(cases[0].getElement()!.previousElementSibling!.getAttribute('stroke-width')==='11','half CSS pixel halo survives zoom');
+  const dashHalo=cases[0].getElement()!.previousElementSibling!;
+  const filterId=dashHalo.getAttribute('filter')?.match(/^url\(#(.+)\)$/)?.[1];
+  const dashFilter=filterId?document.getElementById(filterId):null;
+  check(dashHalo.getAttribute('stroke-width')==='10'&&dashFilter?.querySelector('feMorphology')?.getAttribute('radius')==='0.5','half CSS pixel silhouette dilation survives zoom');
+  check(dashFilter?.querySelector('feMorphology')?.getAttribute('operator')==='dilate'&&dashFilter.querySelector('feFlood')?.getAttribute('flood-color')==='#ffffff','dash endpoints and sides share the halo paint');
+  cases[0].setStyle({dashArray:undefined});await frame();
+  check(dashHalo.getAttribute('stroke-width')==='11'&&!dashHalo.hasAttribute('filter'),'solid stroke keeps half CSS pixel halo without a filter');
+  cases[0].setStyle({dashArray:'3 9'});await frame();
+  check(dashHalo.getAttribute('stroke-width')==='10'&&dashHalo.hasAttribute('filter'),'changing back to dashes restores silhouette dilation');
   check(cases[0].getElement()!.previousElementSibling!.getAttribute('d')===cases[0].getElement()!.getAttribute('d'),'zoom projection reused');
   bindGeometryHalo(cases[0],{widthPx:0,color:'#ffffff'});check(document.querySelectorAll('.ria-geometry-halo').length===3,'zero disables extra path');
   cases[1].remove();check(document.querySelectorAll('.ria-geometry-halo').length===2,'remove cleans halo');cases[1].addTo(map);check(document.querySelectorAll('.ria-geometry-halo').length===3,'readd restores single halo');
