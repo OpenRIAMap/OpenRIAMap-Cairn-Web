@@ -41,7 +41,7 @@ Object.assign(window,{runC15RenderChecks:async(performanceChecks=true)=>{
  for(const path of cases){const original=path.getElement()!,ring=original.previousElementSibling!;check(ring.getAttribute('d')===original.getAttribute('d'),'projected geometry reused');check(ring.getAttribute('stroke-dasharray')===original.getAttribute('stroke-dasharray'),'dashes preserved');check((ring as SVGElement).style.pointerEvents==='none','Halo noninteractive');}
  check(cases[1].getElement()!.getAttribute('fill-opacity')==='0','opaque fill split so inner halo is visible');
  check(document.querySelectorAll('.ria-halo-original-fill').length===1,'one original fill, no opacity double paint');
- cases[0].setStyle({weight:10,dashArray:'3 9',dashOffset:'5'});map.setZoom(2);await frame();
+ cases[0].setStyle({weight:10,dashArray:'3 9',dashOffset:'5',lineCap:'butt'});map.setZoom(2);await frame();
  const dashHalo=cases[0].getElement()!.previousElementSibling!,dashFilterId=dashHalo.getAttribute('filter')?.match(/^url\(#(.+)\)$/)?.[1];
  check(dashHalo.getAttribute('stroke-width')==='10'&&Boolean(dashFilterId)&&document.getElementById(dashFilterId!)?.querySelector('feMorphology')?.getAttribute('radius')==='0.5','fractional silhouette halo after update');
  const sharp=cases[0].getElement()!;sharp.setAttribute('stroke-linejoin','miter');sharp.setAttribute('stroke-miterlimit','5');await frame();

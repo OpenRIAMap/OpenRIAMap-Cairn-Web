@@ -33,7 +33,7 @@ export function bindGeometryHalo(path:L.Path,halo?:ResolvedHalo):void{
     if(inner){fill=original.cloneNode(false) as SVGPathElement;nonInteractive(fill);fill.removeAttribute('id');fill.classList.add('ria-halo-original-fill');parent.insertBefore(fill,original);splitFill=true;}
     const ensureDilation=()=>{
       if(dilation)return;
-      if(!defs){defs=document.createElementNS(ns,'defs');parent.insertBefore(defs,original);}
+      if(!defs){defs=document.createElementNS(ns,'defs');parent.insertBefore(defs,node?.parentNode===parent?node:original);}
       dilation=document.createElementNS(ns,'filter');dilation.id='ria-halo-dash-'+(++sequence);dilation.setAttribute('filterUnits','userSpaceOnUse');
       morphology=document.createElementNS(ns,'feMorphology');morphology.setAttribute('in','SourceAlpha');morphology.setAttribute('operator','dilate');morphology.setAttribute('result','expanded');
       flood=document.createElementNS(ns,'feFlood');flood.setAttribute('result','paint');
@@ -44,11 +44,14 @@ export function bindGeometryHalo(path:L.Path,halo?:ResolvedHalo):void{
       if(!node)return;copyGeometry(original,node);attr(node,'fill','none');attr(node,'stroke',halo.color);attr(node,'stroke-opacity','1');
       const width=original.getAttribute('stroke')==='none'?0:Number(original.getAttribute('stroke-width')??path.options.weight??0);
       const dashed=Boolean(original.getAttribute('stroke-dasharray')?.match(/[1-9]/));
-      if(dashed){ensureDilation();attr(morphology!,'radius',String(halo.widthPx));attr(flood!,'flood-color',halo.color);attr(node,'filter','url(#'+dilation!.id+')');}
+      // Round/square caps already expand along the dash when stroke width grows.
+      // Only butt caps need silhouette dilation; avoid a filter per ordinary line.
+      const silhouette=dashed&&(original.getAttribute('stroke-linecap')??'butt')==='butt';
+      if(silhouette){ensureDilation();attr(morphology!,'radius',String(halo.widthPx));attr(flood!,'flood-color',halo.color);attr(node,'filter','url(#'+dilation!.id+')');}
       else node.removeAttribute('filter');
       // Expand the visible dash silhouette, including butt-cap endpoints.
       // A wider stroke with the same dash lengths only creates side strips.
-      attr(node,'stroke-width',String(dashed?width:width+2*halo.widthPx));
+      attr(node,'stroke-width',String(silhouette?width:width+2*halo.widthPx));
       if(mask&&white&&cut){
         copyGeometry(original,cut);attr(cut,'stroke','black');attr(cut,'stroke-opacity','1');attr(cut,'stroke-width',String(width));attr(cut,'fill',polygon&&!inner?'black':'none');attr(cut,'fill-opacity','1');
         const bounds=(path as L.Path&{_pxBounds?:L.Bounds})._pxBounds;
