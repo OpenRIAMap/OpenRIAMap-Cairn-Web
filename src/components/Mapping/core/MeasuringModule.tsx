@@ -107,6 +107,9 @@ import GridSnapModeSwitch, {
 } from '@/components/Mapping/tools/GridSnapModeSwitch';
 
 import ManualPointInput from '@/components/Mapping/tools/ManualPointInput';
+import PointInsertionTool from '@/components/Mapping/tools/PointInsertionTool';
+import ShapeInputT, { type ShapeInputHandle } from '@/components/Mapping/tools/ShapeInputT';
+import { PointSequence, equalPoints, type SequenceSnapshot } from '@/components/Mapping/tools/pointSequence';
 
 import CurveInputT, { type CurveInputTHandle } from '@/components/Mapping/tools/CurveInputT';
 
@@ -301,7 +304,7 @@ const toolWriteBlocked=()=>writeBlocked()||(!internalWriteRef.current&&renderedD
 const writeInternally=<T,>(action:()=>T):T=>{const previous=internalWriteRef.current;internalWriteRef.current=true;try{return action();}finally{internalWriteRef.current=previous;}};
 const [completeArray,setCompleteArray]=useState<{geometry:MultipartGeometry;id:number;world:string;allowParts:boolean}|null>(null);
 const completeArrayEpoch=useRef(0);
-const completeHistory=useRef<{undo:Array<{before:WorkflowDrawingDraft;after:WorkflowDrawingDraft}>;redo:Array<{before:WorkflowDrawingDraft;after:WorkflowDrawingDraft}>}>({undo:[],redo:[]});
+const completeHistory=useRef<{undo:Array<{before:WorkflowDrawingDraft;after:WorkflowDrawingDraft;sequenceBefore?:SequenceSnapshot;sequenceAfter?:SequenceSnapshot}>;redo:Array<{before:WorkflowDrawingDraft;after:WorkflowDrawingDraft;sequenceBefore?:SequenceSnapshot;sequenceAfter?:SequenceSnapshot}>}>({undo:[],redo:[]});
 const [historyRevision,setHistoryRevision]=useState(0);
 const [drawMode, setDrawMode] = useState<'none'|'point'|'polyline'|'polygon'>('none');
 const drawModeRef = useRef<'none'|'point'|'polyline'|'polygon'>('none');
@@ -342,12 +345,23 @@ useEffect(() => { if (configRuntime && !workflowRunning && !availableQuickWorkfl
 // 说明：y 为可选（仅在部分 JSON 子类型需要输出 [x,y,z] 时使用；地图渲染仍使用固定 y=64）
 const [tempPoints, setTempPointState] = useState<Array<{ x: number; z: number; y?: number }>>([]);
 const tempPointsRef=useRef(tempPoints);
+const pointSequenceRef=useRef(new PointSequence());
+const [insertionOpen,setInsertionOpen]=useState(false);
+const [insertionPicking,setInsertionPickingState]=useState(false);
+const insertionPickingRef=useRef(false);
+const setInsertionPicking=(value:boolean)=>{insertionPickingRef.current=value;setInsertionPickingState(value);};
+const [shapeInputOpen,setShapeInputOpen]=useState(false);
+// Each coordinate tool owns its lock. A closed curve editor must not release
+// the shape editor's map-input lock through its own suppression callback.
+const shapeInputOpenRef=useRef(false);
+const shapeInputRef=useRef<ShapeInputHandle|null>(null);
 const drawingListeners=useRef(new Set<()=>void>());
 const [drawingTargetRevision,setDrawingTargetRevision]=useState(0);
 const setTempPoints=useCallback((value:typeof tempPoints|((previous:typeof tempPoints)=>typeof tempPoints))=>{
   if(writeBlocked())return;
   const next=typeof value==='function'?value(tempPointsRef.current):value;
   if(!internalWriteRef.current)completeHistory.current.redo=[];
+  if(!internalWriteRef.current){const active=pointSequenceRef.current.active;pointSequenceRef.current.sync(next);if(active&&!pointSequenceRef.current.active)setMultipartInputError('插入起点已失效，已恢复末端追加。');}
   tempPointsRef.current=next;setTempPointState(next);
 },[]);
 useEffect(()=>{for(const listener of drawingListeners.current)listener();},[tempPoints,drawingTargetRevision]);
@@ -425,7 +439,7 @@ useEffect(() => { editSelectedInnerSpaceRef.current = editSelectedInnerSpace; },
 useEffect(() => { activeInnerSpaceRef.current = activeInnerSpace; }, [activeInnerSpace]);
 useEffect(() => { showMultipartPartLabelsRef.current = showMultipartPartLabels; }, [showMultipartPartLabels]);
 
-const multipartStructureLocked = showMultipartPartLabels || controlPointSessionBusy || manualPointInputOpen || curveInputOpen || completeArray!==null || fullFrozenRef.current;
+const multipartStructureLocked = showMultipartPartLabels || controlPointSessionBusy || insertionPicking || pointSequenceRef.current.active || shapeInputOpen || manualPointInputOpen || curveInputOpen || completeArray!==null || fullFrozenRef.current;
 
 
 
@@ -671,6 +685,8 @@ const toggleMultipartPartLabels = () => {
   }
   if (!closeControlPointSessions()) return;
   curveInputTRef.current?.requestCloseAndClear?.();
+  shapeInputRef.current?.requestCloseAndClear();
+  pointSequenceRef.current.stop();setInsertionPicking(false);setInsertionOpen(false);
   persistActiveEditorCoords(tempPoints);
   setMultipartInputError('');
   showMultipartPartLabelsRef.current=true;
@@ -1414,6 +1430,8 @@ const clearCurrentWorkspace = () => {
 
   // 退出测绘：强制关闭并清空“曲线输入”临时容器（避免残留与抑制状态遗留）
   curveInputTRef.current?.requestCloseAndClear?.();
+  shapeInputRef.current?.requestCloseAndClear();
+  pointSequenceRef.current.stop();setInsertionPicking(false);setInsertionOpen(false);
 
   // 关闭测绘与面板
   setMeasuringActive(false);
@@ -1538,6 +1556,8 @@ const clearTemporaryForVariantSwitch = () => {
 
   // 曲线输入也属于临时容器
   curveInputTRef.current?.requestCloseAndClear?.();
+  shapeInputRef.current?.requestCloseAndClear();
+  pointSequenceRef.current.stop();setInsertionPicking(false);setInsertionOpen(false);
 
   // 编辑/绘制态复位
   setTempPoints([]);
@@ -1728,8 +1748,8 @@ useEffect(() => {
 
   const handleClick = (e: L.LeafletMouseEvent) => {
     if (!mapDraftInputActiveRef.current || writeBlocked()) return;
-    // 曲线输入面板开启时：主绘制/编辑区完全冻结
-    if (curveInputFrozenRef.current) return;
+    // 坐标预览或插入选择器占用地图时，禁止主绘制加点
+    if (curveInputFrozenRef.current || shapeInputOpenRef.current || insertionPickingRef.current) return;
 
     // ControlPointsT can exist in desktop and compact shells concurrently.
     // The aggregate ref is updated synchronously by either shell.
@@ -1798,13 +1818,67 @@ const updateLatestEndpointMarker = (p: { x: number; z: number }, color: string) 
 
 
 
+const validateCompletedCoordinates = (coords: WorldPoint[]) => drawModeRef.current==='none'?'当前没有可写几何':validateActiveMultipartCoords(coords)??validateMultipartGeometry(buildCurrentMultipartGeometry(drawModeRef.current,coords));
+
+const getManualInputToken = () => JSON.stringify([coordinateContextKey,pointSequenceRef.current.anchor]);
+
+const getCoordinateInputToken = () => JSON.stringify([drawingEpochRef.current, drawModeRef.current, currentWorldId, editingLayerId, activeMultipartPartRef.current, editSelectedInnerSpaceRef.current, activeInnerSpaceRef.current, pointSequenceRef.current.ids, pointSequenceRef.current.anchor, pointSequenceRef.current.cursor]);
+
+const validateCoordinateInput = (points: WorldPoint[], token?: string): string | undefined => {
+  if (writeBlocked() || isTempMountReadonly || !mapDraftInputActiveRef.current || showMultipartPartLabelsRef.current || controlPointSessionBusyRef.current) return '当前草稿不可写，请先结束其他控制点事务。';
+  if (token !== undefined && token !== getCoordinateInputToken()) return '输入位置或草稿已变化，请关闭后重新打开此输入工具；当前参数仍保留。';
+  if (!points.length || points.some(point => !Number.isFinite(point.x) || !Number.isFinite(point.z) || (point.y !== undefined && !Number.isFinite(point.y)))) return '输入序列包含无效坐标。';
+  const candidate = drawModeRef.current === 'point' ? points.slice(0, 1) : pointSequenceRef.current.candidate(points, drawModeRef.current === 'polygon').points;
+  const error = validateActiveMultipartCoords(candidate); if (error) return error;
+  // A generated outline is a completed shape, unlike the first clicks of an
+  // unfinished draft. Validate its entire combination, including retained holes.
+  if (token !== undefined) return validateCompletedCoordinates(candidate);
+};
+
+const commitCoordinatePoints = (points: WorldPoint[], grouped = false, token?: string): boolean => {
+  const error = validateCoordinateInput(points, token);
+  if (error) { setMultipartInputError(error); return false; }
+  const sequence = pointSequenceRef.current;
+  const batches = grouped || drawModeRef.current === 'point' ? [points] : points.map(point => [point]);
+  for (const batch of batches) {
+    const before = workflowBridge.getDrawingDraft?.(); if (!before) return false;
+    const sequenceBefore = sequence.snapshot();
+    let next: WorldPoint[];
+    if (drawModeRef.current === 'point') { next = batch.slice(0, 1); sequence.sync(next); }
+    else next = sequence.append(batch, drawModeRef.current === 'polygon');
+    if (multipartEnabledRef.current) persistActiveEditorCoords(next);
+    writeInternally(() => setTempPoints(next));
+    const after = workflowBridge.getDrawingDraft?.(); if (!after) return false;
+    completeHistory.current.undo.push({ before, after, sequenceBefore, sequenceAfter: sequence.snapshot() });
+  }
+  completeHistory.current.redo = []; setRedoStack([]); setHistoryRevision(value => value + 1); setMultipartInputError('');
+  drawDraftGeometry(tempPointsRef.current, drawModeRef.current, drawColorRef.current);
+  const last = points[points.length - 1]; if (last) updateLatestEndpointMarker(last, drawColorRef.current);
+  return true;
+};
+
+const commitWholeCoordinates = (coords: WorldPoint[]): boolean => {
+  if (writeBlocked() || isTempMountReadonly || !acceptActiveMultipartCoords(coords)) return false;
+  const error = validateCompletedCoordinates(coords);
+  if (error) { setMultipartInputError(error); return false; }
+  if(equalPoints(tempPointsRef.current,coords))return true;
+  const before = workflowBridge.getDrawingDraft?.(); if (!before) return false;
+  const sequenceBefore = pointSequenceRef.current.snapshot();
+  if (multipartEnabledRef.current) persistActiveEditorCoords(coords);
+  setTempPoints(coords);
+  const after = workflowBridge.getDrawingDraft?.();
+  if (after) completeHistory.current.undo.push({ before, after, sequenceBefore, sequenceAfter: pointSequenceRef.current.snapshot() });
+  completeHistory.current.redo = []; setRedoStack([]); setHistoryRevision(value => value + 1);
+  drawDraftGeometry(coords, drawModeRef.current, drawColorRef.current); draftEndpointRef.current?.clearLayers(); return true;
+};
+
 const onMapDrawClick = (e: L.LeafletMouseEvent) => {
   // This remains the final guard for direct calls and for a listener that
   // survives React transitions.  Idle map clicks must never mutate drafts.
   if (!mapDraftInputActiveRef.current) return;
   if (showMultipartPartLabelsRef.current) return;
-  // 曲线输入面板开启时：主绘制/编辑区完全冻结
-  if (curveInputFrozenRef.current) return;
+  // 坐标预览或插入选择器占用地图时，禁止主绘制加点
+  if (curveInputFrozenRef.current || shapeInputOpenRef.current || insertionPickingRef.current) return;
 
   // Double protection for direct calls as well as Leaflet's stable listener.
   if (controlPointSessionBusyRef.current) return;
@@ -1826,49 +1900,23 @@ const onMapDrawClick = (e: L.LeafletMouseEvent) => {
   // ② 网格化（整数 / 0.5 / 强制中心）：在“辅助线修正”之后立刻对点击坐标做修正
   newPoint = snapWorldPointByMode(newPoint);
 
-  setTempPoints((prev) => {
-    // Point multipart components are individual coordinates, not a nested
-    // path. Re-clicking replaces the selected point rather than creating an
-    // invisible second coordinate in the same component.
-    const updated = drawMode === 'point' ? [newPoint] : [...prev, newPoint];
-    if (!acceptActiveMultipartCoords(updated)) return prev;
-    // The selected component/ring is the canonical draft before Leaflet draws
-    // the persistent reference geometry. This is what prevents redraws from
-    // appearing only after an unrelated Undo/Redo state change.
-    if (multipartEnabledRef.current) persistActiveEditorCoords(updated);
-    setRedoStack([]);
-    drawDraftGeometry(updated, drawMode, drawColorRef.current);
-    updateLatestEndpointMarker(newPoint, drawColorRef.current);
-    return updated;
-  });
+  commitCoordinatePoints([newPoint]);
 };
 
 onMapDrawClickRef.current = onMapDrawClick;
 
-const onManualPointSubmit = (v: { x: number; y: number; z: number }) => {
-  if(writeBlocked())return;
-  if (showMultipartPartLabelsRef.current) return;
-  if (!measuringActive || !drawing || drawMode === 'none') return;
-  if (curveInputFrozenRef.current) return;
-  if (controlPointSessionBusyRef.current) return;
-  if (drawClickSuppressedRef.current) return;
+const onManualPointSubmit = (v: { x: number; y: number; z: number }, token?:string) => {
+  if(token!==undefined&&token!==getManualInputToken()){setMultipartInputError('输入位置或草稿已变化，请关闭后重新打开手动输入。');return false;}
+  if(writeBlocked())return false;
+  if (showMultipartPartLabelsRef.current) return false;
+  if (!measuringActive || !drawing || drawMode === 'none') return false;
+  if (curveInputFrozenRef.current || shapeInputOpenRef.current || insertionPickingRef.current) return false;
+  if (controlPointSessionBusyRef.current) return false;
+  if (drawClickSuppressedRef.current) return false;
 
-  // 点要素：若手动输入包含 y，则写入 tempPoints[0].y，并同步写入 featureInfo.elevation（兼容旧规范）。
-  if (drawMode === 'point') {
-    setFeatureInfo((prev: any) => ({ ...(prev ?? {}), elevation: v.y }));
-  }
-
-  const newPoint = ({ x: v.x, z: v.z, y: v.y } as { x: number; z: number; y: number });
-
-  setTempPoints((prev) => {
-    const updated = drawMode === 'point' ? [newPoint] : [...prev, newPoint];
-    if (!acceptActiveMultipartCoords(updated)) return prev;
-    if (multipartEnabledRef.current) persistActiveEditorCoords(updated);
-    setRedoStack([]);
-    drawDraftGeometry(updated, drawMode, drawColorRef.current);
-    updateLatestEndpointMarker({ x: v.x, z: v.z }, drawColorRef.current);
-    return updated;
-  });
+  const success=commitCoordinatePoints([{x:v.x,z:v.z,y:v.y}]);
+  if(success&&drawMode==='point')setFeatureInfo((prev:any)=>({...prev,elevation:v.y}));
+  return success;
 };
 
 
@@ -2031,7 +2079,7 @@ useEffect(() => {
 
   // 仅限测绘栏绘制区（draft），且开关开启
   if (!measuringActive) return;
-  if (!showDraftControlPoints) return;
+  if (!showDraftControlPoints && !insertionOpen && !pointSequenceRef.current.active) return;
   if (drawMode === 'none') return;
   if (!Array.isArray(tempPoints) || tempPoints.length === 0) return;
 
@@ -2085,6 +2133,7 @@ useEffect(() => {
   mapReady,
   measuringActive,
   showDraftControlPoints,
+  insertionOpen, insertionPicking, historyRevision,
   showDraftControlPointCoords,
   tempPoints,
   drawMode,
@@ -2122,6 +2171,7 @@ useEffect(() => {
 
 
 const finishLayer = () => {
+  if(controlPointSessionBusyRef.current||curveInputFrozenRef.current||shapeInputOpenRef.current||insertionPickingRef.current){setMultipartInputError('请先完成或关闭当前坐标工具，再保存图层。');return;}
   if (guardTempMountReadonly()) return;
   const map = leafletMapRef.current;
   const proj = projectionRef.current;
@@ -2698,11 +2748,13 @@ useEffect(() => {
 ]);
 
  
+const restorePointSequence=(snapshot?:SequenceSnapshot)=>{const sequence=pointSequenceRef.current,active=sequence.active;if(snapshot)sequence.restore(snapshot);else sequence.sync(tempPointsRef.current);if(active&&!sequence.active)setMultipartInputError('插入起点已失效，已恢复末端追加。');const endpoint=sequence.active?sequence.points[sequence.index]:tempPointsRef.current[tempPointsRef.current.length-1];if(endpoint)updateLatestEndpointMarker(endpoint,drawColorRef.current);else draftEndpointRef.current?.clearLayers();};
+
 const handleUndo = () => {
-  if(writeBlocked()||showMultipartPartLabelsRef.current||controlPointSessionBusyRef.current)return;
+  if(writeBlocked()||showMultipartPartLabelsRef.current||controlPointSessionBusyRef.current||curveInputFrozenRef.current||shapeInputOpenRef.current||insertionPickingRef.current)return;
   const whole=completeHistory.current.undo[completeHistory.current.undo.length-1];
   if(whole&&sameDrawingValue(workflowBridge.getDrawingDraft?.(),whole.after)){
-    writeInternally(()=>workflowBridge.restoreDrawingDraft?.(whole.before));completeHistory.current.undo.pop();completeHistory.current.redo.push(whole);setHistoryRevision(v=>v+1);return;
+    writeInternally(()=>workflowBridge.restoreDrawingDraft?.(whole.before));restorePointSequence(whole.sequenceBefore);completeHistory.current.undo.pop();completeHistory.current.redo.push(whole);setHistoryRevision(v=>v+1);return;
   }
   if(!tempPoints.length)return;
 
@@ -2720,10 +2772,10 @@ const handleUndo = () => {
 };
 
 const handleRedo = () => {
-  if(writeBlocked()||showMultipartPartLabelsRef.current||controlPointSessionBusyRef.current)return;
+  if(writeBlocked()||showMultipartPartLabelsRef.current||controlPointSessionBusyRef.current||curveInputFrozenRef.current||shapeInputOpenRef.current||insertionPickingRef.current)return;
   const whole=completeHistory.current.redo[completeHistory.current.redo.length-1];
   if(whole&&sameDrawingValue(workflowBridge.getDrawingDraft?.(),whole.before)){
-    writeInternally(()=>workflowBridge.restoreDrawingDraft?.(whole.after));completeHistory.current.redo.pop();completeHistory.current.undo.push(whole);setHistoryRevision(v=>v+1);return;
+    writeInternally(()=>workflowBridge.restoreDrawingDraft?.(whole.after));restorePointSequence(whole.sequenceAfter);completeHistory.current.redo.pop();completeHistory.current.undo.push(whole);setHistoryRevision(v=>v+1);return;
   }
   if(!redoStack.length)return;
 
@@ -2745,7 +2797,7 @@ useEffect(() => {
   const onKeyDown = (event: KeyboardEvent) => {
     if (!measuringActive || !drawing || drawMode === 'none' || writeBlocked()) return;
     if (showMultipartPartLabelsRef.current) return;
-    if (manualPointInputOpen || curveInputOpen || controlPointSessionBusy) return;
+    if (manualPointInputOpen || curveInputOpen || shapeInputOpen || insertionPicking || controlPointSessionBusy) return;
     const target = event.target as HTMLElement | null;
     const tag = target?.tagName?.toLowerCase();
     if (tag === 'input' || tag === 'textarea' || tag === 'select' || target?.isContentEditable) return;
@@ -2766,7 +2818,7 @@ useEffect(() => {
   };
   window.addEventListener('keydown', onKeyDown);
   return () => window.removeEventListener('keydown', onKeyDown);
-}, [measuringActive, drawing, drawMode, manualPointInputOpen, curveInputOpen, controlPointSessionBusy, tempPoints, redoStack, historyRevision]);
+}, [measuringActive, drawing, drawMode, manualPointInputOpen, curveInputOpen, shapeInputOpen, insertionPicking, controlPointSessionBusy, tempPoints, redoStack, historyRevision]);
 
  
  
@@ -3538,7 +3590,7 @@ const unlockFullCategory=()=>{
  if(writeBlocked()||editingLayerId!==null||fullSelectionState!=='loaded')return;
  try {
   if(specialDraftMode!=='none')throw Error('请先结束或放弃当前专用合并会话。');
-  if(manualPointInputOpen||curveInputOpen||controlPointSessionBusy||showMultipartPartLabels)throw Error('请先结束坐标工具并关闭部件编号显示，再解锁分类。');
+  if(manualPointInputOpen||curveInputOpen||shapeInputOpen||insertionPicking||pointSequenceRef.current.active||controlPointSessionBusy||showMultipartPartLabels)throw Error('请先结束坐标工具并关闭部件编号显示，再解锁分类。');
   if(activeEditWorld!==normalizeV3WorldId(currentWorldId))throw Error('请返回本次新建所属世界。');
   const form=currentCreateForm(),config=nativeEdit?.config??fullExternalCreate!.config,geometry=workflowBridge.getDrawingDraft?.();if(!geometry)throw Error('缺少当前绘图草稿。');
   projectCreateDraft(config,fullCategory,form);
@@ -3566,7 +3618,7 @@ const restoreFullCategory=()=>{
 const sameDrawingValue=(a:WorkflowDrawingDraft|null|undefined,b:WorkflowDrawingDraft)=>!!a&&JSON.stringify(a.geometry)===JSON.stringify(b.geometry);
 const openCompleteArray=()=>{
  if(writeBlocked()||showMultipartPartLabelsRef.current||isTempMountReadonly||activeEditWorld&&activeEditWorld!==normalizeV3WorldId(currentWorldId))return;
- if(manualPointInputOpen||curveInputOpen||controlPointSessionBusy){setMultipartInputError('请先完成当前坐标工具，再打开完整数组。');return;}
+ if(manualPointInputOpen||curveInputOpen||shapeInputOpen||insertionPicking||pointSequenceRef.current.active||controlPointSessionBusy){setMultipartInputError('请先完成当前坐标工具，再打开完整数组。');return;}
  const draft=workflowBridge.getDrawingDraft?.();if(!draft)return;
  setMeasureDropdownOpen(false);completeArrayOpenRef.current=true;const id=++completeArrayEpoch.current;
  setCompleteArray({geometry:structuredClone(draft.geometry),id,world:normalizeV3WorldId(currentWorldId),allowParts:partsPermission()});
@@ -3629,7 +3681,7 @@ const renderFullForm=()=>{
     {editingLayerId===null&&drawMode==='polygon'&&(roles.has('platformFootprint')||roles.has('stationBuilding'))?<AppButton type="button" onClick={()=>requestExitSpecialDraftIfNeeded(()=>setSpecialDraftMode(specialDraftMode==='merge-polygon-outline-building'?'none':'merge-polygon-outline-building'))}>多面合一</AppButton>:null}
     {drawMode==='polyline'&&roles.has('railLine')?<RailwayDirectionReverseButton enabled={tempPoints.length>=2&&!drawClickSuppressed&&!showMultipartPartLabels} onReverse={()=>{if(showMultipartPartLabelsRef.current)return;const reversed=[...tempPoints].reverse();if(multipartEnabledRef.current)persistActiveEditorCoords(reversed);setTempPoints(reversed);drawDraftGeometry(reversed,'polyline',drawColor);setNativeEdit(current=>current?{...current,draft:reverseWorkflowEditEndpoints(current.plan,current.draft)}:current);}}/>:null}</div>
    </div>
-   {specialDraftMode==='merge-point-platform-station'?<MergePointPlatformStation {...mergeProps} draft={mergePointPSDraft} onChange={setMergePointPSDraft}/>:specialDraftMode==='merge-polygon-outline-building'?<MergePolygonOutlineBuilding {...mergeProps} draft={mergePolygonOBDraft} onChange={setMergePolygonOBDraft}/>:externalEdit?<fieldset disabled={externalEditWorldMismatch}><ExternalFeatureEditHost onClassificationChange={selectFullCategory} config={externalEdit.config} workflow={externalEdit.workflow} session={externalEdit.session} bridge={workflowBridge} context={{initialRecord:externalEdit.session.original,featureIdentity:{layerId:editingLayerId!,originalId:String(externalEdit.session.original.ID)},activeWorld:externalEdit.world,originalGeometry:externalEdit.session.originalGeometry,currentGeometry:multipartDraftRef.current??undefined,editor:editorIdInput,onEditorChange:(value:string)=>{if(!writeBlocked())setEditorIdInput(value);},onUpdate:finishLayer,onCancel:clearTemporaryForVariantSwitch,saveDisabled:isTempMountReadonly||externalEditWorldMismatch||writeBlocked()||showMultipartPartLabels||controlPointSessionBusy}} onDraftChange={session=>!toolWriteBlocked()&&setExternalEdit(current=>current?{...current,session}:current)}/></fieldset>:nativeEdit?<fieldset disabled={nativeEditWorldMismatch}>{nativeEditWorldMismatch?<p role="alert">请返回 {nativeEdit.world} 后继续。</p>:null}<NativeWorkflowEditPanel config={nativeEdit.config} plan={nativeEdit.plan} draft={nativeEdit.draft} records={nativeEditSearchRecords} world={nativeEdit.world} editor={editorIdInput} onEditorChange={value=>{if(!writeBlocked())setEditorIdInput(value);}} onCancel={clearTemporaryForVariantSwitch} onSave={nativeEdit.original?finishLayer:undefined} saveDisabled={isTempMountReadonly||nativeEditWorldMismatch||writeBlocked()||showMultipartPartLabels||controlPointSessionBusy} onChange={draft=>!toolWriteBlocked()&&setNativeEdit(current=>current?{...current,draft}:current)} mode={nativeEdit.original?'edit':'create'} hideClassification={!nativeEdit.original} onClassificationChange={selectFullCategory}/></fieldset>:fullExternalCreate?<fieldset disabled={fullExternalWorldMismatch}>{fullExternalWorldMismatch?<p role="alert">请返回 {fullExternalCreate.world} 后继续此新建。</p>:null}<WorkflowStyleEditPanel view={fullExternalCreate.view} values={fullExternalCreate.values} unparsedEntries={fullExternalCreate.unparsed} bridge={{...workflowBridge,getCaptureContext:()=>({config:fullExternalCreate.config,workflow:fullExternalCreate.workflow})}} idFirst classificationContent={<p className="text-xs">分类由上方四级选择树指定；本次保存为新要素。</p>} onChangeValue={(key,value)=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,values:{...current.values,[key]:value}}:current)} onChangeUnparsedEntries={unparsed=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,unparsed}:current)} editorId={editorIdInput} onChangeEditorId={value=>{if(!writeBlocked())setEditorIdInput(value);}}/></fieldset>:<p className="text-xs text-slate-500">未分类几何草稿。选择分类后使用对应编辑方案填写新要素。</p>}
+   {specialDraftMode==='merge-point-platform-station'?<MergePointPlatformStation {...mergeProps} draft={mergePointPSDraft} onChange={setMergePointPSDraft}/>:specialDraftMode==='merge-polygon-outline-building'?<MergePolygonOutlineBuilding {...mergeProps} draft={mergePolygonOBDraft} onChange={setMergePolygonOBDraft}/>:externalEdit?<fieldset disabled={externalEditWorldMismatch}><ExternalFeatureEditHost onClassificationChange={selectFullCategory} config={externalEdit.config} workflow={externalEdit.workflow} session={externalEdit.session} bridge={workflowBridge} context={{initialRecord:externalEdit.session.original,featureIdentity:{layerId:editingLayerId!,originalId:String(externalEdit.session.original.ID)},activeWorld:externalEdit.world,originalGeometry:externalEdit.session.originalGeometry,currentGeometry:multipartDraftRef.current??undefined,editor:editorIdInput,onEditorChange:(value:string)=>{if(!writeBlocked())setEditorIdInput(value);},onUpdate:finishLayer,onCancel:clearTemporaryForVariantSwitch,saveDisabled:isTempMountReadonly||externalEditWorldMismatch||writeBlocked()||showMultipartPartLabels||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking}} onDraftChange={session=>!toolWriteBlocked()&&setExternalEdit(current=>current?{...current,session}:current)}/></fieldset>:nativeEdit?<fieldset disabled={nativeEditWorldMismatch}>{nativeEditWorldMismatch?<p role="alert">请返回 {nativeEdit.world} 后继续。</p>:null}<NativeWorkflowEditPanel config={nativeEdit.config} plan={nativeEdit.plan} draft={nativeEdit.draft} records={nativeEditSearchRecords} world={nativeEdit.world} editor={editorIdInput} onEditorChange={value=>{if(!writeBlocked())setEditorIdInput(value);}} onCancel={clearTemporaryForVariantSwitch} onSave={nativeEdit.original?finishLayer:undefined} saveDisabled={isTempMountReadonly||nativeEditWorldMismatch||writeBlocked()||showMultipartPartLabels||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking} onChange={draft=>!toolWriteBlocked()&&setNativeEdit(current=>current?{...current,draft}:current)} mode={nativeEdit.original?'edit':'create'} hideClassification={!nativeEdit.original} onClassificationChange={selectFullCategory}/></fieldset>:fullExternalCreate?<fieldset disabled={fullExternalWorldMismatch}>{fullExternalWorldMismatch?<p role="alert">请返回 {fullExternalCreate.world} 后继续此新建。</p>:null}<WorkflowStyleEditPanel view={fullExternalCreate.view} values={fullExternalCreate.values} unparsedEntries={fullExternalCreate.unparsed} bridge={{...workflowBridge,getCaptureContext:()=>({config:fullExternalCreate.config,workflow:fullExternalCreate.workflow})}} idFirst classificationContent={<p className="text-xs">分类由上方四级选择树指定；本次保存为新要素。</p>} onChangeValue={(key,value)=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,values:{...current.values,[key]:value}}:current)} onChangeUnparsedEntries={unparsed=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,unparsed}:current)} editorId={editorIdInput} onChangeEditorId={value=>{if(!writeBlocked())setEditorIdInput(value);}}/></fieldset>:<p className="text-xs text-slate-500">未分类几何草稿。选择分类后使用对应编辑方案填写新要素。</p>}
   </section>;
 };
 const isWorkflowStyleEditing=Boolean(nativeEdit||externalEdit||fullExternalCreate);
@@ -3897,7 +3949,7 @@ const workflowBridge: WorkflowBridge = {
   },
   getDrawingGeometry:()=>drawModeRef.current==='none'?null:structuredClone(buildCurrentMultipartGeometry(drawModeRef.current,tempPointsRef.current)),
   prepareDrawingTransition:()=>{
-    if(manualPointInputOpen||curveInputFrozenRef.current||completeArrayOpenRef.current||fullFrozenRef.current)return false;
+    if(manualPointInputOpen||curveInputFrozenRef.current||shapeInputOpenRef.current||completeArrayOpenRef.current||fullFrozenRef.current)return false;
     return closeControlPointSessions();
   },
   getDrawingDraft:():WorkflowDrawingDraft|null=>drawModeRef.current==='none'?null:{
@@ -4753,6 +4805,16 @@ const measuringWindowActions = (
 
 
 
+const coordinateContextKey = JSON.stringify([currentWorldId, editingLayerId, drawMode, drawingTargetRevision, activeMultipartPart, editSelectedInnerSpace, activeInnerSpace, renderedDrawingEpoch, measuringActive, drawing]);
+useEffect(() => {
+  pointSequenceRef.current.reset(tempPointsRef.current); setInsertionOpen(false); setInsertionPicking(false);
+  shapeInputRef.current?.requestCloseAndClear();
+}, [coordinateContextKey]);
+useEffect(() => {
+  const wasActive=pointSequenceRef.current.active; pointSequenceRef.current.sync(tempPoints);
+  if(wasActive&&!pointSequenceRef.current.active){setMultipartInputError('插入起点已失效，已恢复末端追加。');setHistoryRevision(value=>value+1);}
+}, [tempPoints]);
+
   return (
     <>
       {nativeWorkflowSnapshot ? createPortal(<NativeWorkflowHost readOnly={completeArray!==null} key={nativeWorkflowSnapshot.workflow.id} config={nativeWorkflowSnapshot.config} workflow={nativeWorkflowSnapshot.workflow} bridge={workflowBridge} getRecords={getEffectiveRecords} registry={specializedWorkflowRegistry} onCommit={commitNativeWorkflow} onExit={stopWorkflowToSelector} />, nativeHostElement) : null}
@@ -4844,10 +4906,10 @@ const measuringWindowActions = (
 
 {drawMode !== 'none' && (
   <div className="flex gap-2 mb-2">
-    <AppButton className="bg-yellow-400 text-white px-2 py-1 rounded flex-1 disabled:opacity-40" onClick={handleUndo} disabled={showMultipartPartLabels||controlPointSessionBusy} type="button">
+    <AppButton className="bg-yellow-400 text-white px-2 py-1 rounded flex-1 disabled:opacity-40" onClick={handleUndo} disabled={showMultipartPartLabels||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking} type="button">
       撤销
     </AppButton>
-    <AppButton className="bg-orange-400 text-white px-2 py-1 rounded flex-1 disabled:opacity-40" onClick={handleRedo} disabled={showMultipartPartLabels||controlPointSessionBusy} type="button">
+    <AppButton className="bg-orange-400 text-white px-2 py-1 rounded flex-1 disabled:opacity-40" onClick={handleRedo} disabled={showMultipartPartLabels||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking} type="button">
       重做
     </AppButton>
 
@@ -4858,7 +4920,7 @@ const measuringWindowActions = (
         }`}
         onClick={finishLayer}
         type="button"
-        disabled={isTempMountReadonly}
+        disabled={isTempMountReadonly||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking}
       >
         完成当前图层
       </AppButton>
@@ -4874,9 +4936,9 @@ const measuringWindowActions = (
     type="button"
     className={`flex-1 px-2 py-1 rounded text-sm border ${
       showDraftControlPoints ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'
-    } ${showDraftControlPointsLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+    } ${(showDraftControlPointsLocked || insertionOpen || pointSequenceRef.current.active) ? 'opacity-70 cursor-not-allowed' : ''}`}
     onClick={() => {
-      if (showDraftControlPointsLocked) return;
+      if (showDraftControlPointsLocked || insertionOpen || pointSequenceRef.current.active) return;
 
       setShowDraftControlPoints((v) => {
         const next = !v;
@@ -4884,12 +4946,12 @@ const measuringWindowActions = (
         return next;
       });
     }}
-    title={showDraftControlPointsLocked ? '控制点修改/添加中：显示控制点已锁定开启' : '显示/隐藏控制点'}
+    title={showDraftControlPointsLocked || insertionOpen || pointSequenceRef.current.active ? '控制点修改/添加中：显示控制点已锁定开启' : '显示/隐藏控制点'}
   >
     显示控制点
   </AppButton>
 
-  {showDraftControlPoints && (
+  {(showDraftControlPoints || insertionOpen || pointSequenceRef.current.active) && (
     <AppButton
       type="button"
       className={`flex-1 px-2 py-1 rounded text-sm border ${
@@ -4911,17 +4973,19 @@ const measuringWindowActions = (
 {/* 手动输入 & 曲线输入：同一行并平分空间 */}
 <div className="flex gap-2 mb-2">
   <ManualPointInput
-    enabled={measuringActive && drawing && drawMode !== 'none' && !showMultipartPartLabels && !showDraftControlPointsLocked && !drawClickSuppressed && !curveInputFrozen}
+    enabled={measuringActive && drawing && drawMode !== 'none' && !showMultipartPartLabels && !controlPointSessionBusy && !drawClickSuppressed && !curveInputFrozen && !shapeInputOpen}
     activeMode={drawMode}
     defaultY={-64}
     onSubmit={onManualPointSubmit}
-    onOpenChange={setManualPointInputOpen}
+    onOpenChange={(open)=>{if(open)setInsertionPicking(false);setManualPointInputOpen(open);}}
+    getInputToken={getManualInputToken}
+    onSubmitBatch={(points,token)=>{if(token!==undefined&&token!==getManualInputToken()){setMultipartInputError('输入位置或草稿已变化，请关闭后重新打开手动输入。');return false;}return commitCoordinatePoints(points,false);}}
     outerClassName="flex-1"
   />
 
   <CurveInputT
     ref={curveInputTRef}
-    enabled={measuringActive && drawing && !showMultipartPartLabels && (drawMode === 'polyline' || drawMode === 'polygon') && !showDraftControlPointsLocked}
+    enabled={measuringActive && drawing && !showMultipartPartLabels && (drawMode === 'polyline' || drawMode === 'polygon') && !controlPointSessionBusy && !manualPointInputOpen && !shapeInputOpen}
     externallySuppressed={drawClickSuppressed || curveInputFrozen}
     mapReady={mapReady}
     leafletMapRef={leafletMapRef}
@@ -4930,7 +4994,9 @@ const measuringWindowActions = (
     outerClassName="flex-1"
     // 曲线输入开启时：完全冻结主绘制/编辑交互（不影响 ControlPointsT 的抑制状态）
     onSetDrawClickSuppressed={(v) => setCurveInputFrozenImmediate(v)}
-    onOpenChange={setCurveInputOpen}
+    onOpenChange={(open)=>{if(open)setInsertionPicking(false);setCurveInputOpen(open);}}
+    getInputToken={getCoordinateInputToken}
+    validateInput={validateCoordinateInput}
     filterWorldPointByAssistLine={(p) => {
       const assist = assistLineToolsRef.current;
       if (assist?.isEnabled?.()) {
@@ -4939,21 +5005,16 @@ const measuringWindowActions = (
       }
       return p;
     }}
-    onCommitPoints={(points) => {
-      if (!Array.isArray(points) || points.length === 0) return;
-
-      setTempPoints((prev) => {
-        const updated = [...prev, ...points];
-        if (!acceptActiveMultipartCoords(updated)) return prev;
-        if (multipartEnabledRef.current) persistActiveEditorCoords(updated);
-        setRedoStack([]);
-        drawDraftGeometry(updated, drawMode, drawColorRef.current);
-        const last = updated[updated.length - 1];
-        if (last) updateLatestEndpointMarker({ x: last.x, z: last.z }, drawColorRef.current);
-        return updated;
-      });
-    }}
+    onCommitPoints={(points,token) => commitCoordinatePoints(points,false,token)}
   />
+  <ShapeInputT ref={shapeInputRef} enabled={measuringActive&&drawing&&['polyline','polygon'].includes(drawMode)&&!controlPointSessionBusy&&!curveInputOpen&&!manualPointInputOpen&&!showMultipartPartLabels&&!isTempMountReadonly&&!writeBlocked()}
+    mapReady={mapReady} leafletMapRef={leafletMapRef} projectionRef={projectionRef} polygon={drawMode==='polygon'}
+    defaultY={tempPoints.find(point=>point.y!==undefined)?.y??-64} getInputToken={getCoordinateInputToken}
+    onOpenChange={(open)=>{shapeInputOpenRef.current=open;if(open)setInsertionPicking(false);setShapeInputOpen(open);}}
+    filterWorldPoint={(point)=>assistLineToolsRef.current?.transformWorldPoint?.(point)?.point??point}
+    candidate={(points)=>pointSequenceRef.current.candidate(points,drawMode==='polygon').points}
+    validate={(points,token)=>validateCoordinateInput(points,token)}
+    commit={(points,token)=>commitCoordinatePoints(points,true,token)} />
 </div>
 
 
@@ -4973,7 +5034,12 @@ const measuringWindowActions = (
 {drawMode !== 'none' && (
   <ControlPointsT
     ref={controlPointsTDesktopRef}
-    readOnly={showMultipartPartLabels||fullFrozenRef.current||completeArray!==null||Boolean(activeEditWorld&&activeEditWorld!==normalizeV3WorldId(currentWorldId))}
+    readOnly={(controlPointSessionBusy&&!controlPointBusyShellsRef.current.has('desktop'))||isTempMountReadonly||showMultipartPartLabels||fullFrozenRef.current||completeArray!==null||pointSequenceRef.current.active||insertionPicking||manualPointInputOpen||curveInputOpen||shapeInputOpen||Boolean(activeEditWorld&&activeEditWorld!==normalizeV3WorldId(currentWorldId))}
+    contextKey={coordinateContextKey}
+    additionalControls={<PointInsertionTool contextKey={coordinateContextKey} sequence={pointSequenceRef.current} open={insertionOpen} picking={insertionPicking}
+      disabled={showMultipartPartLabels||controlPointSessionBusy||manualPointInputOpen||curveInputOpen||shapeInputOpen||isTempMountReadonly||writeBlocked()||!['polyline','polygon'].includes(drawMode)}
+      polygon={drawMode==='polygon'} revision={historyRevision} mapReady={mapReady} leafletMapRef={leafletMapRef} projectionRef={projectionRef}
+      onOpen={setInsertionOpen} onPicking={setInsertionPicking} onChange={()=>{setHistoryRevision(value=>value+1);const sequence=pointSequenceRef.current;const endpoint=sequence.active?sequence.points[sequence.index]:tempPointsRef.current[tempPointsRef.current.length-1];if(endpoint)updateLatestEndpointMarker(endpoint,drawColorRef.current);}} />}
     onOpenCompleteArray={openCompleteArray}
     mapReady={mapReady}
     leafletMapRef={leafletMapRef}
@@ -4981,17 +5047,9 @@ const measuringWindowActions = (
     activeMode={drawMode}
     activeColor={drawColor}
     activeCoords={tempPoints}
-    validateCandidateCoords={(coords) => validateActiveMultipartCoords(coords)}
+    validateCandidateCoords={validateCompletedCoordinates}
     onSessionStateChange={({ busy }) => updateControlPointSessionState('desktop', busy)}
-    onApplyActiveCoords={(coords) => {
-      if (!acceptActiveMultipartCoords(coords)) return;
-      if (multipartEnabledRef.current) persistActiveEditorCoords(coords);
-      setTempPoints(coords);
-      drawDraftGeometry(coords, drawMode, drawColorRef.current);
-
-      // 控制点编辑/插入保存后：不保留“最新端点临时点”
-      draftEndpointRef.current?.clearLayers();
-    }}
+    onApplyActiveCoords={commitWholeCoordinates}
     onSetDrawClickSuppressed={(v) => {
       updateControlPointDrawSuppression('desktop', v);
     }}
@@ -5108,10 +5166,10 @@ const measuringWindowActions = (
 
 {drawMode !== 'none' && (
   <div className="flex gap-2 mb-2">
-    <AppButton className="bg-yellow-400 text-white px-2 py-1 rounded flex-1 disabled:opacity-40" onClick={handleUndo} disabled={showMultipartPartLabels||controlPointSessionBusy} type="button">
+    <AppButton className="bg-yellow-400 text-white px-2 py-1 rounded flex-1 disabled:opacity-40" onClick={handleUndo} disabled={showMultipartPartLabels||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking} type="button">
       撤销
     </AppButton>
-    <AppButton className="bg-orange-400 text-white px-2 py-1 rounded flex-1 disabled:opacity-40" onClick={handleRedo} disabled={showMultipartPartLabels||controlPointSessionBusy} type="button">
+    <AppButton className="bg-orange-400 text-white px-2 py-1 rounded flex-1 disabled:opacity-40" onClick={handleRedo} disabled={showMultipartPartLabels||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking} type="button">
       重做
     </AppButton>
 
@@ -5122,7 +5180,7 @@ const measuringWindowActions = (
         }`}
         onClick={finishLayer}
         type="button"
-        disabled={isTempMountReadonly}
+        disabled={isTempMountReadonly||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking}
       >
         完成当前图层
       </AppButton>
@@ -5135,7 +5193,8 @@ const measuringWindowActions = (
 {drawMode !== 'none' && (
   <ControlPointsT
     ref={controlPointsTCompactRef}
-    readOnly={showMultipartPartLabels||fullFrozenRef.current||completeArray!==null||Boolean(activeEditWorld&&activeEditWorld!==normalizeV3WorldId(currentWorldId))}
+    readOnly={(controlPointSessionBusy&&!controlPointBusyShellsRef.current.has('compact'))||isTempMountReadonly||showMultipartPartLabels||fullFrozenRef.current||completeArray!==null||pointSequenceRef.current.active||insertionPicking||manualPointInputOpen||curveInputOpen||shapeInputOpen||Boolean(activeEditWorld&&activeEditWorld!==normalizeV3WorldId(currentWorldId))}
+    contextKey={coordinateContextKey}
     onOpenCompleteArray={openCompleteArray}
     mapReady={mapReady}
     leafletMapRef={leafletMapRef}
@@ -5143,17 +5202,9 @@ const measuringWindowActions = (
     activeMode={drawMode}
     activeColor={drawColor}
     activeCoords={tempPoints}
-    validateCandidateCoords={(coords) => validateActiveMultipartCoords(coords)}
+    validateCandidateCoords={validateCompletedCoordinates}
     onSessionStateChange={({ busy }) => updateControlPointSessionState('compact', busy)}
-    onApplyActiveCoords={(coords) => {
-      if (!acceptActiveMultipartCoords(coords)) return;
-      if (multipartEnabledRef.current) persistActiveEditorCoords(coords);
-      setTempPoints(coords);
-      drawDraftGeometry(coords, drawMode, drawColorRef.current);
-
-      // 控制点编辑/插入保存后：不保留“最新端点临时点”
-      draftEndpointRef.current?.clearLayers();
-    }}
+    onApplyActiveCoords={commitWholeCoordinates}
     onSetDrawClickSuppressed={(v) => {
       updateControlPointDrawSuppression('compact', v);
     }}

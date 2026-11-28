@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { X } from 'lucide-react';
 
@@ -26,7 +26,9 @@ export interface ManualPointInputProps {
   defaultY?: number;
 
   /** 点击“完成”时回调（不清空输入，不关闭面板） */
-  onSubmit: (v: ManualPointInputValue) => void;
+  onSubmit: (v: ManualPointInputValue, token?: string) => boolean | void;
+  onSubmitBatch?: (points: ManualPointInputValue[], token?: string) => boolean;
+  getInputToken?: () => string;
 
   /** Reports the visible editor session so parent selectors can lock safely. */
   onOpenChange?: (open: boolean) => void;
@@ -34,8 +36,10 @@ export interface ManualPointInputProps {
 
 const isValid = (n: number | null) => typeof n === 'number' && Number.isFinite(n);
 
-export default function ManualPointInput({ enabled = true, activeMode = 'none', defaultY = -64, onSubmit, outerClassName, onOpenChange }: ManualPointInputProps) {
+export default function ManualPointInput({ enabled = true, activeMode = 'none', defaultY = -64, onSubmit, onSubmitBatch, getInputToken, outerClassName, onOpenChange }: ManualPointInputProps) {
   const [open, setOpen] = useState(false);
+  const inputToken = useRef<string | undefined>();
+  const [submissionError, setSubmissionError] = useState('');
 
   const [xRaw, setXRaw] = useState('');
   const [yRaw, setYRaw] = useState(String(defaultY));
@@ -70,7 +74,8 @@ export default function ManualPointInput({ enabled = true, activeMode = 'none', 
       return;
     }
 
-    onSubmit({ x: x!, y: y!, z: z! });
+    const result = onSubmit({ x: x!, y: y!, z: z! }, inputToken.current);
+    setSubmissionError(result === false ? '未写入，请检查当前草稿和输入位置；本窗口内容已保留。' : '');
   };
 
   const parseBatch = (raw: string) => {
@@ -125,10 +130,12 @@ export default function ManualPointInput({ enabled = true, activeMode = 'none', 
 
     // 点要素：仅录入第一个坐标；线/面：按顺序逐一录入
     if (String(activeMode) === 'point') {
-      onSubmit(r.points[0]);
+      const result = onSubmit(r.points[0], inputToken.current);
+      setSubmissionError(result === false ? '未写入，请检查当前草稿和输入位置；本窗口内容已保留。' : '');
       return;
     }
-    r.points.forEach((p) => onSubmit(p));
+    if (onSubmitBatch) setSubmissionError(onSubmitBatch(r.points, inputToken.current) ? '' : '未写入，请检查当前草稿和输入位置；本窗口内容已保留。');
+    else r.points.forEach((p) => onSubmit(p, inputToken.current));
   };
 
   return (
@@ -140,6 +147,7 @@ export default function ManualPointInput({ enabled = true, activeMode = 'none', 
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         onClick={() => {
           if (disabled) return;
+          if (!open) { inputToken.current = getInputToken?.(); setSubmissionError(''); }
           setOpen((v) => !v);
         }}
       >
@@ -162,6 +170,7 @@ export default function ManualPointInput({ enabled = true, activeMode = 'none', 
       </div>
 
       <div className="p-3">
+        {submissionError && <p role="alert" className="text-xs text-rose-600">{submissionError}</p>}
         <div className="text-xs text-gray-600 mb-2">
           仅允许 0.1 步进。点击“完成”会按当前输入向绘制/编辑要素添加一个控制点。
         </div>

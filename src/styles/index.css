@@ -145,3 +145,11 @@ html, body, #root {
 .cm-option-row > input, .cm-option-row > label { flex:1 1 10rem; min-width:0; }
 .cm-option-row > button { flex:0 0 auto; }
 .cm-option-row > div { flex:1 1 100%; min-width:0; }
+
+/* Draft-only geometry editing handles. Stable DOM instances during pointer drags. */
+.cm-direct-vertex span,.cm-shape-handle span { display:block;width:100%;height:100%;border:2px solid #fff;background:#2563eb;box-shadow:0 0 0 1px #171717,0 1px 5px #0008;border-radius:50%; }
+.cm-direct-vertex span { background:var(--cm-vertex-color,#2563eb); }
+.cm-selected-vertex span { outline:3px solid #fbbf24; }
+.cm-shape-size span,.cm-shape-edge span,.cm-shape-vertex span { border-radius:2px;background:#14b8a6; }
+.cm-shape-rotate span { background:#f59e0b; }
+.cm-shape-center span { background:#8b5cf6; }

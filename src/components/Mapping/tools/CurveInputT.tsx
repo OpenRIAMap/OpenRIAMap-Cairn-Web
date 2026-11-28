@@ -49,8 +49,10 @@ type CurveInputTProps = {
   /** 打开/关闭时抑制主绘制 click 加点 */
   onSetDrawClickSuppressed?: (suppressed: boolean) => void;
 
-  /** 输出：将生成的点序列按顺序追加到当前要素控制点末尾 */
-  onCommitPoints: (points: WorldPoint[]) => void;
+  /** 输出：将生成的点序列按顺序写入当前绘图输入位置 */
+  onCommitPoints: (points: WorldPoint[], token?: string) => boolean | void;
+  getInputToken?: () => string;
+  validateInput?: (points: WorldPoint[], token?: string) => string | undefined;
 
   /** Reports the visible editor session so parent selectors can lock safely. */
   onOpenChange?: (open: boolean) => void;
@@ -287,6 +289,8 @@ export default forwardRef<CurveInputTHandle, CurveInputTProps>(function CurveInp
 
   const [open, setOpen] = useState(false);
   const openRef = useRef(false);
+  const inputTokenRef = useRef<string | undefined>();
+  const [outputError, setOutputError] = useState('');
   useEffect(() => {
     openRef.current = open;
   }, [open]);
@@ -762,8 +766,10 @@ export default forwardRef<CurveInputTHandle, CurveInputTProps>(function CurveInp
       return;
     }
 
-    onCommitPoints(pts);
-    requestCloseAndClear();
+    const validationError = props.validateInput?.(pts, inputTokenRef.current);
+    if (validationError) { setOutputError(validationError); return; }
+    if (onCommitPoints(pts, inputTokenRef.current) !== false) requestCloseAndClear();
+    else setOutputError('未写入，请检查测绘面板中的校验提示；本窗口参数已保留。');
   };
 
   // UI local state for manual endpoints
@@ -798,6 +804,7 @@ export default forwardRef<CurveInputTHandle, CurveInputTProps>(function CurveInp
           if (entryDisabled) return;
           const nextOpen = !openRef.current;
           // 先同步冻结/解冻主绘制，避免“刚打开立刻点图”时漏冻结
+          if (nextOpen) { inputTokenRef.current = props.getInputToken?.(); setOutputError(''); }
           onSetDrawClickSuppressed?.(nextOpen);
           setOpen(nextOpen);
           // 收起时立刻清理，避免残留
@@ -818,6 +825,7 @@ export default forwardRef<CurveInputTHandle, CurveInputTProps>(function CurveInp
             </div>
 
             <div className="p-3 space-y-3">
+              {outputError && <p role="alert" className="text-sm text-rose-600">{outputError}</p>}
               <AppCard>
                 <div className="text-xs text-gray-600 mb-2">
                   线/面模式可用。点选遵循网格吸附与辅助线；端点锁定为 0.5 网格。输出点序列量化到 0.1。
@@ -1057,14 +1065,14 @@ export default forwardRef<CurveInputTHandle, CurveInputTProps>(function CurveInp
                       className="w-full bg-green-500 text-white px-3 py-1 rounded"
                       onClick={exportPoints}
                       disabled={!P0 || !P1}
-                      title="将生成的点序列追加到当前要素控制点末尾"
+                      title="将生成的点序列写入当前绘图输入位置"
                     >
                       输出
                     </AppButton>
                   </div>
                 </div>
                 <div className="mt-2 text-xs text-gray-600">
-                  输出精度：0.1；端点锁定：0.5。输出后将按起点→终点顺序追加到当前要素控制点列表末尾。
+                  输出精度：0.1；端点锁定：0.5。输出后按起点→终点顺序写入当前输入位置；插入启用时接在插入游标后。
                 </div>
               </AppCard>
             </div>

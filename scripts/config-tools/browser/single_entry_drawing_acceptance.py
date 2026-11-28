@@ -44,6 +44,16 @@ def draw(points):
   assert 0<at['x']<1440 and 0<at['y']<1000,at
   for event in ['mousePressed','mouseReleased']:b.call('Input.dispatchMouseEvent',{'type':event,'button':'left','clickCount':1,**at})
   time.sleep(.1)
+
+def drag_control_point(index,x,z):
+ # Direct editing uses native pointer drags; empty map clicks no longer move a point.
+ start=b.evaluate('(()=>{const r=document.querySelectorAll(".cm-direct-vertex")['+str(index)+'].getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()')
+ end=b.evaluate('window.workflowAcceptance.screenPointAt('+str(x)+','+str(z)+')')
+ b.call('Input.dispatchMouseEvent',{'type':'mouseMoved','buttons':0,**start})
+ b.call('Input.dispatchMouseEvent',{'type':'mousePressed','button':'left','clickCount':1,'buttons':1,**start})
+ for step in range(1,13):
+  b.call('Input.dispatchMouseEvent',{'type':'mouseMoved','buttons':1,'x':start['x']+(end['x']-start['x'])*step/12,'y':start['y']+(end['y']-start['y'])*step/12});time.sleep(.02)
+ b.call('Input.dispatchMouseEvent',{'type':'mouseReleased','button':'left','clickCount':1,'buttons':0,**end});time.sleep(.25)
 def array(points):
  click('数组');selector='textarea[placeholder^="请输入严格 JSON 数组"]';b.wait('!!document.querySelector('+json.dumps(selector)+')');val(selector,json.dumps([[x,64,z] for x,z in points]));click('校验');click('完成');b.wait('!document.querySelector('+json.dumps(selector)+')')
 def page():return b.evaluate('document.querySelector("[data-workflow-step]")?.dataset.workflowStep')
@@ -115,6 +125,13 @@ def assert_fixed_geometry(expected):
 try:
  config=copy.deepcopy(BASE);flow=open_flow(config,'v3-bud_building','SEPOLYGON')
  save_config('polygon',config)
+ # Real host regression: the inactive curve tool reports false after shape
+ # opens; it must not release the shape owner's map-input lock.
+ empty=draft();click('图形输入');time.sleep(.4);draw([(120,0),(130,10)]);assert draft()==empty
+ press(panel_button('shape-input','放置'));draw([(0,0)]);assert draft()==empty
+ press(panel_button('shape-input','输入'));assert len(geometry()['parts'][0][0])==32
+ click('撤销');assert not geometry()['parts'][0][0]
+ checks.append('shape preview and placement block ordinary map writes in the real host; Input still commits once and one Undo restores the empty draft')
  draw([(0,0),(70,0),(70,70),(0,70)]);click('多部件和内洞设置');array([(0,0),(70,0),(70,70),(0,70)])
  click('内部空间');click('添加内部洞');draw([(10,10),(20,10),(20,20)]);array([(10,10),(20,10),(20,20),(10,20)])
  click('添加部件');draw([(20,-50),(70,-50),(70,-20)]);array([(20,-50),(70,-50),(70,-20),(20,-20)])
@@ -138,7 +155,7 @@ try:
   val_expr('document.querySelectorAll(\'[data-panel-id="curve-input"] input[placeholder="X(0.1)"]\')['+str(i)+']',x);val_expr('document.querySelectorAll(\'[data-panel-id="curve-input"] input[placeholder="Z(0.1)"]\')['+str(i)+']',z);press(panel_button('curve-input','设起点' if i==0 else '设终点'))
  press('[...document.querySelector(\'[data-panel-id="curve-input"]\').querySelectorAll("button")].find(e=>e.textContent.includes("添加曲柄"))');press(panel_button('curve-input','输出'));assert geometry()==before
  if b.evaluate('!!document.querySelector(\'[data-panel-id="curve-input"]\')'):close_panel('curve-input')
- click('修改');draw([(12,12)]);draw([(120,0)])
+ click('修改');b.wait('document.querySelectorAll(".cm-direct-vertex").length===4');drag_control_point(0,120,0)
  assert '外边界' in b.evaluate('document.querySelector(\'[data-panel-id="cpT-edit-panel"]\').textContent')
  press('[...document.querySelector(\'[data-panel-id="cpT-edit-panel"]\').querySelectorAll("button")].find(e=>e.textContent.includes("保存"))');assert geometry()==before
  click('反转');click('反转');assert geometry()==before
@@ -147,7 +164,8 @@ try:
  checks.append('A06: original manual/array/curve/control-point inputs reject outside-hole edits, reverse roundtrip is isolated, and points inside another hole are rejected')
  click('显示部件编号');locked=draft()
  assert b.evaluate('[...document.querySelectorAll("button")].find(e=>e.title==="添加部件").disabled')
- assert all(b.evaluate('[...document.querySelectorAll("button")].find(e=>e.textContent.trim()==='+json.dumps(label)+').disabled') for label in ['撤销','重做','数组','修改','添加','删除','反转'])
+ assert all(b.evaluate('[...document.querySelectorAll("button")].find(e=>e.textContent.trim()==='+json.dumps(label)+').disabled') for label in ['撤销','重做','数组','修改','插入','反转','图形输入'])
+ assert not b.evaluate('[...document.querySelector(\'[aria-label="控制点工具"]\').querySelectorAll("button")].some(e=>["添加","删除"].includes(e.textContent.trim()))')
  b.evaluate('document.activeElement?.blur()')
  for key,code,n in [('z','KeyZ',90),('y','KeyY',89)]:
   b.call('Input.dispatchKeyEvent',{'type':'keyDown','key':key,'code':code,'windowsVirtualKeyCode':n,'modifiers':2});b.call('Input.dispatchKeyEvent',{'type':'keyUp','key':key,'code':code,'windowsVirtualKeyCode':n})
