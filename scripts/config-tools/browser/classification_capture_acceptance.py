@@ -39,13 +39,21 @@ try:
  click('多部件和内洞设置');array([[0,64,0],[100,64,0],[100,64,60],[0,64,60]])
  click('内部空间');click('添加内部洞');world_draw([(24,24),(36,24),(36,36)]);array([[20,64,20],[40,64,20],[40,64,40],[20,64,40]])
  value('select[aria-label="部件编号"]','0');click('添加部件');world_draw([(20,-50),(70,-50),(70,-20)]);array([[20,64,-50],[70,64,-50],[70,64,-20],[20,64,-20]])
- click('上一步');click('下一步')
+ # Returning across a completed/skipped capture checkpoint now deliberately
+ # clears downstream drafts after confirmation, including this PFB geometry.
+ click('上一步');click('确认返回');click('跳过')
+ if not b.evaluate('Boolean('+q('select[aria-label="部件编号"]')+')'):click('多部件和内洞设置')
+ assert b.evaluate(q('select[aria-label="部件编号"]')+'.options.length')==1
+ draw([(700,600),(900,600),(900,750),(700,750)])
+ array([[0,64,0],[100,64,0],[100,64,60],[0,64,60]])
+ click('内部空间');click('添加内部洞');world_draw([(24,24),(36,24),(36,36)]);array([[20,64,20],[40,64,20],[40,64,40],[20,64,40]])
+ value('select[aria-label="部件编号"]','0');click('添加部件');world_draw([(20,-50),(70,-50),(70,-20)]);array([[20,64,-50],[70,64,-50],[70,64,-20],[20,64,-20]])
  assert b.evaluate(q('select[aria-label="部件编号"]')+'.options.length')==2
  value('select[aria-label="部件编号"]','0');assert b.evaluate(q('select[aria-label="内部洞编号"]')+'.options.length')==1
  click('下一步');pfb=next(r for r in records() if r.get('Kind')=='PFB');assert pfb['Class']=='RIL' and len(pfb['CoordG'])==2 and len(pfb['CoordG'][0])==2
  for _ in range(3):fill();draw([(800,680)]);click('下一步')
  captured=records();assert [r['Kind'] for r in captured]==['PFB','PLF','PLF','STA'];assert all(r['Class']=='RIL' for r in captured);assert all(isinstance(row['stationDistance'],(int,float)) for r in captured if r['Kind']=='PLF' for row in r['lines'] if 'stationDistance' in row)
- checks.append('skip STB, two PFB parts and hole survive return-to-base/re-entry, both platform directions and station capture output exact RIL roles')
+ checks.append('confirmed checkpoint return clears downstream PFB draft; recapture with two parts and a hole, both platform directions and station output exact RIL roles')
  b.screenshot('classification-station-full-capture.png')
  # Read the saved PFB through the normal layer editor and preserve every ring.
  click('切换到完整模式')
@@ -98,7 +106,7 @@ try:
    b.evaluate('document.querySelector("[data-edit-control=edit-SBP-stations] button").click()');time.sleep(.15)
    value('[data-edit-control="edit-SBP-stations"] input','CAPTURE_PLF')
   value('input[aria-label="工作流编辑人"]','capture-author')
-  draw([(700,600),(900,600),(900,750),(700,750)] if shape=='面' else [(800,680)]);click('完成当前图层')
+  draw([(700,600),(900,600),(900,750),(700,750)] if shape=='面' else [(800,680)]);click('保存图层')
   b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===1');record=records()[0];assert record['Class']=='RIL' and record['Kind']==role and record['ID']==fields['ID']
  checks.append('actual full-mode STF and SBP creation use declared RIL roles; manual IDs and field formats remain unchanged')
  navigate();click('测绘');click('开始测绘(完整)')
