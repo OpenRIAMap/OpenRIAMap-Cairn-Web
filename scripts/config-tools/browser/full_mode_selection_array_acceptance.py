@@ -84,6 +84,7 @@ try:
   if binding['slot']==old:binding['slot']='CROSS_NAME'
  cross['workflows'].append(w)
  fresh(cross);click('测绘');click('开始测绘(完整)');category(['PTA','AIR','NOM']);click('确认选择并导入')
+ press('[...document.querySelectorAll(\'section[aria-label="结构化标签与扩展"]\')].map(e=>e.parentElement.querySelector(":scope>summary")).find(e=>e.checkVisibility())')
  val('input[aria-label="新建要素 ID"]','CROSS_ID');val_expr(name_input(),'Cross value');click('添加标签行');val('select[aria-label="标签已注册字段"]','Adm');val('input[aria-label="标签扩展值"]','ADM_FOR_TEST')
  draw([(0,0),(50,0)]);prior=array_text();click('解锁分类选择');category(['CROSS','POT','NOM']);click('尝试切换');assert state()=='loaded',alerts()
  assert b.evaluate('document.querySelector(\'input[aria-label="新建要素 ID"]\').value')=='CROSS_ID';assert b.evaluate('('+name_input()+').value')=='Cross value';assert 'ADM_FOR_TEST' in b.evaluate('document.body.innerText');assert array_text()==prior
