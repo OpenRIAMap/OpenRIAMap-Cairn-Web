@@ -141,7 +141,9 @@ export function renderLabelHtml(styleKey: LabelStyleKeyInput, text: string, opts
   const underline = Boolean(keyObj?.underline);
 
   const rawText = String(text ?? '');
-  const labelWhiteSpace = writingMode === 'vertical' ? 'normal' : rawText.includes('\n') ? 'pre-line' : 'nowrap';
+  // Text is already wrapped by the shared formatter. A zero-size Leaflet
+  // anchor must not soft-wrap each CJK character into another visual row.
+  const labelWhiteSpace = writingMode === 'vertical' ? 'normal' : rawText.includes('\n') ? 'pre' : 'nowrap';
 
   const buildVerticalTokensHtml = (text:string):string =>
     `<span style="display:inline-flex;flex-direction:row-reverse;gap:.15em;align-items:flex-start;">${text.split('\n').map(column=>`<span style="display:inline-flex;flex-direction:column;align-items:center;line-height:1.35;">${displayCharacters(column).map(char=>`<span>${escapeHtml(char)}</span>`).join('')}</span>`).join('')}</span>`;

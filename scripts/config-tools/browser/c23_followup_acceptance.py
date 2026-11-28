@@ -12,6 +12,9 @@ b=Browser();checks=[]
 try:
  b.call('Page.navigate',{'url':APP_URL+'/scripts/browser/fixtures/c23-assist.html'})
  b.wait('document.querySelector("input")!==null',45)
+ sizes=b.evaluate('[...document.querySelectorAll("[data-label-family]")].map(e=>({family:e.dataset.labelFamily,w:e.firstElementChild.getBoundingClientRect().width,h:e.firstElementChild.getBoundingClientRect().height}))')
+ assert len(sizes)==5 and all(item['w']>90 and 25<item['h']<85 for item in sizes),sizes
+ checks.append('five HTML label families retain three visual rows at zero-size Leaflet anchors')
  b.evaluate('(()=>{const e=document.querySelector("input");Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(e,"LOCAL_C23");e.dispatchEvent(new Event("input",{bubbles:true}));})()')
  b.wait('document.body.innerText.includes("没有匹配")')
  b.click('Mount sample');b.wait('document.querySelectorAll("[role=option]").length===1')
