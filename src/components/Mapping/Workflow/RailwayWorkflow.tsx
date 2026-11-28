@@ -1,3 +1,7 @@
+import {reportExternalMissing} from './externalFormFeedback';
+import {RequiredFieldsHint} from '@/configStudio/RequiredFieldsHint';
+import {ExternalWorkflowJournal} from './externalWorkflowJournal';
+import {useExternalWorkflowPages} from './useExternalWorkflowPages';
 import { applicationWorldCodeMap, applicationWorldPrefixMap, subscribeApplication } from '@/core/project/applicationRuntime';
 // File: src/components/Mapping/Workflow/RailwayWorkflow.tsx
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -131,14 +135,15 @@ function TopNav(props: TopNavProps) {
             className={`px-3 py-1.5 rounded text-sm border border-gray-300 bg-white text-gray-900 ${
               nextDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'
             }`}
-            disabled={!!nextDisabled}
-            onClick={onNext}
+            aria-disabled={!!nextDisabled}
+            onClick={event=>{const root=event.currentTarget.closest<HTMLElement>('.p-3');if(root&&!reportExternalMissing(root))return;if(!nextDisabled)onNext?.();}}
             type="button"
           >
             下一步
           </AppButton>
         ) : null}
       </div>
+      <RequiredFieldsHint/>
     </div>
   );
 }
@@ -159,13 +164,13 @@ function LabeledInput(props: LabeledInputProps) {
   const { label, value, placeholder, onChange, type = 'text' } = props;
   return (
     <label className="block space-y-1">
-      <div className="text-xs opacity-80">{label}</div>
-      <input
+      <div className="text-xs opacity-80">{label}{!label.includes('可选')?' *':''}</div>
+      <input aria-required={!label.includes('可选')}
         type={type}
         className="w-full border p-1 rounded text-sm"
         value={value}
         placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {e.currentTarget.closest('[data-input-invalid]')?.removeAttribute('data-input-invalid');e.currentTarget.removeAttribute('aria-invalid');onChange(e.target.value);}}
         onMouseDownCapture={(e) => e.stopPropagation()}
         onPointerDownCapture={(e) => e.stopPropagation()}
         onTouchStartCapture={(e) => e.stopPropagation()}
@@ -177,14 +182,15 @@ function LabeledInput(props: LabeledInputProps) {
 
 export default function RailwayWorkflow(props: WorkflowComponentProps) {
   const { bridge } = props;
+  const [journal]=useState(()=>new ExternalWorkflowJournal());
   const bridgeRef = useRef(bridge);
   useEffect(() => {
-    bridgeRef.current = bridge;
+    bridgeRef.current = {...bridge,commitFeature:args=>journal.commit(bridge,args)};
   }, [bridge]);
   useEffect(()=>{bridgeRef.current.setCaptureRole?.('RLE');return()=>bridgeRef.current.setCaptureRole?.(undefined);},[]);
 
 
-  const [step, setStep] = useState<Step>('creator');
+  const [step, setStepState] = useState<Step>('creator');
 
   // Page 1
   const [creatorId, setCreatorId] = useState<string>(() => (bridgeRef.current.getEditorId?.() ?? '').trim());
@@ -221,6 +227,9 @@ export default function RailwayWorkflow(props: WorkflowComponentProps) {
   );
 
   const shouldSkipBranch = useMemo(() => ['联络线', '其他', '股道', '支线', '无方向联络线'].includes(dirChoice), [dirChoice]);
+
+  const pages=useExternalWorkflowPages({step,setStep:setStepState,state:{creatorId,dirChoice,centerPoints,centerSavedOnce,branchChoice,branchLocked,info,downPoints,upPoints},order:(shouldSkipBranch?['creator','center','info','down','up']:['creator','center','branch','info','down','up']) as Step[],fields:{creator:['creatorId'],center:['dirChoice','centerPoints','centerSavedOnce'],branch:['branchChoice','branchLocked'],info:['info'],down:['downPoints'],up:['upPoints']},bridge:bridgeRef,journal,restore:(saved,target,draft)=>{setCreatorId(saved.creatorId);setDirChoice(saved.dirChoice);setCenterPoints(saved.centerPoints);setCenterSavedOnce(saved.centerSavedOnce);setBranchChoice(saved.branchChoice);setBranchLocked(saved.branchLocked);setInfo(saved.info);setDownPoints(saved.downPoints);setUpPoints(saved.upPoints);if(draft){if(target==='center')setCenterPoints(draft.coordinates);if(target==='down')setDownPoints(draft.coordinates);if(target==='up')setUpPoints(draft.coordinates);}}});
+  const setStep=(next:Step)=>{void pages.go(next);};
 
   // --------- Step enter effects (控制绘制模式/草稿点载入) ----------
   useEffect(() => {
@@ -333,7 +342,6 @@ export default function RailwayWorkflow(props: WorkflowComponentProps) {
   };
 
   const onPrevFromBranch = () => {
-    if (branchLocked) return; // 锁定后不允许回到该页
     goTo('center');
   };
 
@@ -358,7 +366,7 @@ export default function RailwayWorkflow(props: WorkflowComponentProps) {
     const section = String(info.sectionCode ?? '').trim();
 
     // 例：ZRT1_A
-    return `${prefix}R${bureau}${lineNo}_${section}`;
+    return [`${prefix}R${bureau}${lineNo}`,section].filter(Boolean).join('_');
   };
 
   const buildColor = () => sanitizeColorNoHash(info.colorHexNoHash);
@@ -426,7 +434,6 @@ export default function RailwayWorkflow(props: WorkflowComponentProps) {
   const validateInfoForm = () => {
     const need: Array<[keyof InfoForm, string]> = [
       ['lineName', '线路名'],
-      ['sectionCode', '区段代码'],
       ['bureau', '路局代码'],
       ['lineNo', '线路编号'],
       ['colorHexNoHash', '标准色号'],
@@ -443,6 +450,7 @@ export default function RailwayWorkflow(props: WorkflowComponentProps) {
 
   const onCompleteInfo = () => {
     // 1) 校验
+    const active=document.querySelector<HTMLElement>('[data-workflow-external-page="info"]');if(active&&!reportExternalMissing(active))return;
     const v = validateInfoForm();
     if (!v.ok) {
       window.alert(v.error);
@@ -635,6 +643,7 @@ export default function RailwayWorkflow(props: WorkflowComponentProps) {
     }
 
     // 输出上下行两条：点序原样使用；start/end 根据点序相对中心线方向自动交换
+    const active=document.querySelector<HTMLElement>('[data-workflow-external-page="info"]');if(active&&!reportExternalMissing(active))return;
     const v = validateInfoForm();
     if (!v.ok) {
       window.alert(v.error);
@@ -773,7 +782,7 @@ if (step === 'branch') {
         title="铁路工作流：绘制方式选择"
         showPrev
         showNext={canNext}
-        prevDisabled={branchLocked}
+        prevDisabled={false}
         nextDisabled={!canNext}
         onPrev={onPrevFromBranch}
         onNext={onNextFromBranch}
@@ -820,7 +829,7 @@ if (step === 'branch') {
 
         {branchChoice ? (
           <div className="text-xs text-amber-600">
-            此处一旦选择后则无法回到此页面，请确认
+            返回此页需确认并清除后续填写内容
           </div>
         ) : null}
       </div>
@@ -831,9 +840,9 @@ if (step === 'branch') {
 
   if (step === 'info') {
     return (
-      <div className="p-3">
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="text-sm font-semibold">铁路工作流：信息填写</div>
+      <div className="p-3" data-workflow-external-page="info"><RequiredFieldsHint/>
+        <div className="flex items-center justify-between gap-2 mb-3"><AppButton type="button" className="rounded border px-3 py-1" onClick={()=>goTo('down')}>上一步</AppButton>
+          <div className="text-sm font-semibold">铁路工作流：信息填写</div><AppButton type="button" className="rounded border px-3 py-1" onClick={()=>goTo(shouldSkipBranch?'center':'branch')}>上一步</AppButton>
           <AppButton
             className="px-3 py-1.5 rounded border text-sm hover:bg-gray-100"
             onClick={() => {
@@ -854,7 +863,7 @@ if (step === 'branch') {
             onChange={(v) => setInfo((s) => ({ ...s, lineName: v }))}
           />
           <LabeledInput
-              label="区段代码"
+              label="区段代码（可选）"
               value={info.sectionCode}
               onChange={(v) => setInfo((s) => ({ ...s, sectionCode: v }))}
               placeholder="例如：A"

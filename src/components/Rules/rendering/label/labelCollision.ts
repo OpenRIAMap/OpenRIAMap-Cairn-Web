@@ -1,3 +1,4 @@
+import {formatMapLabelText} from './labelTextFormat';
 import type { FeatureDisplayPlan } from '@/components/Rules/rendering/display/displayTypes';
 import type { LabelDeclutterConfig, LabelRequest } from '@/components/Rules/rendering/labelLayout';
 import type { LabelDensityReduceStep } from './labelDensity';
@@ -71,6 +72,7 @@ export function mergeDisplayCollisionIntoDeclutter(
     collisionRole: plan.collision?.role,
     collisionGroup: plan.collision?.group,
     hidePolicy: plan.collision?.hidePolicy,
+    ...(plan.collision?.hidePolicy==='abbreviateThenHide'?{allowAbbrev:true,abbrev:(text:string)=>formatMapLabelText(text.replace(/\n/g,' '),{perLine:10,maxLines:1})}:{}),
     collisionAllowOverlap: plan.collision?.allowOverlap ?? declutter.collisionAllowOverlap,
     collisionCollideWith: getCollisionCollideWith(plan) ?? declutter.collisionCollideWith,
     collisionBlocks: getCollisionBlocks(plan) ?? declutter.collisionBlocks,

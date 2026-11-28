@@ -134,6 +134,9 @@ export type WorkflowBridge = {
 
   /** 写入固定测绘图层 */
   commitFeature: (args: WorkflowCommitArgs) => WorkflowCommitResult;
+  /** Opaque, owner-maintained before images; never persisted into records. */
+  captureCommittedState?: () => unknown;
+  rollbackWorkflowWrites?: (writes:ReadonlyArray<{layerId:number;before:unknown}>) => void;
 
   /**
    * 读取固定测绘图层的 jsonInfo 列表（可选）。

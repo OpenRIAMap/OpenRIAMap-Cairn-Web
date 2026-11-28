@@ -1,3 +1,4 @@
+import {workflowOutputLabel} from './workflowOutputLabel';
 import {reconcileWorkflowLayout} from './workflowLayout';
 import type {ConfigPackageV3,WorkflowDefinition} from './types';
 import {classificationPathKey,hasDescendants} from './runtime';
@@ -13,9 +14,9 @@ export function syncWorkflowClassification(config:ConfigPackageV3,source:Workflo
       if(!control.systemManaged||!['classificationPicker','tagsExtensions',...(config.contractRevision>=21?['dataset']:[])].includes(control.kind))return [control];
       const output=workflow.outputs.find(output=>output.id===(control.outputId??(workflow.outputs.length===1?workflow.outputs[0].id:undefined)));
       if(control.kind==='dataset')delete control.tagsExtensions;const key=control.kind+':'+output?.id;if(!output||seen.has(key))return [];seen.add(key);
-      return [{...control,outputId:output.id,classificationScope:undefined,columns:1 as const,required:control.kind==='classificationPicker',label:{zh:(control.kind==='classificationPicker'?'分类':control.kind==='dataset'?'所属数据集':'标签与扩展')+' · 输出 '+(workflow.outputs.indexOf(output)+1),en:''}}];
+      return [{...control,outputId:output.id,classificationScope:undefined,columns:1 as const,required:control.kind==='classificationPicker',label:{zh:(control.kind==='classificationPicker'?'分类':control.kind==='dataset'?'所属数据集':'标签与扩展')+' · '+workflowOutputLabel(output,workflow.outputs.indexOf(output)),en:''}}];
     });
-    for(const [index,output] of workflow.outputs.entries())for(const kind of (config.contractRevision>=21?['classificationPicker','tagsExtensions','dataset']:['classificationPicker','tagsExtensions']) as Array<'classificationPicker'|'tagsExtensions'|'dataset'>)if(!seen.has(kind+':'+output.id))form.controls!.push({...(kind==='tagsExtensions'?legacy:{}),id:`system-${kind}-${output.id}`,kind,outputId:output.id,columns:1,label:{zh:(kind==='classificationPicker'?'分类':kind==='dataset'?'所属数据集':'标签与扩展')+' · 输出 '+(index+1),en:''},systemManaged:true,...(kind==='classificationPicker'?{required:true}:kind==='tagsExtensions'?{tagsExtensions:{tagsEnabled:true,extensionsEnabled:true}}:{})});
+    for(const [index,output] of workflow.outputs.entries())for(const kind of (config.contractRevision>=21?['classificationPicker','tagsExtensions','dataset']:['classificationPicker','tagsExtensions']) as Array<'classificationPicker'|'tagsExtensions'|'dataset'>)if(!seen.has(kind+':'+output.id))form.controls!.push({...(kind==='tagsExtensions'?legacy:{}),id:`system-${kind}-${output.id}`,kind,outputId:output.id,columns:1,label:{zh:(kind==='classificationPicker'?'分类':kind==='dataset'?'所属数据集':'标签与扩展')+' · '+workflowOutputLabel(output,index),en:''},systemManaged:true,...(kind==='classificationPicker'?{required:true}:kind==='tagsExtensions'?{tagsExtensions:{tagsEnabled:true,extensionsEnabled:true}}:{})});
     if(config.contractRevision>=22)workflow.steps=workflow.steps.map(step=>step.kind==='form'?reconcileWorkflowLayout(step):step);
     return JSON.stringify(source)===JSON.stringify(workflow)?source:workflow;
   }

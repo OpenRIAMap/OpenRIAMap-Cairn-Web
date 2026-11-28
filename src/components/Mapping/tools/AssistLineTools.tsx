@@ -1,3 +1,6 @@
+import {mountAssistGrid,normalizeAssistGrid,snapAssistGrid,type AssistGridSettings} from './assistGrid';
+import {AssistFeatureSearch,type AssistFeatureOption} from './AssistFeatureSearch';
+import {readMultipartGeometry,type MultipartGeometry} from '@/core/geometry/multipartGeometry';
 import {
   forwardRef,
   useCallback,
@@ -19,7 +22,7 @@ import AppButton from '@/components/ui/AppButton';
 
 export type WorldPoint = { x: number; z: number };
 
-type AssistLineMode = 'fixedLine' | 'coordSystem' | 'pickFeature';
+type AssistLineMode = 'fixedLine' | 'coordSystem' | 'pickFeature' | 'fullGrid';
 type FixedAxis = 'x' | 'z';
 
 type GeometryRings = {
@@ -41,6 +44,7 @@ const fmt05 = (n: number) => {
 };
 
 type AssistLineTarget =
+  | {kind:'fullGrid';grid:AssistGridSettings;label:string}
   | {
       kind: 'fixedLine';
       axis: FixedAxis;
@@ -80,6 +84,8 @@ export type AssistLineToolsHandle = {
 };
 
 type AssistLineToolsProps = {
+  contextKey?:string;
+  getMountedRecords?:()=>Record<string,unknown>[];
   mapReady: boolean;
   leafletMapRef: MutableRefObject<L.Map | null>;
   projectionRef: MutableRefObject<DynmapProjection | null>;
@@ -200,22 +206,18 @@ function buildTargetLabelFromFeature(r: FeatureRecord): string {
   return `Rules：${core}`;
 }
 
-function buildTargetFromRuleFeature(r: FeatureRecord): AssistLineTarget | null {
-  if (!r || (r.type !== 'Polyline' && r.type !== 'Polygon')) return null;
-  const coords3 = Array.isArray(r.coords3) ? r.coords3 : [];
-  if (coords3.length < 2) return null;
-  const ring = coords3
-    .map((p) => ({ x: Number((p as any)?.x), z: Number((p as any)?.z) }))
-    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.z));
-  if (ring.length < 2) return null;
-  return {
-    kind: 'leafletFeature',
-    label: buildTargetLabelFromFeature(r),
-    geom: {
-      rings: [ring],
-      closed: [r.type === 'Polygon'],
-    },
-  };
+function targetFromGeometry(geometry:MultipartGeometry,label:string):AssistLineTarget|null{
+  if(geometry.type==='Point')return null;
+  const rings=geometry.type==='Polygon'?geometry.parts.flat():geometry.parts;
+  if(!rings.length||rings.some(ring=>ring.length<(geometry.type==='Polygon'?3:2)))return null;
+  return {kind:'leafletFeature',label,geom:{rings:rings.map(ring=>ring.map(({x,z})=>({x,z}))),closed:rings.map(()=>geometry.type==='Polygon')}};
+}
+function buildTargetFromRuleFeature(r:FeatureRecord):AssistLineTarget|null{
+  if(!r||(r.type!=='Polyline'&&r.type!=='Polygon'))return null;
+  const geometry=r.multipartGeometry??readMultipartGeometry(r.featureInfo,r.type==='Polygon'?'Polygon':'LineString').geometry;
+  if(geometry)return targetFromGeometry(geometry,buildTargetLabelFromFeature(r));
+  const ring=(r.coords3??[]).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.z));
+  return ring.length>=2?{kind:'leafletFeature',label:buildTargetLabelFromFeature(r),geom:{rings:[ring],closed:[r.type==='Polygon']}}:null;
 }
 
 function buildTargetLabelFromLayer(layer: L.Polyline): string {
@@ -237,6 +239,8 @@ function buildTargetLabelFromLayer(layer: L.Polyline): string {
 export default forwardRef<AssistLineToolsHandle, AssistLineToolsProps>(function AssistLineTools(props, ref) {
   const {
     mapReady,
+    contextKey,
+    getMountedRecords,
     leafletMapRef,
     projectionRef,
     defaultThreshold = 20,
@@ -254,6 +258,11 @@ export default forwardRef<AssistLineToolsHandle, AssistLineToolsProps>(function 
 
   // 模式
   const [mode, setMode] = useState<AssistLineMode>('pickFeature');
+  const [gridX,setGridX]=useState('0'),[gridZ,setGridZ]=useState('0'),[gridSpacing,setGridSpacing]=useState('10');
+  const [gridColor,setGridColor]=useState<AssistGridSettings['color']>('#ffffff');
+  const [gridDense,setGridDense]=useState(false);
+  const contextRef=useRef(contextKey);
+
 
   // 固定直线参数
   const [fixedAxis, setFixedAxis] = useState<FixedAxis>('x');
@@ -321,6 +330,12 @@ export default forwardRef<AssistLineToolsHandle, AssistLineToolsProps>(function 
     };
   }, [mapReady, leafletMapRef]);
 
+  useEffect(()=>{
+    const map=leafletMapRef.current,projection=projectionRef.current;
+    if(!mapReady||!map||!projection||!enabled||target?.kind!=='fullGrid'){setGridDense(false);return;}
+    return mountAssistGrid(map,projection,target.grid,setGridDense);
+  },[mapReady,enabled,target,leafletMapRef,projectionRef,contextKey]);
+
   /* -------------------- 高亮渲染 -------------------- */
   useEffect(() => {
     const map = leafletMapRef.current;
@@ -329,7 +344,7 @@ export default forwardRef<AssistLineToolsHandle, AssistLineToolsProps>(function 
     if (!map || !proj || !hg) return;
 
     hg.clearLayers();
-    if (!enabled || !target) return;
+    if (!enabled || !target || target.kind==='fullGrid') return;
 
     if (target.kind === 'leafletFeature') {
       for (const ring of target.geom.rings) {
@@ -551,6 +566,24 @@ export default forwardRef<AssistLineToolsHandle, AssistLineToolsProps>(function 
     map.on('click', handler);
   }, [mapReady, enabled, mode, leafletMapRef, toWorld, cancelPicking, setMapCursor, setRuleAssistPickMode]);
 
+  const searchTargets=()=>{
+    const options=new Map<string,{option:AssistFeatureOption;target:AssistLineTarget}>();
+    for(const record of getMountedRecords?.()??[]){
+      const type=record.Type==='Polygon'?'Polygon':record.Type==='Polyline'?'LineString':null;if(!type)continue;
+      const geometry=readMultipartGeometry(record,type).geometry;if(!geometry)continue;
+      const id=String(record.ID??''),name=String(record.Name??''),classification=[record.Class,record.Kind,record.SKind,record.SKind2].filter(Boolean).join('/');
+      const key=JSON.stringify([record.World,record.Class,id]);
+      const next=targetFromGeometry(geometry,`${id}（${name}）`);if(next)options.set(key,{option:{key,id,name,description:classification},target:next});
+    }
+    leafletMapRef.current?.eachLayer(layer=>visitLayerDeep(layer,child=>{
+      if(!(child instanceof L.Polyline)||(child as any).__riaAssistIgnore||(child as any).__riaAssistRuleFeature||child.options.interactive===false)return;
+      const key='layer-'+L.Util.stamp(child),rings=ringsFromLeafletPolyline(child).map(ring=>ring.map(toWorld).filter((point):point is WorldPoint=>Boolean(point)));
+      if(!rings.length)return;const label=buildTargetLabelFromLayer(child);
+      options.set(key,{option:{key,id:key,name:label,description:child instanceof L.Polygon?'面':'线'},target:{kind:'leafletFeature',label,geom:{rings,closed:rings.map(()=>child instanceof L.Polygon)}}});
+    }));return options;
+  };
+  useEffect(()=>{if(contextRef.current!==contextKey){contextRef.current=contextKey;cancelPicking();setEnabled(false);setTarget(null);setStatusText('');}},[contextKey,cancelPicking]);
+
   // 面板关闭、禁用、或切走模式：自动退出拾取
   useEffect(() => {
     if (!enabled || !panelOpen || mode !== 'pickFeature') {
@@ -622,6 +655,8 @@ export default forwardRef<AssistLineToolsHandle, AssistLineToolsProps>(function 
       if (!enabled || !target) {
         return { point: p, snapped: false, dist: null, targetLabel: null };
       }
+
+      if(target.kind==='fullGrid')return {...snapAssistGrid(p,target.grid,threshold),targetLabel:target.label};
 
       // 固定直线：无限延伸（算法独立于可视化 extent）
       if (target.kind === 'fixedLine') {
@@ -695,6 +730,7 @@ export default forwardRef<AssistLineToolsHandle, AssistLineToolsProps>(function 
       { key: 'fixedLine' as const, label: '固定直线' },
       { key: 'coordSystem' as const, label: '参考坐标系' },
       { key: 'pickFeature' as const, label: '选择要素' },
+      {key:'fullGrid' as const,label:'全图网格'},
     ],
     []
   );
@@ -783,7 +819,7 @@ export default forwardRef<AssistLineToolsHandle, AssistLineToolsProps>(function 
 
               {/* 模式切换（对齐点/线/面切换样式） */}
               <div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {modeButtons.map((m) => (
                     <AppButton
                       key={m.key}
@@ -875,9 +911,16 @@ export default forwardRef<AssistLineToolsHandle, AssistLineToolsProps>(function 
                   </div>
                 )}
 
+                {mode==='fullGrid'&&<div className="mt-2 space-y-2">
+                  <div className="grid grid-cols-2 gap-2"><label className="text-xs">中心x<input aria-label="网格中心x" type="number" step="0.5" value={gridX} onChange={e=>setGridX(e.target.value)} className="w-full rounded border p-1"/></label><label className="text-xs">中心z<input aria-label="网格中心z" type="number" step="0.5" value={gridZ} onChange={e=>setGridZ(e.target.value)} className="w-full rounded border p-1"/></label></div>
+                  <label className="block text-xs">间距<input aria-label="网格间距" type="number" min="0.5" step="0.5" value={gridSpacing} onChange={e=>setGridSpacing(e.target.value)} className="mt-1 w-full rounded border p-1"/></label>
+                  <label className="block text-xs">显示效果<select aria-label="网格显示效果" value={gridColor} onChange={e=>setGridColor(e.target.value as AssistGridSettings['color'])} className="ml-2 rounded border p-1"><option value="#ffffff">白线</option><option value="#000000">黑线</option></select> · 1px</label>
+                  <AppButton type="button" className="rounded border px-3 py-1" onClick={()=>{try{const grid=normalizeAssistGrid(gridX,gridZ,gridSpacing,gridColor);setGridX(String(grid.x));setGridZ(String(grid.z));setGridSpacing(String(grid.spacing));setTarget({kind:'fullGrid',grid,label:`全图网格（${grid.x}, ${grid.z}；间距${grid.spacing}）`});cancelPicking();setStatusText('全图网格已应用。');}catch(error){setStatusText(error instanceof Error?error.message:String(error));}}}>应用</AppButton>
+                  {gridDense?<p role="status" className="text-xs">当前缩放网格过密，请放大查看</p>:null}
+                </div>}
                 {mode === 'pickFeature' && (
                   <div className="mt-2 space-y-2">
-                    <div className="text-xs text-gray-600">从地图中选择一条线/面要素作为参考线。</div>
+                    <div className="text-xs text-gray-600">从地图中选择一条线/面要素作为参考线。</div><AssistFeatureSearch getOptions={()=>[...searchTargets().values()].map(item=>item.option)} onApply={key=>{const match=searchTargets().get(key);if(!match)return false;setTarget(match.target);cancelPicking();setStatusText('已应用辅助线目标：'+match.target.label);return true;}}/>
 
                     <div className="flex items-center gap-2">
                       <AppButton

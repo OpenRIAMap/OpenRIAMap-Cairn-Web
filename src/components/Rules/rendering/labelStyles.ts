@@ -1,3 +1,4 @@
+import {displayCharacters} from './label/labelTextFormat';
 import { labelPlacementTransform, labelScreenOffset, type LabelPlacement } from './labelPlacement';
 export type { LabelPlacement } from './labelPlacement';
 import * as L from 'leaflet';
@@ -142,32 +143,8 @@ export function renderLabelHtml(styleKey: LabelStyleKeyInput, text: string, opts
   const rawText = String(text ?? '');
   const labelWhiteSpace = writingMode === 'vertical' ? 'normal' : rawText.includes('\n') ? 'pre-line' : 'nowrap';
 
-  const buildVerticalTokensHtml = (s: string): string => {
-    // 规则：连续 >=4 个英文/数字字符视为一个整体（横置显示），其他字符逐字竖排。
-    const parts: Array<{ t: string; kind: 'latin' | 'other' }> = [];
-    let i = 0;
-    while (i < s.length) {
-      const rest = s.slice(i);
-      const m = rest.match(/^[A-Za-z0-9]{4,}/);
-      if (m && m[0]) {
-        parts.push({ t: m[0], kind: 'latin' });
-        i += m[0].length;
-        continue;
-      }
-      parts.push({ t: s[i], kind: 'other' });
-      i += 1;
-    }
-
-    return parts
-      .map((p) => {
-        const safe = escapeHtml(p.t);
-        if (p.kind === 'latin') {
-          return `<span style="display:inline-block; writing-mode:horizontal-tb; transform:rotate(90deg); transform-origin:center;">${safe}</span>`;
-        }
-        return `<span>${safe}</span>`;
-      })
-      .join('<br/>');
-  };
+  const buildVerticalTokensHtml = (text:string):string =>
+    `<span style="display:inline-flex;flex-direction:row-reverse;gap:.15em;align-items:flex-start;">${text.split('\n').map(column=>`<span style="display:inline-flex;flex-direction:column;align-items:center;line-height:1.35;">${displayCharacters(column).map(char=>`<span>${escapeHtml(char)}</span>`).join('')}</span>`).join('')}</span>`;
 
   const safe = writingMode === 'vertical' ? buildVerticalTokensHtml(rawText) : escapeHtml(rawText);
 

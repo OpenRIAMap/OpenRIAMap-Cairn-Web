@@ -154,7 +154,7 @@ const normalizeRailRelations = (out: Record<string, unknown>): void => {
           Overtaking: row.Overtaking ?? false,
           getin: row.getin ?? true,
           getout: row.getout ?? true,
-          NextOT: row.NextOT ?? false,
+          ...(Object.prototype.hasOwnProperty.call(row,'NextOT')?{NextOT:row.NextOT}:{}),
         });
       })
       .filter((row): row is Record<string, unknown> => Boolean(row));

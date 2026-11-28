@@ -790,7 +790,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
           return resolveLabelText(label, source => featureValue(candidate, source), (value, format) => format === 'floorLabel' ? fmtFloorLabel(value) : value,
             () => fallback?.whenNoLabelText === 'showID' ? String(featureValue(candidate, 'ID') ?? '') : fallback?.whenNoLabelText === 'showClassKind' ? [path.class,path.kind,path.skind,path.skind2].filter(Boolean).join('/') : fallback?.whenNoLabelText === 'placeholder' ? '—' : '', config.contractRevision >= 19, config.contractRevision < 20);
         },
-        ...(labelText?.maxChars !== undefined ? { maxChars: labelText.maxChars, abbreviation: { enabled: labelText.abbreviationEnabled !== false, maxChars: labelText.maxChars, suffix: labelText.suffix ?? '…' } } : {}),
+        ...(labelText?.maxChars !== undefined ? { maxChars: labelText.maxChars, abbreviation: { enabled: labelText.abbreviationEnabled !== false, maxChars: labelText.maxChars, suffix: labelText.suffix ?? '...' } } : {}),
         ...(labelText?.minChars !== undefined ? { minChars: labelText.minChars } : {}),
         ...(labelText?.emptyBehavior !== undefined ? { emptyBehavior: labelText.emptyBehavior } : {}),
         ...(labelText?.opacity !== undefined ? { opacity: labelText.opacity } : {}),
@@ -864,7 +864,7 @@ function nativeRule(config: ConfigPackageV3, record: FeatureRecord, ctx: RenderC
         // not silently rewritten to Name by a lower display-plan layer.
         source: (label.source || '__v3_null_label__') as any,
         styleKey: labelKey as any,
-        ...(labelText?.maxChars !== undefined ? { maxChars: labelText.maxChars, abbreviation: { enabled: labelText.abbreviationEnabled !== false, maxChars: labelText.maxChars, suffix: labelText.suffix ?? '…' } } : {}),
+        ...(labelText?.maxChars !== undefined ? { maxChars: labelText.maxChars, abbreviation: { enabled: labelText.abbreviationEnabled !== false, maxChars: labelText.maxChars, suffix: labelText.suffix ?? '...' } } : {}),
         ...(labelText?.minChars !== undefined ? { minChars: labelText.minChars } : {}),
         ...(labelText?.emptyBehavior !== undefined ? { emptyBehavior: labelText.emptyBehavior } : {}),
         ...(labelText?.opacity !== undefined ? { opacity: labelText.opacity } : {}),

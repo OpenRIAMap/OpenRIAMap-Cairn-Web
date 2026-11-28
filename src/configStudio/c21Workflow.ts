@@ -28,6 +28,6 @@ export function activeWorkflowSlots(workflow:WorkflowDefinition,slots:Record<str
 export function groupTagControls(workflow:WorkflowDefinition):void{
  for(const step of workflow.steps.filter(s=>s.kind==='form')){
   const tags=(step.controls??[]).filter(c=>c.kind==='dataset'||c.kind!=='tagsExtensions'&&c.kind!=='classificationPicker'&&c.slot&&workflow.outputs.some(o=>o.assignments.some(a=>a.target.startsWith('tags.')&&a.expression.trim()===c.slot)));
-  if(!tags.length)continue;step.sections??=[];let section=step.sections.find(s=>s.id==='extra-tag-information');if(!section){section={id:'extra-tag-information',label:{zh:'额外标签信息',en:'Additional tags'},initialOpen:true};step.sections.push(section);}for(const c of tags)if(!c.sectionId)c.sectionId=section.id;
+  if(!tags.length)continue;step.sections??=[];let section=step.sections.find(s=>s.id==='extra-tag-information');if(!section){section={id:'extra-tag-information',label:{zh:'额外标签信息',en:'Additional tags'},initialOpen:false};step.sections.push(section);}for(const c of tags)if(!c.sectionId)c.sectionId=section.id;
  }
 }

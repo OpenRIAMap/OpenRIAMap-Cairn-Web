@@ -1,3 +1,5 @@
+import {polygonLabelContainment} from '../rendering/label/polygonLabelBounds';
+import {formatMapLabelText} from '../rendering/label/labelTextFormat';
 import {matchesClassificationRange} from '@/configStudio/classificationScope';
 import {expandBindingGroup} from '@/configStudio/externalBindings';
 import {classificationPathKey} from '@/configStudio/runtime';
@@ -374,25 +376,7 @@ function resolveLabelTextForAudit(
   // legacy renderer.  When absent this returns byte-for-byte equivalent V1
   // text; when present it applies the authored truncation/wrap policy before
   // either normal or declutter rendering sees the text.
-  const explicitMax = Number(labelPlan.maxChars ?? labelPlan.abbreviation?.maxChars);
-  const maxChars = Number.isFinite(explicitMax) && explicitMax > 0 ? Math.floor(explicitMax) : undefined;
-  const suffix = String(labelPlan.abbreviation?.suffix ?? '…');
-  const characters = Array.from(text);
-  if (!labelPlan.multiline) {
-    return maxChars && characters.length > maxChars
-      ? `${characters.slice(0, maxChars).join('')}${suffix}`
-      : text;
-  }
-
-  const perLine = maxChars ?? 12;
-  const maxLinesRaw = Number(labelPlan.maxLines);
-  const maxLines = Number.isFinite(maxLinesRaw) && maxLinesRaw > 0 ? Math.floor(maxLinesRaw) : 2;
-  const chunks: string[] = [];
-  for (let offset = 0; offset < characters.length && chunks.length < maxLines; offset += perLine) {
-    chunks.push(characters.slice(offset, offset + perLine).join(''));
-  }
-  if (characters.length > perLine * maxLines && chunks.length) chunks[chunks.length - 1] = `${chunks[chunks.length - 1]}${suffix}`;
-  return chunks.join('\n');
+  return formatMapLabelText(text, {perLine: labelPlan.maxChars ?? labelPlan.abbreviation?.maxChars, maxLines: labelPlan.multiline === false ? 1 : labelPlan.maxLines, suffix: labelPlan.abbreviation?.suffix ?? '...'});
 }
 
 function updateLineAuditBlocked(
@@ -3676,15 +3660,9 @@ export default function RuleDrivenLayer(props: Props) {
             if (configRuntime && sourceRecord.type === 'Polygon' && (displayPlan.anchor.requireInsideGeometry || displayPlan.anchor.allowOutsideGeometry === false)) {
               const allParts = sourceRecord.multipartGeometry?.type === 'Polygon' ? sourceRecord.multipartGeometry.parts : [[sourceRecord.coords3 ?? []]];
               const parts = req.partIndex === undefined ? allParts : allParts.slice(req.partIndex, req.partIndex + 1);
-              req.acceptsAnchor = screen => {
-                const point = projection.latLngToLocation(map.containerPointToLatLng(screen), Y_FOR_DISPLAY);
-                const contains = (ring: Array<{ x: number; z: number }>) => pointInPolygonXZ(point, ring) || ring.some((a,i) => {
-                  const b = ring[(i + 1) % ring.length]; const dx = b.x - a.x, dz = b.z - a.z;
-                  const t = Math.max(0, Math.min(1, ((point.x - a.x)*dx + (point.z - a.z)*dz)/(dx*dx + dz*dz || 1)));
-                  return Math.hypot(point.x - a.x - t*dx, point.z - a.z - t*dz) < 1e-6;
-                });
-                return parts.some(rings => rings[0]?.length && contains(rings[0]) && !rings.slice(1).some(hole => contains(hole)));
-              };
+              const containment=polygonLabelContainment(parts.map(rings=>rings.map(ring=>ring.map(point=>map.latLngToContainerPoint(projection.locationToLatLng(point.x,Y_FOR_DISPLAY,point.z))))));
+              req.acceptsAnchor=containment.point;
+              if(displayPlan.geometry.render!=='point'&&!displayPlan.geometry.midpoint)req.acceptsRect=containment.rect;
             }
             req.densityImportance = displayPlan.density?.importanceField ? Number(getFeatureValueByPath(r, displayPlan.density.importanceField)) || 0 : undefined;
             req.worldId = worldId;
@@ -5491,6 +5469,7 @@ function buildLabelRequest(
     candidateOffsetsPx: effectiveDisplayAnchor?.candidateOffsetsPx,
     anchorOffsetPx: effectiveDisplayAnchor?.offsetPx,
     declutter: labelPlan.declutter,
+    writingMode: typeof labelPlan.styleKey==='object'?labelPlan.styleKey.writingMode:undefined,
   };
 
   if (pointLatLng) return { ...common, id: `${r.uid}#label`, anchorLatLng: pointLatLng };

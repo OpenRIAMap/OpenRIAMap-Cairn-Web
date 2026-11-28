@@ -1,3 +1,4 @@
+import {parallelLabelPaths,unionLabelRects} from './parallelLabelLines';
 import * as L from "leaflet";
 import type {
   DisplayAnchorConfig,
@@ -18,6 +19,7 @@ export type TextPathPlanMode =
   | "svgVerticalCjk";
 
 export type TextPathPlan = {
+  rows?: TextPathPlan[];
   pathD: string;
   viewBox: string;
   width: number;
@@ -35,6 +37,7 @@ export type TextPathPlan = {
 };
 
 export type TextPathBuildOptions = {
+  fontSizePx?: number;
   map: L.Map;
   text: string;
   pathLatLngs: L.LatLng[];
@@ -536,9 +539,19 @@ function approxMetricsCacheKey(options: TextPathBuildOptions): string {
   return `${zoom}|${options.text}|${pathKey}|${options.anchor?.lineTextMode ?? "auto"}`;
 }
 
+function buildMultilineTextPath(options:TextPathBuildOptions,approx:boolean):TextPathPlanAndMetrics|null{
+  const rows=parallelLabelPaths(options.map,options.pathLatLngs,options.text,options.fontSizePx??14).map(row=>(approx?buildTextPathApproxMetrics:buildTextPathPlanAndMetrics)({...options,text:row.text,pathLatLngs:row.path,cacheKeyHint:undefined}));
+  if(!rows.length||rows.some(row=>!row))return null;
+  const valid=rows as TextPathPlanAndMetrics[], collisionRect=unionLabelRects(valid.map(row=>row.metrics.collisionRect));
+  const box=unionLabelRects(valid.map(({plan:p})=>({x:p.markerContainerPoint.x-p.width/2,y:p.markerContainerPoint.y-p.height/2,w:p.width,h:p.height})));
+  const first=valid[0],width=Math.ceil(box.w),height=Math.ceil(box.h);
+  return {plan:{...first.plan,rows:valid.map(row=>row.plan),text:options.text,width,height,viewBox:`0 0 ${width} ${height}`,markerContainerPoint:L.point(box.x+width/2,box.y+height/2)},metrics:{...first.metrics,collisionRect,estimatedTextWidthPx:Math.max(...valid.map(row=>row.metrics.estimatedTextWidthPx))}};
+}
+
 export function buildTextPathApproxMetrics(
   options: TextPathBuildOptions,
 ): TextPathPlanAndMetrics | null {
+  if(options.text.includes('\n'))return buildMultilineTextPath(options,true);
   const anchor = resolveAnchor(options.anchor);
   const points = pointsFromLatLngs(options.map, options.pathLatLngs);
   if (points.length < 2) return null;
@@ -630,6 +643,7 @@ export function buildTextPathApproxMetrics(
 export function buildTextPathPlanAndMetrics(
   options: TextPathBuildOptions,
 ): TextPathPlanAndMetrics | null {
+  if(options.text.includes('\n'))return buildMultilineTextPath(options,false);
   const anchor = resolveAnchor(options.anchor);
   const points = pointsFromLatLngs(options.map, options.pathLatLngs);
   if (points.length < 2) return null;
