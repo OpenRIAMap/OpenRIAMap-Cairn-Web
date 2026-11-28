@@ -73,6 +73,10 @@ export function validateNativeStructure(value: unknown): NativeStructureIssue[] 
     }
   }
   for(const workflow of config.workflows){
+    if(config.contractRevision<23){
+      for(const output of workflow.outputs)if(output.label!==undefined)issues.push({path:'config/workflows/'+workflow.id+'/outputs/'+output.id+'/label',message:'输出名称最低要求 c23。'});
+      for(const binding of workflow.external?.roleBindings??[])if(binding.label!==undefined)issues.push({path:'config/workflows/'+workflow.id+'/external/roleBindings/'+binding.role+'/label',message:'角色输出名称最低要求 c23。'});
+    }
     if(config.contractRevision>=18&&workflow.editor?.scope)issues.push({path:'config/workflows/'+workflow.id+'/editor/scope',message:'c18 编辑作用范围必须使用显式分类加减 range，不能保留旧 scope。'});
     if(config.contractRevision<16&&workflow.external&&(workflow.external.roleBindings!==undefined||workflow.external.referenceBindings!==undefined))issues.push({path:'config/workflows/'+workflow.id+'/external',message:'角色与引用绑定最低要求 c16。'});
     if(config.contractRevision>=16&&workflow.mode==='external'&&(!workflow.external?.roleBindings||workflow.external.coveredClassifications!==undefined))issues.push({path:'config/workflows/'+workflow.id+'/external',message:'c16 专用流程必须使用明确角色绑定，不能保留旧范围副本。'});

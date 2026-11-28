@@ -1,3 +1,4 @@
+import {displayCharacters} from './label/labelTextFormat';
 import { usesScriptAwareGlyphs } from './label/lineScriptMetrics';
 import { customPillMetrics } from '../../../configStudio/customPill';
 import { placeLabel, labelCandidateShift, mergeLabelSymbolBounds, type SymbolCollisionBounds } from './labelPlacement';
@@ -234,6 +235,7 @@ export type LabelRequest = {
   anchorCandidatesLatLng?: L.LatLng[];
   /** Native polygon anchor containment policy, including holes and parts. */
   acceptsAnchor?: (screenPoint: L.Point) => boolean;
+  acceptsRect?: (rect:{x:number;y:number;w:number;h:number})=>boolean;
   collisionBoundsAdjustment?: { x?: number; y?: number; width?: number; height?: number };
 
   /** Explicit strict-SVG budget failure is hidden rather than silently painted as HTML. */
@@ -315,6 +317,7 @@ export type LabelRequest = {
    * - 不给则用默认字体估计
    */
   font?: string;
+  writingMode?: "horizontal" | "vertical";
 };
 
 export type LabelHiddenReason =
@@ -535,7 +538,12 @@ function measureText(
   withDot: boolean,
   dotAnchorMode?: "inline" | "anchorRight",
   pill?: LabelRequest['customPill'],
+  writingMode?:LabelRequest['writingMode'],
 ): Measured {
+  if(writingMode==='vertical'){
+    const columns=text.split('\n'),size=getFontSizePx(font);
+    return {w:Math.ceil(columns.length*size*1.5)+12+(withDot?14:0),h:Math.ceil(Math.max(...columns.map(column=>displayCharacters(column).length))*size*1.35)+8};
+  }
   const key = `${font}|${withDot ? 1 : 0}|${dotAnchorMode ?? "inline"}|${text}|${pill ? JSON.stringify([pill.size,pill.settings.lineHeightRatio,pill.settings.paddingXRatio,pill.settings.paddingYRatio,pill.settings.radiusRatio,pill.settings.strokeWidth]) : ''}`;
   const hit = _measureCache.get(key);
   if (hit) return hit;
@@ -562,8 +570,8 @@ function measureText(
   if (typeof document === "undefined") {
     const fontSize = getFontSizePx(font);
     const approx = {
-      w: Math.ceil(text.length * fontSize * 0.62) + 12 + (withDot ? 14 : 0),
-      h: Math.ceil(fontSize * 1.35) + 8,
+      w: Math.ceil(Math.max(...text.split('\n').map(line=>Array.from(line).length)) * fontSize * 0.62) + 12 + (withDot ? 14 : 0),
+      h: Math.ceil(fontSize * 1.35 * text.split('\n').length) + 8,
     };
     _measureCache.set(key, approx);
     return approx;
@@ -577,20 +585,20 @@ function measureText(
   if (!ctx) {
     const fontSize = getFontSizePx(font);
     const approx = {
-      w: Math.ceil(text.length * fontSize * 0.62) + 12 + (withDot ? 14 : 0),
-      h: Math.ceil(fontSize * 1.35) + 8,
+      w: Math.ceil(Math.max(...text.split('\n').map(line=>Array.from(line).length)) * fontSize * 0.62) + 12 + (withDot ? 14 : 0),
+      h: Math.ceil(fontSize * 1.35 * text.split('\n').length) + 8,
     };
     _measureCache.set(key, approx);
     return approx;
   }
 
   ctx.font = font;
-  const metrics = ctx.measureText(text);
+  const metrics = {width:Math.max(...text.split('\n').map(line=>ctx.measureText(line).width))};
   const fontSize = getFontSizePx(font);
 
   // 你的 label HTML 有 padding + border；这里按经验值加入余量
   const w = Math.ceil(metrics.width) + 12 + (withDot ? 14 : 0);
-  const h = Math.ceil(fontSize * 1.35) + 8;
+  const h = Math.ceil(fontSize * 1.35 * text.split('\n').length) + 8;
 
   const measured = { w, h };
   _measureCache.set(key, measured);
@@ -1168,7 +1176,7 @@ export function layoutLabelsOnMap(
     const decl = req.declutter ?? {};
     const font =
       req.font ?? "12px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-    const measured = measureText(req.text, font, !!req.withDot, req.dotAnchorMode, req.customPill);
+    const measured = measureText(req.text, font, !!req.withDot, req.dotAnchorMode, req.customPill, req.writingMode);
 
     const anchorPx = map.latLngToContainerPoint(req.anchorLatLng);
     const candidates = normalizeCandidates(req, measured, {
@@ -1306,7 +1314,7 @@ export function layoutLabelsOnMap(
         text,
         pathLatLngs: pathCandidate.pathLatLngs,
         anchor,
-        fontSizePx: usesScriptAwareGlyphs(anchor) ? getFontSizePx(req.font ?? '14px system-ui') : undefined,
+        fontSizePx: getFontSizePx(req.font ?? '14px system-ui'),
         metricsOnly: true,
       });
       if (glyphResult.metrics) {
@@ -1329,6 +1337,7 @@ export function layoutLabelsOnMap(
     }
 
     return buildTextPathApproxMetrics({
+      fontSizePx:getFontSizePx(req.font ?? '14px system-ui'),
       map,
       text,
       pathLatLngs: pathCandidate.pathLatLngs,
@@ -1917,7 +1926,7 @@ export function layoutLabelsOnMap(
     const font =
       baseReq.font ??
       "12px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-    const measured = measureText(text, font, !!baseReq.withDot, baseReq.dotAnchorMode, baseReq.customPill);
+    const measured = measureText(text, font, !!baseReq.withDot, baseReq.dotAnchorMode, baseReq.customPill, baseReq.writingMode);
     const polygonAuditEnabled = isPolygonAuditRequest(baseReq);
     const polygonLayoutCandidates: PolygonLayoutCandidateAudit[] = [];
 
@@ -2042,6 +2051,7 @@ export function layoutLabelsOnMap(
         const trial = rectForCandidate(item, measured, anchorPxCand, c);
         const textPathMetrics = maybeTextPathMetrics(item, text, ac);
         const rect = textPathMetrics?.metrics?.collisionRect ? adjustedCollisionRect(textPathMetrics.metrics.collisionRect,baseReq.collisionBoundsAdjustment) : trial.rect;
+        if(baseReq.acceptsRect&&!baseReq.acceptsRect(rect)){item.lastFailureReason='notPlaced';continue;}
         const auditCandidate: PolygonLayoutCandidateAudit | undefined =
           polygonAuditEnabled
             ? {
@@ -2231,7 +2241,7 @@ export function layoutLabelsOnMap(
     const font =
       baseReq.font ??
       "12px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-    const measured = measureText(text, font, !!baseReq.withDot, baseReq.dotAnchorMode, baseReq.customPill);
+    const measured = measureText(text, font, !!baseReq.withDot, baseReq.dotAnchorMode, baseReq.customPill, baseReq.writingMode);
     const candidates = normalizeCandidates({ ...baseReq, text }, measured, {
       ...params,
       viewportPaddingPx: item.viewportPaddingPx,

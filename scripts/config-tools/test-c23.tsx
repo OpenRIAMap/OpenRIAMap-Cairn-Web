@@ -1,0 +1,62 @@
+import {polygonLabelContainment} from '../../src/components/Rules/rendering/label/polygonLabelBounds';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {formatMapLabelText,displayCharacters} from '../../src/components/Rules/rendering/label/labelTextFormat';
+import {normalizeAssistGrid,snapAssistGrid} from '../../src/components/Mapping/tools/assistGridMath';
+import {ExternalWorkflowJournal} from '../../src/components/Mapping/Workflow/externalWorkflowJournal';
+import {workflowOutputLabel} from '../../src/configStudio/workflowOutputLabel';
+import {syncWorkflowClassification} from '../../src/configStudio/systemClassification';
+import {migratePackageToContract} from '../../src/configStudio/contractMigration';
+import {validateNativeStructure} from '../../src/configStudio/nativeContractValidation';
+import {WorkflowFormLayout} from '../../src/configStudio/WorkflowFormLayout';
+import {WorkflowAnnotationsInput} from '../../src/configStudio/WorkflowAnnotationsInput';
+import {FeatureEditActions} from '../../src/components/Mapping/Editor/FeatureEditActions';
+import type {ConfigPackageV3,WorkflowStep} from '../../src/configStudio/types';
+import type {WorkflowBridge} from '../../src/components/Mapping/Workflow/WorkflowHost';
+(globalThis as any).React=React;
+
+for(const length of [9,10,11,20,30,31,60]){
+  const text='甲'.repeat(length),shown=formatMapLabelText(text),lines=shown.split('\n');
+  assert(lines.length<=3);assert(lines.every(line=>displayCharacters(line).length<=10));
+  assert.equal(shown.endsWith('...'),length>30);
+  if(length<=30)assert.equal(lines.join(''),text);
+}
+assert.equal(formatMapLabelText('1234567890\nabcdefghij\nABCDEFGHIJ\nx'),'1234567890\nabcdefghij\nABCDEFG...');
+assert.equal(formatMapLabelText('1\n2\n3\n4'),'1\n2\n3...');
+const emoji='👩🏽‍💻';assert.equal(displayCharacters(emoji).length,1);
+assert.equal(formatMapLabelText(emoji.repeat(11)),emoji.repeat(10)+'\n'+emoji);
+assert.equal(formatMapLabelText('e\u0301'.repeat(11)),'e\u0301'.repeat(10)+'\n'+'e\u0301');
+assert.equal(formatMapLabelText('ABCDEFGHIJKLMNOPQRSTUVWXYZ12345').split('\n')[2],'UVWXYZ1...');
+assert.equal(formatMapLabelText('abc',{perLine:.5,maxLines:.5}),'...'.slice(0,1));
+const containment=polygonLabelContainment([[ [{x:0,y:0},{x:100,y:0},{x:100,y:100},{x:0,y:100}], [{x:40,y:40},{x:60,y:40},{x:60,y:60},{x:40,y:60}] ]]);
+assert(containment.rect({x:10,y:10,w:20,h:20}));assert(!containment.rect({x:30,y:30,w:40,h:40}),'enclosed holes exclude a whole label');assert(!containment.rect({x:90,y:90,w:20,h:20}));
+const grid=normalizeAssistGrid('-1.5','2','2.5','#ffffff');
+assert.deepEqual(snapAssistGrid({x:1.1,z:3.4},grid,.2),{point:{x:1,z:3.4},snapped:true,dist:Math.abs(1.1-1)});
+assert.deepEqual(snapAssistGrid({x:1.5,z:2.5},grid,1).point,{x:1,z:2.5},'ties use the x line, not an intersection');
+for(const spacing of ['','0','-1','NaN','Infinity','0.1'])assert.throws(()=>normalizeAssistGrid('0','0',spacing,'#000000'));
+assert.equal(normalizeAssistGrid('0','0','.5','#000000').spacing,.5);
+
+const baseline=JSON.parse(fs.readFileSync('public/configuration/releases/36e3e9aacd32e7fa937315d0b8b927c40d11ef4b84d7331a5dc8ee3878b03ca1/config.json','utf8')) as ConfigPackageV3;
+const c22=migratePackageToContract(baseline,22).config,before=JSON.stringify(c22),c23=migratePackageToContract(c22,23).config;
+assert.equal(JSON.stringify(c22),before);assert.equal(c23.contractRevision,23);assert.equal(c23.revision,c22.revision);
+assert.deepEqual(c23.workflows,c22.workflows);assert.deepEqual(c23.nodes,c22.nodes);
+const w=structuredClone(c23.workflows.find(w=>w.mode==='composed')!);w.outputs[0].label={zh:'道路',en:'Road'};
+const named=syncWorkflowClassification(c23,w);
+for(const control of named.steps.flatMap(step=>step.controls??[]).filter(control=>control.outputId===w.outputs[0].id&&control.systemManaged))assert(control.label.zh.includes('道路'));
+assert.equal(workflowOutputLabel(w.outputs[0],0,'en'),'Road');assert.equal(workflowOutputLabel({},1),'输出 2');
+assert.deepEqual(validateNativeStructure({...c23,workflows:[named]}),[]);
+assert(validateNativeStructure({...c22,workflows:[named]}).some(issue=>issue.path.endsWith('/label')));
+const step:WorkflowStep={id:'form',kind:'form',label:{zh:'页',en:''},controls:[{id:'text',kind:'text',columns:1,label:{zh:'姓名',en:''}}],sections:[{id:'section',label:{zh:'额外信息',en:''}}],layout:[{kind:'section',sectionId:'section',children:[{kind:'control',controlId:'text'}]}]};
+assert(renderToStaticMarkup(<WorkflowFormLayout step={step} controls={step.controls!} render={control=><input key={control.id} aria-label={control.label.zh}/>}/>).includes('aria-expanded="false"'));
+const control=w.steps.flatMap(step=>step.controls??[]).find(control=>control.kind==='tagsExtensions')!;
+assert(renderToStaticMarkup(<WorkflowAnnotationsInput config={c23} workflow={w} control={control} value={{}} classifications={{}} onChange={()=>{}}/>).includes('<details'));
+assert(renderToStaticMarkup(<FeatureEditActions mode="create" onSave={()=>{}} onCancel={()=>{}}/>).includes('保存图层'));
+
+let layers=new Map<number,string>([[99,'unrelated']]),nextId=1;
+const bridge={captureCommittedState:()=>new Map(layers),getDrawingDraft:()=>null,commitFeature:()=>{const layerId=nextId++;layers.set(layerId,'owned');return {ok:true,layerId};},rollbackWorkflowWrites:(writes:Array<{layerId:number;before:Map<number,string>}>)=>{const next=new Map(layers);for(const write of writes){next.delete(write.layerId);if(write.before.has(write.layerId))next.set(write.layerId,write.before.get(write.layerId)!);}layers=next;}} as unknown as WorkflowBridge;
+const journal=new ExternalWorkflowJournal();journal.page='stb';journal.commit(bridge,{} as never);journal.page='pfb';journal.commit(bridge,{} as never);
+journal.rollback(bridge,['pfb']);assert.deepEqual([...layers.keys()],[99,1]);
+journal.rollback(bridge,['stb','pfb']);assert.deepEqual([...layers.entries()],[[99,'unrelated']]);
+console.log('c23: migration/name identity, closed forms, 10x3 graphemes, grid math and owned-write rollback passed.');

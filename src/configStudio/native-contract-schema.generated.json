@@ -13331,6 +13331,13 @@
         "id": {
           "type": "string"
         },
+        "label": {
+          "anyOf": [
+            {
+              "ref": "t1"
+            }
+          ]
+        },
         "classification": {
           "anyOf": [
             {
@@ -13410,6 +13417,13 @@
             },
             {
               "const": "tradePoint"
+            }
+          ]
+        },
+        "label": {
+          "anyOf": [
+            {
+              "ref": "t1"
             }
           ]
         },
@@ -13887,6 +13901,9 @@
             },
             {
               "const": 4
+            },
+            {
+              "const": 23
             },
             {
               "const": 5

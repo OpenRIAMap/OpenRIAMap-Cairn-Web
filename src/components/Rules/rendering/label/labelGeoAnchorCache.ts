@@ -787,3 +787,19 @@ export function resetStableGeoAnchorCacheForFeature(featureKey: string): void {
 export function clearStableGeoAnchorCache(): void {
   anchorCache.clear();
 }
+
+/** Reuse the bounded geometry cache for collision retries, centre first. */
+export function polygonLayoutCandidates(options:ResolveStableGeoAnchorOptions):WorldPointXZ[]{
+  const entry=getEntry(options);
+  if(!entry)return [];
+  const cached=layoutCandidatesCache.get(entry);if(cached)return cached;
+  const output=entry.candidates.slice().sort((a,b)=>a.score-b.score||a.index-b.index).map(candidate=>candidate.worldXZ);
+  const seen=new Set(output.map(candidateKey)),bbox=bboxFromPoly(options.poly),limit=Math.min(64,entry.candidateMax);
+  let scanned=0;const scanMax=Math.min(256,Number(options.anchor?.geoCandidateScanMax)||256);
+  for(let row=0;row<9&&scanned<scanMax;row++)for(let column=0;column<9&&scanned<scanMax;column++){
+    scanned++;const point={x:bbox.minX+(bbox.maxX-bbox.minX)*(column+.5)/9,z:bbox.minZ+(bbox.maxZ-bbox.minZ)*(row+.5)/9};
+    if(!seen.has(candidateKey(point))&&pointInPolygon(point,options.poly)){seen.add(candidateKey(point));output.push(point);}
+  }
+  const result=output.slice(0,limit);layoutCandidatesCache.set(entry,result);return result;
+}
+const layoutCandidatesCache=new WeakMap<StableGeoAnchorCacheEntry,WorldPointXZ[]>();

@@ -1,3 +1,9 @@
+import {reportExternalMissing} from './externalFormFeedback';
+import {RequiredFieldsHint} from '@/configStudio/RequiredFieldsHint';
+import WorkflowFeatureSearchSelect from './WorkflowFeatureSearchSelect';
+import {specializedReferenceSearch} from './specialized/referenceSearch';
+import {ExternalWorkflowJournal} from './externalWorkflowJournal';
+import {useExternalWorkflowPages} from './useExternalWorkflowPages';
 import { applicationWorldCodeMap, applicationWorldPrefixMap, subscribeApplication } from '@/core/project/applicationRuntime';
 // File: src/components/Mapping/Workflow/StationWorkflow.tsx
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -11,7 +17,7 @@ import {multipartGeometryFromSinglePath,validateMultipartGeometry,type Multipart
  * 页面结构：
  * 1) 填写者
  * 2) 基础信息（bureau / line / section / stationNo / Name）
- * 3) 车站总建筑（STB polygon，可跳过；离开后不可回退）
+ * 3) 车站总建筑（STB polygon，可跳过；确认后可清除后续内容并回退）
  * 4) 车站轮廓（PFB polygon，可从 STB 导入坐标）
  * 5) 下行站台（PLF point + 状态/线路组，可添加多线路）
  * 6) 上行站台（PLF point，可从下行导入坐标）
@@ -36,7 +42,7 @@ type LineEntry = {
   Overtaking: boolean;
   getin: boolean;
   getout: boolean;
-  NextOT: boolean;
+  NextOT?: boolean;
 };
 
 let WORLD_ID_TO_CODE=applicationWorldCodeMap();
@@ -103,14 +109,15 @@ function TopNav(props: TopNavProps) {
             className={`px-3 py-1.5 rounded text-sm border border-gray-300 bg-white text-gray-900 ${
               nextDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'
             }`}
-            disabled={!!nextDisabled}
-            onClick={onNext}
+            aria-disabled={!!nextDisabled}
+            onClick={event=>{const root=event.currentTarget.closest<HTMLElement>('.p-3');if(root&&!reportExternalMissing(root))return;if(!nextDisabled)onNext?.();}}
             type="button"
           >
             下一步
           </AppButton>
         ) : null}
       </div>
+      <RequiredFieldsHint/>
     </div>
   );
 }
@@ -132,14 +139,14 @@ function LabeledInput(props: LabeledInputProps) {
   const { label, value, placeholder, onChange, type = 'text', disabled } = props;
   return (
     <label className="block space-y-1">
-      <div className="text-xs opacity-80">{label}</div>
-      <input
+      <div className="text-xs opacity-80">{label}{!label.includes('可选')?' *':''}</div>
+      <input aria-required={!label.includes('可选')}
         type={type}
         className={`w-full border p-1 rounded text-sm ${disabled ? 'bg-gray-100 text-gray-500' : ''}`}
         value={value}
         placeholder={placeholder}
         disabled={!!disabled}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {e.currentTarget.closest('[data-input-invalid]')?.removeAttribute('data-input-invalid');e.currentTarget.removeAttribute('aria-invalid');onChange(e.target.value);}}
         onMouseDownCapture={(e) => e.stopPropagation()}
         onPointerDownCapture={(e) => e.stopPropagation()}
         onTouchStartCapture={(e) => e.stopPropagation()}
@@ -174,12 +181,13 @@ function Toggle(props: ToggleProps) {
 export default function StationWorkflow(props: WorkflowComponentProps) {
   const { bridge } = props;
 
+  const [journal]=useState(()=>new ExternalWorkflowJournal());
   const bridgeRef = useRef(bridge);
   useEffect(() => {
-    bridgeRef.current = bridge;
+    bridgeRef.current = {...bridge,commitFeature:args=>journal.commit(bridge,args)};
   }, [bridge]);
 
-  const [step, setStep] = useState<Step>('creator');
+  const [step, setStepState] = useState<Step>('creator');
 
   // Page 1
   const [creatorId, setCreatorId] = useState<string>(() => (bridgeRef.current.getEditorId?.() ?? '').trim());
@@ -220,7 +228,6 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
       Overtaking: false,
       getin: true,
       getout: true,
-      NextOT: false,
     },
   ]);
   const [plfDownId, setPlfDownId] = useState('');
@@ -237,7 +244,6 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
       Overtaking: false,
       getin: true,
       getout: true,
-      NextOT: false,
     },
   ]);
   const [plfUpId, setPlfUpId] = useState('');
@@ -245,6 +251,9 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
 
   // STA
   const [stbIdManual, setStbIdManual] = useState('');
+
+  const pages=useExternalWorkflowPages({step,setStep:setStepState,state:{creatorId,base,stbAbbrA,stbFinalized,stbSkipped,stbId,stbPolygon,stbGeometry,pfbPolygon,pfbGeometry,pfbId,plfNoDown,plfSituationDown,plfConnectDown,plfLinesDown,plfDownId,plfDownPoint,plfNoUp,plfSituationUp,plfConnectUp,plfLinesUp,plfUpId,plfUpPoint,stbIdManual},order:['creator','base','stb','pfb','plfDown','plfUp','sta'] as const,fields:{creator:['creatorId'],base:['base'],stb:['stbAbbrA','stbFinalized','stbSkipped','stbId','stbPolygon','stbGeometry'],pfb:['pfbPolygon','pfbGeometry','pfbId'],plfDown:['plfNoDown','plfSituationDown','plfConnectDown','plfLinesDown','plfDownId','plfDownPoint'],plfUp:['plfNoUp','plfSituationUp','plfConnectUp','plfLinesUp','plfUpId','plfUpPoint'],sta:['stbIdManual']},bridge:bridgeRef,journal,restore:(saved,target,draft)=>{setCreatorId(saved.creatorId);setBase(saved.base);setStbAbbrA(saved.stbAbbrA);setStbFinalized(saved.stbFinalized);setStbSkipped(saved.stbSkipped);setStbId(saved.stbId);setStbPolygon(saved.stbPolygon);setStbGeometry(saved.stbGeometry);setPfbPolygon(saved.pfbPolygon);setPfbGeometry(saved.pfbGeometry);setPfbId(saved.pfbId);setPlfNoDown(saved.plfNoDown);setPlfSituationDown(saved.plfSituationDown);setPlfConnectDown(saved.plfConnectDown);setPlfLinesDown(saved.plfLinesDown);setPlfDownId(saved.plfDownId);setPlfDownPoint(saved.plfDownPoint);setPlfNoUp(saved.plfNoUp);setPlfSituationUp(saved.plfSituationUp);setPlfConnectUp(saved.plfConnectUp);setPlfLinesUp(saved.plfLinesUp);setPlfUpId(saved.plfUpId);setPlfUpPoint(saved.plfUpPoint);setStbIdManual(saved.stbIdManual);if(draft){if(target==='stb'){setStbPolygon(draft.coordinates);setStbGeometry(draft.geometry);}if(target==='pfb'){setPfbPolygon(draft.coordinates);setPfbGeometry(draft.geometry);}if(target==='plfDown')setPlfDownPoint(draft.coordinates);if(target==='plfUp')setPlfUpPoint(draft.coordinates);}}});
+  const setStep=(next:Step)=>{void pages.go(next);};
 
   // 线路 ID：用于 PFB ID、PLF lines[0].ID
   const lineIdRef = useMemo(() => {
@@ -254,9 +263,9 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     // 区段代码在本工作流中为必填；在其为空时不生成引用ID，避免自动回填写入“缺区段”的临时值。
     // 典型现象：用户先填 stationNo 再填 sectionCode 时，早期 effect 会把默认线路ID锁定为无区段版本，
     // 从而首次进入上下行站台页面出现类似 "ZRT131_D" 的格式。
-    if (!bureau || !lineNo || !section) return '';
+    if (!bureau || !lineNo) return '';
     // 与铁路工作流保持一致的“线路ID引用”生成方式（不包含测绘次数）
-    return `${worldPrefix}R${bureau}${lineNo}_${section}`;
+    return [`${worldPrefix}R${bureau}${lineNo}`,section].filter(Boolean).join('_');
   }, [base.bureau, base.lineNo, base.sectionCode, worldPrefix]);
 
   const lineIdDownRef = useMemo(() => (lineIdRef ? `${lineIdRef}_D` : ''), [lineIdRef]);
@@ -270,26 +279,29 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     return `${worldPrefix}R${bureau}${lineNo}STA_${stationNo}`;
   }, [base.bureau, base.lineNo, base.stationNo, worldPrefix]);
 
-  // 为默认 lines[0].ID 自动回填
+  const autoLineIds=useRef({down:'',up:'',station:''});
+  // Update generated defaults after a confirmed rewind, preserving user-selected values.
   useEffect(() => {
     if (!lineIdDownRef && !lineIdUpRef) return;
+    const previousAuto=autoLineIds.current;
     setPlfLinesDown((prev) => {
       if (!prev?.length) return prev;
       const next = [...prev];
-      if (!String(next[0]?.ID ?? '').trim() && lineIdDownRef) next[0] = { ...next[0], ID: lineIdDownRef };
+      if ((!String(next[0]?.ID ?? '').trim() || next[0]?.ID===previousAuto.down) && lineIdDownRef) next[0] = { ...next[0], ID: lineIdDownRef };
       // stationCode 默认 = stationNo
       const sc = String(base.stationNo ?? '').trim();
-      if (sc && (next[0].stationCode === undefined || next[0].stationCode === '')) next[0] = { ...next[0], stationCode: sc };
+      if (sc && (next[0].stationCode === undefined || next[0].stationCode === '' || String(next[0].stationCode)===previousAuto.station)) next[0] = { ...next[0], stationCode: sc };
       return next;
     });
     setPlfLinesUp((prev) => {
       if (!prev?.length) return prev;
       const next = [...prev];
-      if (!String(next[0]?.ID ?? '').trim() && lineIdUpRef) next[0] = { ...next[0], ID: lineIdUpRef };
+      if ((!String(next[0]?.ID ?? '').trim() || next[0]?.ID===previousAuto.up) && lineIdUpRef) next[0] = { ...next[0], ID: lineIdUpRef };
       const sc = String(base.stationNo ?? '').trim();
-      if (sc && (next[0].stationCode === undefined || next[0].stationCode === '')) next[0] = { ...next[0], stationCode: sc };
+      if (sc && (next[0].stationCode === undefined || next[0].stationCode === '' || String(next[0].stationCode)===previousAuto.station)) next[0] = { ...next[0], stationCode: sc };
       return next;
     });
+    autoLineIds.current={down:lineIdDownRef,up:lineIdUpRef,station:String(base.stationNo??'').trim()};
   }, [lineIdDownRef, lineIdUpRef, base.stationNo]);
 
   // step -> draw mode
@@ -353,13 +365,12 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
   const goBaseNext = () => {
     const bureau = String(base.bureau ?? '').trim();
     const lineNo = String(base.lineNo ?? '').trim();
-    const section = String(base.sectionCode ?? '').trim();
     const stationNo = String(base.stationNo ?? '').trim();
     const Name = String(base.Name ?? '').trim();
-    if (!bureau || !lineNo || !section || !stationNo || !Name) return;
+    if (!bureau || !lineNo || !stationNo || !Name) return;
 
-    // 已经离开过 STB 页面，则不允许回退到 STB：直接去 PFB
-    setStep(stbFinalized ? 'pfb' : 'stb');
+    // Backtracking restores the target page and removes its later owned outputs.
+    setStep('stb');
   };
 
   const goPrevFromStb = () => setStep('base');
@@ -423,7 +434,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     setStep('pfb');
   };
 
-  const goPrevFromPfb = () => {const geometry=bridgeRef.current.getDrawingGeometry?.();if(geometry)setPfbGeometry(structuredClone(geometry));setStep('base');};
+  const goPrevFromPfb=()=>setStep('stb');
   const finalizePfbNext = () => {
     const b = bridgeRef.current;
     const pts = b.getTempPoints() ?? [];
@@ -484,7 +495,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
         Overtaking: !!it.Overtaking,
         getin: !!it.getin,
         getout: !!it.getout,
-        NextOT: !!it.NextOT,
+        ...(Object.prototype.hasOwnProperty.call(it,'NextOT')?{NextOT:it.NextOT}:{}),
       });
     }
     return { ok: true as const, lines: out };
@@ -648,7 +659,6 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     const canNext =
       nonEmpty(base.bureau) &&
       nonEmpty(base.lineNo) &&
-      nonEmpty(base.sectionCode) &&
       nonEmpty(base.stationNo) &&
       nonEmpty(base.Name);
 
@@ -672,7 +682,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <LabeledInput
-              label="区段代码"
+              label="区段代码（可选）"
               value={base.sectionCode}
               onChange={(v) => setBase((p) => ({ ...p, sectionCode: v }))}
               placeholder="例如：A"
@@ -703,7 +713,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
     const canNext = pts.length >= 3;
     const canSkip = pts.length === 0;
     const lockedHint = (
-      <div className="text-xs text-amber-600">此页一旦点击“下一步/跳过”后将无法回退，请确认。</div>
+      <div className="text-xs text-amber-600">返回此页时将清除本页及后续采集结果，需要重新填写。</div>
     );
 
     return (
@@ -790,7 +800,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
 
     return (
       <div className="p-3">
-        <TopNav title="车站和站台：下行站台" showNext nextDisabled={!canNext} onNext={finalizePlfDownNext} />
+        <TopNav title="车站和站台：下行站台" showPrev onPrev={()=>setStep('pfb')} showNext nextDisabled={!canNext} onNext={finalizePlfDownNext} />
 
         <div className="space-y-3">
           <LabeledInput label="车站内站台编号" value={plfNoDown} onChange={setPlfNoDown} placeholder="例如：1" />
@@ -818,7 +828,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
                   ) : null}
                 </div>
 
-                <LabeledInput
+                <WorkflowFeatureSearchSelect required bridge={bridgeRef.current} config={specializedReferenceSearch(bridgeRef.current,'line')}
                   label="线路ID (ID)"
                   value={ln.ID}
                   onChange={(v) =>
@@ -904,17 +914,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
                       })
                     }
                   />
-                  <Toggle
-                    label="下一站越行 (NextOT)"
-                    value={ln.NextOT}
-                    onChange={(v) =>
-                      setPlfLinesDown((p) => {
-                        const next = [...p];
-                        next[idx] = { ...next[idx], NextOT: v };
-                        return next;
-                      })
-                    }
-                  />
+
                 </div>
               </div>
             ))}
@@ -931,8 +931,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
                     Overtaking: false,
                     getin: true,
                     getout: true,
-                    NextOT: false,
-                  },
+                                },
                 ])
               }
             >
@@ -950,7 +949,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
 
     return (
       <div className="p-3">
-        <TopNav title="车站和站台：上行站台" showNext nextDisabled={!canNext} onNext={finalizePlfUpNext} />
+        <TopNav title="车站和站台：上行站台" showPrev onPrev={()=>setStep('plfDown')} showNext nextDisabled={!canNext} onNext={finalizePlfUpNext} />
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
@@ -991,7 +990,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
                   ) : null}
                 </div>
 
-                <LabeledInput
+                <WorkflowFeatureSearchSelect required bridge={bridgeRef.current} config={specializedReferenceSearch(bridgeRef.current,'line')}
                   label="线路ID (ID)"
                   value={ln.ID}
                   onChange={(v) =>
@@ -1077,17 +1076,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
                       })
                     }
                   />
-                  <Toggle
-                    label="下一站越行 (NextOT)"
-                    value={ln.NextOT}
-                    onChange={(v) =>
-                      setPlfLinesUp((p) => {
-                        const next = [...p];
-                        next[idx] = { ...next[idx], NextOT: v };
-                        return next;
-                      })
-                    }
-                  />
+
                 </div>
               </div>
             ))}
@@ -1104,8 +1093,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
                     Overtaking: false,
                     getin: true,
                     getout: true,
-                    NextOT: false,
-                  },
+                                },
                 ])
               }
             >
@@ -1125,7 +1113,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
 
     return (
       <div className="p-3">
-        <TopNav title="车站和站台：站台点" showNext nextDisabled={!canNext} onNext={finalizeStaNext} />
+        <TopNav title="车站和站台：站场" showPrev onPrev={()=>setStep('plfUp')} showNext nextDisabled={!canNext} onNext={finalizeStaNext} />
 
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
@@ -1152,12 +1140,7 @@ export default function StationWorkflow(props: WorkflowComponentProps) {
           </div>
 
           {stbSkipped ? (
-            <LabeledInput
-              label="车站建筑ID（第三页跳过时必填）"
-              value={stbIdManual}
-              onChange={setStbIdManual}
-              placeholder="例如：ZRTSTB_XZM"
-            />
+            <WorkflowFeatureSearchSelect label="车站建筑ID（第三页跳过时必填）" required bridge={bridgeRef.current} config={specializedReferenceSearch(bridgeRef.current,'stationBuilding')} value={stbIdManual} onChange={setStbIdManual} placeholder="搜索车站建筑 ID 或名称"/>
           ) : (
             <div className="text-xs opacity-70">车站建筑ID：{stbId || '(未生成)'}（来自第三页）</div>
           )}

@@ -1,3 +1,4 @@
+import {UserPrefillSettings} from './UserPrefillSettings';
 import {ConfigDialog} from '@/configStudio/ConfigDialog';
 import { retiredSourceNotice } from '@/components/Rules/data/formalDataSourceRuntime';
 import {getFormalConfiguration,subscribeFormalConfiguration} from '@/configRuntime/formalConfiguration';
@@ -606,6 +607,7 @@ export function SettingsPanel({ onClose, onOpenConfigStudio, onOpenConfigLab, re
         </div>
 
 
+        <UserPrefillSettings/>
         <section className="space-y-3" aria-labelledby="appearance-settings-heading">
           <h3 id="appearance-settings-heading" className="flex items-center gap-2 text-sm font-medium text-gray-700">
             <Palette className="h-4 w-4" />

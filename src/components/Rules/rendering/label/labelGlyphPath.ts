@@ -1,3 +1,4 @@
+import {parallelLabelPaths,unionLabelRects} from './parallelLabelLines';
 import { scriptGlyphWidths, scriptSpacing, usesScriptAwareGlyphs } from './lineScriptMetrics';
 import * as L from "leaflet";
 import type {
@@ -552,15 +553,28 @@ function buildCjkGlyphPathFullPlan(options: CjkGlyphPathBuildOptions): CjkGlyphP
   return result;
 }
 
+function buildMultilineGlyphPath(options:CjkGlyphPathBuildOptions):CjkGlyphPathBuildResult{
+  const rows=parallelLabelPaths(options.map,options.pathLatLngs,options.text,options.fontSizePx??14).map(row=>buildCjkGlyphPathFullPlan({...options,text:row.text,pathLatLngs:row.path,metricsOnly:false,cacheKeyHint:undefined}));
+  const failed=rows.find(row=>!row.plan||!row.metrics);if(failed)return failed;
+  if(!rows.length)return buildCjkGlyphPathFullPlan({...options,text:''});
+  const plans=rows.map(row=>row.plan!),collisionRect=unionLabelRects(rows.map(row=>row.metrics!.collisionRect));
+  const box=unionLabelRects(plans.map(p=>({x:p.markerContainerPoint.x-p.width/2,y:p.markerContainerPoint.y-p.height/2,w:p.width,h:p.height})));
+  const width=Math.ceil(box.w),height=Math.ceil(box.h);
+  const glyphs=plans.flatMap(p=>p.glyphs.map(g=>({...g,x:g.x+p.markerContainerPoint.x-p.width/2-box.x,y:g.y+p.markerContainerPoint.y-p.height/2-box.y})));
+  return {...rows[0],plan:{...plans[0],text:options.text,glyphs,width,height,viewBox:`0 0 ${width} ${height}`,markerContainerPoint:L.point(box.x+width/2,box.y+height/2)},metrics:{...rows[0].metrics!,collisionRect,glyphCount:glyphs.length,estimatedTextWidthPx:Math.max(...plans.map(p=>p.estimatedTextWidthPx))}};
+}
+
 export function buildCjkGlyphPathApproxMetricsResult(
   options: CjkGlyphPathBuildOptions,
 ): CjkGlyphPathBuildResult {
+  if(options.text.includes('\n'))return buildMultilineGlyphPath(options);
   return buildCjkGlyphPathApproxOnly({ ...options, metricsOnly: true });
 }
 
 export function buildCjkGlyphPathPlanResult(
   options: CjkGlyphPathBuildOptions,
 ): CjkGlyphPathBuildResult {
+  if(options.text.includes('\n'))return buildMultilineGlyphPath(options);
   return buildCjkGlyphPathFullPlan(options);
 }
 

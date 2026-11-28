@@ -1,3 +1,4 @@
+import {RequiredFieldsHint} from '@/configStudio/RequiredFieldsHint';
 import {externalRolePaths} from '@/configStudio/externalBindings';
 import {DatasetInput} from '@/configStudio/DatasetInput';
 import {workflowCategoryOptions} from '@/configStudio/workflowCategoryOptions';
@@ -28,6 +29,7 @@ type Props = {
   editorIdentityLast?:boolean;
   classificationContent?:ReactNode;
   extraContent?:ReactNode;
+  footer?:ReactNode;
   view: ProjectedRegistryScene;
   values: WorkflowEditorDraftValues;
   unparsedEntries: WorkflowEditorUnparsedEntry[];
@@ -102,7 +104,7 @@ export default function WorkflowStyleEditPanel(props: Props) {
     bridge,
     editorId,
     onChangeEditorId,
-    idFirst=false,classificationContent,extraContent,editorIdentityLast=false,
+    idFirst=false,classificationContent,extraContent,editorIdentityLast=false,footer,
   } = props;
   const context=bridge.getCaptureContext?.();
   const classificationOptions=context?workflowCategoryOptions(context.config,externalRolePaths(context.config,context.workflow,'tradePoint')).map(option=>({kind:option.path.kind??'',skind:option.path.skind??'',skind2:option.path.skind2??'',name:option.label,label:option.label,classCode:option.path.class})):[];
@@ -426,6 +428,7 @@ export default function WorkflowStyleEditPanel(props: Props) {
       {!idFirst?renderField(view.idField):null}
 
       <div className="border-t pt-2">
+      <RequiredFieldsHint/>
         {view.fields.length || view.groups.length ? (
           <>
             {view.fields.map(renderField)}
@@ -470,6 +473,7 @@ export default function WorkflowStyleEditPanel(props: Props) {
         </div>
       )}
       {editorIdentityLast && editorIdentity}
+      {footer}
     </div>
   );
 }

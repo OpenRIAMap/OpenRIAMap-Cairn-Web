@@ -25,14 +25,33 @@ export function bindGeometryHalo(path:L.Path,halo?:ResolvedHalo):void{
     const parent=original.parentNode,polygon=path instanceof L.Polygon,inner=Boolean(polygon&&halo.cutout&&halo.showInner);
     node=original.cloneNode(false) as SVGPathElement;node.removeAttribute('id');nonInteractive(node);node.classList.add('ria-geometry-halo');
     let mask:SVGMaskElement|undefined,white:SVGRectElement|undefined,cut:SVGPathElement|undefined;
+    let dilation:SVGFilterElement|undefined,morphology:SVGFEMorphologyElement|undefined,flood:SVGFEFloodElement|undefined;
     if(halo.cutout){
       defs=document.createElementNS(ns,'defs');mask=document.createElementNS(ns,'mask');mask.id='ria-halo-'+(++sequence);mask.setAttribute('maskUnits','userSpaceOnUse');mask.setAttribute('maskContentUnits','userSpaceOnUse');mask.style.maskType='luminance';
       white=document.createElementNS(ns,'rect');white.setAttribute('fill','white');cut=original.cloneNode(false) as SVGPathElement;nonInteractive(cut);cut.removeAttribute('id');mask.append(white,cut);defs.append(mask);parent.insertBefore(defs,original);node.setAttribute('mask','url(#'+mask.id+')');
     }
     if(inner){fill=original.cloneNode(false) as SVGPathElement;nonInteractive(fill);fill.removeAttribute('id');fill.classList.add('ria-halo-original-fill');parent.insertBefore(fill,original);splitFill=true;}
+    const ensureDilation=()=>{
+      if(dilation)return;
+      if(!defs){defs=document.createElementNS(ns,'defs');parent.insertBefore(defs,node?.parentNode===parent?node:original);}
+      dilation=document.createElementNS(ns,'filter');dilation.id='ria-halo-dash-'+(++sequence);dilation.setAttribute('filterUnits','userSpaceOnUse');
+      morphology=document.createElementNS(ns,'feMorphology');morphology.setAttribute('in','SourceAlpha');morphology.setAttribute('operator','dilate');morphology.setAttribute('result','expanded');
+      flood=document.createElementNS(ns,'feFlood');flood.setAttribute('result','paint');
+      const composite=document.createElementNS(ns,'feComposite');composite.setAttribute('in','paint');composite.setAttribute('in2','expanded');composite.setAttribute('operator','in');
+      dilation.append(morphology,flood,composite);defs.append(dilation);
+    };
     const sync=()=>{
       if(!node)return;copyGeometry(original,node);attr(node,'fill','none');attr(node,'stroke',halo.color);attr(node,'stroke-opacity','1');
-      const width=original.getAttribute('stroke')==='none'?0:Number(original.getAttribute('stroke-width')??path.options.weight??0);attr(node,'stroke-width',String(width+2*halo.widthPx));
+      const width=original.getAttribute('stroke')==='none'?0:Number(original.getAttribute('stroke-width')??path.options.weight??0);
+      const dashed=Boolean(original.getAttribute('stroke-dasharray')?.match(/[1-9]/));
+      // Round/square caps already expand along the dash when stroke width grows.
+      // Only butt caps need silhouette dilation; avoid a filter per ordinary line.
+      const silhouette=dashed&&(original.getAttribute('stroke-linecap')??'butt')==='butt';
+      if(silhouette){ensureDilation();attr(morphology!,'radius',String(halo.widthPx));attr(flood!,'flood-color',halo.color);attr(node,'filter','url(#'+dilation!.id+')');}
+      else node.removeAttribute('filter');
+      // Expand the visible dash silhouette, including butt-cap endpoints.
+      // A wider stroke with the same dash lengths only creates side strips.
+      attr(node,'stroke-width',String(silhouette?width:width+2*halo.widthPx));
       if(mask&&white&&cut){
         copyGeometry(original,cut);attr(cut,'stroke','black');attr(cut,'stroke-opacity','1');attr(cut,'stroke-width',String(width));attr(cut,'fill',polygon&&!inner?'black':'none');attr(cut,'fill-opacity','1');
         const bounds=(path as L.Path&{_pxBounds?:L.Bounds})._pxBounds;
@@ -43,8 +62,9 @@ export function bindGeometryHalo(path:L.Path,halo?:ResolvedHalo):void{
         const radius=width/2+halo.widthPx,join=original.getAttribute('stroke-linejoin')??'miter',cap=original.getAttribute('stroke-linecap')??'butt';
         const authoredMiter=Number(original.getAttribute('stroke-miterlimit')??4),miter=Number.isFinite(authoredMiter)&&authoredMiter>=1?authoredMiter:4;
         const margin=radius*Math.max(cap==='square'?Math.SQRT2:1,join==='miter'?miter:1)+2;
-        for(const [name,value]of Object.entries({x:box.x-margin,y:box.y-margin,width:Math.max(1,box.width+2*margin),height:Math.max(1,box.height+2*margin)})){attr(mask,name,String(value));attr(white,name,String(value));}
+        for(const [name,value]of Object.entries({x:box.x-margin,y:box.y-margin,width:Math.max(1,box.width+2*margin),height:Math.max(1,box.height+2*margin)})){attr(mask,name,String(value));attr(white,name,String(value));if(dilation)attr(dilation,name,String(value));}
       }
+      if(dashed&&dilation&&!mask){const box=original.getBBox(),margin=width+halo.widthPx*2+4;for(const [name,value]of Object.entries({x:box.x-margin,y:box.y-margin,width:Math.max(1,box.width+2*margin),height:Math.max(1,box.height+2*margin)}))attr(dilation,name,String(value));}
       if(fill){copyGeometry(original,fill);attr(fill,'stroke','none');attr(fill,'fill',path.options.fill===false?'none':original.getAttribute('fill')??'none');attr(fill,'fill-opacity',String(path.options.fillOpacity??.2));attr(original,'fill-opacity','0');}
     };
     sync();parent.insertBefore(node,original);

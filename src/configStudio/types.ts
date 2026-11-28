@@ -971,6 +971,8 @@ export type WorkflowAuxiliaryPoint = { id: string; slot: string; label: Localize
 export type WorkflowAssignment = { id: string; target: string; expression: string; when?: WorkflowValueCondition };
 export type WorkflowOutput = {
   id: string;
+  /** c23 display metadata; never used as output identity. */
+  label?: LocalizedText;
   /** Default category scope. The system creates Classification N controls if it has descendants. */
   classification?: ClassificationPath;
   /** c15: union of explicit nodes or terminal descendants, filtered by geometry. */
@@ -983,7 +985,7 @@ export type WorkflowOutput = {
 export type WorkflowClassificationSelector = { id: string; mode: 'self' | 'leafDescendants'; path: ClassificationPath; condition?: 'include' | 'exclude' };
 /** Fixed algorithm capabilities; taxonomy paths are always package data. */
 export type ExternalRole = 'railLine' | 'stationArea' | 'platform' | 'platformFootprint' | 'stationBuilding' | 'stationBuildingPoint' | 'stationFloor' | 'tradePoint';
-export type ExternalRoleBinding = { role: ExternalRole; classificationGroup: { selectors: WorkflowClassificationSelector[] } };
+export type ExternalRoleBinding = { role: ExternalRole; label?: LocalizedText; classificationGroup: { selectors: WorkflowClassificationSelector[] } };
 export type ExternalReferenceBinding = { bindingId: string } & (
   | { source: { workflowId: string; bindingId: string }; classificationGroup?: never; search?: never }
   | { source?: never; classificationGroup: { selectors: WorkflowClassificationSelector[] }; search: Omit<SearchProfile, 'target' | 'targetRole' | 'mode' | 'searchFields' | 'displayFields' | 'returnFields' | 'coarse'> }
@@ -1036,7 +1038,7 @@ export type ParityReport = { schemaVersion: 'cairnmap.v1-parity-report.v2'; sour
 export type ConfigPackageV3 = {
   schemaVersion: 'cairnmap.config-package.v3';
   /** Contract revision is API compatibility, not the user-facing package revision. */
-  contractRevision: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22;
+  contractRevision: 3 | 4 | import('./contract').NativeContractRevision;
   packageId: string;
   projectId: string;
   /** Persistence version only; the save dialog requires a monotonic integer. */

@@ -31,7 +31,7 @@ try:
   path(['C16TEST','PARENT',key,'LEAF']);b.wait('Boolean('+target('input[aria-label="新建要素 ID"]')+')')
   value('input[aria-label="新建要素 ID"]','MANUAL_'+key);value('[data-edit-control="name"] input','Actual '+key);value('input[aria-label="工作流编辑人"]','local-user')
   assert b.evaluate(target('[data-edit-control="count"] input')+'.value')=='0'
-  draw(points);click('完成当前图层');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length==='+str(len(checks)+1))
+  draw(points);click('保存图层');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length==='+str(len(checks)+1))
   row=records()[-1];assert row['ID']=='MANUAL_'+key and row['Class']=='C16TEST' and row['SKind']==key and row['SKind2']=='LEAF';assert row['Count']==0 and row['CreateBy']=='local-user' and not row.get('ModifityBy');checks.append('four-level '+key+' manual ID/native defaults/creation metadata')
  b.screenshot('c16-full-created.png')
  (OUT/'c16-created-records.json').write_text(json.dumps(records(),ensure_ascii=False,indent=2),encoding='utf-8')

@@ -1,3 +1,5 @@
+import {prefillUser,rememberSessionUser} from '@/store/userPrefill';
+import {RequiredFieldsHint} from './RequiredFieldsHint';
 import {outputAcceptsClassification,workflowClassificationGroup} from './workflowClassificationGroup';
 import {OrdinaryTableInput} from './OrdinaryTableInput';
 import {WorkflowFormLayout} from './WorkflowFormLayout';
@@ -115,9 +117,10 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
   const defaults = () => Object.fromEntries(workflow.steps.flatMap(item => item.controls ?? []).flatMap(control => control.defaultValue === undefined ? [] : [[control.slot ?? control.id, structuredClone(control.defaultValue)]]));
   const [page, setPage] = useState(0);
   const workflow=useMemo(()=>resolveWorkflowFields(config,migrateWorkflowDrawings(sourceWorkflow)),[config,sourceWorkflow]);
-  const [slots, setSlots] = useState<V3WorkflowValueMap>(() => ({ ...defaults(), actor: initialActor, World: activeWorld }));
+  const [slots, setSlots] = useState<V3WorkflowValueMap>(() => ({ ...defaults(), actor: prefillUser('',initialActor), World: activeWorld }));
   const [classifications, setClassifications] = useState<Record<string, ClassificationPath | undefined>>({});
   const [submitted, setSubmitted] = useState<V3WorkflowRunResult | null>(null);
+  const [errorRevision,setErrorRevision]=useState(0);
   const [inputIssues, setInputIssues] = useState<V3WorkflowInputIssue[]>([]);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
@@ -149,6 +152,7 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
     try { return { outputs: workflow.mode === 'composed' ? evaluateV3WorkflowOutputs(workflow, slots, { world: activeWorld, classifications, config, coordinates, now: createdAt }) : [], error: '' }; }
     catch (error) { return { outputs: [], error: error instanceof Error ? error.message : '输出表达式无效。' }; }
   }, [workflow, slots, classifications, activeWorld, config, coordinates, createdAt]);
+  useEffect(()=>{if(!errorRevision)return;const frame=requestAnimationFrame(()=>{const root=titleRef.current?.closest('[data-workflow-step]');const invalid=root?.querySelector<HTMLElement>('[data-input-invalid="true"]');if(invalid?.getBoundingClientRect().height){invalid.scrollIntoView({block:'nearest'});invalid.querySelector<HTMLElement>('input:not(:disabled),select:not(:disabled),textarea:not(:disabled),button:not(:disabled)')?.focus();}});return()=>cancelAnimationFrame(frame);},[errorRevision]);
   if (workflow.mode === 'external') return <section className="rounded border bg-violet-50 p-3"><strong>外部整体工作流：{workflow.label.zh}</strong><button type="button" disabled={!onRequestExternal} className="ml-2 rounded border px-2 py-1" onClick={() => onRequestExternal?.(workflow)}>打开已受控工作流</button></section>;
   if (!step) return <p>工作流没有页面。</p>;
   const currentIssues = inputIssues.filter(issue => !issue.stepId || issue.stepId === step.id);
@@ -203,7 +207,7 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
   };
   const next=()=>{try{
     const final=step.kind==='geometry'?snapshot([step]):{slots};
-    const issues=validateV3WorkflowInputs(workflow,final.slots,[step],config);setInputIssues(issues);if(!issues.length)setPage(value=>Math.min(steps.length-1,value+1));
+    const issues=validateV3WorkflowInputs(workflow,final.slots,[step],config);setInputIssues(issues);setErrorRevision(n=>n+1);if(!issues.length)setPage(value=>Math.min(steps.length-1,value+1));
   }catch(error){setInputIssues([{stepId:step.id,message:error instanceof Error?error.message:'几何无效。'}]);}};
   const submit=async()=>{
     if(savingRef.current||submitted)return;
@@ -212,7 +216,7 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
       const output=evaluateV3WorkflowOutputs(workflow,final.slots,{world:activeWorld,classifications,config,coordinates:final.coordinates,now:createdAt});
       const issues=[...validateV3WorkflowInputs(workflow,final.slots,steps,config),...validateV3WorkflowRecords(config,workflow,output)];
       if(!output.length)issues.push({message:'必须至少启用一个实际输出。'});
-      setInputIssues(issues);if(issues.length)return;
+      setInputIssues(issues);setErrorRevision(n=>n+1);if(issues.length)return;
       savingRef.current=true;setSaving(true);try{await onSubmit?.(output);setSubmitted(output);}finally{savingRef.current=false;setSaving(false);}
     }catch(error){setInputIssues([{message:error instanceof Error?error.message:'保存失败，请重试。'}]);savingRef.current=false;setSaving(false);}
   };
@@ -223,8 +227,8 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
   return <section data-workflow-step={step.id} className="cm-workflow-page rounded-lg border bg-white p-3">
     {config.contractRevision>=15?Object.entries(classifications).filter(([id,path])=>path&&!workflow.outputs.some(output=>output.id===id&&outputAcceptsClassification(config,output,path))).map(([id])=><p role="alert" className="mb-2 text-sm text-rose-700" key={id}>原分类已不属于当前分类组，不能继续提交。<button type="button" className="ml-2 rounded border px-2 py-1" onClick={()=>{setClassifications(current=>({...current,[id]:undefined}));setSlots(current=>{const next={...current};for(const control of workflow.steps.flatMap(step=>step.controls??[]).filter(control=>['classificationPicker','tagsExtensions'].includes(control.kind)&&control.outputId===id))delete next[control.slot??control.id];return next;});}}>清除失效选择并重新选取</button></p>):null}
     <div ref={titleRef} className="mb-3 flex flex-wrap justify-between gap-2"><strong>{step.label.zh}</strong><span className="text-xs">世界：{activeWorld} · 第 {page + 1} / {steps.length} 页</span></div>
-    {step.kind!=="actor"&&step.kind!=="geometry"?navigation:null}
-    {step.kind === 'actor' ? <label className="block text-sm">填写人<input aria-label="填写人" className="mt-1 w-full rounded border px-2 py-1" value={String(slots.actor ?? '')} onChange={event => setSlots(current => ({ ...current, actor: event.target.value }))} /></label> : null}
+    {step.kind==='form'||step.kind==='actor'?<RequiredFieldsHint/>:null}{step.kind!=="actor"&&step.kind!=="geometry"?navigation:null}
+    {step.kind === 'actor' ? <label data-input-invalid={inputIssues.some(issue=>issue.stepId===step.id)||undefined} className="block text-sm"><span>填写人{workflow.actor?.required!==false?' *':''}</span><input aria-label="填写人" className="mt-1 w-full rounded border px-2 py-1" value={String(slots.actor ?? '')} onChange={event => {rememberSessionUser(event.target.value);setSlots(current => ({ ...current, actor: event.target.value }));}} /></label> : null}
     {step.kind === 'tagsExtensions' ? <div className="cm-flex-grid gap-2">{(['tags', 'extensions'] as const).filter(key => step.tagsExtensions?.[key === 'tags' ? 'tagsEnabled' : 'extensionsEnabled'] !== false).map(key => <textarea key={key} className="rounded border p-2 text-sm" rows={3} placeholder={`${key} JSON（可选）`} value={typeof slots[key] === 'object' ? JSON.stringify(slots[key]) : String(slots[key] ?? '')} onChange={event => setSlots(current => ({ ...current, [key]: event.target.value }))} />)}</div> : null}
     {step.kind === 'geometry' ? <div className="rounded border border-dashed p-3 text-sm">
       <p>固定绘制类型：{step.geometry?.[0]} · 当前 {liveCounts[drawingKey(step)]?.coordinates??0} 个坐标{liveCounts[drawingKey(step)]?` · ${liveCounts[drawingKey(step)].parts} 个部件`:null}</p>
@@ -240,10 +244,10 @@ export function V3WorkflowRunner({ config, workflow:sourceWorkflow, records = []
       }} /></label>:null}
       {geometryErrors[drawingKey(step)] ? <p role="alert" className="text-rose-700">{geometryErrors[drawingKey(step)]}</p> : null}
     </div> : null}
-    {step.controls?.length ? <div className="cm-runtime-grid"><WorkflowFormLayout step={step} errors={inputIssues.flatMap(i=>i.controlId?[i.controlId]:[])} controls={step.controls.filter(control => workflowConditionMatches(control.when, typedSlots)&&(!control.outputId||!['classificationPicker','tagsExtensions','dataset'].includes(control.kind)||workflowConditionMatches(workflow.outputs.find(output=>output.id===control.outputId)?.when,typedSlots)))} render={control => <div key={control.id} data-workflow-control={control.id} className="grid min-w-0 content-start gap-1 self-start text-sm" style={{"--cm-columns":control.columns===1?6:control.columns===2?3:2} as CSSProperties}>
-      <span>{control.kind==='classificationPicker'?workflowClassificationCaption(config,control,workflow.outputs.find(output=>output.id===control.outputId)):control.label.zh}{control.required ? ' *' : ''}</span>{control.kind==='tagsExtensions'?<WorkflowAnnotationsInput config={config} workflow={workflow} control={control} value={slots[control.id]} classifications={classifications} onChange={value=>{setSlots(current=>({...current,[control.id]:value}));setInputIssues([]);}}/>:<ControlInput classificationPaths={classifications[control.outputId??'']?[classifications[control.outputId??'']!]:[]} control={control} output={workflow.outputs.find(output=>output.id===control.outputId)} fixedGeometry={workflow.outputs.find(output => output.id === control.outputId)?.geometry.selected} value={slots[control.slot ?? control.id]} config={config} records={records} world={activeWorld} onChange={value => {
+    {step.controls?.length ? <div className="cm-runtime-grid"><WorkflowFormLayout validationSignal={errorRevision} step={step} errors={inputIssues.flatMap(i=>i.controlId?[i.controlId]:[])} controls={step.controls.filter(control => workflowConditionMatches(control.when, typedSlots)&&(!control.outputId||!['classificationPicker','tagsExtensions','dataset'].includes(control.kind)||workflowConditionMatches(workflow.outputs.find(output=>output.id===control.outputId)?.when,typedSlots)))} render={control => <div key={control.id} data-workflow-control={control.id} data-input-invalid={inputIssues.some(issue=>issue.controlId===control.id)||undefined} className="grid min-w-0 content-start gap-1 self-start text-sm" style={{"--cm-columns":control.columns===1?6:control.columns===2?3:2} as CSSProperties}>
+      {control.kind!=='tagsExtensions'?<span>{control.kind==='classificationPicker'?workflowClassificationCaption(config,control,workflow.outputs.find(output=>output.id===control.outputId)):control.label.zh}{control.required&&(!control.requiredWhen?.length||control.requiredWhen.every(condition=>workflowConditionMatches(condition,typedSlots))) ? ' *' : ''}</span>:null}{control.kind==='tagsExtensions'?<WorkflowAnnotationsInput invalid={inputIssues.some(issue=>issue.controlId===control.id)} validationSignal={errorRevision} config={config} workflow={workflow} control={control} value={slots[control.id]} classifications={classifications} onChange={value=>{setSlots(current=>({...current,[control.id]:value}));setInputIssues(current=>current.filter(issue=>issue.controlId!==control.id));}}/>:<ControlInput classificationPaths={classifications[control.outputId??'']?[classifications[control.outputId??'']!]:[]} control={control} output={workflow.outputs.find(output=>output.id===control.outputId)} fixedGeometry={workflow.outputs.find(output => output.id === control.outputId)?.geometry.selected} value={slots[control.slot ?? control.id]} config={config} records={records} world={activeWorld} onChange={value => {
         if (control.kind === 'classificationPicker') { const classification = decodePath(String(value)); if (control.outputId) setClassifications(current => ({ ...current, [control.outputId!]: classification })); }
-        setSlots(current => ({ ...current, [control.slot ?? control.id]: value })); setInputIssues([]);
+        setSlots(current => ({ ...current, [control.slot ?? control.id]: value })); setInputIssues(current=>current.filter(issue=>issue.controlId!==control.id));
       }} />
     }</div>}/></div> : null}
     {currentIssues.length ? <ul role="alert" className="mt-3 rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-800">{currentIssues.map((issue, index) => <li key={index}>{issue.message}</li>)}</ul> : null}

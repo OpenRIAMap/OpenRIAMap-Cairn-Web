@@ -2,7 +2,7 @@ import * as L from "leaflet";
 import type { DynmapProjection } from "@/lib/DynmapProjection";
 import type { FeatureRecord } from "@/components/Rules/rendering/renderPrimitives";
 import type { DisplayAnchorConfig } from "@/components/Rules/rendering/display/displayTypes";
-import { chooseStableGeoAnchorCandidate, type GeoAnchorSelectionDebugInfo } from "@/components/Rules/rendering/label/labelGeoAnchorCache";
+import { chooseStableGeoAnchorCandidate, polygonLayoutCandidates, type GeoAnchorSelectionDebugInfo } from "@/components/Rules/rendering/label/labelGeoAnchorCache";
 import { getStableLineAnchorCandidates } from "@/components/Rules/rendering/label/labelLineAnchorCache";
 
 /**
@@ -488,7 +488,7 @@ function resolvePolygonAnchor(
       layoutViewportRect:
         options.layoutViewportWorldRectXZ ?? options.viewportWorldRectXZ ?? null,
     });
-    anchorXZ = stable?.worldXZ ?? computeFixedInteriorAnchorXZ(poly);
+    anchorXZ = options.displayAnchor?.geoCandidateMode&&options.displayAnchor.geoCandidateMode!=='fixedInterior'?computeFixedInteriorAnchorXZ(poly)??stable?.worldXZ??null:stable?.worldXZ??computeFixedInteriorAnchorXZ(poly);
     const fallbackInside = anchorXZ ? pointInPolygonXZ(anchorXZ, poly) : false;
     const geoAnchorDebug = stable?.geoAnchorDebug ?? {
       strategy: strategy ?? "fixedInterior",
@@ -500,6 +500,9 @@ function resolvePolygonAnchor(
     if (!anchorXZ) return null;
     return {
       anchorLatLng: options.projection.locationToLatLng(anchorXZ.x, options.y, anchorXZ.z),
+      ...(options.displayAnchor?.geoCandidateMode&&options.displayAnchor.geoCandidateMode!=='fixedInterior'?{
+        anchorCandidatesLatLng:polygonLayoutCandidates({featureKey:options.feature.uid,poly,anchor:options.displayAnchor}).filter(point=>point.x!==anchorXZ!.x||point.z!==anchorXZ!.z).map(point=>options.projection.locationToLatLng(point.x,options.y,point.z)),
+      }:{}),
       geoAnchorDebug,
     };
   } else if (
@@ -541,6 +544,9 @@ function resolvePolygonAnchor(
     if (!anchorXZ) return null;
     return {
       anchorLatLng: options.projection.locationToLatLng(anchorXZ.x, options.y, anchorXZ.z),
+      ...(options.displayAnchor?.geoCandidateMode&&options.displayAnchor.geoCandidateMode!=='fixedInterior'?{
+        anchorCandidatesLatLng:polygonLayoutCandidates({featureKey:options.feature.uid,poly,anchor:options.displayAnchor}).filter(point=>point.x!==anchorXZ!.x||point.z!==anchorXZ!.z).map(point=>options.projection.locationToLatLng(point.x,options.y,point.z)),
+      }:{}),
       geoAnchorDebug,
     };
   } else {

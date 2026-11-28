@@ -50,6 +50,7 @@ export function makeTextPathLabelMarkerResult(
     pathLatLngs: options.pathLatLngs,
     anchor: options.anchor ?? null,
     className: style.className,
+    fontSizePx: style.fontSize,
     rotateDeg,
     fallback: options.fallback ?? options.anchor?.textPathFallback ?? null,
     cacheKeyHint: options.cacheKeyHint,
@@ -69,14 +70,14 @@ export function makeTextPathLabelMarkerResult(
     typeof plan.letterSpacingPx === "number" && plan.letterSpacingPx > 0
       ? `letter-spacing:${Math.round(plan.letterSpacingPx * 100) / 100}px;`
       : "";
-  const transform =
-    plan.mode === "svgStraightLabel" &&
-    Number.isFinite(Number(plan.rotateDeg)) &&
-    Number(plan.rotateDeg) !== 0
-      ? ` transform="rotate(${Math.round(Number(plan.rotateDeg) * 100) / 100} ${plan.width / 2} ${plan.height / 2})"`
-      : "";
 
-  const textBody = `<defs><path id="${pathId}" d="${plan.pathD}" /></defs><g${transform}><text class="${plan.className}"><textPath href="#${pathId}" startOffset="50%" text-anchor="middle" method="align" spacing="auto">${escapeHtml(plan.text)}</textPath></text></g>`;
+
+  const rootLeft=plan.markerContainerPoint.x-plan.width/2,rootTop=plan.markerContainerPoint.y-plan.height/2;
+  const textBody=(plan.rows??[plan]).map((row,index)=>{
+    const id=pathId+'-'+index,x=row.markerContainerPoint.x-row.width/2-rootLeft,y=row.markerContainerPoint.y-row.height/2-rootTop;
+    const rotation=row.mode==='svgStraightLabel'&&row.rotateDeg?`rotate(${row.rotateDeg} ${row.width/2} ${row.height/2})`:'';
+    return `<g transform="translate(${x} ${y})"><defs><path id="${id}" d="${row.pathD}" /></defs><g transform="${rotation}"><text class="${row.className}"><textPath href="#${id}" startOffset="50%" text-anchor="middle" method="align" spacing="auto">${escapeHtml(row.text)}</textPath></text></g></g>`;
+  }).join('');
 
   const html = `
     <svg class="ria-line-textpath-svg" width="${plan.width}" height="${plan.height}" viewBox="${plan.viewBox}" aria-hidden="true" style="overflow:visible;pointer-events:auto">

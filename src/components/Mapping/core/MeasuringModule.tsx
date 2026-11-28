@@ -1,3 +1,5 @@
+import {FeatureEditActions} from '../Editor/FeatureEditActions';
+import {prefillUser,rememberSessionUser,subscribeUserPrefill} from '@/store/userPrefill';
 import {availableQuickWorkflows} from '@/configStudio/WorkflowAvailabilityEditor';
 import CompleteArrayEditor from '../tools/CompleteArrayEditor';
 import {resolveCreateForm,projectCreateDraft,transferCreateDraft,type CreateForm} from './fullCreateForms';
@@ -909,7 +911,9 @@ const resetWorkflowStyleEditorState = () => {
 // extensions Step A：按组分区编辑时用于新增 extGroup
 
 // 编辑者ID：用于自动写入 CreateBy / ModifityBy（不直接作为附加字段输出）
-const [editorIdInput, setEditorIdInput] = useState('');
+const [editorIdInput, setEditorIdInput] = useState(()=>prefillUser());
+useEffect(()=>{rememberSessionUser(editorIdInput);},[editorIdInput]);
+useEffect(()=>subscribeUserPrefill(()=>setEditorIdInput(value=>prefillUser(value))),[]);
 
 // ======== 切换确认：附加信息不为空时提示可能丢失 ========
 const [switchWarnOpen, setSwitchWarnOpen] = useState(false);
@@ -3681,7 +3685,8 @@ const renderFullForm=()=>{
     {editingLayerId===null&&drawMode==='polygon'&&(roles.has('platformFootprint')||roles.has('stationBuilding'))?<AppButton type="button" onClick={()=>requestExitSpecialDraftIfNeeded(()=>setSpecialDraftMode(specialDraftMode==='merge-polygon-outline-building'?'none':'merge-polygon-outline-building'))}>多面合一</AppButton>:null}
     {drawMode==='polyline'&&roles.has('railLine')?<RailwayDirectionReverseButton enabled={tempPoints.length>=2&&!drawClickSuppressed&&!showMultipartPartLabels} onReverse={()=>{if(showMultipartPartLabelsRef.current)return;const reversed=[...tempPoints].reverse();if(multipartEnabledRef.current)persistActiveEditorCoords(reversed);setTempPoints(reversed);drawDraftGeometry(reversed,'polyline',drawColor);setNativeEdit(current=>current?{...current,draft:reverseWorkflowEditEndpoints(current.plan,current.draft)}:current);}}/>:null}</div>
    </div>
-   {specialDraftMode==='merge-point-platform-station'?<MergePointPlatformStation {...mergeProps} draft={mergePointPSDraft} onChange={setMergePointPSDraft}/>:specialDraftMode==='merge-polygon-outline-building'?<MergePolygonOutlineBuilding {...mergeProps} draft={mergePolygonOBDraft} onChange={setMergePolygonOBDraft}/>:externalEdit?<fieldset disabled={externalEditWorldMismatch}><ExternalFeatureEditHost onClassificationChange={selectFullCategory} config={externalEdit.config} workflow={externalEdit.workflow} session={externalEdit.session} bridge={workflowBridge} context={{initialRecord:externalEdit.session.original,featureIdentity:{layerId:editingLayerId!,originalId:String(externalEdit.session.original.ID)},activeWorld:externalEdit.world,originalGeometry:externalEdit.session.originalGeometry,currentGeometry:multipartDraftRef.current??undefined,editor:editorIdInput,onEditorChange:(value:string)=>{if(!writeBlocked())setEditorIdInput(value);},onUpdate:finishLayer,onCancel:clearTemporaryForVariantSwitch,saveDisabled:isTempMountReadonly||externalEditWorldMismatch||writeBlocked()||showMultipartPartLabels||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking}} onDraftChange={session=>!toolWriteBlocked()&&setExternalEdit(current=>current?{...current,session}:current)}/></fieldset>:nativeEdit?<fieldset disabled={nativeEditWorldMismatch}>{nativeEditWorldMismatch?<p role="alert">请返回 {nativeEdit.world} 后继续。</p>:null}<NativeWorkflowEditPanel config={nativeEdit.config} plan={nativeEdit.plan} draft={nativeEdit.draft} records={nativeEditSearchRecords} world={nativeEdit.world} editor={editorIdInput} onEditorChange={value=>{if(!writeBlocked())setEditorIdInput(value);}} onCancel={clearTemporaryForVariantSwitch} onSave={nativeEdit.original?finishLayer:undefined} saveDisabled={isTempMountReadonly||nativeEditWorldMismatch||writeBlocked()||showMultipartPartLabels||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking} onChange={draft=>!toolWriteBlocked()&&setNativeEdit(current=>current?{...current,draft}:current)} mode={nativeEdit.original?'edit':'create'} hideClassification={!nativeEdit.original} onClassificationChange={selectFullCategory}/></fieldset>:fullExternalCreate?<fieldset disabled={fullExternalWorldMismatch}>{fullExternalWorldMismatch?<p role="alert">请返回 {fullExternalCreate.world} 后继续此新建。</p>:null}<WorkflowStyleEditPanel view={fullExternalCreate.view} values={fullExternalCreate.values} unparsedEntries={fullExternalCreate.unparsed} bridge={{...workflowBridge,getCaptureContext:()=>({config:fullExternalCreate.config,workflow:fullExternalCreate.workflow})}} idFirst classificationContent={<p className="text-xs">分类由上方四级选择树指定；本次保存为新要素。</p>} onChangeValue={(key,value)=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,values:{...current.values,[key]:value}}:current)} onChangeUnparsedEntries={unparsed=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,unparsed}:current)} editorId={editorIdInput} onChangeEditorId={value=>{if(!writeBlocked())setEditorIdInput(value);}}/></fieldset>:<p className="text-xs text-slate-500">未分类几何草稿。选择分类后使用对应编辑方案填写新要素。</p>}
+   {specialDraftMode==='merge-point-platform-station'?<MergePointPlatformStation {...mergeProps} draft={mergePointPSDraft} onChange={setMergePointPSDraft}/>:specialDraftMode==='merge-polygon-outline-building'?<MergePolygonOutlineBuilding {...mergeProps} draft={mergePolygonOBDraft} onChange={setMergePolygonOBDraft}/>:externalEdit?<fieldset disabled={externalEditWorldMismatch}><ExternalFeatureEditHost onClassificationChange={selectFullCategory} config={externalEdit.config} workflow={externalEdit.workflow} session={externalEdit.session} bridge={workflowBridge} context={{initialRecord:externalEdit.session.original,featureIdentity:{layerId:editingLayerId!,originalId:String(externalEdit.session.original.ID)},activeWorld:externalEdit.world,originalGeometry:externalEdit.session.originalGeometry,currentGeometry:multipartDraftRef.current??undefined,editor:editorIdInput,onEditorChange:(value:string)=>{if(!writeBlocked())setEditorIdInput(value);},onUpdate:finishLayer,onCancel:clearTemporaryForVariantSwitch,saveDisabled:isTempMountReadonly||externalEditWorldMismatch||writeBlocked()||showMultipartPartLabels||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking}} onDraftChange={session=>!toolWriteBlocked()&&setExternalEdit(current=>current?{...current,session}:current)}/></fieldset>:nativeEdit?<fieldset disabled={nativeEditWorldMismatch}>{nativeEditWorldMismatch?<p role="alert">请返回 {nativeEdit.world} 后继续。</p>:null}<NativeWorkflowEditPanel config={nativeEdit.config} plan={nativeEdit.plan} draft={nativeEdit.draft} records={nativeEditSearchRecords} world={nativeEdit.world} editor={editorIdInput} onEditorChange={value=>{if(!writeBlocked())setEditorIdInput(value);}} onCancel={clearTemporaryForVariantSwitch} onSave={finishLayer} saveDisabled={isTempMountReadonly||nativeEditWorldMismatch||writeBlocked()||showMultipartPartLabels||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking} onChange={draft=>!toolWriteBlocked()&&setNativeEdit(current=>current?{...current,draft}:current)} mode={nativeEdit.original?'edit':'create'} hideClassification={!nativeEdit.original} onClassificationChange={selectFullCategory}/></fieldset>:fullExternalCreate?<fieldset disabled={fullExternalWorldMismatch}>{fullExternalWorldMismatch?<p role="alert">请返回 {fullExternalCreate.world} 后继续此新建。</p>:null}<WorkflowStyleEditPanel editorIdentityLast footer={<FeatureEditActions mode="create" onCancel={clearTemporaryForVariantSwitch} onSave={finishLayer} saveDisabled={isTempMountReadonly||writeBlocked()||showMultipartPartLabels||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking}/>} view={fullExternalCreate.view} values={fullExternalCreate.values} unparsedEntries={fullExternalCreate.unparsed} bridge={{...workflowBridge,getCaptureContext:()=>({config:fullExternalCreate.config,workflow:fullExternalCreate.workflow})}} idFirst classificationContent={<p className="text-xs">分类由上方四级选择树指定；本次保存为新要素。</p>} onChangeValue={(key,value)=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,values:{...current.values,[key]:value}}:current)} onChangeUnparsedEntries={unparsed=>!toolWriteBlocked()&&setFullExternalCreate(current=>current?{...current,unparsed}:current)} editorId={editorIdInput} onChangeEditorId={value=>{if(!writeBlocked())setEditorIdInput(value);}}/></fieldset>:<p className="text-xs text-slate-500">未分类几何草稿。选择分类后使用对应编辑方案填写新要素。</p>}
+   {specialDraftMode!=='none'?<FeatureEditActions mode="create" onCancel={clearTemporaryForVariantSwitch} onSave={finishLayer} saveDisabled={isTempMountReadonly||nativeEditWorldMismatch||writeBlocked()||showMultipartPartLabels||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking}/>:null}
   </section>;
 };
 const isWorkflowStyleEditing=Boolean(nativeEdit||externalEdit||fullExternalCreate);
@@ -3853,11 +3858,8 @@ const commitFeatureFromWorkflow = (args: WorkflowCommitArgs) => {
     },
   };
 
-  setLayers(prev => {
-    const next = [...prev, layerObj];
-    syncFixedRoot(next, null);
-    return next;
-  });
+  const committedLayers=[...layersRef.current,layerObj];
+  layersRef.current=committedLayers;syncFixedRoot(committedLayers,null);setLayers(committedLayers);
 
   return { ok: true as const, layerId: id };
 };
@@ -3880,7 +3882,30 @@ const commitNativeWorkflow = (config: ConfigPackageV3, workflow: WorkflowDefinit
   setLayers(previous => { const next = [...previous, ...batch]; syncFixedRoot(next, null); return next; });
 };
 
+type WorkflowBeforeImage={world:string;layers:LayerType[];temp:ReturnType<typeof readTempRuleSources>};
+const captureWorkflowCommittedState=():WorkflowBeforeImage=>({world:currentWorldId,layers:layersRef.current.map(layer=>({...layer,jsonInfo:layer.jsonInfo?structuredClone(layer.jsonInfo):undefined})),temp:structuredClone(readTempRuleSources())});
+const rollbackWorkflowWrites=(writes:ReadonlyArray<{layerId:number;before:unknown}>)=>{
+  if(writeBlocked())throw Error('请先结束当前编辑事务。');
+  const snapshots=writes.map(write=>({...write,before:write.before as WorkflowBeforeImage}));
+  if(snapshots.some(write=>write.before?.world!==currentWorldId||!Array.isArray(write.before.layers)))throw Error('回退快照与当前世界不一致。');
+  const oldTemp=readTempRuleSources(),nextTemp={...oldTemp};let next=[...layersRef.current];
+  for(const {layerId,before} of snapshots){
+    const index=next.findIndex(layer=>layer.id===layerId),prior=before.layers.find(layer=>layer.id===layerId);
+    if(index>=0)next.splice(index,1);
+    if(prior)next.splice(Math.min(before.layers.findIndex(layer=>layer.id===layerId),next.length),0,prior);
+    const uid=getLayerTempUid(layerId),priorSource=before.temp?.[currentWorldId]?.find(source=>source.uid===uid);
+    nextTemp[currentWorldId]=(nextTemp[currentWorldId]??[]).filter(source=>source.uid!==uid);
+    if(priorSource)nextTemp[currentWorldId].push(priorSource);
+  }
+  // Validate everything first; the storage write precedes the React commit.
+  try{writeTempRuleSources(nextTemp);}catch(error){try{writeTempRuleSources(oldTemp);}catch{}throw error;}
+  layersRef.current=next;setLayers(next);syncFixedRoot(next,null);
+  setTempMountUiVersion(version=>version+1);requestTempMountNavigationRebuild(currentWorldId);
+};
+
 const workflowBridge: WorkflowBridge = {
+  captureCommittedState:captureWorkflowCommittedState,
+  rollbackWorkflowWrites,
   getCurrentWorldId: () => currentWorldId,
   getEditorId: () => editorIdInput,
   setEditorId: (id: string) => setEditorIdInput(id),
@@ -4688,7 +4713,7 @@ const workflowBridge: WorkflowBridge = {
                             title={busy ? '当前有要素正在编辑/绘制，请先保存' : quickMeasuringActive ? '快捷测绘模式启用时禁止编辑图层（避免图层被转移导致卡死）' : '编辑'}
                           >编辑</AppButton>
 
-                          <AppButton className="px-2 py-1 text-sm bg-red-400 text-white" onClick={() => deleteLayer(l.id)} type="button">删除</AppButton>
+                          <AppButton className="px-2 py-1 text-sm bg-red-400 text-white" onClick={() => deleteLayer(l.id)} type="button">卸除</AppButton>
 
                           <AppButton
                             className="px-3 py-1 text-sm bg-purple-400 text-white"
@@ -4913,18 +4938,7 @@ useEffect(() => {
       重做
     </AppButton>
 
-    {measuringVariant === 'full' && !externalEdit && editingLayerId === null && (
-      <AppButton
-        className={`px-3 py-1 rounded-lg flex-1 ${
-          isTempMountReadonly ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-green-500 text-white'
-        }`}
-        onClick={finishLayer}
-        type="button"
-        disabled={isTempMountReadonly||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking}
-      >
-        完成当前图层
-      </AppButton>
-    )}
+
   </div>
 )}
 
@@ -5022,6 +5036,16 @@ useEffect(() => {
 <div className="mb-2">
   <AssistLineTools
     ref={assistLineToolsRef}
+    contextKey={currentWorldId}
+    getMountedRecords={()=>{
+      if(!configRuntime)return [];
+      const formal=useRuleDataStore.getState().datasets[normalizeV3WorldId(currentWorldId)]?.features??[];
+      const mounted=(readTempRuleSources()?.[currentWorldId]??[]).filter(source=>source.enabled!==false).flatMap(source=>source.items??[]);
+      const base=effectiveMappingRecords(configRuntime,formal,mounted);
+      const ids=new Set(base.map(record=>String(record.ID)));
+      const local=layersRef.current.flatMap(layer=>layer.jsonInfo?.featureInfo&&ids.has(String(layer.jsonInfo.featureInfo.ID))?[layer.jsonInfo.featureInfo]:[]);
+      return effectiveMappingRecords(configRuntime,base,local,relayPackageDraft.deleteMarks);
+    }}
     mapReady={mapReady}
     leafletMapRef={leafletMapRef}
     projectionRef={projectionRef}
@@ -5173,18 +5197,7 @@ useEffect(() => {
       重做
     </AppButton>
 
-    {measuringVariant === 'full' && !externalEdit && editingLayerId === null && (
-      <AppButton
-        className={`px-3 py-1 rounded-lg flex-1 ${
-          isTempMountReadonly ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-green-500 text-white'
-        }`}
-        onClick={finishLayer}
-        type="button"
-        disabled={isTempMountReadonly||controlPointSessionBusy||curveInputOpen||shapeInputOpen||insertionPicking}
-      >
-        完成当前图层
-      </AppButton>
-    )}
+
   </div>
 )}
 

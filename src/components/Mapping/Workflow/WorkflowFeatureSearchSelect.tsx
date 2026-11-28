@@ -8,10 +8,10 @@ import { filterWorkflowSearchOptions, mergeWorkflowSearchPool, type SearchSelect
 export { buildWorkflowSearchOptionsFromFeatures, filterWorkflowSearchOptions } from './workflowSearchPool';
 export type { SearchSelectConfig, SearchPoolOption } from './workflowSearchPool';
 
-type Props = { bridge: WorkflowBridge; label: string; value: string; onChange: (value: string) => void; placeholder?: string; config: SearchSelectConfig; disabled?: boolean };
+type Props = { required?:boolean; bridge: WorkflowBridge; label: string; value: string; onChange: (value: string) => void; placeholder?: string; config: SearchSelectConfig; disabled?: boolean };
 const stageLabels: Record<string,string> = { 'world-version':'正在确认数据发布', 'world-cache-check':'正在检查数据缓存', 'world-index-scan':'正在读取数据目录', 'world-chunk-load':'正在读取要素数据', 'world-cache-write':'正在更新数据缓存', 'world-ready':'正在生成搜索候选' };
 
-export default function WorkflowFeatureSearchSelect({ bridge, label, value, onChange, placeholder, config, disabled }: Props) {
+export default function WorkflowFeatureSearchSelect({ bridge, label, value, onChange, placeholder, config, disabled, required=false }: Props) {
   const worldId = normalizeRuleSourceWorldId(bridge.getCurrentWorldId());
   const dataset = useRuleDataStore(state=>state.datasets[worldId]);
   const loadedDatasets=useRuleDataStore(state=>state.datasets);
@@ -60,8 +60,8 @@ export default function WorkflowFeatureSearchSelect({ bridge, label, value, onCh
   const restart=()=>{setRequested(true);setRetry(current=>current+1);setOpen(true);};
   return <div className="space-y-1">
     {config.error?<p role="alert" className="text-xs text-rose-700">{config.error}</p>:null}
-    <div className="text-xs opacity-80">{label}</div>
-    <input className="w-full border p-1 rounded text-sm" value={value??''} placeholder={placeholder} disabled={disabled}
+    <div className="text-xs opacity-80">{label}{required?' *':''}</div>
+    <input aria-required={required} className="w-full border p-1 rounded text-sm" value={value??''} placeholder={placeholder} disabled={disabled}
       onChange={event=>{onChange(event.target.value);setRequested(true);setOpen(true);}}
       onFocus={()=>{clearTimeout(blurTimer.current);setRequested(true);setOpen(true);}} onBlur={()=>{blurTimer.current=setTimeout(()=>setOpen(false),120);}}
       onMouseDownCapture={event=>event.stopPropagation()} onPointerDownCapture={event=>event.stopPropagation()} onTouchStartCapture={event=>event.stopPropagation()}/>

@@ -55,7 +55,7 @@ try:
  val('textarea[aria-label="完整 Coord 数组"]','[[[[null,64,0],[1,64,0],[1,64,1]]]]');click('校验');assert '有限数字' in alerts();assert b.evaluate('[...document.querySelectorAll("[data-complete-array-editor] button")].find(e=>e.textContent.trim()==="应用").disabled')
  click('关闭完整数组');assert array_text()==reordered
  checks.append('complete-array editor has no reverse; nonnumeric tuple rejected without partial application')
- click('完成当前图层');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===1');record=records()[0];assert record['CoordG']==reordered
+ click('保存图层');b.wait('window.workflowAcceptance.measurement.getCommittedFeatures().length===1');record=records()[0];assert record['CoordG']==reordered
  # Actual existing layer toolbar, not a setter.
  click('>');click('编辑');b.wait('!!document.querySelector(\'input[aria-label="编辑要素 ID"]\')')
  assert not b.evaluate('!!document.querySelector(\'select[aria-label="要素分类 Class"]\')')
@@ -84,6 +84,7 @@ try:
   if binding['slot']==old:binding['slot']='CROSS_NAME'
  cross['workflows'].append(w)
  fresh(cross);click('测绘');click('开始测绘(完整)');category(['PTA','AIR','NOM']);click('确认选择并导入')
+ press('[...document.querySelectorAll(\'section[aria-label="结构化标签与扩展"]\')].map(e=>e.parentElement.querySelector(":scope>summary")).find(e=>e.checkVisibility())')
  val('input[aria-label="新建要素 ID"]','CROSS_ID');val_expr(name_input(),'Cross value');click('添加标签行');val('select[aria-label="标签已注册字段"]','Adm');val('input[aria-label="标签扩展值"]','ADM_FOR_TEST')
  draw([(0,0),(50,0)]);prior=array_text();click('解锁分类选择');category(['CROSS','POT','NOM']);click('尝试切换');assert state()=='loaded',alerts()
  assert b.evaluate('document.querySelector(\'input[aria-label="新建要素 ID"]\').value')=='CROSS_ID';assert b.evaluate('('+name_input()+').value')=='Cross value';assert 'ADM_FOR_TEST' in b.evaluate('document.body.innerText');assert array_text()==prior

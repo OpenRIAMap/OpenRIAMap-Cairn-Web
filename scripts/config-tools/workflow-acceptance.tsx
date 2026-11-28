@@ -15,6 +15,7 @@ import '../../src/styles/index.css';
 import 'leaflet/dist/leaflet.css';
 import { useRuleDataStore } from '../../src/store/ruleDataStore';
 import MeasuringModule, { type MeasuringModuleHandle } from '../../src/components/Mapping/core/MeasuringModule';
+import ReviewConfirmationHost from '../../src/components/Review/ReviewConfirmationHost';
 import { createEditableConfigPackageFromCurrentProject as createConfigPackageFromCurrentProject } from '../../src/configStudio/renderRuleTemplates';
 import { compileConfigRuntime } from '../../src/configStudio/runtime';
 import { DynmapProjection, createDynmapCRS, ZTH_FLAT_CONFIG } from '../../src/lib/DynmapProjection';
@@ -43,7 +44,7 @@ function Harness() {
   const projectionRef = useRef(projection);
   const measurementRef = useRef<MeasuringModuleHandle | null>(null);
   useEffect(() => { (window as any).workflowAcceptance = { map, config, setConfig, world, setWorld, setRecords: (features: unknown[]) => useRuleDataStore.setState({ datasets: { zth: { worldId: 'zth', features } as any } }), screenPointAt: (x: number, z: number) => { const p = map!.latLngToContainerPoint(projection.locationToLatLng(x,64,z)); const r = map!.getContainer().getBoundingClientRect(); return { x: p.x + r.x, y: p.y + r.y }; }, measurement: measurementRef.current }; }, [map, config, world]);
-  return <main style={{ height: 900, width: 1200, margin: 20 }}><MapContainer style={{ height: '100%', width: '100%' }} center={[0, 0]} zoom={3} {...MAP_ZOOM_BOUNDS} crs={createDynmapCRS(ZTH_FLAT_CONFIG)}><Ready onReady={setMap} /></MapContainer>
+  return <main style={{ height: 900, width: 1200, margin: 20 }}><ReviewConfirmationHost/><MapContainer style={{ height: '100%', width: '100%' }} center={[0, 0]} zoom={3} {...MAP_ZOOM_BOUNDS} crs={createDynmapCRS(ZTH_FLAT_CONFIG)}><Ready onReady={setMap} /></MapContainer>
     {map ? <MeasuringModule ref={measurementRef} mapReady leafletMapRef={mapRef} projectionRef={projectionRef} currentWorldId={world} configRuntime={runtimeConfig} disablePackageUpload={!location.search.includes('edit=1')} /> : null}
   </main>;
 }

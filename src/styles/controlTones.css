@@ -299,3 +299,10 @@
 :root[data-color-scheme="dark"] .bg-rose-50:disabled,
 :root[data-color-scheme="dark"] .bg-rose-700:disabled,
 :root[data-color-scheme="dark"] .bg-rose-50\/95:disabled { background-color:var(--cm-panel-selected); color:var(--cm-panel-muted); border-color:var(--cm-panel-line); opacity:1; }
+
+/* Missing required values remain legible without opaque label backgrounds. */
+[data-input-invalid="true"] { border-color:#dc2626; }
+[data-input-invalid="true"] > span, [data-input-invalid="true"] > label { color:#b91c1c; }
+[data-input-invalid="true"] input, [data-input-invalid="true"] select, [data-input-invalid="true"] textarea { border-color:#dc2626 !important; }
+:root[data-color-scheme="dark"] [data-input-invalid="true"] > span,
+:root[data-color-scheme="dark"] [data-input-invalid="true"] > label { color:var(--cm-text-primary); -webkit-text-stroke:.35px #f87171; }

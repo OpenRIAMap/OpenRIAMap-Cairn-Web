@@ -1,3 +1,4 @@
+import {prefillUser,rememberSessionUser} from '@/store/userPrefill';
 import { useEffect, useRef, useState } from 'react';
 import AppCard from '@/components/ui/AppCard';
 import BlockingFullscreenModal from '@/components/Common/BlockingFullscreenModal';
@@ -20,7 +21,7 @@ export default function RelayPackageExportPanel(props: {
   onUploadToReview?: (input: { blob: Blob; filename: string; operator: string; note: string }) => Promise<{ submissionId: string; revisionId: string }>;
 }) {
   const { open, draft, configuration, featureCount, onClose, onExport, onUploadToReview } = props;
-  const [operator, setOperator] = useState(draft.meta.operator ?? '');
+  const [operator, setOperator] = useState(()=>prefillUser(draft.meta.operator??''));
   const [note, setNote] = useState(draft.meta.note ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export default function RelayPackageExportPanel(props: {
 
   useEffect(() => {
     if (!open) return;
-    setOperator(draft.meta.operator ?? '');
+    setOperator(prefillUser(draft.meta.operator??''));
     setNote(draft.meta.note ?? '');
     setBusy(false);
     setError(null);
@@ -76,7 +77,7 @@ export default function RelayPackageExportPanel(props: {
         <div className="p-4 space-y-4">
           <div>
             <label className="block text-sm font-bold mb-1">用户</label>
-            <input value={operator} onChange={(e) => { setOperator(e.target.value); setPreparedPackage(null); setError(null); }} className="w-full border rounded px-3 py-2 text-sm" />
+            <input value={operator} onChange={(e) => { setOperator(e.target.value);rememberSessionUser(e.target.value); setPreparedPackage(null); setError(null); }} className="w-full border rounded px-3 py-2 text-sm" />
           </div>
           <div>
             <label className="block text-sm font-bold mb-1">备注</label>

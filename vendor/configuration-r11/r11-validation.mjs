@@ -9777,15 +9777,15 @@ function validateMediaPolicy(config, incoming, existing) {
 }
 
 // src/configStudio/contract.ts
-var NATIVE_CONFIG_REVISION = 22;
+var NATIVE_CONFIG_REVISION = 23;
 var CONTRACT_CAPABILITIES = {
   latest: NATIVE_CONFIG_REVISION,
-  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
-  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
-  category: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
-  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
-  publication: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
-  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17], [17, 18], [18, 19], [19, 20], [20, 21], [21, 22]] }
+  native: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+  activation: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+  category: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+  workflow: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+  publication: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+  migration: { baseline: 13, previousVersions: 5, steps: [[13, 14], [14, 15], [15, 16], [16, 17], [17, 18], [18, 19], [19, 20], [20, 21], [21, 22], [22, 23]] }
 };
 var supportsContract = (capability, value) => typeof value === "number" && CONTRACT_CAPABILITIES[capability].includes(value);
 function isNativeConfigRevision(value) {
@@ -27901,6 +27901,13 @@ var native_contract_schema_generated_default = {
         id: {
           type: "string"
         },
+        label: {
+          anyOf: [
+            {
+              ref: "t1"
+            }
+          ]
+        },
         classification: {
           anyOf: [
             {
@@ -27980,6 +27987,13 @@ var native_contract_schema_generated_default = {
             },
             {
               const: "tradePoint"
+            }
+          ]
+        },
+        label: {
+          anyOf: [
+            {
+              ref: "t1"
             }
           ]
         },
@@ -28459,6 +28473,9 @@ var native_contract_schema_generated_default = {
               const: 4
             },
             {
+              const: 23
+            },
+            {
               const: 5
             },
             {
@@ -28903,6 +28920,10 @@ function validateNativeStructure(value) {
     }
   }
   for (const workflow of config.workflows) {
+    if (config.contractRevision < 23) {
+      for (const output of workflow.outputs) if (output.label !== void 0) issues.push({ path: "config/workflows/" + workflow.id + "/outputs/" + output.id + "/label", message: "\u8F93\u51FA\u540D\u79F0\u6700\u4F4E\u8981\u6C42 c23\u3002" });
+      for (const binding of workflow.external?.roleBindings ?? []) if (binding.label !== void 0) issues.push({ path: "config/workflows/" + workflow.id + "/external/roleBindings/" + binding.role + "/label", message: "\u89D2\u8272\u8F93\u51FA\u540D\u79F0\u6700\u4F4E\u8981\u6C42 c23\u3002" });
+    }
     if (config.contractRevision >= 18 && workflow.editor?.scope) issues.push({ path: "config/workflows/" + workflow.id + "/editor/scope", message: "c18 \u7F16\u8F91\u4F5C\u7528\u8303\u56F4\u5FC5\u987B\u4F7F\u7528\u663E\u5F0F\u5206\u7C7B\u52A0\u51CF range\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7 scope\u3002" });
     if (config.contractRevision < 16 && workflow.external && (workflow.external.roleBindings !== void 0 || workflow.external.referenceBindings !== void 0)) issues.push({ path: "config/workflows/" + workflow.id + "/external", message: "\u89D2\u8272\u4E0E\u5F15\u7528\u7ED1\u5B9A\u6700\u4F4E\u8981\u6C42 c16\u3002" });
     if (config.contractRevision >= 16 && workflow.mode === "external" && (!workflow.external?.roleBindings || workflow.external.coveredClassifications !== void 0)) issues.push({ path: "config/workflows/" + workflow.id + "/external", message: "c16 \u4E13\u7528\u6D41\u7A0B\u5FC5\u987B\u4F7F\u7528\u660E\u786E\u89D2\u8272\u7ED1\u5B9A\uFF0C\u4E0D\u80FD\u4FDD\u7559\u65E7\u8303\u56F4\u526F\u672C\u3002" });
@@ -30568,7 +30589,7 @@ async function readRawNativePackage(file, options = {}) {
 }
 
 // scripts/config-tools/server-validation-entry.ts
-var rulesVersion = "cairnmap-c22-production-2";
+var rulesVersion = "cairnmap-c23-production-1";
 var validateConfiguration = validateConfigPackage;
 function describeAuditFields(config, record) {
   if (!config) return {};
