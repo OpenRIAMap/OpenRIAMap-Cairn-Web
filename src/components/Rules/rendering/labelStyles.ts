@@ -433,6 +433,7 @@ export function renderLabelHtml(styleKey: LabelStyleKeyInput, text: string, opts
         <span style="
           position:relative;
           display:inline-block;
+          white-space:normal;
           color:#0f172a;
           font-weight:${fontWeight};
           font-size:${structureSize}px;
@@ -446,6 +447,7 @@ export function renderLabelHtml(styleKey: LabelStyleKeyInput, text: string, opts
             position:absolute;
             inset:0;
             display:inline-block;
+            white-space:${labelWhiteSpace};
             color:${halo};
             text-shadow:${haloShadow};
             pointer-events:none;
@@ -453,7 +455,8 @@ export function renderLabelHtml(styleKey: LabelStyleKeyInput, text: string, opts
           ">${safe}</span>
           <span style="
             position:relative;
-            display:inline-block;
+            display:block;
+            white-space:${labelWhiteSpace};
             color:#0f172a;
             text-decoration:${underline ? 'underline' : 'none'};
             pointer-events:none;
