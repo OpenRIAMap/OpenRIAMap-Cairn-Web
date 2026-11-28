@@ -12,7 +12,9 @@ checks=[]
 def click_selector(selector):
     q='document.querySelector('+json.dumps(selector)+')'
     b.wait('Boolean('+q+')')
-    rect=b.evaluate('(()=>{const e='+q+';e.scrollIntoView({block:"center"});const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()')
+    # Opening a docked detail schedules its own reveal on the next frame.
+    # Let that layout finish before deriving coordinates for the next click.
+    rect=b.evaluate('(async()=>{const e='+q+';e.scrollIntoView({block:"center"});await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()')
     for typ,extra in [('mouseMoved',{}),('mousePressed',{'button':'left','buttons':1,'clickCount':1}),('mouseReleased',{'button':'left','buttons':0,'clickCount':1})]:
         b.call('Input.dispatchMouseEvent',{'type':typ,**rect,**extra})
 
@@ -65,12 +67,16 @@ try:
     click_selector(close)
     b.wait('!document.querySelector("[data-review-package][aria-current=true]")')
     click_selector(card0)
+    b.wait('document.querySelector('+json.dumps(card0)+').getAttribute("aria-current")==="true"')
     b.click('切换工作区绑定')
+    b.wait("[...document.querySelectorAll('nav button')].find(e=>e.textContent==='切换工作区绑定').getAttribute('aria-pressed')==='true'")
     click_selector(card1)
+    b.wait("document.body.innerText.includes('当前审核图层管理已绑定另一个审核包')")
     assert b.evaluate('document.querySelector('+json.dumps(card0)+').getAttribute("aria-current")==="true"')
     click_selector(close)
     assert b.evaluate('document.querySelector('+json.dumps(card0)+').getAttribute("aria-current")==="true"')
     b.click('切换允许关闭')
+    b.wait("[...document.querySelectorAll('nav button')].find(e=>e.textContent==='切换允许关闭').getAttribute('aria-pressed')==='true'")
     click_selector(close)
     b.wait('!document.querySelector("[data-review-package][aria-current=true]")')
     checks.append('detail marker follows actual open/switch/close and preserves blocked switch or cancelled close')

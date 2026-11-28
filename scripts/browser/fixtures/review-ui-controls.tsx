@@ -56,8 +56,8 @@ function Fixture(){
       <button onClick={()=>{document.documentElement.dataset.colorScheme='dark';}}>深色情景</button>
       <button onClick={()=>{document.documentElement.dataset.colorScheme='light';}}>浅色情景</button>
       <button onClick={()=>setDocked(v=>!v)}>切换容器</button>
-      <button onClick={()=>setBound(v=>!v)}>切换工作区绑定</button>
-      <button onClick={()=>setCanClose(v=>!v)}>切换允许关闭</button>
+      <button aria-pressed={bound} onClick={()=>setBound(v=>!v)}>切换工作区绑定</button>
+      <button aria-pressed={canClose} onClick={()=>setCanClose(v=>!v)}>切换允许关闭</button>
       <button onClick={()=>{boardVersion++;notifyUpload();}}>更新状态板版本</button>
       <button onClick={()=>{principalId=principalId==='reviewer-test'?'another-reviewer':'reviewer-test';notifyUpload();}}>切换测试身份</button>
       <button onClick={()=>setOpened(true)}>重开面板</button>
